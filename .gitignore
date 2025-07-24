@@ -57,4 +57,4 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Ignore actual environment files
 .env.*
-!.env.*.example
+!.env.example
