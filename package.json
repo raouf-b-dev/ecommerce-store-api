@@ -20,6 +20,10 @@
     "test:prod": "cross-env NODE_ENV=production jest",
     "test:staging": "cross-env NODE_ENV=staging jest",
     "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "migration:generate": "npm run typeorm -- -d ./data-source.ts migration:generate",
+    "migration:run": "npm run typeorm -- -d ./data-source.ts migration:run",
+    "migration:revert": "npm run typeorm -- -d ./data-source.ts migration:revert",
     "start:debug": "cross-env NODE_ENV=development DEBUG_PORT=9229 nest start --debug --watch"
   },
   "dependencies": {
