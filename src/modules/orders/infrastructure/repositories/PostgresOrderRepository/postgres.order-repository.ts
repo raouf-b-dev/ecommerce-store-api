@@ -2,9 +2,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Order } from '../../domain/entities/order';
-import { OrderRepository } from '../../domain/repositories/order-repository';
-import { OrderEntity } from '../orm/order.schema';
+import { Order } from '../../../domain/entities/order';
+import { OrderRepository } from '../../../domain/repositories/order-repository';
+import { OrderEntity } from '../../orm/order.schema';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {

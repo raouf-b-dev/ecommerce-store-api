@@ -8,41 +8,40 @@ import {
 } from './order.token';
 import { OrderRepository } from './domain/repositories/order-repository';
 import { RedisOrderRepository } from './infrastructure/repositories/redis.order-repository';
-import { PostgresOrderRepository } from './infrastructure/repositories/postgres.order-repository';
+import { PostgresOrderRepository } from './infrastructure/repositories/PostgresOrderRepository/postgres.order-repository';
+import { OrderEntity } from './infrastructure/orm/order.schema';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [TypeOrmModule.forFeature([OrderEntity])],
       controllers: [OrdersController],
       providers: [
-        // External Repos
-
-        // Postgres Repo
+        //Postgres Repo
         {
           provide: POSTGRES_ORDER_REPOSITORY,
-          useFactory: () => {
-            return new PostgresOrderRepository();
-          },
-          inject: [],
+          useClass: PostgresOrderRepository,
         },
 
-        // Redis Repo
+        // Redis Repo (decorator around Postgres)
         {
           provide: REDIS_ORDER_REPOSITORY,
-          useFactory: (pgRepo: PostgresOrderRepository) =>
-            new RedisOrderRepository(pgRepo),
+          useFactory: (pgRepo: PostgresOrderRepository) => {
+            return new RedisOrderRepository(pgRepo);
+          },
           inject: [POSTGRES_ORDER_REPOSITORY],
         },
 
-        // Interface Bindings
+        // Default Repository Binding
         {
           provide: OrderRepository,
           useExisting: REDIS_ORDER_REPOSITORY,
         },
 
-        // Usecases
+        // Use cases
         GetOrderUseCase,
 
         // Controllers

@@ -12,7 +12,7 @@ import {
 } from './order.token';
 
 import { RedisOrderRepository } from './infrastructure/repositories/redis.order-repository';
-import { PostgresOrderRepository } from './infrastructure/repositories/postgres.order-repository';
+import { PostgresOrderRepository } from './infrastructure/repositories/PostgresOrderRepository/postgres.order-repository';
 import { OrderEntity } from './infrastructure/orm/order.schema';
 
 @Module({
