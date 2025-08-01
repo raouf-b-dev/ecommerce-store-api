@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
 import { UpdateOrderDto } from './presentation/dto/update-order.dto';
-import { GetOrderController } from './presentation/controllers/getOrder.controller';
+import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
 
 @Controller('orders')
 export class OrdersController {

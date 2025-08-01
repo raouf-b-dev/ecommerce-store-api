@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/getOrder.controller';
-import { GetOrderUseCase } from './application/use-cases/getOrder.usecase';
+import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
+import { GetOrderUseCase } from './application/use-cases/GetOrder/getOrder.usecase';
 
 import { OrderRepository } from './domain/repositories/order-repository';
 import {

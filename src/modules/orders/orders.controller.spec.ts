@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/getOrder.controller';
-import { GetOrderUseCase } from './application/use-cases/getOrder.usecase';
+import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
+import { GetOrderUseCase } from './application/use-cases/GetOrder/getOrder.usecase';
 import {
   POSTGRES_ORDER_REPOSITORY,
   REDIS_ORDER_REPOSITORY,

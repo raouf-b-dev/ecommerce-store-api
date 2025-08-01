@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { GetOrderUseCase } from '../../application/use-cases/getOrder.usecase';
-import { Order } from '../../domain/entities/order';
+import { GetOrderUseCase } from '../../../application/use-cases/GetOrder/getOrder.usecase';
+import { Order } from '../../../domain/entities/order';
 
 @Injectable()
 export class GetOrderController {
