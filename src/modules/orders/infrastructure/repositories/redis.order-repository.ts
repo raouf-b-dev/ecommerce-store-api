@@ -8,6 +8,9 @@ export class RedisOrderRepository implements OrderRepository {
   async save(order: Order): Promise<void> {
     throw new Error('Method not implemented.');
   }
+  update(order: Order): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   async findById(id: number): Promise<Order | null> {
     try {
       const order = await this.postgresRepo.findById(id);
