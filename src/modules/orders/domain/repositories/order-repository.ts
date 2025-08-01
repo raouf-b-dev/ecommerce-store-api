@@ -1,4 +1,4 @@
-import { Order } from '../entities/order.entity';
+import { Order } from '../entities/order';
 
 export abstract class OrderRepository {
   abstract save(order: Order): Promise<void>;
