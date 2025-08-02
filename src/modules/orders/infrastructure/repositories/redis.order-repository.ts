@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Order } from '../../domain/entities/order';
 import { OrderRepository } from '../../domain/repositories/order-repository';
+import { RepositoryError } from '../../../../core/errors/repository.error';
+import { Result } from '../../../../core/domain/result';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
   constructor(private readonly postgresRepo: OrderRepository) {}
-  async save(order: Order): Promise<void> {
+  async save(order: Order): Promise<Result<void, RepositoryError>> {
     throw new Error('Method not implemented.');
   }
-  update(order: Order): Promise<void> {
+  async update(order: Order): Promise<Result<void, RepositoryError>> {
     throw new Error('Method not implemented.');
   }
-  async findById(id: number): Promise<Order | null> {
+  async findById(id: number): Promise<Result<Order, RepositoryError>> {
     try {
       const order = await this.postgresRepo.findById(id);
       if (!order) throw new Error('Order not found');
@@ -20,10 +22,10 @@ export class RedisOrderRepository implements OrderRepository {
       throw error;
     }
   }
-  async findAll(): Promise<Order[]> {
+  async findAll(): Promise<Result<Order[], RepositoryError>> {
     throw new Error('Method not implemented.');
   }
-  async deleteById(id: number): Promise<void> {
+  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     throw new Error('Method not implemented.');
   }
 }
