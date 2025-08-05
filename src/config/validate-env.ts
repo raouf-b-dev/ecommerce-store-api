@@ -10,6 +10,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     REDIS_HOST: str(),
     REDIS_PORT: port({ default: 6379 }),
     REDIS_PASSWORD: str({ default: '' }),
+    REDIS_KEYPREFIX: str({ default: '' }),
+    REDIS_DB: num({ default: 0 }),
 
     DB_HOST: str(),
     DB_PORT: port({ default: 5432 }),

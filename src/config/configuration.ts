@@ -8,7 +8,9 @@ export interface IAppConfig {
   redis: {
     host: string;
     port: number;
-    password?: string;
+    password: string;
+    key_prefix: string;
+    db: number;
   };
   postgres: {
     host: string;
@@ -37,6 +39,8 @@ export default (): IAppConfig => {
       host: env.REDIS_HOST,
       port: env.REDIS_PORT,
       password: env.REDIS_PASSWORD,
+      key_prefix: env.REDIS_KEYPREFIX,
+      db: env.REDIS_DB,
     },
     postgres: {
       host: env.DB_HOST,
