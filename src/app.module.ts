@@ -5,7 +5,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { EnvConfigModule } from './config/config.module';
-import { DatabaseModule } from './core/database/database.module';
+import { DatabaseModule } from './core/infrastructure/database/database.module';
+import { RedisModule } from './core/infrastructure/redis/redis.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DatabaseModule } from './core/database/database.module';
       load: [configuration],
     }),
     DatabaseModule,
+    RedisModule,
   ],
 
   controllers: [AppController],
