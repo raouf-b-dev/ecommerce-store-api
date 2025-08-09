@@ -14,7 +14,7 @@ import {
 import { RedisOrderRepository } from './infrastructure/repositories/RedisOrderRepository/redis.order-repository';
 import { PostgresOrderRepository } from './infrastructure/repositories/PostgresOrderRepository/postgres.order-repository';
 import { OrderEntity } from './infrastructure/orm/order.schema';
-import { CacheService } from '../../core/infrastructure/redis/cache.service';
+import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 
 @Module({
