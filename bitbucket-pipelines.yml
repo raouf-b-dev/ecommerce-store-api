@@ -1,0 +1,25 @@
+# bitbucket-pipelines.yml
+image: node:22
+
+options:
+  max-time: 20
+  size: 2x
+
+pipelines:
+  default:
+    - step:
+        name: Install, Lint & Test
+        caches:
+          - node
+        script:
+          - echo "🛠 Installing dependencies..."
+          - npm ci
+          - echo "🔍 Linting..."
+          - npm run lint
+          - echo "🧪 Running tests..."
+          - npm run test:ci
+        artifacts:
+          - coverage/**
+definitions:
+  caches:
+    node: ~/.npm
