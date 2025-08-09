@@ -1,16 +1,13 @@
-// src/shared/redis/redis-index-initializer.service.ts
-
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from './redis.service';
-
-import { OrderIndexSchema } from './constants/redis.schemas';
-import { Order_REDIS } from './constants/redis.constants';
+import { RedisSearchClient } from '../commands/redis-search.client';
+import { OrderIndexSchema } from '../constants/redis.schemas';
+import { Order_REDIS } from '../constants/redis.constants';
 
 @Injectable()
 export class RedisIndexInitializerService {
   private readonly logger = new Logger(RedisIndexInitializerService.name);
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(private readonly redisSearch: RedisSearchClient) {}
 
   async onModuleInit() {
     await this.initOrderIndex();
@@ -18,7 +15,7 @@ export class RedisIndexInitializerService {
 
   private async initOrderIndex() {
     try {
-      await this.redisService.createIndex(
+      await this.redisSearch.createIndex(
         Order_REDIS.INDEX,
         OrderIndexSchema,
         `${Order_REDIS.CACHE_KEY}:`,
