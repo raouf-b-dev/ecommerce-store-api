@@ -13,7 +13,7 @@ pipelines:
           - node
         script:
           - echo "🛠 Installing dependencies..."
-          - npm ci
+          - npm ci --legacy-peer-deps
           - echo "🔍 Linting..."
           - npm run lint
           - echo "🧪 Running tests..."
