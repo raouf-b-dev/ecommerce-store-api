@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisSearchClient } from '../commands/redis-search.client';
+import { RedisSearchClient } from '../clients/redis-search.client';
 import { OrderIndexSchema } from '../constants/redis.schemas';
 import { Order_REDIS } from '../constants/redis.constants';
 
