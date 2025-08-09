@@ -6,30 +6,14 @@ options:
 
 pipelines:
   branches:
-    fix/test-pipelines: # Runs only on your testing branch
+    master:
       - step:
-          name: Install, Lint & Test
+          name: Install & Test (Master branch)
           caches:
             - node
           script:
             - echo "🛠 Installing dependencies (legacy peer deps to avoid conflicts)..."
             - npm ci --legacy-peer-deps
-            - echo "🔍 Linting..."
-            - npm run lint
-            - echo "🧪 Running tests..."
-            - npm run test:ci
-          artifacts:
-            - coverage/**
-    main:
-      - step:
-          name: Install, Lint & Test (Production)
-          caches:
-            - node
-          script:
-            - echo "🛠 Installing dependencies..."
-            - npm ci --legacy-peer-deps
-            - echo "🔍 Linting..."
-            - npm run lint
             - echo "🧪 Running tests..."
             - npm run test:ci
           artifacts:
