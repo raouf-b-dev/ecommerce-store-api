@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { EnvConfigModule } from './config/config.module';
 import { DatabaseModule } from './core/infrastructure/database/database.module';
 import { RedisModule } from './core/infrastructure/redis/redis.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { RedisModule } from './core/infrastructure/redis/redis.module';
     }),
     DatabaseModule,
     RedisModule,
+    ProductsModule,
   ],
 
   controllers: [AppController],
