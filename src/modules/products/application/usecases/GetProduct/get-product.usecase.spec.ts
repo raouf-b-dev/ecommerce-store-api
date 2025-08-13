@@ -29,7 +29,16 @@ describe('GetProductUseCase', () => {
   describe('execute', () => {
     it('should return Success if product is found', async () => {
       const productId = 1;
-      const expectedProduct = new Product({ id: productId, name: 'Car' });
+      const expectedProduct = new Product({
+        id: productId,
+        name: 'Car',
+        description: 'A fast red sports car',
+        price: 35000,
+        sku: 'CAR-001',
+        stockQuantity: 10,
+        createdAt: new Date('2025-01-01T10:00:00Z'),
+        updatedAt: new Date('2025-08-13T15:00:00Z'),
+      });
 
       mockProductRepository.findById.mockResolvedValue(
         Result.success(expectedProduct),

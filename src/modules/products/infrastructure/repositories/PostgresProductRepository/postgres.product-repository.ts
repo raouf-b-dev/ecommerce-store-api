@@ -14,10 +14,7 @@ export class PostgresProductRepository implements ProductRepository {
   ) {}
   async save(product: Product): Promise<Result<void, RepositoryError>> {
     try {
-      const entity = this.ormRepo.create({
-        id: product.id,
-        name: product.name,
-      });
+      const entity = this.ormRepo.create(product);
       await this.ormRepo.save(entity);
 
       return Result.success<void>(undefined);

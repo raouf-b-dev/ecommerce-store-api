@@ -19,8 +19,26 @@ const mockTypeOrmRepository = {
 };
 
 // Reusable test data
-const productDomain = new Product({ id: 1, name: 'car' });
-const productEntity = { id: 1, name: 'car' } as ProductEntity;
+const productDomain = new Product({
+  id: 1,
+  name: 'car',
+  description: 'A fast red sports car',
+  price: 35000,
+  sku: 'CAR-001',
+  stockQuantity: 10,
+  createdAt: new Date('2025-01-01T10:00:00Z'),
+  updatedAt: new Date('2025-08-13T15:00:00Z'),
+});
+const productEntity = {
+  id: 1,
+  name: 'car',
+  description: 'A fast red sports car',
+  price: 35000,
+  sku: 'CAR-001',
+  stockQuantity: 10,
+  createdAt: new Date('2025-01-01T10:00:00Z'),
+  updatedAt: new Date('2025-08-13T15:00:00Z'),
+} as ProductEntity;
 const dbError = new Error('DB Error');
 
 describe('PostgresProductRepository', () => {
@@ -78,7 +96,17 @@ describe('PostgresProductRepository', () => {
 
   describe('update', () => {
     it('should successfully update an existing product', async () => {
-      const productToUpdate = new Product({ id: 1, name: 'Bike' });
+      const productToUpdate = new Product({
+        id: 2,
+        name: 'Bike',
+        description: 'A mountain bike suitable for rough terrain',
+        price: 1200,
+        sku: 'BIKE-002',
+        stockQuantity: 5,
+        createdAt: new Date('2025-02-15T09:30:00Z'),
+        updatedAt: new Date('2025-08-10T12:00:00Z'),
+      });
+
       const mergedEntity = { ...productEntity, name: 'Bike' };
 
       mockTypeOrmRepository.findOne.mockResolvedValue(productEntity);
@@ -91,7 +119,7 @@ describe('PostgresProductRepository', () => {
       if (isSuccess(result)) {
         expect(result.value).toBeUndefined();
       }
-      expect(ormRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(ormRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
       expect(ormRepo.merge).toHaveBeenCalledWith(productEntity, {
         name: 'Bike',
       });
