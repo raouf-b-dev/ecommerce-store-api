@@ -5,6 +5,7 @@ import { CreateProductController } from './presentation/controllers/CreateProduc
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { Product } from './domain/entities/product';
 import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
+import { ListProductsController } from './presentation/controllers/ListProducts/list-products.controller';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -12,8 +13,10 @@ describe('ProductsController', () => {
   let getProductController: GetProductController;
   let createProductController: CreateProductController;
   let deleteProductController: DeleteProductController;
+  let listProductsController: ListProductsController;
 
   let product: Product;
+  let productsList: Product[];
   let createProductDto: CreateProductDto;
 
   beforeEach(async () => {
@@ -27,6 +30,8 @@ describe('ProductsController', () => {
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-08-13T15:00:00Z'),
     });
+
+    productsList = [product];
 
     createProductDto = {
       name: 'Car',
@@ -45,6 +50,12 @@ describe('ProductsController', () => {
           provide: GetProductController,
           useValue: {
             handle: jest.fn().mockResolvedValue(product),
+          },
+        },
+        {
+          provide: ListProductsController,
+          useValue: {
+            handle: jest.fn().mockResolvedValue(productsList),
           },
         },
         {
@@ -67,6 +78,10 @@ describe('ProductsController', () => {
     getProductController =
       module.get<GetProductController>(GetProductController);
 
+    listProductsController = module.get<ListProductsController>(
+      ListProductsController,
+    );
+
     createProductController = module.get<CreateProductController>(
       CreateProductController,
     );
@@ -84,6 +99,11 @@ describe('ProductsController', () => {
     const id = '1';
     await controller.findOne(id);
     expect(getProductController.handle).toHaveBeenCalledWith(1);
+  });
+
+  it('should call ListProductsController.handle when findAll is called', async () => {
+    await controller.findAll();
+    expect(listProductsController.handle).toHaveBeenCalledWith();
   });
 
   it('should call CreateProductController.handle when createProduct is called', async () => {

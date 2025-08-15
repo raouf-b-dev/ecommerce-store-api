@@ -12,6 +12,7 @@ import { UpdateProductDto } from './presentation/dto/update-product.dto';
 import { GetProductController } from './presentation/controllers/GetProduct/get-product.controller';
 import { CreateProductController } from './presentation/controllers/CreateProduct/create-product.controller';
 import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
+import { ListProductsController } from './presentation/controllers/ListProducts/list-products.controller';
 
 @Controller('products')
 export class ProductsController {
@@ -19,6 +20,7 @@ export class ProductsController {
     private readonly getProductController: GetProductController,
     private readonly createProductController: CreateProductController,
     private readonly deleteProductController: DeleteProductController,
+    private readonly listProductsController: ListProductsController,
   ) {}
 
   @Post()
@@ -28,7 +30,7 @@ export class ProductsController {
 
   @Get()
   findAll() {
-    // return this.getProductController.handle();
+    return this.listProductsController.handle();
   }
 
   @Get(':id')
