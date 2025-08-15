@@ -11,12 +11,14 @@ import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { UpdateProductDto } from './presentation/dto/update-product.dto';
 import { GetProductController } from './presentation/controllers/GetProduct/get-product.controller';
 import { CreateProductController } from './presentation/controllers/CreateProduct/create-product.controller';
+import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
 
 @Controller('products')
 export class ProductsController {
   constructor(
     private readonly getProductController: GetProductController,
     private readonly createProductController: CreateProductController,
+    private readonly deleteProductController: DeleteProductController,
   ) {}
 
   @Post()
@@ -41,6 +43,6 @@ export class ProductsController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.getProductController.handle(+id);
+    return this.deleteProductController.handle(+id);
   }
 }

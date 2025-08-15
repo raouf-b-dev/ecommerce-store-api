@@ -25,7 +25,7 @@ describe('GetProductController', () => {
   });
 
   describe('handle', () => {
-    it('should return success if Product if found', async () => {
+    it('should return success if Product is found', async () => {
       const productId = 1;
       expectedProduct = new Product({
         id: productId,

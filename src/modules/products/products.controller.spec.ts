@@ -4,12 +4,14 @@ import { GetProductController } from './presentation/controllers/GetProduct/get-
 import { CreateProductController } from './presentation/controllers/CreateProduct/create-product.controller';
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { Product } from './domain/entities/product';
+import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
 
   let getProductController: GetProductController;
   let createProductController: CreateProductController;
+  let deleteProductController: DeleteProductController;
 
   let product: Product;
   let createProductDto: CreateProductDto;
@@ -51,6 +53,12 @@ describe('ProductsController', () => {
             handle: jest.fn().mockResolvedValue(product),
           },
         },
+        {
+          provide: DeleteProductController,
+          useValue: {
+            handle: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
@@ -61,6 +69,10 @@ describe('ProductsController', () => {
 
     createProductController = module.get<CreateProductController>(
       CreateProductController,
+    );
+
+    deleteProductController = module.get<DeleteProductController>(
+      DeleteProductController,
     );
   });
 
@@ -79,5 +91,11 @@ describe('ProductsController', () => {
     expect(createProductController.handle).toHaveBeenCalledWith(
       createProductDto,
     );
+  });
+
+  it('should call DeleteProductController.handle when remove is called', async () => {
+    const id = '1';
+    await controller.remove(id);
+    expect(deleteProductController.handle).toHaveBeenCalledWith(1);
   });
 });
