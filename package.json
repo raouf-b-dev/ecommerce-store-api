@@ -34,7 +34,12 @@
     "migration:generate": "npm run typeorm -- -d ./data-source.ts migration:generate",
     "migration:run": "npm run typeorm -- -d ./data-source.ts migration:run",
     "migration:revert": "npm run typeorm -- -d ./data-source.ts migration:revert",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "env:init": "node scripts/generate-envs.js",
+    "env:init:dev": "node scripts/generate-envs.js --envs=development",
+    "env:init:prod": "node scripts/generate-envs.js --envs=production",
+    "env:init:staging": "node scripts/generate-envs.js --envs=staging",
+    "env:init:test": "node scripts/generate-envs.js --envs=test"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
