@@ -1,3 +1,4 @@
+// src\modules\products\infrastructure\repositories\RedisProductRepository\redis.product-repository.ts
 import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { RepositoryError } from '../../../../../core/errors/repository.error';

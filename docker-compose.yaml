@@ -1,12 +1,13 @@
 services:
   postgres:
     image: postgres:latest
+    container_name: postgres-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: rb@dev.123
-      POSTGRES_DB: rbdatabase
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
     ports:
-      - '5432:5432'
+      - '${DB_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
@@ -14,11 +15,12 @@ services:
   redis:
     image: redis/redis-stack:latest
     container_name: redis-stack
+
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT}:6379'
       - '8001:8001'
     environment:
-      - REDIS_ARGS=--requirepass dev123 --appendonly yes
+      - REDIS_ARGS= --requirepass ${REDIS_PASSWORD} --appendonly yes
     volumes:
       - redis_data:/data
     restart: always

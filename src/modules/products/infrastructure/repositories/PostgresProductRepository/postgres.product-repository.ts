@@ -1,3 +1,4 @@
+// src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
 import { Repository } from 'typeorm';
 import { Result } from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
