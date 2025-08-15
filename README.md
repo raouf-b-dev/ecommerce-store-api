@@ -1,98 +1,180 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+> ⚠️ **Read-only / No contributions accepted**  
+> This repository is a **private GitHub mirror** of the canonical Bitbucket repository.  
+> **All rights reserved © 2025 PrimeRaouf.** Do not copy, distribute, or use this code without explicit permission.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# ecommerce-mvp-api
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> A production-ready NestJS MVP API for an e-commerce store — Postgres, Redis, TypeORM, DDD, clean architecture, and Docker Compose.
 
-## Description
+**Primary repository (Bitbucket)**: `https://rbdzmain@bitbucket.org/b_b_m_dev/ecommerce-store-api.git`  
+**GitHub mirror**: `https://github.com/PrimeRaouf/ecommerce-store-api.git`
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 📋 Table of Contents
 
-```bash
-$ npm install
+- [Prerequisites](#prerequisites)
+- [Features](#-features)
+- [Quick Start (Development)](#-quick-start-development)
+- [Testing](#-testing)
+- [Database (TypeORM)](#-database-typeorm)
+- [Environment Config](#-environment-config)
+- [Docker](#-docker)
+- [NPM Scripts](#-npm-scripts-most-used)
+- [Secrets](#-secrets)
+- [Project Structure](#-project-structure-excerpt)
+- [Troubleshooting](#-troubleshooting)
+- [Acknowledgments](#-acknowledgments)
+
+---
+
+## 🖥 Prerequisites
+
+Tested environment:
+
+- **Node.js** ≥ 22 (tested with v22.14.0)
+- **npm** ≥ 11 (tested with v11.4.2)
+- **Docker Desktop** ≥ 28 (tested with v28.3.2)
+- **Docker Compose v2** (`docker compose` command — tested with v2.39.1, included in Docker Desktop)
+- **Git** ≥ 2.49 (tested with v2.49.0)
+- (Optional) **PowerShell** ≥ 7.5.2 or WSL2/Git Bash for better Docker command compatibility on Windows
+
+---
+
+## ✨ Features
+
+- NestJS + TypeScript
+- PostgreSQL (TypeORM) & Redis
+- Domain-Driven Design (presentation, application, domain, infrastructure layers)
+- Result pattern, custom errors, and consistent error handling
+- Unit tests across layers (Jest)
+- Docker Compose for per-environment infrastructure
+
+---
+
+## 🚀 Quick Start (Development)
+
+1. **Clone & install**
+
+   ```bash
+   git clone https://github.com/PrimeRaouf/ecommerce-store-api.git
+   cd ecommerce-store-api
+   npm i
+   ```
+
+2. **Generate env files**  
+   Creates `.env.development`, `.env.production`, `.env.staging`, `.env.test` from `.env.example`:
+
+   ```bash
+   npm run env:init
+   # or single env
+   npm run env:init:dev
+   ```
+
+3. **Fill in secrets**  
+   Update the generated `.env.*` files with DB, Redis, JWT, and other secrets.
+
+4. **Start infrastructure** (Postgres, Redis):
+
+   ```bash
+   npm run d:up:dev
+   ```
+
+5. **Run the API**
+   ```bash
+   npm run start:dev
+   ```
+
+---
+
+## 🧪 Testing
+
+- Unit tests: `npm test`
+- Watch mode: `npm run test:watch`
+- Coverage: `npm run test:cov`
+- E2E: `npm run test:e2e`
+
+> Tests use `.env.test` and can run isolated infrastructure via Docker Compose when needed.
+
+---
+
+## 🐘 Database (TypeORM)
+
+- Generate: `npm run migration:generate -- <Name>`
+- Run: `npm run migration:run`
+- Revert: `npm run migration:revert`
+
+> Make sure Postgres is up (`npm run d:up:dev`) and env vars are set.
+
+---
+
+## 🔧 Environment Config
+
+- Env files are **gitignored**; `.env.example` is the canonical key list.
+- Create per-env files: `.env.development`, `.env.staging`, `.env.production`, `.env.test`.
+- Use `scripts/generate-envs.js` to scaffold from `.env.example`.
+
+---
+
+## 🐳 Docker
+
+- **Up (dev)**: `npm run d:up:dev`
+- **Down (dev)**: `npm run d:down:dev`
+- Replace `dev` with `staging`, `prod`, or `test` as needed.
+
+> `docker-compose.yaml` reads values from `.env.<env>` via `--env-file`.
+
+---
+
+## 📜 NPM Scripts (Most Used)
+
+- `start:dev` — Nest in watch mode
+- `d:up:<env>` / `d:down:<env>` — Docker Compose up/down with env file
+- `test`, `test:watch`, `test:cov`, `test:e2e`
+- `migration:*` — TypeORM migrations
+- `env:init` — Generate `.env.*` files from `.env.example`
+
+Full list available in `package.json`.
+
+---
+
+## 🔐 Secrets
+
+- Never commit real secrets.
+- For production, prefer AWS Secrets Manager, Vault, or OS-level file permission restrictions.
+
+---
+
+## 🧰 Project Structure (excerpt)
+
+```
+src/
+  modules/
+  main.ts
+  ...
+docker-compose.yaml
+.env.example
+.env.development (gitignored)
+.env.staging     (gitignored)
+.env.production  (gitignored)
+.env.test        (gitignored)
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🧭 Troubleshooting
 
-# watch mode
-$ npm run start:dev
+- **Docker fails with missing envs**: ensure `.env.<env>` exists and you’re using the right script (e.g., `d:up:dev`).
+- **Migrations can’t connect**: check DB env vars and Postgres container status.
+- **Jest open handles**: run `npm run test:ci` (in band mode, detects open handles).
 
-# production mode
-$ npm run start:prod
+---
+
+## 🤝 Acknowledgments
+
+Built by **PrimeRaouf**  
+GitHub: [https://github.com/PrimeRaouf/ecommerce-store-api](https://github.com/PrimeRaouf/ecommerce-store-api)
+
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
