@@ -8,6 +8,7 @@ import { ProductEntity } from '../../orm/product.schema';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { CreateProductDto } from '../../../presentation/dto/create-product.dto';
+import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
 
 export class PostgresProductRepository implements ProductRepository {
   constructor(
@@ -18,7 +19,10 @@ export class PostgresProductRepository implements ProductRepository {
     createProductDto: CreateProductDto,
   ): Promise<Result<Product, RepositoryError>> {
     try {
-      const entity = this.ormRepo.create(createProductDto);
+      const entity = this.ormRepo.create({
+        ...createProductDto,
+        createdAt: new Date(),
+      });
       await this.ormRepo.save(entity);
 
       return Result.success<Product>(entity);
@@ -27,25 +31,27 @@ export class PostgresProductRepository implements ProductRepository {
     }
   }
 
-  async update(product: Product): Promise<Result<void, RepositoryError>> {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Result<Product, RepositoryError>> {
     try {
       // Ensure the product exists first
       const existing = await this.ormRepo.findOne({
-        where: { id: product.id },
+        where: { id },
       });
       if (!existing) {
-        return ErrorFactory.RepositoryError(
-          `Product with ID ${product.id} not found`,
-        );
+        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
       }
 
       // Merge new values into the existing entity
-      const updated = this.ormRepo.merge(existing, {
-        name: product.name,
+      const updatedProduct = this.ormRepo.merge(existing, {
+        ...updateProductDto,
+        updatedAt: new Date(),
       });
 
-      await this.ormRepo.save(updated);
-      return Result.success<void>(undefined);
+      await this.ormRepo.save(updatedProduct);
+      return Result.success<Product>(updatedProduct);
     } catch (error) {
       return ErrorFactory.RepositoryError(
         `Failed to update the product`,

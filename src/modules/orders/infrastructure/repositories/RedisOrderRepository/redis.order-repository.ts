@@ -17,16 +17,15 @@ export class RedisOrderRepository implements OrderRepository {
 
   async save(order: Order): Promise<Result<void, RepositoryError>> {
     try {
-      // Save to Postgres first
       const saveResult = await this.postgresRepo.save(order);
       if (saveResult.isFailure) return saveResult;
 
-      // Cache it
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}${order.id}`,
+        `${Order_REDIS.CACHE_KEY}:${order.id}`,
         order,
         { ttl: Order_REDIS.EXPIRATION },
       );
+      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {
@@ -36,16 +35,15 @@ export class RedisOrderRepository implements OrderRepository {
 
   async update(order: Order): Promise<Result<void, RepositoryError>> {
     try {
-      // Update in Postgres
       const updateResult = await this.postgresRepo.update(order);
       if (updateResult.isFailure) return updateResult;
 
-      // Update in cache
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}${order.id}`,
+        `${Order_REDIS.CACHE_KEY}:${order.id}`,
         order,
         { ttl: Order_REDIS.EXPIRATION },
       );
+      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {
@@ -55,21 +53,18 @@ export class RedisOrderRepository implements OrderRepository {
 
   async findById(id: number): Promise<Result<Order, RepositoryError>> {
     try {
-      // Try cache first
       const cached = await this.cacheService.get<Order>(
-        `${Order_REDIS.CACHE_KEY}${id}`,
+        `${Order_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
         return Result.success<Order>(cached);
       }
 
-      // Fallback to Postgres
       const dbResult = await this.postgresRepo.findById(id);
       if (dbResult.isFailure) return dbResult;
 
-      // Cache the result
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}${id}`,
+        `${Order_REDIS.CACHE_KEY}:${id}`,
         dbResult.value,
         { ttl: Order_REDIS.EXPIRATION },
       );
@@ -82,20 +77,38 @@ export class RedisOrderRepository implements OrderRepository {
 
   async findAll(): Promise<Result<Order[], RepositoryError>> {
     try {
-      // We could cache the list, but to avoid stale data let's go to Postgres
-      const dbResult = await this.postgresRepo.findAll();
-      if (dbResult.isFailure) return dbResult;
-
-      // Optionally cache each order
-      await Promise.all(
-        dbResult.value.map((order) =>
-          this.cacheService.set(`${Order_REDIS.CACHE_KEY}${order.id}`, order, {
-            ttl: Order_REDIS.EXPIRATION,
-          }),
-        ),
+      const isCached = await this.cacheService.get<string>(
+        Order_REDIS.IS_CACHED_FLAG,
       );
 
-      return dbResult;
+      if (isCached) {
+        const cachedOrders = await this.cacheService.getAll<Order>(
+          Order_REDIS.INDEX,
+        );
+        return Result.success(cachedOrders);
+      }
+
+      const dbResult = await this.postgresRepo.findAll();
+      if (dbResult.isFailure) {
+        return dbResult;
+      }
+
+      const orders = dbResult.value;
+
+      const cacheEntries = orders.map((order) => ({
+        key: `${Order_REDIS.CACHE_KEY}:${order.id}`,
+        value: order,
+      }));
+
+      await this.cacheService.setAll(cacheEntries, {
+        ttl: Order_REDIS.EXPIRATION,
+      });
+
+      await this.cacheService.set(Order_REDIS.IS_CACHED_FLAG, 'true', {
+        ttl: Order_REDIS.EXPIRATION,
+      });
+
+      return Result.success(orders);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find all orders`, error);
     }
@@ -107,8 +120,8 @@ export class RedisOrderRepository implements OrderRepository {
       const deleteResult = await this.postgresRepo.deleteById(id);
       if (deleteResult.isFailure) return deleteResult;
 
-      // Remove from cache
-      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}${id}`);
+      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${id}`);
+      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {

@@ -42,13 +42,11 @@ describe('CreateProductController', () => {
       price: 35000,
       sku: 'CAR-001',
       stockQuantity: 10,
-      createdAt: new Date('2025-01-01T10:00:00Z'),
-      updatedAt: new Date('2025-08-13T15:00:00Z'),
     } as CreateProductDto;
   });
 
   describe('handle', () => {
-    it('should return success if product if found', async () => {
+    it('should return success if product if created', async () => {
       mockCreateProductUseCase.execute.mockResolvedValue(
         Result.success(product),
       );
@@ -65,7 +63,7 @@ describe('CreateProductController', () => {
       expect(mockCreateProductUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
-    it('should rethrow Failure(ControllerError) if product is not found', async () => {
+    it('should rethrow Failure(ControllerError) if product is not created', async () => {
       mockCreateProductUseCase.execute.mockResolvedValue(
         Result.failure(
           ErrorFactory.UseCaseError(`Failed to save product`).error,

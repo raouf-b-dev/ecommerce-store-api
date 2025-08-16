@@ -45,13 +45,11 @@ describe('CreateProductUseCase', () => {
       price: 35000,
       sku: 'CAR-001',
       stockQuantity: 10,
-      createdAt: new Date('2025-01-01T10:00:00Z'),
-      updatedAt: new Date('2025-08-13T15:00:00Z'),
     } as CreateProductDto;
   });
 
   describe('execute', () => {
-    it('should return Success if product is found', async () => {
+    it('should return Success if product is created', async () => {
       mockProductRepository.save.mockResolvedValue(Result.success(product));
 
       const result = await useCase.execute(createProductDto);
@@ -64,7 +62,7 @@ describe('CreateProductUseCase', () => {
       expect(mockProductRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure(UseCaseError) if product is not found', async () => {
+    it('should return Failure(UseCaseError) if product is not created', async () => {
       const repoError = ErrorFactory.RepositoryError(`Failed to save product`);
       mockProductRepository.save.mockResolvedValue(repoError);
 
