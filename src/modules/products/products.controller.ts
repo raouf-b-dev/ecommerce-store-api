@@ -13,14 +13,16 @@ import { GetProductController } from './presentation/controllers/GetProduct/get-
 import { CreateProductController } from './presentation/controllers/CreateProduct/create-product.controller';
 import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
 import { ListProductsController } from './presentation/controllers/ListProducts/list-products.controller';
+import { UpdateProductController } from './presentation/controllers/UpdateProduct/update-product.controller';
 
 @Controller('products')
 export class ProductsController {
   constructor(
-    private readonly getProductController: GetProductController,
     private readonly createProductController: CreateProductController,
-    private readonly deleteProductController: DeleteProductController,
+    private readonly getProductController: GetProductController,
     private readonly listProductsController: ListProductsController,
+    private readonly updateProductController: UpdateProductController,
+    private readonly deleteProductController: DeleteProductController,
   ) {}
 
   @Post()
@@ -40,7 +42,7 @@ export class ProductsController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    // return this.getProductController.handle(+id, updateProductDto);
+    return this.updateProductController.handle(+id, updateProductDto);
   }
 
   @Delete(':id')
