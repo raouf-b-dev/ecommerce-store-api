@@ -27,7 +27,7 @@ export class OrdersController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.getOrderController.handle(+id);
+    return this.getOrderController.handle(id);
   }
 
   @Patch(':id')

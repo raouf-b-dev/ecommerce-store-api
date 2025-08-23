@@ -5,7 +5,7 @@ import { GetOrderController } from './presentation/controllers/GetOrder/get-orde
 describe('OrdersController', () => {
   let controller: OrdersController;
   let getOrderController: GetOrderController;
-
+  let id: string;
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
@@ -18,6 +18,7 @@ describe('OrdersController', () => {
         },
       ],
     }).compile();
+    id = 'OR00000001';
 
     controller = module.get<OrdersController>(OrdersController);
     getOrderController = module.get<GetOrderController>(GetOrderController);
@@ -28,8 +29,7 @@ describe('OrdersController', () => {
   });
 
   it('should call GetOrderController.handle when findOne is called', async () => {
-    const id = '1';
     await controller.findOne(id);
-    expect(getOrderController.handle).toHaveBeenCalledWith(1);
+    expect(getOrderController.handle).toHaveBeenCalledWith(id);
   });
 });
