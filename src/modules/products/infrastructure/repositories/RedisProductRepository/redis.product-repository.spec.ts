@@ -1,4 +1,4 @@
-// src/Product/infrastructure/redis-Product.repository.spec.ts
+// src/modules/products/infrastructure/repositories/RedisProductRepository/redis.product-repository.spec.ts
 import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import {
@@ -8,7 +8,7 @@ import {
 } from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Product_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
-import { Product } from '../../../domain/entities/product';
+import { IProduct } from '../../../domain/interfaces/IProduct';
 import { RedisProductRepository } from './redis.product-repository';
 import { CreateProductDto } from '../../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
@@ -17,18 +17,18 @@ describe('RedisProductRepository', () => {
   let repo: RedisProductRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: jest.Mocked<ProductRepository>;
-  let product: Product;
+  let product: IProduct;
   let createProductDto: CreateProductDto;
   let updateProductDto: UpdateProductDto;
-  let id: number;
-  let products: Product[]; // Added for findAll tests
+  let id: string;
+  let products: IProduct[];
 
   beforeEach(() => {
     cacheService = {
       set: jest.fn(),
-      setAll: jest.fn(), // Mock setAll
+      setAll: jest.fn(),
       get: jest.fn(),
-      getAll: jest.fn(), // Mock getAll
+      getAll: jest.fn(),
       delete: jest.fn(),
     } as any;
 
@@ -42,22 +42,22 @@ describe('RedisProductRepository', () => {
 
     repo = new RedisProductRepository(cacheService, postgresRepo);
 
+    id = 'PR0000001';
     createProductDto = {
       name: 'car',
       description: 'A fast red sports car',
       price: 35000,
       sku: 'CAR-001',
       stockQuantity: 10,
-    } as CreateProductDto;
+    };
 
-    id = 1;
     updateProductDto = {
-      name: 'car',
-      description: 'A fast red sports car',
-      price: 35000,
-      sku: 'CAR-001',
-      stockQuantity: 10,
-    } as UpdateProductDto;
+      name: 'updated car',
+      description: 'An even faster car',
+      price: 37000,
+      sku: 'CAR-002',
+      stockQuantity: 12,
+    };
 
     product = {
       id,
@@ -68,25 +68,25 @@ describe('RedisProductRepository', () => {
       stockQuantity: 10,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-08-13T15:00:00Z'),
-    } as Product;
+    };
 
     products = [
-      // Sample products for findAll
       product,
       {
         ...product,
-        id: 2,
+        id: 'PR0000002',
         name: 'bike',
         sku: 'BIKE-001',
       },
     ];
   });
 
+  // save
   describe('save', () => {
     it('should save to postgres and cache', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(product));
       cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockResolvedValue(undefined); // Mock delete for IS_CACHED_FLAG
+      cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repo.save(createProductDto);
 
@@ -98,11 +98,9 @@ describe('RedisProductRepository', () => {
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
-      ); // Expect IS_CACHED_FLAG to be cleared
+      );
       expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(product);
-      }
+      if (isSuccess(result)) expect(result.value).toEqual(product);
     });
 
     it('should return failure if postgres save fails', async () => {
@@ -112,33 +110,34 @@ describe('RedisProductRepository', () => {
       const result = await repo.save(createProductDto);
 
       expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled(); // Flag not cleared if save fails
+      expect(cacheService.delete).not.toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
+      if (isFailure(result)) expect(result.error.message).toBe('fail');
     });
 
-    it('should return failure if cache throws', async () => {
+    it('should return failure if cache.set throws', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(product));
       cacheService.set.mockRejectedValue(new Error('cache error'));
 
       const result = await repo.save(createProductDto);
 
+      expect(postgresRepo.save).toHaveBeenCalled();
+      expect(cacheService.set).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        // Corrected error message expectation
         expect(result.error.message).toContain('Failed to save product');
       }
     });
 
-    it('should return failure if IS_CACHED_FLAG deletion throws', async () => {
+    it('should return failure if cache.delete (IS_CACHED_FLAG) throws', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(product));
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockRejectedValue(new Error('flag delete error'));
 
       const result = await repo.save(createProductDto);
 
+      expect(cacheService.set).toHaveBeenCalled();
+      expect(cacheService.delete).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error.message).toContain('Failed to save product');
@@ -146,11 +145,12 @@ describe('RedisProductRepository', () => {
     });
   });
 
+  // update
   describe('update', () => {
     it('should update to postgres and cache', async () => {
       postgresRepo.update.mockResolvedValue(Result.success(product));
       cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockResolvedValue(undefined); // Mock delete for IS_CACHED_FLAG
+      cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repo.update(id, updateProductDto);
 
@@ -162,11 +162,9 @@ describe('RedisProductRepository', () => {
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
-      ); // Expect IS_CACHED_FLAG to be cleared
+      );
       expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(product);
-      }
+      if (isSuccess(result)) expect(result.value).toEqual(product);
     });
 
     it('should return failure if postgres update fails', async () => {
@@ -176,33 +174,34 @@ describe('RedisProductRepository', () => {
       const result = await repo.update(id, updateProductDto);
 
       expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled(); // Flag not cleared if update fails
+      expect(cacheService.delete).not.toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
+      if (isFailure(result)) expect(result.error.message).toBe('fail');
     });
 
-    it('should return failure if cache throws', async () => {
+    it('should return failure if cache.set throws during update', async () => {
       postgresRepo.update.mockResolvedValue(Result.success(product));
       cacheService.set.mockRejectedValue(new Error('cache error'));
 
       const result = await repo.update(id, updateProductDto);
 
+      expect(postgresRepo.update).toHaveBeenCalled();
+      expect(cacheService.set).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        // Corrected error message expectation
         expect(result.error.message).toContain('Failed to update product');
       }
     });
 
-    it('should return failure if IS_CACHED_FLAG deletion throws', async () => {
+    it('should return failure if cache.delete (IS_CACHED_FLAG) throws during update', async () => {
       postgresRepo.update.mockResolvedValue(Result.success(product));
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockRejectedValue(new Error('flag delete error'));
 
       const result = await repo.update(id, updateProductDto);
 
+      expect(cacheService.set).toHaveBeenCalled();
+      expect(cacheService.delete).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error.message).toContain('Failed to update product');
@@ -210,77 +209,72 @@ describe('RedisProductRepository', () => {
     });
   });
 
+  // findById
   describe('findById', () => {
-    it('should return cached Product if found', async () => {
+    it('should return cached product if found', async () => {
       cacheService.get.mockResolvedValue(product);
 
-      const result = await repo.findById(product.id);
+      const result = await repo.findById(id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(product);
-      }
       expect(cacheService.get).toHaveBeenCalledWith(
-        `${Product_REDIS.CACHE_KEY}:${product.id}`,
-      ); // Check cache key
+        `${Product_REDIS.CACHE_KEY}:${id}`,
+      );
       expect(postgresRepo.findById).not.toHaveBeenCalled();
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) expect(result.value).toEqual(product);
     });
 
-    it('should fetch from postgres if not cached', async () => {
+    it('should fetch from postgres if not cached and then cache it', async () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(Result.success(product));
-      cacheService.set.mockResolvedValue(undefined); // Ensure set is mocked
+      cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repo.findById(product.id);
+      const result = await repo.findById(id);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(product.id);
+      expect(postgresRepo.findById).toHaveBeenCalledWith(id);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${Product_REDIS.CACHE_KEY}:${product.id}`, // Corrected key
+        `${Product_REDIS.CACHE_KEY}:${id}`,
         product,
         { ttl: Product_REDIS.EXPIRATION },
       );
       expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(product);
-      }
+      if (isSuccess(result)) expect(result.value).toEqual(product);
     });
 
-    it('should return failure if postgres fails', async () => {
+    it('should return failure if postgres findById fails', async () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(
         Result.failure(new RepositoryError('fail')),
       );
 
-      const result = await repo.findById(product.id);
+      const result = await repo.findById(id);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(product.id);
-      expect(cacheService.set).not.toHaveBeenCalled(); // No caching if postgres fails
+      expect(postgresRepo.findById).toHaveBeenCalledWith(id);
+      expect(cacheService.set).not.toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
+      if (isFailure(result)) expect(result.error.message).toBe('fail');
     });
 
-    it('should return failure if caching fails after fetching from postgres', async () => {
+    it('should return failure if cache.set throws after postgres success', async () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(Result.success(product));
       cacheService.set.mockRejectedValue(new Error('cache error'));
 
-      const result = await repo.findById(product.id);
+      const result = await repo.findById(id);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(product.id);
-      expect(cacheService.set).toHaveBeenCalled(); // Set was attempted
+      expect(postgresRepo.findById).toHaveBeenCalledWith(id);
+      expect(cacheService.set).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        // Corrected error message expectation
         expect(result.error.message).toContain('Failed to find product');
       }
     });
   });
 
+  // findAll
   describe('findAll', () => {
-    it('should return cached Products if IS_CACHED_FLAG is true', async () => {
-      cacheService.get.mockResolvedValue('true'); // Simulate flag being set
+    it('should return cached products if IS_CACHED_FLAG is true', async () => {
+      cacheService.get.mockResolvedValue('true');
       cacheService.getAll.mockResolvedValue(products);
 
       const result = await repo.findAll();
@@ -289,25 +283,24 @@ describe('RedisProductRepository', () => {
         Product_REDIS.IS_CACHED_FLAG,
       );
       expect(cacheService.getAll).toHaveBeenCalledWith(Product_REDIS.INDEX);
-      expect(postgresRepo.findAll).not.toHaveBeenCalled(); // PostgreSQL should not be called
+      expect(postgresRepo.findAll).not.toHaveBeenCalled();
       expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(products);
-      }
+      if (isSuccess(result)) expect(result.value).toEqual(products);
     });
 
-    it('should fetch from postgres, cache products and flag if IS_CACHED_FLAG is null', async () => {
-      cacheService.get.mockResolvedValue(null); // Simulate flag not set
+    it('should fetch from postgres and cache if not cached', async () => {
+      cacheService.get.mockResolvedValue(null);
       postgresRepo.findAll.mockResolvedValue(Result.success(products));
-      cacheService.setAll.mockResolvedValue(undefined); // Mock setAll success
-      cacheService.set.mockResolvedValue(undefined); // Mock set success for the flag
+      cacheService.setAll.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(undefined);
 
       const result = await repo.findAll();
 
       expect(cacheService.get).toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
       );
-      expect(postgresRepo.findAll).toHaveBeenCalled(); // PostgreSQL should be called
+      expect(postgresRepo.findAll).toHaveBeenCalled();
+      // Check setAll call shape
       expect(cacheService.setAll).toHaveBeenCalledWith(
         products.map((p) => ({
           key: `${Product_REDIS.CACHE_KEY}:${p.id}`,
@@ -321,9 +314,7 @@ describe('RedisProductRepository', () => {
         { ttl: Product_REDIS.EXPIRATION },
       );
       expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(products);
-      }
+      if (isSuccess(result)) expect(result.value).toEqual(products);
     });
 
     it('should return failure if postgres findAll fails', async () => {
@@ -338,16 +329,15 @@ describe('RedisProductRepository', () => {
         Product_REDIS.IS_CACHED_FLAG,
       );
       expect(postgresRepo.findAll).toHaveBeenCalled();
-      expect(cacheService.setAll).not.toHaveBeenCalled(); // No caching if postgres fails
+      expect(cacheService.setAll).not.toHaveBeenCalled();
       expect(cacheService.set).not.toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
         expect.any(String),
         expect.any(Object),
-      ); // Flag not set
+      );
       expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      if (isFailure(result))
         expect(result.error.message).toBe('Postgres find all failed');
-      }
     });
 
     it('should return failure if cache.setAll throws after postgres success', async () => {
@@ -361,23 +351,23 @@ describe('RedisProductRepository', () => {
         Product_REDIS.IS_CACHED_FLAG,
       );
       expect(postgresRepo.findAll).toHaveBeenCalled();
-      expect(cacheService.setAll).toHaveBeenCalled(); // setAll was called
+      expect(cacheService.setAll).toHaveBeenCalled();
       expect(cacheService.set).not.toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
         expect.any(String),
         expect.any(Object),
-      ); // Flag not set if setAll fails
+      );
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to find all products'); // Generic error from ErrorFactory
+        expect(result.error.message).toContain('Failed to find all products');
       }
     });
 
-    it('should return failure if cache.set (for flag) throws after postgres success and setAll success', async () => {
+    it('should return failure if cache.set (flag) throws after setAll success', async () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findAll.mockResolvedValue(Result.success(products));
       cacheService.setAll.mockResolvedValue(undefined);
-      cacheService.set.mockRejectedValue(new Error('Cache flag set failed')); // Flag set fails
+      cacheService.set.mockRejectedValue(new Error('Cache flag set failed'));
 
       const result = await repo.findAll();
 
@@ -390,7 +380,7 @@ describe('RedisProductRepository', () => {
         Product_REDIS.IS_CACHED_FLAG,
         'true',
         { ttl: Product_REDIS.EXPIRATION },
-      ); // Flag set was called
+      );
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error.message).toContain('Failed to find all products');
@@ -398,21 +388,21 @@ describe('RedisProductRepository', () => {
     });
   });
 
+  // deleteById
   describe('deleteById', () => {
-    it('should delete from postgres and cache, and clear the list flag', async () => {
+    it('should delete from postgres and cache and clear list flag', async () => {
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
-      // Mock both individual product delete and IS_CACHED_FLAG delete
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.deleteById(product.id);
+      const result = await repo.deleteById(id);
 
-      expect(postgresRepo.deleteById).toHaveBeenCalledWith(product.id);
+      expect(postgresRepo.deleteById).toHaveBeenCalledWith(id);
       expect(cacheService.delete).toHaveBeenCalledWith(
-        `${Product_REDIS.CACHE_KEY}:${product.id}`,
-      ); // Individual product cache key
+        `${Product_REDIS.CACHE_KEY}:${id}`,
+      );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Product_REDIS.IS_CACHED_FLAG,
-      ); // List flag should be cleared
+      );
       expect(isSuccess(result)).toBe(true);
     });
 
@@ -420,34 +410,33 @@ describe('RedisProductRepository', () => {
       const fail = Result.failure<RepositoryError>(new RepositoryError('fail'));
       postgresRepo.deleteById.mockResolvedValue(fail);
 
-      const result = await repo.deleteById(product.id);
+      const result = await repo.deleteById(id);
 
-      expect(cacheService.delete).not.toHaveBeenCalled(); // Cache delete not called
+      expect(cacheService.delete).not.toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
+      if (isFailure(result)) expect(result.error.message).toBe('fail');
     });
 
-    it('should return failure if cache throws during individual product deletion', async () => {
+    it('should return failure if cache.delete for individual product throws', async () => {
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockImplementation((key: string) => {
-        if (key === `${Product_REDIS.CACHE_KEY}:${product.id}`) {
+        if (key === `${Product_REDIS.CACHE_KEY}:${id}`) {
           return Promise.reject(new Error('cache delete error'));
         }
         return Promise.resolve();
       });
 
-      const result = await repo.deleteById(product.id);
+      const result = await repo.deleteById(id);
 
+      expect(postgresRepo.deleteById).toHaveBeenCalledWith(id);
+      expect(cacheService.delete).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        // Corrected error message expectation
         expect(result.error.message).toContain('Failed to delete product');
       }
     });
 
-    it('should return failure if cache throws during IS_CACHED_FLAG deletion', async () => {
+    it('should return failure if cache.delete for IS_CACHED_FLAG throws', async () => {
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockImplementation((key: string) => {
         if (key === Product_REDIS.IS_CACHED_FLAG) {
@@ -456,11 +445,12 @@ describe('RedisProductRepository', () => {
         return Promise.resolve();
       });
 
-      const result = await repo.deleteById(product.id);
+      const result = await repo.deleteById(id);
 
+      expect(postgresRepo.deleteById).toHaveBeenCalledWith(id);
+      expect(cacheService.delete).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        // Corrected error message expectation
         expect(result.error.message).toContain('Failed to delete product');
       }
     });

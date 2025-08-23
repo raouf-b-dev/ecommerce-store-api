@@ -4,7 +4,7 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
 import { Product_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
-import { Product } from '../../../domain/entities/product';
+import { IProduct } from '../../../domain/interfaces/IProduct';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CreateProductDto } from '../../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
@@ -17,7 +17,7 @@ export class RedisProductRepository implements ProductRepository {
 
   async save(
     createProductDto: CreateProductDto,
-  ): Promise<Result<Product, RepositoryError>> {
+  ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Save to Postgres first
       const saveResult = await this.postgresRepo.save(createProductDto);
@@ -32,46 +32,43 @@ export class RedisProductRepository implements ProductRepository {
       );
       await this.cacheService.delete(Product_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<Product>(product);
+      return Result.success<IProduct>(product);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save product`, error);
     }
   }
 
   async update(
-    id: number,
+    id: string,
     updateProductDto: UpdateProductDto,
-  ): Promise<Result<Product, RepositoryError>> {
+  ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Update in Postgres
       const updateResult = await this.postgresRepo.update(id, updateProductDto);
       if (updateResult.isFailure) return updateResult;
 
+      const product = updateResult.value;
       // Update in cache
-      await this.cacheService.set(
-        `${Product_REDIS.CACHE_KEY}:${id}`,
-        updateResult.value,
-        {
-          ttl: Product_REDIS.EXPIRATION,
-        },
-      );
+      await this.cacheService.set(`${Product_REDIS.CACHE_KEY}:${id}`, product, {
+        ttl: Product_REDIS.EXPIRATION,
+      });
       // Invalidate the list cache
       await this.cacheService.delete(Product_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<Product>(updateResult.value);
+      return Result.success<IProduct>(product);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to update product`, error);
     }
   }
 
-  async findById(id: number): Promise<Result<Product, RepositoryError>> {
+  async findById(id: string): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Try cache first
-      const cached = await this.cacheService.get<Product>(
+      const cached = await this.cacheService.get<IProduct>(
         `${Product_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<Product>(cached);
+        return Result.success<IProduct>(cached);
       }
 
       // Fallback to Postgres
@@ -91,14 +88,14 @@ export class RedisProductRepository implements ProductRepository {
     }
   }
 
-  async findAll(): Promise<Result<Product[], RepositoryError>> {
+  async findAll(): Promise<Result<IProduct[], RepositoryError>> {
     try {
       const isCached = await this.cacheService.get<string>(
         Product_REDIS.IS_CACHED_FLAG,
       );
 
       if (isCached) {
-        const cachedProducts = await this.cacheService.getAll<Product>(
+        const cachedProducts = await this.cacheService.getAll<IProduct>(
           Product_REDIS.INDEX,
         );
         return Result.success(cachedProducts);
@@ -130,7 +127,7 @@ export class RedisProductRepository implements ProductRepository {
     }
   }
 
-  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.deleteById(id);
       if (deleteResult.isFailure) return deleteResult;
