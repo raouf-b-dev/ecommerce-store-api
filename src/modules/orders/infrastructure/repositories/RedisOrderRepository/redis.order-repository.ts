@@ -1,12 +1,14 @@
 // src/order/infrastructure/redis-order.repository.ts
 import { Injectable } from '@nestjs/common';
-import { Order } from '../../../domain/entities/order';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Result } from '../../../../../core/domain/result';
 import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
+import { IOrder } from '../../../domain/interfaces/IOrder';
+import { CreateOrderDto } from '../../../presentation/dto/create-order.dto';
+import { UpdateOrderDto } from '../../../presentation/dto/update-order.dto';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
@@ -15,10 +17,13 @@ export class RedisOrderRepository implements OrderRepository {
     private readonly postgresRepo: OrderRepository,
   ) {}
 
-  async save(order: Order): Promise<Result<void, RepositoryError>> {
+  async save(
+    createOrderDto: CreateOrderDto,
+  ): Promise<Result<IOrder, RepositoryError>> {
     try {
-      const saveResult = await this.postgresRepo.save(order);
+      const saveResult = await this.postgresRepo.save(createOrderDto);
       if (saveResult.isFailure) return saveResult;
+      const order = saveResult.value;
 
       await this.cacheService.set(
         `${Order_REDIS.CACHE_KEY}:${order.id}`,
@@ -27,37 +32,40 @@ export class RedisOrderRepository implements OrderRepository {
       );
       await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<void>(undefined);
+      return Result.success<IOrder>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save order`, error);
     }
   }
 
-  async update(order: Order): Promise<Result<void, RepositoryError>> {
+  async update(
+    id: string,
+    updateOrderDto: UpdateOrderDto,
+  ): Promise<Result<IOrder, RepositoryError>> {
     try {
-      const updateResult = await this.postgresRepo.update(order);
+      const updateResult = await this.postgresRepo.update(id, updateOrderDto);
       if (updateResult.isFailure) return updateResult;
 
-      await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
-        order,
-        { ttl: Order_REDIS.EXPIRATION },
-      );
+      const order = updateResult.value;
+
+      await this.cacheService.set(`${Order_REDIS.CACHE_KEY}:${id}`, order, {
+        ttl: Order_REDIS.EXPIRATION,
+      });
       await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<void>(undefined);
+      return Result.success<IOrder>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to update order`, error);
     }
   }
 
-  async findById(id: number): Promise<Result<Order, RepositoryError>> {
+  async findById(id: string): Promise<Result<IOrder, RepositoryError>> {
     try {
-      const cached = await this.cacheService.get<Order>(
+      const cached = await this.cacheService.get<IOrder>(
         `${Order_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<Order>(cached);
+        return Result.success<IOrder>(cached);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -75,14 +83,14 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async findAll(): Promise<Result<Order[], RepositoryError>> {
+  async findAll(): Promise<Result<IOrder[], RepositoryError>> {
     try {
       const isCached = await this.cacheService.get<string>(
         Order_REDIS.IS_CACHED_FLAG,
       );
 
       if (isCached) {
-        const cachedOrders = await this.cacheService.getAll<Order>(
+        const cachedOrders = await this.cacheService.getAll<IOrder>(
           Order_REDIS.INDEX,
         );
         return Result.success(cachedOrders);
@@ -114,7 +122,7 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
     try {
       // Delete from Postgres
       const deleteResult = await this.postgresRepo.deleteById(id);

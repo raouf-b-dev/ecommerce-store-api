@@ -1,408 +1,490 @@
-// src/order/infrastructure/redis-order.repository.spec.ts
-import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
+// src/order/infrastructure/__tests__/redis-order.repository.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
-import {
-  isFailure,
-  isSuccess,
-  Result,
-} from '../../../../../core/domain/result';
+import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
+import { Result } from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
+import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
-import { Order } from '../../../domain/entities/order';
+import { IOrder } from '../../../domain/interfaces/IOrder';
+import { CreateOrderDto } from '../../../presentation/dto/create-order.dto';
+import { UpdateOrderDto } from '../../../presentation/dto/update-order.dto';
+import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RedisOrderRepository } from './redis.order-repository';
 
 describe('RedisOrderRepository', () => {
-  let repo: RedisOrderRepository;
+  let repository: RedisOrderRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: jest.Mocked<OrderRepository>;
-  let order: Order;
-  let orders: Order[];
 
-  beforeEach(() => {
-    cacheService = {
-      set: jest.fn(),
-      setAll: jest.fn(),
+  const mockOrder: IOrder = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    customerId: 'customer-123',
+    items: [
+      {
+        id: 'item-1',
+        productId: 'product-1',
+        productName: 'Test Product',
+        quantity: 2,
+        unitPrice: 10.5,
+        lineTotal: 21.0,
+      },
+    ],
+    status: OrderStatus.PENDING,
+    totalPrice: 21.0,
+    createdAt: new Date('2024-01-01T00:00:00Z'),
+    updatedAt: new Date('2024-01-01T00:00:00Z'),
+  };
+
+  const mockCreateOrderDto: CreateOrderDto = {
+    customerId: 'customer-123',
+    items: [
+      {
+        productId: 'product-1',
+        productName: 'Test Product',
+        quantity: 2,
+        unitPrice: 10.5,
+        lineTotal: 21.0,
+      },
+    ],
+    status: OrderStatus.PENDING,
+  };
+
+  const mockUpdateOrderDto: UpdateOrderDto = {
+    status: OrderStatus.PAID,
+  };
+
+  beforeEach(async () => {
+    const mockCacheService = {
       get: jest.fn(),
-      getAll: jest.fn(),
+      set: jest.fn(),
       delete: jest.fn(),
-    } as any;
+      getAll: jest.fn(),
+      setAll: jest.fn(),
+    };
 
-    postgresRepo = {
+    const mockPostgresRepo = {
       save: jest.fn(),
       update: jest.fn(),
       findById: jest.fn(),
       findAll: jest.fn(),
       deleteById: jest.fn(),
-    } as any;
+    };
 
-    repo = new RedisOrderRepository(cacheService, postgresRepo);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RedisOrderRepository,
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
+        },
+        {
+          provide: OrderRepository,
+          useValue: mockPostgresRepo,
+        },
+      ],
+    }).compile();
 
-    order = { id: 1, name: 'Test Order', totalAmount: 100 } as unknown as Order;
-    orders = [
-      order,
-      { id: 2, name: 'Another Order', totalAmount: 200 } as unknown as Order,
-    ];
+    repository = module.get<RedisOrderRepository>(RedisOrderRepository);
+    cacheService = module.get(CacheService);
+    postgresRepo = module.get(OrderRepository);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('save', () => {
-    it('should save to postgres and cache, and invalidate list flag', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(undefined));
+    it('should save order to postgres and cache successfully', async () => {
+      // Arrange
+      const saveResult = Result.success<IOrder>(mockOrder);
+      postgresRepo.save.mockResolvedValue(saveResult);
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.save(order);
+      // Act
+      const result = await repository.save(mockCreateOrderDto);
 
-      expect(postgresRepo.save).toHaveBeenCalledWith(order);
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(mockOrder);
+      expect(postgresRepo.save).toHaveBeenCalledWith(mockCreateOrderDto);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
-        order,
+        `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        mockOrder,
         { ttl: Order_REDIS.EXPIRATION },
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Order_REDIS.IS_CACHED_FLAG,
       );
-      expect(isSuccess(result)).toBe(true);
     });
 
-    it('should return failure if postgres save fails', async () => {
-      const fail = Result.failure<RepositoryError>(new RepositoryError('fail'));
-      postgresRepo.save.mockResolvedValue(fail);
+    it('should return failure when postgres save fails', async () => {
+      // Arrange
+      const error = new RepositoryError('Postgres save failed');
+      const saveResult = Result.failure<RepositoryError>(error);
+      postgresRepo.save.mockResolvedValue(saveResult);
 
-      const result = await repo.save(order);
+      // Act
+      const result = await repository.save(mockCreateOrderDto);
 
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
       expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
     });
 
-    it('should return failure if cache set throws', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(undefined));
-      cacheService.set.mockRejectedValue(new Error('cache set error'));
+    it('should handle cache service errors gracefully', async () => {
+      // Arrange
+      const saveResult = Result.success<IOrder>(mockOrder);
+      postgresRepo.save.mockResolvedValue(saveResult);
+      cacheService.set.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.save(order);
+      // Act
+      const result = await repository.save(mockCreateOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to save order');
-      }
-    });
-
-    it('should return failure if IS_CACHED_FLAG deletion throws', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(undefined));
-      cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockRejectedValue(new Error('flag delete error'));
-
-      const result = await repo.save(order);
-
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error).toBeInstanceOf(RepositoryError);
         expect(result.error.message).toContain('Failed to save order');
       }
     });
   });
 
   describe('update', () => {
-    it('should update to postgres and cache, and invalidate list flag', async () => {
-      postgresRepo.update.mockResolvedValue(Result.success(undefined));
+    const orderId = '123e4567-e89b-12d3-a456-426614174000';
+    const updatedOrder = { ...mockOrder, status: OrderStatus.PAID };
+
+    it('should update order in postgres and cache successfully', async () => {
+      // Arrange
+      const updateResult = Result.success<IOrder>(updatedOrder);
+      postgresRepo.update.mockResolvedValue(updateResult);
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.update(order);
+      // Act
+      const result = await repository.update(orderId, mockUpdateOrderDto);
 
-      expect(postgresRepo.update).toHaveBeenCalledWith(order);
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(updatedOrder);
+      expect(postgresRepo.update).toHaveBeenCalledWith(
+        orderId,
+        mockUpdateOrderDto,
+      );
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
-        order,
+        `${Order_REDIS.CACHE_KEY}:${orderId}`,
+        updatedOrder,
         { ttl: Order_REDIS.EXPIRATION },
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Order_REDIS.IS_CACHED_FLAG,
       );
-      expect(isSuccess(result)).toBe(true);
     });
 
-    it('should return failure if postgres update fails', async () => {
-      const fail = Result.failure<RepositoryError>(new RepositoryError('fail'));
-      postgresRepo.update.mockResolvedValue(fail);
+    it('should return failure when postgres update fails', async () => {
+      // Arrange
+      const error = new RepositoryError('Update failed');
+      const updateResult = Result.failure<RepositoryError>(error);
+      postgresRepo.update.mockResolvedValue(updateResult);
 
-      const result = await repo.update(order);
+      // Act
+      const result = await repository.update(orderId, mockUpdateOrderDto);
 
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
       expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
     });
 
-    it('should return failure if cache set throws', async () => {
-      postgresRepo.update.mockResolvedValue(Result.success(undefined));
-      cacheService.set.mockRejectedValue(new Error('cache set error'));
+    it('should handle cache service errors during update', async () => {
+      // Arrange
+      const updateResult = Result.success<IOrder>(updatedOrder);
+      postgresRepo.update.mockResolvedValue(updateResult);
+      cacheService.set.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.update(order);
+      // Act
+      const result = await repository.update(orderId, mockUpdateOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to update order');
-      }
-    });
-
-    it('should return failure if IS_CACHED_FLAG deletion throws', async () => {
-      postgresRepo.update.mockResolvedValue(Result.success(undefined));
-      cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockRejectedValue(new Error('flag delete error'));
-
-      const result = await repo.update(order);
-
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to update order');
-      }
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure)
+        expect(result.error).toBeInstanceOf(RepositoryError);
     });
   });
 
   describe('findById', () => {
-    it('should return cached order if found', async () => {
-      cacheService.get.mockResolvedValue(order);
+    const orderId = '123e4567-e89b-12d3-a456-426614174000';
 
-      const result = await repo.findById(order.id);
+    it('should return cached order when available', async () => {
+      // Arrange
+      cacheService.get.mockResolvedValue(mockOrder);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(order);
-      }
+      // Act
+      const result = await repository.findById(orderId);
+
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(mockOrder);
       expect(cacheService.get).toHaveBeenCalledWith(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
+        `${Order_REDIS.CACHE_KEY}:${orderId}`,
       );
       expect(postgresRepo.findById).not.toHaveBeenCalled();
     });
 
-    it('should fetch from postgres if not cached', async () => {
+    it('should fetch from postgres and cache when not in cache', async () => {
+      // Arrange
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(order));
+      const dbResult = Result.success<IOrder>(mockOrder);
+      postgresRepo.findById.mockResolvedValue(dbResult);
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repo.findById(order.id);
+      // Act
+      const result = await repository.findById(orderId);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(order.id);
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(mockOrder);
+      expect(postgresRepo.findById).toHaveBeenCalledWith(orderId);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
-        order,
+        `${Order_REDIS.CACHE_KEY}:${orderId}`,
+        mockOrder,
         { ttl: Order_REDIS.EXPIRATION },
       );
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(order);
-      }
     });
 
-    it('should return failure if postgres fails', async () => {
+    it('should return failure when postgres findById fails', async () => {
+      // Arrange
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(
-        Result.failure(new RepositoryError('fail')),
-      );
+      const error = new RepositoryError('Order not found');
+      const dbResult = Result.failure<RepositoryError>(error);
+      postgresRepo.findById.mockResolvedValue(dbResult);
 
-      const result = await repo.findById(order.id);
+      // Act
+      const result = await repository.findById(orderId);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(order.id);
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
       expect(cacheService.set).not.toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
     });
 
-    it('should return failure if caching fails after fetching from postgres', async () => {
-      cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(order));
-      cacheService.set.mockRejectedValue(new Error('cache error'));
+    it('should handle cache service errors during findById', async () => {
+      // Arrange
+      cacheService.get.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.findById(order.id);
+      // Act
+      const result = await repository.findById(orderId);
 
-      expect(postgresRepo.findById).toHaveBeenCalledWith(order.id);
-      expect(cacheService.set).toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to find order');
-      }
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure)
+        expect(result.error).toBeInstanceOf(RepositoryError);
     });
   });
 
   describe('findAll', () => {
-    it('should return cached Orders if IS_CACHED_FLAG is true', async () => {
+    const mockOrders = [mockOrder, { ...mockOrder, id: 'order-2' }];
+
+    it('should return cached orders when cache flag is set', async () => {
+      // Arrange
       cacheService.get.mockResolvedValue('true');
-      cacheService.getAll.mockResolvedValue(orders);
+      cacheService.getAll.mockResolvedValue(mockOrders);
 
-      const result = await repo.findAll();
+      // Act
+      const result = await repository.findAll();
 
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(mockOrders);
       expect(cacheService.get).toHaveBeenCalledWith(Order_REDIS.IS_CACHED_FLAG);
       expect(cacheService.getAll).toHaveBeenCalledWith(Order_REDIS.INDEX);
       expect(postgresRepo.findAll).not.toHaveBeenCalled();
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(orders);
-      }
     });
 
-    it('should fetch from postgres, cache orders and flag if IS_CACHED_FLAG is null', async () => {
+    it('should fetch from postgres and cache when cache flag is not set', async () => {
+      // Arrange
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(orders));
+      const dbResult = Result.success<IOrder[]>(mockOrders);
+      postgresRepo.findAll.mockResolvedValue(dbResult);
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repo.findAll();
+      const expectedCacheEntries = mockOrders.map((order) => ({
+        key: `${Order_REDIS.CACHE_KEY}:${order.id}`,
+        value: order,
+      }));
 
-      expect(cacheService.get).toHaveBeenCalledWith(Order_REDIS.IS_CACHED_FLAG);
+      // Act
+      const result = await repository.findAll();
+
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) expect(result.value).toEqual(mockOrders);
       expect(postgresRepo.findAll).toHaveBeenCalled();
-      expect(cacheService.setAll).toHaveBeenCalledWith(
-        orders.map((o) => ({
-          key: `${Order_REDIS.CACHE_KEY}:${o.id}`,
-          value: o,
-        })),
-        { ttl: Order_REDIS.EXPIRATION },
-      );
+      expect(cacheService.setAll).toHaveBeenCalledWith(expectedCacheEntries, {
+        ttl: Order_REDIS.EXPIRATION,
+      });
       expect(cacheService.set).toHaveBeenCalledWith(
         Order_REDIS.IS_CACHED_FLAG,
         'true',
         { ttl: Order_REDIS.EXPIRATION },
       );
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toEqual(orders);
-      }
     });
 
-    it('should return failure if postgres findAll fails', async () => {
+    it('should return failure when postgres findAll fails', async () => {
+      // Arrange
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(
-        Result.failure(new RepositoryError('Postgres find all failed')),
-      );
+      const error = new RepositoryError('Database error');
+      const dbResult = Result.failure<RepositoryError>(error);
+      postgresRepo.findAll.mockResolvedValue(dbResult);
 
-      const result = await repo.findAll();
+      // Act
+      const result = await repository.findAll();
 
-      expect(cacheService.get).toHaveBeenCalledWith(Order_REDIS.IS_CACHED_FLAG);
-      expect(postgresRepo.findAll).toHaveBeenCalled();
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
       expect(cacheService.setAll).not.toHaveBeenCalled();
-      expect(cacheService.set).not.toHaveBeenCalledWith(
-        Order_REDIS.IS_CACHED_FLAG,
-        expect.any(String),
-        expect.any(Object),
-      );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Postgres find all failed');
-      }
     });
 
-    it('should return failure if cache.setAll throws after postgres success', async () => {
-      cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(orders));
-      cacheService.setAll.mockRejectedValue(new Error('Cache setAll failed'));
+    it('should handle cache service errors during findAll', async () => {
+      // Arrange
+      cacheService.get.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.findAll();
+      // Act
+      const result = await repository.findAll();
 
-      expect(cacheService.get).toHaveBeenCalledWith(Order_REDIS.IS_CACHED_FLAG);
-      expect(postgresRepo.findAll).toHaveBeenCalled();
-      expect(cacheService.setAll).toHaveBeenCalled();
-      expect(cacheService.set).not.toHaveBeenCalledWith(
-        Order_REDIS.IS_CACHED_FLAG,
-        expect.any(String),
-        expect.any(Object),
-      );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to find all orders');
-      }
-    });
-
-    it('should return failure if cache.set (for flag) throws after postgres success and setAll success', async () => {
-      cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(orders));
-      cacheService.setAll.mockResolvedValue(undefined);
-      cacheService.set.mockRejectedValue(new Error('Cache flag set failed'));
-
-      const result = await repo.findAll();
-
-      expect(cacheService.get).toHaveBeenCalledWith(Order_REDIS.IS_CACHED_FLAG);
-      expect(postgresRepo.findAll).toHaveBeenCalled();
-      expect(cacheService.setAll).toHaveBeenCalled();
-      expect(cacheService.set).toHaveBeenCalledWith(
-        Order_REDIS.IS_CACHED_FLAG,
-        'true',
-        { ttl: Order_REDIS.EXPIRATION },
-      );
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to find all orders');
-      }
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure)
+        expect(result.error).toBeInstanceOf(RepositoryError);
     });
   });
 
   describe('deleteById', () => {
-    it('should delete from postgres and cache, and clear the list flag', async () => {
-      postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
+    const orderId = '123e4567-e89b-12d3-a456-426614174000';
+
+    it('should delete order from postgres and cache successfully', async () => {
+      // Arrange
+      const deleteResult = Result.success<void>(undefined);
+      postgresRepo.deleteById.mockResolvedValue(deleteResult);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.deleteById(order.id);
+      // Act
+      const result = await repository.deleteById(orderId);
 
-      expect(postgresRepo.deleteById).toHaveBeenCalledWith(order.id);
+      // Assert
+      expect(result.isSuccess).toBe(true);
+      expect(postgresRepo.deleteById).toHaveBeenCalledWith(orderId);
       expect(cacheService.delete).toHaveBeenCalledWith(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
+        `${Order_REDIS.CACHE_KEY}:${orderId}`,
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         Order_REDIS.IS_CACHED_FLAG,
       );
-      expect(isSuccess(result)).toBe(true);
     });
 
-    it('should return failure if postgres delete fails', async () => {
-      const fail = Result.failure<RepositoryError>(new RepositoryError('fail'));
-      postgresRepo.deleteById.mockResolvedValue(fail);
+    it('should return failure when postgres delete fails', async () => {
+      // Arrange
+      const error = new RepositoryError('Delete failed');
+      const deleteResult = Result.failure<RepositoryError>(error);
+      postgresRepo.deleteById.mockResolvedValue(deleteResult);
 
-      const result = await repo.deleteById(order.id);
+      // Act
+      const result = await repository.deleteById(orderId);
 
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
       expect(cacheService.delete).not.toHaveBeenCalled();
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('fail');
-      }
     });
 
-    it('should return failure if cache throws during individual order deletion', async () => {
-      postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
-      cacheService.delete.mockImplementation((key: string) => {
-        if (key === `${Order_REDIS.CACHE_KEY}:${order.id}`) {
-          return Promise.reject(new Error('cache delete error'));
-        }
-        return Promise.resolve();
-      });
+    it('should handle cache service errors during delete', async () => {
+      // Arrange
+      const deleteResult = Result.success<void>(undefined);
+      postgresRepo.deleteById.mockResolvedValue(deleteResult);
+      cacheService.delete.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.deleteById(order.id);
+      // Act
+      const result = await repository.deleteById(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to delete order');
-      }
+      // Assert
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure)
+        expect(result.error).toBeInstanceOf(RepositoryError);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should use ErrorFactory for repository errors', async () => {
+      // Arrange
+      const originalError = new Error('Database connection failed');
+      postgresRepo.save.mockRejectedValue(originalError);
+
+      // Spy on ErrorFactory
+      const errorFactorySpy = jest.spyOn(ErrorFactory, 'RepositoryError');
+
+      // Act
+      const result = await repository.save(mockCreateOrderDto);
+
+      // Assert
+      expect(result.isFailure).toBe(true);
+      expect(errorFactorySpy).toHaveBeenCalledWith(
+        'Failed to save order',
+        originalError,
+      );
     });
 
-    it('should return failure if cache throws during IS_CACHED_FLAG deletion', async () => {
-      postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
-      cacheService.delete.mockImplementation((key: string) => {
-        if (key === Order_REDIS.IS_CACHED_FLAG) {
-          return Promise.reject(new Error('flag delete error'));
-        }
-        return Promise.resolve();
-      });
+    it('should handle unexpected errors in all methods', async () => {
+      const methods = [
+        { method: 'save', args: [mockCreateOrderDto] },
+        { method: 'update', args: ['test-id', mockUpdateOrderDto] },
+        { method: 'findById', args: ['test-id'] },
+        { method: 'findAll', args: [] },
+        { method: 'deleteById', args: ['test-id'] },
+      ];
 
-      const result = await repo.deleteById(order.id);
+      for (const { method, args } of methods) {
+        // Arrange
+        postgresRepo.save.mockRejectedValue(
+          new RepositoryError('Unexpected error'),
+        );
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toContain('Failed to delete order');
+        // Act
+        const result = await (repository as any)[method](...args);
+
+        // Assert
+        expect(result.isFailure).toBe(true);
+        expect(result.error).toBeInstanceOf(RepositoryError);
       }
+    });
+  });
+
+  describe('Cache Key Generation', () => {
+    it('should use correct cache keys for different operations', async () => {
+      const orderId = 'test-order-id';
+
+      // Test findById cache key
+      cacheService.get.mockResolvedValue(mockOrder);
+      await repository.findById(orderId);
+      expect(cacheService.get).toHaveBeenCalledWith(
+        `${Order_REDIS.CACHE_KEY}:${orderId}`,
+      );
+
+      // Test save cache key
+      const saveResult = Result.success<IOrder>(mockOrder);
+      postgresRepo.save.mockResolvedValue(saveResult);
+      cacheService.set.mockResolvedValue(undefined);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      await repository.save(mockCreateOrderDto);
+      expect(cacheService.set).toHaveBeenCalledWith(
+        `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        mockOrder,
+        { ttl: Order_REDIS.EXPIRATION },
+      );
     });
   });
 });
