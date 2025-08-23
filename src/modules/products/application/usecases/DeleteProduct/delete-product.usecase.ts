@@ -7,12 +7,12 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 @Injectable()
-export class DeleteProductUseCase extends UseCase<number, void, UseCaseError> {
+export class DeleteProductUseCase extends UseCase<string, void, UseCaseError> {
   constructor(private readonly productRepository: ProductRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<void, UseCaseError>> {
+  async execute(id: string): Promise<Result<void, UseCaseError>> {
     try {
       const productResult = await this.productRepository.deleteById(id);
 

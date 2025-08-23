@@ -26,7 +26,7 @@ describe('CreateProductController', () => {
     controller = new CreateProductController(mockCreateProductUseCase);
 
     product = new Product({
-      id: 1,
+      id: 'PR0000001',
       name: 'car',
       description: 'A fast red sports car',
       price: 35000,

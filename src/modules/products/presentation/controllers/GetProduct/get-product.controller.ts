@@ -8,7 +8,7 @@ import { GetProductUseCase } from '../../../application/usecases/GetProduct/get-
 @Injectable()
 export class GetProductController {
   constructor(private getProductUseCase: GetProductUseCase) {}
-  async handle(id: number): Promise<Result<Product, ControllerError>> {
+  async handle(id: string): Promise<Result<Product, ControllerError>> {
     try {
       const productResult = await this.getProductUseCase.execute(id);
       if (isFailure(productResult)) {

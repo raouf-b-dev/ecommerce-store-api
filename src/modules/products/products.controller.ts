@@ -37,16 +37,16 @@ export class ProductsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.getProductController.handle(+id);
+    return this.getProductController.handle(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.updateProductController.handle(+id, updateProductDto);
+    return this.updateProductController.handle(id, updateProductDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.deleteProductController.handle(+id);
+    return this.deleteProductController.handle(id);
   }
 }

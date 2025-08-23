@@ -14,13 +14,14 @@ describe('ListProductsController', () => {
   let controller: ListProductsController;
   let mockListProductsUseCase: jest.Mocked<ListProductsUseCase>;
   let expectedProducts: Product[];
+  let productId: string;
 
   beforeEach(() => {
     // Mock the ListProductsUseCase
     mockListProductsUseCase = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<ListProductsUseCase>;
-
+    productId = 'PR0000001';
     controller = new ListProductsController(mockListProductsUseCase);
   });
 
@@ -28,7 +29,7 @@ describe('ListProductsController', () => {
     it('should return success if any Product is found', async () => {
       expectedProducts = [
         new Product({
-          id: 1,
+          id: productId,
           name: 'Car',
           description: 'A fast red sports car',
           price: 35000,

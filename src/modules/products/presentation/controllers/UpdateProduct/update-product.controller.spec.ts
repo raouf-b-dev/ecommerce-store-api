@@ -14,7 +14,7 @@ import { UpdateProductDto } from '../../dto/update-product.dto';
 describe('UpdateProductController', () => {
   let controller: UpdateProductController;
   let updateProductDto: UpdateProductDto;
-  let id_param: number;
+  let productId: string;
 
   let mockUpdateProductUseCase: jest.Mocked<UpdateProductUseCase>;
   let product: Product;
@@ -24,10 +24,9 @@ describe('UpdateProductController', () => {
     mockUpdateProductUseCase = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<UpdateProductUseCase>;
+    productId = 'PR0000001';
 
     controller = new UpdateProductController(mockUpdateProductUseCase);
-
-    id_param = 1;
 
     updateProductDto = {
       name: 'Car',
@@ -40,7 +39,7 @@ describe('UpdateProductController', () => {
     } as UpdateProductDto;
 
     product = new Product({
-      id: id_param,
+      id: productId,
       name: 'car',
       description: 'A fast red sports car',
       price: 35000,
@@ -57,14 +56,14 @@ describe('UpdateProductController', () => {
         Result.success(product),
       );
 
-      const result = await controller.handle(id_param, updateProductDto);
+      const result = await controller.handle(productId, updateProductDto);
 
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
         expect(result.value).toBe(product);
       }
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledWith({
-        id: id_param,
+        id: productId,
         dto: updateProductDto,
       });
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledTimes(1);
@@ -77,7 +76,7 @@ describe('UpdateProductController', () => {
         ),
       );
 
-      const result = await controller.handle(id_param, updateProductDto);
+      const result = await controller.handle(productId, updateProductDto);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
@@ -89,7 +88,7 @@ describe('UpdateProductController', () => {
       }
 
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledWith({
-        id: id_param,
+        id: productId,
         dto: updateProductDto,
       });
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledTimes(1);
@@ -100,7 +99,7 @@ describe('UpdateProductController', () => {
 
       mockUpdateProductUseCase.execute.mockRejectedValue(error);
 
-      const result = await controller.handle(id_param, updateProductDto);
+      const result = await controller.handle(productId, updateProductDto);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
@@ -110,7 +109,7 @@ describe('UpdateProductController', () => {
       }
 
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledWith({
-        id: id_param,
+        id: productId,
         dto: updateProductDto,
       });
       expect(mockUpdateProductUseCase.execute).toHaveBeenCalledTimes(1);

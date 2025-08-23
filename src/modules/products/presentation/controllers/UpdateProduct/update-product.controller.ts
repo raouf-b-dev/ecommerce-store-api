@@ -10,7 +10,7 @@ import { Product } from '../../../domain/entities/product';
 export class UpdateProductController {
   constructor(private updateProductUseCase: UpdateProductUseCase) {}
   async handle(
-    id: number,
+    id: string,
     dto: UpdateProductDto,
   ): Promise<Result<Product, ControllerError>> {
     try {

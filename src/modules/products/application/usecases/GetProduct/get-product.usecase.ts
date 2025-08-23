@@ -8,12 +8,12 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 @Injectable()
-export class GetProductUseCase extends UseCase<number, Product, UseCaseError> {
+export class GetProductUseCase extends UseCase<string, Product, UseCaseError> {
   constructor(private readonly productRepository: ProductRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<Product, UseCaseError>> {
+  async execute(id: string): Promise<Result<Product, UseCaseError>> {
     try {
       const productResult = await this.productRepository.findById(id);
 

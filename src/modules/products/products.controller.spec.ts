@@ -22,11 +22,12 @@ describe('ProductsController', () => {
   let productsList: Product[];
   let createProductDto: CreateProductDto;
   let updateProductDto: UpdateProductDto;
-  let id: number;
+  let id: string;
 
   beforeEach(async () => {
+    id = 'PR0000001';
     product = new Product({
-      id: 1,
+      id,
       name: 'Car',
       description: 'A fast red sports car',
       price: 35000,
@@ -51,8 +52,6 @@ describe('ProductsController', () => {
       price: 35000,
       sku: 'CAR-001',
     } as UpdateProductDto;
-
-    id = 1;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],

@@ -1,5 +1,5 @@
 export interface IProduct {
-  id: number;
+  id: string; // Changed from number to string for prefixed IDs like PR0000001
   name: string;
   description?: string;
   price: number;

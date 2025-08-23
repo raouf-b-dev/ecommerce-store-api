@@ -1,6 +1,5 @@
 // src/modules/Products/presentation/controllers/Delete-Product.controller.spec.ts
 import { DeleteProductController } from './delete-product.controller';
-import { Product } from '../../../domain/entities/product';
 import {
   isFailure,
   isSuccess,
@@ -13,20 +12,20 @@ import { DeleteProductUseCase } from '../../../application/usecases/DeleteProduc
 describe('DeleteProductController', () => {
   let controller: DeleteProductController;
   let mockDeleteProductUseCase: jest.Mocked<DeleteProductUseCase>;
+  let productId: string;
 
   beforeEach(() => {
     // Mock the DeleteProductUseCase
     mockDeleteProductUseCase = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<DeleteProductUseCase>;
+    productId = 'PR0000001';
 
     controller = new DeleteProductController(mockDeleteProductUseCase);
   });
 
   describe('handle', () => {
     it('should return success if Product is deleted', async () => {
-      const productId = 1;
-
       mockDeleteProductUseCase.execute.mockResolvedValue(
         Result.success(undefined),
       );
@@ -42,8 +41,6 @@ describe('DeleteProductController', () => {
     });
 
     it('should rethrow Failure(ControllerError) if product is not deleted', async () => {
-      const productId = 999;
-
       mockDeleteProductUseCase.execute.mockResolvedValue(
         Result.failure(
           ErrorFactory.UseCaseError(`Product with id ${productId} not deleted`)
@@ -69,7 +66,6 @@ describe('DeleteProductController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const productId = 999;
       const error = new Error('Database connection failed');
 
       mockDeleteProductUseCase.execute.mockRejectedValue(error);

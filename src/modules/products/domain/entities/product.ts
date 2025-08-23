@@ -1,7 +1,7 @@
 import { IProduct } from '../interfaces/IProduct';
 
 export class Product implements IProduct {
-  id: number;
+  id: string;
   name: string;
   description?: string | undefined;
   price: number;

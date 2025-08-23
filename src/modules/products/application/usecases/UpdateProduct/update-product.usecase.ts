@@ -10,7 +10,7 @@ import { Product } from '../../../domain/entities/product';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
-  { id: number; dto: UpdateProductDto },
+  { id: string; dto: UpdateProductDto },
   Product,
   UseCaseError
 > {
@@ -19,7 +19,7 @@ export class UpdateProductUseCase extends UseCase<
   }
 
   async execute(input: {
-    id: number;
+    id: string;
     dto: UpdateProductDto;
   }): Promise<Result<Product, UseCaseError>> {
     try {

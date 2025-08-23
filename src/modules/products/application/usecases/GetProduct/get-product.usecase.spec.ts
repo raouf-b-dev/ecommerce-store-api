@@ -13,6 +13,7 @@ import { GetProductUseCase } from './get-product.usecase';
 describe('GetProductUseCase', () => {
   let useCase: GetProductUseCase;
   let mockProductRepository: jest.Mocked<ProductRepository>;
+  let productId: string;
 
   beforeEach(() => {
     mockProductRepository = {
@@ -22,13 +23,13 @@ describe('GetProductUseCase', () => {
       findAll: jest.fn(),
       deleteById: jest.fn(),
     };
+    productId = 'PR0000001';
 
     useCase = new GetProductUseCase(mockProductRepository);
   });
 
   describe('execute', () => {
     it('should return Success if product is found', async () => {
-      const productId = 1;
       const expectedProduct = new Product({
         id: productId,
         name: 'Car',
@@ -55,7 +56,6 @@ describe('GetProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not found', async () => {
-      const productId = 999;
       mockProductRepository.findById.mockResolvedValue(
         ErrorFactory.RepositoryError(`Product with id ${productId} not found`),
       );
@@ -74,7 +74,6 @@ describe('GetProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 2;
       const repoError = new Error('Database connection failed');
 
       mockProductRepository.findById.mockRejectedValue(repoError);

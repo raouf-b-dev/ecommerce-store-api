@@ -12,6 +12,7 @@ import { DeleteProductUseCase } from './delete-product.usecase';
 describe('DeleteProductUseCase', () => {
   let useCase: DeleteProductUseCase;
   let mockProductRepository: jest.Mocked<ProductRepository>;
+  let productId: string;
 
   beforeEach(() => {
     mockProductRepository = {
@@ -21,14 +22,13 @@ describe('DeleteProductUseCase', () => {
       findAll: jest.fn(),
       deleteById: jest.fn(),
     };
+    productId = 'PR0000001';
 
     useCase = new DeleteProductUseCase(mockProductRepository);
   });
 
   describe('execute', () => {
     it('should return Success if product is deleted', async () => {
-      const productId = 1;
-
       mockProductRepository.deleteById.mockResolvedValue(
         Result.success(undefined),
       );
@@ -44,7 +44,6 @@ describe('DeleteProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not deleted', async () => {
-      const productId = 999;
       mockProductRepository.deleteById.mockResolvedValue(
         ErrorFactory.RepositoryError(
           `Product with id ${productId} not deleted`,
@@ -65,7 +64,6 @@ describe('DeleteProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 2;
       const repoError = new Error('Database connection failed');
 
       mockProductRepository.deleteById.mockRejectedValue(repoError);

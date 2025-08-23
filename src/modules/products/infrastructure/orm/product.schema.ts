@@ -1,10 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+// src/modules/products/infrastructure/orm/product.schema.ts
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 import { IProduct } from '../../domain/interfaces/IProduct';
 
 @Entity({ name: 'products' })
 export class ProductEntity implements IProduct {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn('varchar')
+  id: string;
 
   @Column()
   name: string;
@@ -15,10 +16,10 @@ export class ProductEntity implements IProduct {
   @Column({ nullable: true })
   sku?: string;
 
-  @Column('decimal')
+  @Column('decimal', { precision: 12, scale: 2 })
   price: number;
 
-  @Column()
+  @Column('int')
   stockQuantity: number;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

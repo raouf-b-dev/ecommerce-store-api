@@ -16,7 +16,7 @@ describe('UpdateProductUseCase', () => {
   let mockProductRepository: jest.Mocked<ProductRepository>;
   let product: Product;
   let updateProductDto: UpdateProductDto;
-  let id_param: number;
+  let id_param: string;
 
   beforeEach(() => {
     mockProductRepository = {
@@ -29,7 +29,7 @@ describe('UpdateProductUseCase', () => {
 
     useCase = new UpdateProductUseCase(mockProductRepository);
 
-    id_param = 1;
+    id_param = 'PR0000001';
     updateProductDto = {
       name: 'car',
       description: 'A fast red sports car',

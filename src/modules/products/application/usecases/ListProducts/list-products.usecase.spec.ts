@@ -13,7 +13,7 @@ import { ListProductsUseCase } from './list-products.usecase';
 describe('ListProductsUseCase', () => {
   let useCase: ListProductsUseCase;
   let mockProductRepository: jest.Mocked<ProductRepository>;
-
+  let productId: string;
   beforeEach(() => {
     mockProductRepository = {
       findById: jest.fn(),
@@ -22,7 +22,7 @@ describe('ListProductsUseCase', () => {
       findAll: jest.fn(),
       deleteById: jest.fn(),
     };
-
+    productId = 'PR0000001';
     useCase = new ListProductsUseCase(mockProductRepository);
   });
 
@@ -30,7 +30,7 @@ describe('ListProductsUseCase', () => {
     it('should return Success if product is found', async () => {
       const expectedProducts = [
         new Product({
-          id: 1,
+          id: productId,
           name: 'Car',
           description: 'A fast red sports car',
           price: 35000,

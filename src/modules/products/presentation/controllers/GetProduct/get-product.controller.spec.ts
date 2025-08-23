@@ -14,19 +14,20 @@ describe('GetProductController', () => {
   let controller: GetProductController;
   let mockGetProductUseCase: jest.Mocked<GetProductUseCase>;
   let expectedProduct: Product;
+  let productId: string;
 
   beforeEach(() => {
     // Mock the GetProductUseCase
     mockGetProductUseCase = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<GetProductUseCase>;
+    productId = 'PR0000001';
 
     controller = new GetProductController(mockGetProductUseCase);
   });
 
   describe('handle', () => {
     it('should return success if Product is found', async () => {
-      const productId = 1;
       expectedProduct = new Product({
         id: productId,
         name: 'Car',
@@ -53,8 +54,6 @@ describe('GetProductController', () => {
     });
 
     it('should rethrow Failure(ControllerError) if product is not found', async () => {
-      const productId = 999;
-
       mockGetProductUseCase.execute.mockResolvedValue(
         Result.failure(
           ErrorFactory.UseCaseError(`Product with id ${productId} not found`)
@@ -78,7 +77,6 @@ describe('GetProductController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const productId = 999;
       const error = new Error('Database connection failed');
 
       mockGetProductUseCase.execute.mockRejectedValue(error);

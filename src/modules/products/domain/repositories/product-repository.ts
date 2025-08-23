@@ -3,16 +3,17 @@ import { RepositoryError } from '../../../../core/errors/repository.error';
 import { CreateProductDto } from '../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../presentation/dto/update-product.dto';
 import { Product } from '../entities/product';
+import { IProduct } from '../interfaces/IProduct';
 
 export abstract class ProductRepository {
   abstract save(
     product: CreateProductDto,
-  ): Promise<Result<Product, RepositoryError>>;
+  ): Promise<Result<IProduct, RepositoryError>>;
   abstract update(
-    id: number,
+    id: string,
     product: UpdateProductDto,
-  ): Promise<Result<Product, RepositoryError>>;
-  abstract findById(id: number): Promise<Result<Product, RepositoryError>>;
-  abstract findAll(): Promise<Result<Product[], RepositoryError>>;
-  abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
+  ): Promise<Result<IProduct, RepositoryError>>;
+  abstract findById(id: string): Promise<Result<IProduct, RepositoryError>>;
+  abstract findAll(): Promise<Result<IProduct[], RepositoryError>>;
+  abstract deleteById(id: string): Promise<Result<void, RepositoryError>>;
 }

@@ -8,7 +8,7 @@ import { DeleteProductUseCase } from '../../../application/usecases/DeleteProduc
 @Injectable()
 export class DeleteProductController {
   constructor(private deleteProductUseCase: DeleteProductUseCase) {}
-  async handle(id: number): Promise<Result<void, ControllerError>> {
+  async handle(id: string): Promise<Result<void, ControllerError>> {
     try {
       const deleteResult = await this.deleteProductUseCase.execute(id);
       if (isFailure(deleteResult)) {
