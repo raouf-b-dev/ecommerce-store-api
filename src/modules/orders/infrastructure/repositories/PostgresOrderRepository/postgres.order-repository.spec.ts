@@ -3,214 +3,298 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderEntity } from '../../orm/order.schema';
-import { Order } from '../../../domain/entities/order';
-import { isFailure, isSuccess } from '../../../../../core/domain/result';
+import {
+  isFailure,
+  isSuccess,
+  Result,
+} from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { PostgresOrderRepository } from './postgres.order-repository';
-
-// Mock repository for dependency injection
-const mockTypeOrmRepository = {
-  create: jest.fn(),
-  save: jest.fn(),
-  merge: jest.fn(),
-  findOne: jest.fn(),
-  find: jest.fn(),
-  delete: jest.fn(),
-};
-
-// Reusable test data
-const orderDomain = new Order({ id: 1, totalPrice: 500 });
-const orderEntity = { id: 1, totalPrice: 500 } as OrderEntity;
-const dbError = new Error('DB Error');
+import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
+import { CreateOrderDto } from '../../../presentation/dto/create-order.dto';
+import { UpdateOrderDto } from '../../../presentation/dto/update-order.dto';
 
 describe('PostgresOrderRepository', () => {
   let repository: PostgresOrderRepository;
-  let ormRepo: Repository<OrderEntity>;
+  let ormRepo: jest.Mocked<Repository<OrderEntity>>;
+  let mockOrmRepo: any;
+  let mockIdGen: jest.Mocked<IdGeneratorService>;
+
+  const dbError = new Error('DB Error');
+
+  const createOrderDto: CreateOrderDto = {
+    // minimal fields required by CreateOrderDto in tests
+    customerId: 'CUST001',
+    items: [
+      {
+        productId: 'PR0000001',
+        productName: 'Product 1',
+        unitPrice: 100,
+        quantity: 2,
+        lineTotal: 200,
+      },
+    ],
+    status: 'pending' as any,
+  } as any;
+
+  const updateOrderDto: UpdateOrderDto = {
+    totalPrice: 750,
+  } as any;
+
+  const generatedId = 'OR0000001';
+
+  const orderEntity = {
+    id: generatedId,
+    customerId: createOrderDto.customerId,
+    items: createOrderDto.items,
+    totalPrice: 200,
+    status: 'pending',
+    createdAt: new Date('2025-01-01T10:00:00Z'),
+    updatedAt: new Date('2025-01-01T10:00:00Z'),
+  } as any;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    mockOrmRepo = {
+      create: jest.fn(),
+      save: jest.fn(),
+      merge: jest.fn(),
+      findOne: jest.fn(),
+      find: jest.fn(),
+      delete: jest.fn(),
+    };
+
+    mockIdGen = {
+      generateOrderId: jest.fn(),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresOrderRepository,
         {
           provide: getRepositoryToken(OrderEntity),
-          useValue: mockTypeOrmRepository,
+          useValue: mockOrmRepo,
+        },
+        {
+          provide: IdGeneratorService,
+          useValue: mockIdGen,
         },
       ],
     }).compile();
 
     repository = module.get<PostgresOrderRepository>(PostgresOrderRepository);
-    ormRepo = module.get<Repository<OrderEntity>>(
-      getRepositoryToken(OrderEntity),
-    );
+    ormRepo = module.get(getRepositoryToken(OrderEntity)) as any;
   });
 
   describe('save', () => {
-    it('should successfully save a new order', async () => {
-      mockTypeOrmRepository.create.mockReturnValue(orderEntity);
-      mockTypeOrmRepository.save.mockResolvedValue(orderEntity);
+    it('should successfully save a new order and return it', async () => {
+      mockIdGen.generateOrderId.mockResolvedValue(generatedId);
 
-      const result = await repository.save(orderDomain);
+      const createdEntity = { ...orderEntity };
+      mockOrmRepo.create.mockReturnValue(createdEntity);
+      mockOrmRepo.save.mockResolvedValue(createdEntity);
+
+      const result = await repository.save(createOrderDto);
+
+      expect(mockIdGen.generateOrderId).toHaveBeenCalled();
+      expect(mockOrmRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: generatedId,
+          ...createOrderDto,
+          createdAt: expect.any(Date),
+        }),
+      );
+      expect(mockOrmRepo.save).toHaveBeenCalledWith(createdEntity);
 
       expect(isSuccess(result)).toBe(true);
-      // More specific check for void success
       if (isSuccess(result)) {
-        expect(result.value).toBeUndefined();
+        expect(result.value).toEqual(createdEntity);
       }
-      expect(ormRepo.create).toHaveBeenCalledWith(orderDomain);
-      expect(ormRepo.save).toHaveBeenCalledWith(orderEntity);
     });
 
-    it('should return a failure if the database throws an error', async () => {
-      mockTypeOrmRepository.save.mockRejectedValue(dbError);
+    it('should return failure if orm.save throws', async () => {
+      mockIdGen.generateOrderId.mockResolvedValue(generatedId);
+      mockOrmRepo.create.mockReturnValue(orderEntity);
+      mockOrmRepo.save.mockRejectedValue(dbError);
 
-      const result = await repository.save(orderDomain);
+      const result = await repository.save(createOrderDto);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.cause).toBe(dbError);
+        expect((result.error as any).cause).toBe(dbError);
       }
     });
   });
 
   describe('update', () => {
     it('should successfully update an existing order', async () => {
-      const orderToUpdate = new Order({ id: 1, totalPrice: 999 });
-      const mergedEntity = { ...orderEntity, totalPrice: 999 };
+      const existing = { ...orderEntity };
+      const merged = {
+        ...existing,
+        ...updateOrderDto,
+        updatedAt: new Date('2025-08-13T15:00:00Z'),
+      };
 
-      mockTypeOrmRepository.findOne.mockResolvedValue(orderEntity);
-      mockTypeOrmRepository.merge.mockReturnValue(mergedEntity);
-      mockTypeOrmRepository.save.mockResolvedValue(mergedEntity);
+      mockOrmRepo.findOne.mockResolvedValue(existing);
+      mockOrmRepo.merge.mockReturnValue(merged);
+      mockOrmRepo.save.mockResolvedValue(merged);
 
-      const result = await repository.update(orderToUpdate);
+      const result = await repository.update(generatedId, updateOrderDto);
+
+      expect(mockOrmRepo.findOne).toHaveBeenCalledWith({
+        where: { id: generatedId },
+      });
+      expect(mockOrmRepo.merge).toHaveBeenCalledWith(
+        existing,
+        expect.objectContaining(updateOrderDto),
+      );
+      expect(mockOrmRepo.save).toHaveBeenCalledWith(merged);
 
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
-        expect(result.value).toBeUndefined();
+        expect(result.value).toEqual(merged);
       }
-      expect(ormRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(ormRepo.merge).toHaveBeenCalledWith(orderEntity, {
-        totalPrice: 999,
-      });
-      expect(ormRepo.save).toHaveBeenCalledWith(mergedEntity);
     });
 
-    it('should return a failure if the order to update is not found', async () => {
-      mockTypeOrmRepository.findOne.mockResolvedValue(null);
+    it('should return failure if order to update is not found', async () => {
+      mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.update(orderDomain);
+      const result = await repository.update(generatedId, updateOrderDto);
+
+      expect(mockOrmRepo.findOne).toHaveBeenCalledWith({
+        where: { id: generatedId },
+      });
+      expect(mockOrmRepo.merge).not.toHaveBeenCalled();
+      expect(mockOrmRepo.save).not.toHaveBeenCalled();
 
       expect(isFailure(result)).toBe(true);
-      expect(ormRepo.merge).not.toHaveBeenCalled();
-      expect(ormRepo.save).not.toHaveBeenCalled();
+      if (isFailure(result)) {
+        expect(result.error.message).toContain(
+          `Order with ID ${generatedId} not found`,
+        );
+      }
     });
 
-    it('should return a failure if the database throws an error during update', async () => {
-      mockTypeOrmRepository.findOne.mockResolvedValue(orderEntity);
-      mockTypeOrmRepository.save.mockRejectedValue(dbError);
+    it('should return failure if orm.save throws during update', async () => {
+      const existing = { ...orderEntity };
+      mockOrmRepo.findOne.mockResolvedValue(existing);
+      mockOrmRepo.merge.mockReturnValue({ ...existing, ...updateOrderDto });
+      mockOrmRepo.save.mockRejectedValue(dbError);
 
-      const result = await repository.update(orderDomain);
+      const result = await repository.update(generatedId, updateOrderDto);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.cause).toBe(dbError);
+        expect((result.error as any).cause).toBe(dbError);
       }
     });
   });
 
   describe('findById', () => {
-    it('should return the order when it is found', async () => {
-      mockTypeOrmRepository.findOne.mockResolvedValue(orderEntity);
+    it('should return the order when found', async () => {
+      mockOrmRepo.findOne.mockResolvedValue(orderEntity);
 
-      const result = await repository.findById(1);
+      const result = await repository.findById(generatedId);
 
+      expect(mockOrmRepo.findOne).toHaveBeenCalledWith({
+        where: { id: generatedId },
+      });
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
         expect(result.value).toEqual(orderEntity);
       }
-      expect(ormRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 
-    it('should return a failure when the order is not found', async () => {
-      mockTypeOrmRepository.findOne.mockResolvedValue(null);
+    it('should return failure when order is not found', async () => {
+      mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById(999);
+      const result = await repository.findById('missing-id');
 
+      expect(mockOrmRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'missing-id' },
+      });
       expect(isFailure(result)).toBe(true);
+      if (isFailure(result)) {
+        expect(result.error.message).toContain('Order not found');
+      }
     });
 
-    it('should return a failure if the database throws an error', async () => {
-      mockTypeOrmRepository.findOne.mockRejectedValue(dbError);
+    it('should return failure if orm throws', async () => {
+      mockOrmRepo.findOne.mockRejectedValue(dbError);
 
-      const result = await repository.findById(1);
+      const result = await repository.findById(generatedId);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.cause).toBe(dbError);
+        expect((result.error as any).cause).toBe(dbError);
       }
     });
   });
 
   describe('findAll', () => {
     it('should return a list of orders', async () => {
-      const orders = [orderEntity, { ...orderEntity, id: 2 }];
-      mockTypeOrmRepository.find.mockResolvedValue(orders);
+      const orders = [orderEntity, { ...orderEntity, id: 'OR0000002' }];
+      mockOrmRepo.find.mockResolvedValue(orders);
 
       const result = await repository.findAll();
 
+      expect(mockOrmRepo.find).toHaveBeenCalled();
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
-        expect(result.value).toHaveLength(2);
         expect(result.value).toEqual(orders);
+        expect(result.value).toHaveLength(2);
       }
     });
 
-    it('should return a failure when no orders are found', async () => {
-      mockTypeOrmRepository.find.mockResolvedValue([]);
+    it('should return failure when no orders are found', async () => {
+      mockOrmRepo.find.mockResolvedValue([]);
 
       const result = await repository.findAll();
 
+      expect(mockOrmRepo.find).toHaveBeenCalled();
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(result.error.message).toBe('Did not find any orders');
       }
     });
 
-    it('should return a failure if the database throws an error', async () => {
-      mockTypeOrmRepository.find.mockRejectedValue(dbError);
+    it('should return failure if orm.find throws', async () => {
+      mockOrmRepo.find.mockRejectedValue(dbError);
 
       const result = await repository.findAll();
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.cause).toBe(dbError);
+        expect((result.error as any).cause).toBe(dbError);
       }
     });
   });
 
   describe('deleteById', () => {
     it('should successfully delete an order', async () => {
-      mockTypeOrmRepository.delete.mockResolvedValue(undefined);
+      mockOrmRepo.delete.mockResolvedValue(undefined);
 
-      const result = await repository.deleteById(1);
+      const result = await repository.deleteById(generatedId);
 
+      expect(mockOrmRepo.delete).toHaveBeenCalledWith(generatedId);
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
         expect(result.value).toBeUndefined();
       }
-      expect(ormRepo.delete).toHaveBeenCalledWith(1);
     });
 
-    it('should return a failure if the database throws an error', async () => {
-      mockTypeOrmRepository.delete.mockRejectedValue(dbError);
+    it('should return failure if orm.delete throws', async () => {
+      mockOrmRepo.delete.mockRejectedValue(dbError);
 
-      const result = await repository.deleteById(1);
+      const result = await repository.deleteById(generatedId);
 
+      expect(mockOrmRepo.delete).toHaveBeenCalledWith(generatedId);
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
-        expect(result.error.cause).toBe(dbError);
+        expect((result.error as any).cause).toBe(dbError);
       }
     });
   });
