@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { GetOrderUseCase } from '../../../application/use-cases/GetOrder/getOrder.usecase';
-import { Order } from '../../../domain/entities/Order';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { isFailure, Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';

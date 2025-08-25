@@ -10,7 +10,10 @@ import {
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
 import { UpdateOrderDto } from './presentation/dto/update-order.dto';
 import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { OrderResponseDto } from './presentation/dto/order-response.dto';
 
+@ApiTags('orders')
 @Controller('orders')
 export class OrdersController {
   constructor(private getOrderController: GetOrderController) {}
@@ -26,6 +29,8 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get order by ID' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
   async findOne(@Param('id') id: string) {
     return this.getOrderController.handle(id);
   }
