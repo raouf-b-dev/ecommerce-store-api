@@ -1,7 +1,6 @@
 // src/modules/orders/presentation/controllers/get-order.controller.spec.ts
 import { GetOrderController } from './get-order.controller';
 import { GetOrderUseCase } from '../../../application/use-cases/GetOrder/getOrder.usecase';
-import { Order } from '../../../domain/entities/Order';
 import {
   isFailure,
   isSuccess,
