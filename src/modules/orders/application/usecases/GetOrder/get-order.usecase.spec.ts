@@ -7,7 +7,7 @@ import {
 } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
-import { GetOrderUseCase } from './getOrder.usecase';
+import { GetOrderUseCase } from './get-order.usecase';
 import { IOrder } from '../../../domain/interfaces/IOrder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 

@@ -1,6 +1,6 @@
 // src/modules/orders/presentation/controllers/get-order.controller.spec.ts
 import { GetOrderController } from './get-order.controller';
-import { GetOrderUseCase } from '../../../application/use-cases/GetOrder/getOrder.usecase';
+import { GetOrderUseCase } from '../../../application/usecases/GetOrder/get-order.usecase';
 import {
   isFailure,
   isSuccess,
@@ -22,39 +22,39 @@ describe('GetOrderController', () => {
       execute: jest.fn(),
     } as unknown as jest.Mocked<GetOrderUseCase>;
 
+    orderId = 'OR0000001';
+    mockOrder = {
+      id: orderId,
+      customerId: 'CU0000001',
+      items: [
+        {
+          id: 'item_1',
+          productId: 'PR0000001',
+          productName: 'Test Product',
+          unitPrice: 100,
+          quantity: 2,
+          lineTotal: 200,
+        },
+        {
+          id: 'item_2',
+          productId: 'PR0000002',
+          productName: 'Another Product',
+          unitPrice: 50,
+          quantity: 1,
+          lineTotal: 50,
+        },
+      ],
+      status: OrderStatus.PENDING,
+      totalPrice: 250,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+    } as IOrder;
+
     controller = new GetOrderController(mockGetOrderUseCase);
   });
 
   describe('handle', () => {
     it('should return success if order if found', async () => {
-      orderId = 'OR0000001';
-      mockOrder = {
-        id: orderId,
-        customerId: 'CU0000001',
-        items: [
-          {
-            id: 'item_1',
-            productId: 'PR0000001',
-            productName: 'Test Product',
-            unitPrice: 100,
-            quantity: 2,
-            lineTotal: 200,
-          },
-          {
-            id: 'item_2',
-            productId: 'PR0000002',
-            productName: 'Another Product',
-            unitPrice: 50,
-            quantity: 1,
-            lineTotal: 50,
-          },
-        ],
-        status: OrderStatus.PENDING,
-        totalPrice: 250,
-        createdAt: new Date('2025-01-01T10:00:00Z'),
-        updatedAt: new Date('2025-01-01T10:00:00Z'),
-      } as IOrder;
-
       mockGetOrderUseCase.execute.mockResolvedValue(Result.success(mockOrder));
 
       const result = await controller.handle(orderId);
