@@ -19,6 +19,7 @@ import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { OrderItemEntity } from './infrastructure/orm/order-item.schema';
 import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
 import { CreateOrderUseCase } from './application/usecases/CreateOrder/create-order.usecase';
+import { OrderFactory } from './domain/factories/order.factory';
 
 @Module({
   imports: [
@@ -52,6 +53,9 @@ import { CreateOrderUseCase } from './application/usecases/CreateOrder/create-or
       provide: OrderRepository,
       useExisting: REDIS_ORDER_REPOSITORY,
     },
+
+    // Domain
+    OrderFactory,
 
     // Use cases
     CreateOrderUseCase,
