@@ -2,8 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { RedisIndexInitializerService } from './redis-index-initializer.service';
 import { RedisSearchClient } from '../clients/redis-search.client';
-import { OrderIndexSchema } from '../constants/redis.schemas';
-import { Order_REDIS } from '../constants/redis.constants';
+import {
+  OrderIndexSchema,
+  ProductIndexSchema,
+} from '../constants/redis.schemas';
+import { Order_REDIS, Product_REDIS } from '../constants/redis.constants';
 
 describe('RedisIndexInitializerService', () => {
   let service: RedisIndexInitializerService;
@@ -36,23 +39,40 @@ describe('RedisIndexInitializerService', () => {
     jest.clearAllMocks();
   });
 
-  it('should call createIndex on module init', async () => {
+  it('should call createIndex for both order and product on module init', async () => {
     await service.onModuleInit();
 
-    expect(redisSearch.createIndex).toHaveBeenCalledWith(
+    expect(redisSearch.createIndex).toHaveBeenCalledTimes(2);
+
+    expect(redisSearch.createIndex).toHaveBeenNthCalledWith(
+      1,
       Order_REDIS.INDEX,
       OrderIndexSchema,
       `${Order_REDIS.CACHE_KEY}:`,
     );
-    expect(loggerLogSpy).toHaveBeenCalledWith(
+
+    expect(redisSearch.createIndex).toHaveBeenNthCalledWith(
+      2,
+      Product_REDIS.INDEX,
+      ProductIndexSchema,
+      `${Product_REDIS.CACHE_KEY}:`,
+    );
+
+    expect(loggerLogSpy).toHaveBeenNthCalledWith(
+      1,
       `Redis index '${Order_REDIS.INDEX}' initialized`,
+    );
+
+    expect(loggerLogSpy).toHaveBeenNthCalledWith(
+      2,
+      `Redis index '${Product_REDIS.INDEX}' initialized`,
     );
   });
 
-  it('should log "already exists" if error contains "Index already exists"', async () => {
-    (redisSearch.createIndex as jest.Mock).mockRejectedValueOnce(
-      new Error('Index already exists'),
-    );
+  it('should log "already exists" if order index already exists', async () => {
+    (redisSearch.createIndex as jest.Mock)
+      .mockResolvedValueOnce(Promise.reject(new Error('Index already exists')))
+      .mockResolvedValueOnce(undefined);
 
     await service.onModuleInit();
 
@@ -61,14 +81,42 @@ describe('RedisIndexInitializerService', () => {
     );
   });
 
-  it('should log an error if createIndex throws a different error', async () => {
-    const error = new Error('Unexpected failure');
-    (redisSearch.createIndex as jest.Mock).mockRejectedValueOnce(error);
+  it('should log "already exists" if product index already exists', async () => {
+    (redisSearch.createIndex as jest.Mock)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(Promise.reject(new Error('Index already exists')));
+
+    await service.onModuleInit();
+
+    expect(loggerLogSpy).toHaveBeenCalledWith(
+      `Redis index '${Product_REDIS.INDEX}' already exists`,
+    );
+  });
+
+  it('should log an error if order index creation fails unexpectedly', async () => {
+    const error = new Error('Unexpected order error');
+    (redisSearch.createIndex as jest.Mock)
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(undefined);
 
     await service.onModuleInit();
 
     expect(loggerErrorSpy).toHaveBeenCalledWith(
       `Failed to create index '${Order_REDIS.INDEX}'`,
+      error,
+    );
+  });
+
+  it('should log an error if product index creation fails unexpectedly', async () => {
+    const error = new Error('Unexpected product error');
+    (redisSearch.createIndex as jest.Mock)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(error);
+
+    await service.onModuleInit();
+
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      `Failed to create index '${Product_REDIS.INDEX}'`,
       error,
     );
   });
