@@ -1,16 +1,18 @@
 import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
-import { CreateOrderDto } from '../../presentation/dto/create-order.dto';
-import { UpdateOrderDto } from '../../presentation/dto/update-order.dto';
+import {
+  AggregatedOrderInput,
+  AggregatedUpdateInput,
+} from '../factories/order.factory';
 import { IOrder } from '../interfaces/IOrder';
 
 export abstract class OrderRepository {
   abstract save(
-    createOrderDto: CreateOrderDto,
+    createOrderDto: AggregatedOrderInput,
   ): Promise<Result<IOrder, RepositoryError>>;
   abstract update(
     id: string,
-    updateOrderDto: UpdateOrderDto,
+    updateOrderDto: AggregatedUpdateInput,
   ): Promise<Result<IOrder, RepositoryError>>;
   abstract findById(id: string): Promise<Result<IOrder, RepositoryError>>;
   abstract findAll(): Promise<Result<IOrder[], RepositoryError>>;

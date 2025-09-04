@@ -7,8 +7,10 @@ import { CacheService } from '../../../../../core/infrastructure/redis/cache/cac
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
 import { IOrder } from '../../../domain/interfaces/IOrder';
-import { CreateOrderDto } from '../../../presentation/dto/create-order.dto';
-import { UpdateOrderDto } from '../../../presentation/dto/update-order.dto';
+import {
+  AggregatedOrderInput,
+  AggregatedUpdateInput,
+} from '../../../domain/factories/order.factory';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
@@ -18,7 +20,7 @@ export class RedisOrderRepository implements OrderRepository {
   ) {}
 
   async save(
-    createOrderDto: CreateOrderDto,
+    createOrderDto: AggregatedOrderInput,
   ): Promise<Result<IOrder, RepositoryError>> {
     try {
       const saveResult = await this.postgresRepo.save(createOrderDto);
@@ -40,7 +42,7 @@ export class RedisOrderRepository implements OrderRepository {
 
   async update(
     id: string,
-    updateOrderDto: UpdateOrderDto,
+    updateOrderDto: AggregatedUpdateInput,
   ): Promise<Result<IOrder, RepositoryError>> {
     try {
       const updateResult = await this.postgresRepo.update(id, updateOrderDto);

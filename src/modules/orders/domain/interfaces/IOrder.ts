@@ -9,5 +9,5 @@ export interface IOrder {
   status: OrderStatus;
   totalPrice: number;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }

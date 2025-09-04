@@ -7,10 +7,12 @@ import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
 import { IOrder } from '../../../domain/interfaces/IOrder';
-import { CreateOrderDto } from '../../../presentation/dto/create-order.dto';
-import { UpdateOrderDto } from '../../../presentation/dto/update-order.dto';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RedisOrderRepository } from './redis.order-repository';
+import {
+  AggregatedOrderInput,
+  AggregatedUpdateInput,
+} from '../../../domain/factories/order.factory';
 
 describe('RedisOrderRepository', () => {
   let repository: RedisOrderRepository;
@@ -36,7 +38,7 @@ describe('RedisOrderRepository', () => {
     updatedAt: new Date('2024-01-01T00:00:00Z'),
   };
 
-  const mockCreateOrderDto: CreateOrderDto = {
+  const mockCreateOrderDto: AggregatedOrderInput = {
     customerId: 'customer-123',
     items: [
       {
@@ -48,9 +50,10 @@ describe('RedisOrderRepository', () => {
       },
     ],
     status: OrderStatus.PENDING,
+    totalPrice: 21.0,
   };
 
-  const mockUpdateOrderDto: UpdateOrderDto = {
+  const mockUpdateOrderDto: AggregatedUpdateInput = {
     status: OrderStatus.PAID,
   };
 
