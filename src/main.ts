@@ -3,9 +3,12 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ResultInterceptor } from './core/interceptors/result.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalInterceptors(new ResultInterceptor());
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisSearchClient } from '../clients/redis-search.client';
 import {
   OrderIndexSchema,
@@ -7,51 +7,35 @@ import {
 import { Order_REDIS, Product_REDIS } from '../constants/redis.constants';
 
 @Injectable()
-export class RedisIndexInitializerService {
+export class RedisIndexInitializerService implements OnModuleInit {
   private readonly logger = new Logger(RedisIndexInitializerService.name);
 
   constructor(private readonly redisSearch: RedisSearchClient) {}
 
   async onModuleInit() {
-    await this.initOrderIndex();
-    await this.initProductIndex();
+    await this.ensureIndex(
+      Order_REDIS.INDEX,
+      OrderIndexSchema,
+      Order_REDIS.CACHE_KEY,
+    );
+
+    await this.ensureIndex(
+      Product_REDIS.INDEX,
+      ProductIndexSchema,
+      Product_REDIS.CACHE_KEY,
+    );
   }
 
-  private async initOrderIndex() {
+  private async ensureIndex(index: string, schema: any, prefix: string) {
     try {
-      await this.redisSearch.createIndex(
-        Order_REDIS.INDEX,
-        OrderIndexSchema,
-        `${Order_REDIS.CACHE_KEY}:`,
-      );
-      this.logger.log(`Redis index '${Order_REDIS.INDEX}' initialized`);
-    } catch (error) {
+      await this.redisSearch.createIndex(index, schema, `${prefix}:`);
+      this.logger.log(`Redis index '${index}' created/ensured`);
+    } catch (error: any) {
       if (error?.message?.includes('Index already exists')) {
-        this.logger.log(`Redis index '${Order_REDIS.INDEX}' already exists`);
+        this.logger.log(`Redis index '${index}' already exists`);
+        // Optional: validate schema and re-create if mismatch
       } else {
-        this.logger.error(
-          `Failed to create index '${Order_REDIS.INDEX}'`,
-          error,
-        );
-      }
-    }
-  }
-  private async initProductIndex() {
-    try {
-      await this.redisSearch.createIndex(
-        Product_REDIS.INDEX,
-        ProductIndexSchema,
-        `${Product_REDIS.CACHE_KEY}:`,
-      );
-      this.logger.log(`Redis index '${Product_REDIS.INDEX}' initialized`);
-    } catch (error) {
-      if (error?.message?.includes('Index already exists')) {
-        this.logger.log(`Redis index '${Product_REDIS.INDEX}' already exists`);
-      } else {
-        this.logger.error(
-          `Failed to create index '${Product_REDIS.INDEX}'`,
-          error,
-        );
+        this.logger.error(`Failed to create index '${index}'`, error);
       }
     }
   }

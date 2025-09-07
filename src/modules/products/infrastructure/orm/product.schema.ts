@@ -1,6 +1,7 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 import { IProduct } from '../../domain/interfaces/IProduct';
+import { numericToNumber } from '../../../../core/infrastructure/database/number.transformer';
 
 @Entity({ name: 'products' })
 export class ProductEntity implements IProduct {
@@ -16,7 +17,7 @@ export class ProductEntity implements IProduct {
   @Column({ nullable: true })
   sku?: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', { precision: 12, scale: 2, transformer: numericToNumber })
   price: number;
 
   @Column({ name: 'stock_quantity', type: 'int' })
