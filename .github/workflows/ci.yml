@@ -60,8 +60,8 @@ jobs:
 
       - name: Install network and DB clients
         run: |
-          apt-get update -y
-          apt-get install -y netcat-openbsd redis-tools postgresql-client
+          sudo apt-get update -y
+          sudo apt-get install -y netcat-openbsd redis-tools postgresql-client
 
       - name: Wait for services, detect hosts and create .env.test
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
