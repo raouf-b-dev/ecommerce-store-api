@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // Creates .env.development/.env.production/.env.staging/.env.test from .env.example
+// Also creates .secrets from .secrets.example
+//
 // Usage:
-//   node scripts/generate-envs.js                  # all envs, blanking values except NODE_ENV & REDIS_KEYPREFIX
+//   node scripts/generate-envs.js
 //   node scripts/generate-envs.js --envs=development,staging
-//   node scripts/generate-envs.js --from=.env.example --force
-//   npm run env:init -- --force                    # via package.json script
+//   node scripts/generate-envs.js --from=.env.example --fromSecrets=.secrets.example --force
+//   npm run env:init -- --force
 
 const fs = require('fs');
 const fsp = fs.promises;
@@ -21,17 +23,17 @@ const ENV_LIST = (args.envs || 'development,production,staging,test')
   .map((s) => s.trim())
   .filter(Boolean);
 
-const TEMPLATE = args.from || '.env.example';
+const ENV_TEMPLATE = args.from || '.env.example';
+const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
 const FORCE = Boolean(args.force);
 
-// read template lines, keep order and comments
+// Helpers
 async function readTemplate(file) {
   const raw = await fsp.readFile(file, 'utf8').catch(() => '');
   return raw.split(/\r?\n/);
 }
 
 function isKV(line) {
-  // KEY=VALUE (ignore comments/blank)
   return /^[A-Za-z_][A-Za-z0-9_]*=/.test(line);
 }
 
@@ -41,58 +43,84 @@ function keyOf(line) {
 
 function buildLinesForEnv(lines, envName) {
   return lines.map((line) => {
-    if (!isKV(line)) return line; // keep comments/blank lines as-is
+    if (!isKV(line)) return line;
     const key = keyOf(line);
 
-    // by default, blank values but provide sensible env-specific defaults
     switch (key) {
       case 'NODE_ENV':
         return `NODE_ENV=${envName}`;
       case 'REDIS_KEYPREFIX':
         return `REDIS_KEYPREFIX=ecom:${envName}:`;
       case 'PORT':
-        // Keep dev/test default 3000; leave others blank if you prefer: change as needed
         return envName === 'development' || envName === 'test'
           ? 'PORT=3000'
           : 'PORT=';
       default:
-        // blank everything else to force developers to think about values
         return `${key}=`;
     }
   });
 }
 
-async function writeEnvFile(targetPath, contentLines) {
+async function writeFile(targetPath, contentLines) {
   await fsp.writeFile(targetPath, contentLines.join('\n'), {
     encoding: 'utf8',
     flag: 'w',
   });
 }
 
+// MAIN
 (async () => {
-  const templatePath = path.resolve(process.cwd(), TEMPLATE);
-  const templateLines = await readTemplate(templatePath);
+  // ENV files
+  const envTemplatePath = path.resolve(process.cwd(), ENV_TEMPLATE);
+  const envTemplateLines = await readTemplate(envTemplatePath);
 
-  if (templateLines.length === 0) {
-    console.error(`⚠️  Template not found or empty: ${TEMPLATE}`);
-    process.exit(1);
+  if (envTemplateLines.length === 0) {
+    console.error(`⚠️  Env template not found or empty: ${ENV_TEMPLATE}`);
+  } else {
+    for (const env of ENV_LIST) {
+      const outName = `.env.${env}`;
+      const outPath = path.resolve(process.cwd(), outName);
+
+      const exists = fs.existsSync(outPath);
+      if (exists && !FORCE) {
+        console.log(
+          `⏭️  Skipping ${outName} (exists). Use --force to overwrite.`,
+        );
+        continue;
+      }
+
+      const lines = buildLinesForEnv(envTemplateLines, env);
+      await writeFile(outPath, lines);
+
+      console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
+    }
   }
 
-  for (const env of ENV_LIST) {
-    const outName = `.env.${env}`;
-    const outPath = path.resolve(process.cwd(), outName);
+  // SECRETS file
+  const secretsTemplatePath = path.resolve(process.cwd(), SECRETS_TEMPLATE);
+  const secretsTemplateLines = await readTemplate(secretsTemplatePath);
 
-    const exists = fs.existsSync(outPath);
+  if (secretsTemplateLines.length === 0) {
+    console.error(
+      `⚠️  Secrets template not found or empty: ${SECRETS_TEMPLATE}`,
+    );
+  } else {
+    const outSecrets = `.secrets`;
+    const outSecretsPath = path.resolve(process.cwd(), outSecrets);
+
+    const exists = fs.existsSync(outSecretsPath);
     if (exists && !FORCE) {
       console.log(
-        `⏭️  Skipping ${outName} (exists). Use --force to overwrite.`,
+        `⏭️  Skipping ${outSecrets} (exists). Use --force to overwrite.`,
       );
-      continue;
+    } else {
+      // Keep keys from template, blank values to force filling
+      const lines = secretsTemplateLines.map((line) =>
+        isKV(line) ? `${keyOf(line)}=` : line,
+      );
+
+      await writeFile(outSecretsPath, lines);
+      console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outSecrets}`);
     }
-
-    const lines = buildLinesForEnv(templateLines, env);
-    await writeEnvFile(outPath, lines);
-
-    console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
   }
 })();
