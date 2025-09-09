@@ -1,6 +1,5 @@
 name: CI
 
-# Runs on pushes to master and when manually triggered.
 on:
   push:
     branches: [master]
@@ -16,25 +15,25 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
-    # Service containers for integration tests
     services:
       postgres:
-        # pinned minor version to avoid surprise changes
         image: postgres:16.3
         ports: ['5432:5432']
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -q"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
       redis:
-        image: redis/redis-stack:latest
+        image: redis/redis-stack:7.2.0-v18
         ports: ['6379:6379', '8001:8001']
+        env:
+          REDIS_ARGS: ${{ secrets.CI_REDIS_PASSWORD && format('--requirepass {0}', secrets.CI_REDIS_PASSWORD) || '' }}
         options: >-
           --health-cmd="redis-cli ping || exit 1"
           --health-interval=10s
@@ -43,8 +42,6 @@ jobs:
 
     env:
       NODE_ENV: test
-      DB_PORT: '5432'
-      REDIS_PORT: '6379'
 
     steps:
       - name: Checkout
@@ -61,79 +58,95 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      # Create .env.test only when workflow has access to repo secrets (skip on external fork PRs)
-      - name: Create .env.test from secrets
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          NODE_ENV: test
-          PORT: '3000'
-          DB_HOST: ${{ job.services.postgres.hostname }}
-          DB_PORT: ${{ env.DB_PORT }}
-          DB_USERNAME: ${{ secrets.CI_DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          DB_DATABASE: ${{ secrets.CI_DB_DATABASE }}
-          REDIS_HOST: ${{ job.services.redis.hostname }}
-          REDIS_PORT: ${{ env.REDIS_PORT }}
-          REDIS_PASSWORD: ${{ secrets.CI_REDIS_PASSWORD }}
-          REDIS_KEYPREFIX: ${{ secrets.CI_REDIS_KEYPREFIX }}
-          JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
-          JWT_EXPIRES_IN: ${{ secrets.CI_JWT_EXPIRES_IN }}
+      - name: Install network and DB clients
         run: |
-          # create .env.test without indentation or extra spaces
-          printf '%s\n' \
-            "NODE_ENV=${NODE_ENV}" \
-            "PORT=${PORT}" \
-            "" \
-            "DB_HOST=${DB_HOST}" \
-            "DB_PORT=${DB_PORT}" \
-            "DB_USERNAME=${DB_USERNAME}" \
-            "DB_PASSWORD=${DB_PASSWORD}" \
-            "DB_DATABASE=${DB_DATABASE}" \
-            "" \
-            "REDIS_HOST=${REDIS_HOST}" \
-            "REDIS_PORT=${REDIS_PORT}" \
-            "REDIS_PASSWORD=${REDIS_PASSWORD}" \
-            "REDIS_KEYPREFIX=${REDIS_KEYPREFIX}" \
-            "REDIS_DB=0" \
-            "" \
-            "JWT_SECRET=${JWT_SECRET}" \
-            "JWT_EXPIRES_IN=${JWT_EXPIRES_IN}" \
-            > .env.test
-          echo ".env.test created."
+          apt-get update -y
+          apt-get install -y netcat-openbsd redis-tools postgresql-client
 
-      # Wait for services to accept connections (defensive)
-      - name: Wait for services
+      - name: Wait for services, detect hosts and create .env.test
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          CI_DB_USERNAME: ${{ secrets.CI_DB_USERNAME }}
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+          CI_DB_DATABASE: ${{ secrets.CI_DB_DATABASE }}
+          CI_REDIS_PASSWORD: ${{ secrets.CI_REDIS_PASSWORD }}
+          CI_REDIS_KEYPREFIX: ${{ secrets.CI_REDIS_KEYPREFIX }}
+          CI_JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
+          CI_JWT_EXPIRES_IN: ${{ secrets.CI_JWT_EXPIRES_IN }}
         run: |
-          for i in {1..60}; do nc -z ${{ job.services.postgres.hostname }} 5432 && break; echo "waiting pg..."; sleep 1; done
-          for i in {1..60}; do nc -z ${{ job.services.redis.hostname }} 6379 && break; echo "waiting redis..."; sleep 1; done
+          set -euo pipefail
 
-      - name: Run DB migrations (test)
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: npm run migration:run:test
-        env:
-          NODE_ENV: test
-          DB_HOST: ${{ job.services.postgres.hostname }}
-          DB_PORT: ${{ env.DB_PORT }}
-          DB_USERNAME: ${{ secrets.CI_DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          DB_DATABASE: ${{ secrets.CI_DB_DATABASE }}
+          # Set defaults
+          DB_USER="${CI_DB_USERNAME:-postgres}"
+          DB_PASS="${CI_DB_PASSWORD:-postgres}"
+          DB_NAME="${CI_DB_DATABASE:-test_db}"
+          REDIS_PASS="${CI_REDIS_PASSWORD:-}"
+          REDIS_KEYPREFIX="${CI_REDIS_KEYPREFIX:-ecom:test:}"
+          JWT_SECRET="${CI_JWT_SECRET:-myjwtsecret}"
+          JWT_EXPIRES="${CI_JWT_EXPIRES_IN:-1h}"
 
-      - name: Run tests (CI)
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-        run: npm run test:ci
-        env:
-          NODE_ENV: test
-          DB_HOST: ${{ job.services.postgres.hostname }}
-          DB_PORT: ${{ env.DB_PORT }}
-          DB_USERNAME: ${{ secrets.CI_DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
-          DB_DATABASE: ${{ secrets.CI_DB_DATABASE }}
-          REDIS_HOST: ${{ job.services.redis.hostname }}
-          REDIS_PORT: ${{ env.REDIS_PORT }}
-          REDIS_PASSWORD: ${{ secrets.CI_REDIS_PASSWORD }}
+          # In GitHub Actions, services are accessible via localhost
+          PG_HOST="localhost"
+          REDIS_HOST_DETECTED="localhost"
 
-      # For fork PRs: run safe checks only (no secrets injected)
+          # Test PostgreSQL connection with retries
+          echo "Testing PostgreSQL connection..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U "${DB_USER}" -d "${DB_NAME}"; then
+              echo "PostgreSQL is ready at localhost:5432"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+          # Test Redis connection with retries
+          echo "Testing Redis connection..."
+          REDIS_CMD="redis-cli -h localhost -p 6379"
+          if [ -n "${REDIS_PASS}" ]; then
+            REDIS_CMD="${REDIS_CMD} -a ${REDIS_PASS}"
+          fi
+
+          for i in {1..30}; do
+            if $REDIS_CMD ping > /dev/null 2>&1; then
+              echo "Redis is ready at localhost:6379"
+              break
+            fi
+            echo "Waiting for Redis... ($i/30)"
+            sleep 2
+          done
+
+          # Write .env.test using the detected hosts
+          cat > .env.test << EOF
+          NODE_ENV=test
+          PORT=3000
+
+          DB_HOST=${PG_HOST}
+          DB_PORT=5432
+          DB_USERNAME=${DB_USER}
+          DB_PASSWORD=${DB_PASS}
+          DB_DATABASE=${DB_NAME}
+
+          REDIS_HOST=${REDIS_HOST_DETECTED}
+          REDIS_PORT=6379
+          REDIS_PASSWORD=${REDIS_PASS}
+          REDIS_KEYPREFIX=${REDIS_KEYPREFIX}
+          REDIS_DB=0
+
+          JWT_SECRET=${JWT_SECRET}
+          JWT_EXPIRES_IN=${JWT_EXPIRES}
+          EOF
+
+          echo ".env.test created with DB_HOST=${PG_HOST} and REDIS_HOST=${REDIS_HOST_DETECTED}"
+          echo "Contents of .env.test (passwords masked):"
+          sed 's/PASSWORD=.*/PASSWORD=***/g' .env.test
+
+          # Export the detected values as environment variables for subsequent steps
+          echo "DETECTED_DB_HOST=${PG_HOST}" >> $GITHUB_ENV
+          echo "DETECTED_REDIS_HOST=${REDIS_HOST_DETECTED}" >> $GITHUB_ENV
+          echo "DETECTED_DB_USER=${DB_USER}" >> $GITHUB_ENV
+          echo "DETECTED_DB_NAME=${DB_NAME}" >> $GITHUB_ENV
+
       - name: Safe checks for fork PRs (no secrets)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
@@ -142,11 +155,21 @@ jobs:
         env:
           NODE_ENV: test
 
+      - name: Run DB migrations (test)
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: npm run migration:run:test
+        env:
+          NODE_ENV: test
+
+      - name: Run tests (CI)
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: npm run test:ci
+        env:
+          NODE_ENV: test
+
       - name: Build
         run: npm run build
 
-      # Defensive cleanup to remove the .env file (always runs even on failure)
       - name: Cleanup .env.test
         if: always()
-        run: |
-          rm -f .env.test || true
+        run: rm -f .env.test || true
