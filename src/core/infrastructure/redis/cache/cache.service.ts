@@ -4,6 +4,13 @@ import { RedisJsonClient } from '../clients/redis-json.client';
 import { RedisKeyClient } from '../clients/redis-key.client';
 import { RedisSearchClient } from '../clients/redis-search.client';
 import { RedisService } from '../redis.service';
+import { SearchOptions } from '../types';
+
+interface SetOptions {
+  path?: string;
+  ttl?: number;
+  nx?: boolean;
+}
 
 @Injectable()
 export class CacheService {
@@ -26,8 +33,24 @@ export class CacheService {
   async getAll<T>(
     index: string,
     query: string = '*',
-    options?: FtSearchOptions,
+    searchOptions: SearchOptions = {},
   ): Promise<T[]> {
+    const { page = 1, limit = 10, sortBy, sortOrder = 'asc' } = searchOptions;
+
+    const options: FtSearchOptions = {
+      LIMIT: {
+        from: (page - 1) * limit,
+        size: limit,
+      },
+    };
+
+    if (sortBy) {
+      options.SORTBY = {
+        BY: sortBy,
+        DIRECTION: sortOrder.toUpperCase() as 'ASC' | 'DESC',
+      };
+    }
+
     const values = await this.searchClient.search(index, query, options);
     return values.documents.map((doc: any) => doc.value as T);
   }
@@ -35,24 +58,30 @@ export class CacheService {
   async set<T>(
     key: string,
     value: T,
-    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
+    { path = '$', ttl = 3600, nx = false }: SetOptions = {},
   ): Promise<void> {
-    await this.jsonClient.set(key, path, value as any);
+    await this.jsonClient.set(key, path, value as any, { nx });
     await this.keyClient.expire(key, ttl);
   }
 
   async setAll(
     entries: { key: string; value: any }[],
-    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
+    {
+      path = '$',
+      ttl = 3600,
+      nx = false,
+    }: { path?: string; ttl?: number; nx?: boolean } = {},
   ): Promise<void> {
     const pipeline = this.keyClient.createPipeline();
 
     for (const { key, value } of entries) {
       const fullKey = this.redisService.getFullKey(key);
-      pipeline.json.set(fullKey, path, value);
-      if (ttl) {
-        pipeline.expire(fullKey, ttl);
-      }
+
+      const args: any[] = [fullKey, path, value];
+      if (ttl) args.push('EX', ttl);
+      if (nx) args.push('NX');
+
+      (pipeline.json as any).set(...args);
     }
 
     await pipeline.exec();
@@ -89,6 +118,19 @@ export class CacheService {
 
   async delete(key: string): Promise<void> {
     await this.jsonClient.del(key);
+  }
+
+  async deletePattern(pattern: string): Promise<void> {
+    const keys = await this.scanKeys(pattern);
+    if (keys.length > 0) {
+      const pipeline = this.keyClient.createPipeline();
+      keys.forEach((key) => pipeline.del(key));
+      await pipeline.exec();
+    }
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return (await this.keyClient.exists(key)) === 1;
   }
 
   async search<T>(
