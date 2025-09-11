@@ -50,10 +50,7 @@ describe('CreateOrderController', () => {
       items: [
         {
           productId: 'product-1',
-          productName: 'Test Product',
           quantity: 2,
-          unitPrice: 10.5,
-          lineTotal: 21.0,
         },
       ],
       status: OrderStatus.PENDING,

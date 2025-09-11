@@ -22,8 +22,8 @@ describe('GetOrderUseCase', () => {
       findById: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
-      findAll: jest.fn(),
       deleteById: jest.fn(),
+      ListOrders: jest.fn(),
     };
 
     orderId = 'OR0000001';

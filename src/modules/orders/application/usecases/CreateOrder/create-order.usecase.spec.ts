@@ -25,8 +25,8 @@ describe('CreateOrderUseCase', () => {
       findById: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
-      findAll: jest.fn(),
       deleteById: jest.fn(),
+      ListOrders: jest.fn(),
     };
     orderFactory = new OrderFactory();
 
@@ -56,10 +56,7 @@ describe('CreateOrderUseCase', () => {
       items: [
         {
           productId: 'product-1',
-          productName: 'Test Product',
           quantity: 2,
-          unitPrice: 10.5,
-          lineTotal: 21.0,
         },
       ],
       status: OrderStatus.PENDING,
