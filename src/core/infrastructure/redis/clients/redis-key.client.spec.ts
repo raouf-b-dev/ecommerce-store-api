@@ -18,6 +18,7 @@ describe('RedisKeyClient', () => {
             client: {
               ttl: jest.fn(),
               expire: jest.fn(),
+              exists: jest.fn(), // Added missing exists method
               multi: jest.fn(),
               scan: jest.fn(),
             },
@@ -54,6 +55,36 @@ describe('RedisKeyClient', () => {
     expect(redisService.getFullKey).toHaveBeenCalledWith('key');
     expect(redisService.client.expire).toHaveBeenCalledWith('prefix:key', 500);
     expect(result).toBe(1);
+  });
+
+  it('expire should use default ttl when not provided', async () => {
+    redisService.getFullKey.mockReturnValue('prefix:key');
+    (redisService.client.expire as jest.Mock).mockResolvedValue(1);
+
+    const result = await service.expire('key');
+
+    expect(redisService.client.expire).toHaveBeenCalledWith('prefix:key', 3600);
+    expect(result).toBe(1);
+  });
+
+  it('exists should call getFullKey and client.exists', async () => {
+    redisService.getFullKey.mockReturnValue('prefix:key');
+    (redisService.client.exists as jest.Mock).mockResolvedValue(1);
+
+    const result = await service.exists('key');
+
+    expect(redisService.getFullKey).toHaveBeenCalledWith('key');
+    expect(redisService.client.exists).toHaveBeenCalledWith('prefix:key');
+    expect(result).toBe(1);
+  });
+
+  it('exists should return 0 when key does not exist', async () => {
+    redisService.getFullKey.mockReturnValue('prefix:nonexistent');
+    (redisService.client.exists as jest.Mock).mockResolvedValue(0);
+
+    const result = await service.exists('nonexistent');
+
+    expect(result).toBe(0);
   });
 
   it('createPipeline should call client.multi', () => {
@@ -95,5 +126,20 @@ describe('RedisKeyClient', () => {
     });
     expect(redisService.removePrefix).toHaveBeenCalledTimes(3);
     expect(result).toEqual(['key1', 'key2', 'key3']);
+  });
+
+  it('scanKeys should use default count when not provided', async () => {
+    redisService.getFullKey.mockReturnValue('prefix:pattern');
+    (redisService.client.scan as jest.Mock).mockResolvedValue({
+      cursor: '0',
+      keys: [],
+    });
+
+    await service.scanKeys('pattern');
+
+    expect(redisService.client.scan).toHaveBeenCalledWith('0', {
+      MATCH: 'prefix:pattern',
+      COUNT: 100,
+    });
   });
 });

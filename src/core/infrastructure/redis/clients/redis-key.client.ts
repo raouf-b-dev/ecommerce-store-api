@@ -15,6 +15,11 @@ export class RedisKeyClient {
     return await this.redisService.client.expire(fullKey, ttl);
   }
 
+  async exists(key: string): Promise<number> {
+    const fullKey = this.redisService.getFullKey(key);
+    return await this.redisService.client.exists(fullKey);
+  }
+
   createPipeline() {
     return this.redisService.client.multi();
   }

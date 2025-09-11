@@ -6,9 +6,22 @@ import { RedisService } from '../redis.service';
 export class RedisJsonClient {
   constructor(private readonly redisService: RedisService) {}
 
-  async set(key: string, path: string, value: RedisJSON): Promise<void> {
+  async set(
+    key: string,
+    path: string,
+    value: RedisJSON,
+    options: { nx?: boolean } = {},
+  ): Promise<boolean> {
     const fullKey = this.redisService.getFullKey(key);
-    await this.redisService.client.json.set(fullKey, path, value);
+
+    const res = await this.redisService.client.json.set(
+      fullKey,
+      path,
+      value,
+      options.nx ? { NX: true } : {},
+    );
+
+    return res === 'OK';
   }
 
   async merge(key: string, path: string, partial: RedisJSON): Promise<void> {
