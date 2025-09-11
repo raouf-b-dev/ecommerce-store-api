@@ -2,7 +2,6 @@ import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
 import { CreateProductDto } from '../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../presentation/dto/update-product.dto';
-import { Product } from '../entities/product';
 import { IProduct } from '../interfaces/IProduct';
 
 export abstract class ProductRepository {
