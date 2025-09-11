@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
@@ -13,6 +14,14 @@ import { numericToNumber } from '../../../../core/infrastructure/database/number
 import { OrderStatus } from '../../domain/value-objects/order-status';
 
 @Entity({ name: 'orders' })
+@Index('idx_orders_created_at_desc', ['createdAt'])
+@Index('idx_orders_customer_created', ['customerId', 'createdAt'])
+@Index('idx_orders_status_created', ['status', 'createdAt'])
+@Index('idx_orders_customer_status_created', [
+  'customerId',
+  'status',
+  'createdAt',
+])
 export class OrderEntity implements IOrder {
   @PrimaryColumn('varchar')
   id: string;
