@@ -1,10 +1,12 @@
 export const OrderIndexSchema = {
-  '$.id': { type: 'TEXT', AS: 'id' }, // lookup by order ID
-  '$.customerId': { type: 'TEXT', AS: 'customerId' }, // find orders per customer
-  '$.status': { type: 'TEXT', AS: 'status' }, // filter by status (pending, shipped, etc.)
-  '$.totalPrice': { type: 'NUMERIC', AS: 'totalPrice' }, // range queries ("orders > $100")
-  '$.createdAt': { type: 'TEXT', AS: 'createdAt' }, // for sorting/recent orders
+  '$.id': { type: 'TEXT', AS: 'id' },
+  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.status': { type: 'TEXT', AS: 'status' },
+  '$.totalPrice': { type: 'NUMERIC', AS: 'totalPrice', SORTABLE: true },
+  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
+  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
+
 export const ProductIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' }, // lookup by ID
   '$.name': { type: 'TEXT', AS: 'name' }, // search by name
