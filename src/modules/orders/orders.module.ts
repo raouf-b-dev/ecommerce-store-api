@@ -20,6 +20,8 @@ import { OrderItemEntity } from './infrastructure/orm/order-item.schema';
 import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
 import { CreateOrderUseCase } from './application/usecases/CreateOrder/create-order.usecase';
 import { OrderFactory } from './domain/factories/order.factory';
+import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
+import { ListOrdersUsecase } from './application/usecases/ListOrders/list-orders.usecase';
 
 @Module({
   imports: [
@@ -60,10 +62,12 @@ import { OrderFactory } from './domain/factories/order.factory';
     // Use cases
     CreateOrderUseCase,
     GetOrderUseCase,
+    ListOrdersUsecase,
 
     // Controllers
     CreateOrderController,
     GetOrderController,
+    ListOrdersController,
   ],
 })
 export class OrdersModule {}
