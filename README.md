@@ -1,176 +1,482 @@
-> ⚠️ **Read-only / No contributions accepted**  
-> This repository is a **private GitHub mirror** of the canonical Bitbucket repository.  
-> **All rights reserved © 2025 PrimeRaouf.** Do not copy, distribute, or use this code without explicit permission.
+# 🛒 E-commerce MVP API
 
-# ecommerce-mvp-api
+<p align="center"> <a href="https://github.com/PrimeRaouf/ecommerce-store-api/actions"><img src="https://github.com/PrimeRaouf/ecommerce-store-api/actions/workflows/CI.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-Private-red.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
 
-> A production-ready NestJS MVP API for an e-commerce store — Postgres, Redis, TypeORM, DDD, clean architecture, and Docker Compose.
-
-**Primary repository (Bitbucket)**: `https://rbdzmain@bitbucket.org/b_b_m_dev/ecommerce-store-api.git`  
-**GitHub mirror**: `https://github.com/PrimeRaouf/ecommerce-store-api.git`
-
----
+> A production-ready NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
 
 ## 📋 Table of Contents
 
-- [Prerequisites](#prerequisites)
-- [Features](#-features)
-- [Quick Start (Development)](#-quick-start-development)
-- [Testing](#-testing)
-- [Database (TypeORM)](#-database-typeorm)
-- [Environment Config](#-environment-config)
-- [Docker](#-docker)
-- [NPM Scripts](#-npm-scripts-most-used)
-- [Secrets](#-secrets)
-- [Project Structure](#-project-structure-excerpt)
-- [Troubleshooting](#-troubleshooting)
-- [Acknowledgments](#-acknowledgments)
+- [🌟 Key Features](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-key-features)
+- [🚀 Quick Start](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-quick-start)
+- [🧪 Testing](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-testing)
+- [🗄️ Database Management](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-database-management)
+- [🐳 Docker & Infrastructure](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-docker--infrastructure)
+- [🏗️ Project Architecture](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-project-architecture)
+- [🔧 Environment Configuration](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-environment-configuration)
+- [📜 Available Scripts](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-available-scripts)
+- [🚦 API Endpoints](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-api-endpoints)
+- [🔐 Security & Best Practices](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-security--best-practices)
+- [🛠️ Troubleshooting](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-troubleshooting)
+- [📊 Project Statistics](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-project-statistics)
+- [📄 License](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-license)
+- [🤝 Acknowledgments](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-acknowledgments)
+- [📞 Support](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-support)
 
 ---
 
-## 🖥 Prerequisites
+## 🌟 Key Features
 
-Tested environment:
+### 🏗️ **Architecture & Design**
+
+- **Domain-Driven Design (DDD)** with clear layer separation
+- **Clean Architecture** principles (presentation, application, domain, infrastructure)
+- **Result Pattern** for consistent error handling
+- **TypeScript** for type safety and better developer experience
+
+### 🛠️ **Technology Stack**
+
+- **NestJS** - Scalable Node.js framework
+- **PostgreSQL** with **TypeORM** - Robust relational database with migrations
+- **Redis** with **RedisJSON & RedisSearch** - Advanced caching and search capabilities
+- **Docker Compose** - Containerized development environment
+- **Swagger/OpenAPI** - Auto-generated API documentation
+
+### 🧪 **Quality Assurance**
+
+- **Comprehensive Unit Testing** with Jest
+- **High Test Coverage** across all layers
+- **GitHub Actions CI/CD** with automated testing
+- **ESLint + Prettier** for code quality
+- **Type-safe environment configuration**
+
+### 📦 **Core Modules**
+
+- **Product Management** - Complete CRUD with advanced filtering
+- **Order Processing** - Order lifecycle management
+- **Authentication** - JWT-based security
+- **Validation** - Request/response validation with class-validator
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+Ensure you have the following installed:
 
 - **Node.js** ≥ 22 (tested with v22.14.0)
 - **npm** ≥ 11 (tested with v11.4.2)
 - **Docker Desktop** ≥ 28 (tested with v28.3.2)
-- **Docker Compose v2** (`docker compose` command — tested with v2.39.1, included in Docker Desktop)
-- **Git** ≥ 2.49 (tested with v2.49.0)
-- (Optional) **PowerShell** ≥ 7.5.2 or WSL2/Git Bash for better Docker command compatibility on Windows
+- **Docker Compose v2** (`docker compose` command)
+- **Git** ≥ 2.49
 
----
+### Installation
 
-## ✨ Features
+1.  **Clone the repository**
 
-- NestJS + TypeScript
-- PostgreSQL (TypeORM) & Redis
-- Domain-Driven Design (presentation, application, domain, infrastructure layers)
-- Result pattern, custom errors, and consistent error handling
-- Unit tests across layers (Jest)
-- Docker Compose for per-environment infrastructure
+    ```bash
+    git clone https://github.com/PrimeRaouf/ecommerce-store-api.git
+    cd ecommerce-store-api
 
----
+    ```
 
-## 🚀 Quick Start (Development)
+2.  **Install dependencies**
 
-1. **Clone & install**
+    ```bash
+    npm install
 
-   ```bash
-   git clone https://github.com/PrimeRaouf/ecommerce-store-api.git
-   cd ecommerce-store-api
-   npm i
-   ```
+    ```
 
-2. **Generate env files**  
-   Creates `.env.development`, `.env.production`, `.env.staging`, `.env.test` from `.env.example`:
+3.  **Generate environment files**
 
-   ```bash
-   npm run env:init
-   # or single env
-   npm run env:init:dev
-   ```
+    ```bash
+    # Generate all environment files
+    npm run env:init
 
-3. **Fill in secrets**  
-   Update the generated `.env.*` files with DB, Redis, JWT, and other secrets.
+    # Or generate specific environment
+    npm run env:init:dev
 
-4. **Start infrastructure** (Postgres, Redis):
+    ```
 
-   ```bash
-   npm run d:up:dev
-   ```
+4.  **Configure environment variables**
 
-5. **Run the API**
-   ```bash
-   npm run start:dev
-   ```
+    Update the generated `.env.*` files with your secrets:
+
+    - Database credentials
+    - Redis configuration
+    - JWT secrets
+    - Other service configurations
+
+5.  **Start infrastructure services**
+
+    ```bash
+    npm run d:up:dev
+
+    ```
+
+6.  **Run database migrations**
+
+    ```bash
+    npm run migration:run:dev
+
+    ```
+
+7.  **Start the development server**
+
+    ```bash
+    npm run start:dev
+
+    ```
+
+The API will be available at `http://localhost:3000` 🎉
+
+📖 **API Documentation**: `http://localhost:3000/api` (Swagger UI)
 
 ---
 
 ## 🧪 Testing
 
-- Unit tests: `npm test`
-- Watch mode: `npm run test:watch`
-- Coverage: `npm run test:cov`
-- E2E: `npm run test:e2e`
+Our testing strategy ensures high code quality and reliability:
 
-> Tests use `.env.test` and can run isolated infrastructure via Docker Compose when needed.
+```bash
+# Run all tests
+npm test
 
----
+# Watch mode for development
+npm run test:watch
 
-## 🐘 Database (TypeORM)
+# Generate coverage report
+npm run test:cov
 
-- Generate: `npm run migration:generate -- <Name>`
-- Run: `npm run migration:run`
-- Revert: `npm run migration:revert`
+# Run E2E tests
+npm run test:e2e
 
-> Make sure Postgres is up (`npm run d:up:dev`) and env vars are set.
+# CI mode (used in GitHub Actions)
+npm run test:ci
 
----
+```
 
-## 🔧 Environment Config
+### Test Coverage
 
-- Env files are **gitignored**; `.env.example` is the canonical key list.
-- Create per-env files: `.env.development`, `.env.staging`, `.env.production`, `.env.test`.
-- Use `scripts/generate-envs.js` to scaffold from `.env.example`.
-
----
-
-## 🐳 Docker
-
-- **Up (dev)**: `npm run d:up:dev`
-- **Down (dev)**: `npm run d:down:dev`
-- Replace `dev` with `staging`, `prod`, or `test` as needed.
-
-> `docker-compose.yaml` reads values from `.env.<env>` via `--env-file`.
+- **Unit Tests**: Domain logic, services, and utilities
+- **Integration Tests**: Database interactions and Redis caching
+- **E2E Tests**: Complete API endpoint testing
+- **Coverage Reporting**: Detailed coverage metrics with Jest
 
 ---
 
-## 📜 NPM Scripts (Most Used)
+## 🗄️ Database Management
 
-- `start:dev` — Nest in watch mode
-- `d:up:<env>` / `d:down:<env>` — Docker Compose up/down with env file
-- `test`, `test:watch`, `test:cov`, `test:e2e`
-- `migration:*` — TypeORM migrations
-- `env:init` — Generate `.env.*` files from `.env.example`
+### Migrations with TypeORM
 
-Full list available in `package.json`.
+```bash
+# Generate migration from entity changes
+npm run migration:generate:dev -- CreateProductTable
+
+# Create empty migration
+npm run migration:create:dev -- AddProductIndex
+
+# Run pending migrations
+npm run migration:run:dev
+
+# Revert last migration
+npm run migration:revert:dev
+
+# Show migration status
+npm run migration:show:dev
+
+```
+
+### Multi-Environment Support
+
+Replace `:dev` with `:prod`, `:staging`, or `:test` for different environments.
 
 ---
 
-## 🔐 Secrets
+## 🐳 Docker & Infrastructure
 
-- Never commit real secrets.
-- For production, prefer AWS Secrets Manager, Vault, or OS-level file permission restrictions.
+### Docker Compose Commands
+
+```bash
+# Development environment
+npm run d:up:dev      # Start services
+npm run d:down:dev    # Stop services
+npm run d:reset:dev   # Reset with fresh data
+
+# Production environment
+npm run d:up:prod
+npm run d:down:prod
+npm run d:reset:prod
+
+# Other environments: staging, test
+npm run d:up:staging
+npm run d:up:test
+
+```
+
+### Services Included
+
+- **PostgreSQL 16.3** - Primary database
+- **Redis Stack 7.2** - Caching and search (includes RedisJSON & RedisSearch)
+- **Custom networking** for service communication
 
 ---
 
-## 🧰 Project Structure (excerpt)
+## 🏗️ Project Architecture
+
+### Clean Architecture Layers
 
 ```
 src/
-  modules/
-  main.ts
-  ...
-docker-compose.yaml
-.env.example
-.env.development (gitignored)
-.env.staging     (gitignored)
-.env.production  (gitignored)
-.env.test        (gitignored)
+├── modules/                 # Feature modules
+│   ├── product/            # Product domain module
+│   │   ├── application/    # Use cases & DTOs
+│   │   ├── domain/         # Entities & domain logic
+│   │   ├── infrastructure/ # Repositories & external services
+│   │   └── presentation/   # Controllers & validation
+│   └── order/              # Order domain module
+├── shared/                 # Shared utilities & types
+├── config/                 # Configuration modules
+└── main.ts                 # Application bootstrap
+
 ```
+
+### Design Principles
+
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+- **Single Responsibility**: Each class has one reason to change
+- **Open/Closed**: Open for extension, closed for modification
+- **Interface Segregation**: Many client-specific interfaces
 
 ---
 
-## 🧭 Troubleshooting
+## 🔧 Environment Configuration
 
-- **Docker fails with missing envs**: ensure `.env.<env>` exists and you’re using the right script (e.g., `d:up:dev`).
-- **Migrations can’t connect**: check DB env vars and Postgres container status.
-- **Jest open handles**: run `npm run test:ci` (in band mode, detects open handles).
+### Environment Files
+
+- `.env.development` - Development settings
+- `.env.staging` - Staging environment
+- `.env.production` - Production configuration
+- `.env.test` - Testing environment
+- `.env.example` - Template with all required keys
+
+### Key Configuration Areas
+
+- **Database Connection** (PostgreSQL)
+- **Redis Configuration** (connection, keyspace)
+- **JWT Authentication** (secrets, expiration)
+- **API Settings** (port, CORS, rate limiting)
+
+---
+
+## 📜 Available Scripts
+
+### Development
+
+- `start:dev` - Start in watch mode
+- `start:debug` - Start with debugging
+- `build` - Build for production
+- `lint` - Run ESLint with auto-fix
+
+### Testing
+
+- `test` - Run unit tests
+- `test:watch` - Run tests in watch mode
+- `test:cov` - Generate coverage report
+- `test:e2e` - Run end-to-end tests
+- `test:ci` - Run tests in CI mode
+
+### Database
+
+- `migration:generate:*` - Generate new migration
+- `migration:run:*` - Apply migrations
+- `migration:revert:*` - Rollback migration
+
+### Docker
+
+- `d:up:*` - Start environment services
+- `d:down:*` - Stop environment services
+- `d:reset:*` - Reset environment with fresh data
+
+### Utilities
+
+- `env:init` - Generate all environment files
+- `clean` - Remove build artifacts
+
+---
+
+## 🚦 API Endpoints
+
+### Core Resources
+
+Method
+
+Endpoint
+
+Description
+
+`GET`
+
+`/api/products`
+
+List products with filtering
+
+`POST`
+
+`/api/products`
+
+Create new product
+
+`GET`
+
+`/api/products/:id`
+
+Get product details
+
+`PUT`
+
+`/api/products/:id`
+
+Update product
+
+`DELETE`
+
+`/api/products/:id`
+
+Delete product
+
+`GET`
+
+`/api/orders`
+
+List user orders
+
+`POST`
+
+`/api/orders`
+
+Create new order
+
+`GET`
+
+`/api/orders/:id`
+
+Get order details
+
+### Documentation
+
+Full API documentation with request/response schemas available at: **`http://localhost:3000/api`** when running locally.
+
+---
+
+## 🔐 Security & Best Practices
+
+### Security Features
+
+- **JWT Authentication** with secure token handling
+- **Input Validation** with class-validator decorators
+- **SQL Injection Prevention** with TypeORM query builders
+- **CORS Configuration** for cross-origin requests
+- **Rate Limiting** (configurable per endpoint)
+
+### Development Best Practices
+
+- **TypeScript** for compile-time type checking
+- **ESLint + Prettier** for consistent code style
+- **Husky Git Hooks** for pre-commit validation
+- **Environment-based Configuration** for different deployment stages
+- **Comprehensive Error Handling** with custom exceptions
+
+---
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+#### Docker Services Won't Start
+
+```bash
+# Check if ports are in use
+lsof -i :5432  # PostgreSQL
+lsof -i :6379  # Redis
+
+# Reset Docker environment
+npm run d:reset:dev
+
+```
+
+#### Migration Errors
+
+```bash
+# Ensure database is running
+npm run d:up:dev
+
+# Check connection with migration status
+npm run migration:show:dev
+
+# Reset database if needed (⚠️ DATA LOSS)
+npm run d:reset:dev
+npm run migration:run:dev
+
+```
+
+#### Test Failures
+
+```bash
+# Run tests in isolation
+npm run test:ci
+
+# Check for open handles
+npm run test -- --detectOpenHandles
+
+# Ensure test database is clean
+npm run d:reset:test
+
+```
+
+### Environment Issues
+
+- Verify all required environment variables are set
+- Check `.env.example` for the complete list of required keys
+- Ensure Docker services are healthy before running the application
+
+---
+
+## 📊 Project Statistics
+
+- **Languages**: TypeScript 100%
+- **Test Coverage**: High (run `npm run test:cov` for details)
+- **Build Status**: Automated CI/CD with GitHub Actions
+- **Dependencies**: Always up-to-date with security patches
+
+---
+
+## 📄 License
+
+**All rights reserved © 2025 PrimeRaouf.**
+
+This repository is private. Do not copy, distribute, or use this code without explicit permission.
 
 ---
 
 ## 🤝 Acknowledgments
 
-Built by **PrimeRaouf**  
-GitHub: [https://github.com/PrimeRaouf/ecommerce-store-api](https://github.com/PrimeRaouf/ecommerce-store-api)
+- **NestJS Team** for the excellent framework
+- **TypeORM** for robust database management
+- **Redis** for high-performance caching
+- **Jest** for comprehensive testing capabilities
+
+---
+
+## 📞 Support
+
+For questions, issues, or contributions:
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/PrimeRaouf/ecommerce-store-api/issues)
+- **GitHub Repository**: [https://github.com/PrimeRaouf/ecommerce-store-api](https://github.com/PrimeRaouf/ecommerce-store-api)
+
+---
+
+**Built with ❤️ by [PrimeRaouf](https://github.com/PrimeRaouf)**
+
+_Crafting production-ready APIs with clean architecture and modern best practices_

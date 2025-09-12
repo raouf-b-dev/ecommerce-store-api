@@ -9,13 +9,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
-import { UpdateOrderDto } from './presentation/dto/update-order.dto';
 import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrderResponseDto } from './presentation/dto/order-response.dto';
 import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
 import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
+import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -24,6 +24,7 @@ export class OrdersController {
     private getOrderController: GetOrderController,
     private createOrderController: CreateOrderController,
     private listOrdersController: ListOrdersController,
+    private cancelOrderController: CancelOrderController,
   ) {}
 
   @Post()
@@ -45,9 +46,11 @@ export class OrdersController {
     return this.getOrderController.handle(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    // return this.ordersService.update(+id, updateOrderDto);
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Cancel an order' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async cancelOrder(@Param('id') id: string) {
+    return this.cancelOrderController.handle(id);
   }
 
   @Delete(':id')

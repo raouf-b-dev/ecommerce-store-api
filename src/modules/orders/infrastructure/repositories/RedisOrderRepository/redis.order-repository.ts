@@ -22,7 +22,7 @@ export class RedisOrderRepository implements OrderRepository {
     private readonly postgresRepo: OrderRepository,
   ) {}
 
-  async ListOrders(
+  async listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], RepositoryError>> {
     try {
@@ -68,7 +68,7 @@ export class RedisOrderRepository implements OrderRepository {
         }
       }
 
-      const dbResult = await this.postgresRepo.ListOrders(listOrdersQueryDto);
+      const dbResult = await this.postgresRepo.listOrders(listOrdersQueryDto);
       if (dbResult.isFailure) {
         return dbResult;
       }
@@ -181,6 +181,19 @@ export class RedisOrderRepository implements OrderRepository {
       return Result.success<void>(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to delete order`, error);
+    }
+  }
+
+  async cancelById(id: string): Promise<Result<IOrder, RepositoryError>> {
+    try {
+      const cancelResult = await this.postgresRepo.cancelById(id);
+      if (cancelResult.isFailure) return cancelResult;
+      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${id}`);
+      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+
+      return Result.success<IOrder>(cancelResult.value);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(`Failed to cancel order`, error);
     }
   }
 }

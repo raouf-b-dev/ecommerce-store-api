@@ -6,20 +6,25 @@ import { CreateOrderDto } from './presentation/dto/create-order.dto';
 import { OrderStatus } from './domain/value-objects/order-status';
 import { IOrder } from './domain/interfaces/IOrder';
 import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
+import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
   let createOrderController: CreateOrderController;
   let getOrderController: GetOrderController;
   let listOrdersController: ListOrdersController;
+  let cancelOrderController: CancelOrderController;
 
   let id: string;
   let mockOrder: IOrder;
+  let cancelledOrder: IOrder;
   let mockCreateOrderDto: CreateOrderDto;
 
   beforeEach(async () => {
+    id = 'OR00000001';
+
     mockOrder = {
-      id: '123e4567-e89b-12d3-a456-426614174000',
+      id,
       customerId: 'customer-123',
       items: [
         {
@@ -35,6 +40,11 @@ describe('OrdersController', () => {
       totalPrice: 21.0,
       createdAt: new Date('2024-01-01T00:00:00Z'),
       updatedAt: new Date('2024-01-01T00:00:00Z'),
+    } as IOrder;
+
+    cancelledOrder = {
+      ...mockOrder,
+      status: OrderStatus.CANCELLED,
     } as IOrder;
 
     mockCreateOrderDto = {
@@ -69,10 +79,14 @@ describe('OrdersController', () => {
             handle: jest.fn().mockResolvedValue([mockOrder]),
           },
         },
+        {
+          provide: CancelOrderController,
+          useValue: {
+            handle: jest.fn().mockResolvedValue(cancelledOrder),
+          },
+        },
       ],
     }).compile();
-
-    id = 'OR00000001';
 
     controller = module.get<OrdersController>(OrdersController);
     createOrderController = module.get<CreateOrderController>(
@@ -81,6 +95,9 @@ describe('OrdersController', () => {
     getOrderController = module.get<GetOrderController>(GetOrderController);
     listOrdersController =
       module.get<ListOrdersController>(ListOrdersController);
+    cancelOrderController = module.get<CancelOrderController>(
+      CancelOrderController,
+    );
   });
 
   afterEach(() => {
@@ -110,5 +127,11 @@ describe('OrdersController', () => {
     const res = await controller.findAll(query);
     expect(listOrdersController.handle).toHaveBeenCalledWith(query);
     expect(res).toEqual([mockOrder]);
+  });
+
+  it('should call CancelOrderController.handle when cancelOrder is called and return its result', async () => {
+    const res = await controller.cancelOrder(id);
+    expect(cancelOrderController.handle).toHaveBeenCalledWith(id);
+    expect(res).toEqual(cancelledOrder);
   });
 });

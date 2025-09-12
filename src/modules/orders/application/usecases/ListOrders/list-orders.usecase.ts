@@ -16,7 +16,7 @@ export class ListOrdersUsecase
     dto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], UseCaseError>> {
     try {
-      const ordersResult = await this.orderRepository.ListOrders(dto);
+      const ordersResult = await this.orderRepository.listOrders(dto);
       if (ordersResult.isFailure) {
         return ordersResult;
       }

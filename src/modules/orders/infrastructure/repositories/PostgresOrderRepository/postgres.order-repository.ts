@@ -18,6 +18,10 @@ import {
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import { OrderItem } from '../../../domain/entities/OrderItem';
 import { Money } from '../../../domain/value-objects/money';
+import {
+  OrderStatus,
+  OrderStatusVO,
+} from '../../../domain/value-objects/order-status';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -27,7 +31,7 @@ export class PostgresOrderRepository implements OrderRepository {
     private readonly dataSource: DataSource,
     private readonly idGeneratorService: IdGeneratorService,
   ) {}
-  async ListOrders(
+  async listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], RepositoryError>> {
     try {
@@ -370,6 +374,55 @@ export class PostgresOrderRepository implements OrderRepository {
       return Result.success<void>(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to delete the order', error);
+    }
+  }
+
+  async cancelById(id: string): Promise<Result<IOrder, RepositoryError>> {
+    try {
+      const updatedOrder = await this.dataSource.transaction(
+        async (manager) => {
+          const existingOrder = await manager.findOne(OrderEntity, {
+            where: { id },
+            relations: ['items'],
+          });
+
+          if (!existingOrder) {
+            throw new RepositoryError(
+              `ORDER_NOT_FOUND: Order with ID ${id} not found`,
+            );
+          }
+
+          const currentStatus = new OrderStatusVO(existingOrder.status);
+
+          if (!currentStatus.canTransitionTo(OrderStatus.CANCELLED)) {
+            throw new RepositoryError(
+              `ORDER_CANNOT_BE_CANCELLED: Cannot cancel order with status "${currentStatus.value}"`,
+            );
+          }
+
+          // Restore product stock
+          for (const item of existingOrder.items) {
+            await manager
+              .createQueryBuilder()
+              .update(ProductEntity)
+              .set({ stockQuantity: () => `stock_quantity + ${item.quantity}` })
+              .where('id = :id', { id: item.productId })
+              .execute();
+          }
+
+          // Update order status
+          existingOrder.status = OrderStatus.CANCELLED;
+          existingOrder.updatedAt = new Date();
+
+          const savedOrder = await manager.save(existingOrder);
+          return savedOrder as IOrder;
+        },
+      );
+
+      return Result.success<IOrder>(updatedOrder);
+    } catch (error: any) {
+      if (error instanceof RepositoryError) return Result.failure(error);
+      return ErrorFactory.RepositoryError('Failed to cancel order', error);
     }
   }
 }

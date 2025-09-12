@@ -16,8 +16,9 @@ export abstract class OrderRepository {
     updateOrderDto: AggregatedUpdateInput,
   ): Promise<Result<IOrder, RepositoryError>>;
   abstract findById(id: string): Promise<Result<IOrder, RepositoryError>>;
-  abstract ListOrders(
+  abstract listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], RepositoryError>>;
+  abstract cancelById(id: string): Promise<Result<IOrder, RepositoryError>>;
   abstract deleteById(id: string): Promise<Result<void, RepositoryError>>;
 }

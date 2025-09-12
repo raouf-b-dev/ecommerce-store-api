@@ -22,6 +22,8 @@ import { CreateOrderUseCase } from './application/usecases/CreateOrder/create-or
 import { OrderFactory } from './domain/factories/order.factory';
 import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
 import { ListOrdersUsecase } from './application/usecases/ListOrders/list-orders.usecase';
+import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
+import { CancelOrderUseCase } from './application/usecases/CancelOrder/cancel-order.usecase';
 
 @Module({
   imports: [
@@ -63,11 +65,13 @@ import { ListOrdersUsecase } from './application/usecases/ListOrders/list-orders
     CreateOrderUseCase,
     GetOrderUseCase,
     ListOrdersUsecase,
+    CancelOrderUseCase,
 
     // Controllers
     CreateOrderController,
     GetOrderController,
     ListOrdersController,
+    CancelOrderController,
   ],
 })
 export class OrdersModule {}

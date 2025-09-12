@@ -159,7 +159,7 @@ describe('PostgresOrderRepository', () => {
 
   describe('ListOrders', () => {
     it('should return orders with default pagination/sort', async () => {
-      const result = await repository.ListOrders({});
+      const result = await repository.listOrders({});
       expect(isSuccess(result)).toBe(true);
       if (isSuccess(result)) {
         expect(Array.isArray(result.value)).toBe(true);
@@ -179,7 +179,7 @@ describe('PostgresOrderRepository', () => {
         page: 2,
         limit: 5,
       };
-      const result = await repository.ListOrders(dto);
+      const result = await repository.listOrders(dto);
 
       expect(isSuccess(result)).toBe(true);
 
@@ -196,7 +196,7 @@ describe('PostgresOrderRepository', () => {
         throw dbError;
       });
 
-      const result = await repository.ListOrders({});
+      const result = await repository.listOrders({});
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {
         expect(
@@ -525,6 +525,98 @@ describe('PostgresOrderRepository', () => {
         expect(
           (result.error as any).cause || (result.error as any).original,
         ).toBeDefined();
+      }
+    });
+  });
+
+  describe('cancelById', () => {
+    beforeEach(() => {
+      mockManager.findOne = jest.fn().mockResolvedValue({
+        ...orderEntity,
+        items: [
+          {
+            productId: 'PR0000001',
+            quantity: 2,
+          },
+        ],
+      });
+
+      mockManager.createQueryBuilder.mockReturnValue(mockTxQb);
+      mockTxQb.update.mockReturnThis();
+      mockTxQb.set.mockReturnThis();
+      mockTxQb.where.mockReturnThis();
+      mockTxQb.execute.mockResolvedValue({ affected: 1 });
+
+      mockManager.save = jest.fn().mockResolvedValue({
+        ...orderEntity,
+        status: OrderStatus.CANCELLED,
+        updatedAt: new Date(),
+      });
+    });
+
+    it('should successfully cancel an order by ID', async () => {
+      const result = await repository.cancelById(generatedId);
+
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockManager.findOne).toHaveBeenCalledWith(OrderEntity, {
+        where: { id: generatedId },
+        relations: ['items'],
+      });
+
+      expect(mockManager.createQueryBuilder).toHaveBeenCalled();
+      expect(mockTxQb.update).toHaveBeenCalledWith(ProductEntity);
+      expect(mockTxQb.set).toHaveBeenCalled();
+      expect(mockTxQb.where).toHaveBeenCalled();
+
+      expect(mockManager.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: OrderStatus.CANCELLED }),
+      );
+
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
+        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      }
+    });
+
+    it('should return failure if no order was found', async () => {
+      mockManager.findOne.mockResolvedValue(null);
+
+      const result = await repository.cancelById(generatedId);
+
+      expect(isFailure(result)).toBe(true);
+      if (isFailure(result)) {
+        expect(result.error.message).toContain(
+          `ORDER_NOT_FOUND: Order with ID ${generatedId} not found`,
+        );
+      }
+    });
+
+    it('should return RepositoryError if query builder throws', async () => {
+      mockTxQb.execute.mockRejectedValue(dbError);
+
+      const result = await repository.cancelById(generatedId);
+
+      expect(isFailure(result)).toBe(true);
+      if (isFailure(result)) {
+        expect(result.error).toBeInstanceOf(RepositoryError);
+        expect(
+          (result.error as any).cause || (result.error as any).original,
+        ).toBeDefined();
+      }
+    });
+
+    it('should return failure if order status cannot be cancelled', async () => {
+      mockManager.findOne.mockResolvedValue({
+        ...orderEntity,
+        status: OrderStatus.SHIPPED,
+        items: [],
+      });
+
+      const result = await repository.cancelById(generatedId);
+
+      expect(isFailure(result)).toBe(true);
+      if (isFailure(result)) {
+        expect(result.error.message).toContain('ORDER_CANNOT_BE_CANCELLED');
       }
     });
   });

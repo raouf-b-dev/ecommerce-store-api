@@ -37,13 +37,13 @@ describe('ListOrdersUsecase', () => {
 
   beforeEach(() => {
     mockRepo = {
-      ListOrders: jest.fn(),
+      listOrders: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       findById: jest.fn(),
-      findAll: jest.fn(),
       deleteById: jest.fn(),
-    } as any;
+      cancelById: jest.fn(),
+    };
 
     usecase = new ListOrdersUsecase(mockRepo);
   });
@@ -55,11 +55,11 @@ describe('ListOrdersUsecase', () => {
   it('returns success with list of orders when repository returns success', async () => {
     const dto: ListOrdersQueryDto = {};
 
-    mockRepo.ListOrders.mockResolvedValue(Result.success([sampleOrder]));
+    mockRepo.listOrders.mockResolvedValue(Result.success([sampleOrder]));
 
     const result = await usecase.execute(dto);
 
-    expect(mockRepo.ListOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepo.listOrders).toHaveBeenCalledWith(dto);
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value).toEqual([sampleOrder]);
@@ -69,11 +69,11 @@ describe('ListOrdersUsecase', () => {
   it('propagates repository failure as usecase failure', async () => {
     const dto: ListOrdersQueryDto = {};
     const repoErr = new RepositoryError('repo failed');
-    mockRepo.ListOrders.mockResolvedValue(Result.failure(repoErr));
+    mockRepo.listOrders.mockResolvedValue(Result.failure(repoErr));
 
     const result = await usecase.execute(dto);
 
-    expect(mockRepo.ListOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepo.listOrders).toHaveBeenCalledWith(dto);
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error).toBe(repoErr);
@@ -83,11 +83,11 @@ describe('ListOrdersUsecase', () => {
   it('returns UseCaseError when repository throws an unexpected error', async () => {
     const dto: ListOrdersQueryDto = {};
     const thrown = new Error('boom');
-    mockRepo.ListOrders.mockRejectedValue(thrown);
+    mockRepo.listOrders.mockRejectedValue(thrown);
 
     const result = await usecase.execute(dto);
 
-    expect(mockRepo.ListOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepo.listOrders).toHaveBeenCalledWith(dto);
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error).toBeInstanceOf(UseCaseError);

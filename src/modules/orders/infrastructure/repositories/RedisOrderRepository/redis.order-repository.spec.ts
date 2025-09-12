@@ -61,12 +61,13 @@ describe('RedisOrderRepository', () => {
       getAll: jest.fn(),
       setAll: jest.fn(),
     };
-    const mockPostgresRepo = {
+    const mockPostgresRepo: jest.Mocked<OrderRepository> = {
       save: jest.fn(),
       update: jest.fn(),
       findById: jest.fn(),
       deleteById: jest.fn(),
-      ListOrders: jest.fn(),
+      listOrders: jest.fn(),
+      cancelById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -233,7 +234,7 @@ describe('RedisOrderRepository', () => {
       cacheService.getAll.mockResolvedValue([mockCachedOrder]);
 
       const dto: ListOrdersQueryDto = {};
-      const result = await repository.ListOrders(dto);
+      const result = await repository.listOrders(dto);
 
       expect(result.isSuccess).toBe(true);
       if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
@@ -241,12 +242,12 @@ describe('RedisOrderRepository', () => {
 
     it('should fetch from postgres and cache if no cache', async () => {
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.ListOrders.mockResolvedValue(Result.success([mockOrder]));
+      postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockResolvedValue(undefined);
 
       const dto: ListOrdersQueryDto = {};
-      const result = await repository.ListOrders(dto);
+      const result = await repository.listOrders(dto);
 
       expect(result.isSuccess).toBe(true);
       if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
@@ -269,6 +270,42 @@ describe('RedisOrderRepository', () => {
 
       expect(result.isFailure).toBe(true);
       expect(spy).toHaveBeenCalledWith('Failed to save order', originalError);
+    });
+  });
+
+  describe('cancelById', () => {
+    const cancelledOrder: IOrder = {
+      ...mockOrder,
+      status: OrderStatus.CANCELLED,
+    };
+
+    it('should cancel order in postgres and update cache', async () => {
+      postgresRepo.cancelById.mockResolvedValue(Result.success(cancelledOrder));
+      cacheService.delete.mockResolvedValue(undefined);
+
+      const result = await repository.cancelById(mockOrder.id);
+
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess)
+        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+
+      expect(cacheService.delete).toHaveBeenCalledWith(
+        `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
+      );
+      expect(cacheService.delete).toHaveBeenCalledWith(
+        Order_REDIS.IS_CACHED_FLAG,
+      );
+    });
+
+    it('should return failure if postgres cancel fails', async () => {
+      const error = new RepositoryError('Cancel failed');
+      postgresRepo.cancelById.mockResolvedValue(Result.failure(error));
+
+      const result = await repository.cancelById(mockOrder.id);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) expect(result.error).toEqual(error);
+      expect(cacheService.set).not.toHaveBeenCalled();
     });
   });
 });
