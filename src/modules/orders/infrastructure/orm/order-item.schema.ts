@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
   JoinColumn,
 } from 'typeorm';
-import type { OrderEntity } from './order.schema';
+import { OrderEntity } from './order.schema';
 import { IOrderItem } from '../../domain/interfaces/IOrderItem';
 import { numericToNumber } from '../../../../core/infrastructure/database/number.transformer';
 
@@ -40,11 +40,9 @@ export class OrderItemEntity implements IOrderItem {
   })
   lineTotal: number;
 
-  @ManyToOne(
-    () => require('./order.schema').OrderEntity,
-    (order: OrderEntity) => order.items,
-    { onDelete: 'CASCADE' },
-  )
+  @ManyToOne(() => OrderEntity, (order: OrderEntity) => order.items, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
 }

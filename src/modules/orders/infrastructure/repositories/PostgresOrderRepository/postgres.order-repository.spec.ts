@@ -76,7 +76,6 @@ describe('PostgresOrderRepository', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // ListOrders QB factory: returns a qb with spyable methods
     const createListQueryBuilder = () => {
       const qb: any = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -89,7 +88,6 @@ describe('PostgresOrderRepository', () => {
       return qb;
     };
 
-    // A single, reusable mock query builder for transactional tests.
     mockTxQb = {
       update: jest.fn().mockReturnThis(),
       set: jest.fn().mockReturnThis(),
@@ -104,7 +102,6 @@ describe('PostgresOrderRepository', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       delete: jest.fn(),
-      // createQueryBuilder used by ListOrders
       createQueryBuilder: jest.fn().mockImplementation(createListQueryBuilder),
     };
 
@@ -113,7 +110,6 @@ describe('PostgresOrderRepository', () => {
     } as any;
 
     mockManager = {
-      // **FIX**: Always return the same mock query builder instance
       createQueryBuilder: jest.fn().mockReturnValue(mockTxQb),
       exists: jest.fn().mockResolvedValue(true),
       create: jest
@@ -121,17 +117,14 @@ describe('PostgresOrderRepository', () => {
         .mockImplementation((EntityClass: any, payload: any) => ({
           ...payload,
         })),
-      save: jest
-        .fn()
-        .mockImplementation(async (entity: any) => ({ ...entity })),
+      save: jest.fn(),
       findOne: jest.fn(),
-      find: jest.fn().mockResolvedValue([mockProduct]), // Default to returning the mock product
+      find: jest.fn().mockResolvedValue([mockProduct]),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
 
     mockDataSource = {
-      transaction: jest.fn().mockImplementation(async (cb: any) => {
-        // invoke the callback with our mock manager
+      transaction: jest.fn().mockImplementation((cb: any) => {
         return cb(mockManager);
       }),
     };

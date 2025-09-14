@@ -10,7 +10,6 @@ describe('IdGeneratorService', () => {
   let queryRunner: jest.Mocked<QueryRunner>;
 
   beforeEach(async () => {
-    // Create mock QueryRunner
     queryRunner = {
       connect: jest.fn(),
       startTransaction: jest.fn(),
@@ -20,7 +19,6 @@ describe('IdGeneratorService', () => {
       query: jest.fn(),
     } as any;
 
-    // Create mock DataSource
     dataSource = {
       createQueryRunner: jest.fn().mockReturnValue(queryRunner as any),
       query: jest.fn(),
@@ -69,6 +67,24 @@ describe('IdGeneratorService', () => {
 
       expect(result).toBe('OR0000123');
     });
+
+    it('should throw if result is missing or malformed', async () => {
+      queryRunner.query.mockResolvedValue([]);
+      await expect(service.generateOrderId()).rejects.toThrow(
+        'Failed to retrieve current_value from id_sequences',
+      );
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
+      expect(queryRunner.release).toHaveBeenCalledTimes(1);
+
+      jest.clearAllMocks();
+
+      queryRunner.query.mockResolvedValue([{ current_value: 'not-a-number' }]);
+      await expect(service.generateOrderId()).rejects.toThrow(
+        'Failed to retrieve current_value from id_sequences',
+      );
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
+      expect(queryRunner.release).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('generateProductId', () => {
@@ -112,14 +128,11 @@ describe('IdGeneratorService', () => {
     });
 
     it('should rollback transaction on database error', async () => {
-      // Arrange
       const dbError = new Error('Database connection failed');
       queryRunner.query.mockRejectedValue(dbError);
 
-      // Ensure rollbackTransaction resolves (normal rollback)
       queryRunner.rollbackTransaction.mockResolvedValue(undefined);
 
-      // Act & Assert
       await expect(service.generateOrderId()).rejects.toThrow(dbError);
       expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
       expect(queryRunner.release).toHaveBeenCalledTimes(1);
@@ -138,16 +151,12 @@ describe('IdGeneratorService', () => {
     });
 
     it('should release query runner even if rollback fails', async () => {
-      // Arrange
       const dbError = new Error('Database error');
       const rollbackError = new Error('Rollback failed');
 
       queryRunner.query.mockRejectedValue(dbError);
-      // Simulate rollback failing
       queryRunner.rollbackTransaction.mockRejectedValue(rollbackError);
 
-      // Act & Assert
-      // When rollback rejects, that rejection surfaces (observed runtime behaviour)
       await expect(service.generateOrderId()).rejects.toThrow(rollbackError);
       expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
       expect(queryRunner.release).toHaveBeenCalledTimes(1);
@@ -177,14 +186,11 @@ describe('IdGeneratorService', () => {
     });
   });
 
-  // The following tests assume the service exposes getCurrentSequenceValue and resetSequence
   describe('getCurrentSequenceValue and resetSequence', () => {
     it('should return current sequence value when record exists', async () => {
       const mockResult = [{ current_value: 150 }];
       dataSource.query = jest.fn().mockResolvedValue(mockResult);
 
-      // Call method directly on service (using dataSource mock)
-      // @ts-ignore - dataSource is private in service; tests assume service methods call dataSource.query
       const val = await service.getCurrentSequenceValue('ORDER');
       expect(val).toBe(150);
       expect((dataSource.query as jest.Mock).mock.calls[0][0]).toContain(
@@ -253,13 +259,12 @@ describe('IdGeneratorService', () => {
 
       jest.clearAllMocks();
       queryRunner.query.mockRejectedValue(new Error('Test error'));
-      // make rollback succeed
       queryRunner.rollbackTransaction.mockResolvedValue(undefined);
 
       try {
         await service.generateOrderId();
       } catch (e) {
-        // expected
+        expect(e).toBeInstanceOf(Error);
       }
       expect(queryRunner.release).toHaveBeenCalledTimes(1);
     });

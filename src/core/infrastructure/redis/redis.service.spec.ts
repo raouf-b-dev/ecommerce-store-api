@@ -1,7 +1,9 @@
+// src/core/infrastructure/redis/redis.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
 import { EnvConfigService } from '../../../config/env-config.service';
 import { createClient } from 'redis';
+import { Logger } from '@nestjs/common';
 
 jest.mock('redis', () => ({
   createClient: jest.fn(),
@@ -11,8 +13,17 @@ describe('RedisService', () => {
   let service: RedisService;
   let mockClient: any;
   let mockEnvConfig: any;
+  let logger: jest.Mocked<Logger>;
 
   beforeEach(async () => {
+    const mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+    };
+
     mockClient = {
       connect: jest.fn(),
       quit: jest.fn(),
@@ -35,10 +46,12 @@ describe('RedisService', () => {
       providers: [
         RedisService,
         { provide: EnvConfigService, useValue: mockEnvConfig },
+        { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
 
     service = module.get<RedisService>(RedisService);
+    logger = module.get(Logger);
   });
 
   afterEach(() => {
@@ -56,6 +69,22 @@ describe('RedisService', () => {
       });
       expect(mockClient.on).toHaveBeenCalledWith('error', expect.any(Function));
       expect(mockClient.connect).toHaveBeenCalled();
+    });
+
+    it('should log error when redis emits error event', async () => {
+      await service.onModuleInit();
+
+      const errorHandler = mockClient.on.mock.calls.find(
+        (call) => call[0] === 'error',
+      )[1];
+
+      const testError = new Error('Redis failed');
+      errorHandler(testError);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Redis Client Error',
+        testError,
+      );
     });
   });
 

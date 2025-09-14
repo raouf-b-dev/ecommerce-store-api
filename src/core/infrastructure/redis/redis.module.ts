@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { RedisKeyClient } from './clients/redis-key.client';
 import { RedisSearchClient } from './clients/redis-search.client';
@@ -15,6 +15,7 @@ import { RedisJsonClient } from './clients/redis-json.client';
     RedisSearchClient,
     CacheService,
     RedisIndexInitializerService,
+    Logger,
   ],
   exports: [
     CacheService,

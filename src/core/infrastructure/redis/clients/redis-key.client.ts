@@ -37,7 +37,7 @@ export class RedisKeyClient {
       });
 
       const nextCursor = result.cursor;
-      const keys = result.keys.map((key: string) =>
+      const keys: string[] = result.keys.map((key: string) =>
         this.redisService.removePrefix(key),
       );
 

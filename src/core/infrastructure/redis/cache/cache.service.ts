@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { FtSearchOptions } from 'redis';
+import { FtSearchOptions, RedisJSON } from 'redis';
 import { RedisJsonClient } from '../clients/redis-json.client';
 import { RedisKeyClient } from '../clients/redis-key.client';
 import { RedisSearchClient } from '../clients/redis-search.client';
@@ -60,7 +60,7 @@ export class CacheService {
     value: T,
     { path = '$', ttl = 3600, nx = false }: SetOptions = {},
   ): Promise<void> {
-    await this.jsonClient.set(key, path, value as any, { nx });
+    await this.jsonClient.set(key, path, value as RedisJSON, { nx });
     await this.keyClient.expire(key, ttl);
   }
 
@@ -81,7 +81,7 @@ export class CacheService {
       if (ttl) args.push('EX', ttl);
       if (nx) args.push('NX');
 
-      (pipeline.json as any).set(...args);
+      pipeline.json.set(...args);
     }
 
     await pipeline.exec();
@@ -92,7 +92,7 @@ export class CacheService {
     partial: Partial<T>,
     { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
   ): Promise<T | null> {
-    await this.jsonClient.merge(key, path, partial as any);
+    await this.jsonClient.merge(key, path, partial as RedisJSON);
     if (ttl) {
       await this.keyClient.expire(key, ttl);
     }

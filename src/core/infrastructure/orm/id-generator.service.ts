@@ -35,26 +35,32 @@ export class IdGeneratorService {
     entityType: string,
     prefix: string,
   ): Promise<string> {
-    // Use a transaction to ensure thread safety
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const result = await queryRunner.query(
+      const rawResult = await queryRunner.query(
         `
-        INSERT INTO id_sequences (entity_type, prefix, current_value, created_at, updated_at)
-        VALUES ($1, $2, 1, NOW(), NOW())
-        ON CONFLICT (entity_type) 
-        DO UPDATE SET 
-          current_value = id_sequences.current_value + 1,
-          updated_at = NOW()
-        RETURNING current_value
+      INSERT INTO id_sequences (entity_type, prefix, current_value, created_at, updated_at)
+      VALUES ($1, $2, 1, NOW(), NOW())
+      ON CONFLICT (entity_type) 
+      DO UPDATE SET 
+        current_value = id_sequences.current_value + 1,
+        updated_at = NOW()
+      RETURNING current_value
       `,
         [entityType, prefix],
       );
 
       await queryRunner.commitTransaction();
+
+      // Narrow the type safely
+      const result = rawResult as Array<{ current_value: number }>;
+
+      if (!result[0] || typeof result[0].current_value !== 'number') {
+        throw new Error('Failed to retrieve current_value from id_sequences');
+      }
 
       const currentValue = result[0].current_value;
       return this.formatId(prefix, currentValue);

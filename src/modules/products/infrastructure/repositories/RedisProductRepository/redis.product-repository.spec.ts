@@ -25,12 +25,19 @@ describe('RedisProductRepository', () => {
 
   beforeEach(() => {
     cacheService = {
-      set: jest.fn(),
-      setAll: jest.fn(),
+      ttl: jest.fn(),
       get: jest.fn(),
       getAll: jest.fn(),
+      set: jest.fn(),
+      setAll: jest.fn(),
+      merge: jest.fn(),
+      mergeAll: jest.fn(),
       delete: jest.fn(),
-    } as any;
+      deletePattern: jest.fn(),
+      exists: jest.fn(),
+      search: jest.fn(),
+      scanKeys: jest.fn(),
+    } as unknown as jest.Mocked<CacheService>;
 
     postgresRepo = {
       save: jest.fn(),
@@ -38,7 +45,7 @@ describe('RedisProductRepository', () => {
       findById: jest.fn(),
       findAll: jest.fn(),
       deleteById: jest.fn(),
-    } as any;
+    };
 
     repo = new RedisProductRepository(cacheService, postgresRepo);
 

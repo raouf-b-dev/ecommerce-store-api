@@ -1,5 +1,5 @@
 // src/order/infrastructure/redis-order.repository.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Result } from '../../../../../core/domain/result';
@@ -20,6 +20,7 @@ export class RedisOrderRepository implements OrderRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: OrderRepository,
+    private readonly logger: Logger,
   ) {}
 
   async listOrders(
@@ -61,7 +62,7 @@ export class RedisOrderRepository implements OrderRepository {
             return Result.success<IOrder[]>(orders);
           }
         } catch (cacheError) {
-          console.warn(
+          this.logger.warn(
             'Cache lookup failed, falling back to database:',
             cacheError,
           );
@@ -89,7 +90,7 @@ export class RedisOrderRepository implements OrderRepository {
             ttl: Order_REDIS.EXPIRATION,
           });
         } catch (cacheError) {
-          console.warn('Failed to cache orders:', cacheError);
+          this.logger.warn('Failed to cache orders:', cacheError);
         }
       }
       return Result.success<IOrder[]>(orders);

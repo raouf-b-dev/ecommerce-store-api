@@ -16,11 +16,13 @@ import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.
 import { OrderMapper } from '../../utils/order.mapper';
 import { OrderForCache } from '../../utils/order.type';
 import { RedisOrderRepository } from './redis.order-repository';
+import { Logger } from '@nestjs/common';
 
 describe('RedisOrderRepository', () => {
   let repository: RedisOrderRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: jest.Mocked<OrderRepository>;
+  let logger: jest.Mocked<Logger>;
 
   const mockOrder: IOrder = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -54,6 +56,14 @@ describe('RedisOrderRepository', () => {
   };
 
   beforeEach(async () => {
+    const mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+    };
+
     const mockCacheService = {
       get: jest.fn(),
       set: jest.fn(),
@@ -75,12 +85,14 @@ describe('RedisOrderRepository', () => {
         RedisOrderRepository,
         { provide: CacheService, useValue: mockCacheService },
         { provide: OrderRepository, useValue: mockPostgresRepo },
+        { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
 
     repository = module.get(RedisOrderRepository);
     cacheService = module.get(CacheService);
     postgresRepo = module.get(OrderRepository);
+    logger = module.get(Logger);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -256,6 +268,34 @@ describe('RedisOrderRepository', () => {
         Order_REDIS.IS_CACHED_FLAG,
         'true',
         { ttl: Order_REDIS.EXPIRATION },
+      );
+    });
+
+    it('should log a warning if cache lookup fails', async () => {
+      cacheService.get.mockRejectedValue(new Error('Redis down'));
+      postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
+
+      const result = await repository.listOrders({});
+
+      expect(result.isSuccess).toBe(true);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Cache lookup failed, falling back to database:',
+        expect.any(Error),
+      );
+    });
+
+    it('should log a warning if caching orders fails', async () => {
+      cacheService.get.mockResolvedValue(null); // no cache hit
+      postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
+
+      cacheService.setAll.mockRejectedValue(new Error('Redis write failed'));
+
+      const result = await repository.listOrders({});
+
+      expect(result.isSuccess).toBe(true);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Failed to cache orders:',
+        expect.any(Error),
       );
     });
   });

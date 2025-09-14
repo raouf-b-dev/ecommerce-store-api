@@ -54,7 +54,7 @@ export class OrdersController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') _id: string) {
     // return this.ordersService.remove(+id);
   }
 }

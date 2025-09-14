@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersController } from './orders.controller';
@@ -46,8 +46,9 @@ import { CancelOrderUseCase } from './application/usecases/CancelOrder/cancel-or
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresOrderRepository,
+        logger: Logger,
       ) => {
-        return new RedisOrderRepository(cacheService, postgresRepo);
+        return new RedisOrderRepository(cacheService, postgresRepo, logger);
       },
       inject: [CacheService, POSTGRES_ORDER_REPOSITORY],
     },
