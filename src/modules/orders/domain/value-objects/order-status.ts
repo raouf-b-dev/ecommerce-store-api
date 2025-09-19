@@ -2,7 +2,9 @@
 export enum OrderStatus {
   PENDING = 'pending',
   PAID = 'paid',
+  PROCESSING = 'processing',
   SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
 }
 
@@ -28,8 +30,16 @@ export class OrderStatusVO {
     return this._status === OrderStatus.PAID;
   }
 
+  isProcessing(): boolean {
+    return this._status === OrderStatus.PROCESSING;
+  }
+
   isShipped(): boolean {
     return this._status === OrderStatus.SHIPPED;
+  }
+
+  isDelivered(): boolean {
+    return this._status === OrderStatus.DELIVERED;
   }
 
   isCancelled(): boolean {
@@ -39,8 +49,10 @@ export class OrderStatusVO {
   canTransitionTo(newStatus: OrderStatus): boolean {
     const transitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
-      [OrderStatus.PAID]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-      [OrderStatus.SHIPPED]: [], // Final state
+      [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
+      [OrderStatus.DELIVERED]: [], // Final state
       [OrderStatus.CANCELLED]: [], // Final state
     };
 
@@ -63,8 +75,16 @@ export class OrderStatusVO {
     return new OrderStatusVO(OrderStatus.PAID);
   }
 
+  static processing(): OrderStatusVO {
+    return new OrderStatusVO(OrderStatus.PROCESSING);
+  }
+
   static shipped(): OrderStatusVO {
     return new OrderStatusVO(OrderStatus.SHIPPED);
+  }
+
+  static delivered(): OrderStatusVO {
+    return new OrderStatusVO(OrderStatus.DELIVERED);
   }
 
   static cancelled(): OrderStatusVO {
