@@ -16,12 +16,12 @@ import {
   AggregatedUpdateInput,
 } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
-import { OrderItem } from '../../../domain/entities/OrderItem';
-import { Money } from '../../../domain/value-objects/money';
+import { OrderItemProps } from '../../../domain/entities/order-items';
 import {
   OrderStatus,
   OrderStatusVO,
 } from '../../../domain/value-objects/order-status';
+import { Order } from '../../../domain/entities/order';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -141,52 +141,43 @@ export class PostgresOrderRepository implements OrderRepository {
           }
         }
 
-        const domainOrderItems: OrderItem[] = createOrderDto.items.map(
+        const domainOrderItems: OrderItemProps[] = createOrderDto.items.map(
           (itemDto) => {
             const product = productMap.get(itemDto.productId)!;
 
-            const unitPriceFromDb = product.price;
-            const domainItem = new OrderItem({
+            return {
               productId: product.id,
               productName: product.name,
-              unitPrice: unitPriceFromDb,
+              unitPrice: product.price,
               quantity: itemDto.quantity,
-            });
-
-            return domainItem;
+            };
           },
         );
 
-        let totalMoney = Money.zero();
-        for (const di of domainOrderItems) {
-          totalMoney = totalMoney.add(di.lineTotal);
-        }
-        const computedTotal = totalMoney.value;
-
-        const orderItemEntities = domainOrderItems.map((di) => {
-          const p = di.toPrimitives();
-          return manager.create(OrderItemEntity, {
-            productId: p.productId,
-            productName: p.productName,
-            unitPrice: p.unitPrice,
-            quantity: p.quantity,
-            lineTotal: p.lineTotal,
-          });
-        });
-
         const orderId = await this.idGeneratorService.generateOrderId();
-        const order: IOrder = {
+
+        const domainOrder = Order.create({
           id: orderId,
           customerId: createOrderDto.customerId,
-          status: createOrderDto.status,
-          totalPrice: computedTotal,
+          items: domainOrderItems,
+        });
+
+        const orderPrimitives = domainOrder.toPrimitives();
+
+        const orderItemEntities = domainOrder.items.map((item) => {
+          return manager.create(OrderItemEntity, item.toPrimitives());
+        });
+
+        const completeOrder: IOrder = {
+          ...orderPrimitives,
           items: orderItemEntities,
-          createdAt: new Date(),
         };
 
-        const newOrder = manager.create(OrderEntity, order);
-        const saved = await manager.save(newOrder);
-        return saved as IOrder;
+        const orderEntity = manager.create(OrderEntity, completeOrder);
+
+        const savedEntity = await manager.save(orderEntity);
+
+        return savedEntity;
       });
 
       return Result.success<IOrder>(savedOrder);
@@ -203,19 +194,19 @@ export class PostgresOrderRepository implements OrderRepository {
     try {
       const updatedOrder = await this.dataSource.transaction(
         async (manager) => {
-          const existingOrder = await manager.findOne(OrderEntity, {
+          const existingOrderEntity = await manager.findOne(OrderEntity, {
             where: { id },
             relations: ['items'],
           });
 
-          if (!existingOrder) {
+          if (!existingOrderEntity) {
             throw new RepositoryError(
               `ORDER_NOT_FOUND: Order with ID ${id} not found`,
             );
           }
 
           const oldMap = new Map<string, number>();
-          for (const it of existingOrder.items || []) {
+          for (const it of existingOrderEntity.items || []) {
             const prev = oldMap.get(it.productId) ?? 0;
             oldMap.set(it.productId, prev + it.quantity);
           }
@@ -234,6 +225,7 @@ export class PostgresOrderRepository implements OrderRepository {
                 where: { id: In(allProductIds) },
               })
             : [];
+
           const productMap = new Map<string, ProductEntity>();
           for (const p of products) productMap.set(p.id, p);
 
@@ -293,52 +285,41 @@ export class PostgresOrderRepository implements OrderRepository {
             }
           }
 
-          existingOrder.updatedAt = new Date();
-          existingOrder.customerId =
-            updateOrderDto.customerId ?? existingOrder.customerId;
-          existingOrder.status = updateOrderDto.status ?? existingOrder.status;
-
           if (updateOrderDto.items) {
-            const domainOrderItems: OrderItem[] = updateOrderDto.items.map(
+            const newDomainItems: OrderItemProps[] = updateOrderDto.items.map(
               (itemDto) => {
                 const product = productMap.get(itemDto.productId)!;
-
-                const domainItem = new OrderItem({
+                return {
                   productId: product.id,
                   productName: product.name,
                   unitPrice: product.price,
                   quantity: itemDto.quantity,
-                });
-
-                return domainItem;
+                };
               },
             );
 
-            let totalMoney = Money.zero();
-            for (const di of domainOrderItems) {
-              totalMoney = totalMoney.add(di.lineTotal);
-            }
-            const computedTotal = totalMoney.value;
-
-            const newOrderItemEntities = domainOrderItems.map((di) => {
-              const p = di.toPrimitives();
-              return manager.create(OrderItemEntity, {
-                productId: p.productId,
-                productName: p.productName,
-                unitPrice: p.unitPrice,
-                quantity: p.quantity,
-                lineTotal: p.lineTotal,
-              });
+            const newDomainOrder = new Order({
+              ...existingOrderEntity,
+              items: newDomainItems,
+              updatedAt: new Date(),
             });
 
             await manager.delete(OrderItemEntity, { order: { id } as any });
 
-            existingOrder.items = newOrderItemEntities;
-            existingOrder.totalPrice = computedTotal;
+            const orderPrimitives = newDomainOrder.toPrimitives();
+            const newOrderItemEntities = newDomainOrder.items.map((item) =>
+              manager.create(OrderItemEntity, item.toPrimitives()),
+            );
+
+            existingOrderEntity.items = newOrderItemEntities;
+            existingOrderEntity.totalPrice = orderPrimitives.totalPrice;
+            existingOrderEntity.updatedAt = orderPrimitives.updatedAt;
+          } else {
+            existingOrderEntity.updatedAt = new Date();
           }
 
-          const saved = await manager.save(existingOrder);
-          return saved as IOrder;
+          const savedEntity = await manager.save(existingOrderEntity);
+          return savedEntity as IOrder;
         },
       );
 
