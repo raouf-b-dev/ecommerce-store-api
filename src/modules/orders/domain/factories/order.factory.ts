@@ -7,7 +7,7 @@ import { DomainError } from '../../../../core/errors/domain.error';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 
 export interface AggregatedOrderInput extends Omit<CreateOrderDto, 'items'> {
-  items: CreateOrderItemDto[]; // no totalPrice here
+  items: CreateOrderItemDto[];
 }
 export interface AggregatedUpdateInput extends Omit<UpdateOrderDto, 'items'> {
   items?: CreateOrderItemDto[];
