@@ -6,21 +6,21 @@
 
 ## 📋 Table of Contents
 
-- [🌟 Key Features](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-key-features)
-- [🚀 Quick Start](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-quick-start)
-- [🧪 Testing](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-testing)
-- [🗄️ Database Management](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-database-management)
-- [🐳 Docker & Infrastructure](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-docker--infrastructure)
-- [🏗️ Project Architecture](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-project-architecture)
-- [🔧 Environment Configuration](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-environment-configuration)
-- [📜 Available Scripts](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-available-scripts)
-- [🚦 API Endpoints](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-api-endpoints)
-- [🔐 Security & Best Practices](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-security--best-practices)
-- [🛠️ Troubleshooting](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#%EF%B8%8F-troubleshooting)
-- [📊 Project Statistics](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-project-statistics)
-- [📄 License](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-license)
-- [🤝 Acknowledgments](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-acknowledgments)
-- [📞 Support](https://claude.ai/chat/83b07142-0719-4465-9f2c-a91adfa70831#-support)
+- [🌟 Key Features](#-key-features)
+- [🚀 Quick Start](#-quick-start)
+- [🧪 Testing](#-testing)
+- [🗄️ Database Management](#-database-management)
+- [🐳 Docker & Infrastructure](#-docker--infrastructure)
+- [🏗️ Project Architecture](#-project-architecture)
+- [🔧 Environment Configuration](#-environment-configuration)
+- [📜 Available Scripts](#-available-scripts)
+- [🚦 API Endpoints](#-api-endpoints)
+- [🔐 Security & Best Practices](#-security--best-practices)
+- [🛠️ Troubleshooting](#-troubleshooting)
+- [📊 Project Statistics](#-project-statistics)
+- [📄 License](#-license)
+- [🤝 Acknowledgments](#-acknowledgments)
+- [📞 Support](#-support)
 
 ---
 
@@ -101,7 +101,6 @@ Ensure you have the following installed:
 4.  **Configure environment variables**
 
     Update the generated `.env.*` files with your secrets:
-
     - Database credentials
     - Redis configuration
     - JWT secrets
