@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsIn } from 'class-validator';
+import { IsOptional, IsEnum, IsIn, IsDateString } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus } from '../../domain/value-objects/order-status';
@@ -33,6 +33,13 @@ export class ListOrdersQueryDto {
   customerId?: string;
 
   @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter orders by customer email',
+    example: 'customer@example.com',
+  })
+  customerEmail?: string;
+
+  @IsOptional()
   @IsEnum(OrderStatus)
   @ApiPropertyOptional({
     enum: OrderStatus,
@@ -58,4 +65,36 @@ export class ListOrdersQueryDto {
     default: 'desc',
   })
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @IsOptional()
+  @IsDateString()
+  @ApiPropertyOptional({
+    description: 'Filter orders created after this date (ISO 8601)',
+    example: '2024-01-01T00:00:00.000Z',
+  })
+  createdAfter?: string;
+
+  @IsOptional()
+  @IsDateString()
+  @ApiPropertyOptional({
+    description: 'Filter orders created before this date (ISO 8601)',
+    example: '2024-12-31T23:59:59.999Z',
+  })
+  createdBefore?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @ApiPropertyOptional({
+    description: 'Filter orders with total price greater than',
+    example: 50.0,
+  })
+  minAmount?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @ApiPropertyOptional({
+    description: 'Filter orders with total price less than',
+    example: 1000.0,
+  })
+  maxAmount?: number;
 }
