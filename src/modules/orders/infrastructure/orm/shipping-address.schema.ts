@@ -1,9 +1,8 @@
 // src/modules/orders/infrastructure/orm/shipping-address.schema.ts
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { IShippingAddress } from '../../domain/interfaces/IShippingAddress';
 
 @Entity({ name: 'shipping_addresses' })
-export class ShippingAddressEntity implements IShippingAddress {
+export class ShippingAddressEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
