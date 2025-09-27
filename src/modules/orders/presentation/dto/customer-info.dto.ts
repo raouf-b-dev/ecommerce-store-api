@@ -3,10 +3,6 @@ import { IsString, IsEmail, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CustomerInfoDto {
-  @ApiProperty({ example: 'cust_456', description: 'Customer ID' })
-  @IsString()
-  customerId: string;
-
   @ApiProperty({
     example: 'customer@example.com',
     description: 'Customer email address',
