@@ -31,6 +31,14 @@ export class IdGeneratorService {
     return this.generateId('CUSTOMER', 'CU');
   }
 
+  async generateShippingAddressId(): Promise<string> {
+    return this.generateId('SHIPPINGADDRESS', 'SA');
+  }
+
+  async generatePaymentInfoId(): Promise<string> {
+    return this.generateId('PAYMENT', 'PA');
+  }
+
   private async generateId(
     entityType: string,
     prefix: string,
