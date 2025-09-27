@@ -105,3 +105,26 @@ export class OrderMapper {
     return domains.map((domain) => OrderMapper.toEntity(domain));
   }
 }
+
+export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
+  createdAt: number;
+  updatedAt: number;
+};
+
+export class OrderCacheMapper {
+  public static toCache(order: IOrder): OrderForCache {
+    return {
+      ...order,
+      createdAt: order.createdAt.getTime(),
+      updatedAt: order.updatedAt.getTime(),
+    };
+  }
+
+  public static fromCache(cachedOrder: OrderForCache): IOrder {
+    return {
+      ...cachedOrder,
+      createdAt: new Date(cachedOrder.createdAt),
+      updatedAt: new Date(cachedOrder.updatedAt),
+    };
+  }
+}
