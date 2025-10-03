@@ -38,15 +38,6 @@ export class PaymentInfo implements IPaymentInfo {
     if (props.amount <= 0) {
       throw new Error('Payment amount must be positive');
     }
-
-    // Business rule: COD completed payments must have paidAt
-    if (
-      this._method.isCashOnDelivery() &&
-      this._status.isCompleted() &&
-      !props.paidAt
-    ) {
-      throw new Error('Completed COD payment must have paidAt date');
-    }
   }
 
   // Getters
