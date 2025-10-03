@@ -7,13 +7,13 @@ import { CacheService } from '../../../../../core/infrastructure/redis/cache/cac
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
 import { IOrder } from '../../../domain/interfaces/IOrder';
-import {
-  AggregatedOrderInput,
-  AggregatedUpdateInput,
-} from '../../../domain/factories/order.factory';
+import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
-import { OrderMapper } from '../../utils/order.mapper';
-import { OrderForCache } from '../../utils/order.type';
+import {
+  OrderForCache,
+  OrderCacheMapper,
+} from '../../persistence/mappers/order.mapper';
+import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
@@ -58,7 +58,7 @@ export class RedisOrderRepository implements OrderRepository {
                 '*',
                 { page, limit, sortBy, sortOrder },
               );
-            const orders = rawCachedOrders.map(OrderMapper.fromCache);
+            const orders = rawCachedOrders.map(OrderCacheMapper.fromCache);
             return Result.success<IOrder[]>(orders);
           }
         } catch (cacheError) {
@@ -80,7 +80,7 @@ export class RedisOrderRepository implements OrderRepository {
         try {
           const cacheEntries = orders.map((order) => ({
             key: `${Order_REDIS.CACHE_KEY}:${order.id}`,
-            value: OrderMapper.toCache(order),
+            value: OrderCacheMapper.toCache(order),
           }));
           await this.cacheService.setAll(cacheEntries, {
             ttl: Order_REDIS.EXPIRATION,
@@ -109,7 +109,7 @@ export class RedisOrderRepository implements OrderRepository {
 
       await this.cacheService.set(
         `${Order_REDIS.CACHE_KEY}:${order.id}`,
-        OrderMapper.toCache(order),
+        OrderCacheMapper.toCache(order),
         { ttl: Order_REDIS.EXPIRATION },
       );
       await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
@@ -120,19 +120,22 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async update(
+  async updateItemsInfo(
     id: string,
-    updateOrderDto: AggregatedUpdateInput,
+    updateOrderItemDto: CreateOrderItemDto[],
   ): Promise<Result<IOrder, RepositoryError>> {
     try {
-      const updateResult = await this.postgresRepo.update(id, updateOrderDto);
+      const updateResult = await this.postgresRepo.updateItemsInfo(
+        id,
+        updateOrderItemDto,
+      );
       if (updateResult.isFailure) return updateResult;
 
       const order = updateResult.value;
 
       await this.cacheService.set(
         `${Order_REDIS.CACHE_KEY}:${id}`,
-        OrderMapper.toCache(order),
+        OrderCacheMapper.toCache(order),
         {
           ttl: Order_REDIS.EXPIRATION,
         },
@@ -151,7 +154,7 @@ export class RedisOrderRepository implements OrderRepository {
         `${Order_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<IOrder>(OrderMapper.fromCache(cached));
+        return Result.success<IOrder>(OrderCacheMapper.fromCache(cached));
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -160,7 +163,7 @@ export class RedisOrderRepository implements OrderRepository {
 
       await this.cacheService.set(
         `${Order_REDIS.CACHE_KEY}:${id}`,
-        OrderMapper.toCache(order),
+        OrderCacheMapper.toCache(order),
         { ttl: Order_REDIS.EXPIRATION },
       );
 

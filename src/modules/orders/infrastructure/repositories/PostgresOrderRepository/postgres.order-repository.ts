@@ -11,17 +11,13 @@ import { IOrder } from '../../../domain/interfaces/IOrder';
 import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { ProductEntity } from '../../../../products/infrastructure/orm/product.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
-import {
-  AggregatedOrderInput,
-  AggregatedUpdateInput,
-} from '../../../domain/factories/order.factory';
+import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import { OrderItemProps } from '../../../domain/entities/order-items';
-import {
-  OrderStatus,
-  OrderStatusVO,
-} from '../../../domain/value-objects/order-status';
 import { Order } from '../../../domain/entities/order';
+import { OrderFactory } from '../../../domain/factories/order.factory';
+import { OrderMapper } from '../../persistence/mappers/order.mapper';
+import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -30,7 +26,9 @@ export class PostgresOrderRepository implements OrderRepository {
     private readonly ormRepo: Repository<OrderEntity>,
     private readonly dataSource: DataSource,
     private readonly idGeneratorService: IdGeneratorService,
+    private readonly orderFactory: OrderFactory,
   ) {}
+
   async listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], RepositoryError>> {
@@ -44,12 +42,10 @@ export class PostgresOrderRepository implements OrderRepository {
         sortOrder = 'desc',
       } = listOrdersQueryDto;
 
-      // Create query builder
       const queryBuilder = this.ormRepo
         .createQueryBuilder('order')
         .leftJoinAndSelect('order.items', 'items');
 
-      // Apply filters
       if (customerId) {
         queryBuilder.andWhere('order.customerId = :customerId', { customerId });
       }
@@ -58,18 +54,15 @@ export class PostgresOrderRepository implements OrderRepository {
         queryBuilder.andWhere('order.status = :status', { status });
       }
 
-      // Apply sorting
       const sortColumn = `order.${sortBy}`;
       queryBuilder.orderBy(
         sortColumn,
         sortOrder.toUpperCase() as 'ASC' | 'DESC',
       );
 
-      // Apply pagination
       const skip = (page - 1) * limit;
       queryBuilder.skip(skip).take(limit);
 
-      // Execute query
       const orders = await queryBuilder.getMany();
 
       return Result.success<IOrder[]>(orders);
@@ -102,10 +95,10 @@ export class PostgresOrderRepository implements OrderRepository {
           }
         }
 
-        for (const it of createOrderDto.items) {
-          if (!Number.isInteger(it.quantity) || it.quantity <= 0) {
+        for (const item of createOrderDto.items) {
+          if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
             throw new RepositoryError(
-              `INVALID_QUANTITY: quantity must be a positive integer for product ${it.productId}`,
+              `INVALID_QUANTITY: quantity must be a positive integer for product ${item.productId}`,
             );
           }
         }
@@ -144,7 +137,6 @@ export class PostgresOrderRepository implements OrderRepository {
         const domainOrderItems: OrderItemProps[] = createOrderDto.items.map(
           (itemDto) => {
             const product = productMap.get(itemDto.productId)!;
-
             return {
               productId: product.id,
               productName: product.name,
@@ -155,29 +147,26 @@ export class PostgresOrderRepository implements OrderRepository {
         );
 
         const orderId = await this.idGeneratorService.generateOrderId();
+        const customerId = await this.idGeneratorService.generateCustomerId();
+        const paymentInfoId =
+          await this.idGeneratorService.generatePaymentInfoId();
+        const shippingAddressId =
+          await this.idGeneratorService.generateShippingAddressId();
 
-        const domainOrder = Order.create({
-          id: orderId,
-          customerId: createOrderDto.customerId,
-          items: domainOrderItems,
+        const domainOrder = this.orderFactory.createOrderWithCalculatedPricing({
+          orderId,
+          customerId,
+          paymentInfoId,
+          shippingAddressId,
+          orderDto: createOrderDto,
+          domainOrderItems,
         });
 
-        const orderPrimitives = domainOrder.toPrimitives();
-
-        const orderItemEntities = domainOrder.items.map((item) => {
-          return manager.create(OrderItemEntity, item.toPrimitives());
-        });
-
-        const completeOrder: IOrder = {
-          ...orderPrimitives,
-          items: orderItemEntities,
-        };
-
-        const orderEntity = manager.create(OrderEntity, completeOrder);
+        const orderEntity = OrderMapper.toEntity(domainOrder.toPrimitives());
 
         const savedEntity = await manager.save(orderEntity);
 
-        return savedEntity;
+        return savedEntity as IOrder;
       });
 
       return Result.success<IOrder>(savedOrder);
@@ -187,9 +176,9 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
-  async update(
+  async updateItemsInfo(
     id: string,
-    updateOrderDto: AggregatedUpdateInput,
+    updateOrderItemDto: CreateOrderItemDto[],
   ): Promise<Result<IOrder, RepositoryError>> {
     try {
       const updatedOrder = await this.dataSource.transaction(
@@ -205,15 +194,21 @@ export class PostgresOrderRepository implements OrderRepository {
             );
           }
 
+          const existingDomainOrder = OrderMapper.toDomain(existingOrderEntity);
+
           const oldMap = new Map<string, number>();
-          for (const it of existingOrderEntity.items || []) {
-            const prev = oldMap.get(it.productId) ?? 0;
-            oldMap.set(it.productId, prev + it.quantity);
+          for (const item of existingDomainOrder.getItemEntities()) {
+            const itemPrimitives = item.toPrimitives();
+            const prev = oldMap.get(itemPrimitives.productId) ?? 0;
+            oldMap.set(
+              itemPrimitives.productId,
+              prev + itemPrimitives.quantity,
+            );
           }
 
           const newMap = new Map<string, number>();
-          for (const it of updateOrderDto.items ?? []) {
-            newMap.set(it.productId, it.quantity);
+          for (const item of updateOrderItemDto) {
+            newMap.set(item.productId, item.quantity);
           }
 
           const allProductIds = Array.from(
@@ -237,10 +232,10 @@ export class PostgresOrderRepository implements OrderRepository {
             }
           }
 
-          for (const it of updateOrderDto.items ?? []) {
-            if (!Number.isInteger(it.quantity) || it.quantity <= 0) {
+          for (const item of updateOrderItemDto) {
+            if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
               throw new RepositoryError(
-                `INVALID_QUANTITY: quantity must be a positive integer for product ${it.productId}`,
+                `INVALID_QUANTITY: quantity must be a positive integer for product ${item.productId}`,
               );
             }
           }
@@ -275,50 +270,52 @@ export class PostgresOrderRepository implements OrderRepository {
                 );
               }
             } else if (delta < 0) {
-              const inc = -delta;
+              const returnQty = -delta;
               await manager
                 .createQueryBuilder()
                 .update(ProductEntity)
-                .set({ stockQuantity: () => `stock_quantity + ${inc}` })
+                .set({ stockQuantity: () => `stock_quantity + ${returnQty}` })
                 .where('id = :id', { id: productId })
                 .execute();
             }
           }
 
-          if (updateOrderDto.items) {
-            const newDomainItems: OrderItemProps[] = updateOrderDto.items.map(
-              (itemDto) => {
-                const product = productMap.get(itemDto.productId)!;
-                return {
-                  productId: product.id,
-                  productName: product.name,
-                  unitPrice: product.price,
-                  quantity: itemDto.quantity,
-                };
-              },
-            );
+          const newDomainItems: OrderItemProps[] = updateOrderItemDto.map(
+            (itemDto) => {
+              const product = productMap.get(itemDto.productId)!;
+              return {
+                productId: product.id,
+                productName: product.name,
+                unitPrice: product.price,
+                quantity: itemDto.quantity,
+              };
+            },
+          );
 
-            const newDomainOrder = new Order({
-              ...existingOrderEntity,
-              items: newDomainItems,
-              updatedAt: new Date(),
-            });
+          const existingPrimitives = existingDomainOrder.toPrimitives();
 
-            await manager.delete(OrderItemEntity, { order: { id } as any });
+          const updatedDomainOrder = new Order({
+            id: existingPrimitives.id,
+            customerId: existingPrimitives.customerId,
+            paymentInfoId: existingPrimitives.paymentInfoId,
+            shippingAddressId: existingPrimitives.shippingAddressId,
+            customerInfo: existingPrimitives.customerInfo,
+            items: newDomainItems,
+            shippingAddress: existingPrimitives.shippingAddress,
+            paymentInfo: existingPrimitives.paymentInfo,
+            customerNotes: existingPrimitives.customerNotes,
+            status: existingPrimitives.status,
+            createdAt: existingPrimitives.createdAt,
+            updatedAt: new Date(),
+          });
 
-            const orderPrimitives = newDomainOrder.toPrimitives();
-            const newOrderItemEntities = newDomainOrder.items.map((item) =>
-              manager.create(OrderItemEntity, item.toPrimitives()),
-            );
+          await manager.delete(OrderItemEntity, { order: { id } as any });
 
-            existingOrderEntity.items = newOrderItemEntities;
-            existingOrderEntity.totalPrice = orderPrimitives.totalPrice;
-            existingOrderEntity.updatedAt = orderPrimitives.updatedAt;
-          } else {
-            existingOrderEntity.updatedAt = new Date();
-          }
+          const updatedOrderEntity = OrderMapper.toEntity(
+            updatedDomainOrder.toPrimitives(),
+          );
 
-          const savedEntity = await manager.save(existingOrderEntity);
+          const savedEntity = await manager.save(updatedOrderEntity);
           return savedEntity as IOrder;
         },
       );
@@ -329,6 +326,33 @@ export class PostgresOrderRepository implements OrderRepository {
       return ErrorFactory.RepositoryError('Failed to update order', error);
     }
   }
+
+  // let updatedCustomerInfo: ICustomerInfo =
+  //   existingPrimitives.customerInfo;
+  // let updatedPaymentInfo = existingPrimitives.paymentInfo;
+  // let updatedShippingAddress = existingPrimitives.shippingAddress;
+
+  // if (updateOrderDto.customerInfo) {
+  //   updatedCustomerInfo = {
+  //     customerId: existingPrimitives.customerInfo.customerId,
+  //     ...updateOrderDto.customerInfo,
+  //   };
+  // }
+
+  // if (updateOrderDto.paymentInfo) {
+  //   updatedPaymentInfo = {
+  //     ...existingPrimitives.paymentInfo,
+  //     method: updateOrderDto.paymentInfo.method,
+  //     notes: updateOrderDto.paymentInfo.notes,
+  //   };
+  // }
+
+  // if (updateOrderDto.shippingAddress) {
+  //   updatedShippingAddress = {
+  //     id: existingPrimitives.shippingAddress.id,
+  //     ...updateOrderDto.shippingAddress,
+  //   };
+  // }
 
   async findById(id: string): Promise<Result<IOrder, RepositoryError>> {
     try {
@@ -373,29 +397,34 @@ export class PostgresOrderRepository implements OrderRepository {
             );
           }
 
-          const currentStatus = new OrderStatusVO(existingOrder.status);
+          const domainOrder = OrderMapper.toDomain(existingOrder);
 
-          if (!currentStatus.canTransitionTo(OrderStatus.CANCELLED)) {
+          if (!domainOrder.isCancellable()) {
             throw new RepositoryError(
-              `ORDER_CANNOT_BE_CANCELLED: Cannot cancel order with status "${currentStatus.value}"`,
+              `ORDER_CANNOT_BE_CANCELLED: Cannot cancel order with status "${domainOrder.status}"`,
             );
           }
 
-          // Restore product stock
-          for (const item of existingOrder.items) {
+          for (const item of domainOrder.getItemEntities()) {
+            const itemPrimitives = item.toPrimitives();
             await manager
               .createQueryBuilder()
               .update(ProductEntity)
-              .set({ stockQuantity: () => `stock_quantity + ${item.quantity}` })
-              .where('id = :id', { id: item.productId })
+              .set({
+                stockQuantity: () =>
+                  `stock_quantity + ${itemPrimitives.quantity}`,
+              })
+              .where('id = :id', { id: itemPrimitives.productId })
               .execute();
           }
 
-          // Update order status
-          existingOrder.status = OrderStatus.CANCELLED;
-          existingOrder.updatedAt = new Date();
+          domainOrder.cancel();
 
-          const savedOrder = await manager.save(existingOrder);
+          const updatedEntity = OrderMapper.toEntity(
+            domainOrder.toPrimitives(),
+          );
+
+          const savedOrder = await manager.save(updatedEntity);
           return savedOrder as IOrder;
         },
       );
