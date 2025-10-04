@@ -1,7 +1,6 @@
 // src/modules/orders/domain/entities/order.entity.ts
 import { IOrder } from '../interfaces/IOrder';
 import { IOrderItem } from '../interfaces/IOrderItem';
-import { Money } from '../value-objects/money';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { OrderItem, OrderItemProps } from './order-items';
 import {
@@ -19,8 +18,11 @@ import {
 } from '../interfaces/ICustomerInfo';
 import { IPaymentInfo, IPaymentInfoEditable } from '../interfaces/IPaymentInfo';
 import { IShippingAddress } from '../interfaces/IShippingAddress';
-import { PaymentStatusVO } from '../value-objects/payment-status';
-import { PaymentMethodVO } from '../value-objects/payment-method';
+import {
+  PaymentStatus,
+  PaymentStatusVO,
+} from '../value-objects/payment-status';
+import { OrderPricing } from '../value-objects/order-pricing';
 
 export interface OrderProps {
   id: string;
@@ -51,13 +53,15 @@ export class Order implements IOrder {
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
+  private _pricing: OrderPricing;
+
   constructor(props: OrderProps) {
     this.validateProps(props);
 
     this._id = props.id.trim();
     this._customerId = props.customerId.trim();
     this._paymentInfoId = props.paymentInfoId.trim();
-    this._paymentInfoId = props.paymentInfoId.trim();
+    this._shippingAddressId = props.shippingAddressId.trim();
     this._customerInfo = CustomerInfo.fromPrimitives(props.customerInfo);
     this._items = props.items.map((item) => new OrderItem(item));
     this._shippingAddress = ShippingAddress.fromPrimitives(
@@ -68,6 +72,8 @@ export class Order implements IOrder {
     this._status = new OrderStatusVO(props.status || OrderStatus.PENDING);
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
+
+    this._pricing = OrderPricing.calculate(this._items);
   }
 
   private validateProps(props: OrderProps): void {
@@ -88,16 +94,18 @@ export class Order implements IOrder {
     }
   }
 
-  // Getters implementing IOrder interface
   get id(): string {
     return this._id;
   }
+
   get customerId(): string {
     return this._customerId;
   }
+
   get paymentInfoId(): string {
     return this._paymentInfoId;
   }
+
   get shippingAddressId(): string {
     return this._shippingAddressId;
   }
@@ -135,21 +143,15 @@ export class Order implements IOrder {
   }
 
   get subtotal(): number {
-    const subtotalMoney = this._items.reduce(
-      (total, item) => total.add(item.lineTotal),
-      Money.zero(),
-    );
-    return subtotalMoney.value;
+    return this._pricing.subtotal;
   }
 
   get shippingCost(): number {
-    return this.calculateShipping().value;
+    return this._pricing.shippingCost;
   }
 
   get totalPrice(): number {
-    const subtotalMoney = Money.from(this.subtotal);
-    const shippingMoney = Money.from(this.shippingCost);
-    return subtotalMoney.add(shippingMoney).value;
+    return this._pricing.totalPrice;
   }
 
   get createdAt(): Date {
@@ -160,22 +162,12 @@ export class Order implements IOrder {
     return new Date(this._updatedAt);
   }
 
-  // Helper method to get items as entities (for internal use)
   getItemEntities(): readonly OrderItem[] {
     return [...this._items];
   }
 
-  // Private helpers
-  private calculateShipping(): Money {
-    const baseRate = Money.fromNumber(5.99);
-    const subtotalMoney = Money.from(this.subtotal);
-    const freeShippingThreshold = Money.fromNumber(50);
-
-    if (subtotalMoney.greaterThanOrEqual(freeShippingThreshold)) {
-      return Money.zero();
-    }
-
-    return baseRate;
+  getPricing(): OrderPricing {
+    return this._pricing;
   }
 
   private assertCanBeUpdated(): void {
@@ -184,7 +176,10 @@ export class Order implements IOrder {
     }
   }
 
-  // Update methods for editable properties
+  private recalculatePricing(): void {
+    this._pricing = OrderPricing.recalculate(this._items);
+  }
+
   updateCustomerInfo(updates: ICustomerInfoEditable): void {
     this.assertCanBeUpdated();
     this._customerInfo.updateContactInfo(updates);
@@ -199,6 +194,7 @@ export class Order implements IOrder {
     }
 
     this._items = items.map((item) => new OrderItem(item));
+    this.recalculatePricing();
     this._updatedAt = new Date();
   }
 
@@ -241,7 +237,6 @@ export class Order implements IOrder {
     this._updatedAt = new Date();
   }
 
-  // Bulk update method
   updatePendingOrder(updates: {
     customerInfo?: ICustomerInfoEditable;
     items?: OrderItemProps[];
@@ -272,7 +267,6 @@ export class Order implements IOrder {
     }
   }
 
-  // Status transition methods
   changeStatus(newStatus: OrderStatus | string): void {
     const newStatusVO = new OrderStatusVO(newStatus);
 
@@ -294,7 +288,6 @@ export class Order implements IOrder {
     if (!this._paymentInfo.isCompleted()) {
       throw new Error('Cannot mark order as paid - payment not completed');
     }
-
     this.changeStatus(OrderStatus.PAID);
   }
 
@@ -310,7 +303,6 @@ export class Order implements IOrder {
     this.changeStatus(OrderStatus.DELIVERED);
   }
 
-  // Business rules
   isEditable(): boolean {
     return this._status.isPending();
   }
@@ -332,11 +324,12 @@ export class Order implements IOrder {
   }
 
   requiresPayment(): boolean {
-    const method = new PaymentMethodVO(this._paymentInfo.method);
-    return method.requiresImmediatePayment() && this._paymentInfo.isPending();
+    return (
+      this._paymentInfo.requiresImmediatePayment() &&
+      this._paymentInfo.isPending()
+    );
   }
 
-  // For persistence/serialization
   toPrimitives(): IOrder {
     return {
       id: this._id,
@@ -358,44 +351,39 @@ export class Order implements IOrder {
   }
 
   static fromPrimitives(data: OrderProps): Order {
-    return new Order({
-      id: data.id,
-      customerId: data.customerId,
-      paymentInfoId: data.paymentInfoId,
-      shippingAddressId: data.shippingAddressId,
-      customerInfo: data.customerInfo,
-      items: data.items || [],
-      shippingAddress: data.shippingAddress,
-      paymentInfo: data.paymentInfo,
-      customerNotes: data.customerNotes,
-      status: data.status,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-    });
+    return new Order(data);
   }
 
   static create(props: {
     id: string;
-    customerId: string;
-    customerInfo: CustomerInfoProps;
     items: OrderItemProps[];
+    customerInfo: CustomerInfoProps;
     shippingAddress: ShippingAddressProps;
-    paymentInfo: PaymentInfoProps;
+    paymentInfo: Omit<PaymentInfoProps, 'status' | 'amount'>;
     customerNotes?: string;
   }): Order {
+    const orderItems = props.items.map((item) => new OrderItem(item));
+    const pricing = OrderPricing.calculate(orderItems);
+
+    const paymentInfo: PaymentInfoProps = {
+      id: props.paymentInfo.id,
+      method: props.paymentInfo.method,
+      status: PaymentStatus.PENDING,
+      amount: pricing.totalPrice,
+      notes: props.paymentInfo.notes,
+    };
+
     return new Order({
       id: props.id,
-      customerId: props.customerId,
+      customerId: props.customerInfo.customerId,
       paymentInfoId: props.paymentInfo.id,
       shippingAddressId: props.shippingAddress.id,
       customerInfo: props.customerInfo,
       items: props.items,
       shippingAddress: props.shippingAddress,
-      paymentInfo: props.paymentInfo,
+      paymentInfo: paymentInfo,
       customerNotes: props.customerNotes,
       status: OrderStatus.PENDING,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
   }
 }

@@ -5,15 +5,19 @@ import { IOrder } from '../../../domain/interfaces/IOrder';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
 import { CustomerInfoMapper } from './customer-info.mapper';
+import { OrderItemCreate, OrderItemMapper } from './order-item.mapper';
 import { PaymentInfoMapper } from './payment-info.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
 
-type CreateFromEntity<T, ExcludeKeys extends keyof T = never> = Required<
+export type CreateFromEntity<T, ExcludeKeys extends keyof T = never> = Required<
   Omit<T, ExcludeKeys>
 >;
 type OrderCreate = CreateFromEntity<OrderEntity, 'items'>;
-type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order' | 'product'>;
 
+export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
+  createdAt: number;
+  updatedAt: number;
+};
 export class OrderMapper {
   static toDomain(entity: OrderEntity): Order {
     const props: OrderProps = {
@@ -31,13 +35,8 @@ export class OrderMapper {
         entity.shippingAddress,
       ).toPrimitives(),
       items: entity.items.map(
-        (itemEntity): OrderItemProps => ({
-          id: itemEntity.id,
-          productId: itemEntity.productId,
-          productName: itemEntity.productName,
-          unitPrice: itemEntity.unitPrice,
-          quantity: itemEntity.quantity,
-        }),
+        (itemEntity): OrderItemProps =>
+          OrderItemMapper.toDomain(itemEntity).toPrimitives(),
       ),
       customerNotes: entity.customerNotes,
       status: entity.status,
@@ -73,25 +72,21 @@ export class OrderMapper {
       orderPayload,
     );
 
-    const itemPayloads: OrderItemCreate[] = primitives.items.map(
-      (item): OrderItemCreate => {
-        const itemEntity: OrderItemCreate = {
-          id: item.id,
-          productId: item.productId,
-          productName: item.productName ?? '',
-          unitPrice: item.unitPrice,
-          quantity: item.quantity,
-          lineTotal: item.lineTotal,
-        };
+    const itemPlayloads: OrderItemCreate[] = primitives.items.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName ?? '',
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      lineTotal: item.lineTotal,
+    }));
 
-        return itemEntity;
-      },
-    );
+    const orderItemsEntities: OrderItemEntity[] =
+      OrderItemMapper.toEntityArray(itemPlayloads);
 
-    orderEntity.items = itemPayloads.map((itemPayload) => {
-      const item = Object.assign(new OrderItemEntity(), itemPayload);
-      item.order = orderEntity;
-      return item;
+    orderEntity.items = orderItemsEntities.map((orderItemEntity) => {
+      orderItemEntity.order = orderEntity;
+      return orderItemEntity;
     });
 
     return orderEntity;
@@ -105,11 +100,6 @@ export class OrderMapper {
     return domains.map((domain) => OrderMapper.toEntity(domain));
   }
 }
-
-export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
-  createdAt: number;
-  updatedAt: number;
-};
 
 export class OrderCacheMapper {
   public static toCache(order: IOrder): OrderForCache {

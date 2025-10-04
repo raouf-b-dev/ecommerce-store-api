@@ -4,7 +4,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { OrderEntity } from '../../orm/order.schema';
 import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
-import { OrderFactory } from '../../../domain/factories/order.factory';
 import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
@@ -13,7 +12,6 @@ import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { PaymentMethod } from '../../../domain/value-objects/payment-method';
 import { PaymentStatus } from '../../../domain/value-objects/payment-status';
-import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { PostgresOrderRepository } from './postgres.order-repository';
 
 describe('PostgresOrderRepository', () => {
@@ -23,7 +21,6 @@ describe('PostgresOrderRepository', () => {
   let mockDataSource: jest.Mocked<DataSource>;
   let mockManager: any;
   let mockTxQb: any;
-  let mockOrderFactory: jest.Mocked<OrderFactory>;
   // Mock data from user
   const generatedId = 'OR0000001';
   const generatedCustomerId = 'CUST0000001';
@@ -108,7 +105,6 @@ describe('PostgresOrderRepository', () => {
     createdAt: new Date('2025-10-01T10:00:00.000Z'),
     updatedAt: new Date('2025-10-01T10:00:00.000Z'),
   };
-  const mockDomainOrder = OrderMapper.toDomain(mockOrderEntity);
   beforeEach(async () => {
     mockOrmRepo = {
       createQueryBuilder: jest.fn(),
@@ -142,18 +138,12 @@ describe('PostgresOrderRepository', () => {
     mockDataSource = {
       transaction: jest.fn().mockImplementation((cb) => cb(mockManager)),
     } as any;
-    mockOrderFactory = {
-      createOrderWithCalculatedPricing: jest
-        .fn()
-        .mockReturnValue(mockDomainOrder),
-    } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresOrderRepository,
         { provide: getRepositoryToken(OrderEntity), useValue: mockOrmRepo },
         { provide: DataSource, useValue: mockDataSource },
         { provide: IdGeneratorService, useValue: mockIdGen },
-        { provide: OrderFactory, useValue: mockOrderFactory },
       ],
     }).compile();
     repository = module.get<PostgresOrderRepository>(PostgresOrderRepository);
@@ -244,9 +234,6 @@ describe('PostgresOrderRepository', () => {
       expect(result.isSuccess).toBe(true);
       if (result.isSuccess) expect(result.value).toEqual(mockOrderEntity);
       expect(mockIdGen.generateOrderId).toHaveBeenCalled();
-      expect(
-        mockOrderFactory.createOrderWithCalculatedPricing,
-      ).toHaveBeenCalled();
       expect(mockManager.save).toHaveBeenCalled();
     });
     it('should fail if product not found', async () => {
