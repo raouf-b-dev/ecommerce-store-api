@@ -15,7 +15,6 @@ import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import { OrderItemProps } from '../../../domain/entities/order-items';
 import { Order } from '../../../domain/entities/order';
-import { OrderFactory } from '../../../domain/factories/order.factory';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 
@@ -26,7 +25,6 @@ export class PostgresOrderRepository implements OrderRepository {
     private readonly ormRepo: Repository<OrderEntity>,
     private readonly dataSource: DataSource,
     private readonly idGeneratorService: IdGeneratorService,
-    private readonly orderFactory: OrderFactory,
   ) {}
 
   async listOrders(
@@ -153,13 +151,16 @@ export class PostgresOrderRepository implements OrderRepository {
         const shippingAddressId =
           await this.idGeneratorService.generateShippingAddressId();
 
-        const domainOrder = this.orderFactory.createOrderWithCalculatedPricing({
-          orderId,
-          customerId,
-          paymentInfoId,
-          shippingAddressId,
-          orderDto: createOrderDto,
-          domainOrderItems,
+        const domainOrder = Order.create({
+          id: orderId,
+          items: domainOrderItems,
+          customerInfo: { ...createOrderDto.customerInfo, customerId },
+          shippingAddress: {
+            ...createOrderDto.shippingAddress,
+            id: shippingAddressId,
+          },
+          paymentInfo: { ...createOrderDto.paymentInfo, id: paymentInfoId },
+          customerNotes: createOrderDto.customerNotes,
         });
 
         const orderEntity = OrderMapper.toEntity(domainOrder.toPrimitives());
@@ -295,17 +296,8 @@ export class PostgresOrderRepository implements OrderRepository {
           const existingPrimitives = existingDomainOrder.toPrimitives();
 
           const updatedDomainOrder = new Order({
-            id: existingPrimitives.id,
-            customerId: existingPrimitives.customerId,
-            paymentInfoId: existingPrimitives.paymentInfoId,
-            shippingAddressId: existingPrimitives.shippingAddressId,
-            customerInfo: existingPrimitives.customerInfo,
+            ...existingPrimitives,
             items: newDomainItems,
-            shippingAddress: existingPrimitives.shippingAddress,
-            paymentInfo: existingPrimitives.paymentInfo,
-            customerNotes: existingPrimitives.customerNotes,
-            status: existingPrimitives.status,
-            createdAt: existingPrimitives.createdAt,
             updatedAt: new Date(),
           });
 
