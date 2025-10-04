@@ -40,7 +40,7 @@ describe('PostgresOrderRepository', () => {
       city: 'Los Angeles',
       state: 'CA',
       postalCode: '90001',
-      country: 'US',
+      country: 'us',
     },
     paymentInfo: { method: PaymentMethod.CASH_ON_DELIVERY },
   };
@@ -55,7 +55,7 @@ describe('PostgresOrderRepository', () => {
     updatedAt: new Date('2025-08-13T15:00:00Z'),
   };
   const mockOrderItemEntity1: OrderItemEntity = {
-    id: 'item-uuid-1',
+    id: '370cbbcf-c0f2-4b1e-94ef-d87526b2c069',
     productId: 'PR0000001',
     productName: 'Test Product',
     unitPrice: 100,
@@ -85,7 +85,60 @@ describe('PostgresOrderRepository', () => {
       city: 'Los Angeles',
       state: 'CA',
       postalCode: '90001',
-      country: 'US',
+      country: 'us',
+      phone: undefined,
+    },
+    paymentInfo: {
+      id: 'PAY0000001',
+      method: PaymentMethod.CASH_ON_DELIVERY,
+      status: PaymentStatus.PENDING,
+      amount: 200,
+      transactionId: undefined,
+      paidAt: undefined,
+      notes: undefined,
+    },
+    customerNotes: undefined,
+    subtotal: 200,
+    shippingCost: 0,
+    totalPrice: 200,
+    status: OrderStatus.PENDING,
+    createdAt: new Date('2025-10-01T10:00:00.000Z'),
+    updatedAt: new Date('2025-10-01T10:00:00.000Z'),
+  };
+
+  // Add this near your other mock data
+  const mockDomainPrimitives = {
+    id: 'OR0000001',
+    customerId: 'CUST0000001',
+    shippingAddressId: 'ADDR0000001',
+    paymentInfoId: 'PAY0000001',
+    customerInfo: {
+      customerId: 'CUST0000001',
+      email: 'jane.smith@example.com',
+      phone: undefined,
+      firstName: 'Jane',
+      lastName: 'Smith',
+    },
+    items: [
+      {
+        // The ID is dynamic, but we put a placeholder here
+        id: '370cbbcf-c0f2-4b1e-94ef-d87526b2c069',
+        productId: 'PR0000001',
+        productName: 'Test Product',
+        unitPrice: 100,
+        quantity: 2,
+        lineTotal: 200,
+      },
+    ],
+    shippingAddress: {
+      id: 'ADDR0000001',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      street: '456 Oak Avenue',
+      city: 'Los Angeles',
+      state: 'CA',
+      postalCode: '90001',
+      country: 'us',
       phone: undefined,
     },
     paymentInfo: {
@@ -232,7 +285,18 @@ describe('PostgresOrderRepository', () => {
       mockManager.save.mockResolvedValue(mockOrderEntity);
       const result = await repository.save(createOrderDto);
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrderEntity);
+      if (result.isSuccess)
+        expect(result.value).toEqual({
+          ...mockDomainPrimitives,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          items: [
+            {
+              ...mockDomainPrimitives.items[0],
+              id: expect.any(String),
+            },
+          ],
+        });
       expect(mockIdGen.generateOrderId).toHaveBeenCalled();
       expect(mockManager.save).toHaveBeenCalled();
     });

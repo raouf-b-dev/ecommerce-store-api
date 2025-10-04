@@ -165,9 +165,9 @@ export class PostgresOrderRepository implements OrderRepository {
 
         const orderEntity = OrderMapper.toEntity(domainOrder.toPrimitives());
 
-        const savedEntity = await manager.save(orderEntity);
+        await manager.save(orderEntity);
 
-        return savedEntity as IOrder;
+        return domainOrder.toPrimitives();
       });
 
       return Result.success<IOrder>(savedOrder);
