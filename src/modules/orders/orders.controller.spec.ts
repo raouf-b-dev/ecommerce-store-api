@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
-import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
+import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
+import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
 import { OrderStatus } from './domain/value-objects/order-status';
-import { IOrder } from './domain/interfaces/IOrder';
-import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
-import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
+import { IOrder } from './domain/interfaces/order.interface';
+import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
+import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { PaymentMethod } from './domain/value-objects/payment-method';
 import { PaymentStatus } from './domain/value-objects/payment-status';
 

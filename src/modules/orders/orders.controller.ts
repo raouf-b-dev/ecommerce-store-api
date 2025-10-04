@@ -9,13 +9,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
-import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
+import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrderResponseDto } from './presentation/dto/order-response.dto';
-import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
-import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
+import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
+import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
-import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
+import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')

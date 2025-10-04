@@ -1,6 +1,6 @@
 // src/modules/orders/domain/entities/order.entity.ts
-import { IOrder } from '../interfaces/IOrder';
-import { IOrderItem } from '../interfaces/IOrderItem';
+import { IOrder } from '../interfaces/order.interface';
+import { IOrderItem } from '../interfaces/order-item.interface';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { OrderItem, OrderItemProps } from './order-items';
 import {
@@ -15,14 +15,17 @@ import { PaymentInfo, PaymentInfoProps } from '../value-objects/payment-info';
 import {
   ICustomerInfo,
   ICustomerInfoEditable,
-} from '../interfaces/ICustomerInfo';
-import { IPaymentInfo, IPaymentInfoEditable } from '../interfaces/IPaymentInfo';
-import { IShippingAddress } from '../interfaces/IShippingAddress';
+} from '../interfaces/customer-info.interface';
+import {
+  IPaymentInfo,
+  IPaymentInfoEditable,
+} from '../interfaces/payment-info.interface';
 import {
   PaymentStatus,
   PaymentStatusVO,
 } from '../value-objects/payment-status';
 import { OrderPricing } from '../value-objects/order-pricing';
+import { IShippingAddress } from '../interfaces/shipping-address.interface';
 
 export interface OrderProps {
   id: string;

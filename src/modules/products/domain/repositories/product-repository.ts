@@ -2,7 +2,7 @@ import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
 import { CreateProductDto } from '../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../presentation/dto/update-product.dto';
-import { IProduct } from '../interfaces/IProduct';
+import { IProduct } from '../interfaces/product.interface';
 
 export abstract class ProductRepository {
   abstract save(

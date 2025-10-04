@@ -3,7 +3,7 @@ import { RepositoryError } from '../../../../core/errors/repository.error';
 import { CreateOrderItemDto } from '../../presentation/dto/create-order-item.dto';
 import { ListOrdersQueryDto } from '../../presentation/dto/list-orders-query.dto';
 import { AggregatedOrderInput } from '../factories/order.factory';
-import { IOrder } from '../interfaces/IOrder';
+import { IOrder } from '../interfaces/order.interface';
 
 export abstract class OrderRepository {
   abstract save(

@@ -1,7 +1,7 @@
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
 import { Order, OrderProps } from '../../../domain/entities/order';
 import { OrderItemProps } from '../../../domain/entities/order-items';
-import { IOrder } from '../../../domain/interfaces/IOrder';
+import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
 import { CustomerInfoMapper } from './customer-info.mapper';

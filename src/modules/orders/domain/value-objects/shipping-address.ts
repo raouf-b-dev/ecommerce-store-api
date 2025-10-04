@@ -1,4 +1,4 @@
-import { IShippingAddress } from '../interfaces/IShippingAddress';
+import { IShippingAddress } from '../interfaces/shipping-address.interface';
 
 // src/modules/orders/domain/value-objects/shipping-address.ts
 export interface ShippingAddressProps {

@@ -1,7 +1,7 @@
 // src/modules/orders/domain/value-objects/payment-info.ts
 import { PaymentStatus, PaymentStatusVO } from './payment-status';
 import { PaymentMethod, PaymentMethodVO } from './payment-method';
-import { IPaymentInfo } from '../interfaces/IPaymentInfo';
+import { IPaymentInfo } from '../interfaces/payment-info.interface';
 
 export interface PaymentInfoProps {
   id: string;

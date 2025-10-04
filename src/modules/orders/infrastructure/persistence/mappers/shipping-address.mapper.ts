@@ -1,5 +1,5 @@
 // src/modules/orders/infrastructure/mappers/shipping-address.mapper.ts
-import { IShippingAddress } from '../../../domain/interfaces/IShippingAddress';
+import { IShippingAddress } from '../../../domain/interfaces/shipping-address.interface';
 import {
   ShippingAddress,
   ShippingAddressProps,
