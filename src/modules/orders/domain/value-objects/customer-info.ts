@@ -1,5 +1,5 @@
 // src/modules/orders/domain/value-objects/customer-info.ts
-import { ICustomerInfo } from '../interfaces/ICustomerInfo';
+import { ICustomerInfo } from '../interfaces/customer-info.interface';
 
 export interface CustomerInfoProps {
   customerId: string;

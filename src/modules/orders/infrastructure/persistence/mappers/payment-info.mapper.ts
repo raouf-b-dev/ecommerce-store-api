@@ -1,5 +1,5 @@
 // src/modules/orders/infrastructure/mappers/payment-info.mapper.ts
-import { IPaymentInfo } from '../../../domain/interfaces/IPaymentInfo';
+import { IPaymentInfo } from '../../../domain/interfaces/payment-info.interface';
 import {
   PaymentInfo,
   PaymentInfoProps,

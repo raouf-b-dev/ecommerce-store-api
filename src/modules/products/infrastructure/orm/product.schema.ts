@@ -1,6 +1,6 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
 import { Column, Entity, PrimaryColumn } from 'typeorm';
-import { IProduct } from '../../domain/interfaces/IProduct';
+import { IProduct } from '../../domain/interfaces/product.interface';
 import { numericToNumber } from '../../../../core/infrastructure/database/number.transformer';
 
 @Entity({ name: 'products' })

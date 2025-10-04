@@ -1,5 +1,5 @@
 // src/modules/orders/infrastructure/mappers/customer-info.mapper.ts
-import { ICustomerInfo } from '../../../domain/interfaces/ICustomerInfo';
+import { ICustomerInfo } from '../../../domain/interfaces/customer-info.interface';
 import {
   CustomerInfo,
   CustomerInfoProps,

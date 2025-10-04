@@ -1,4 +1,4 @@
-import { IProduct } from '../interfaces/IProduct';
+import { IProduct } from '../interfaces/product.interface';
 
 export class Product implements IProduct {
   id: string;

@@ -11,11 +11,11 @@ import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { UpdateProductDto } from './presentation/dto/update-product.dto';
 import { ProductResponseDto } from './presentation/dto/product-response.dto';
-import { GetProductController } from './presentation/controllers/GetProduct/get-product.controller';
-import { CreateProductController } from './presentation/controllers/CreateProduct/create-product.controller';
-import { DeleteProductController } from './presentation/controllers/DeleteProduct/delete-product.controller';
-import { ListProductsController } from './presentation/controllers/ListProducts/list-products.controller';
-import { UpdateProductController } from './presentation/controllers/UpdateProduct/update-product.controller';
+import { GetProductController } from './presentation/controllers/get-product/get-product.controller';
+import { CreateProductController } from './presentation/controllers/create-product/create-product.controller';
+import { DeleteProductController } from './presentation/controllers/delete-product/delete-product.controller';
+import { ListProductsController } from './presentation/controllers/list-products/list-products.controller';
+import { UpdateProductController } from './presentation/controllers/update-product/update-product.controller';
 
 @ApiTags('products')
 @Controller('products')

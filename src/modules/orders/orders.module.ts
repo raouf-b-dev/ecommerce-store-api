@@ -2,8 +2,8 @@ import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/GetOrder/get-order.controller';
-import { GetOrderUseCase } from './application/usecases/GetOrder/get-order.usecase';
+import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
+import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
 
 import { OrderRepository } from './domain/repositories/order-repository';
 import {
@@ -11,19 +11,19 @@ import {
   REDIS_ORDER_REPOSITORY,
 } from './order.token';
 
-import { RedisOrderRepository } from './infrastructure/repositories/RedisOrderRepository/redis.order-repository';
-import { PostgresOrderRepository } from './infrastructure/repositories/PostgresOrderRepository/postgres.order-repository';
+import { RedisOrderRepository } from './infrastructure/repositories/redis-order-repository/redis.order-repository';
+import { PostgresOrderRepository } from './infrastructure/repositories/postgres-order-repository/postgres.order-repository';
 import { OrderEntity } from './infrastructure/orm/order.schema';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { OrderItemEntity } from './infrastructure/orm/order-item.schema';
-import { CreateOrderController } from './presentation/controllers/CreateOrder/create-order.controller';
-import { CreateOrderUseCase } from './application/usecases/CreateOrder/create-order.usecase';
+import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
+import { CreateOrderUseCase } from './application/usecases/create-order/create-order.usecase';
 import { OrderFactory } from './domain/factories/order.factory';
-import { ListOrdersController } from './presentation/controllers/ListOrders/list-orders.controller';
-import { ListOrdersUsecase } from './application/usecases/ListOrders/list-orders.usecase';
-import { CancelOrderController } from './presentation/controllers/CancelOrder/cancel-order.controller';
-import { CancelOrderUseCase } from './application/usecases/CancelOrder/cancel-order.usecase';
+import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
+import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
+import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
+import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
 import { ShippingAddressEntity } from './infrastructure/orm/shipping-address.schema';
 import { PaymentInfoEntity } from './infrastructure/orm/payment-info.schema';
 import { CustomerInfoEntity } from './infrastructure/orm/customer-info.schema';
