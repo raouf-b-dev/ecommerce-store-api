@@ -1,6 +1,7 @@
 // src/modules/orders/domain/entities/order-item.entity.ts
 import { Money } from '../value-objects/money';
 import { Quantity } from '../value-objects/quantity';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface OrderItemProps {
   id?: string;
@@ -56,7 +57,7 @@ export class OrderItem {
   }
 
   private generateId(): string {
-    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return uuidv4();
   }
 
   // For persistence/serialization
