@@ -14,6 +14,7 @@ import {
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
+import { Order } from '../../../domain/entities/order';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
@@ -58,7 +59,9 @@ export class RedisOrderRepository implements OrderRepository {
                 '*',
                 { page, limit, sortBy, sortOrder },
               );
-            const orders = rawCachedOrders.map(OrderCacheMapper.fromCache);
+            const orders: IOrder[] = rawCachedOrders.map((order) =>
+              OrderCacheMapper.fromCache(order).toPrimitives(),
+            );
             return Result.success<IOrder[]>(orders);
           }
         } catch (cacheError) {
@@ -148,13 +151,13 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<IOrder, RepositoryError>> {
+  async findById(id: string): Promise<Result<Order, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<OrderForCache>(
         `${Order_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<IOrder>(OrderCacheMapper.fromCache(cached));
+        return Result.success<Order>(OrderCacheMapper.fromCache(cached));
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -163,7 +166,7 @@ export class RedisOrderRepository implements OrderRepository {
 
       await this.cacheService.set(
         `${Order_REDIS.CACHE_KEY}:${id}`,
-        OrderCacheMapper.toCache(order),
+        OrderCacheMapper.toCache(order.toPrimitives()),
         { ttl: Order_REDIS.EXPIRATION },
       );
 
@@ -188,14 +191,14 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async cancelById(id: string): Promise<Result<IOrder, RepositoryError>> {
+  async cancelOrder(order: Order): Promise<Result<void, RepositoryError>> {
     try {
-      const cancelResult = await this.postgresRepo.cancelById(id);
+      const cancelResult = await this.postgresRepo.cancelOrder(order);
       if (cancelResult.isFailure) return cancelResult;
-      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${id}`);
+      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${order.id}`);
       await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<IOrder>(cancelResult.value);
+      return Result.success<void>(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to cancel order`, error);
     }

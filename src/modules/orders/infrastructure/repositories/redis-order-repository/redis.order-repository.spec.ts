@@ -19,6 +19,7 @@ import {
 import { PaymentMethod } from '../../../domain/value-objects/payment-method';
 import { PaymentStatus } from '../../../domain/value-objects/payment-status';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
+import { Order } from '../../../domain/entities/order';
 
 describe('RedisOrderRepository', () => {
   let repository: RedisOrderRepository;
@@ -27,49 +28,60 @@ describe('RedisOrderRepository', () => {
   let logger: jest.Mocked<Logger>;
 
   const mockOrder: IOrder = {
-    id: '123e4567-e89b-12d3-a456-426614174000',
-    customerId: 'customer-123',
+    id: 'OR0001',
+    customerId: 'CUST1',
+    paymentInfoId: 'PAY001',
+    shippingAddressId: 'ADDR001',
+
     items: [
       {
         id: 'item-1',
-        productId: 'product-1',
-        productName: 'Test Product',
-        quantity: 2,
-        unitPrice: 10.5,
-        lineTotal: 21,
+        productId: 'PR1',
+        productName: 'P1',
+        quantity: 1,
+        unitPrice: 10,
+        lineTotal: 10,
       },
     ],
+
+    customerInfo: {
+      customerId: 'CUST1',
+      email: 'customer@example.com',
+      phone: '+1234567890',
+      firstName: 'John',
+      lastName: 'Doe',
+    },
+
+    paymentInfo: {
+      id: 'PAY001',
+      method: PaymentMethod.CREDIT_CARD,
+      amount: 15,
+      status: PaymentStatus.PENDING,
+      transactionId: 'TXN123456',
+      notes: 'Awaiting payment confirmation',
+    },
+
+    shippingAddress: {
+      id: 'ADDR001',
+      firstName: 'John',
+      lastName: 'Doe',
+      street: '123 Main Street',
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10001',
+      country: 'DZ',
+      phone: '+1234567890',
+    },
+
+    subtotal: 10,
+    shippingCost: 5,
+    totalPrice: 15,
+
     status: OrderStatus.PENDING,
-    totalPrice: 21,
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
-    paymentInfoId: '',
-    shippingAddressId: '',
-    customerInfo: {
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@example.com',
-      phone: '1234567890',
-      customerId: '',
-    },
-    paymentInfo: {
-      method: PaymentMethod.CASH_ON_DELIVERY,
-      amount: 0,
-      id: '',
-      status: PaymentStatus.PENDING,
-    },
-    shippingAddress: {
-      street: '123 Test St',
-      city: 'Testville',
-      state: 'TS',
-      postalCode: '12345',
-      country: 'Testland',
-      id: '',
-      firstName: '',
-      lastName: '',
-    },
-    subtotal: 0,
-    shippingCost: 0,
+
+    customerNotes: 'Please ring doorbell upon delivery',
   };
 
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
@@ -107,7 +119,7 @@ describe('RedisOrderRepository', () => {
       findById: jest.fn(),
       deleteById: jest.fn(),
       listOrders: jest.fn(),
-      cancelById: jest.fn(),
+      cancelOrder: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -140,7 +152,7 @@ describe('RedisOrderRepository', () => {
 
       expect(cacheService.set).toHaveBeenCalledWith(
         `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
-        mockCachedOrder,
+        OrderCacheMapper.toCache(mockOrder),
         { ttl: Order_REDIS.EXPIRATION },
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
@@ -223,22 +235,27 @@ describe('RedisOrderRepository', () => {
       const result = await repository.findById(mockOrder.id);
 
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrder);
+      if (result.isSuccess) {
+        const expectedEntity = OrderCacheMapper.fromCache(mockCachedOrder);
+        expect(result.value).toEqual(expectedEntity);
+      }
       expect(postgresRepo.findById).not.toHaveBeenCalled();
     });
 
     it('should fetch from postgres and cache if not cached', async () => {
+      const order: Order = Order.fromPrimitives(mockOrder);
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(mockOrder));
+      postgresRepo.findById.mockResolvedValue(Result.success(order));
       cacheService.set.mockResolvedValue(undefined);
 
       const result = await repository.findById(mockOrder.id);
 
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrder);
+      if (result.isSuccess) expect(result.value).toEqual(order);
+      const expectedCached = OrderCacheMapper.toCache(order.toPrimitives());
       expect(cacheService.set).toHaveBeenCalledWith(
         `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
-        mockCachedOrder,
+        expectedCached,
         { ttl: Order_REDIS.EXPIRATION },
       );
     });
@@ -281,7 +298,12 @@ describe('RedisOrderRepository', () => {
       const result = await repository.listOrders(dto);
 
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
+      if (result.isSuccess) {
+        const expected = [
+          OrderCacheMapper.fromCache(mockCachedOrder).toPrimitives(),
+        ];
+        expect(result.value).toEqual(expected);
+      }
     });
 
     it('should fetch from postgres and cache if no cache', async () => {
@@ -296,6 +318,7 @@ describe('RedisOrderRepository', () => {
       expect(result.isSuccess).toBe(true);
       if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
       expect(cacheService.setAll).toHaveBeenCalled();
+
       expect(cacheService.set).toHaveBeenCalledWith(
         Order_REDIS.IS_CACHED_FLAG,
         'true',
@@ -345,21 +368,17 @@ describe('RedisOrderRepository', () => {
     });
   });
 
-  describe('cancelById', () => {
-    const cancelledOrder: IOrder = {
-      ...mockOrder,
-      status: OrderStatus.CANCELLED,
-    };
-
+  describe('cancelOrder', () => {
+    const cancelledOrder: Order = Order.fromPrimitives(mockOrder);
+    cancelledOrder.cancel();
     it('should cancel order in postgres and update cache', async () => {
-      postgresRepo.cancelById.mockResolvedValue(Result.success(cancelledOrder));
+      postgresRepo.cancelOrder.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repository.cancelById(mockOrder.id);
+      const result = await repository.cancelOrder(cancelledOrder);
 
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess)
-        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      if (result.isSuccess) expect(result.value).toBe(undefined);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
         `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
@@ -370,10 +389,13 @@ describe('RedisOrderRepository', () => {
     });
 
     it('should return failure if postgres cancel fails', async () => {
-      const error = new RepositoryError('Cancel failed');
-      postgresRepo.cancelById.mockResolvedValue(Result.failure(error));
+      const cancelledOrder: Order = Order.fromPrimitives(mockOrder);
+      cancelledOrder.cancel();
 
-      const result = await repository.cancelById(mockOrder.id);
+      const error = new RepositoryError('Cancel failed');
+      postgresRepo.cancelOrder.mockResolvedValue(Result.failure(error));
+
+      const result = await repository.cancelOrder(cancelledOrder);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) expect(result.error).toEqual(error);
