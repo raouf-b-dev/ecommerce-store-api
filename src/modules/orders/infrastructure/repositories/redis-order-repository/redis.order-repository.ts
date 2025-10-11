@@ -191,11 +191,15 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async cancelOrder(order: Order): Promise<Result<void, RepositoryError>> {
+  async cancelOrder(
+    orderPrimitives: IOrder,
+  ): Promise<Result<void, RepositoryError>> {
     try {
-      const cancelResult = await this.postgresRepo.cancelOrder(order);
+      const cancelResult = await this.postgresRepo.cancelOrder(orderPrimitives);
       if (cancelResult.isFailure) return cancelResult;
-      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${order.id}`);
+      await this.cacheService.delete(
+        `${Order_REDIS.CACHE_KEY}:${orderPrimitives.id}`,
+      );
       await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);

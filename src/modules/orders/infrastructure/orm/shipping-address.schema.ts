@@ -1,5 +1,5 @@
 // src/modules/orders/infrastructure/orm/shipping-address.schema.ts
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity({ name: 'shipping_addresses' })
 export class ShippingAddressEntity {

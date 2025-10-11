@@ -18,6 +18,8 @@ export abstract class OrderRepository {
   abstract listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], RepositoryError>>;
-  abstract cancelOrder(order: Order): Promise<Result<void, RepositoryError>>;
+  abstract cancelOrder(
+    orderPrimitives: IOrder,
+  ): Promise<Result<void, RepositoryError>>;
   abstract deleteById(id: string): Promise<Result<void, RepositoryError>>;
 }

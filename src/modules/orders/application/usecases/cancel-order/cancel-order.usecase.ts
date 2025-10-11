@@ -24,7 +24,9 @@ export class CancelOrderUseCase
 
       order.cancel();
 
-      const cancelRequest = await this.orderRepository.cancelOrder(order);
+      const cancelRequest = await this.orderRepository.cancelOrder(
+        order.toPrimitives(),
+      );
       if (cancelRequest.isFailure) return cancelRequest;
 
       return Result.success(order.toPrimitives());

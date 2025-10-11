@@ -376,23 +376,23 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
-  async cancelOrder(order: Order): Promise<Result<void, RepositoryError>> {
+  async cancelOrder(
+    orderPrimitives: IOrder,
+  ): Promise<Result<void, RepositoryError>> {
     try {
       await this.dataSource.transaction(async (manager) => {
-        for (const item of order.getItemEntities()) {
-          const itemPrimitives = item.toPrimitives();
+        for (const item of orderPrimitives.items) {
           await manager
             .createQueryBuilder()
             .update(ProductEntity)
             .set({
-              stockQuantity: () =>
-                `stock_quantity + ${itemPrimitives.quantity}`,
+              stockQuantity: () => `stock_quantity + ${item.quantity}`,
             })
-            .where('id = :id', { id: itemPrimitives.productId })
+            .where('id = :id', { id: item.productId })
             .execute();
         }
 
-        const updatedEntity = OrderMapper.toEntity(order.toPrimitives());
+        const updatedEntity = OrderMapper.toEntity(orderPrimitives);
 
         await manager.save(updatedEntity);
       });
