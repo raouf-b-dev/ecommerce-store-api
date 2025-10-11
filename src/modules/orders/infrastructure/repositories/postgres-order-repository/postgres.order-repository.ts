@@ -346,17 +346,19 @@ export class PostgresOrderRepository implements OrderRepository {
   //   };
   // }
 
-  async findById(id: string): Promise<Result<IOrder, RepositoryError>> {
+  async findById(id: string): Promise<Result<Order, RepositoryError>> {
     try {
-      const order = await this.ormRepo.findOne({
+      const orderEntity = await this.ormRepo.findOne({
         where: { id },
         relations: ['items'],
       });
-      if (!order) {
+      if (!orderEntity) {
         return ErrorFactory.RepositoryError('Order not found');
       }
 
-      return Result.success<IOrder>(order);
+      const order = OrderMapper.toDomain(orderEntity);
+
+      return Result.success<Order>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to find the order', error);
     }
@@ -374,55 +376,29 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
-  async cancelById(id: string): Promise<Result<IOrder, RepositoryError>> {
+  async cancelOrder(order: Order): Promise<Result<void, RepositoryError>> {
     try {
-      const updatedOrder = await this.dataSource.transaction(
-        async (manager) => {
-          const existingOrder = await manager.findOne(OrderEntity, {
-            where: { id },
-            relations: ['items'],
-          });
+      await this.dataSource.transaction(async (manager) => {
+        for (const item of order.getItemEntities()) {
+          const itemPrimitives = item.toPrimitives();
+          await manager
+            .createQueryBuilder()
+            .update(ProductEntity)
+            .set({
+              stockQuantity: () =>
+                `stock_quantity + ${itemPrimitives.quantity}`,
+            })
+            .where('id = :id', { id: itemPrimitives.productId })
+            .execute();
+        }
 
-          if (!existingOrder) {
-            throw new RepositoryError(
-              `ORDER_NOT_FOUND: Order with ID ${id} not found`,
-            );
-          }
+        const updatedEntity = OrderMapper.toEntity(order.toPrimitives());
 
-          const domainOrder = OrderMapper.toDomain(existingOrder);
+        await manager.save(updatedEntity);
+      });
 
-          if (!domainOrder.isCancellable()) {
-            throw new RepositoryError(
-              `ORDER_CANNOT_BE_CANCELLED: Cannot cancel order with status "${domainOrder.status}"`,
-            );
-          }
-
-          for (const item of domainOrder.getItemEntities()) {
-            const itemPrimitives = item.toPrimitives();
-            await manager
-              .createQueryBuilder()
-              .update(ProductEntity)
-              .set({
-                stockQuantity: () =>
-                  `stock_quantity + ${itemPrimitives.quantity}`,
-              })
-              .where('id = :id', { id: itemPrimitives.productId })
-              .execute();
-          }
-
-          domainOrder.cancel();
-
-          const updatedEntity = OrderMapper.toEntity(
-            domainOrder.toPrimitives(),
-          );
-
-          const savedOrder = await manager.save(updatedEntity);
-          return savedOrder as IOrder;
-        },
-      );
-
-      return Result.success<IOrder>(updatedOrder);
-    } catch (error: any) {
+      return Result.success<void>(undefined);
+    } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to cancel order', error);
     }

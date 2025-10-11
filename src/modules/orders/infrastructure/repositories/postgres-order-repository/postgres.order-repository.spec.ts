@@ -13,6 +13,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { PaymentMethod } from '../../../domain/value-objects/payment-method';
 import { PaymentStatus } from '../../../domain/value-objects/payment-status';
 import { PostgresOrderRepository } from './postgres.order-repository';
+import { Order } from '../../../domain/entities/order';
 
 describe('PostgresOrderRepository', () => {
   let repository: PostgresOrderRepository;
@@ -21,7 +22,6 @@ describe('PostgresOrderRepository', () => {
   let mockDataSource: jest.Mocked<DataSource>;
   let mockManager: any;
   let mockTxQb: any;
-  // Mock data from user
   const generatedId = 'OR0000001';
   const generatedCustomerId = 'CUST0000001';
   const generatedPaymentInfoId = 'PAY0000001';
@@ -106,7 +106,6 @@ describe('PostgresOrderRepository', () => {
     updatedAt: new Date('2025-10-01T10:00:00.000Z'),
   };
 
-  // Add this near your other mock data
   const mockDomainPrimitives = {
     id: 'OR0000001',
     customerId: 'CUST0000001',
@@ -121,7 +120,6 @@ describe('PostgresOrderRepository', () => {
     },
     items: [
       {
-        // The ID is dynamic, but we put a placeholder here
         id: '370cbbcf-c0f2-4b1e-94ef-d87526b2c069',
         productId: 'PR0000001',
         productName: 'Test Product',
@@ -394,7 +392,10 @@ describe('PostgresOrderRepository', () => {
       mockOrmRepo.findOne.mockResolvedValue(mockOrderEntity);
       const result = await repository.findById('OR0000001');
       expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrderEntity);
+      if (result.isSuccess)
+        expect(result.value).toEqual(
+          Order.fromPrimitives(mockDomainPrimitives),
+        );
     });
     it('should return error if order not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
@@ -432,39 +433,97 @@ describe('PostgresOrderRepository', () => {
         expect(result.error.message).toBe('Failed to delete the order');
     });
   });
-  describe('cancelById', () => {
-    it('should cancel order successfully', async () => {
-      mockManager.findOne.mockResolvedValue(mockOrderEntity);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue(mockOrderEntity);
-      const result = await repository.cancelById('OR0000001');
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrderEntity);
-    });
-    it('should fail if order not found', async () => {
-      mockManager.findOne.mockResolvedValue(null);
-      const result = await repository.cancelById('OR0000001');
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('ORDER_NOT_FOUND');
-    });
-    it('should fail if order not cancellable', async () => {
-      const nonCancellableOrder = {
-        ...mockOrderEntity,
-        status: OrderStatus.DELIVERED,
-      };
-      mockManager.findOne.mockResolvedValue(nonCancellableOrder);
-      const result = await repository.cancelById('OR0000001');
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('ORDER_CANNOT_BE_CANCELLED');
-    });
-    it('should return error on DB failure', async () => {
-      mockManager.findOne.mockRejectedValue(new Error('DB Error'));
-      const result = await repository.cancelById('OR0000001');
+  describe('cancelOrder', () => {
+    it('should return error on DB failure (save fails)', async () => {
+      mockManager.save.mockRejectedValue(new Error('DB Error'));
+
+      const cancelledOrder: Order = Order.fromPrimitives(mockDomainPrimitives);
+      cancelledOrder.cancel();
+      const result = await repository.cancelOrder(cancelledOrder);
+
       expect(result.isFailure).toBe(true);
       if (result.isFailure)
         expect(result.error.message).toBe('Failed to cancel order');
+    });
+
+    it('should cancel order and restore stock for each item (success)', async () => {
+      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
+      mockManager.save.mockResolvedValue({
+        ...mockOrderEntity,
+        status: OrderStatus.CANCELLED,
+      });
+
+      const cancelledOrder: Order = Order.fromPrimitives(mockDomainPrimitives);
+      cancelledOrder.cancel();
+
+      const result = await repository.cancelOrder(cancelledOrder);
+
+      expect(result.isSuccess).toBe(true);
+
+      expect(mockManager.createQueryBuilder).toHaveBeenCalled();
+      expect(mockTxQb.update).toHaveBeenCalled();
+      const itemProductId = mockDomainPrimitives.items[0].productId;
+      expect(mockTxQb.where).toHaveBeenCalledWith('id = :id', {
+        id: itemProductId,
+      });
+      expect(mockManager.save).toHaveBeenCalled();
+    });
+
+    it('should return error when updating product stock fails (query builder execute rejects)', async () => {
+      mockTxQb.execute.mockRejectedValue(
+        new Error('DB Error during stock restore'),
+      );
+
+      const cancelledOrder: Order = Order.fromPrimitives(mockDomainPrimitives);
+      cancelledOrder.cancel();
+
+      const result = await repository.cancelOrder(cancelledOrder);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure)
+        expect(result.error.message).toBe('Failed to cancel order');
+    });
+
+    it('should restore stock for multiple items when order has many items', async () => {
+      const multiItemPrimitives = {
+        ...mockDomainPrimitives,
+        items: [
+          { ...mockDomainPrimitives.items[0] },
+          {
+            id: 'b1d2c3d4-e5f6-4789-9abc-def012345678',
+            productId: 'PR0000002',
+            productName: 'Second Product',
+            unitPrice: 50,
+            quantity: 1,
+            lineTotal: 50,
+          },
+        ],
+      };
+
+      mockManager.createQueryBuilder.mockClear();
+      mockTxQb.update.mockClear();
+      mockTxQb.where.mockClear();
+      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
+      mockManager.save.mockResolvedValue({
+        ...mockOrderEntity,
+        id: 'OR0000001',
+      });
+
+      const cancelledOrder: Order = Order.fromPrimitives(multiItemPrimitives);
+      cancelledOrder.cancel();
+
+      const result = await repository.cancelOrder(cancelledOrder);
+
+      expect(result.isSuccess).toBe(true);
+
+      expect(mockManager.createQueryBuilder).toHaveBeenCalledTimes(2);
+      expect(mockTxQb.where).toHaveBeenCalledWith('id = :id', {
+        id: 'PR0000001',
+      });
+      expect(mockTxQb.where).toHaveBeenCalledWith('id = :id', {
+        id: 'PR0000002',
+      });
+      expect(mockManager.save).toHaveBeenCalled();
     });
   });
 });
