@@ -1,7 +1,7 @@
 // src/modules/orders/presentation/controllers/ListOrders/list-orders.controller.spec.ts
 import { ListOrdersController } from './list-orders.controller';
 import { ListOrdersUsecase } from '../../../application/usecases/list-orders/list-orders.usecase';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import {
   Result,
   isSuccess,

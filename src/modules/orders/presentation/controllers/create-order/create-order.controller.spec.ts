@@ -1,8 +1,8 @@
 // src/modules/Orders/presentation/controllers/Create-Order.controller.spec.ts
 import { CreateOrderController } from './create-order.controller';
 import { CreateOrderUseCase } from '../../../application/usecases/create-order/create-order.usecase';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
-import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.test.factory';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import {
   isFailure,
   isSuccess,

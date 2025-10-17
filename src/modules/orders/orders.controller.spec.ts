@@ -5,8 +5,8 @@ import { GetOrderController } from './presentation/controllers/get-order/get-ord
 import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
-import { OrderTestFactory } from './testing/factories/order.test.factory';
-import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.test.factory';
+import { OrderTestFactory } from './testing/factories/order.factory';
+import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
 
 describe('OrdersController', () => {
   let controller: OrdersController;

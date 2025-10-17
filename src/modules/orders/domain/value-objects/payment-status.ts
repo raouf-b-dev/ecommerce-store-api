@@ -3,6 +3,7 @@ export enum PaymentStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FAILED = 'failed',
+  NOT_REQUIRED_YET = 'not_required_yet',
 }
 
 export class PaymentStatusVO {
@@ -31,11 +32,19 @@ export class PaymentStatusVO {
     return this._status === PaymentStatus.FAILED;
   }
 
+  isNotRequiredYet(): boolean {
+    return this._status === PaymentStatus.NOT_REQUIRED_YET;
+  }
+
   canTransitionTo(newStatus: PaymentStatus): boolean {
     const transitions: Record<PaymentStatus, PaymentStatus[]> = {
       [PaymentStatus.PENDING]: [PaymentStatus.COMPLETED, PaymentStatus.FAILED],
-      [PaymentStatus.COMPLETED]: [], // Final state
-      [PaymentStatus.FAILED]: [PaymentStatus.PENDING], // Can retry failed payments
+      [PaymentStatus.COMPLETED]: [],
+      [PaymentStatus.FAILED]: [PaymentStatus.PENDING],
+      [PaymentStatus.NOT_REQUIRED_YET]: [
+        PaymentStatus.PENDING,
+        PaymentStatus.COMPLETED,
+      ],
     };
 
     return transitions[this._status].includes(newStatus);
@@ -59,5 +68,9 @@ export class PaymentStatusVO {
 
   static failed(): PaymentStatusVO {
     return new PaymentStatusVO(PaymentStatus.FAILED);
+  }
+
+  static notRequiredYet(): PaymentStatusVO {
+    return new PaymentStatusVO(PaymentStatus.NOT_REQUIRED_YET);
   }
 }

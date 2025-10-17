@@ -8,7 +8,7 @@ import {
 } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
 
 describe('GetOrderController', () => {
   let controller: GetOrderController;

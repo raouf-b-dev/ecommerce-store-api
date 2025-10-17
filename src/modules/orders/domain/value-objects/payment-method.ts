@@ -6,6 +6,11 @@ export enum PaymentMethod {
   CREDIT_CARD = 'credit_card',
 }
 
+export enum PaymentTiming {
+  BEFORE_FULFILLMENT = 'before_fulfillment',
+  ON_DELIVERY = 'on_delivery',
+}
+
 export class PaymentMethodVO {
   private readonly _method: PaymentMethod;
 
@@ -20,7 +25,6 @@ export class PaymentMethodVO {
     return this._method;
   }
 
-  // Business logic methods
   isCashOnDelivery(): boolean {
     return this._method === PaymentMethod.CASH_ON_DELIVERY;
   }
@@ -41,9 +45,28 @@ export class PaymentMethodVO {
     return this._method === PaymentMethod.CREDIT_CARD;
   }
 
-  // Business rules
-  requiresImmediatePayment(): boolean {
-    return this.isOnlinePayment();
+  /**
+   * Critical: Determines when payment should be collected
+   */
+  getPaymentTiming(): PaymentTiming {
+    if (this.isCashOnDelivery()) {
+      return PaymentTiming.ON_DELIVERY;
+    }
+    return PaymentTiming.BEFORE_FULFILLMENT;
+  }
+
+  /**
+   * Payment must be completed before order can be confirmed
+   */
+  requiresPaymentBeforeConfirmation(): boolean {
+    return this.getPaymentTiming() === PaymentTiming.BEFORE_FULFILLMENT;
+  }
+
+  /**
+   * Payment happens during delivery
+   */
+  requiresPaymentOnDelivery(): boolean {
+    return this.getPaymentTiming() === PaymentTiming.ON_DELIVERY;
   }
 
   allowsManualConfirmation(): boolean {
@@ -51,7 +74,6 @@ export class PaymentMethodVO {
   }
 
   supportsRefunds(): boolean {
-    // COD doesn't support automatic refunds
     return this.isOnlinePayment();
   }
 
@@ -68,17 +90,16 @@ export class PaymentMethodVO {
 
   getProcessingFee(amount: number): number {
     const feeRates: Record<PaymentMethod, number> = {
-      [PaymentMethod.CASH_ON_DELIVERY]: 0, // No processing fee
-      [PaymentMethod.STRIPE]: 0.029, // 2.9% + $0.30
-      [PaymentMethod.PAYPAL]: 0.0349, // 3.49% + $0.49
-      [PaymentMethod.CREDIT_CARD]: 0.025, // 2.5%
+      [PaymentMethod.CASH_ON_DELIVERY]: 0,
+      [PaymentMethod.STRIPE]: 0.029,
+      [PaymentMethod.PAYPAL]: 0.0349,
+      [PaymentMethod.CREDIT_CARD]: 0.025,
     };
 
     const rate = feeRates[this._method];
-    return Math.round(amount * rate * 100) / 100; // Round to 2 decimals
+    return Math.round(amount * rate * 100) / 100;
   }
 
-  // Value object equality
   equals(other: PaymentMethodVO): boolean {
     return this._method === other._method;
   }
@@ -87,7 +108,6 @@ export class PaymentMethodVO {
     return this._method;
   }
 
-  // Factory methods
   static cashOnDelivery(): PaymentMethodVO {
     return new PaymentMethodVO(PaymentMethod.CASH_ON_DELIVERY);
   }

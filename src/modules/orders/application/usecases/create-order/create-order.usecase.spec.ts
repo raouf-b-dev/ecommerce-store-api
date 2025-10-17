@@ -1,8 +1,8 @@
 // src/modules/Orders/application/usecases/CreateOrder/create-order.usecase.spec.ts
 import { CreateOrderUseCase } from './create-order.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
-import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.test.factory';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { isFailure, isSuccess } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';

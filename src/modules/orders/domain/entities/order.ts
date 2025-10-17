@@ -24,6 +24,7 @@ import {
   PaymentStatus,
   PaymentStatusVO,
 } from '../value-objects/payment-status';
+import { PaymentMethodVO } from '../value-objects/payment-method';
 import { OrderPricing } from '../value-objects/order-pricing';
 import { IShippingAddress } from '../interfaces/shipping-address.interface';
 
@@ -55,7 +56,6 @@ export class Order implements IOrder {
   private _status: OrderStatusVO;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
-
   private _pricing: OrderPricing;
 
   constructor(props: OrderProps) {
@@ -75,7 +75,6 @@ export class Order implements IOrder {
     this._status = new OrderStatusVO(props.status || OrderStatus.PENDING);
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
-
     this._pricing = OrderPricing.calculate(this._items);
   }
 
@@ -97,34 +96,28 @@ export class Order implements IOrder {
     }
   }
 
+  // Getters
   get id(): string {
     return this._id;
   }
-
   get customerId(): string {
     return this._customerId;
   }
-
   get paymentInfoId(): string {
     return this._paymentInfoId;
   }
-
   get shippingAddressId(): string {
     return this._shippingAddressId;
   }
-
   get customerInfo(): ICustomerInfo {
     return this._customerInfo.toPrimitives();
   }
-
   get items(): IOrderItem[] {
     return this._items.map((item) => item.toPrimitives());
   }
-
   get shippingAddress(): IShippingAddress {
     return this._shippingAddress.toPrimitives();
   }
-
   get paymentInfo(): IPaymentInfo {
     return {
       id: this._paymentInfo.id,
@@ -136,31 +129,24 @@ export class Order implements IOrder {
       notes: this._paymentInfo.notes,
     };
   }
-
   get customerNotes(): string | undefined {
     return this._customerNotes;
   }
-
   get status(): OrderStatus {
     return this._status.value;
   }
-
   get subtotal(): number {
     return this._pricing.subtotal;
   }
-
   get shippingCost(): number {
     return this._pricing.shippingCost;
   }
-
   get totalPrice(): number {
     return this._pricing.totalPrice;
   }
-
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
-
   get updatedAt(): Date {
     return new Date(this._updatedAt);
   }
@@ -173,11 +159,244 @@ export class Order implements IOrder {
     return this._pricing;
   }
 
+  private getPaymentMethod(): PaymentMethodVO {
+    return new PaymentMethodVO(this._paymentInfo.method);
+  }
+
+  // ==================== BUSINESS RULES ====================
+
+  /**
+   * Orders can only be edited when pending
+   */
   private assertCanBeUpdated(): void {
     if (!this._status.isPending()) {
       throw new Error('Order can only be updated when status is PENDING');
     }
   }
+
+  /**
+   * Check if order can be confirmed based on payment method
+   * - Online payments: payment must be completed first
+   * - COD: can be confirmed immediately
+   */
+  canBeConfirmed(): boolean {
+    if (!this._status.isPending()) {
+      return false;
+    }
+
+    const paymentMethod = this.getPaymentMethod();
+
+    // Online payments require payment completion before confirmation
+    if (paymentMethod.requiresPaymentBeforeConfirmation()) {
+      return this._paymentInfo.isCompleted();
+    }
+
+    // COD can be confirmed without payment
+    return true;
+  }
+
+  /**
+   * Confirm the order - different logic for different payment methods
+   */
+  confirm(): void {
+    if (!this.canBeConfirmed()) {
+      const paymentMethod = this.getPaymentMethod();
+
+      if (paymentMethod.requiresPaymentBeforeConfirmation()) {
+        throw new Error(
+          'Cannot confirm order - payment must be completed first',
+        );
+      }
+
+      throw new Error('Order cannot be confirmed in current state');
+    }
+
+    this.changeStatus(OrderStatus.CONFIRMED);
+  }
+
+  /**
+   * Check if order can be processed
+   */
+  canBeProcessed(): boolean {
+    return this._status.isConfirmed();
+  }
+
+  /**
+   * Process the order (prepare/pack)
+   */
+  process(): void {
+    if (!this.canBeProcessed()) {
+      throw new Error('Order must be confirmed before processing');
+    }
+    this.changeStatus(OrderStatus.PROCESSING);
+  }
+
+  /**
+   * Check if order can be shipped
+   */
+  canBeShipped(): boolean {
+    return this._status.isProcessing();
+  }
+
+  /**
+   * Ship the order
+   */
+  ship(): void {
+    if (!this.canBeShipped()) {
+      throw new Error('Order must be in processing state to ship');
+    }
+    this.changeStatus(OrderStatus.SHIPPED);
+  }
+
+  /**
+   * Check if order can be delivered
+   * COD orders must have payment collected at this point
+   */
+  canBeDelivered(): boolean {
+    if (!this._status.isShipped()) {
+      return false;
+    }
+
+    const paymentMethod = this.getPaymentMethod();
+
+    // COD requires payment to be collected during delivery
+    if (paymentMethod.requiresPaymentOnDelivery()) {
+      // Payment should be pending or not required yet
+      return (
+        this._paymentInfo.isPending() || this._paymentInfo.isNotRequiredYet()
+      );
+    }
+
+    // Online payments should already be completed
+    return this._paymentInfo.isCompleted();
+  }
+
+  /**
+   * Deliver the order
+   * For COD: marks payment as completed at delivery
+   */
+  deliver(codPaymentDetails?: {
+    transactionId?: string;
+    notes?: string;
+  }): void {
+    if (!this.canBeDelivered()) {
+      throw new Error('Order cannot be delivered in current state');
+    }
+
+    const paymentMethod = this.getPaymentMethod();
+
+    // For COD, collect payment at delivery
+    if (paymentMethod.requiresPaymentOnDelivery()) {
+      if (!this._paymentInfo.isCompleted()) {
+        this._paymentInfo.markAsCompleted(
+          codPaymentDetails?.transactionId || `COD-${this._id}`,
+          codPaymentDetails?.notes || 'Payment collected on delivery',
+        );
+      }
+    }
+
+    this.changeStatus(OrderStatus.DELIVERED);
+  }
+
+  /**
+   * Check if order can be cancelled
+   */
+  isCancellable(): boolean {
+    return (
+      this._status.isPending() ||
+      this._status.isConfirmed() ||
+      this._status.isProcessing() ||
+      this._status.isShipped()
+    );
+  }
+
+  /**
+   * Cancel the order
+   * Note: Cancelling shipped orders may require additional business logic
+   */
+  cancel(reason?: string): void {
+    if (!this.isCancellable()) {
+      throw new Error('Order cannot be cancelled in current state');
+    }
+
+    // Add cancellation reason to notes
+    if (reason) {
+      this._customerNotes = this._customerNotes
+        ? `${this._customerNotes}\n\nCancellation reason: ${reason}`
+        : `Cancellation reason: ${reason}`;
+    }
+
+    this.changeStatus(OrderStatus.CANCELLED);
+
+    // Handle refunds for online payments if already paid
+    const paymentMethod = this.getPaymentMethod();
+    if (paymentMethod.supportsRefunds() && this._paymentInfo.isCompleted()) {
+      // Trigger refund process (implement in payment service)
+      this._paymentInfo.updateTransactionInfo(
+        this._paymentInfo.transactionId || '',
+        'Refund initiated due to cancellation',
+      );
+    }
+  }
+
+  /**
+   * Check if payment is required now
+   */
+  requiresPayment(): boolean {
+    const paymentMethod = this.getPaymentMethod();
+
+    // Online payments require immediate payment
+    if (paymentMethod.requiresPaymentBeforeConfirmation()) {
+      return this._paymentInfo.isPending();
+    }
+
+    // COD requires payment at delivery
+    if (paymentMethod.requiresPaymentOnDelivery()) {
+      return this._status.isShipped() && !this._paymentInfo.isCompleted();
+    }
+
+    return false;
+  }
+
+  /**
+   * Get next expected action based on current state
+   */
+  getNextExpectedAction(): string {
+    if (this._status.isPending()) {
+      const paymentMethod = this.getPaymentMethod();
+      if (
+        paymentMethod.requiresPaymentBeforeConfirmation() &&
+        !this._paymentInfo.isCompleted()
+      ) {
+        return 'Awaiting payment';
+      }
+      return 'Awaiting confirmation';
+    }
+
+    if (this._status.isConfirmed()) {
+      return 'Ready for processing';
+    }
+
+    if (this._status.isProcessing()) {
+      return 'Ready for shipping';
+    }
+
+    if (this._status.isShipped()) {
+      const paymentMethod = this.getPaymentMethod();
+      if (paymentMethod.requiresPaymentOnDelivery()) {
+        return 'Awaiting delivery and payment collection';
+      }
+      return 'In transit';
+    }
+
+    if (this._status.isDelivered()) {
+      return 'Completed';
+    }
+
+    return 'Cancelled';
+  }
+
+  // ==================== UPDATE METHODS ====================
 
   private recalculatePricing(): void {
     this._pricing = OrderPricing.recalculate(this._items);
@@ -191,11 +410,9 @@ export class Order implements IOrder {
 
   updateItems(items: OrderItemProps[]): void {
     this.assertCanBeUpdated();
-
     if (!items || items.length === 0) {
       throw new Error('Order must have at least one item');
     }
-
     this._items = items.map((item) => new OrderItem(item));
     this.recalculatePricing();
     this._updatedAt = new Date();
@@ -252,25 +469,21 @@ export class Order implements IOrder {
     if (updates.customerInfo) {
       this.updateCustomerInfo(updates.customerInfo);
     }
-
     if (updates.items) {
       this.updateItems(updates.items);
     }
-
     if (updates.shippingAddress) {
       this.updateShippingAddress(updates.shippingAddress);
     }
-
     if (updates.paymentInfo) {
       this.updatePaymentInfo(updates.paymentInfo);
     }
-
     if (updates.customerNotes !== undefined) {
       this.updateCustomerNotes(updates.customerNotes);
     }
   }
 
-  changeStatus(newStatus: OrderStatus | string): void {
+  private changeStatus(newStatus: OrderStatus | string): void {
     const newStatusVO = new OrderStatusVO(newStatus);
 
     if (!this._status.canTransitionTo(newStatusVO.value)) {
@@ -283,55 +496,29 @@ export class Order implements IOrder {
     this._updatedAt = new Date();
   }
 
-  cancel(): void {
-    this.changeStatus(OrderStatus.CANCELLED);
-  }
-
-  markAsPaid(): void {
-    if (!this._paymentInfo.isCompleted()) {
-      throw new Error('Cannot mark order as paid - payment not completed');
-    }
-    this.changeStatus(OrderStatus.PAID);
-  }
-
-  process(): void {
-    this.changeStatus(OrderStatus.PROCESSING);
-  }
-
-  ship(): void {
-    this.changeStatus(OrderStatus.SHIPPED);
-  }
-
-  deliver(): void {
-    this.changeStatus(OrderStatus.DELIVERED);
-  }
+  // ==================== QUERY METHODS ====================
 
   isEditable(): boolean {
     return this._status.isPending();
   }
 
-  isProcessable(): boolean {
-    return this._status.isPaid();
-  }
-
-  isShippable(): boolean {
-    return this._status.isProcessing();
-  }
-
-  isCancellable(): boolean {
+  isInProgress(): boolean {
     return (
-      this._status.isPending() ||
-      this._status.isPaid() ||
-      this._status.isProcessing()
+      this._status.isConfirmed() ||
+      this._status.isProcessing() ||
+      this._status.isShipped()
     );
   }
 
-  requiresPayment(): boolean {
-    return (
-      this._paymentInfo.requiresImmediatePayment() &&
-      this._paymentInfo.isPending()
-    );
+  isCompleted(): boolean {
+    return this._status.isDelivered();
   }
+
+  isCancelled(): boolean {
+    return this._status.isCancellable();
+  }
+
+  // ==================== SERIALIZATION ====================
 
   toPrimitives(): IOrder {
     return {
@@ -367,11 +554,17 @@ export class Order implements IOrder {
   }): Order {
     const orderItems = props.items.map((item) => new OrderItem(item));
     const pricing = OrderPricing.calculate(orderItems);
+    const paymentMethod = new PaymentMethodVO(props.paymentInfo.method);
+
+    // Set initial payment status based on payment method
+    const initialPaymentStatus = paymentMethod.requiresPaymentOnDelivery()
+      ? PaymentStatus.NOT_REQUIRED_YET
+      : PaymentStatus.PENDING;
 
     const paymentInfo: PaymentInfoProps = {
       id: props.paymentInfo.id,
       method: props.paymentInfo.method,
-      status: PaymentStatus.PENDING,
+      status: initialPaymentStatus,
       amount: pricing.totalPrice,
       notes: props.paymentInfo.notes,
     };

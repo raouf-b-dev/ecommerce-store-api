@@ -1,7 +1,7 @@
 // src/modules/orders/application/usecases/ListOrders/list-orders.usecase.spec.ts
 import { ListOrdersUsecase } from './list-orders.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { isSuccess, isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { RepositoryError } from '../../../../../core/errors/repository.error';

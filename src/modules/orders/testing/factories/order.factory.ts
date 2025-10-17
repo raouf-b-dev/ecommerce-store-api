@@ -1,4 +1,4 @@
-// src/modules/order/testing/factories/order.factory.ts
+// src/modules/order/testing/factories/order.test.factory.ts
 import { IOrder } from '../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../domain/value-objects/order-status';
 import { PaymentMethod } from '../../domain/value-objects/payment-method';
@@ -38,7 +38,7 @@ export class OrderTestFactory {
         lastName: 'Doe',
       },
 
-      // Payment information
+      // Payment information - defaults to CREDIT_CARD with PENDING status
       paymentInfo: {
         id: 'PAY001',
         method: PaymentMethod.CREDIT_CARD,
@@ -57,7 +57,7 @@ export class OrderTestFactory {
         city: 'New York',
         state: 'NY',
         postalCode: '10001',
-        country: 'DZ',
+        country: 'dz',
         phone: '+1234567890',
       },
 
@@ -92,12 +92,49 @@ export class OrderTestFactory {
     });
   }
 
+  static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.CONFIRMED,
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        status: PaymentStatus.COMPLETED,
+        paidAt: new Date('2025-01-01T10:30:00Z'),
+      },
+      ...overrides,
+    });
+  }
+
+  static createProcessingOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.PROCESSING,
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        status: PaymentStatus.COMPLETED,
+        paidAt: new Date('2025-01-01T10:30:00Z'),
+      },
+      ...overrides,
+    });
+  }
+
   static createShippedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.SHIPPED,
       paymentInfo: {
         ...this.createMockOrder().paymentInfo,
         status: PaymentStatus.COMPLETED,
+        paidAt: new Date('2025-01-01T10:30:00Z'),
+      },
+      ...overrides,
+    });
+  }
+
+  static createDeliveredOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.DELIVERED,
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        status: PaymentStatus.COMPLETED,
+        paidAt: new Date('2025-01-01T11:00:00Z'),
       },
       ...overrides,
     });
@@ -106,16 +143,25 @@ export class OrderTestFactory {
   static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.CANCELLED,
+      customerNotes: 'Order cancelled by customer',
       ...overrides,
     });
   }
 
+  /**
+   * IMPORTANT: Cancellable orders are PENDING, CONFIRMED, PROCESSING, or SHIPPED
+   * Default: PENDING for easy testing
+   */
   static createCancellableOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createPendingOrder(overrides);
   }
 
+  /**
+   * IMPORTANT: Non-cancellable orders are DELIVERED or CANCELLED
+   * Default: DELIVERED (final state)
+   */
   static createNonCancellableOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createShippedOrder(overrides);
+    return this.createDeliveredOrder(overrides);
   }
 
   /**
@@ -126,6 +172,32 @@ export class OrderTestFactory {
       paymentInfo: {
         ...this.createMockOrder().paymentInfo,
         method: PaymentMethod.CASH_ON_DELIVERY,
+        status: PaymentStatus.NOT_REQUIRED_YET, // Important!
+        transactionId: undefined,
+        paidAt: undefined,
+        notes: 'Payment on delivery',
+      },
+      ...overrides,
+    });
+  }
+
+  static createStripeOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        method: PaymentMethod.STRIPE,
+        status: PaymentStatus.PENDING,
+      },
+      ...overrides,
+    });
+  }
+
+  static createPayPalOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        method: PaymentMethod.PAYPAL,
+        status: PaymentStatus.PENDING,
       },
       ...overrides,
     });
@@ -150,10 +222,58 @@ export class OrderTestFactory {
     return this.createMockOrder({
       items,
       subtotal,
+      shippingCost: 5,
       totalPrice,
       paymentInfo: {
         ...this.createMockOrder().paymentInfo,
         amount: totalPrice,
+      },
+    });
+  }
+
+  /**
+   * Helper: Creates COD order ready for confirmation
+   */
+  static createCODOrderReadyForConfirmation(): IOrder {
+    return this.createCashOnDeliveryOrder({
+      status: OrderStatus.PENDING,
+      paymentInfo: {
+        id: 'PAY001',
+        method: PaymentMethod.CASH_ON_DELIVERY,
+        status: PaymentStatus.NOT_REQUIRED_YET,
+        amount: 15,
+        notes: 'Payment on delivery',
+      },
+    });
+  }
+
+  /**
+   * Helper: Creates online payment order ready for confirmation (payment completed)
+   */
+  static createOnlineOrderReadyForConfirmation(): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.PENDING,
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        status: PaymentStatus.COMPLETED,
+        paidAt: new Date(),
+        transactionId: 'stripe_pi_123456',
+      },
+    });
+  }
+
+  /**
+   * Helper: Creates online payment order NOT ready for confirmation (payment pending)
+   */
+  static createOnlineOrderNotReadyForConfirmation(): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.PENDING,
+      paymentInfo: {
+        ...this.createMockOrder().paymentInfo,
+        method: PaymentMethod.STRIPE,
+        status: PaymentStatus.PENDING,
+        transactionId: undefined,
+        paidAt: undefined,
       },
     });
   }

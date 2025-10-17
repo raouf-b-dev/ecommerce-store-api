@@ -7,7 +7,7 @@ import {
 } from './order.factory';
 import { OrderStatus } from '../value-objects/order-status';
 import { DomainError } from '../../../../core/errors/domain.error';
-import { CreateOrderDtoTestFactory } from '../../testing/factories/create-order-dto.test.factory';
+import { CreateOrderDtoTestFactory } from '../../testing/factories/create-order-dto.factory';
 
 describe('OrderFactory', () => {
   let factory: OrderFactory;

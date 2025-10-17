@@ -1,11 +1,15 @@
 // src/modules/orders/domain/value-objects/order-status.ts
+
+/**
+ * Order status represents the FULFILLMENT state, independent of payment
+ */
 export enum OrderStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
+  PENDING = 'pending', // Order created, awaiting confirmation
+  CONFIRMED = 'confirmed', // Order confirmed, ready for processing
+  PROCESSING = 'processing', // Order being prepared/packed
+  SHIPPED = 'shipped', // Order in transit
+  DELIVERED = 'delivered', // Order delivered to customer
+  CANCELLED = 'cancelled', // Order cancelled
 }
 
 export class OrderStatusVO {
@@ -26,8 +30,8 @@ export class OrderStatusVO {
     return this._status === OrderStatus.PENDING;
   }
 
-  isPaid(): boolean {
-    return this._status === OrderStatus.PAID;
+  isConfirmed(): boolean {
+    return this._status === OrderStatus.CONFIRMED;
   }
 
   isProcessing(): boolean {
@@ -42,18 +46,21 @@ export class OrderStatusVO {
     return this._status === OrderStatus.DELIVERED;
   }
 
-  isCancelled(): boolean {
+  isCancellable(): boolean {
     return this._status === OrderStatus.CANCELLED;
   }
 
+  /**
+   * Order status transitions independent of payment
+   */
   canTransitionTo(newStatus: OrderStatus): boolean {
     const transitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
-      [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
       [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
-      [OrderStatus.DELIVERED]: [], // Final state
-      [OrderStatus.CANCELLED]: [], // Final state
+      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+      [OrderStatus.DELIVERED]: [],
+      [OrderStatus.CANCELLED]: [],
     };
 
     return transitions[this._status].includes(newStatus);
@@ -71,8 +78,8 @@ export class OrderStatusVO {
     return new OrderStatusVO(OrderStatus.PENDING);
   }
 
-  static paid(): OrderStatusVO {
-    return new OrderStatusVO(OrderStatus.PAID);
+  static confirmed(): OrderStatusVO {
+    return new OrderStatusVO(OrderStatus.CONFIRMED);
   }
 
   static processing(): OrderStatusVO {

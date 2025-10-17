@@ -1,8 +1,8 @@
 // src/modules/orders/application/usecases/get-order/get-order.usecase.spec.ts
 import { GetOrderUseCase } from './get-order.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../testing/factories/order.test.factory';
-import { OrderBuilder } from '../../../testing/builders/order.test.builder';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { OrderBuilder } from '../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { isFailure, isSuccess } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';

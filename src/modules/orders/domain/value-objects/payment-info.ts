@@ -32,11 +32,31 @@ export class PaymentInfo implements IPaymentInfo {
     this._transactionId = props.transactionId;
     this._paidAt = props.paidAt;
     this._notes = props.notes?.trim();
+
+    // Validate status makes sense for payment method
+    this.validateStatusForMethod();
   }
 
   private validateProps(props: PaymentInfoProps): void {
     if (props.amount <= 0) {
       throw new Error('Payment amount must be positive');
+    }
+  }
+
+  private validateStatusForMethod(): void {
+    // NOT_REQUIRED_YET should only be used for COD
+    if (this._status.isNotRequiredYet() && !this._method.isCashOnDelivery()) {
+      throw new Error(
+        'NOT_REQUIRED_YET status can only be used with Cash on Delivery',
+      );
+    }
+
+    // Online payments should never start with NOT_REQUIRED_YET
+    if (
+      this._method.requiresPaymentBeforeConfirmation() &&
+      this._status.isNotRequiredYet()
+    ) {
+      throw new Error('Online payment methods must start with PENDING status');
     }
   }
 
@@ -69,7 +89,45 @@ export class PaymentInfo implements IPaymentInfo {
     return this._notes;
   }
 
-  // Business methods combining both VOs
+  // Status query methods
+  isPending(): boolean {
+    return this._status.isPending();
+  }
+
+  isCompleted(): boolean {
+    return this._status.isCompleted();
+  }
+
+  isFailed(): boolean {
+    return this._status.isFailed();
+  }
+
+  isNotRequiredYet(): boolean {
+    return this._status.isNotRequiredYet();
+  }
+
+  // Payment method query methods
+  isCashOnDelivery(): boolean {
+    return this._method.isCashOnDelivery();
+  }
+
+  requiresImmediatePayment(): boolean {
+    return this._method.requiresPaymentBeforeConfirmation();
+  }
+
+  requiresPaymentOnDelivery(): boolean {
+    return this._method.requiresPaymentOnDelivery();
+  }
+
+  supportsRefunds(): boolean {
+    return this._method.supportsRefunds() && this.isCompleted();
+  }
+
+  getProcessingFee(): number {
+    return this._method.getProcessingFee(this._amount);
+  }
+
+  // State transition methods
   markAsCompleted(transactionId?: string, notes?: string): void {
     if (!this._status.canTransitionTo(PaymentStatus.COMPLETED)) {
       throw new Error(
@@ -100,6 +158,43 @@ export class PaymentInfo implements IPaymentInfo {
     this._notes = reason?.trim();
   }
 
+  /**
+   * For COD orders: transition from NOT_REQUIRED_YET to PENDING
+   * when the order is ready for delivery
+   */
+  markAsReadyForCollection(): void {
+    if (!this._method.requiresPaymentOnDelivery()) {
+      throw new Error(
+        'Only COD payments can be marked as ready for collection',
+      );
+    }
+
+    if (!this._status.isNotRequiredYet()) {
+      throw new Error(
+        'Payment must be in NOT_REQUIRED_YET status to mark as ready for collection',
+      );
+    }
+
+    this._status = PaymentStatusVO.pending();
+    this._notes = 'Ready for payment collection on delivery';
+  }
+
+  /**
+   * Retry a failed payment (transition back to PENDING)
+   */
+  retryPayment(): void {
+    if (!this._status.isFailed()) {
+      throw new Error('Can only retry failed payments');
+    }
+
+    if (!this._status.canTransitionTo(PaymentStatus.PENDING)) {
+      throw new Error('Cannot retry payment in current state');
+    }
+
+    this._status = PaymentStatusVO.pending();
+    this._notes = 'Payment retry initiated';
+  }
+
   updateTransactionInfo(transactionId: string, notes?: string): void {
     this._transactionId = transactionId;
     if (notes) {
@@ -107,39 +202,54 @@ export class PaymentInfo implements IPaymentInfo {
     }
   }
 
-  // Business queries using both VOs
-  isPending(): boolean {
-    return this._status.isPending();
-  }
-
-  isCompleted(): boolean {
-    return this._status.isCompleted();
-  }
-
-  isFailed(): boolean {
-    return this._status.isFailed();
-  }
-
-  isCashOnDelivery(): boolean {
-    return this._method.isCashOnDelivery();
-  }
-
-  requiresImmediatePayment(): boolean {
-    return this._method.requiresImmediatePayment();
-  }
-
-  supportsRefunds(): boolean {
-    return this._method.supportsRefunds() && this.isCompleted();
-  }
-
-  getProcessingFee(): number {
-    return this._method.getProcessingFee(this._amount);
-  }
-
+  // Display methods
   getDisplayInfo(): string {
     const statusText =
       this._status.value.charAt(0).toUpperCase() + this._status.value.slice(1);
     return `${this._method.getDisplayName()} - ${statusText}`;
+  }
+
+  getStatusDescription(): string {
+    if (this._status.isNotRequiredYet()) {
+      return 'Payment will be collected on delivery';
+    }
+    if (this._status.isPending() && this._method.requiresPaymentOnDelivery()) {
+      return 'Payment to be collected on delivery';
+    }
+    if (
+      this._status.isPending() &&
+      this._method.requiresPaymentBeforeConfirmation()
+    ) {
+      return 'Awaiting payment';
+    }
+    if (this._status.isCompleted()) {
+      return `Paid${this._paidAt ? ` on ${this._paidAt.toLocaleDateString()}` : ''}`;
+    }
+    if (this._status.isFailed()) {
+      return 'Payment failed';
+    }
+    return this._status.value;
+  }
+
+  /**
+   * Check if payment is blocking order progression
+   */
+  isBlockingOrderProgression(): boolean {
+    // Online payments block confirmation when pending
+    if (this._method.requiresPaymentBeforeConfirmation()) {
+      return this._status.isPending();
+    }
+
+    // COD never blocks progression (payment happens at delivery)
+    return false;
+  }
+
+  /**
+   * Check if payment should be collected now
+   */
+  shouldCollectPaymentNow(): boolean {
+    // Only for COD when status is PENDING (at delivery time)
+    return this._method.requiresPaymentOnDelivery() && this._status.isPending();
   }
 
   // Value object equality
@@ -174,19 +284,28 @@ export class PaymentInfo implements IPaymentInfo {
   }
 
   // Factory methods for common use cases
-  static createCOD(id: string, amount: number): PaymentInfo {
+
+  /**
+   * Create COD payment - starts with NOT_REQUIRED_YET status
+   */
+  static createCOD(id: string, amount: number, notes?: string): PaymentInfo {
     return new PaymentInfo({
       id,
       method: PaymentMethod.CASH_ON_DELIVERY,
-      status: PaymentStatus.PENDING,
+      status: PaymentStatus.NOT_REQUIRED_YET,
       amount,
+      notes: notes || 'Payment on delivery',
     });
   }
 
+  /**
+   * Create Stripe payment - starts with PENDING unless transaction ID provided
+   */
   static createStripe(
     id: string,
     amount: number,
     transactionId?: string,
+    notes?: string,
   ): PaymentInfo {
     return new PaymentInfo({
       id,
@@ -195,13 +314,18 @@ export class PaymentInfo implements IPaymentInfo {
       amount,
       transactionId,
       paidAt: transactionId ? new Date() : undefined,
+      notes,
     });
   }
 
+  /**
+   * Create PayPal payment - starts with PENDING unless transaction ID provided
+   */
   static createPayPal(
     id: string,
     amount: number,
     transactionId?: string,
+    notes?: string,
   ): PaymentInfo {
     return new PaymentInfo({
       id,
@@ -210,6 +334,27 @@ export class PaymentInfo implements IPaymentInfo {
       amount,
       transactionId,
       paidAt: transactionId ? new Date() : undefined,
+      notes,
+    });
+  }
+
+  /**
+   * Create Credit Card payment - starts with PENDING unless transaction ID provided
+   */
+  static createCreditCard(
+    id: string,
+    amount: number,
+    transactionId?: string,
+    notes?: string,
+  ): PaymentInfo {
+    return new PaymentInfo({
+      id,
+      method: PaymentMethod.CREDIT_CARD,
+      status: transactionId ? PaymentStatus.COMPLETED : PaymentStatus.PENDING,
+      amount,
+      transactionId,
+      paidAt: transactionId ? new Date() : undefined,
+      notes,
     });
   }
 }

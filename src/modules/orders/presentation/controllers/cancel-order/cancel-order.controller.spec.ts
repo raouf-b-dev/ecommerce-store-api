@@ -2,80 +2,14 @@
 import { CancelOrderController } from './cancel-order.controller';
 import { CancelOrderUseCase } from '../../../application/usecases/cancel-order/cancel-order.usecase';
 import { Result } from '../../../../../core/domain/result';
-import { IOrder } from '../../../domain/interfaces/order.interface';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
+import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { PaymentStatus } from '../../../domain/value-objects/payment-status';
-import { PaymentMethod } from '../../../domain/value-objects/payment-method';
+import { OrderTestFactory } from '../../../testing/factories/order.factory';
 
 describe('CancelOrderController', () => {
   let controller: CancelOrderController;
   let mockUseCase: jest.Mocked<CancelOrderUseCase>;
-
-  const mockOrder: IOrder = {
-    // Basic identifiers
-    id: 'OR0001',
-    customerId: 'CUST1',
-    paymentInfoId: 'PAY001',
-    shippingAddressId: 'ADDR001',
-
-    // Order items
-    items: [
-      {
-        id: 'item-1',
-        productId: 'PR1',
-        productName: 'P1',
-        quantity: 1,
-        unitPrice: 10,
-        lineTotal: 10,
-      },
-    ],
-
-    // Customer information
-    customerInfo: {
-      customerId: 'CUST1',
-      email: 'customer@example.com',
-      phone: '+1234567890',
-      firstName: 'John',
-      lastName: 'Doe',
-    },
-
-    // Payment information
-    paymentInfo: {
-      id: 'PAY001',
-      method: PaymentMethod.CREDIT_CARD,
-      amount: 15,
-      status: PaymentStatus.PENDING,
-      transactionId: 'TXN123456',
-      notes: 'Awaiting payment confirmation',
-    },
-
-    // Shipping address
-    shippingAddress: {
-      id: 'ADDR001',
-      firstName: 'John',
-      lastName: 'Doe',
-      street: '123 Main Street',
-      city: 'New York',
-      state: 'NY',
-      postalCode: '10001',
-      country: 'USA',
-      phone: '+1234567890',
-    },
-
-    // Pricing
-    subtotal: 10,
-    shippingCost: 5,
-    totalPrice: 15,
-
-    // Order status and timestamps
-    status: OrderStatus.PENDING,
-    createdAt: new Date('2025-01-01T10:00:00Z'),
-    updatedAt: new Date('2025-01-01T10:00:00Z'),
-
-    // Optional customer notes
-    customerNotes: 'Please ring doorbell upon delivery',
-  };
 
   beforeEach(() => {
     mockUseCase = {
@@ -85,35 +19,206 @@ describe('CancelOrderController', () => {
     controller = new CancelOrderController(mockUseCase);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should return success result when use case succeeds', async () => {
-    mockUseCase.execute.mockResolvedValue(Result.success(mockOrder));
+    const orderId = 'OR0000001';
+    const cancelledOrder = OrderTestFactory.createCancelledOrder({
+      id: orderId,
+    });
 
-    const result = await controller.handle('123');
+    mockUseCase.execute.mockResolvedValue(Result.success(cancelledOrder));
 
-    expect(mockUseCase.execute).toHaveBeenCalledWith('123');
+    const result = await controller.handle(orderId);
+
+    expect(mockUseCase.execute).toHaveBeenCalledWith(orderId);
+    expect(mockUseCase.execute).toHaveBeenCalledTimes(1);
     expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) expect(result.value).toEqual(mockOrder);
+    if (result.isSuccess) {
+      expect(result.value).toEqual(cancelledOrder);
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+    }
+  });
+
+  it('should cancel pending order successfully', async () => {
+    const orderId = 'OR0000001';
+    const cancelledOrder = OrderTestFactory.createCancelledOrder({
+      id: orderId,
+    });
+
+    mockUseCase.execute.mockResolvedValue(Result.success(cancelledOrder));
+
+    const result = await controller.handle(orderId);
+
+    expect(result.isSuccess).toBe(true);
+    if (result.isSuccess) {
+      expect(result.value.id).toBe(orderId);
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+    }
   });
 
   it('should return failure result when use case fails', async () => {
+    const orderId = 'OR0000001';
     const useCaseError = new UseCaseError('Order cannot be cancelled');
+
     mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
 
-    const result = await controller.handle('123');
+    const result = await controller.handle(orderId);
 
+    expect(mockUseCase.execute).toHaveBeenCalledWith(orderId);
     expect(result.isFailure).toBe(true);
-    if (result.isFailure) expect(result.error).toBe(useCaseError);
+    if (result.isFailure) {
+      expect(result.error).toBe(useCaseError);
+      expect(result.error.message).toBe('Order cannot be cancelled');
+    }
   });
 
-  it('should catch unexpected errors and wrap in ControllerError', async () => {
-    mockUseCase.execute.mockRejectedValue(new Error('Unexpected'));
+  it('should return failure when order not found', async () => {
+    const orderId = 'OR9999999';
+    const useCaseError = new UseCaseError(`Order with id ${orderId} not found`);
 
-    const result = await controller.handle('123');
+    mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
+
+    const result = await controller.handle(orderId);
 
     expect(result.isFailure).toBe(true);
     if (result.isFailure) {
-      expect(result.error.name).toBe('ControllerError');
-      expect(result.error.message).toContain('Unexpected Controller Error');
+      expect(result.error.message).toContain('not found');
     }
+  });
+
+  it('should return failure when order is not cancellable', async () => {
+    const orderId = 'OR0000001';
+    const useCaseError = new UseCaseError(
+      'Order is not in a cancellable state',
+    );
+
+    mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
+
+    const result = await controller.handle(orderId);
+
+    expect(result.isFailure).toBe(true);
+    if (result.isFailure) {
+      expect(result.error.message).toBe('Order is not in a cancellable state');
+    }
+  });
+
+  it('should catch unexpected errors and wrap in ControllerError', async () => {
+    const orderId = 'OR0000001';
+    const unexpectedError = new Error('Unexpected database error');
+
+    mockUseCase.execute.mockRejectedValue(unexpectedError);
+
+    const result = await controller.handle(orderId);
+
+    expect(result.isFailure).toBe(true);
+    if (result.isFailure) {
+      expect(result.error).toBeInstanceOf(ControllerError);
+      expect(result.error.message).toContain('Unexpected Controller Error');
+      expect(result.error.cause).toBe(unexpectedError);
+    }
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty order ID', async () => {
+      const emptyId = '';
+      const useCaseError = new UseCaseError('Invalid order ID');
+
+      mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
+
+      const result = await controller.handle(emptyId);
+
+      expect(result.isFailure).toBe(true);
+      expect(mockUseCase.execute).toHaveBeenCalledWith(emptyId);
+    });
+
+    it('should handle null order ID', async () => {
+      const nullId = null as any;
+      const useCaseError = new UseCaseError('Invalid order ID');
+
+      mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
+
+      const result = await controller.handle(nullId);
+
+      expect(result.isFailure).toBe(true);
+      expect(mockUseCase.execute).toHaveBeenCalledWith(nullId);
+    });
+
+    it('should handle network timeout error', async () => {
+      const orderId = 'OR0000001';
+      const timeoutError = new Error('Request timeout');
+
+      mockUseCase.execute.mockRejectedValue(timeoutError);
+
+      const result = await controller.handle(orderId);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error).toBeInstanceOf(ControllerError);
+        expect(result.error.cause?.message).toBe('Request timeout');
+      }
+    });
+  });
+
+  describe('order cancellation scenarios', () => {
+    it('should cancel order with single item', async () => {
+      const orderId = 'OR0000001';
+      const cancelledOrder = OrderTestFactory.createCancelledOrder({
+        id: orderId,
+        items: [OrderTestFactory.createMockOrder().items[0]],
+      });
+
+      mockUseCase.execute.mockResolvedValue(Result.success(cancelledOrder));
+
+      const result = await controller.handle(orderId);
+
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) {
+        expect(result.value.items).toHaveLength(1);
+        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      }
+    });
+
+    it('should cancel order with multiple items', async () => {
+      const orderId = 'OR0000001';
+      const multiItemOrder = OrderTestFactory.createMultiItemOrder(5);
+      const cancelledOrder = {
+        ...multiItemOrder,
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+      };
+
+      mockUseCase.execute.mockResolvedValue(Result.success(cancelledOrder));
+
+      const result = await controller.handle(orderId);
+
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) {
+        expect(result.value.items).toHaveLength(5);
+        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      }
+    });
+
+    it('should cancel cash on delivery order', async () => {
+      const orderId = 'OR0000001';
+      const codOrder = OrderTestFactory.createCashOnDeliveryOrder();
+      const cancelledOrder = {
+        ...codOrder,
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+      };
+
+      mockUseCase.execute.mockResolvedValue(Result.success(cancelledOrder));
+
+      const result = await controller.handle(orderId);
+
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) {
+        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+        expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      }
+    });
   });
 });
