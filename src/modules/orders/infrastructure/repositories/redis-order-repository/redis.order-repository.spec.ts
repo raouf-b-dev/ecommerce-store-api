@@ -18,6 +18,7 @@ import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.
 import { Order } from '../../../domain/entities/order';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('RedisOrderRepository', () => {
   let repository: RedisOrderRepository;
@@ -84,7 +85,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.save(mockCreateOrderDto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(mockOrder);
 
       expect(cacheService.set).toHaveBeenCalledWith(
@@ -103,8 +104,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.save(mockCreateOrderDto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) expect(result.error).toEqual(error);
+      ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.set).not.toHaveBeenCalled();
     });
 
@@ -114,11 +114,11 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.save(mockCreateOrderDto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toContain('Failed to save order');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save order',
+        RepositoryError,
+      );
     });
 
     it('should save cash on delivery order', async () => {
@@ -131,7 +131,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.save(codDto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
       }
@@ -157,7 +157,7 @@ describe('RedisOrderRepository', () => {
         mockUpdateOrderDto,
       );
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(updatedOrder);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${Order_REDIS.CACHE_KEY}:${updatedOrder.id}`,
@@ -178,8 +178,7 @@ describe('RedisOrderRepository', () => {
         mockUpdateOrderDto,
       );
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) expect(result.error).toEqual(error);
+      ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.set).not.toHaveBeenCalled();
     });
   });
@@ -190,7 +189,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.findById(mockOrder.id);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         const expectedEntity = OrderCacheMapper.fromCache(mockCachedOrder);
         expect(result.value).toEqual(expectedEntity);
@@ -206,7 +205,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.findById(mockOrder.id);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(order);
       const expectedCached = OrderCacheMapper.toCache(order.toPrimitives());
       expect(cacheService.set).toHaveBeenCalledWith(
@@ -224,7 +223,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.findById(pendingOrder.id);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.status).toBe(OrderStatus.PENDING);
       }
@@ -238,7 +237,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.deleteById(mockOrder.id);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.delete).toHaveBeenCalledWith(
         `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
       );
@@ -253,8 +252,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.deleteById(mockOrder.id);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) expect(result.error).toEqual(error);
+      ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.delete).not.toHaveBeenCalled();
     });
   });
@@ -267,7 +265,7 @@ describe('RedisOrderRepository', () => {
       const dto: ListOrdersQueryDto = {};
       const result = await repository.listOrders(dto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         const expected = [
           OrderCacheMapper.fromCache(mockCachedOrder).toPrimitives(),
@@ -285,7 +283,7 @@ describe('RedisOrderRepository', () => {
       const dto: ListOrdersQueryDto = {};
       const result = await repository.listOrders(dto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
       expect(cacheService.setAll).toHaveBeenCalled();
       expect(cacheService.set).toHaveBeenCalledWith(
@@ -309,7 +307,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.listOrders({});
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value).toHaveLength(3);
         expect(result.value[0].status).toBe(OrderStatus.PENDING);
@@ -324,7 +322,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.listOrders({});
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(logger.warn).toHaveBeenCalledWith(
         'Cache lookup failed, falling back to database:',
         expect.any(Error),
@@ -338,7 +336,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.listOrders({});
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(logger.warn).toHaveBeenCalledWith(
         'Failed to cache orders:',
         expect.any(Error),
@@ -355,7 +353,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.listOrders(dto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(postgresRepo.listOrders).toHaveBeenCalledWith(dto);
       expect(cacheService.getAll).not.toHaveBeenCalled();
     });
@@ -374,7 +372,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.listOrders(dto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value).toHaveLength(10);
       }
@@ -392,7 +390,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.cancelOrder(cancelledOrderPrimitives);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toBe(undefined);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
@@ -413,8 +411,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.cancelOrder(cancelledOrderPrimitives);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) expect(result.error).toEqual(error);
+      ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.delete).not.toHaveBeenCalled();
     });
 
@@ -430,7 +427,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.cancelOrder(cancelledOrder);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.delete).toHaveBeenCalledTimes(2);
     });
 
@@ -443,10 +440,10 @@ describe('RedisOrderRepository', () => {
       const result = await repository.cancelOrder(cancelledOrder);
 
       // Should still succeed even if cache deletion fails
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('Failed to cancel order');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to cancel order',
+      );
     });
   });
 
@@ -455,11 +452,14 @@ describe('RedisOrderRepository', () => {
       const originalError = new Error('Unexpected');
       postgresRepo.save.mockRejectedValue(originalError);
 
-      const spy = jest.spyOn(ErrorFactory, 'RepositoryError');
       const result = await repository.save(mockCreateOrderDto);
 
-      expect(result.isFailure).toBe(true);
-      expect(spy).toHaveBeenCalledWith('Failed to save order', originalError);
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save order',
+        RepositoryError,
+        originalError,
+      );
     });
 
     it('should handle cache service errors during save', async () => {
@@ -468,10 +468,7 @@ describe('RedisOrderRepository', () => {
 
       const result = await repository.save(mockCreateOrderDto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Failed to save order');
-      }
+      ResultAssertionHelper.assertResultFailure(result, 'Failed to save order');
     });
 
     it('should handle cache service errors during update', async () => {
@@ -486,10 +483,10 @@ describe('RedisOrderRepository', () => {
         mockUpdateOrderDto,
       );
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Failed to update order');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to update order',
+      );
     });
   });
 

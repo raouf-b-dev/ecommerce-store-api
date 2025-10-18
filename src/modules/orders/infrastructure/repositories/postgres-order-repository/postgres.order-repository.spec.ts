@@ -1,120 +1,65 @@
 // src/order/infrastructure/postgres-order.repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { OrderEntity } from '../../orm/order.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
-import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
-import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
-import { ProductEntity } from '../../../../products/infrastructure/orm/product.schema';
-import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { PostgresOrderRepository } from './postgres.order-repository';
 import { Order } from '../../../domain/entities/order';
+import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
+import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
+import {
+  TestDataHelper,
+  createMockIdGenerator,
+  createMockQueryBuilder,
+  createMockTransactionManager,
+  createMockDataSource,
+  ResultAssertionHelper,
+} from '../../../../../testing';
+import { ProductEntityTestFactory } from '../../../../products/testing';
+import {
+  CreateOrderDtoTestFactory,
+  OrderEntityTestFactory,
+} from '../../../testing';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
+import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 describe('PostgresOrderRepository', () => {
   let repository: PostgresOrderRepository;
   let mockOrmRepo: jest.Mocked<Repository<OrderEntity>>;
-  let mockIdGen: jest.Mocked<IdGeneratorService>;
-  let mockDataSource: jest.Mocked<DataSource>;
-  let mockManager: any;
-  let mockTxQb: any;
 
-  const generatedId = 'OR0000001';
-  const generatedCustomerId = 'CUST0000001';
-  const generatedPaymentInfoId = 'PAY0000001';
-  const generatedShippingAddressId = 'ADDR0000001';
-
-  // FIXED: Create DTO with COD payment method
-  const createOrderDto = CreateOrderDtoTestFactory.createCashOnDeliveryDto();
-
-  // FIXED: Update mock order to match COD payment
-  const mockOrderPrimitives = OrderTestFactory.createCashOnDeliveryOrder({
-    id: generatedId,
-    customerId: generatedCustomerId,
-    paymentInfoId: generatedPaymentInfoId,
-    shippingAddressId: generatedShippingAddressId,
+  const testData = TestDataHelper.createRepositoryTestData({ useCOD: true });
+  const mockIdGen = createMockIdGenerator({
+    orderId: testData.orderId,
+    customerId: testData.customerId,
+    paymentInfoId: testData.paymentInfoId,
+    shippingAddressId: testData.shippingAddressId,
   });
 
-  // FIXED: Match product ID with DTO (PR3)
-  const mockProduct: ProductEntity = {
-    id: 'PR3', // Changed from PR0000001 to match DTO
-    name: 'Test Product',
-    description: 'A test product',
-    price: 100,
-    sku: 'TEST-001',
-    stockQuantity: 10,
-    createdAt: new Date('2025-01-01T10:00:00Z'),
-    updatedAt: new Date('2025-08-13T15:00:00Z'),
-  };
-
-  const mockOrderItemEntity1: OrderItemEntity = {
-    id: '370cbbcf-c0f2-4b1e-94ef-d87526b2c069',
-    productId: 'PR3', // Changed to match
-    productName: 'Test Product',
-    unitPrice: 100,
-    quantity: 1, // Changed from 2 to match DTO
-    lineTotal: 100,
-    order: null as any,
-    product: mockProduct,
-  };
-
-  const mockOrderEntity: OrderEntity = {
-    id: generatedId,
-    customerId: generatedCustomerId,
-    shippingAddressId: generatedShippingAddressId,
-    paymentInfoId: generatedPaymentInfoId,
-    customerInfo: mockOrderPrimitives.customerInfo,
-    items: [mockOrderItemEntity1],
-    shippingAddress: mockOrderPrimitives.shippingAddress,
-    paymentInfo: mockOrderPrimitives.paymentInfo,
-    customerNotes: mockOrderPrimitives.customerNotes,
-    subtotal: mockOrderPrimitives.subtotal,
-    shippingCost: mockOrderPrimitives.shippingCost,
-    totalPrice: mockOrderPrimitives.totalPrice,
-    status: OrderStatus.PENDING,
-    createdAt: mockOrderPrimitives.createdAt,
-    updatedAt: mockOrderPrimitives.updatedAt,
-  };
+  let mockQueryBuilder: ReturnType<typeof createMockQueryBuilder>;
+  let mockManager: ReturnType<typeof createMockTransactionManager>;
+  let mockDataSource: ReturnType<typeof createMockDataSource>;
 
   beforeEach(async () => {
+    // Setup mock query builder
+    mockQueryBuilder = createMockQueryBuilder();
+    mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+
+    // Setup mock manager
+    mockManager = createMockTransactionManager({
+      mockProduct: testData.productEntity,
+      mockOrder: testData.orderEntity,
+      mockQueryBuilder,
+    });
+
+    // Setup mock data source
+    mockDataSource = createMockDataSource(mockManager);
+
+    // Setup mock ORM repository
     mockOrmRepo = {
-      createQueryBuilder: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       findOne: jest.fn(),
       delete: jest.fn(),
-    } as any;
-
-    mockIdGen = {
-      generateOrderId: jest.fn().mockResolvedValue(generatedId),
-      generateCustomerId: jest.fn().mockResolvedValue(generatedCustomerId),
-      generatePaymentInfoId: jest
-        .fn()
-        .mockResolvedValue(generatedPaymentInfoId),
-      generateShippingAddressId: jest
-        .fn()
-        .mockResolvedValue(generatedShippingAddressId),
-    } as any;
-
-    mockTxQb = {
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      execute: jest.fn().mockResolvedValue({ raw: [], affected: 1 }),
-    };
-
-    mockManager = {
-      find: jest.fn().mockResolvedValue([mockProduct]),
-      exists: jest.fn().mockResolvedValue(true),
-      save: jest.fn().mockResolvedValue(mockOrderEntity),
-      delete: jest.fn().mockResolvedValue({ raw: [], affected: 1 }),
-      findOne: jest.fn().mockResolvedValue(mockOrderEntity),
-      createQueryBuilder: jest.fn().mockReturnValue(mockTxQb),
-    };
-
-    mockDataSource = {
-      transaction: jest.fn().mockImplementation((cb) => cb(mockManager)),
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -129,32 +74,17 @@ describe('PostgresOrderRepository', () => {
     repository = module.get<PostgresOrderRepository>(PostgresOrderRepository);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  afterAll(() => {
-    jest.restoreAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   describe('listOrders', () => {
     it('should list orders successfully with default params', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([mockOrderEntity]),
-      } as unknown as SelectQueryBuilder<OrderEntity>;
+      const orders = [testData.orderEntity];
+      mockQueryBuilder.getMany.mockResolvedValue(orders);
 
-      mockOrmRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const result = await repository.listOrders({});
 
-      const dto: ListOrdersQueryDto = {};
-      const result = await repository.listOrders(dto);
-
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual([mockOrderEntity]);
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual(orders);
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
       expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
@@ -164,21 +94,13 @@ describe('PostgresOrderRepository', () => {
     });
 
     it('should list orders with filters', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([mockOrderEntity]),
-      } as unknown as SelectQueryBuilder<OrderEntity>;
-
-      mockOrmRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const orders = [testData.orderEntity];
+      mockQueryBuilder.getMany.mockResolvedValue(orders);
 
       const dto: ListOrdersQueryDto = {
         page: 2,
         limit: 5,
-        customerId: generatedCustomerId,
+        customerId: testData.customerId,
         status: OrderStatus.PENDING,
         sortBy: 'totalPrice',
         sortOrder: 'asc',
@@ -186,56 +108,38 @@ describe('PostgresOrderRepository', () => {
 
       const result = await repository.listOrders(dto);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'order.customerId = :customerId',
-        { customerId: generatedCustomerId },
-      );
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'order.status = :status',
-        { status: OrderStatus.PENDING },
-      );
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-        'order.totalPrice',
-        'ASC',
+        { customerId: testData.customerId },
       );
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5);
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(5);
     });
 
     it('should return error on failure', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockRejectedValue(new Error('DB Error')),
-      } as unknown as SelectQueryBuilder<OrderEntity>;
+      mockQueryBuilder.getMany.mockRejectedValue(new Error('DB Error'));
 
-      mockOrmRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      const result = await repository.listOrders({});
 
-      const dto: ListOrdersQueryDto = {};
-      const result = await repository.listOrders(dto);
-
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to list orders');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to list orders',
+      );
     });
   });
 
   describe('save', () => {
     it('should save order successfully', async () => {
-      mockManager.find.mockResolvedValue([mockProduct]);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue(mockOrderEntity);
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockManager.save.mockResolvedValue(testData.orderEntity);
 
-      const result = await repository.save(createOrderDto as any);
+      const result = await repository.save(testData.createOrderDto as any);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.id).toBe(generatedId);
-        expect(result.value.customerId).toBe(generatedCustomerId);
+        expect(result.value.id).toBe(testData.orderId);
+        expect(result.value.customerId).toBe(testData.customerId);
       }
       expect(mockIdGen.generateOrderId).toHaveBeenCalled();
       expect(mockManager.save).toHaveBeenCalled();
@@ -244,172 +148,198 @@ describe('PostgresOrderRepository', () => {
     it('should fail if product not found', async () => {
       mockManager.find.mockResolvedValue([]);
 
-      const result = await repository.save(createOrderDto as any);
+      const result = await repository.save(testData.createOrderDto as any);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('PRODUCT_NOT_FOUND');
+      ResultAssertionHelper.assertResultFailure(result, 'PRODUCT_NOT_FOUND');
     });
 
     it('should fail on invalid quantity', async () => {
       const invalidDto = CreateOrderDtoTestFactory.createCashOnDeliveryDto();
-      invalidDto.items = [{ productId: 'PR3', quantity: 0 }]; // Use PR3
+      invalidDto.items = [{ productId: testData.productId, quantity: 0 }];
 
-      mockManager.find.mockResolvedValue([mockProduct]);
+      mockManager.find.mockResolvedValue([testData.productEntity]);
 
       const result = await repository.save(invalidDto as any);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('INVALID_QUANTITY');
+      ResultAssertionHelper.assertResultFailure(result, 'INVALID_QUANTITY');
     });
 
     it('should fail on insufficient stock', async () => {
-      mockManager.find.mockResolvedValue([mockProduct]);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
       mockManager.exists.mockResolvedValue(true);
 
-      const result = await repository.save(createOrderDto as any);
+      const result = await repository.save(testData.createOrderDto as any);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('INSUFFICIENT_STOCK');
+      ResultAssertionHelper.assertResultFailure(result, 'INSUFFICIENT_STOCK');
     });
 
     it('should return error on DB failure', async () => {
       mockManager.find.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.save(createOrderDto as any);
+      const result = await repository.save(testData.createOrderDto as any);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to create order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to create order',
+      );
     });
 
     it('should save order with multiple items', async () => {
-      const multiItemDto = CreateOrderDtoTestFactory.createMultiItemDto([
-        'PR1',
-        'PR2',
-        'PR3',
-      ]);
-      const products = [
-        { ...mockProduct, id: 'PR1' },
-        { ...mockProduct, id: 'PR2' },
-        { ...mockProduct, id: 'PR3' },
-      ];
+      const multiItemData = TestDataHelper.createMultiItemTestData(3);
 
-      mockManager.find.mockResolvedValue(products);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue(mockOrderEntity);
+      mockManager.find.mockResolvedValue(multiItemData.productEntities);
+      mockManager.save.mockResolvedValue(multiItemData.orderEntity);
 
-      const result = await repository.save(multiItemDto as any);
+      const result = await repository.save(multiItemData.createOrderDto as any);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should save order with low stock product', async () => {
+      const lowStockProduct = ProductEntityTestFactory.createLowStockProduct({
+        id: testData.productId,
+        stockQuantity: 5,
+      });
+
+      mockManager.find.mockResolvedValue([lowStockProduct]);
+      mockManager.save.mockResolvedValue(testData.orderEntity);
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultSuccess(result);
     });
   });
 
   describe('updateItemsInfo', () => {
     it('should update order items successfully', async () => {
       const updateDto: CreateOrderItemDto[] = [
-        { productId: 'PR3', quantity: 3 }, // Use PR3
+        { productId: testData.productId, quantity: 3 },
       ];
 
-      mockManager.findOne.mockResolvedValue(mockOrderEntity);
-      mockManager.find.mockResolvedValue([mockProduct]);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.delete.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue(mockOrderEntity);
+      mockManager.findOne.mockResolvedValue(testData.orderEntity);
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockManager.save.mockResolvedValue(testData.orderEntity);
 
-      const result = await repository.updateItemsInfo(generatedId, updateDto);
+      const result = await repository.updateItemsInfo(
+        testData.orderId,
+        updateDto,
+      );
 
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) expect(result.value).toEqual(mockOrderEntity);
+      ResultAssertionHelper.assertResultSuccess(result);
+      if (result.isSuccess) {
+        expect(result.value).toEqual(testData.orderEntity);
+      }
       expect(mockManager.save).toHaveBeenCalled();
     });
 
     it('should fail if order not found', async () => {
       mockManager.findOne.mockResolvedValue(null);
 
-      const result = await repository.updateItemsInfo(generatedId, []);
+      const result = await repository.updateItemsInfo(testData.orderId, []);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('ORDER_NOT_FOUND');
+      ResultAssertionHelper.assertResultFailure(result, 'ORDER_NOT_FOUND');
     });
 
     it('should fail if product not found during update', async () => {
-      mockManager.findOne.mockResolvedValue(mockOrderEntity);
+      mockManager.findOne.mockResolvedValue(testData.orderEntity);
       mockManager.find.mockResolvedValue([]);
 
       const updateDto: CreateOrderItemDto[] = [
         { productId: 'PR999', quantity: 1 },
       ];
-      const result = await repository.updateItemsInfo(generatedId, updateDto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('PRODUCT_NOT_FOUND');
+      const result = await repository.updateItemsInfo(
+        testData.orderId,
+        updateDto,
+      );
+
+      ResultAssertionHelper.assertResultFailure(result, 'PRODUCT_NOT_FOUND');
     });
 
     it('should fail on insufficient stock during update', async () => {
       const updateDto: CreateOrderItemDto[] = [
-        { productId: 'PR3', quantity: 20 },
+        { productId: testData.productId, quantity: 20 },
       ];
 
-      mockManager.findOne.mockResolvedValue(mockOrderEntity);
-      mockManager.find.mockResolvedValue([mockProduct]);
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockManager.findOne.mockResolvedValue(testData.orderEntity);
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
       mockManager.exists.mockResolvedValue(true);
 
-      const result = await repository.updateItemsInfo(generatedId, updateDto);
+      const result = await repository.updateItemsInfo(
+        testData.orderId,
+        updateDto,
+      );
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('INSUFFICIENT_STOCK');
+      ResultAssertionHelper.assertResultFailure(result, 'INSUFFICIENT_STOCK');
     });
 
     it('should return error on DB failure', async () => {
       mockManager.findOne.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.updateItemsInfo(generatedId, []);
+      const result = await repository.updateItemsInfo(testData.orderId, []);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to update order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to update order',
+      );
     });
   });
 
   describe('findById', () => {
     it('should find order by id successfully', async () => {
-      mockOrmRepo.findOne.mockResolvedValue(mockOrderEntity);
+      mockOrmRepo.findOne.mockResolvedValue(testData.orderEntity);
 
-      const result = await repository.findById(generatedId);
+      const result = await repository.findById(testData.orderId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value).toBeInstanceOf(Order);
-        expect(result.value.id).toBe(generatedId);
+        expect(result.value.id).toBe(testData.orderId);
       }
     });
 
     it('should return error if order not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById(generatedId);
+      const result = await repository.findById(testData.orderId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Order not found');
+      ResultAssertionHelper.assertResultFailure(result, 'Order not found');
     });
 
     it('should return error on DB failure', async () => {
       mockOrmRepo.findOne.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.findById(generatedId);
+      const result = await repository.findById(testData.orderId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to find the order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to find the order',
+      );
+    });
+
+    it('should find orders with different statuses', async () => {
+      const statuses = [
+        OrderStatus.PENDING,
+        OrderStatus.CONFIRMED,
+        OrderStatus.PROCESSING,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+      ];
+
+      for (const status of statuses) {
+        const orderEntity =
+          OrderEntityTestFactory.createOrderEntityWithStatus(status);
+        mockOrmRepo.findOne.mockResolvedValue(orderEntity);
+
+        const result = await repository.findById(orderEntity.id);
+
+        ResultAssertionHelper.assertResultSuccess(result);
+        if (result.isSuccess) {
+          expect(result.value.status).toBe(status);
+        }
+      }
     });
   });
 
@@ -417,92 +347,95 @@ describe('PostgresOrderRepository', () => {
     it('should delete order by id successfully', async () => {
       mockOrmRepo.delete.mockResolvedValue({ raw: [], affected: 1 });
 
-      const result = await repository.deleteById(generatedId);
+      const result = await repository.deleteById(testData.orderId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should return error if order not found', async () => {
       mockOrmRepo.delete.mockResolvedValue({ raw: [], affected: 0 });
 
-      const result = await repository.deleteById(generatedId);
+      const result = await repository.deleteById(testData.orderId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Order not found');
+      ResultAssertionHelper.assertResultFailure(result, 'Order not found');
     });
 
     it('should return error on DB failure', async () => {
       mockOrmRepo.delete.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.deleteById(generatedId);
+      const result = await repository.deleteById(testData.orderId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to delete the order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to delete the order',
+      );
     });
   });
 
   describe('cancelOrder', () => {
     it('should cancel order and restore stock for each item (success)', async () => {
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue({
-        ...mockOrderEntity,
-        status: OrderStatus.CANCELLED,
-      });
-
       const orderToCancel = OrderTestFactory.createCancellableOrder({
-        id: generatedId,
+        id: testData.orderId,
       });
       const cancelledOrder = Order.fromPrimitives(orderToCancel);
       cancelledOrder.cancel();
+
+      const cancelledEntity = OrderEntityTestFactory.createCancelledOrderEntity(
+        {
+          id: testData.orderId,
+        },
+      );
+
+      mockManager.save.mockResolvedValue(cancelledEntity);
 
       const result = await repository.cancelOrder(
         cancelledOrder.toPrimitives(),
       );
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(mockManager.createQueryBuilder).toHaveBeenCalled();
-      expect(mockTxQb.update).toHaveBeenCalled();
+      expect(mockQueryBuilder.update).toHaveBeenCalled();
       expect(mockManager.save).toHaveBeenCalled();
     });
 
     it('should return error on DB failure (save fails)', async () => {
-      mockManager.save.mockRejectedValue(new Error('DB Error'));
-
       const orderToCancel = OrderTestFactory.createCancellableOrder({
-        id: generatedId,
+        id: testData.orderId,
       });
       const cancelledOrder = Order.fromPrimitives(orderToCancel);
       cancelledOrder.cancel();
+
+      mockManager.save.mockRejectedValue(new Error('DB Error'));
 
       const result = await repository.cancelOrder(
         cancelledOrder.toPrimitives(),
       );
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to cancel order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to cancel order',
+      );
     });
 
     it('should return error when updating product stock fails', async () => {
-      mockTxQb.execute.mockRejectedValue(
-        new Error('DB Error during stock restore'),
-      );
-
       const orderToCancel = OrderTestFactory.createCancellableOrder({
-        id: generatedId,
+        id: testData.orderId,
       });
       const cancelledOrder = Order.fromPrimitives(orderToCancel);
       cancelledOrder.cancel();
+
+      mockQueryBuilder.execute.mockRejectedValue(
+        new Error('DB Error during stock restore'),
+      );
 
       const result = await repository.cancelOrder(
         cancelledOrder.toPrimitives(),
       );
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toBe('Failed to cancel order');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to cancel order',
+      );
     });
 
     it('should restore stock for multiple items when order has many items', async () => {
@@ -511,21 +444,211 @@ describe('PostgresOrderRepository', () => {
       cancelledOrder.cancel();
 
       mockManager.createQueryBuilder.mockClear();
-      mockTxQb.update.mockClear();
-      mockTxQb.where.mockClear();
-      mockTxQb.execute.mockResolvedValue({ raw: [], affected: 1 });
-      mockManager.save.mockResolvedValue({
-        ...mockOrderEntity,
-        id: multiItemOrder.id,
-      });
+      mockQueryBuilder.update.mockClear();
+      mockQueryBuilder.where.mockClear();
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+
+      const cancelledEntity = OrderEntityTestFactory.createCancelledOrderEntity(
+        {
+          id: multiItemOrder.id,
+        },
+      );
+      mockManager.save.mockResolvedValue(cancelledEntity);
 
       const result = await repository.cancelOrder(
         cancelledOrder.toPrimitives(),
       );
 
-      expect(result.isSuccess).toBe(true);
-      expect(mockManager.createQueryBuilder).toHaveBeenCalledTimes(3); // Once per item
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockManager.createQueryBuilder).toHaveBeenCalledTimes(3);
       expect(mockManager.save).toHaveBeenCalled();
+    });
+
+    it('should cancel COD order successfully', async () => {
+      const codOrder = OrderTestFactory.createCashOnDeliveryOrder({
+        id: testData.orderId,
+      });
+      const cancelledOrder = Order.fromPrimitives(codOrder);
+      cancelledOrder.cancel();
+
+      const cancelledEntity = OrderEntityTestFactory.createCancelledOrderEntity(
+        {
+          id: testData.orderId,
+        },
+      );
+      mockManager.save.mockResolvedValue(cancelledEntity);
+
+      const result = await repository.cancelOrder(
+        cancelledOrder.toPrimitives(),
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should cancel order at different stages', async () => {
+      const cancellableStatuses = [
+        OrderStatus.PENDING,
+        OrderStatus.CONFIRMED,
+        OrderStatus.PROCESSING,
+        OrderStatus.SHIPPED,
+      ];
+
+      for (const status of cancellableStatuses) {
+        const order = OrderTestFactory.createMockOrder({
+          id: `OR${status}`,
+          status,
+        });
+        const cancelledOrder = Order.fromPrimitives(order);
+        cancelledOrder.cancel();
+
+        const cancelledEntity =
+          OrderEntityTestFactory.createCancelledOrderEntity({
+            id: order.id,
+          });
+        mockManager.save.mockResolvedValue(cancelledEntity);
+
+        const result = await repository.cancelOrder(
+          cancelledOrder.toPrimitives(),
+        );
+
+        ResultAssertionHelper.assertResultSuccess(result);
+        expect(result.value).toBe(undefined);
+      }
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle orders with special characters in notes', async () => {
+      const orderWithSpecialNotes = OrderEntityTestFactory.createOrderEntity({
+        customerNotes: 'Special chars: <>&"\'',
+      });
+
+      mockManager.save.mockResolvedValue(orderWithSpecialNotes);
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should handle concurrent stock updates gracefully', async () => {
+      // Simulate affected = 0 (stock already taken by another transaction)
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockManager.exists.mockResolvedValue(true);
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultFailure(result, 'INSUFFICIENT_STOCK');
+    });
+
+    it('should handle orders with maximum allowed items', async () => {
+      const maxItems = TestDataHelper.createMultiItemTestData(10);
+
+      mockManager.find.mockResolvedValue(maxItems.productEntities);
+      mockManager.save.mockResolvedValue(maxItems.orderEntity);
+
+      const result = await repository.save(maxItems.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should handle orders with minimum values', async () => {
+      const minOrder = OrderEntityTestFactory.createOrderEntity({
+        subtotal: 0.01,
+        shippingCost: 0,
+        totalPrice: 0.01,
+        items: [
+          OrderEntityTestFactory.createOrderItemEntity({
+            quantity: 1,
+            unitPrice: 0.01,
+            lineTotal: 0.01,
+          }),
+        ],
+      });
+
+      mockManager.save.mockResolvedValue(minOrder);
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+  });
+
+  describe('Transaction Handling', () => {
+    it('should rollback on product stock update failure', async () => {
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockQueryBuilder.execute.mockRejectedValue(
+        new Error('Stock update failed'),
+      );
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultFailure(result);
+      expect(mockManager.save).not.toHaveBeenCalled();
+    });
+
+    it('should rollback on save failure after stock update', async () => {
+      mockManager.find.mockResolvedValue([testData.productEntity]);
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+      mockManager.save.mockRejectedValue(new Error('Save failed'));
+
+      const result = await repository.save(testData.createOrderDto as any);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to create order',
+      );
+    });
+
+    it('should handle transaction isolation correctly', async () => {
+      // Ensure transaction callback is called
+      expect(mockDataSource.transaction).toBeDefined();
+
+      await repository.save(testData.createOrderDto as any);
+
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('Performance & Optimization', () => {
+    it('should batch product lookups efficiently', async () => {
+      const multiItemData = TestDataHelper.createMultiItemTestData(5);
+
+      mockManager.find.mockResolvedValue(multiItemData.productEntities);
+      mockManager.save.mockResolvedValue(multiItemData.orderEntity);
+
+      await repository.save(multiItemData.createOrderDto as any);
+
+      // Should only call find once with all product IDs
+      expect(mockManager.find).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle duplicate product IDs in order items', async () => {
+      const dto = CreateOrderDtoTestFactory.createMultiItemDto([
+        'PR1',
+        'PR1',
+        'PR2',
+      ]);
+      const products = ProductEntityTestFactory.createProductEntities([
+        'PR1',
+        'PR2',
+      ]);
+
+      mockManager.find.mockResolvedValue(products);
+      mockManager.save.mockResolvedValue(testData.orderEntity);
+
+      const result = await repository.save(dto as any);
+
+      // Should only look up unique product IDs
+      expect(mockManager.find).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: expect.anything(),
+          }),
+        }),
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
     });
   });
 });

@@ -6,6 +6,7 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('CancelOrderController', () => {
   let controller: CancelOrderController;
@@ -35,7 +36,7 @@ describe('CancelOrderController', () => {
 
     expect(mockUseCase.execute).toHaveBeenCalledWith(orderId);
     expect(mockUseCase.execute).toHaveBeenCalledTimes(1);
-    expect(result.isSuccess).toBe(true);
+    ResultAssertionHelper.assertResultSuccess(result);
     if (result.isSuccess) {
       expect(result.value).toEqual(cancelledOrder);
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
@@ -52,7 +53,7 @@ describe('CancelOrderController', () => {
 
     const result = await controller.handle(orderId);
 
-    expect(result.isSuccess).toBe(true);
+    ResultAssertionHelper.assertResultSuccess(result);
     if (result.isSuccess) {
       expect(result.value.id).toBe(orderId);
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
@@ -68,11 +69,11 @@ describe('CancelOrderController', () => {
     const result = await controller.handle(orderId);
 
     expect(mockUseCase.execute).toHaveBeenCalledWith(orderId);
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBe(useCaseError);
-      expect(result.error.message).toBe('Order cannot be cancelled');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Order cannot be cancelled',
+      UseCaseError,
+    );
   });
 
   it('should return failure when order not found', async () => {
@@ -83,10 +84,7 @@ describe('CancelOrderController', () => {
 
     const result = await controller.handle(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain('not found');
-    }
+    ResultAssertionHelper.assertResultFailure(result, 'not found');
   });
 
   it('should return failure when order is not cancellable', async () => {
@@ -99,10 +97,10 @@ describe('CancelOrderController', () => {
 
     const result = await controller.handle(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toBe('Order is not in a cancellable state');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Order is not in a cancellable state',
+    );
   });
 
   it('should catch unexpected errors and wrap in ControllerError', async () => {
@@ -113,12 +111,12 @@ describe('CancelOrderController', () => {
 
     const result = await controller.handle(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBeInstanceOf(ControllerError);
-      expect(result.error.message).toContain('Unexpected Controller Error');
-      expect(result.error.cause).toBe(unexpectedError);
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Unexpected Controller Error',
+      ControllerError,
+      unexpectedError,
+    );
   });
 
   describe('edge cases', () => {
@@ -130,7 +128,8 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(emptyId);
 
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
+
       expect(mockUseCase.execute).toHaveBeenCalledWith(emptyId);
     });
 
@@ -142,7 +141,7 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(nullId);
 
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
       expect(mockUseCase.execute).toHaveBeenCalledWith(nullId);
     });
 
@@ -154,11 +153,12 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.cause?.message).toBe('Request timeout');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected Controller Error',
+        ControllerError,
+        timeoutError,
+      );
     });
   });
 
@@ -174,7 +174,7 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.items).toHaveLength(1);
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
@@ -194,7 +194,7 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.items).toHaveLength(5);
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
@@ -214,7 +214,7 @@ describe('CancelOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
