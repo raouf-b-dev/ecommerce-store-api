@@ -5,6 +5,7 @@ import { OrderBuilder } from '../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
@@ -32,7 +33,7 @@ describe('CancelOrderUseCase', () => {
 
     expect(mockRepository.findById).toHaveBeenCalledWith(orderId);
     expect(mockRepository.cancelOrder).toHaveBeenCalled();
-    expect(result.isSuccess).toBe(true);
+    ResultAssertionHelper.assertResultSuccess(result);
     if (result.isSuccess) {
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
     }
@@ -44,13 +45,12 @@ describe('CancelOrderUseCase', () => {
 
     const result = await useCase.execute(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBeInstanceOf(RepositoryError);
-      expect(result.error.message).toContain(
-        'Order with id OR0000001 not found',
-      );
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Order with id OR0000001 not found',
+      RepositoryError,
+    );
+
     expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
   });
 
@@ -64,11 +64,12 @@ describe('CancelOrderUseCase', () => {
 
     const result = await useCase.execute(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBeInstanceOf(UseCaseError);
-      expect(result.error.message).toBe('Order is not in a cancellable state');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Order is not in a cancellable state',
+      UseCaseError,
+    );
+
     expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
   });
 
@@ -83,27 +84,27 @@ describe('CancelOrderUseCase', () => {
 
     const result = await useCase.execute(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBeInstanceOf(RepositoryError);
-      expect(result.error.message).toBe('DB write failed');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'DB write failed',
+      RepositoryError,
+    );
   });
 
   it('should return a failure result on an unexpected error', async () => {
     const orderId = 'OR0000001';
-    const unexpectedError = new Error('Database connection lost');
+    const errorCause = new Error('Database connection lost');
 
-    mockRepository.findById.mockRejectedValue(unexpectedError);
+    mockRepository.findById.mockRejectedValue(errorCause);
 
     const result = await useCase.execute(orderId);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error).toBeInstanceOf(UseCaseError);
-      expect(result.error.message).toBe('Unexpected Usecase Error');
-      expect(result.error.cause).toBe(unexpectedError);
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Unexpected Usecase Erro',
+      UseCaseError,
+      errorCause,
+    );
   });
 
   describe('complex scenarios', () => {
@@ -120,7 +121,7 @@ describe('CancelOrderUseCase', () => {
       const result = await useCase.execute(orderPrimitives.id);
 
       // Test the outcome
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
         expect(result.value.id).toBe('OR0000001');
@@ -142,7 +143,8 @@ describe('CancelOrderUseCase', () => {
 
       const result = await useCase.execute(order.id);
 
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
+
       expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
     });
   });

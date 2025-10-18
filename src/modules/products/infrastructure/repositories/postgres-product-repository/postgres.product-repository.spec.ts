@@ -9,6 +9,7 @@ import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-ge
 import { IProduct } from '../../../domain/interfaces/product.interface';
 import { CreateProductDto } from '../../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;
@@ -95,7 +96,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.save(createProductDto);
 
       // Assert
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(mockProduct);
       expect(idGeneratorService.generateProductId).toHaveBeenCalledTimes(1);
       expect(ormRepo.create).toHaveBeenCalledWith({
@@ -115,9 +116,11 @@ describe('PostgresProductRepository', () => {
       const result = await repository.save(createProductDto);
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to save the product');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save the product',
+      );
+
       expect(ormRepo.create).not.toHaveBeenCalled();
       expect(ormRepo.save).not.toHaveBeenCalled();
     });
@@ -133,9 +136,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.save(createProductDto);
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to save the product');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save the product',
+      );
     });
   });
 
@@ -160,7 +164,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.update('PR0000001', updateProductDto);
 
       // Assert
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.name).toBe('Updated Product');
         expect(result.value.price).toBe(39.99);
@@ -183,11 +187,11 @@ describe('PostgresProductRepository', () => {
       const result = await repository.update('PR0000999', updateProductDto);
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain(
-          'Product with ID PR0000999 not found',
-        );
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Product with ID PR0000999 not found',
+      );
+
       expect(ormRepo.merge).not.toHaveBeenCalled();
       expect(ormRepo.save).not.toHaveBeenCalled();
     });
@@ -203,9 +207,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.update('PR0000001', updateProductDto);
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to update the product');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to update the product',
+      );
     });
   });
 
@@ -218,7 +223,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findById('PR0000001');
 
       // Assert
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(mockProduct);
       expect(ormRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'PR0000001' },
@@ -233,9 +238,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findById('PR0000999');
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Product not found');
+      ResultAssertionHelper.assertResultFailure(result, 'Product not found');
     });
 
     it('should return failure when database query fails', async () => {
@@ -247,9 +250,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findById('PR0000001');
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to find the product');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to find the product',
+      );
     });
   });
 
@@ -266,7 +270,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findAll();
 
       // Assert
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value).toHaveLength(2);
         expect(result.value[0]).toEqual(mockProduct);
@@ -282,9 +286,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findAll();
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Did not find any products');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Did not find any products',
+      );
     });
 
     it('should return failure when database query fails', async () => {
@@ -296,9 +301,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.findAll();
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to find products');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to find products',
+      );
     });
   });
 
@@ -311,7 +317,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.deleteById('PR0000001');
 
       // Assert
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toBeUndefined();
       expect(ormRepo.delete).toHaveBeenCalledWith('PR0000001');
     });
@@ -325,9 +331,10 @@ describe('PostgresProductRepository', () => {
       const result = await repository.deleteById('PR0000001');
 
       // Assert
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure)
-        expect(result.error.message).toContain('Failed to delete the product');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to delete the product',
+      );
     });
   });
 });
