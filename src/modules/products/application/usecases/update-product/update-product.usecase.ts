@@ -6,12 +6,12 @@ import { isFailure, Result } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
-import { Product } from '../../../domain/entities/product';
+import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
   { id: string; dto: UpdateProductDto },
-  Product,
+  IProduct,
   UseCaseError
 > {
   constructor(private readonly productRepository: ProductRepository) {
@@ -21,7 +21,7 @@ export class UpdateProductUseCase extends UseCase<
   async execute(input: {
     id: string;
     dto: UpdateProductDto;
-  }): Promise<Result<Product, UseCaseError>> {
+  }): Promise<Result<IProduct, UseCaseError>> {
     try {
       const { id, dto } = input;
       const productResult = await this.productRepository.update(id, dto);
@@ -30,7 +30,7 @@ export class UpdateProductUseCase extends UseCase<
         return ErrorFactory.UseCaseError(productResult.error.message);
       }
 
-      return Result.success<Product>(productResult.value);
+      return Result.success<IProduct>(productResult.value);
     } catch (error) {
       return ErrorFactory.UseCaseError('Unexpected use case error', error);
     }

@@ -1,23 +1,23 @@
 // src/modules/Products/application/usecases/ListProduct/get-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
-import { Product } from '../../../domain/entities/product';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { UseCase } from '../../../../../core/application/use-cases/base.usecase';
 import { isFailure, Result } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
+import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class ListProductsUseCase extends UseCase<
   number,
-  Product[],
+  IProduct[],
   UseCaseError
 > {
   constructor(private readonly productRepository: ProductRepository) {
     super();
   }
 
-  async execute(): Promise<Result<Product[], UseCaseError>> {
+  async execute(): Promise<Result<IProduct[], UseCaseError>> {
     try {
       const productResult = await this.productRepository.findAll();
 

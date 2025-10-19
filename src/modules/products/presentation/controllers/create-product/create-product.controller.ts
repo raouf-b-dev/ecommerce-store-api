@@ -4,14 +4,14 @@ import { isFailure, Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { CreateProductUseCase } from '../../../application/usecases/create-product/create-product.usecase';
 import { CreateProductDto } from '../../dto/create-product.dto';
-import { Product } from '../../../domain/entities/product';
+import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class CreateProductController {
   constructor(private createProductUseCase: CreateProductUseCase) {}
   async handle(
     dto: CreateProductDto,
-  ): Promise<Result<Product, ControllerError>> {
+  ): Promise<Result<IProduct, ControllerError>> {
     try {
       const productResult = await this.createProductUseCase.execute(dto);
       if (isFailure(productResult)) {
@@ -20,7 +20,7 @@ export class CreateProductController {
           productResult.error,
         );
       }
-      return Result.success<Product>(productResult.value);
+      return Result.success<IProduct>(productResult.value);
     } catch (error) {
       return ErrorFactory.ControllerError('Unexpected controller error', error);
     }
