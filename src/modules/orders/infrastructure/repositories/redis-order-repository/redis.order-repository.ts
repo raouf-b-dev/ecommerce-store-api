@@ -15,6 +15,7 @@ import {
 } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 import { Order } from '../../../domain/entities/order';
+import { OrderStatus } from '../../../domain/value-objects/order-status';
 
 @Injectable()
 export class RedisOrderRepository implements OrderRepository {
@@ -120,6 +121,37 @@ export class RedisOrderRepository implements OrderRepository {
       return Result.success<IOrder>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save order`, error);
+    }
+  }
+
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+  ): Promise<Result<void, RepositoryError>> {
+    try {
+      const updateResult = await this.postgresRepo.updateStatus(id, status);
+      if (updateResult.isFailure) return updateResult;
+
+      const cached = await this.cacheService.get<OrderForCache>(
+        `${Order_REDIS.CACHE_KEY}:${id}`,
+      );
+
+      if (cached) {
+        cached.status = status;
+        cached.updatedAt = Date.now();
+        await this.cacheService.set(`${Order_REDIS.CACHE_KEY}:${id}`, cached, {
+          ttl: Order_REDIS.EXPIRATION,
+        });
+      }
+
+      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+
+      return Result.success<void>(undefined);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        `Failed to update order status`,
+        error,
+      );
     }
   }
 
