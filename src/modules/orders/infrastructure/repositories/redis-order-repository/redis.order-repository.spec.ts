@@ -53,6 +53,7 @@ describe('RedisOrderRepository', () => {
     const mockPostgresRepo: jest.Mocked<OrderRepository> = {
       save: jest.fn(),
       updateItemsInfo: jest.fn(),
+      updateStatus: jest.fn(),
       findById: jest.fn(),
       deleteById: jest.fn(),
       listOrders: jest.fn(),
@@ -137,7 +138,140 @@ describe('RedisOrderRepository', () => {
     });
   });
 
-  describe('update', () => {
+  describe('updateStatus', () => {
+    it('should update status in postgres and update cache', async () => {
+      const cachedOrder = OrderCacheMapper.toCache(mockOrder);
+
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockResolvedValue(cachedOrder);
+      cacheService.set.mockResolvedValue(undefined);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      const result = await repository.updateStatus(
+        mockOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.updateStatus).toHaveBeenCalledWith(
+        mockOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      expect(cacheService.set).toHaveBeenCalledWith(
+        `${Order_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        expect.objectContaining({
+          status: OrderStatus.CONFIRMED,
+          updatedAt: expect.any(Number),
+        }),
+        { ttl: Order_REDIS.EXPIRATION },
+      );
+      expect(cacheService.delete).toHaveBeenCalledWith(
+        Order_REDIS.IS_CACHED_FLAG,
+      );
+    });
+
+    it('should return failure if postgres updateStatus fails', async () => {
+      const error = new RepositoryError('Update status failed');
+      postgresRepo.updateStatus.mockResolvedValue(Result.failure(error));
+
+      const result = await repository.updateStatus(
+        mockOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultFailureWithError(result, error);
+      expect(cacheService.get).not.toHaveBeenCalled();
+      expect(cacheService.set).not.toHaveBeenCalled();
+    });
+
+    it('should handle cache miss during status update', async () => {
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockResolvedValue(null);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      const result = await repository.updateStatus(
+        mockOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(cacheService.set).not.toHaveBeenCalled();
+      expect(cacheService.delete).toHaveBeenCalledWith(
+        Order_REDIS.IS_CACHED_FLAG,
+      );
+    });
+
+    it('should update cache with new timestamp', async () => {
+      const cachedOrder = OrderCacheMapper.toCache(mockOrder);
+      const beforeUpdate = Date.now();
+
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockResolvedValue(cachedOrder);
+      cacheService.set.mockResolvedValue(undefined);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      await repository.updateStatus(mockOrder.id, OrderStatus.CONFIRMED);
+
+      const setCall = cacheService.set.mock.calls[0];
+      const updatedCache = setCall[1] as OrderForCache;
+
+      expect(updatedCache.updatedAt).toBeGreaterThanOrEqual(beforeUpdate);
+      expect(updatedCache.status).toBe(OrderStatus.CONFIRMED);
+    });
+
+    it('should handle cache service error during status update', async () => {
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockRejectedValue(new Error('Redis error'));
+
+      const result = await repository.updateStatus(
+        mockOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to update order status',
+      );
+    });
+
+    it('should invalidate list cache when updating status', async () => {
+      const cachedOrder = OrderCacheMapper.toCache(mockOrder);
+
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockResolvedValue(cachedOrder);
+      cacheService.set.mockResolvedValue(undefined);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      await repository.updateStatus(mockOrder.id, OrderStatus.CONFIRMED);
+
+      expect(cacheService.delete).toHaveBeenCalledWith(
+        Order_REDIS.IS_CACHED_FLAG,
+      );
+    });
+
+    it('should update status from PENDING to CONFIRMED', async () => {
+      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const cachedOrder = OrderCacheMapper.toCache(pendingOrder);
+
+      postgresRepo.updateStatus.mockResolvedValue(Result.success(undefined));
+      cacheService.get.mockResolvedValue(cachedOrder);
+      cacheService.set.mockResolvedValue(undefined);
+      cacheService.delete.mockResolvedValue(undefined);
+
+      const result = await repository.updateStatus(
+        pendingOrder.id,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      const setCall = cacheService.set.mock.calls[0];
+      const updatedCache = setCall[1] as OrderForCache;
+      expect(updatedCache.status).toBe(OrderStatus.CONFIRMED);
+    });
+  });
+
+  describe('updateItemsInfo', () => {
     it('should update order and cache', async () => {
       const updatedOrder = OrderTestFactory.createMockOrder({
         id: mockOrder.id,

@@ -7,12 +7,17 @@ import { IOrder } from '../../domain/interfaces/order.interface';
 import { AggregatedOrderInput } from '../../domain/factories/order.factory';
 import { CreateOrderItemDto } from '../../presentation/dto/create-order-item.dto';
 import { ListOrdersQueryDto } from '../../presentation/dto/list-orders-query.dto';
+import { OrderStatus } from '../../domain/value-objects/order-status';
 
 export class MockOrderRepository implements OrderRepository {
   // Jest mock functions
   save = jest.fn<
     Promise<Result<IOrder, RepositoryError>>,
     [AggregatedOrderInput]
+  >();
+  updateStatus = jest.fn<
+    Promise<Result<void, RepositoryError>>,
+    [string, OrderStatus]
   >();
   updateItemsInfo = jest.fn<
     Promise<Result<IOrder, RepositoryError>>,
@@ -40,6 +45,26 @@ export class MockOrderRepository implements OrderRepository {
 
   mockSuccessfulSave(order: IOrder): void {
     this.save.mockResolvedValue(Result.success(order));
+  }
+
+  mockSuccessfulUpdateStatus(): void {
+    this.updateStatus.mockResolvedValue(Result.success(undefined));
+  }
+
+  mockUpdateStatusFailure(errorMessage: string): void {
+    this.updateStatus.mockResolvedValue(
+      Result.failure(new RepositoryError(errorMessage)),
+    );
+  }
+
+  mockSuccessfulUpdateItems(order: IOrder): void {
+    this.updateItemsInfo.mockResolvedValue(Result.success(order));
+  }
+
+  mockUpdateItemsFailure(errorMessage: string): void {
+    this.updateItemsInfo.mockResolvedValue(
+      Result.failure(new RepositoryError(errorMessage)),
+    );
   }
 
   mockSuccessfulCancel(): void {
@@ -74,6 +99,7 @@ export class MockOrderRepository implements OrderRepository {
   // Verify no unexpected calls were made
   verifyNoUnexpectedCalls(): void {
     expect(this.save).not.toHaveBeenCalled();
+    expect(this.updateStatus).not.toHaveBeenCalled();
     expect(this.updateItemsInfo).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.listOrders).not.toHaveBeenCalled();
