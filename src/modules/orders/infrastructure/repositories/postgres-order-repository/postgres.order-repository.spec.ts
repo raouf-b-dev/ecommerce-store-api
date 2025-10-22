@@ -60,6 +60,7 @@ describe('PostgresOrderRepository', () => {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       findOne: jest.fn(),
       delete: jest.fn(),
+      update: jest.fn(),
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -208,6 +209,147 @@ describe('PostgresOrderRepository', () => {
       const result = await repository.save(testData.createOrderDto as any);
 
       ResultAssertionHelper.assertResultSuccess(result);
+    });
+  });
+
+  describe('updateStatus', () => {
+    it('should update order status successfully', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.update).toHaveBeenCalledWith(testData.orderId, {
+        status: OrderStatus.CONFIRMED,
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should return error if order not found during status update', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 0,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultFailure(result, 'Order not found');
+    });
+
+    it('should return error on DB failure during status update', async () => {
+      mockOrmRepo.update.mockRejectedValue(new Error('DB Error'));
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to update order status',
+      );
+    });
+
+    it('should update status from PENDING to CONFIRMED', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.CONFIRMED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.update).toHaveBeenCalledWith(
+        testData.orderId,
+        expect.objectContaining({ status: OrderStatus.CONFIRMED }),
+      );
+    });
+
+    it('should update status from CONFIRMED to PROCESSING', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.PROCESSING,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.update).toHaveBeenCalledWith(
+        testData.orderId,
+        expect.objectContaining({ status: OrderStatus.PROCESSING }),
+      );
+    });
+
+    it('should update status from PROCESSING to SHIPPED', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.SHIPPED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should update status from SHIPPED to DELIVERED', async () => {
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      const result = await repository.updateStatus(
+        testData.orderId,
+        OrderStatus.DELIVERED,
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should always update updatedAt timestamp', async () => {
+      const beforeUpdate = new Date();
+      mockOrmRepo.update.mockResolvedValue({
+        raw: [],
+        affected: 1,
+        generatedMaps: [],
+      });
+
+      await repository.updateStatus(testData.orderId, OrderStatus.CONFIRMED);
+
+      expect(mockOrmRepo.update).toHaveBeenCalledWith(
+        testData.orderId,
+        expect.objectContaining({
+          updatedAt: expect.any(Date),
+        }),
+      );
+
+      const callArgs = mockOrmRepo.update.mock.calls[0][1] as any;
+      expect(callArgs.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        beforeUpdate.getTime(),
+      );
     });
   });
 

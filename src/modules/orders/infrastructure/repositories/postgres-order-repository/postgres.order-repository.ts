@@ -17,6 +17,7 @@ import { OrderItemProps } from '../../../domain/entities/order-items';
 import { Order } from '../../../domain/entities/order';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
+import { OrderStatus } from '../../../domain/value-objects/order-status';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -174,6 +175,29 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error: any) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to create order', error);
+    }
+  }
+
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+  ): Promise<Result<void, RepositoryError>> {
+    try {
+      const updateResult = await this.ormRepo.update(id, {
+        status,
+        updatedAt: new Date(),
+      });
+
+      if (updateResult.affected === 0) {
+        return ErrorFactory.RepositoryError('Order not found');
+      }
+
+      return Result.success<void>(undefined);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to update order status',
+        error,
+      );
     }
   }
 
