@@ -16,6 +16,7 @@ import { CreateOrderController } from './presentation/controllers/create-order/c
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
+import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -24,6 +25,7 @@ export class OrdersController {
     private getOrderController: GetOrderController,
     private createOrderController: CreateOrderController,
     private listOrdersController: ListOrdersController,
+    private confirmOrderController: ConfirmOrderController,
     private cancelOrderController: CancelOrderController,
   ) {}
 
@@ -44,6 +46,13 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async findOne(@Param('id') id: string) {
     return this.getOrderController.handle(id);
+  }
+
+  @Patch(':id/confirm')
+  @ApiOperation({ summary: 'Confirm a pending order' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async confirmOrder(@Param('id') id: string) {
+    return this.confirmOrderController.handle(id);
   }
 
   @Patch(':id/cancel')

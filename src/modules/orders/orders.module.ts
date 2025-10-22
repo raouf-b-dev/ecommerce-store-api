@@ -27,6 +27,8 @@ import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-o
 import { ShippingAddressEntity } from './infrastructure/orm/shipping-address.schema';
 import { PaymentInfoEntity } from './infrastructure/orm/payment-info.schema';
 import { CustomerInfoEntity } from './infrastructure/orm/customer-info.schema';
+import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
+import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
 
 @Module({
   imports: [
@@ -76,12 +78,14 @@ import { CustomerInfoEntity } from './infrastructure/orm/customer-info.schema';
     GetOrderUseCase,
     ListOrdersUsecase,
     CancelOrderUseCase,
+    ConfirmOrderUseCase,
 
     // Controllers
     CreateOrderController,
     GetOrderController,
     ListOrdersController,
     CancelOrderController,
+    ConfirmOrderController,
   ],
 })
 export class OrdersModule {}
