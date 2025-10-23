@@ -2,12 +2,13 @@
 import { ListOrdersUsecase } from './list-orders.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import { isSuccess, isFailure } from '../../../../../core/domain/result';
+import { isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import { Result } from '../../../../../core/domain/result';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('ListOrdersUsecase', () => {
   let usecase: ListOrdersUsecase;
@@ -31,11 +32,9 @@ describe('ListOrdersUsecase', () => {
     const result = await usecase.execute(dto);
 
     expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
-      expect(result.value).toEqual([sampleOrder]);
-      expect(result.value).toHaveLength(1);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual([sampleOrder]);
+    expect(result.value).toHaveLength(1);
   });
 
   it('returns success with multiple orders', async () => {
@@ -50,13 +49,11 @@ describe('ListOrdersUsecase', () => {
 
     const result = await usecase.execute(dto);
 
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
-      expect(result.value).toHaveLength(3);
-      expect(result.value[0].id).toBe('OR0001');
-      expect(result.value[1].id).toBe('OR0002');
-      expect(result.value[2].id).toBe('OR0003');
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toHaveLength(3);
+    expect(result.value[0].id).toBe('OR0001');
+    expect(result.value[1].id).toBe('OR0002');
+    expect(result.value[2].id).toBe('OR0003');
   });
 
   it('returns success with empty list when no orders exist', async () => {
@@ -67,11 +64,9 @@ describe('ListOrdersUsecase', () => {
     const result = await usecase.execute(dto);
 
     expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
-      expect(result.value).toEqual([]);
-      expect(result.value).toHaveLength(0);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual([]);
+    expect(result.value).toHaveLength(0);
   });
 
   it('propagates repository failure as usecase failure', async () => {
@@ -120,7 +115,7 @@ describe('ListOrdersUsecase', () => {
       const result = await usecase.execute(dto);
 
       expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
-      expect(isSuccess(result)).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should handle pagination parameters', async () => {
@@ -137,10 +132,8 @@ describe('ListOrdersUsecase', () => {
       const result = await usecase.execute(dto);
 
       expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toHaveLength(10);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toHaveLength(10);
     });
   });
 
@@ -157,13 +150,11 @@ describe('ListOrdersUsecase', () => {
 
       const result = await usecase.execute(dto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toHaveLength(3);
-        expect(result.value.map((o) => o.status)).toContain('pending');
-        expect(result.value.map((o) => o.status)).toContain('shipped');
-        expect(result.value.map((o) => o.status)).toContain('cancelled');
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toHaveLength(3);
+      expect(result.value.map((o) => o.status)).toContain('pending');
+      expect(result.value.map((o) => o.status)).toContain('shipped');
+      expect(result.value.map((o) => o.status)).toContain('cancelled');
     });
 
     it('should handle multi-item orders in list', async () => {
@@ -177,12 +168,10 @@ describe('ListOrdersUsecase', () => {
 
       const result = await usecase.execute(dto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toHaveLength(2);
-        expect(result.value[0].items.length).toBeGreaterThan(1);
-        expect(result.value[1].items.length).toBeGreaterThan(1);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toHaveLength(2);
+      expect(result.value[0].items.length).toBeGreaterThan(1);
+      expect(result.value[1].items.length).toBeGreaterThan(1);
     });
   });
 });

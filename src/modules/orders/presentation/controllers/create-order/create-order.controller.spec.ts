@@ -3,13 +3,10 @@ import { CreateOrderController } from './create-order.controller';
 import { CreateOrderUseCase } from '../../../application/usecases/create-order/create-order.usecase';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
-import {
-  isFailure,
-  isSuccess,
-  Result,
-} from '../../../../../core/domain/result';
+import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('CreateOrderController', () => {
   let controller: CreateOrderController;
@@ -38,10 +35,9 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toBe(mockOrder);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe(mockOrder);
+
       expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
         createOrderDto,
       );
@@ -51,18 +47,19 @@ describe('CreateOrderController', () => {
     it('should return Failure(ControllerError) if Order is not created', async () => {
       const createOrderDto = CreateOrderDtoTestFactory.createMockDto();
 
-      mockCreateOrderUseCase.execute.mockResolvedValue(
-        Result.failure(ErrorFactory.UseCaseError('Failed to save Order').error),
+      const usecaseError = Result.failure(
+        ErrorFactory.UseCaseError('Failed to save Order').error,
       );
+      mockCreateOrderUseCase.execute.mockResolvedValue(usecaseError);
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.message).toBe('Controller failed to create Order');
-        expect(result.error.cause?.message).toBe('Failed to save Order');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Controller failed to create Order',
+        ControllerError,
+        usecaseError.error,
+      );
 
       expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
         createOrderDto,
@@ -78,12 +75,12 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.message).toBe('Unexpected controller error');
-        expect(result.error.cause).toBe(error);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected controller error',
+        ControllerError,
+        error,
+      );
 
       expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
         createOrderDto,
@@ -102,10 +99,8 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
     });
 
     it('should create order with credit card', async () => {
@@ -118,10 +113,8 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.paymentInfo.method).toBe('credit_card');
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.paymentInfo.method).toBe('credit_card');
     });
 
     it('should create order with multiple items', async () => {
@@ -138,10 +131,8 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(3);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(3);
     });
 
     it('should create order with customer notes', async () => {
@@ -158,10 +149,8 @@ describe('CreateOrderController', () => {
 
       const result = await controller.handle(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.customerNotes).toBe(notes);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.customerNotes).toBe(notes);
     });
   });
 });

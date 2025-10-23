@@ -16,7 +16,7 @@ import { CreateOrderController } from './presentation/controllers/create-order/c
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
-import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
+import { ConfirmOrderController as ShipOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -25,7 +25,8 @@ export class OrdersController {
     private getOrderController: GetOrderController,
     private createOrderController: CreateOrderController,
     private listOrdersController: ListOrdersController,
-    private confirmOrderController: ConfirmOrderController,
+    private confirmOrderController: ShipOrderController,
+    private shipOrderController: ShipOrderController,
     private cancelOrderController: CancelOrderController,
   ) {}
 
@@ -53,6 +54,13 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async confirmOrder(@Param('id') id: string) {
     return this.confirmOrderController.handle(id);
+  }
+
+  @Patch(':id/ship')
+  @ApiOperation({ summary: 'Mark order as shipped' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async shipOrder(@Param('id') id: string) {
+    return this.shipOrderController.handle(id);
   }
 
   @Patch(':id/cancel')

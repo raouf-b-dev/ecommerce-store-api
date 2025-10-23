@@ -1,14 +1,11 @@
 // src/modules/orders/presentation/controllers/get-order.controller.spec.ts
 import { GetOrderController } from './get-order.controller';
 import { GetOrderUseCase } from '../../../application/usecases/get-order/get-order.usecase';
-import {
-  isFailure,
-  isSuccess,
-  Result,
-} from '../../../../../core/domain/result';
+import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('GetOrderController', () => {
   let controller: GetOrderController;
@@ -31,10 +28,9 @@ describe('GetOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toBe(mockOrder);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe(mockOrder);
+
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledWith(orderId);
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledTimes(1);
     });
@@ -42,22 +38,19 @@ describe('GetOrderController', () => {
     it('should return Failure(ControllerError) if order is not found', async () => {
       const orderId = 'OR0000001';
 
-      mockGetOrderUseCase.execute.mockResolvedValue(
-        Result.failure(
-          ErrorFactory.UseCaseError(`Order with id ${orderId} not found`).error,
-        ),
+      const usecaseError = Result.failure(
+        ErrorFactory.UseCaseError(`Order with id ${orderId} not found`).error,
       );
+      mockGetOrderUseCase.execute.mockResolvedValue(usecaseError);
 
       const result = await controller.handle(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.message).toBe('Controller failed to get order');
-        expect(result.error.cause?.message).toBe(
-          `Order with id ${orderId} not found`,
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Controller failed to get order',
+        ControllerError,
+        usecaseError.error,
+      );
 
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledWith(orderId);
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledTimes(1);
@@ -70,12 +63,12 @@ describe('GetOrderController', () => {
       mockGetOrderUseCase.execute.mockRejectedValue(error);
 
       const result = await controller.handle(orderId);
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.message).toBe('Unexpected controller error');
-        expect(result.error.cause).toBe(error);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected controller error',
+        ControllerError,
+        error,
+      );
 
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledWith(orderId);
       expect(mockGetOrderUseCase.execute).toHaveBeenCalledTimes(1);

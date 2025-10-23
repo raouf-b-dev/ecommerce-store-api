@@ -29,6 +29,8 @@ import { PaymentInfoEntity } from './infrastructure/orm/payment-info.schema';
 import { CustomerInfoEntity } from './infrastructure/orm/customer-info.schema';
 import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
+import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
+import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
 
 @Module({
   imports: [
@@ -79,6 +81,7 @@ import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confir
     ListOrdersUsecase,
     CancelOrderUseCase,
     ConfirmOrderUseCase,
+    ShipOrderUseCase,
 
     // Controllers
     CreateOrderController,
@@ -86,6 +89,7 @@ import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confir
     ListOrdersController,
     CancelOrderController,
     ConfirmOrderController,
+    ShipOrderController,
   ],
 })
 export class OrdersModule {}

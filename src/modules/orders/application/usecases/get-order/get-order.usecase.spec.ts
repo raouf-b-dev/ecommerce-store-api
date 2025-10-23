@@ -4,8 +4,8 @@ import { MockOrderRepository } from '../../../testing/mocks/order-repository.moc
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { OrderBuilder } from '../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { isFailure, isSuccess } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('GetOrderUseCase', () => {
   let useCase: GetOrderUseCase;
@@ -29,12 +29,11 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.id).toBe(orderId);
-        expect(result.value.status).toBe(OrderStatus.PENDING);
-        expect(result.value.items).toBeDefined();
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(orderId);
+      expect(result.value.status).toBe(OrderStatus.PENDING);
+      expect(result.value.items).toBeDefined();
+
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
       expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
     });
@@ -45,13 +44,11 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toContain(
-          `Order with id ${orderId} not found`,
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
       expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
     });
@@ -64,12 +61,12 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Unexpected use case error');
-        expect(result.error.cause).toBe(repoError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected use case error',
+        UseCaseError,
+        repoError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
       expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
     });
@@ -80,13 +77,11 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(emptyId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toContain(
-          `Order with id ${emptyId} not found`,
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${emptyId} not found`,
+        UseCaseError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(emptyId);
     });
 
@@ -96,10 +91,11 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(nullId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        undefined,
+        UseCaseError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(nullId);
     });
 
@@ -114,12 +110,10 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.id).toBe(orderId);
-        expect(result.value.customerId).toBe('CU0000001');
-        expect(result.value.items).toHaveLength(1);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(orderId);
+      expect(result.value.customerId).toBe('CU0000001');
+      expect(result.value.items).toHaveLength(1);
     });
 
     it('should return order data correctly for multiple items', async () => {
@@ -131,11 +125,9 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(2);
-        expect(result.value.id).toBe(orderId);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(2);
+      expect(result.value.id).toBe(orderId);
     });
   });
 
@@ -149,12 +141,12 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Unexpected use case error');
-        expect(result.error.cause).toBe(customError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected use case error',
+        UseCaseError,
+        customError,
+      );
     });
 
     it('should handle very long order IDs', async () => {
@@ -163,7 +155,7 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(longId);
 
-      expect(isFailure(result)).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(longId);
     });
 
@@ -175,10 +167,8 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.PENDING);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.PENDING);
     });
 
     it('should retrieve shipped order successfully', async () => {
@@ -189,10 +179,8 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
   });
 
@@ -209,12 +197,10 @@ describe('GetOrderUseCase', () => {
 
       const result = await useCase.execute(orderPrimitives.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.id).toBe('OR0000001');
-        expect(result.value.customerId).toBe('CUST999');
-        expect(result.value.items).toHaveLength(5);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe('OR0000001');
+      expect(result.value.customerId).toBe('CUST999');
+      expect(result.value.items).toHaveLength(5);
     });
   });
 });
