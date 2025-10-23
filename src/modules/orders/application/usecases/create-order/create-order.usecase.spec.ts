@@ -4,9 +4,9 @@ import { MockOrderRepository } from '../../../testing/mocks/order-repository.moc
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { OrderFactory } from '../../../domain/factories/order.factory';
-import { isFailure, isSuccess } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('CreateOrderUseCase', () => {
   let useCase: CreateOrderUseCase;
@@ -32,10 +32,8 @@ describe('CreateOrderUseCase', () => {
 
       const result = await useCase.execute(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toBe(mockOrder);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe(mockOrder);
 
       const aggregatedDto = orderFactory.createFromDto(createOrderDto);
       expect(mockOrderRepository.save).toHaveBeenCalledWith(aggregatedDto);
@@ -50,11 +48,11 @@ describe('CreateOrderUseCase', () => {
 
       const result = await useCase.execute(createOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Failed to save Order');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save Order',
+        UseCaseError,
+      );
 
       const aggregatedDto = orderFactory.createFromDto(createOrderDto);
       expect(mockOrderRepository.save).toHaveBeenCalledWith(aggregatedDto);
@@ -69,12 +67,12 @@ describe('CreateOrderUseCase', () => {
 
       const result = await useCase.execute(createOrderDto);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Unexpected use case error');
-        expect(result.error.cause).toBe(repoError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected use case error',
+        UseCaseError,
+        repoError,
+      );
 
       const aggregatedDto = orderFactory.createFromDto(createOrderDto);
       expect(mockOrderRepository.save).toHaveBeenCalledWith(aggregatedDto);
@@ -90,10 +88,8 @@ describe('CreateOrderUseCase', () => {
 
       const result = await useCase.execute(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
     });
 
     it('should create order with multiple items', async () => {
@@ -108,10 +104,8 @@ describe('CreateOrderUseCase', () => {
 
       const result = await useCase.execute(createOrderDto);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(3);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(3);
     });
   });
 });

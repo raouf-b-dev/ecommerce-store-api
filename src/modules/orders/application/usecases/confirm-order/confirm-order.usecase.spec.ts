@@ -2,10 +2,10 @@
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import { isFailure, isSuccess } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
@@ -30,11 +30,9 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-        expect(result.value.id).toBe(pendingOrder.id);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CONFIRMED);
+      expect(result.value.id).toBe(pendingOrder.id);
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         pendingOrder.id,
@@ -56,10 +54,8 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CONFIRMED);
     });
 
     it('should return Failure if order is not found', async () => {
@@ -68,11 +64,11 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toContain('not found');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'not found',
+        RepositoryError,
+      );
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
@@ -85,13 +81,11 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(confirmedOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe(
-          'Order is not in a confirmable state',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a confirmable state',
+        UseCaseError,
+      );
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         confirmedOrder.id,
@@ -107,13 +101,11 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe(
-          'Order is not in a confirmable state',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a confirmable state',
+        UseCaseError,
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -125,12 +117,10 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(deliveredOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe(
-          'Order is not in a confirmable state',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a confirmable state',
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -142,12 +132,10 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(cancelledOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe(
-          'Order is not in a confirmable state',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a confirmable state',
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -161,11 +149,11 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toBe('Database error');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Database error',
+        RepositoryError,
+      );
 
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
         pendingOrder.id,
@@ -181,12 +169,12 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Unexpected Usecase Error');
-        expect(result.error.cause).toBe(unexpectedError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected Usecase Error',
+        UseCaseError,
+        unexpectedError,
+      );
     });
 
     it('should confirm order with Stripe payment method', async () => {
@@ -205,10 +193,8 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(stripeOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CONFIRMED);
     });
 
     it('should confirm order with PayPal payment method', async () => {
@@ -227,7 +213,7 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(paypalOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should confirm multi-item order', async () => {
@@ -247,11 +233,9 @@ describe('ConfirmOrderUseCase', () => {
 
       const result = await useCase.execute(pendingMultiItem.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(5);
-        expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(5);
+      expect(result.value.status).toBe(OrderStatus.CONFIRMED);
     });
   });
 });

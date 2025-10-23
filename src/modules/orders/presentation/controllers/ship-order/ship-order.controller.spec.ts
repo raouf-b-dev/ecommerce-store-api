@@ -2,15 +2,12 @@
 import { ShipOrderController } from './ship-order.controller';
 import { ShipOrderUseCase } from '../../../application/usecases/ship-order/ship-order.usecase';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import {
-  isFailure,
-  isSuccess,
-  Result,
-} from '../../../../../core/domain/result';
+import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('ShipOrderController', () => {
   let controller: ShipOrderController;
@@ -38,11 +35,10 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(shippedOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value).toBe(shippedOrder);
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe(shippedOrder);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
+
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledWith(
         shippedOrder.id,
       );
@@ -60,11 +56,11 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+        UseCaseError,
+      );
 
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledWith(orderId);
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledTimes(1);
@@ -73,19 +69,18 @@ describe('ShipOrderController', () => {
     it('should return Failure(UseCaseError) if order not found', async () => {
       const orderId = 'OR9999';
 
-      mockShipOrderUseCase.execute.mockResolvedValue(
-        Result.failure(
-          ErrorFactory.UseCaseError('Order with id OR9999 not found').error,
-        ),
+      const usecaseError = Result.failure(
+        ErrorFactory.UseCaseError('Order with id OR9999 not found').error,
       );
+      mockShipOrderUseCase.execute.mockResolvedValue(usecaseError);
 
       const result = await controller.handle(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toContain('not found');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'not found',
+        UseCaseError,
+      );
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
@@ -96,12 +91,12 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(ControllerError);
-        expect(result.error.message).toBe('Unexpected Controller Error');
-        expect(result.error.cause).toBe(error);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected Controller Error',
+        ControllerError,
+        error,
+      );
 
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledWith(orderId);
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledTimes(1);
@@ -122,11 +117,9 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(codOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should ship order with completed online payment', async () => {
@@ -150,11 +143,9 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(onlineOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.paymentInfo.status).toBe('completed');
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.paymentInfo.status).toBe('completed');
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should fail to ship order in PENDING status', async () => {
@@ -168,10 +159,10 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
     });
 
     it('should fail to ship order in CONFIRMED status', async () => {
@@ -185,10 +176,10 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(confirmedOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
     });
 
     it('should ship multi-item order', async () => {
@@ -213,11 +204,9 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(processingMultiItem.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(3);
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(3);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should fail to ship already shipped order', async () => {
@@ -231,7 +220,7 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(shippedOrder.id);
 
-      expect(isFailure(result)).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
     });
 
     it('should fail to ship delivered order', async () => {
@@ -245,7 +234,7 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(deliveredOrder.id);
 
-      expect(isFailure(result)).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
     });
 
     it('should fail to ship cancelled order', async () => {
@@ -259,7 +248,7 @@ describe('ShipOrderController', () => {
 
       const result = await controller.handle(cancelledOrder.id);
 
-      expect(isFailure(result)).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
     });
   });
 });

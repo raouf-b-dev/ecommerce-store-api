@@ -2,10 +2,11 @@
 import { ShipOrderUseCase } from './ship-order.usecase';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import { isFailure, isSuccess } from '../../../../../core/domain/result';
+import { isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('ShipOrderUseCase', () => {
   let useCase: ShipOrderUseCase;
@@ -29,11 +30,9 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(processingOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-        expect(result.value.id).toBe(processingOrder.id);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
+      expect(result.value.id).toBe(processingOrder.id);
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         processingOrder.id,
@@ -52,12 +51,11 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toContain('not found');
-      }
-
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'not found',
+        RepositoryError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -69,12 +67,11 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
-
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+        UseCaseError,
+      );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         pendingOrder.id,
       );
@@ -88,11 +85,10 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(pendingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
-
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
 
@@ -103,10 +99,10 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(confirmedOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -118,10 +114,10 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(shippedOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -133,10 +129,10 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(deliveredOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
 
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
@@ -148,11 +144,10 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(cancelledOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error.message).toBe('Order is not in a shippable state');
-      }
-
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order is not in a shippable state',
+      );
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
 
@@ -164,12 +159,11 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(processingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toBe('Database error');
-      }
-
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Database error',
+        RepositoryError,
+      );
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
         processingOrder.id,
         OrderStatus.SHIPPED,
@@ -184,12 +178,12 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(processingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(UseCaseError);
-        expect(result.error.message).toBe('Unexpected Usecase Error');
-        expect(result.error.cause).toBe(unexpectedError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Unexpected Usecase Error',
+        UseCaseError,
+        unexpectedError,
+      );
     });
 
     it('should ship order with COD payment method', async () => {
@@ -202,11 +196,9 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(codOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
+      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
     });
 
     it('should ship order with online payment method', async () => {
@@ -225,10 +217,8 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(stripeOrder.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should ship multi-item order', async () => {
@@ -248,11 +238,9 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(processingMultiItem.id);
 
-      expect(isSuccess(result)).toBe(true);
-      if (isSuccess(result)) {
-        expect(result.value.items).toHaveLength(5);
-        expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.items).toHaveLength(5);
+      expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should return RepositoryError when findById fails', async () => {
@@ -261,10 +249,11 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(orderId);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        undefined,
+        RepositoryError,
+      );
     });
 
     it('should return RepositoryError when updateStatus fails', async () => {
@@ -275,11 +264,11 @@ describe('ShipOrderUseCase', () => {
 
       const result = await useCase.execute(processingOrder.id);
 
-      expect(isFailure(result)).toBe(true);
-      if (isFailure(result)) {
-        expect(result.error).toBeInstanceOf(RepositoryError);
-        expect(result.error.message).toBe('Database connection lost');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Database connection lost',
+        RepositoryError,
+      );
     });
   });
 });
