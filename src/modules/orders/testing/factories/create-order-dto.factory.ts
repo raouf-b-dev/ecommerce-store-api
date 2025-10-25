@@ -2,11 +2,9 @@
 
 import { PaymentMethod } from '../../domain/value-objects/payment-method';
 import { CreateOrderDto } from '../../presentation/dto/create-order.dto';
+import { DeliverOrderDto } from '../../presentation/dto/deliver-order.dto';
 
 export class CreateOrderDtoTestFactory {
-  /**
-   * Creates a valid CreateOrderDto for testing
-   */
   static createMockDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {
     const baseDto: CreateOrderDto = {
       customerInfo: {
@@ -37,9 +35,6 @@ export class CreateOrderDtoTestFactory {
     return { ...baseDto, ...overrides };
   }
 
-  /**
-   * Creates DTO with specific payment method
-   */
   static createCreditCardDto(
     overrides?: Partial<CreateOrderDto>,
   ): CreateOrderDto {
@@ -62,9 +57,6 @@ export class CreateOrderDtoTestFactory {
     });
   }
 
-  /**
-   * Creates DTO with multiple items
-   */
   static createMultiItemDto(productIds: string[]): CreateOrderDto {
     return this.createMockDto({
       items: productIds.map((productId, index) => ({
@@ -74,26 +66,20 @@ export class CreateOrderDtoTestFactory {
     });
   }
 
-  /**
-   * Creates DTO with customer notes
-   */
   static createWithNotesDto(notes: string): CreateOrderDto {
     return this.createMockDto({
       customerNotes: notes,
     });
   }
 
-  /**
-   * Creates invalid DTO for negative testing
-   */
   static createInvalidDto(): CreateOrderDto {
     return {
       customerInfo: {
-        email: 'invalid-email', // Invalid email
+        email: 'invalid-email',
         firstName: '',
         lastName: '',
       },
-      items: [], // Empty items
+      items: [],
       shippingAddress: {
         firstName: '',
         lastName: '',
@@ -106,6 +92,63 @@ export class CreateOrderDtoTestFactory {
       paymentInfo: {
         method: 'INVALID_METHOD' as any,
       },
+    };
+  }
+
+  static createDeliverOrderDto(
+    overrides?: Partial<DeliverOrderDto>,
+  ): DeliverOrderDto {
+    const baseDto: DeliverOrderDto = {
+      codPayment: {
+        transactionId: 'COD-123456',
+        notes: 'Cash collected on delivery',
+        collectedBy: 'Driver John Doe',
+      },
+    };
+
+    return { ...baseDto, ...overrides };
+  }
+
+  static createDeliverOrderDtoWithFullDetails(
+    overrides?: Partial<DeliverOrderDto['codPayment']>,
+  ): DeliverOrderDto {
+    return {
+      codPayment: {
+        transactionId: 'COD-789012',
+        notes: 'Payment collected successfully',
+        collectedBy: 'Delivery Agent Jane Smith',
+        ...overrides,
+      },
+    };
+  }
+
+  static createDeliverOrderDtoWithTransactionId(
+    transactionId: string,
+  ): DeliverOrderDto {
+    return {
+      codPayment: {
+        transactionId,
+        notes: 'Payment collected',
+        collectedBy: 'Delivery Driver',
+      },
+    };
+  }
+
+  static createDeliverOrderDtoWithNotesOnly(notes: string): DeliverOrderDto {
+    return {
+      codPayment: {
+        notes,
+      },
+    };
+  }
+
+  static createEmptyDeliverOrderDto(): DeliverOrderDto {
+    return {};
+  }
+
+  static createDeliverOrderDtoWithEmptyCODPayment(): DeliverOrderDto {
+    return {
+      codPayment: {},
     };
   }
 }
