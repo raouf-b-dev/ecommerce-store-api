@@ -164,21 +164,12 @@ export class Order implements IOrder {
   }
 
   // ==================== BUSINESS RULES ====================
-
-  /**
-   * Orders can only be edited when pending
-   */
   private assertCanBeUpdated(): void {
     if (!this._status.isPending()) {
       throw new Error('Order can only be updated when status is PENDING');
     }
   }
 
-  /**
-   * Check if order can be confirmed based on payment method
-   * - Online payments: payment must be completed first
-   * - COD: can be confirmed immediately
-   */
   canBeConfirmed(): boolean {
     if (!this._status.isPending()) {
       return false;
@@ -191,13 +182,9 @@ export class Order implements IOrder {
       return this._paymentInfo.isCompleted();
     }
 
-    // COD can be confirmed without payment
     return true;
   }
 
-  /**
-   * Confirm the order - different logic for different payment methods
-   */
   confirm(): void {
     if (!this.canBeConfirmed()) {
       const paymentMethod = this.getPaymentMethod();
@@ -214,16 +201,10 @@ export class Order implements IOrder {
     this.changeStatus(OrderStatus.CONFIRMED);
   }
 
-  /**
-   * Check if order can be processed
-   */
   canBeProcessed(): boolean {
     return this._status.isConfirmed();
   }
 
-  /**
-   * Process the order (prepare/pack)
-   */
   process(): void {
     if (!this.canBeProcessed()) {
       throw new Error('Order must be confirmed before processing');
@@ -231,16 +212,10 @@ export class Order implements IOrder {
     this.changeStatus(OrderStatus.PROCESSING);
   }
 
-  /**
-   * Check if order can be shipped
-   */
   canBeShipped(): boolean {
     return this._status.isProcessing();
   }
 
-  /**
-   * Ship the order
-   */
   ship(): void {
     if (!this.canBeShipped()) {
       throw new Error('Order must be in processing state to ship');
@@ -248,10 +223,6 @@ export class Order implements IOrder {
     this.changeStatus(OrderStatus.SHIPPED);
   }
 
-  /**
-   * Check if order can be delivered
-   * COD orders must have payment collected at this point
-   */
   canBeDelivered(): boolean {
     if (!this._status.isShipped()) {
       return false;
@@ -259,22 +230,15 @@ export class Order implements IOrder {
 
     const paymentMethod = this.getPaymentMethod();
 
-    // COD requires payment to be collected during delivery
     if (paymentMethod.requiresPaymentOnDelivery()) {
-      // Payment should be pending or not required yet
       return (
         this._paymentInfo.isPending() || this._paymentInfo.isNotRequiredYet()
       );
     }
 
-    // Online payments should already be completed
     return this._paymentInfo.isCompleted();
   }
 
-  /**
-   * Deliver the order
-   * For COD: marks payment as completed at delivery
-   */
   deliver(codPaymentDetails?: {
     transactionId?: string;
     notes?: string;
@@ -285,7 +249,6 @@ export class Order implements IOrder {
 
     const paymentMethod = this.getPaymentMethod();
 
-    // For COD, collect payment at delivery
     if (paymentMethod.requiresPaymentOnDelivery()) {
       if (!this._paymentInfo.isCompleted()) {
         this._paymentInfo.markAsCompleted(
@@ -298,9 +261,6 @@ export class Order implements IOrder {
     this.changeStatus(OrderStatus.DELIVERED);
   }
 
-  /**
-   * Check if order can be cancelled
-   */
   isCancellable(): boolean {
     return (
       this._status.isPending() ||
@@ -310,16 +270,11 @@ export class Order implements IOrder {
     );
   }
 
-  /**
-   * Cancel the order
-   * Note: Cancelling shipped orders may require additional business logic
-   */
   cancel(reason?: string): void {
     if (!this.isCancellable()) {
       throw new Error('Order cannot be cancelled in current state');
     }
 
-    // Add cancellation reason to notes
     if (reason) {
       this._customerNotes = this._customerNotes
         ? `${this._customerNotes}\n\nCancellation reason: ${reason}`
@@ -328,10 +283,8 @@ export class Order implements IOrder {
 
     this.changeStatus(OrderStatus.CANCELLED);
 
-    // Handle refunds for online payments if already paid
     const paymentMethod = this.getPaymentMethod();
     if (paymentMethod.supportsRefunds() && this._paymentInfo.isCompleted()) {
-      // Trigger refund process (implement in payment service)
       this._paymentInfo.updateTransactionInfo(
         this._paymentInfo.transactionId || '',
         'Refund initiated due to cancellation',
@@ -339,9 +292,6 @@ export class Order implements IOrder {
     }
   }
 
-  /**
-   * Check if payment is required now
-   */
   requiresPayment(): boolean {
     const paymentMethod = this.getPaymentMethod();
 
@@ -350,7 +300,6 @@ export class Order implements IOrder {
       return this._paymentInfo.isPending();
     }
 
-    // COD requires payment at delivery
     if (paymentMethod.requiresPaymentOnDelivery()) {
       return this._status.isShipped() && !this._paymentInfo.isCompleted();
     }
@@ -358,9 +307,6 @@ export class Order implements IOrder {
     return false;
   }
 
-  /**
-   * Get next expected action based on current state
-   */
   getNextExpectedAction(): string {
     if (this._status.isPending()) {
       const paymentMethod = this.getPaymentMethod();

@@ -8,6 +8,7 @@ import { CancelOrderController } from './presentation/controllers/cancel-order/c
 import { OrderTestFactory } from './testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
 import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
+import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -16,15 +17,21 @@ describe('OrdersController', () => {
   let listOrdersController: ListOrdersController;
   let cancelOrderController: CancelOrderController;
   let confirmOrderController: ConfirmOrderController;
+  let deliverOrderController: DeliverOrderController;
   let mockOrder;
   let cancelledOrder;
   let confirmedOrder;
+  let deliveredOrder;
   let createOrderDto;
+  let createDeliveredOrderDto;
+
   beforeEach(async () => {
     mockOrder = OrderTestFactory.createMockOrder();
     cancelledOrder = OrderTestFactory.createCancelledOrder();
     confirmedOrder = OrderTestFactory.createConfirmedOrder();
+    deliveredOrder = OrderTestFactory.createDeliveredOrder();
     createOrderDto = CreateOrderDtoTestFactory.createMockDto();
+    createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
@@ -59,6 +66,12 @@ describe('OrdersController', () => {
             handle: jest.fn().mockResolvedValue(confirmedOrder),
           },
         },
+        {
+          provide: DeliverOrderController,
+          useValue: {
+            handle: jest.fn().mockResolvedValue(deliveredOrder),
+          },
+        },
       ],
     }).compile();
 
@@ -74,6 +87,9 @@ describe('OrdersController', () => {
     );
     confirmOrderController = module.get<ConfirmOrderController>(
       ConfirmOrderController,
+    );
+    deliverOrderController = module.get<DeliverOrderController>(
+      DeliverOrderController,
     );
   });
 
@@ -117,5 +133,16 @@ describe('OrdersController', () => {
       confirmedOrder.id,
     );
     expect(res).toEqual(confirmedOrder);
+  });
+  it('should call DeliverOrderController.handle when deliverOrder is called and return its result', async () => {
+    const res = await controller.deliverOrder(
+      deliveredOrder.id,
+      createDeliveredOrderDto,
+    );
+    expect(deliverOrderController.handle).toHaveBeenCalledWith(
+      deliveredOrder.id,
+      createDeliveredOrderDto,
+    );
+    expect(res).toEqual(deliveredOrder);
   });
 });

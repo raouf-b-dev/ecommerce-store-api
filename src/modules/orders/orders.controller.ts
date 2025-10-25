@@ -17,6 +17,8 @@ import { ListOrdersController } from './presentation/controllers/list-orders/lis
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { ConfirmOrderController as ShipOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
+import { DeliverOrderDto } from './presentation/dto/deliver-order.dto';
+import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -27,6 +29,7 @@ export class OrdersController {
     private listOrdersController: ListOrdersController,
     private confirmOrderController: ShipOrderController,
     private shipOrderController: ShipOrderController,
+    private deliverOrderController: DeliverOrderController,
     private cancelOrderController: CancelOrderController,
   ) {}
 
@@ -61,6 +64,18 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async shipOrder(@Param('id') id: string) {
     return this.shipOrderController.handle(id);
+  }
+
+  @Patch(':id/deliver')
+  @ApiOperation({
+    summary: 'Mark order as delivered (collects COD payment if applicable)',
+  })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async deliverOrder(
+    @Param('id') id: string,
+    @Body() deliverOrderDto: DeliverOrderDto,
+  ) {
+    return this.deliverOrderController.handle(id, deliverOrderDto);
   }
 
   @Patch(':id/cancel')
