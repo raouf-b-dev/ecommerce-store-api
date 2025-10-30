@@ -27,6 +27,9 @@ import {
 import { PaymentMethodVO } from '../value-objects/payment-method';
 import { OrderPricing } from '../value-objects/order-pricing';
 import { IShippingAddress } from '../interfaces/shipping-address.interface';
+import { ErrorFactory } from '../../../../core/errors/error.factory';
+import { DomainError } from '../../../../core/errors/domain.error';
+import { Result } from '../../../../core/domain/result';
 
 export interface OrderProps {
   id: string;
@@ -78,22 +81,24 @@ export class Order implements IOrder {
     this._pricing = OrderPricing.calculate(this._items);
   }
 
-  private validateProps(props: OrderProps): void {
+  private validateProps(props: OrderProps): Result<void, DomainError> {
     if (!props.id?.trim()) {
-      throw new Error('Order ID is required');
+      return ErrorFactory.DomainError('Order ID is required');
     }
     if (!props.customerInfo) {
-      throw new Error('Customer information is required');
+      return ErrorFactory.DomainError('Customer information is required');
     }
     if (!props.items || props.items.length === 0) {
-      throw new Error('Order must have at least one item');
+      return ErrorFactory.DomainError('Order must have at least one item');
     }
     if (!props.shippingAddress) {
-      throw new Error('Shipping address is required');
+      return ErrorFactory.DomainError('Shipping address is required');
     }
     if (!props.paymentInfo) {
-      throw new Error('Payment information is required');
+      return ErrorFactory.DomainError('Payment information is required');
     }
+
+    return Result.success(undefined);
   }
 
   // Getters
@@ -164,10 +169,14 @@ export class Order implements IOrder {
   }
 
   // ==================== BUSINESS RULES ====================
-  private assertCanBeUpdated(): void {
+  private assertCanBeUpdated(): Result<void, DomainError> {
     if (!this._status.isPending()) {
-      throw new Error('Order can only be updated when status is PENDING');
+      return ErrorFactory.DomainError(
+        'Order can only be updated when status is PENDING',
+      );
     }
+
+    return Result.success(undefined);
   }
 
   canBeConfirmed(): boolean {
@@ -185,42 +194,48 @@ export class Order implements IOrder {
     return true;
   }
 
-  confirm(): void {
+  confirm(): Result<void, DomainError> {
     if (!this.canBeConfirmed()) {
       const paymentMethod = this.getPaymentMethod();
 
       if (paymentMethod.requiresPaymentBeforeConfirmation()) {
-        throw new Error(
+        return ErrorFactory.DomainError(
           'Cannot confirm order - payment must be completed first',
         );
       }
 
-      throw new Error('Order cannot be confirmed in current state');
+      return ErrorFactory.DomainError(
+        'Order cannot be confirmed in current state',
+      );
     }
 
-    this.changeStatus(OrderStatus.CONFIRMED);
+    return this.changeStatus(OrderStatus.CONFIRMED);
   }
 
   canBeProcessed(): boolean {
     return this._status.isConfirmed();
   }
 
-  process(): void {
+  process(): Result<void, DomainError> {
     if (!this.canBeProcessed()) {
-      throw new Error('Order must be confirmed before processing');
+      return ErrorFactory.DomainError(
+        'Order must be confirmed before processing',
+      );
     }
-    this.changeStatus(OrderStatus.PROCESSING);
+    return this.changeStatus(OrderStatus.PROCESSING);
   }
 
   canBeShipped(): boolean {
     return this._status.isProcessing();
   }
 
-  ship(): void {
+  ship(): Result<void, DomainError> {
     if (!this.canBeShipped()) {
-      throw new Error('Order must be in processing state to ship');
+      return ErrorFactory.DomainError(
+        'Order must be in processing state to ship',
+      );
     }
-    this.changeStatus(OrderStatus.SHIPPED);
+    return this.changeStatus(OrderStatus.SHIPPED);
   }
 
   canBeDelivered(): boolean {
@@ -242,9 +257,11 @@ export class Order implements IOrder {
   deliver(codPaymentDetails?: {
     transactionId?: string;
     notes?: string;
-  }): void {
+  }): Result<void, DomainError> {
     if (!this.canBeDelivered()) {
-      throw new Error('Order cannot be delivered in current state');
+      return ErrorFactory.DomainError(
+        'Order cannot be delivered in current state',
+      );
     }
 
     const paymentMethod = this.getPaymentMethod();
@@ -258,7 +275,7 @@ export class Order implements IOrder {
       }
     }
 
-    this.changeStatus(OrderStatus.DELIVERED);
+    return this.changeStatus(OrderStatus.DELIVERED);
   }
 
   isCancellable(): boolean {
@@ -270,9 +287,11 @@ export class Order implements IOrder {
     );
   }
 
-  cancel(reason?: string): void {
+  cancel(reason?: string): Result<void, DomainError> {
     if (!this.isCancellable()) {
-      throw new Error('Order cannot be cancelled in current state');
+      return ErrorFactory.DomainError(
+        'Order cannot be cancelled in current state',
+      );
     }
 
     if (reason) {
@@ -281,7 +300,8 @@ export class Order implements IOrder {
         : `Cancellation reason: ${reason}`;
     }
 
-    this.changeStatus(OrderStatus.CANCELLED);
+    const changeStatusResult = this.changeStatus(OrderStatus.CANCELLED);
+    if (changeStatusResult.isFailure) return changeStatusResult;
 
     const paymentMethod = this.getPaymentMethod();
     if (paymentMethod.supportsRefunds() && this._paymentInfo.isCompleted()) {
@@ -290,6 +310,8 @@ export class Order implements IOrder {
         'Refund initiated due to cancellation',
       );
     }
+
+    return Result.success(undefined);
   }
 
   requiresPayment(): boolean {
@@ -354,14 +376,16 @@ export class Order implements IOrder {
     this._updatedAt = new Date();
   }
 
-  updateItems(items: OrderItemProps[]): void {
+  updateItems(items: OrderItemProps[]): Result<void, DomainError> {
     this.assertCanBeUpdated();
     if (!items || items.length === 0) {
-      throw new Error('Order must have at least one item');
+      return ErrorFactory.DomainError('Order must have at least one item');
     }
     this._items = items.map((item) => new OrderItem(item));
     this.recalculatePricing();
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
   updateShippingAddress(address: IShippingAddress): void {
@@ -429,17 +453,21 @@ export class Order implements IOrder {
     }
   }
 
-  private changeStatus(newStatus: OrderStatus | string): void {
+  private changeStatus(
+    newStatus: OrderStatus | string,
+  ): Result<void, DomainError> {
     const newStatusVO = new OrderStatusVO(newStatus);
 
     if (!this._status.canTransitionTo(newStatusVO.value)) {
-      throw new Error(
+      return ErrorFactory.DomainError(
         `Cannot transition from ${this._status.value} to ${newStatusVO.value}`,
       );
     }
 
     this._status = newStatusVO;
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
   // ==================== QUERY METHODS ====================
