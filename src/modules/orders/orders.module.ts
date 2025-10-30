@@ -33,6 +33,8 @@ import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.u
 import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
 import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
 import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
+import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
+import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 
 @Module({
   imports: [
@@ -85,6 +87,7 @@ import { DeliverOrderUseCase } from './application/usecases/deliver-order/delive
     ConfirmOrderUseCase,
     DeliverOrderUseCase,
     ShipOrderUseCase,
+    ProcessOrderUseCase,
 
     // Controllers
     CreateOrderController,
@@ -94,6 +97,7 @@ import { DeliverOrderUseCase } from './application/usecases/deliver-order/delive
     ConfirmOrderController,
     DeliverOrderController,
     ShipOrderController,
+    ProcessOrderController,
   ],
 })
 export class OrdersModule {}

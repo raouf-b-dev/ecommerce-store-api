@@ -19,6 +19,7 @@ import { CancelOrderController } from './presentation/controllers/cancel-order/c
 import { ConfirmOrderController as ShipOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 import { DeliverOrderDto } from './presentation/dto/deliver-order.dto';
 import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
+import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -28,6 +29,7 @@ export class OrdersController {
     private createOrderController: CreateOrderController,
     private listOrdersController: ListOrdersController,
     private confirmOrderController: ShipOrderController,
+    private processOrderController: ProcessOrderController,
     private shipOrderController: ShipOrderController,
     private deliverOrderController: DeliverOrderController,
     private cancelOrderController: CancelOrderController,
@@ -57,6 +59,13 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async confirmOrder(@Param('id') id: string) {
     return this.confirmOrderController.handle(id);
+  }
+
+  @Patch(':id/process')
+  @ApiOperation({ summary: 'Process a pending order' })
+  @ApiResponse({ status: 200, type: OrderResponseDto })
+  async processOrder(@Param('id') id: string) {
+    return this.processOrderController.handle(id);
   }
 
   @Patch(':id/ship')
