@@ -10,6 +10,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CoreModule } from './core/core.module';
 import { CartsModule } from './modules/carts/carts.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 
@@ -26,6 +27,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     ProductsModule,
     OrdersModule,
     CartsModule,
+    PaymentsModule,
     InventoryModule,
     CustomersModule,
 
