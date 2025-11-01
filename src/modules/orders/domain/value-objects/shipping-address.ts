@@ -10,7 +10,7 @@ export interface ShippingAddressProps {
   state: string;
   postalCode: string;
   country: string;
-  phone?: string;
+  phone: string | null;
 }
 
 export class ShippingAddress implements IShippingAddress {
@@ -22,7 +22,7 @@ export class ShippingAddress implements IShippingAddress {
   private readonly _state: string;
   private readonly _postalCode: string;
   private readonly _country: string;
-  private readonly _phone?: string;
+  private readonly _phone: string | null;
 
   constructor(props: ShippingAddressProps) {
     this.validateRequiredFields(props);
@@ -36,7 +36,7 @@ export class ShippingAddress implements IShippingAddress {
     this._state = props.state.trim();
     this._postalCode = props.postalCode.trim();
     this._country = props.country.trim().toLowerCase();
-    this._phone = props.phone?.trim();
+    this._phone = props.phone ? props.phone.trim() : null;
   }
 
   private validateRequiredFields(props: ShippingAddressProps): void {
@@ -121,7 +121,7 @@ export class ShippingAddress implements IShippingAddress {
     return this._country;
   }
 
-  get phone(): string | undefined {
+  get phone(): string | null {
     return this._phone;
   }
 

@@ -1,5 +1,5 @@
 // src/modules/orders/domain/value-objects/order-pricing.ts
-import { Money } from './money';
+import { Money } from '../../../../shared/domain/value-objects/money';
 import { OrderItem } from '../entities/order-items';
 
 export interface OrderPricingProps {

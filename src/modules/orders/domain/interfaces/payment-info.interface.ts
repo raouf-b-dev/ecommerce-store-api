@@ -10,7 +10,7 @@ export interface IPaymentInfo extends IPaymentInfoEditable {
 
 export interface IPaymentInfoEditable {
   status: PaymentStatus;
-  transactionId?: string;
-  paidAt?: Date;
-  notes?: string;
+  transactionId: string | null;
+  paidAt: Date | null;
+  notes: string | null;
 }

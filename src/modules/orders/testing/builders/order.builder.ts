@@ -31,14 +31,12 @@ export class OrderBuilder {
   withPaymentMethod(method: PaymentMethod): this {
     this.order.paymentInfo.method = method;
 
-    // Set appropriate initial payment status based on method
     if (method === PaymentMethod.CASH_ON_DELIVERY) {
       this.order.paymentInfo.status = PaymentStatus.NOT_REQUIRED_YET;
-      this.order.paymentInfo.transactionId = undefined;
-      this.order.paymentInfo.paidAt = undefined;
+      this.order.paymentInfo.transactionId = null;
+      this.order.paymentInfo.paidAt = null;
       this.order.paymentInfo.notes = 'Payment on delivery';
     } else {
-      // Online payment methods start as PENDING
       this.order.paymentInfo.status = PaymentStatus.PENDING;
     }
 
@@ -48,7 +46,6 @@ export class OrderBuilder {
   withPaymentStatus(status: PaymentStatus): this {
     this.order.paymentInfo.status = status;
 
-    // Set paidAt if status is COMPLETED
     if (status === PaymentStatus.COMPLETED && !this.order.paymentInfo.paidAt) {
       this.order.paymentInfo.paidAt = new Date();
     }
@@ -77,38 +74,24 @@ export class OrderBuilder {
     return this;
   }
 
-  /**
-   * Makes order cancellable (PENDING, CONFIRMED, PROCESSING, or SHIPPED)
-   * Default: PENDING
-   */
   asCancellable(): this {
     return this.withStatus(OrderStatus.PENDING).withPaymentStatus(
       PaymentStatus.PENDING,
     );
   }
 
-  /**
-   * Makes order non-cancellable (DELIVERED or CANCELLED)
-   * Default: DELIVERED
-   */
   asNonCancellable(): this {
     return this.withStatus(OrderStatus.DELIVERED).withPaymentStatus(
       PaymentStatus.COMPLETED,
     );
   }
 
-  /**
-   * Sets up COD order in pending state
-   */
   asCODPending(): this {
     return this.withPaymentMethod(PaymentMethod.CASH_ON_DELIVERY)
       .withStatus(OrderStatus.PENDING)
       .withPaymentStatus(PaymentStatus.NOT_REQUIRED_YET);
   }
 
-  /**
-   * Sets up online payment order awaiting payment
-   */
   asOnlinePaymentPending(): this {
     return this.withPaymentMethod(PaymentMethod.STRIPE)
       .withStatus(OrderStatus.PENDING)

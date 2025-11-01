@@ -1,15 +1,12 @@
 // src/modules/orders/domain/value-objects/order-status.ts
 
-/**
- * Order status represents the FULFILLMENT state, independent of payment
- */
 export enum OrderStatus {
-  PENDING = 'pending', // Order created, awaiting confirmation
-  CONFIRMED = 'confirmed', // Order confirmed, ready for processing
-  PROCESSING = 'processing', // Order being prepared/packed
-  SHIPPED = 'shipped', // Order in transit
-  DELIVERED = 'delivered', // Order delivered to customer
-  CANCELLED = 'cancelled', // Order cancelled
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  PROCESSING = 'processing',
+  SHIPPED = 'shipped',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled',
 }
 
 export class OrderStatusVO {
@@ -50,9 +47,6 @@ export class OrderStatusVO {
     return this._status === OrderStatus.CANCELLED;
   }
 
-  /**
-   * Order status transitions independent of payment
-   */
   canTransitionTo(newStatus: OrderStatus): boolean {
     const transitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],

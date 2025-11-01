@@ -5,10 +5,6 @@ import { PaymentMethod } from '../../domain/value-objects/payment-method';
 import { PaymentStatus } from '../../domain/value-objects/payment-status';
 
 export class OrderTestFactory {
-  /**
-   * Creates a complete mock order with all fields populated
-   * Use this as your default mock for most tests
-   */
   static createMockOrder(overrides?: Partial<IOrder>): IOrder {
     const baseOrder: IOrder = {
       // Basic identifiers
@@ -46,6 +42,7 @@ export class OrderTestFactory {
         status: PaymentStatus.PENDING,
         transactionId: 'TXN123456',
         notes: 'Awaiting payment confirmation',
+        paidAt: null,
       },
 
       // Shipping address
@@ -78,9 +75,6 @@ export class OrderTestFactory {
     return { ...baseOrder, ...overrides };
   }
 
-  /**
-   * Creates domain-specific order states for testing business logic
-   */
   static createPendingOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PENDING,
@@ -148,33 +142,22 @@ export class OrderTestFactory {
     });
   }
 
-  /**
-   * IMPORTANT: Cancellable orders are PENDING, CONFIRMED, PROCESSING, or SHIPPED
-   * Default: PENDING for easy testing
-   */
   static createCancellableOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createPendingOrder(overrides);
   }
 
-  /**
-   * IMPORTANT: Non-cancellable orders are DELIVERED or CANCELLED
-   * Default: DELIVERED (final state)
-   */
   static createNonCancellableOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createDeliveredOrder(overrides);
   }
 
-  /**
-   * Creates an order with specific payment method
-   */
   static createCashOnDeliveryOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       paymentInfo: {
         ...this.createMockOrder().paymentInfo,
         method: PaymentMethod.CASH_ON_DELIVERY,
         status: PaymentStatus.NOT_REQUIRED_YET, // Important!
-        transactionId: undefined,
-        paidAt: undefined,
+        transactionId: null,
+        paidAt: null,
         notes: 'Payment on delivery',
       },
       ...overrides,
@@ -203,9 +186,6 @@ export class OrderTestFactory {
     });
   }
 
-  /**
-   * Creates an order with multiple items
-   */
   static createMultiItemOrder(itemCount: number = 3): IOrder {
     const items = Array.from({ length: itemCount }, (_, i) => ({
       id: `item-${i + 1}`,
@@ -231,9 +211,6 @@ export class OrderTestFactory {
     });
   }
 
-  /**
-   * Helper: Creates COD order ready for confirmation
-   */
   static createCODOrderReadyForConfirmation(): IOrder {
     return this.createCashOnDeliveryOrder({
       status: OrderStatus.PENDING,
@@ -243,13 +220,12 @@ export class OrderTestFactory {
         status: PaymentStatus.NOT_REQUIRED_YET,
         amount: 15,
         notes: 'Payment on delivery',
+        transactionId: null,
+        paidAt: null,
       },
     });
   }
 
-  /**
-   * Helper: Creates online payment order ready for confirmation (payment completed)
-   */
   static createOnlineOrderReadyForConfirmation(): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PENDING,
@@ -262,9 +238,6 @@ export class OrderTestFactory {
     });
   }
 
-  /**
-   * Helper: Creates online payment order NOT ready for confirmation (payment pending)
-   */
   static createOnlineOrderNotReadyForConfirmation(): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PENDING,
@@ -272,8 +245,8 @@ export class OrderTestFactory {
         ...this.createMockOrder().paymentInfo,
         method: PaymentMethod.STRIPE,
         status: PaymentStatus.PENDING,
-        transactionId: undefined,
-        paidAt: undefined,
+        transactionId: null,
+        paidAt: null,
       },
     });
   }

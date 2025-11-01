@@ -9,5 +9,5 @@ export interface IShippingAddressEditable {
   state: string;
   postalCode: string;
   country: string;
-  phone?: string;
+  phone: string | null;
 }

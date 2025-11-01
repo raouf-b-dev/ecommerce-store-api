@@ -4,7 +4,7 @@ export interface ICustomerInfo extends ICustomerInfoEditable {
 
 export interface ICustomerInfoEditable {
   email: string;
-  phone?: string;
+  phone: string | null;
   firstName: string;
   lastName: string;
 }

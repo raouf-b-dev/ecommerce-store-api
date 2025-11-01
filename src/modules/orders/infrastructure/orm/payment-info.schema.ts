@@ -34,11 +34,11 @@ export class PaymentInfoEntity {
   amount: number;
 
   @Column({ type: 'varchar', nullable: true })
-  transactionId?: string;
+  transactionId: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  paidAt?: Date;
+  paidAt: Date | null;
 
   @Column({ type: 'text', nullable: true })
-  notes?: string;
+  notes: string | null;
 }

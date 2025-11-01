@@ -28,5 +28,5 @@ export class ShippingAddressEntity {
   country: string;
 
   @Column({ type: 'varchar', nullable: true })
-  phone?: string;
+  phone: string | null;
 }

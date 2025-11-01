@@ -40,10 +40,10 @@ export interface OrderProps {
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
   paymentInfo: PaymentInfoProps;
-  customerNotes?: string;
-  status?: string | OrderStatus;
-  createdAt?: Date;
-  updatedAt?: Date;
+  customerNotes: string | null;
+  status: string | OrderStatus;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export class Order implements IOrder {
@@ -55,7 +55,7 @@ export class Order implements IOrder {
   private _items: OrderItem[];
   private _shippingAddress: ShippingAddress;
   private _paymentInfo: PaymentInfo;
-  private _customerNotes?: string;
+  private _customerNotes: string | null;
   private _status: OrderStatusVO;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -74,7 +74,9 @@ export class Order implements IOrder {
       props.shippingAddress,
     );
     this._paymentInfo = PaymentInfo.fromPrimitives(props.paymentInfo);
-    this._customerNotes = props.customerNotes?.trim();
+    this._customerNotes = props.customerNotes
+      ? props.customerNotes.trim()
+      : null;
     this._status = new OrderStatusVO(props.status || OrderStatus.PENDING);
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
@@ -134,7 +136,7 @@ export class Order implements IOrder {
       notes: this._paymentInfo.notes,
     };
   }
-  get customerNotes(): string | undefined {
+  get customerNotes(): string | null {
     return this._customerNotes;
   }
   get status(): OrderStatus {
@@ -186,7 +188,6 @@ export class Order implements IOrder {
 
     const paymentMethod = this.getPaymentMethod();
 
-    // Online payments require payment completion before confirmation
     if (paymentMethod.requiresPaymentBeforeConfirmation()) {
       return this._paymentInfo.isCompleted();
     }
@@ -423,7 +424,7 @@ export class Order implements IOrder {
 
   updateCustomerNotes(notes?: string): void {
     this.assertCanBeUpdated();
-    this._customerNotes = notes?.trim();
+    this._customerNotes = notes ? notes.trim() : null;
     this._updatedAt = new Date();
   }
 
@@ -524,13 +525,12 @@ export class Order implements IOrder {
     customerInfo: CustomerInfoProps;
     shippingAddress: ShippingAddressProps;
     paymentInfo: Omit<PaymentInfoProps, 'status' | 'amount'>;
-    customerNotes?: string;
+    customerNotes: string | null;
   }): Order {
     const orderItems = props.items.map((item) => new OrderItem(item));
     const pricing = OrderPricing.calculate(orderItems);
     const paymentMethod = new PaymentMethodVO(props.paymentInfo.method);
 
-    // Set initial payment status based on payment method
     const initialPaymentStatus = paymentMethod.requiresPaymentOnDelivery()
       ? PaymentStatus.NOT_REQUIRED_YET
       : PaymentStatus.PENDING;
@@ -541,9 +541,11 @@ export class Order implements IOrder {
       status: initialPaymentStatus,
       amount: pricing.totalPrice,
       notes: props.paymentInfo.notes,
+      transactionId: props.paymentInfo.transactionId,
+      paidAt: props.paymentInfo.paidAt,
     };
 
-    return new Order({
+    const payload: OrderProps = {
       id: props.id,
       customerId: props.customerInfo.customerId,
       paymentInfoId: props.paymentInfo.id,
@@ -554,6 +556,9 @@ export class Order implements IOrder {
       paymentInfo: paymentInfo,
       customerNotes: props.customerNotes,
       status: OrderStatus.PENDING,
-    });
+      createdAt: null,
+      updatedAt: null,
+    };
+    return new Order(payload);
   }
 }

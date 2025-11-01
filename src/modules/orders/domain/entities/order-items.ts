@@ -1,12 +1,12 @@
 // src/modules/orders/domain/entities/order-item.entity.ts
-import { Money } from '../value-objects/money';
-import { Quantity } from '../value-objects/quantity';
+import { Quantity } from '../../../../shared/domain/value-objects/quantity';
+import { Money } from '../../../../shared/domain/value-objects/money';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface OrderItemProps {
-  id?: string;
+  id: string | null;
   productId: string;
-  productName?: string;
+  productName: string | null;
   unitPrice: number;
   quantity: number;
 }
@@ -14,7 +14,7 @@ export interface OrderItemProps {
 export class OrderItem {
   private readonly _id: string;
   private readonly _productId: string;
-  private readonly _productName?: string;
+  private readonly _productName: string | null;
   private readonly _unitPrice: Money;
   private readonly _quantity: Quantity;
   private readonly _lineTotal: Money;
@@ -26,7 +26,7 @@ export class OrderItem {
 
     this._id = props.id || this.generateId();
     this._productId = props.productId.trim();
-    this._productName = props.productName?.trim();
+    this._productName = props.productName ? props.productName.trim() : null;
     this._unitPrice = Money.from(props.unitPrice);
     this._quantity = Quantity.from(props.quantity);
     this._lineTotal = this._unitPrice.multiply(this._quantity.value);
@@ -40,7 +40,7 @@ export class OrderItem {
     return this._productId;
   }
 
-  get productName(): string | undefined {
+  get productName(): string | null {
     return this._productName;
   }
 

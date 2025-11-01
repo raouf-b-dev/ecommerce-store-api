@@ -12,7 +12,7 @@ export class CustomerInfoEntity {
   email: string;
 
   @Column({ type: 'varchar', nullable: true })
-  phone?: string;
+  phone: string | null;
 
   @Column({ type: 'varchar' })
   firstName: string;

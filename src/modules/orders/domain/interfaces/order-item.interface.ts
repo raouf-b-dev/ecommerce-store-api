@@ -2,7 +2,7 @@
 export interface IOrderItem {
   id: string;
   productId: string;
-  productName?: string;
+  productName: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

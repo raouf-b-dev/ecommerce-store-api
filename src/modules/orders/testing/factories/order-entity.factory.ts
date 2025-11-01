@@ -70,7 +70,7 @@ export class OrderEntityTestFactory {
       status: PaymentStatus.PENDING,
       amount: 100,
       transactionId: 'TXN123456',
-      paidAt: undefined,
+      paidAt: null,
       notes: 'Payment pending',
     };
 

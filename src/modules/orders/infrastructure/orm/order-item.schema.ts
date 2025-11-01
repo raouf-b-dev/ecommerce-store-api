@@ -19,7 +19,7 @@ export class OrderItemEntity {
   productId: string;
 
   @Column({ type: 'varchar', nullable: true })
-  productName?: string;
+  productName: string | null;
 
   @Column({
     type: 'numeric',

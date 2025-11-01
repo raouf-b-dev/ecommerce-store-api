@@ -8,9 +8,9 @@ export interface PaymentInfoProps {
   method: PaymentMethod;
   status: PaymentStatus;
   amount: number;
-  transactionId?: string;
-  paidAt?: Date;
-  notes?: string;
+  transactionId: string | null;
+  paidAt: Date | null;
+  notes: string | null;
 }
 
 export class PaymentInfo implements IPaymentInfo {
@@ -18,9 +18,9 @@ export class PaymentInfo implements IPaymentInfo {
   private readonly _method: PaymentMethodVO;
   private _status: PaymentStatusVO;
   private readonly _amount: number;
-  private _transactionId?: string;
-  private _paidAt?: Date;
-  private _notes?: string;
+  private _transactionId: string | null;
+  private _paidAt: Date | null;
+  private _notes: string | null;
 
   constructor(props: PaymentInfoProps) {
     this.validateProps(props);
@@ -31,7 +31,7 @@ export class PaymentInfo implements IPaymentInfo {
     this._amount = props.amount;
     this._transactionId = props.transactionId;
     this._paidAt = props.paidAt;
-    this._notes = props.notes?.trim();
+    this._notes = props.notes ? props.notes.trim() : null;
 
     // Validate status makes sense for payment method
     this.validateStatusForMethod();
@@ -77,15 +77,15 @@ export class PaymentInfo implements IPaymentInfo {
     return this._amount;
   }
 
-  get transactionId(): string | undefined {
+  get transactionId(): string | null {
     return this._transactionId;
   }
 
-  get paidAt(): Date | undefined {
+  get paidAt(): Date | null {
     return this._paidAt;
   }
 
-  get notes(): string | undefined {
+  get notes(): string | null {
     return this._notes;
   }
 
@@ -128,7 +128,7 @@ export class PaymentInfo implements IPaymentInfo {
   }
 
   // State transition methods
-  markAsCompleted(transactionId?: string, notes?: string): void {
+  markAsCompleted(transactionId: string | null, notes: string | null): void {
     if (!this._status.canTransitionTo(PaymentStatus.COMPLETED)) {
       throw new Error(
         `Cannot mark payment as completed from status: ${this._status.value}`,
@@ -147,7 +147,7 @@ export class PaymentInfo implements IPaymentInfo {
     }
   }
 
-  markAsFailed(reason?: string): void {
+  markAsFailed(reason: string | null): void {
     if (!this._status.canTransitionTo(PaymentStatus.FAILED)) {
       throw new Error(
         `Cannot mark payment as failed from status: ${this._status.value}`,
@@ -155,7 +155,7 @@ export class PaymentInfo implements IPaymentInfo {
     }
 
     this._status = PaymentStatusVO.failed();
-    this._notes = reason?.trim();
+    this._notes = reason ? reason.trim() : null;
   }
 
   /**
@@ -195,7 +195,7 @@ export class PaymentInfo implements IPaymentInfo {
     this._notes = 'Payment retry initiated';
   }
 
-  updateTransactionInfo(transactionId: string, notes?: string): void {
+  updateTransactionInfo(transactionId: string, notes: string | null): void {
     this._transactionId = transactionId;
     if (notes) {
       this._notes = notes.trim();
@@ -284,18 +284,23 @@ export class PaymentInfo implements IPaymentInfo {
   }
 
   // Factory methods for common use cases
-
-  /**
-   * Create COD payment - starts with NOT_REQUIRED_YET status
-   */
-  static createCOD(id: string, amount: number, notes?: string): PaymentInfo {
-    return new PaymentInfo({
+  static createCOD(
+    id: string,
+    amount: number,
+    notes?: string,
+    transactionId?: string,
+    paidAt?: Date,
+  ): PaymentInfo {
+    const props: PaymentInfoProps = {
       id,
       method: PaymentMethod.CASH_ON_DELIVERY,
       status: PaymentStatus.NOT_REQUIRED_YET,
       amount,
       notes: notes || 'Payment on delivery',
-    });
+      transactionId: transactionId || null,
+      paidAt: paidAt || null,
+    };
+    return new PaymentInfo(props);
   }
 
   /**
@@ -312,15 +317,12 @@ export class PaymentInfo implements IPaymentInfo {
       method: PaymentMethod.STRIPE,
       status: transactionId ? PaymentStatus.COMPLETED : PaymentStatus.PENDING,
       amount,
-      transactionId,
-      paidAt: transactionId ? new Date() : undefined,
-      notes,
+      transactionId: transactionId || null,
+      paidAt: transactionId ? new Date() : null,
+      notes: notes || null,
     });
   }
 
-  /**
-   * Create PayPal payment - starts with PENDING unless transaction ID provided
-   */
   static createPayPal(
     id: string,
     amount: number,
@@ -332,15 +334,12 @@ export class PaymentInfo implements IPaymentInfo {
       method: PaymentMethod.PAYPAL,
       status: transactionId ? PaymentStatus.COMPLETED : PaymentStatus.PENDING,
       amount,
-      transactionId,
-      paidAt: transactionId ? new Date() : undefined,
-      notes,
+      transactionId: transactionId || null,
+      paidAt: transactionId ? new Date() : null,
+      notes: notes || null,
     });
   }
 
-  /**
-   * Create Credit Card payment - starts with PENDING unless transaction ID provided
-   */
   static createCreditCard(
     id: string,
     amount: number,
@@ -352,9 +351,9 @@ export class PaymentInfo implements IPaymentInfo {
       method: PaymentMethod.CREDIT_CARD,
       status: transactionId ? PaymentStatus.COMPLETED : PaymentStatus.PENDING,
       amount,
-      transactionId,
-      paidAt: transactionId ? new Date() : undefined,
-      notes,
+      transactionId: transactionId || null,
+      paidAt: transactionId ? new Date() : null,
+      notes: notes || null,
     });
   }
 }

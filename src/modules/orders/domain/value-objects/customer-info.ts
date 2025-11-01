@@ -4,7 +4,7 @@ import { ICustomerInfo } from '../interfaces/customer-info.interface';
 export interface CustomerInfoProps {
   customerId: string;
   email: string;
-  phone?: string;
+  phone: string | null;
   firstName: string;
   lastName: string;
 }
@@ -12,7 +12,7 @@ export interface CustomerInfoProps {
 export class CustomerInfo {
   private readonly _customerId: string;
   private _email: string;
-  private _phone?: string;
+  private _phone: string | null;
   private _firstName: string;
   private _lastName: string;
 
@@ -21,7 +21,7 @@ export class CustomerInfo {
 
     this._customerId = props.customerId.trim();
     this._email = props.email.trim().toLowerCase();
-    this._phone = props.phone?.trim();
+    this._phone = props.phone ? props.phone.trim() : null;
     this._firstName = props.firstName.trim();
     this._lastName = props.lastName.trim();
   }
@@ -66,7 +66,7 @@ export class CustomerInfo {
     return this._email;
   }
 
-  get phone(): string | undefined {
+  get phone(): string | null {
     return this._phone;
   }
 
@@ -98,7 +98,7 @@ export class CustomerInfo {
     if (phone && !this.isValidPhone(phone)) {
       throw new Error('Invalid phone format');
     }
-    this._phone = phone?.trim();
+    this._phone = phone ? phone.trim() : null;
   }
 
   updateName(firstName: string, lastName: string): void {
@@ -113,18 +113,18 @@ export class CustomerInfo {
   }
 
   updateContactInfo(updates: {
-    email?: string;
-    phone?: string;
-    firstName?: string;
-    lastName?: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string | null;
+    lastName: string | null;
   }): void {
-    if (updates.email !== undefined) {
+    if (updates.email) {
       this.updateEmail(updates.email);
     }
-    if (updates.phone !== undefined) {
+    if (updates.phone) {
       this.updatePhone(updates.phone);
     }
-    if (updates.firstName !== undefined || updates.lastName !== undefined) {
+    if (updates.firstName || updates.lastName) {
       this.updateName(
         updates.firstName ?? this._firstName,
         updates.lastName ?? this._lastName,
@@ -149,7 +149,7 @@ export class CustomerInfo {
     return {
       customerId: this._customerId,
       email: this._email,
-      phone: this._phone,
+      phone: this._phone || null,
       firstName: this._firstName,
       lastName: this._lastName,
     };

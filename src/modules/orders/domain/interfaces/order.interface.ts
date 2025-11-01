@@ -32,5 +32,5 @@ export interface IOrderEditable {
   customerInfo: ICustomerInfoEditable;
   shippingAddress: IShippingAddressEditable;
   paymentInfo: IPaymentInfoEditable;
-  customerNotes?: string;
+  customerNotes: string | null;
 }

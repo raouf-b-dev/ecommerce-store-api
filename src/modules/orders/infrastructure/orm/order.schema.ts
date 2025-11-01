@@ -77,7 +77,7 @@ export class OrderEntity {
   paymentInfo: PaymentInfoEntity;
 
   @Column({ type: 'text', nullable: true })
-  customerNotes?: string;
+  customerNotes: string | null;
 
   @Column({
     type: 'numeric',
