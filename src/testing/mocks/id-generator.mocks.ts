@@ -2,20 +2,21 @@
 
 import { IdGeneratorService } from '../../core/infrastructure/orm/id-generator.service';
 
-/**
- * Creates a mock IdGeneratorService with predictable IDs
- */
 export function createMockIdGenerator(baseIds?: {
   orderId?: string;
   customerId?: string;
   paymentInfoId?: string;
   shippingAddressId?: string;
+  productId?: string;
+  inventoryId?: string;
 }): jest.Mocked<IdGeneratorService> {
   const defaults = {
     orderId: 'OR0000001',
-    customerId: 'CUST0000001',
-    paymentInfoId: 'PAY0000001',
-    shippingAddressId: 'ADDR0000001',
+    customerId: 'CU0000001',
+    paymentInfoId: 'PA0000001',
+    shippingAddressId: 'SA0000001',
+    productId: 'PR0000001',
+    inventoryId: 'IN0000001',
   };
 
   const ids = { ...defaults, ...baseIds };
@@ -27,5 +28,7 @@ export function createMockIdGenerator(baseIds?: {
     generateShippingAddressId: jest
       .fn()
       .mockResolvedValue(ids.shippingAddressId),
+    generateInventoryId: jest.fn().mockResolvedValue(ids.inventoryId),
+    generateProductId: jest.fn().mockResolvedValue(ids.productId),
   } as any;
 }
