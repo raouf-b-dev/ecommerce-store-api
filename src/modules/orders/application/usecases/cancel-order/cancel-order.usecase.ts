@@ -22,9 +22,7 @@ export class CancelOrderUseCase
       const cancelResult = order.cancel();
       if (cancelResult.isFailure) return cancelResult;
 
-      const updateResult = await this.orderRepository.cancelOrder(
-        order.toPrimitives(),
-      );
+      const updateResult = await this.orderRepository.cancelOrder(order);
       if (updateResult.isFailure) return updateResult;
 
       return Result.success(order.toPrimitives());

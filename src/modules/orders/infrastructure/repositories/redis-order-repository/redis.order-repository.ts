@@ -5,8 +5,7 @@ import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Result } from '../../../../../core/domain/result';
 import { CacheService } from '../../../../../core/infrastructure/redis/cache/cache.service';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
-import { Order_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
-import { IOrder } from '../../../domain/interfaces/order.interface';
+import { ORDER_REDIS } from '../../../../../core/infrastructure/redis/constants/redis.constants';
 import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import {
@@ -27,7 +26,7 @@ export class RedisOrderRepository implements OrderRepository {
 
   async listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
-  ): Promise<Result<IOrder[], RepositoryError>> {
+  ): Promise<Result<Order[], RepositoryError>> {
     try {
       const {
         page = 1,
@@ -50,20 +49,20 @@ export class RedisOrderRepository implements OrderRepository {
       if (shouldUseCache) {
         try {
           const isCached = await this.cacheService.get<string>(
-            Order_REDIS.IS_CACHED_FLAG,
+            ORDER_REDIS.IS_CACHED_FLAG,
           );
 
           if (isCached) {
             const rawCachedOrders =
               await this.cacheService.getAll<OrderForCache>(
-                Order_REDIS.INDEX,
+                ORDER_REDIS.INDEX,
                 '*',
                 { page, limit, sortBy, sortOrder },
               );
-            const orders: IOrder[] = rawCachedOrders.map((order) =>
-              OrderCacheMapper.fromCache(order).toPrimitives(),
+            const orders: Order[] = rawCachedOrders.map((order) =>
+              OrderCacheMapper.fromCache(order),
             );
-            return Result.success<IOrder[]>(orders);
+            return Result.success<Order[]>(orders);
           }
         } catch (cacheError) {
           this.logger.warn(
@@ -83,21 +82,21 @@ export class RedisOrderRepository implements OrderRepository {
       if (shouldUseCache && orders.length > 0) {
         try {
           const cacheEntries = orders.map((order) => ({
-            key: `${Order_REDIS.CACHE_KEY}:${order.id}`,
+            key: `${ORDER_REDIS.CACHE_KEY}:${order.id}`,
             value: OrderCacheMapper.toCache(order),
           }));
           await this.cacheService.setAll(cacheEntries, {
-            ttl: Order_REDIS.EXPIRATION,
+            ttl: ORDER_REDIS.EXPIRATION,
             nx: true,
           });
-          await this.cacheService.set(Order_REDIS.IS_CACHED_FLAG, 'true', {
-            ttl: Order_REDIS.EXPIRATION,
+          await this.cacheService.set(ORDER_REDIS.IS_CACHED_FLAG, 'true', {
+            ttl: ORDER_REDIS.EXPIRATION,
           });
         } catch (cacheError) {
           this.logger.warn('Failed to cache orders:', cacheError);
         }
       }
-      return Result.success<IOrder[]>(orders);
+      return Result.success<Order[]>(orders);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to list orders', error);
     }
@@ -105,20 +104,20 @@ export class RedisOrderRepository implements OrderRepository {
 
   async save(
     createOrderDto: AggregatedOrderInput,
-  ): Promise<Result<IOrder, RepositoryError>> {
+  ): Promise<Result<Order, RepositoryError>> {
     try {
       const saveResult = await this.postgresRepo.save(createOrderDto);
       if (saveResult.isFailure) return saveResult;
       const order = saveResult.value;
 
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}:${order.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${order.id}`,
         OrderCacheMapper.toCache(order),
-        { ttl: Order_REDIS.EXPIRATION },
+        { ttl: ORDER_REDIS.EXPIRATION },
       );
-      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<IOrder>(order);
+      return Result.success<Order>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save order`, error);
     }
@@ -133,18 +132,18 @@ export class RedisOrderRepository implements OrderRepository {
       if (updateResult.isFailure) return updateResult;
 
       const cached = await this.cacheService.get<OrderForCache>(
-        `${Order_REDIS.CACHE_KEY}:${id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${id}`,
       );
 
       if (cached) {
         cached.status = status;
         cached.updatedAt = Date.now();
-        await this.cacheService.set(`${Order_REDIS.CACHE_KEY}:${id}`, cached, {
-          ttl: Order_REDIS.EXPIRATION,
+        await this.cacheService.set(`${ORDER_REDIS.CACHE_KEY}:${id}`, cached, {
+          ttl: ORDER_REDIS.EXPIRATION,
         });
       }
 
-      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {
@@ -158,7 +157,7 @@ export class RedisOrderRepository implements OrderRepository {
   async updateItemsInfo(
     id: string,
     updateOrderItemDto: CreateOrderItemDto[],
-  ): Promise<Result<IOrder, RepositoryError>> {
+  ): Promise<Result<Order, RepositoryError>> {
     try {
       const updateResult = await this.postgresRepo.updateItemsInfo(
         id,
@@ -169,15 +168,15 @@ export class RedisOrderRepository implements OrderRepository {
       const order = updateResult.value;
 
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}:${id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${id}`,
         OrderCacheMapper.toCache(order),
         {
-          ttl: Order_REDIS.EXPIRATION,
+          ttl: ORDER_REDIS.EXPIRATION,
         },
       );
-      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<IOrder>(order);
+      return Result.success<Order>(order);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to update order`, error);
     }
@@ -186,7 +185,7 @@ export class RedisOrderRepository implements OrderRepository {
   async findById(id: string): Promise<Result<Order, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<OrderForCache>(
-        `${Order_REDIS.CACHE_KEY}:${id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
         return Result.success<Order>(OrderCacheMapper.fromCache(cached));
@@ -197,9 +196,9 @@ export class RedisOrderRepository implements OrderRepository {
       const order = dbResult.value;
 
       await this.cacheService.set(
-        `${Order_REDIS.CACHE_KEY}:${id}`,
-        OrderCacheMapper.toCache(order.toPrimitives()),
-        { ttl: Order_REDIS.EXPIRATION },
+        `${ORDER_REDIS.CACHE_KEY}:${id}`,
+        OrderCacheMapper.toCache(order),
+        { ttl: ORDER_REDIS.EXPIRATION },
       );
 
       return dbResult;
@@ -210,12 +209,11 @@ export class RedisOrderRepository implements OrderRepository {
 
   async deleteById(id: string): Promise<Result<void, RepositoryError>> {
     try {
-      // Delete from Postgres
       const deleteResult = await this.postgresRepo.deleteById(id);
       if (deleteResult.isFailure) return deleteResult;
 
-      await this.cacheService.delete(`${Order_REDIS.CACHE_KEY}:${id}`);
-      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+      await this.cacheService.delete(`${ORDER_REDIS.CACHE_KEY}:${id}`);
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {
@@ -224,15 +222,15 @@ export class RedisOrderRepository implements OrderRepository {
   }
 
   async cancelOrder(
-    orderPrimitives: IOrder,
+    orderPrimitives: Order,
   ): Promise<Result<void, RepositoryError>> {
     try {
       const cancelResult = await this.postgresRepo.cancelOrder(orderPrimitives);
       if (cancelResult.isFailure) return cancelResult;
       await this.cacheService.delete(
-        `${Order_REDIS.CACHE_KEY}:${orderPrimitives.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderPrimitives.id}`,
       );
-      await this.cacheService.delete(Order_REDIS.IS_CACHED_FLAG);
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
       return Result.success<void>(undefined);
     } catch (error) {

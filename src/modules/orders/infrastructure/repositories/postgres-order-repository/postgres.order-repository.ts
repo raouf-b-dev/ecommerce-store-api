@@ -7,7 +7,6 @@ import { OrderEntity } from '../../orm/order.schema';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
-import { IOrder } from '../../../domain/interfaces/order.interface';
 import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { ProductEntity } from '../../../../products/infrastructure/orm/product.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
@@ -18,6 +17,9 @@ import { Order } from '../../../domain/entities/order';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
+import { CustomerInfoProps } from '../../../domain/value-objects/customer-info';
+import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
+import { PaymentInfoProps } from '../../../domain/value-objects/payment-info';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -30,7 +32,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
   async listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
-  ): Promise<Result<IOrder[], RepositoryError>> {
+  ): Promise<Result<Order[], RepositoryError>> {
     try {
       const {
         page = 1,
@@ -62,9 +64,10 @@ export class PostgresOrderRepository implements OrderRepository {
       const skip = (page - 1) * limit;
       queryBuilder.skip(skip).take(limit);
 
-      const orders = await queryBuilder.getMany();
+      const orderEntities = await queryBuilder.getMany();
 
-      return Result.success<IOrder[]>(orders);
+      const orders = OrderMapper.toDomainArray(orderEntities);
+      return Result.success<Order[]>(orders);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to list orders', error);
     }
@@ -72,7 +75,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
   async save(
     createOrderDto: AggregatedOrderInput,
-  ): Promise<Result<IOrder, RepositoryError>> {
+  ): Promise<Result<Order, RepositoryError>> {
     try {
       const savedOrder = await this.dataSource.transaction(async (manager) => {
         const productIds = Array.from(
@@ -136,12 +139,14 @@ export class PostgresOrderRepository implements OrderRepository {
         const domainOrderItems: OrderItemProps[] = createOrderDto.items.map(
           (itemDto) => {
             const product = productMap.get(itemDto.productId)!;
-            return {
+            const props: OrderItemProps = {
+              id: null,
               productId: product.id,
               productName: product.name,
               unitPrice: product.price,
               quantity: itemDto.quantity,
             };
+            return props;
           },
         );
 
@@ -152,26 +157,41 @@ export class PostgresOrderRepository implements OrderRepository {
         const shippingAddressId =
           await this.idGeneratorService.generateShippingAddressId();
 
+        const customerInfoProps: CustomerInfoProps = {
+          ...createOrderDto.customerInfo,
+          customerId,
+          phone: createOrderDto.customerInfo.phone || null,
+        };
+        const shippingAddressProps: ShippingAddressProps = {
+          ...createOrderDto.shippingAddress,
+          id: shippingAddressId,
+          phone: createOrderDto.shippingAddress.phone || null,
+        };
+        const paymentInfoProps: Omit<PaymentInfoProps, 'status' | 'amount'> = {
+          ...createOrderDto.paymentInfo,
+          id: paymentInfoId,
+          notes: createOrderDto.paymentInfo.notes || null,
+          transactionId: null,
+          paidAt: null,
+        };
+
         const domainOrder = Order.create({
           id: orderId,
           items: domainOrderItems,
-          customerInfo: { ...createOrderDto.customerInfo, customerId },
-          shippingAddress: {
-            ...createOrderDto.shippingAddress,
-            id: shippingAddressId,
-          },
-          paymentInfo: { ...createOrderDto.paymentInfo, id: paymentInfoId },
-          customerNotes: createOrderDto.customerNotes,
+          customerInfo: customerInfoProps,
+          shippingAddress: shippingAddressProps,
+          paymentInfo: paymentInfoProps,
+          customerNotes: createOrderDto.customerNotes || null,
         });
 
-        const orderEntity = OrderMapper.toEntity(domainOrder.toPrimitives());
+        const orderEntity = OrderMapper.toEntity(domainOrder);
 
-        await manager.save(orderEntity);
-
-        return domainOrder.toPrimitives();
+        return await manager.save(orderEntity);
       });
 
-      return Result.success<IOrder>(savedOrder);
+      const domainOrder = OrderMapper.toDomain(savedOrder);
+
+      return Result.success<Order>(domainOrder);
     } catch (error: any) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to create order', error);
@@ -204,9 +224,9 @@ export class PostgresOrderRepository implements OrderRepository {
   async updateItemsInfo(
     id: string,
     updateOrderItemDto: CreateOrderItemDto[],
-  ): Promise<Result<IOrder, RepositoryError>> {
+  ): Promise<Result<Order, RepositoryError>> {
     try {
-      const updatedOrder = await this.dataSource.transaction(
+      const updatedOrderEntity = await this.dataSource.transaction(
         async (manager) => {
           const existingOrderEntity = await manager.findOne(OrderEntity, {
             where: { id },
@@ -306,14 +326,16 @@ export class PostgresOrderRepository implements OrderRepository {
           }
 
           const newDomainItems: OrderItemProps[] = updateOrderItemDto.map(
-            (itemDto) => {
+            (itemDto: CreateOrderItemDto) => {
               const product = productMap.get(itemDto.productId)!;
-              return {
+              const props: OrderItemProps = {
+                id: null,
                 productId: product.id,
                 productName: product.name,
                 unitPrice: product.price,
                 quantity: itemDto.quantity,
               };
+              return props;
             },
           );
 
@@ -327,16 +349,16 @@ export class PostgresOrderRepository implements OrderRepository {
 
           await manager.delete(OrderItemEntity, { order: { id } as any });
 
-          const updatedOrderEntity = OrderMapper.toEntity(
-            updatedDomainOrder.toPrimitives(),
-          );
+          const updatedOrderEntity = OrderMapper.toEntity(updatedDomainOrder);
 
           const savedEntity = await manager.save(updatedOrderEntity);
-          return savedEntity as IOrder;
+          return savedEntity;
         },
       );
 
-      return Result.success<IOrder>(updatedOrder);
+      const domainOrder = OrderMapper.toDomain(updatedOrderEntity);
+
+      return Result.success<Order>(domainOrder);
     } catch (error: any) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to update order', error);
@@ -401,11 +423,11 @@ export class PostgresOrderRepository implements OrderRepository {
   }
 
   async cancelOrder(
-    orderPrimitives: IOrder,
+    orderPrimitives: Order,
   ): Promise<Result<void, RepositoryError>> {
     try {
       await this.dataSource.transaction(async (manager) => {
-        for (const item of orderPrimitives.items) {
+        for (const item of orderPrimitives.toPrimitives().items) {
           await manager
             .createQueryBuilder()
             .update(ProductEntity)
