@@ -20,9 +20,6 @@ export class ProductEntity implements IProduct {
   @Column('decimal', { precision: 12, scale: 2, transformer: numericToNumber })
   price: number;
 
-  @Column({ name: 'stock_quantity', type: 'int' })
-  stockQuantity: number;
-
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 

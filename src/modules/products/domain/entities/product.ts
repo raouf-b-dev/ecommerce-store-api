@@ -7,7 +7,6 @@ export interface ProductProps {
   description?: string;
   price: number;
   sku?: string;
-  stockQuantity: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -18,7 +17,6 @@ export class Product implements IProduct {
   private _description?: string;
   private _price: number;
   private _sku?: string;
-  private _stockQuantity: number;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -30,7 +28,6 @@ export class Product implements IProduct {
     this._description = props.description?.trim();
     this._price = this.roundPrice(props.price);
     this._sku = props.sku?.trim().toUpperCase();
-    this._stockQuantity = props.stockQuantity;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
@@ -44,12 +41,6 @@ export class Product implements IProduct {
     }
     if (props.price < 0) {
       throw new Error('Product price cannot be negative');
-    }
-    if (props.stockQuantity < 0) {
-      throw new Error('Stock quantity cannot be negative');
-    }
-    if (!Number.isInteger(props.stockQuantity)) {
-      throw new Error('Stock quantity must be an integer');
     }
   }
 
@@ -78,33 +69,12 @@ export class Product implements IProduct {
     return this._sku;
   }
 
-  get stockQuantity(): number {
-    return this._stockQuantity;
-  }
-
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
 
   get updatedAt(): Date {
     return new Date(this._updatedAt);
-  }
-
-  // Business logic methods
-  isInStock(): boolean {
-    return this._stockQuantity > 0;
-  }
-
-  hasLowStock(threshold: number = 5): boolean {
-    return this._stockQuantity <= threshold && this._stockQuantity > 0;
-  }
-
-  isOutOfStock(): boolean {
-    return this._stockQuantity === 0;
-  }
-
-  canFulfillQuantity(quantity: number): boolean {
-    return this._stockQuantity >= quantity;
   }
 
   // Update methods
@@ -131,42 +101,6 @@ export class Product implements IProduct {
 
   updateSku(sku?: string): void {
     this._sku = sku?.trim().toUpperCase();
-    this._updatedAt = new Date();
-  }
-
-  increaseStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new Error('Quantity to increase must be positive');
-    }
-    if (!Number.isInteger(quantity)) {
-      throw new Error('Quantity must be an integer');
-    }
-    this._stockQuantity += quantity;
-    this._updatedAt = new Date();
-  }
-
-  decreaseStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new Error('Quantity to decrease must be positive');
-    }
-    if (!Number.isInteger(quantity)) {
-      throw new Error('Quantity must be an integer');
-    }
-    if (this._stockQuantity < quantity) {
-      throw new Error('Insufficient stock');
-    }
-    this._stockQuantity -= quantity;
-    this._updatedAt = new Date();
-  }
-
-  setStockQuantity(quantity: number): void {
-    if (quantity < 0) {
-      throw new Error('Stock quantity cannot be negative');
-    }
-    if (!Number.isInteger(quantity)) {
-      throw new Error('Stock quantity must be an integer');
-    }
-    this._stockQuantity = quantity;
     this._updatedAt = new Date();
   }
 
@@ -198,7 +132,6 @@ export class Product implements IProduct {
       description: this._description,
       price: this._price,
       sku: this._sku,
-      stockQuantity: this._stockQuantity,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
     };

@@ -4,7 +4,6 @@ export interface IProduct {
   description?: string;
   price: number;
   sku?: string;
-  stockQuantity: number;
   createdAt: Date;
   updatedAt: Date;
 }
