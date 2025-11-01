@@ -2,9 +2,14 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisSearchClient } from '../clients/redis-search.client';
 import {
   OrderIndexSchema,
+  InventoryIndexSchema,
   ProductIndexSchema,
 } from '../constants/redis.schemas';
-import { Order_REDIS, Product_REDIS } from '../constants/redis.constants';
+import {
+  INVENTORY_REDIS,
+  ORDER_REDIS,
+  PRODUCT_REDIS,
+} from '../constants/redis.constants';
 
 @Injectable()
 export class RedisIndexInitializerService implements OnModuleInit {
@@ -14,15 +19,21 @@ export class RedisIndexInitializerService implements OnModuleInit {
 
   async onModuleInit() {
     await this.ensureIndex(
-      Order_REDIS.INDEX,
+      ORDER_REDIS.INDEX,
       OrderIndexSchema,
-      Order_REDIS.CACHE_KEY,
+      ORDER_REDIS.CACHE_KEY,
     );
 
     await this.ensureIndex(
-      Product_REDIS.INDEX,
+      PRODUCT_REDIS.INDEX,
       ProductIndexSchema,
-      Product_REDIS.CACHE_KEY,
+      PRODUCT_REDIS.CACHE_KEY,
+    );
+
+    await this.ensureIndex(
+      INVENTORY_REDIS.INDEX,
+      InventoryIndexSchema,
+      INVENTORY_REDIS.CACHE_KEY,
     );
   }
 
@@ -33,7 +44,6 @@ export class RedisIndexInitializerService implements OnModuleInit {
     } catch (error: any) {
       if (error?.message?.includes('Index already exists')) {
         this.logger.log(`Redis index '${index}' already exists`);
-        // Optional: validate schema and re-create if mismatch
       } else {
         this.logger.error(`Failed to create index '${index}'`, error);
       }
