@@ -1,4 +1,7 @@
 // src/modules/inventory/domain/entities/inventory.entity.ts
+import { Result } from '../../../../core/domain/result';
+import { DomainError } from '../../../../core/errors/domain.error';
+import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { Quantity } from '../../../../shared/domain/value-objects/quantity';
 import { IInventory } from '../interfaces/inventory.interface';
 
@@ -24,7 +27,8 @@ export class Inventory implements IInventory {
   private _lastRestockDate: Date | null;
 
   constructor(props: InventoryProps) {
-    this.validateProps(props);
+    const validationResult = this.validateProps(props);
+    if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id.trim();
     this._productId = props.productId.trim();
@@ -36,21 +40,34 @@ export class Inventory implements IInventory {
     this._lastRestockDate = props.lastRestockDate;
   }
 
-  private validateProps(props: InventoryProps): void {
+  private validateProps(props: InventoryProps): Result<void, DomainError> {
     if (!props.id?.trim()) {
-      throw new Error('Inventory ID is required');
+      return ErrorFactory.DomainError('Inventory ID is required');
     }
     if (!props.productId?.trim()) {
-      throw new Error('Product ID is required');
+      return ErrorFactory.DomainError('Product ID is required');
     }
     if (props.availableQuantity < 0) {
-      throw new Error('Available quantity cannot be negative');
+      return ErrorFactory.DomainError('Available quantity cannot be negative');
     }
     if (props.reservedQuantity < 0) {
-      throw new Error('Reserved quantity cannot be negative');
+      return ErrorFactory.DomainError('Reserved quantity cannot be negative');
     }
     if (props.lowStockThreshold < 0) {
-      throw new Error('Low stock threshold cannot be negative');
+      return ErrorFactory.DomainError('Low stock threshold cannot be negative');
+    }
+
+    return Result.success(undefined);
+  }
+
+  private createQuantity(value: number): Result<Quantity, DomainError> {
+    try {
+      return Result.success(Quantity.from(value));
+    } catch (error) {
+      if (error instanceof DomainError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.DomainError('Invalid quantity value');
     }
   }
 
@@ -107,77 +124,128 @@ export class Inventory implements IInventory {
     );
   }
 
-  canFulfillQuantity(quantity: Quantity): boolean {
-    return this._availableQuantity.isGreaterThanOrEqual(quantity);
+  canFulfillQuantity(quantityNumber: number): boolean {
+    try {
+      const quantity = Quantity.from(quantityNumber);
+      return this._availableQuantity.isGreaterThanOrEqual(quantity);
+    } catch {
+      return false;
+    }
   }
 
   // Stock management methods
-  increaseStock(quantity: Quantity): void {
+  increaseStock(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     if (!quantity.isPositive()) {
-      throw new Error('Quantity to increase must be positive');
+      return ErrorFactory.DomainError('Quantity to increase must be positive');
     }
     this._availableQuantity = this._availableQuantity.add(quantity);
     this._lastRestockDate = new Date();
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
-  decreaseStock(quantity: Quantity): void {
+  decreaseStock(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     if (!quantity.isPositive()) {
-      throw new Error('Quantity to decrease must be positive');
+      return ErrorFactory.DomainError('Quantity to decrease must be positive');
     }
-    if (!this.canFulfillQuantity(quantity)) {
-      throw new Error(
+    if (!this.canFulfillQuantity(quantityNumber)) {
+      return ErrorFactory.DomainError(
         `Insufficient stock. Available: ${this._availableQuantity.value}, Requested: ${quantity.value}`,
       );
     }
-    this._availableQuantity = this._availableQuantity.subtract(quantity);
+    const subtractQuantityResult = this._availableQuantity.subtract(quantity);
+    if (subtractQuantityResult.isFailure) return subtractQuantityResult;
+
+    this._availableQuantity = subtractQuantityResult.value;
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
-  setStock(quantity: Quantity): void {
+  setStock(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     this._availableQuantity = quantity;
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
-  reserveStock(quantity: Quantity): void {
+  reserveStock(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     if (!quantity.isPositive()) {
-      throw new Error('Quantity to reserve must be positive');
+      return ErrorFactory.DomainError('Quantity to reserve must be positive');
     }
-    if (!this.canFulfillQuantity(quantity)) {
-      throw new Error(
+    if (!this.canFulfillQuantity(quantityNumber)) {
+      return ErrorFactory.DomainError(
         `Insufficient stock to reserve. Available: ${this._availableQuantity.value}, Requested: ${quantity.value}`,
       );
     }
-    this._availableQuantity = this._availableQuantity.subtract(quantity);
+    const subtractQuantityResult = this._availableQuantity.subtract(quantity);
+    if (subtractQuantityResult.isFailure) return subtractQuantityResult;
+    this._availableQuantity = subtractQuantityResult.value;
     this._reservedQuantity = this._reservedQuantity.add(quantity);
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
-  releaseReservation(quantity: Quantity): void {
+  releaseReservation(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     if (!quantity.isPositive()) {
-      throw new Error('Quantity to release must be positive');
+      return ErrorFactory.DomainError('Quantity to release must be positive');
     }
     if (this._reservedQuantity.isLessThan(quantity)) {
-      throw new Error(
+      return ErrorFactory.DomainError(
         `Cannot release more than reserved. Reserved: ${this._reservedQuantity.value}, Requested: ${quantity.value}`,
       );
     }
-    this._reservedQuantity = this._reservedQuantity.subtract(quantity);
+    const reservedQuantityResult = this._reservedQuantity.subtract(quantity);
+    if (reservedQuantityResult.isFailure) return reservedQuantityResult;
+    this._reservedQuantity = reservedQuantityResult.value;
+
     this._availableQuantity = this._availableQuantity.add(quantity);
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
-  confirmReservation(quantity: Quantity): void {
+  confirmReservation(quantityNumber: number): Result<void, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const quantity = quantityResult.value;
     if (!quantity.isPositive()) {
-      throw new Error('Quantity to confirm must be positive');
+      return ErrorFactory.DomainError('Quantity to confirm must be positive');
     }
     if (this._reservedQuantity.isLessThan(quantity)) {
-      throw new Error(
+      return ErrorFactory.DomainError(
         `Cannot confirm more than reserved. Reserved: ${this._reservedQuantity.value}, Requested: ${quantity.value}`,
       );
     }
-    this._reservedQuantity = this._reservedQuantity.subtract(quantity);
+    const reservedQuantityResult = this._reservedQuantity.subtract(quantity);
+    if (reservedQuantityResult.isFailure) return reservedQuantityResult;
+    this._reservedQuantity = reservedQuantityResult.value;
     this._updatedAt = new Date();
+
+    return Result.success(undefined);
   }
 
   updateLowStockThreshold(threshold: Quantity): void {
