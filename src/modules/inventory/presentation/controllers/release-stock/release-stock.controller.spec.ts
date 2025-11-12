@@ -1,10 +1,15 @@
+import { ReleaseStockUseCase } from '../../../application/release-stock/release-stock.usecase';
 import { ReleaseStockController } from './release-stock.controller';
 
 describe('ReleaseStockController', () => {
+  let usecase: jest.Mocked<ReleaseStockUseCase>;
   let controller: ReleaseStockController;
 
   beforeEach(async () => {
-    controller = new ReleaseStockController();
+    usecase = {
+      execute: jest.fn(),
+    } as any;
+    controller = new ReleaseStockController(usecase);
   });
 
   afterEach(() => {

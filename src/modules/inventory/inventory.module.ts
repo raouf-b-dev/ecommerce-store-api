@@ -18,7 +18,13 @@ import { CacheService } from '../../core/infrastructure/redis/cache/cache.servic
 import { InventoryRepository } from './domain/repositories/inventory.repository';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { InventoryEntity } from './infrastructure/orm/inventory.schema';
+import { AdjustStockUseCase } from './application/adjust-stock/adjust-stock.usecase';
 import { GetInventoryUseCase } from './application/get-inventory/get-inventory.usecase';
+import { ReserveStockUseCase } from './application/reserve-stock/reserve-stock.usecase';
+import { BulkCheckStockUseCase } from './application/bulk-check-stock/bulk-check-stock.usecase';
+import { CheckStockUseCase } from './application/check-stock/check-stock.usecase';
+import { ListLowStockUseCase } from './application/list-low-stock/list-low-stock.usecase';
+import { ReleaseStockUseCase } from './application/release-stock/release-stock.usecase';
 
 @Module({
   imports: [TypeOrmModule.forFeature([InventoryEntity]), RedisModule],
@@ -50,6 +56,12 @@ import { GetInventoryUseCase } from './application/get-inventory/get-inventory.u
 
     //UseCases:
     GetInventoryUseCase,
+    AdjustStockUseCase,
+    ReserveStockUseCase,
+    ReleaseStockUseCase,
+    CheckStockUseCase,
+    ListLowStockUseCase,
+    BulkCheckStockUseCase,
 
     //Controllers
     GetInventoryController,

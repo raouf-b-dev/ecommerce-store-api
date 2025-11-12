@@ -38,7 +38,7 @@ describe('InventoryController', () => {
         {
           provide: AdjustStockController,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            handle: jest.fn().mockResolvedValue(mockInventory),
           },
         },
         {

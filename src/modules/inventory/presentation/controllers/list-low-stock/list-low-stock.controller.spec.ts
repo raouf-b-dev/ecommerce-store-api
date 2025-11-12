@@ -1,10 +1,15 @@
-import { AddAddressController } from '../../../../customers/presentation/controllers/add-address/add-address.controller';
+import { ListLowStockUseCase } from '../../../application/list-low-stock/list-low-stock.usecase';
+import { ListLowStockController } from './list-low-stock.controller';
 
-describe('AddAddressController', () => {
-  let controller: AddAddressController;
+describe('ListLowStockController', () => {
+  let usecase: jest.Mocked<ListLowStockUseCase>;
+  let controller: ListLowStockController;
 
   beforeEach(async () => {
-    controller = new AddAddressController();
+    usecase = {
+      execute: jest.fn(),
+    } as any;
+    controller = new ListLowStockController(usecase);
   });
 
   afterEach(() => {
