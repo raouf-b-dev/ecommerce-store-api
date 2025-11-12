@@ -1,5 +1,5 @@
 // src/modules/inventory/presentation/dto/adjust-stock.dto.ts
-import { IsNumber, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsEnum, IsInt } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum StockAdjustmentType {
@@ -14,6 +14,7 @@ export class AdjustStockDto {
     description: 'Quantity to adjust',
   })
   @IsNumber()
+  @IsInt()
   quantity: number;
 
   @ApiProperty({
