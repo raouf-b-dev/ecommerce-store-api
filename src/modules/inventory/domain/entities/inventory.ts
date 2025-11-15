@@ -109,8 +109,16 @@ export class Inventory implements IInventory {
   }
 
   // Business logic methods
-  isInStock(): boolean {
-    return this._availableQuantity.isPositive();
+  isInStock(quantityNumber: number = 1): Result<boolean, DomainError> {
+    const quantityResult = this.createQuantity(quantityNumber);
+    if (quantityResult.isFailure) return quantityResult;
+
+    const checkedQuantity = quantityResult.value;
+    const isAvailable =
+      this._availableQuantity.isPositive() &&
+      this._availableQuantity >= checkedQuantity;
+
+    return Result.success(isAvailable);
   }
 
   isOutOfStock(): boolean {
