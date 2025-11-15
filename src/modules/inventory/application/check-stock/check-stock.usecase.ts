@@ -3,20 +3,42 @@ import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { UseCaseError } from '../../../../core/errors/usecase.error';
 import { Result } from '../../../../core/domain/result';
 import { UseCase } from '../../../../core/application/use-cases/base.usecase';
+import { InventoryRepository } from '../../domain/repositories/inventory.repository';
+import { CheckStockResponse } from '../../presentation/dto/check-stock-response.dto';
 
 @Injectable()
 export class CheckStockUseCase
   implements
-    UseCase<{ productId: string; quantity?: number }, void, UseCaseError>
+    UseCase<
+      { productId: string; quantity?: number },
+      CheckStockResponse,
+      UseCaseError
+    >
 {
-  constructor() {}
+  constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(dto: {
     productId: string;
     quantity?: number;
-  }): Promise<Result<void, UseCaseError>> {
+  }): Promise<Result<CheckStockResponse, UseCaseError>> {
     try {
-      return Result.success(undefined);
+      const requestedQuantity = dto.quantity ?? 1;
+
+      const inventoryResult = await this.inventoryRepository.findByProductId(
+        dto.productId,
+      );
+      if (inventoryResult.isFailure) return inventoryResult;
+
+      const inventory = inventoryResult.value;
+
+      const checkStockResult = inventory.isInStock(requestedQuantity);
+      if (checkStockResult.isFailure) return checkStockResult;
+
+      return Result.success({
+        isAvailable: checkStockResult.value,
+        availableQuantity: inventory.availableQuantity,
+        requestedQuantity,
+      });
     } catch (error) {
       return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
     }
