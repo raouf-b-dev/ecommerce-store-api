@@ -11,6 +11,7 @@ import {
   InventoryCacheMapper,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../domain/entities/inventory';
+import { LowStockQueryDto } from '../../../presentation/dto/low-stock-query.dto';
 
 @Injectable()
 export class RedisInventoryRepository implements InventoryRepository {
@@ -170,16 +171,12 @@ export class RedisInventoryRepository implements InventoryRepository {
   }
 
   async findLowStock(
-    threshold = 10,
-    page = 1,
-    limit = 20,
+    query: LowStockQueryDto,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.findLowStock(
-        threshold,
-        page,
-        limit,
-      );
+      const { threshold = 10, page = 1, limit = 20 } = query;
+
+      const dbResult = await this.postgresRepo.findLowStock(query);
       if (dbResult.isFailure) return dbResult;
 
       const inventories = dbResult.value;

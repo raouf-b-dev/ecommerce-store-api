@@ -9,6 +9,7 @@ import { Result } from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
+import { LowStockQueryDto } from '../../../presentation/dto/low-stock-query.dto';
 
 @Injectable()
 export class PostgresInventoryRepository implements InventoryRepository {
@@ -84,11 +85,11 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findLowStock(
-    threshold: number = 10,
-    page: number = 1,
-    limit: number = 20,
+    query: LowStockQueryDto,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
+      const { threshold = 10, page = 1, limit = 20 } = query;
+
       const skip = (page - 1) * limit;
 
       const entities = await this.ormRepo

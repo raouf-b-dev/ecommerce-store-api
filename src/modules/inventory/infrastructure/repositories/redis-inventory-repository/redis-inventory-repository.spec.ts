@@ -12,6 +12,8 @@ import { INVENTORY_REDIS } from '../../../../../core/infrastructure/redis/consta
 import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
 import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { RedisInventoryRepository } from './redis-inventory-repository';
+import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 
 describe('RedisInventoryRepository', () => {
   let repository: RedisInventoryRepository;
@@ -32,6 +34,9 @@ describe('RedisInventoryRepository', () => {
   const idKey = (id: string) => `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
   const productKey = (pid: string) =>
     `${INVENTORY_REDIS.CACHE_KEY}:product:${pid}`;
+
+  const defaultLowStockQueryDto =
+    InventoryDtoTestFactory.createLowStockQueryDto();
 
   beforeEach(() => {
     // Mock CacheService methods
@@ -356,31 +361,24 @@ describe('RedisInventoryRepository', () => {
 
   // --- FindLowStock Tests ---
   describe('findLowStock', () => {
-    const lowStockInv = new InventoryBuilder()
-      .withId('IN005')
-      .withProductId('PR005')
-      .asLowStock()
-      .build();
-    const domainLowStock = Inventory.fromPrimitives(lowStockInv);
-    const cachedLowStock = InventoryCacheMapper.toCache(domainLowStock);
-
     it('should fetch from postgres, cache results, and return low stock inventories', async () => {
       // Arrange
+
+      const lowStockInv = InventoryTestFactory.createLowStockInventory();
+      const domainLowStock = Inventory.fromPrimitives(lowStockInv);
+      const cachedLowStock = InventoryCacheMapper.toCache(domainLowStock);
+
       postgresRepo.mockSuccessfulFindLowStock([lowStockInv]);
-      const threshold = 5;
-      const page = 1;
-      const limit = 10;
 
       // Act
-      const result = await repository.findLowStock(threshold, page, limit);
+      const result = await repository.findLowStock(defaultLowStockQueryDto);
 
       // Assert
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toEqual([domainLowStock]);
+
       expect(postgresRepo.findLowStock).toHaveBeenCalledWith(
-        threshold,
-        page,
-        limit,
+        defaultLowStockQueryDto,
       );
 
       const expectedEntries = [
@@ -399,7 +397,7 @@ describe('RedisInventoryRepository', () => {
       postgresRepo.findLowStock.mockResolvedValue(Result.failure(dbError));
 
       // Act
-      const result = await repository.findLowStock();
+      const result = await repository.findLowStock(defaultLowStockQueryDto);
 
       // Assert
       ResultAssertionHelper.assertResultFailureWithError(result, dbError);
@@ -412,7 +410,7 @@ describe('RedisInventoryRepository', () => {
       postgresRepo.mockEmptyLowStock();
 
       // Act
-      const result = await repository.findLowStock();
+      const result = await repository.findLowStock(defaultLowStockQueryDto);
 
       // Assert
       ResultAssertionHelper.assertResultSuccess(result);

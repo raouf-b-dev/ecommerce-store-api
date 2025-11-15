@@ -1,6 +1,7 @@
 // src/modules/inventory/domain/repositories/inventory.repository.ts
 import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
+import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
 import { Inventory } from '../entities/inventory';
 
 export abstract class InventoryRepository {
@@ -15,9 +16,7 @@ export abstract class InventoryRepository {
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract findLowStock(
-    threshold?: number,
-    page?: number,
-    limit?: number,
+    query: LowStockQueryDto,
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract save(
