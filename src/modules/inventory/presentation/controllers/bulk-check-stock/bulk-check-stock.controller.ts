@@ -3,13 +3,14 @@ import { Result } from '../../../../../core/domain/result';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { BulkCheckStockUseCase } from '../../../application/bulk-check-stock/bulk-check-stock.usecase';
+import { CheckStockResponse } from '../../dto/check-stock-response.dto';
 
 @Injectable()
 export class BulkCheckStockController {
   constructor(private bulkCheckStockUseCase: BulkCheckStockUseCase) {}
-  async handle(dto: {
-    items: Array<{ productId: string; quantity: number }>;
-  }): Promise<Result<void, ControllerError>> {
+  async handle(
+    dto: { productId: string; quantity?: number }[],
+  ): Promise<Result<CheckStockResponse[], ControllerError>> {
     try {
       const result = await this.bulkCheckStockUseCase.execute(dto);
       if (result.isFailure) return result;

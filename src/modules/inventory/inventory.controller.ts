@@ -70,7 +70,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Check stock for multiple products' })
   @ApiResponse({ status: 200, description: 'Bulk stock availability status' })
   async bulkCheckStock(
-    @Body() dto: { items: Array<{ productId: string; quantity: number }> },
+    @Body() dto: { productId: string; quantity?: number }[],
   ) {
     return this.bulkCheckStockController.handle(dto);
   }

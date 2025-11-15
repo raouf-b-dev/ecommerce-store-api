@@ -14,11 +14,11 @@ export class GetInventoryUseCase
 
   async execute(productId: string): Promise<Result<IInventory, UseCaseError>> {
     try {
-      const getInventoryResult =
+      const inventoryResult =
         await this.inventoryRepository.findByProductId(productId);
+      if (inventoryResult.isFailure) return inventoryResult;
 
-      if (getInventoryResult.isFailure) return getInventoryResult;
-      const inventoryPrimitives = getInventoryResult.value.toPrimitives();
+      const inventoryPrimitives = inventoryResult.value.toPrimitives();
 
       return Result.success(inventoryPrimitives);
     } catch (error) {
