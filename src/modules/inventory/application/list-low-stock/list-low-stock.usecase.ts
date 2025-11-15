@@ -4,16 +4,27 @@ import { Result } from '../../../../core/domain/result';
 import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { UseCaseError } from '../../../../core/errors/usecase.error';
 import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
+import { InventoryRepository } from '../../domain/repositories/inventory.repository';
+import { IInventory } from '../../domain/interfaces/inventory.interface';
 
 @Injectable()
 export class ListLowStockUseCase
-  implements UseCase<LowStockQueryDto, void, UseCaseError>
+  implements UseCase<LowStockQueryDto, IInventory[], UseCaseError>
 {
-  constructor() {}
+  constructor(private inventoryRepository: InventoryRepository) {}
 
-  async execute(query: LowStockQueryDto): Promise<Result<void, UseCaseError>> {
+  async execute(
+    query: LowStockQueryDto,
+  ): Promise<Result<IInventory[], UseCaseError>> {
     try {
-      return Result.success(undefined);
+      const lowStockResult = await this.inventoryRepository.findLowStock(query);
+      if (lowStockResult.isFailure) return lowStockResult;
+
+      const inventories: IInventory[] = lowStockResult.value.map((i) =>
+        i.toPrimitives(),
+      );
+
+      return Result.success(inventories);
     } catch (error) {
       return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
     }

@@ -22,9 +22,11 @@ describe('InventoryController', () => {
   let bulkCheckStockController: BulkCheckStockController;
 
   let mockInventory: IInventory;
+  let mockLowStockInventory: IInventory;
 
   beforeEach(async () => {
     mockInventory = InventoryTestFactory.createMockInventory();
+    mockLowStockInventory = InventoryTestFactory.createInStockInventory();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InventoryController],
@@ -62,7 +64,7 @@ describe('InventoryController', () => {
         {
           provide: ListLowStockController,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            handle: jest.fn().mockResolvedValue([mockLowStockInventory]),
           },
         },
         {

@@ -4,6 +4,7 @@ import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
 import { Inventory } from '../../domain/entities/inventory';
 import { IInventory } from '../../domain/interfaces/inventory.interface';
+import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
 
 export class MockInventoryRepository implements InventoryRepository {
   findById = jest.fn<Promise<Result<Inventory, RepositoryError>>, [string]>();
@@ -20,7 +21,7 @@ export class MockInventoryRepository implements InventoryRepository {
 
   findLowStock = jest.fn<
     Promise<Result<Inventory[], RepositoryError>>,
-    [number?, number?, number?]
+    [LowStockQueryDto]
   >();
 
   save = jest.fn<Promise<Result<Inventory, RepositoryError>>, [Inventory]>();
