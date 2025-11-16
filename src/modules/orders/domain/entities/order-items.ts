@@ -2,6 +2,7 @@
 import { Quantity } from '../../../../shared/domain/value-objects/quantity';
 import { Money } from '../../../../shared/domain/value-objects/money';
 import { v4 as uuidv4 } from 'uuid';
+import { IOrderItem } from '../interfaces/order-item.interface';
 
 export interface OrderItemProps {
   id: string | null;
@@ -11,7 +12,7 @@ export interface OrderItemProps {
   quantity: number;
 }
 
-export class OrderItem {
+export class OrderItem implements IOrderItem {
   private readonly _id: string;
   private readonly _productId: string;
   private readonly _productName: string | null;
@@ -44,16 +45,16 @@ export class OrderItem {
     return this._productName;
   }
 
-  get unitPrice(): Money {
-    return this._unitPrice;
+  get unitPrice(): number {
+    return this._unitPrice.value;
   }
 
-  get quantity(): Quantity {
-    return this._quantity;
+  get quantity(): number {
+    return this._quantity.value;
   }
 
-  get lineTotal(): Money {
-    return this._lineTotal;
+  get lineTotal(): number {
+    return this._lineTotal.value;
   }
 
   private generateId(): string {
