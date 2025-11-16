@@ -45,7 +45,7 @@ export class OrderPricing {
 
   static calculate(items: OrderItem[]): OrderPricing {
     const subtotal = items.reduce(
-      (total, item) => total.add(item.lineTotal),
+      (total, item) => total.add(Money.from(item.lineTotal)),
       Money.zero(),
     );
 
