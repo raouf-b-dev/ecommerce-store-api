@@ -4,11 +4,13 @@ import {
   OrderIndexSchema,
   InventoryIndexSchema,
   ProductIndexSchema,
+  CartIndexSchema,
 } from '../constants/redis.schemas';
 import {
   INVENTORY_REDIS,
   ORDER_REDIS,
   PRODUCT_REDIS,
+  CART_REDIS,
 } from '../constants/redis.constants';
 
 @Injectable()
@@ -34,6 +36,12 @@ export class RedisIndexInitializerService implements OnModuleInit {
       INVENTORY_REDIS.INDEX,
       InventoryIndexSchema,
       INVENTORY_REDIS.CACHE_KEY,
+    );
+
+    await this.ensureIndex(
+      CART_REDIS.INDEX,
+      CartIndexSchema,
+      CART_REDIS.CACHE_KEY,
     );
   }
 
