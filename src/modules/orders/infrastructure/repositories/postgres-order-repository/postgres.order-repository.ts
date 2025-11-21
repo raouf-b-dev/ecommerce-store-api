@@ -242,7 +242,7 @@ export class PostgresOrderRepository implements OrderRepository {
           const existingDomainOrder = OrderMapper.toDomain(existingOrderEntity);
 
           const oldMap = new Map<string, number>();
-          for (const item of existingDomainOrder.getItemEntities()) {
+          for (const item of existingDomainOrder.getItems()) {
             const itemPrimitives = item.toPrimitives();
             const prev = oldMap.get(itemPrimitives.productId) ?? 0;
             oldMap.set(

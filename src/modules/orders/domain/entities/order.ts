@@ -158,10 +158,6 @@ export class Order implements IOrder {
     return new Date(this._updatedAt);
   }
 
-  getItemEntities(): readonly OrderItem[] {
-    return [...this._items];
-  }
-
   getPricing(): OrderPricing {
     return this._pricing;
   }
@@ -494,6 +490,9 @@ export class Order implements IOrder {
   }
 
   // ==================== SERIALIZATION ====================
+  getItems(): OrderItem[] {
+    return this._items;
+  }
 
   toPrimitives(): IOrder {
     return {

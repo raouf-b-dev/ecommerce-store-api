@@ -1,7 +1,10 @@
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
 import { CreateFromEntity } from '../../../../../shared/infrastructure/mappers/utils/create-from-entity.type';
 import { Order, OrderProps } from '../../../domain/entities/order';
-import { OrderItemProps } from '../../../domain/entities/order-items';
+import {
+  OrderItem,
+  OrderItemProps,
+} from '../../../domain/entities/order-items';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
@@ -72,17 +75,9 @@ export class OrderMapper {
       orderPayload,
     );
 
-    const itemPlayloads: OrderItemCreate[] = primitives.items.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      productName: item.productName ?? '',
-      unitPrice: item.unitPrice,
-      quantity: item.quantity,
-      lineTotal: item.lineTotal,
-    }));
-
-    const orderItemsEntities: OrderItemEntity[] =
-      OrderItemMapper.toEntityArray(itemPlayloads);
+    const orderItemsEntities: OrderItemEntity[] = OrderItemMapper.toEntityArray(
+      domain.getItems(),
+    );
 
     orderEntity.items = orderItemsEntities.map((orderItemEntity) => {
       orderItemEntity.order = orderEntity;
