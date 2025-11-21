@@ -17,10 +17,10 @@ export class CartEntity {
   @PrimaryColumn('varchar')
   id: string;
 
-  @Column({ name: 'customer_id', nullable: true })
+  @Column({ name: 'customer_id', type: 'varchar', nullable: true })
   customerId: string | null;
 
-  @Column({ name: 'session_id', nullable: true })
+  @Column({ name: 'session_id', type: 'varchar', nullable: true })
   sessionId: string | null;
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, {

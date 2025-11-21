@@ -8,10 +8,10 @@ export class CartItemEntity {
   @PrimaryColumn('varchar')
   id: string;
 
-  @Column({ name: 'product_id' })
+  @Column({ name: 'product_id', type: 'varchar' })
   productId: string;
 
-  @Column({ name: 'product_name' })
+  @Column({ name: 'product_name', type: 'varchar' })
   productName: string;
 
   @Column({
@@ -25,7 +25,7 @@ export class CartItemEntity {
   @Column({ type: 'int' })
   quantity: number;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'varchar', nullable: true })
   imageUrl: string | null;
 
   @ManyToOne(() => CartEntity, (cart) => cart.items, {
