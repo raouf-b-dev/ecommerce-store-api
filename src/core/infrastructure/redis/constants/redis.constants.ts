@@ -24,3 +24,10 @@ export const INVENTORY_REDIS: IRedisContstant = {
   IS_CACHED_FLAG: 'order_list:isCached',
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
+
+export const CART_REDIS: IRedisContstant = {
+  INDEX: 'cart_index',
+  CACHE_KEY: 'cart_cache',
+  IS_CACHED_FLAG: 'cart_list:isCached',
+  EXPIRATION: 3600 * 24 * 7, // 7 days
+};

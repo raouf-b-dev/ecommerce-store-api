@@ -22,3 +22,11 @@ export const InventoryIndexSchema = {
   '$.lowStockThreshold': { type: 'NUMERIC', AS: 'lowStockThreshold' },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
+
+export const CartIndexSchema = {
+  '$.id': { type: 'TEXT', AS: 'id' },
+  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.sessionId': { type: 'TEXT', AS: 'sessionId' },
+  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
+  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
+};
