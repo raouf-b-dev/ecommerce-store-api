@@ -7,11 +7,16 @@ import { PostgresCartRepository } from './postgres.cart-repository';
 import { Cart } from '../../../domain/entities/cart';
 import { CartEntityTestFactory } from '../../../testing/factories/cart-entity.factory';
 import { CartTestFactory } from '../../../testing/factories/cart.factory';
-import { ResultAssertionHelper } from '../../../../../testing';
+import {
+  ResultAssertionHelper,
+  createMockIdGenerator,
+} from '../../../../../testing';
+import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 describe('PostgresCartRepository', () => {
   let repository: PostgresCartRepository;
   let mockOrmRepo: jest.Mocked<Repository<CartEntity>>;
+  let mockIdGenerator: jest.Mocked<IdGeneratorService>;
 
   const mockCartEntity = CartEntityTestFactory.createCartEntityWithItems();
   const mockCart = Cart.fromPrimitives(
@@ -22,6 +27,8 @@ describe('PostgresCartRepository', () => {
   );
 
   beforeEach(async () => {
+    mockIdGenerator = createMockIdGenerator({ cartId: 'CA0000001' });
+
     mockOrmRepo = {
       save: jest.fn(),
       findOne: jest.fn(),
@@ -32,6 +39,7 @@ describe('PostgresCartRepository', () => {
       providers: [
         PostgresCartRepository,
         { provide: getRepositoryToken(CartEntity), useValue: mockOrmRepo },
+        { provide: IdGeneratorService, useValue: mockIdGenerator },
       ],
     }).compile();
 

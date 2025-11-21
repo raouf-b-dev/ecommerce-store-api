@@ -9,6 +9,7 @@ export function createMockIdGenerator(baseIds?: {
   shippingAddressId?: string;
   productId?: string;
   inventoryId?: string;
+  cartId?: string;
 }): jest.Mocked<IdGeneratorService> {
   const defaults = {
     orderId: 'OR0000001',
@@ -17,6 +18,7 @@ export function createMockIdGenerator(baseIds?: {
     shippingAddressId: 'SA0000001',
     productId: 'PR0000001',
     inventoryId: 'IN0000001',
+    cartId: 'CA0000001',
   };
 
   const ids = { ...defaults, ...baseIds };
@@ -30,5 +32,6 @@ export function createMockIdGenerator(baseIds?: {
       .mockResolvedValue(ids.shippingAddressId),
     generateInventoryId: jest.fn().mockResolvedValue(ids.inventoryId),
     generateProductId: jest.fn().mockResolvedValue(ids.productId),
+    generateCartId: jest.fn().mockResolvedValue(ids.cartId),
   } as any;
 }
