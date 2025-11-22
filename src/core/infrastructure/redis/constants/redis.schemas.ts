@@ -30,3 +30,13 @@ export const CartIndexSchema = {
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
+
+export const PaymentIndexSchema = {
+  '$.id': { type: 'TEXT', AS: 'id' },
+  '$.orderId': { type: 'TEXT', AS: 'orderId' },
+  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.status': { type: 'TEXT', AS: 'status' },
+  '$.transactionId': { type: 'TEXT', AS: 'transactionId' },
+  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
+  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
+};
