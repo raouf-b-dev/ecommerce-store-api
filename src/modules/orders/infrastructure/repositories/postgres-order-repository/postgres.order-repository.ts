@@ -152,8 +152,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
         const orderId = await this.idGeneratorService.generateOrderId();
         const customerId = await this.idGeneratorService.generateCustomerId();
-        const paymentInfoId =
-          await this.idGeneratorService.generatePaymentInfoId();
+        const paymentInfoId = await this.idGeneratorService.generatePaymentId();
         const shippingAddressId =
           await this.idGeneratorService.generateShippingAddressId();
 

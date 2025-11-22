@@ -33,7 +33,7 @@ describe('PostgresOrderRepository', () => {
   const mockIdGen = createMockIdGenerator({
     orderId: testData.orderId,
     customerId: testData.customerId,
-    paymentInfoId: testData.paymentInfoId,
+    paymentId: testData.paymentInfoId,
     shippingAddressId: testData.shippingAddressId,
   });
 
