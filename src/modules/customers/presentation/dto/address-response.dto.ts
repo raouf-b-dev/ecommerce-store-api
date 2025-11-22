@@ -1,6 +1,6 @@
 // src/modules/customers/presentation/dto/address-response.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressType } from './add-address.dto';
+import { AddressType } from '../../domain/value-objects/address-type';
 
 export class AddressResponseDto {
   @ApiProperty({

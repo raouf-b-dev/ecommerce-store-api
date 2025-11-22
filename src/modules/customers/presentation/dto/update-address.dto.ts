@@ -1,7 +1,7 @@
 // src/modules/customers/presentation/dto/update-address.dto.ts
 import { IsString, IsOptional, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressType } from './add-address.dto';
+import { AddressType } from '../../domain/value-objects/address-type';
 
 export class UpdateAddressDto {
   @ApiPropertyOptional({

@@ -1,12 +1,7 @@
 // src/modules/customers/presentation/dto/add-address.dto.ts
 import { IsString, IsOptional, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export enum AddressType {
-  HOME = 'HOME',
-  WORK = 'WORK',
-  OTHER = 'OTHER',
-}
+import { AddressType } from '../../domain/value-objects/address-type';
 
 export class AddAddressDto {
   @ApiProperty({
