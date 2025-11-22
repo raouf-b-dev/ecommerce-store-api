@@ -168,6 +168,36 @@ describe('IdGeneratorService', () => {
     });
   });
 
+  describe('generatePaymentId', () => {
+    it('should generate payment ID with correct prefix and format', async () => {
+      const mockResult = [{ current_value: 100 }];
+      queryRunner.query.mockResolvedValue(mockResult);
+
+      const result = await service.generatePaymentId();
+
+      expect(result).toBe('PA0000100');
+      expect(queryRunner.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO id_sequences'),
+        ['PAYMENT', 'PA'],
+      );
+    });
+  });
+
+  describe('generateRefundId', () => {
+    it('should generate refund ID with correct prefix and format', async () => {
+      const mockResult = [{ current_value: 50 }];
+      queryRunner.query.mockResolvedValue(mockResult);
+
+      const result = await service.generateRefundId();
+
+      expect(result).toBe('RE0000050');
+      expect(queryRunner.query).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO id_sequences'),
+        ['REFUND', 'RE'],
+      );
+    });
+  });
+
   describe('generateId (private method)', () => {
     it('should handle large sequence numbers correctly', async () => {
       const mockResult = [{ current_value: 9999999 }];

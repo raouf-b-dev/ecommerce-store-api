@@ -39,12 +39,16 @@ export class IdGeneratorService {
     return this.generateId('SHIPPINGADDRESS', 'SA');
   }
 
-  async generatePaymentInfoId(): Promise<string> {
+  async generatePaymentId(): Promise<string> {
     return this.generateId('PAYMENT', 'PA');
   }
 
   async generateCartId(): Promise<string> {
     return this.generateId('CART', 'CA');
+  }
+
+  async generateRefundId(): Promise<string> {
+    return this.generateId('REFUND', 'RE');
   }
 
   private async generateId(
