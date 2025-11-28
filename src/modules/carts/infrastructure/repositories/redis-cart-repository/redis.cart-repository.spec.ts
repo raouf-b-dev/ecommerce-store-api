@@ -29,7 +29,7 @@ describe('RedisCartRepository', () => {
     };
 
     const mockPostgresRepo = {
-      save: jest.fn(),
+      create: jest.fn(),
       findById: jest.fn(),
       findByCustomerId: jest.fn(),
       findBySessionId: jest.fn(),
@@ -61,15 +61,16 @@ describe('RedisCartRepository', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  describe('save', () => {
-    it('should save cart to postgres and cache', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockCart));
+  describe('create', () => {
+    it('should create cart in postgres and cache', async () => {
+      const dto = { customerId: 'cust-123' };
+      postgresRepo.create.mockResolvedValue(Result.success(mockCart));
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repository.save(mockCart);
+      const result = await repository.create(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(postgresRepo.save).toHaveBeenCalledWith(mockCart);
+      expect(postgresRepo.create).toHaveBeenCalledWith(dto);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${CART_REDIS.CACHE_KEY}:${mockCart.id}`,
         expect.anything(),
@@ -77,11 +78,12 @@ describe('RedisCartRepository', () => {
       );
     });
 
-    it('should return failure if postgres save fails', async () => {
-      const error = new RepositoryError('Postgres save failed');
-      postgresRepo.save.mockResolvedValue(Result.failure(error));
+    it('should return failure if postgres create fails', async () => {
+      const dto = { customerId: 'cust-123' };
+      const error = new RepositoryError('Postgres create failed');
+      postgresRepo.create.mockResolvedValue(Result.failure(error));
 
-      const result = await repository.save(mockCart);
+      const result = await repository.create(dto);
 
       ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.set).not.toHaveBeenCalled();

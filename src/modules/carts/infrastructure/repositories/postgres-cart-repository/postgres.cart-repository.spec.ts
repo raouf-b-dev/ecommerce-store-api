@@ -48,22 +48,28 @@ describe('PostgresCartRepository', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  describe('save', () => {
-    it('should save cart successfully', async () => {
+  describe('create', () => {
+    it('should create cart successfully', async () => {
+      const dto = { customerId: 'cust-123' };
       mockOrmRepo.save.mockResolvedValue(mockCartEntity);
 
-      const result = await repository.save(mockCart);
+      const result = await repository.create(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.save).toHaveBeenCalled();
+      expect(mockIdGenerator.generateCartId).toHaveBeenCalled();
     });
 
     it('should return error on DB failure', async () => {
+      const dto = { customerId: 'cust-123' };
       mockOrmRepo.save.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.save(mockCart);
+      const result = await repository.create(dto);
 
-      ResultAssertionHelper.assertResultFailure(result, 'Failed to save cart');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to create cart',
+      );
     });
   });
 

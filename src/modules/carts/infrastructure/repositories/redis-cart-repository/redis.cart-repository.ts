@@ -12,6 +12,8 @@ import {
   CartForCache,
 } from '../../persistence/mappers/cart.mapper';
 
+import { CreateCartDto } from '../../../presentation/dto/create-cart.dto';
+
 @Injectable()
 export class RedisCartRepository implements CartRepository {
   constructor(
@@ -109,11 +111,11 @@ export class RedisCartRepository implements CartRepository {
     }
   }
 
-  async save(cart: Cart): Promise<Result<Cart, RepositoryError>> {
+  async create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>> {
     try {
-      const saveResult = await this.postgresRepo.save(cart);
-      if (saveResult.isFailure) return saveResult;
-      const savedCart = saveResult.value;
+      const createResult = await this.postgresRepo.create(dto);
+      if (createResult.isFailure) return createResult;
+      const savedCart = createResult.value;
 
       await this.cacheService.set(
         `${CART_REDIS.CACHE_KEY}:${savedCart.id}`,
@@ -123,7 +125,7 @@ export class RedisCartRepository implements CartRepository {
 
       return Result.success(savedCart);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save cart', error);
+      return ErrorFactory.RepositoryError('Failed to create cart', error);
     }
   }
 

@@ -11,6 +11,8 @@ import { CartEntity } from '../../orm/cart.schema';
 import { CartMapper } from '../../persistence/mappers/cart.mapper';
 import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
+import { CreateCartDto } from '../../../presentation/dto/create-cart.dto';
+
 @Injectable()
 export class PostgresCartRepository implements CartRepository {
   constructor(
@@ -77,15 +79,24 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async save(cart: Cart): Promise<Result<Cart, RepositoryError>> {
+  async create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>> {
     try {
-      const entity = CartMapper.toEntity(cart);
-      entity.id = await this.idGeneratorService.generateCartId();
+      const id = await this.idGeneratorService.generateCartId();
+      let cart: Cart;
 
+      if (dto.customerId) {
+        cart = Cart.createUserCart(id, dto.customerId);
+      } else if (dto.sessionId) {
+        cart = Cart.createGuestCart(id, dto.sessionId);
+      } else {
+        cart = Cart.createGuestCart(id, id);
+      }
+
+      const entity = CartMapper.toEntity(cart);
       const savedEntity = await this.repository.save(entity);
       return Result.success(CartMapper.toDomain(savedEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save cart', error);
+      return ErrorFactory.RepositoryError('Failed to create cart', error);
     }
   }
 
@@ -123,7 +134,7 @@ export class PostgresCartRepository implements CartRepository {
         );
       }
 
-      const saveResult = await this.save(userCart);
+      const saveResult = await this.update(userCart);
       if (saveResult.isFailure) return saveResult;
 
       const deleteResult = await this.delete(guestCart.id);

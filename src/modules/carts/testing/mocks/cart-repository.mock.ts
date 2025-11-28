@@ -4,10 +4,11 @@ import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
 import { Cart } from '../../domain/entities/cart';
 import { ICart } from '../../domain/interfaces/cart.interface';
+import { CreateCartDto } from '../../presentation/dto/create-cart.dto';
 
 export class MockCartRepository implements CartRepository {
   // Jest mock functions
-  save = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart]>();
+  create = jest.fn<Promise<Result<Cart, RepositoryError>>, [CreateCartDto]>();
   findById = jest.fn<Promise<Result<Cart, RepositoryError>>, [string]>();
   update = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart]>();
   mergeCarts = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart, Cart]>();
@@ -34,12 +35,12 @@ export class MockCartRepository implements CartRepository {
     this.findBySessionId.mockResolvedValue(Result.failure(error));
   }
 
-  mockSuccessfulSave(cart: Cart): void {
-    this.save.mockResolvedValue(Result.success(cart));
+  mockSuccessfulCreate(cart: Cart): void {
+    this.create.mockResolvedValue(Result.success(cart));
   }
 
-  mockSaveFailure(errorMessage: string): void {
-    this.save.mockResolvedValue(
+  mockCreateFailure(errorMessage: string): void {
+    this.create.mockResolvedValue(
       Result.failure(new RepositoryError(errorMessage)),
     );
   }
@@ -61,7 +62,7 @@ export class MockCartRepository implements CartRepository {
 
   // Verify no unexpected calls were made
   verifyNoUnexpectedCalls(): void {
-    expect(this.save).not.toHaveBeenCalled();
+    expect(this.create).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.findByCustomerId).not.toHaveBeenCalled();
     expect(this.findBySessionId).not.toHaveBeenCalled();
