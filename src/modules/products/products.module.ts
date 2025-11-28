@@ -65,5 +65,6 @@ import { UpdateProductController } from './presentation/controllers/update-produ
     DeleteProductController,
     ListProductsController,
   ],
+  exports: [ProductRepository],
 })
 export class ProductsModule {}

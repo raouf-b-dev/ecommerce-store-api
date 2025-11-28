@@ -25,6 +25,7 @@ import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/u
 import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
 import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-cart
     RedisModule,
     CoreModule,
     InventoryModule,
+    ProductsModule,
   ],
   controllers: [CartsController],
   providers: [

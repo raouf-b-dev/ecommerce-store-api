@@ -8,6 +8,7 @@ import {
   ProductIndexSchema,
   CartIndexSchema,
   PaymentIndexSchema,
+  CustomerIndexSchema,
 } from '../constants/redis.schemas';
 import {
   INVENTORY_REDIS,
@@ -15,6 +16,7 @@ import {
   PRODUCT_REDIS,
   CART_REDIS,
   PAYMENT_REDIS,
+  CUSTOMER_REDIS,
 } from '../constants/redis.constants';
 
 describe('RedisIndexInitializerService', () => {
@@ -50,7 +52,7 @@ describe('RedisIndexInitializerService', () => {
   it('should call createIndex for all modules on module init', async () => {
     await service.onModuleInit();
 
-    expect(redisSearch.createIndex).toHaveBeenCalledTimes(5);
+    expect(redisSearch.createIndex).toHaveBeenCalledTimes(6);
 
     expect(redisSearch.createIndex).toHaveBeenNthCalledWith(
       1,
@@ -87,6 +89,13 @@ describe('RedisIndexInitializerService', () => {
       `${PAYMENT_REDIS.CACHE_KEY}:`,
     );
 
+    expect(redisSearch.createIndex).toHaveBeenNthCalledWith(
+      6,
+      CUSTOMER_REDIS.INDEX,
+      CustomerIndexSchema,
+      `${CUSTOMER_REDIS.CACHE_KEY}:`,
+    );
+
     expect(loggerLogSpy).toHaveBeenNthCalledWith(
       1,
       `Redis index '${ORDER_REDIS.INDEX}' created/ensured`,
@@ -110,6 +119,11 @@ describe('RedisIndexInitializerService', () => {
     expect(loggerLogSpy).toHaveBeenNthCalledWith(
       5,
       `Redis index '${PAYMENT_REDIS.INDEX}' created/ensured`,
+    );
+
+    expect(loggerLogSpy).toHaveBeenNthCalledWith(
+      6,
+      `Redis index '${CUSTOMER_REDIS.INDEX}' created/ensured`,
     );
   });
 
@@ -179,6 +193,22 @@ describe('RedisIndexInitializerService', () => {
 
     expect(loggerLogSpy).toHaveBeenCalledWith(
       `Redis index '${PAYMENT_REDIS.INDEX}' already exists`,
+    );
+  });
+
+  it('should log "already exists" if customer index already exists', async () => {
+    (redisSearch.createIndex as jest.Mock)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('Index already exists'));
+
+    await service.onModuleInit();
+
+    expect(loggerLogSpy).toHaveBeenCalledWith(
+      `Redis index '${CUSTOMER_REDIS.INDEX}' already exists`,
     );
   });
 
@@ -257,6 +287,24 @@ describe('RedisIndexInitializerService', () => {
 
     expect(loggerErrorSpy).toHaveBeenCalledWith(
       `Failed to create index '${PAYMENT_REDIS.INDEX}'`,
+      error,
+    );
+  });
+
+  it('should log an error if customer index creation fails unexpectedly', async () => {
+    const error = new Error('Unexpected customer error');
+    (redisSearch.createIndex as jest.Mock)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(error);
+
+    await service.onModuleInit();
+
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      `Failed to create index '${CUSTOMER_REDIS.INDEX}'`,
       error,
     );
   });
