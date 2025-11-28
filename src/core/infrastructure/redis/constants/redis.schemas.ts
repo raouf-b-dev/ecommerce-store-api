@@ -40,3 +40,13 @@ export const PaymentIndexSchema = {
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
+
+export const CustomerIndexSchema = {
+  '$.id': { type: 'TEXT', AS: 'id' },
+  '$.firstName': { type: 'TEXT', AS: 'firstName' },
+  '$.lastName': { type: 'TEXT', AS: 'lastName' },
+  '$.email': { type: 'TEXT', AS: 'email' },
+  '$.phone': { type: 'TEXT', AS: 'phone' },
+  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
+  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
+};
