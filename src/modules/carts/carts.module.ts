@@ -17,12 +17,22 @@ import { PostgresCartRepository } from './infrastructure/repositories/postgres-c
 import { RedisCartRepository } from './infrastructure/repositories/redis-cart-repository/redis.cart-repository';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { CartRepository } from './domain/repositories/cart.repository';
+import { InventoryModule } from '../inventory/inventory.module';
+import { GetCartUseCase } from './application/usecases/get-cart/get-cart.usecase';
+import { CreateCartUseCase } from './application/usecases/create-cart/create-cart.usecase';
+import { AddCartItemUseCase } from './application/usecases/add-cart-item/add-cart-item.usecase';
+import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/update-cart-item.usecase';
+import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
+import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
+import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CartEntity, CartItemEntity]),
     RedisModule,
+    RedisModule,
     CoreModule,
+    InventoryModule,
   ],
   controllers: [CartsController],
   providers: [
@@ -62,6 +72,16 @@ import { CartRepository } from './domain/repositories/cart.repository';
     RemoveCartItemController,
     ClearCartController,
     MergeCartsController,
+    MergeCartsController,
+
+    // Use Cases
+    GetCartUseCase,
+    CreateCartUseCase,
+    AddCartItemUseCase,
+    UpdateCartItemUseCase,
+    RemoveCartItemUseCase,
+    ClearCartUseCase,
+    MergeCartsUseCase,
   ],
 })
 export class CartsModule {}
