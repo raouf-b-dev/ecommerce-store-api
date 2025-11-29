@@ -25,7 +25,6 @@ import { AddAddressController } from './presentation/controllers/add-address/add
 import { UpdateAddressController } from './presentation/controllers/update-address/update-address.controller';
 import { DeleteAddressController } from './presentation/controllers/delete-address/delete-address.controller';
 import { SetDefaultAddressController } from './presentation/controllers/set-default-address/set-default-address.controller';
-import { GetCustomerOrdersController } from './presentation/controllers/get-customer-orders/get-customer-orders.controller';
 
 @ApiTags('customers')
 @Controller('customers')
@@ -40,7 +39,6 @@ export class CustomersController {
     private readonly updateAddressController: UpdateAddressController,
     private readonly deleteAddressController: DeleteAddressController,
     private readonly setDefaultAddressController: SetDefaultAddressController,
-    private readonly getCustomerOrdersController: GetCustomerOrdersController,
   ) {}
 
   @Post()
@@ -117,12 +115,5 @@ export class CustomersController {
     @Param('addressId') addressId: string,
   ) {
     return this.setDefaultAddressController.handle(id, addressId);
-  }
-
-  @Get(':id/orders')
-  @ApiOperation({ summary: 'Get all orders for a customer' })
-  @ApiResponse({ status: 200, description: 'List of customer orders' })
-  async getCustomerOrders(@Param('id') id: string) {
-    return this.getCustomerOrdersController.handle(id);
   }
 }
