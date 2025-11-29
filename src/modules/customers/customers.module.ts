@@ -5,7 +5,6 @@ import { AddAddressController } from './presentation/controllers/add-address/add
 import { CreateCustomerController } from './presentation/controllers/create-customer/create-customer.controller';
 import { DeleteAddressController } from './presentation/controllers/delete-address/delete-address.controller';
 import { DeleteCustomerController } from './presentation/controllers/delete-customer/delete-customer.controller';
-import { GetCustomerOrdersController } from './presentation/controllers/get-customer-orders/get-customer-orders.controller';
 import { GetCustomerController } from './presentation/controllers/get-customer/get-customer.controller';
 import { ListCustomersController } from './presentation/controllers/list-customers/list-customers.controller';
 import { SetDefaultAddressController } from './presentation/controllers/set-default-address/set-default-address.controller';
@@ -18,11 +17,22 @@ import { CoreModule } from '../../core/core.module';
 import {
   POSTGRES_CUSTOMER_REPOSITORY,
   REDIS_CUSTOMER_REPOSITORY,
-} from './infrastructure/customer.tokens';
+} from './customer.tokens';
 import { PostgresCustomerRepository } from './infrastructure/repositories/postgres-customer-repository/postgres.customer-repository';
 import { RedisCustomerRepository } from './infrastructure/repositories/redis-customer-repository/redis.customer-repository';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { CustomerRepository } from './domain/repositories/customer.repository';
+
+// Use Cases
+import { CreateCustomerUseCase } from './application/usecases/create-customer/create-customer.usecase';
+import { GetCustomerUseCase } from './application/usecases/get-customer/get-customer.usecase';
+import { ListCustomersUseCase } from './application/usecases/list-customers/list-customers.usecase';
+import { UpdateCustomerUseCase } from './application/usecases/update-customer/update-customer.usecase';
+import { DeleteCustomerUseCase } from './application/usecases/delete-customer/delete-customer.usecase';
+import { AddAddressUseCase } from './application/usecases/add-address/add-address.usecase';
+import { UpdateAddressUseCase } from './application/usecases/update-address/update-address.usecase';
+import { DeleteAddressUseCase } from './application/usecases/delete-address/delete-address.usecase';
+import { SetDefaultAddressUseCase } from './application/usecases/set-default-address/set-default-address.usecase';
 
 @Module({
   imports: [
@@ -58,6 +68,17 @@ import { CustomerRepository } from './domain/repositories/customer.repository';
       useExisting: REDIS_CUSTOMER_REPOSITORY,
     },
 
+    // Use Cases
+    CreateCustomerUseCase,
+    GetCustomerUseCase,
+    ListCustomersUseCase,
+    UpdateCustomerUseCase,
+    DeleteCustomerUseCase,
+    AddAddressUseCase,
+    UpdateAddressUseCase,
+    DeleteAddressUseCase,
+    SetDefaultAddressUseCase,
+
     // Individual Controllers (needed as providers for CustomersController)
     CreateCustomerController,
     GetCustomerController,
@@ -68,7 +89,6 @@ import { CustomerRepository } from './domain/repositories/customer.repository';
     UpdateAddressController,
     DeleteAddressController,
     SetDefaultAddressController,
-    GetCustomerOrdersController,
   ],
 })
 export class CustomersModule {}
