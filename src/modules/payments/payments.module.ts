@@ -20,6 +20,13 @@ import { PostgresPaymentRepository } from './infrastructure/repositories/postgre
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { RedisPaymentRepository } from './infrastructure/repositories/redis-payment-repository/redis.payment-repository';
 import { PaymentRepository } from './domain/repositories/payment.repository';
+import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
+import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
+import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
+import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
+import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
 
 @Module({
   imports: [
@@ -65,6 +72,15 @@ import { PaymentRepository } from './domain/repositories/payment.repository';
     ProcessRefundController,
     VerifyPaymentController,
     RecordCodPaymentController,
+
+    // Use Cases
+    CreatePaymentUseCase,
+    GetPaymentUseCase,
+    ListPaymentsUseCase,
+    CapturePaymentUseCase,
+    ProcessRefundUseCase,
+    VerifyPaymentUseCase,
+    RecordCodPaymentUseCase,
   ],
 })
 export class PaymentsModule {}
