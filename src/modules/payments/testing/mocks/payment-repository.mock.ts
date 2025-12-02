@@ -4,7 +4,6 @@ import { RepositoryError } from '../../../../core/errors/repository.error';
 import { Payment } from '../../domain/entities/payment';
 import { Refund } from '../../domain/entities/refund';
 import { IPayment } from '../../domain/interfaces/payment.interface';
-import { IRefund } from '../../domain/interfaces/refund.interface';
 
 export class MockPaymentRepository implements PaymentRepository {
   findById = jest.fn<Promise<Result<Payment, RepositoryError>>, [string]>();
@@ -17,8 +16,8 @@ export class MockPaymentRepository implements PaymentRepository {
     [string]
   >();
   findByCustomerId = jest.fn<
-    Promise<Result<{ items: Payment[]; total: number }, RepositoryError>>,
-    [string, number, number]
+    Promise<Result<Payment[], RepositoryError>>,
+    [string, number?, number?]
   >();
   save = jest.fn<Promise<Result<Payment, RepositoryError>>, [Payment]>();
   update = jest.fn<Promise<Result<Payment, RepositoryError>>, [Payment]>();
@@ -71,5 +70,16 @@ export class MockPaymentRepository implements PaymentRepository {
 
   reset(): void {
     jest.clearAllMocks();
+  }
+
+  verifyNoUnexpectedCalls(): void {
+    expect(this.save).not.toHaveBeenCalled();
+    expect(this.update).not.toHaveBeenCalled();
+    expect(this.delete).not.toHaveBeenCalled();
+    expect(this.findRefundById).not.toHaveBeenCalled();
+    expect(this.saveRefund).not.toHaveBeenCalled();
+    expect(this.findById).not.toHaveBeenCalled();
+    expect(this.findByOrderId).not.toHaveBeenCalled();
+    expect(this.findByCustomerId).not.toHaveBeenCalled();
   }
 }
