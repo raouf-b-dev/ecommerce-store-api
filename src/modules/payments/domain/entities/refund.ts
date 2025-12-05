@@ -7,7 +7,7 @@ import { Money } from '../../../../shared/domain/value-objects/money';
 import { RefundStatus, RefundStatusType } from '../value-objects/refund-status';
 
 export interface RefundProps {
-  id: string;
+  id: string | null;
   paymentId: string;
   amount: number;
   currency: string;
@@ -17,8 +17,8 @@ export interface RefundProps {
   updatedAt: Date | null;
 }
 
-export class Refund {
-  private readonly _id: string;
+export class Refund implements IRefund {
+  private readonly _id: string | null;
   private readonly _paymentId: string;
   private _amount: Money;
   private _reason: string;
@@ -30,7 +30,7 @@ export class Refund {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id.trim();
+    this._id = props.id?.trim() || null;
     this._paymentId = props.paymentId.trim();
     this._amount = Money.from(props.amount, props.currency);
     this._reason = props.reason.trim();
@@ -40,7 +40,7 @@ export class Refund {
   }
 
   private validateProps(props: RefundProps): Result<void, DomainError> {
-    if (!props.id?.trim()) {
+    if (props.id !== null && !props.id?.trim()) {
       return ErrorFactory.DomainError('Refund ID is required');
     }
     if (!props.paymentId?.trim()) {
@@ -60,7 +60,7 @@ export class Refund {
   }
 
   // Getters
-  get id(): string {
+  get id(): string | null {
     return this._id;
   }
 
@@ -155,7 +155,7 @@ export class Refund {
   }
 
   static create(
-    id: string,
+    id: string | null,
     paymentId: string,
     amount: number,
     currency: string,

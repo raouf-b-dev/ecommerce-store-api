@@ -4,7 +4,7 @@ import { PaymentStatusType } from '../value-objects/payment-status';
 import { IRefund } from './refund.interface';
 
 export interface IPayment {
-  id: string;
+  id: string | null;
   orderId: string;
   customerId: string | null;
   amount: number;

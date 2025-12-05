@@ -47,7 +47,7 @@ export class PaymentMapper {
     const primitives = domain.toPrimitives();
 
     const paymentPayload: PaymentCreate = {
-      id: primitives.id,
+      id: primitives.id || '',
       orderId: primitives.orderId,
       customerId: primitives.customerId,
       amount: primitives.amount,

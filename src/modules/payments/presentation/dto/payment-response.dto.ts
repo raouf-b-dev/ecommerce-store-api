@@ -1,7 +1,7 @@
 // src/modules/payments/presentation/dto/payment-response.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod } from './create-payment.dto';
-import { PaymentStatus } from './list-payments-query.dto';
+import { PaymentMethodType } from '../../domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../domain/value-objects/payment-status';
 
 export class PaymentResponseDto {
   @ApiProperty({
@@ -29,18 +29,18 @@ export class PaymentResponseDto {
   currency: string;
 
   @ApiProperty({
-    enum: PaymentMethod,
-    example: PaymentMethod.CREDIT_CARD,
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CREDIT_CARD,
     description: 'Payment method',
   })
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethodType;
 
   @ApiProperty({
-    enum: PaymentStatus,
-    example: PaymentStatus.COMPLETED,
+    enum: PaymentStatusType,
+    example: PaymentStatusType.COMPLETED,
     description: 'Payment status',
   })
-  status: PaymentStatus;
+  status: PaymentStatusType;
 
   @ApiPropertyOptional({
     example: 'txn_1234567890',

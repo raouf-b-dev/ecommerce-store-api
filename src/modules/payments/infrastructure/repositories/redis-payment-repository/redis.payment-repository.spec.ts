@@ -248,7 +248,7 @@ describe('RedisPaymentRepository', () => {
       expect(postgresRepo.save).toHaveBeenCalledWith(newDomainPayment);
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(newPayment.id),
+        idKey(newPayment.id!),
         newCachedPayment,
         { ttl: PAYMENT_REDIS.EXPIRATION },
       );
@@ -287,7 +287,7 @@ describe('RedisPaymentRepository', () => {
       expect(postgresRepo.update).toHaveBeenCalledWith(updatedPayment);
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(updatedPayment.id),
+        idKey(updatedPayment.id!),
         updatedCachedPayment,
         { ttl: PAYMENT_REDIS.EXPIRATION },
       );

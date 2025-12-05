@@ -117,9 +117,9 @@ export class RedisPaymentRepository implements PaymentRepository {
 
   async findByCustomerId(
     customerId: string,
-    page: number,
-    limit: number,
-  ): Promise<Result<{ items: Payment[]; total: number }, RepositoryError>> {
+    page?: number,
+    limit?: number,
+  ): Promise<Result<Payment[], RepositoryError>> {
     return this.postgresRepo.findByCustomerId(customerId, page, limit);
   }
 

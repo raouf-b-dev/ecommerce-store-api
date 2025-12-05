@@ -25,7 +25,7 @@ export class RefundMapper {
     const primitives = domain.toPrimitives();
 
     const refundPayload: RefundCreate = {
-      id: primitives.id,
+      id: primitives.id || '',
       paymentId: primitives.paymentId,
       amount: primitives.amount,
       currency: primitives.currency,

@@ -10,6 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethodDetailsDto } from './payment-method-details.dto';
+import { PaymentMethodType } from '../../domain/value-objects/payment-method';
 
 export enum PaymentMethod {
   CREDIT_CARD = 'CREDIT_CARD',
@@ -36,12 +37,12 @@ export class CreatePaymentDto {
   amount: number;
 
   @ApiProperty({
-    enum: PaymentMethod,
-    example: PaymentMethod.CREDIT_CARD,
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CREDIT_CARD,
     description: 'Payment method',
   })
-  @IsEnum(PaymentMethod)
-  paymentMethod: PaymentMethod;
+  @IsEnum(PaymentMethodType)
+  paymentMethod: PaymentMethodType;
 
   @ApiProperty({
     example: 'USD',

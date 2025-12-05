@@ -16,7 +16,7 @@ import {
 import { Refund, RefundProps } from './refund';
 
 export interface PaymentProps {
-  id: string;
+  id: string | null;
   orderId: string;
   customerId: string | null;
   amount: number;
@@ -34,7 +34,7 @@ export interface PaymentProps {
 }
 
 export class Payment implements IPayment {
-  private readonly _id: string;
+  private readonly _id: string | null;
   private readonly _orderId: string;
   private _customerId: string | null;
   private _amount: Money;
@@ -53,7 +53,7 @@ export class Payment implements IPayment {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id.trim();
+    this._id = props.id?.trim() || null;
     this._orderId = props.orderId.trim();
     this._customerId = props.customerId?.trim() || null;
     this._amount = Money.from(props.amount, props.currency);
@@ -72,7 +72,7 @@ export class Payment implements IPayment {
   }
 
   private validateProps(props: PaymentProps): Result<void, DomainError> {
-    if (!props.id?.trim()) {
+    if (props.id !== null && !props.id?.trim()) {
       return ErrorFactory.DomainError('Payment ID is required');
     }
     if (!props.orderId?.trim()) {
@@ -97,7 +97,7 @@ export class Payment implements IPayment {
   }
 
   // Getters
-  get id(): string {
+  get id(): string | null {
     return this._id;
   }
 
@@ -333,7 +333,7 @@ export class Payment implements IPayment {
   }
 
   static create(
-    id: string,
+    id: string | null,
     orderId: string,
     amount: number,
     currency: string,
@@ -361,7 +361,7 @@ export class Payment implements IPayment {
   }
 
   static createCOD(
-    id: string,
+    id: string | null,
     orderId: string,
     amount: number,
     currency: string,

@@ -83,22 +83,22 @@ export class PostgresPaymentRepository implements PaymentRepository {
 
   async findByCustomerId(
     customerId: string,
-    page: number,
-    limit: number,
-  ): Promise<Result<{ items: Payment[]; total: number }, RepositoryError>> {
+    page?: number,
+    limit?: number,
+  ): Promise<Result<Payment[], RepositoryError>> {
     try {
-      const [entities, total] = await this.paymentRepo.findAndCount({
+      const skip = (page || 1) - 1;
+      const take = limit || 10;
+
+      const entities = await this.paymentRepo.find({
         where: { customerId },
         relations: ['refunds'],
-        skip: (page - 1) * limit,
-        take: limit,
+        skip,
+        take,
         order: { createdAt: 'DESC' },
       });
 
-      return Result.success({
-        items: entities.map((e) => PaymentMapper.toDomain(e)),
-        total,
-      });
+      return Result.success(entities.map((e) => PaymentMapper.toDomain(e)));
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by customer ID',

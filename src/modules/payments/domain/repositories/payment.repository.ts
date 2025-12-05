@@ -14,9 +14,9 @@ export abstract class PaymentRepository {
   ): Promise<Result<Payment, RepositoryError>>;
   abstract findByCustomerId(
     customerId: string,
-    page: number,
-    limit: number,
-  ): Promise<Result<{ items: Payment[]; total: number }, RepositoryError>>;
+    page?: number,
+    limit?: number,
+  ): Promise<Result<Payment[], RepositoryError>>;
   abstract save(payment: Payment): Promise<Result<Payment, RepositoryError>>;
   abstract update(payment: Payment): Promise<Result<Payment, RepositoryError>>;
   abstract delete(id: string): Promise<Result<void, RepositoryError>>;
