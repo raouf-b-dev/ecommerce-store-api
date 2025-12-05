@@ -129,12 +129,12 @@ export class Customer implements ICustomer {
     return this._addresses.some((addr) => addr.isDefault);
   }
 
-  getDefaultAddress(): Address | undefined {
-    return this._addresses.find((addr) => addr.isDefault);
+  getDefaultAddress(): Address {
+    return this._addresses.find((addr) => addr.isDefault)!;
   }
 
-  findAddress(addressId: string): Address | undefined {
-    return this._addresses.find((addr) => addr.id === addressId);
+  findAddress(addressId: string): Address {
+    return this._addresses.find((addr) => addr.id === addressId)!;
   }
 
   addAddress(address: Address): Result<void, DomainError> {

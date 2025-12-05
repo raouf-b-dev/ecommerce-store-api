@@ -6,10 +6,9 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Result } from '../../../../../core/domain/result';
-import { Customer, CustomerProps } from '../../../domain/entities/customer';
+import { Customer } from '../../../domain/entities/customer';
 import { AddressType } from '../../../domain/value-objects/address-type';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
-import { AddressProps } from '../../../domain/entities/address';
 
 describe('CreateCustomerUseCase', () => {
   let useCase: CreateCustomerUseCase;

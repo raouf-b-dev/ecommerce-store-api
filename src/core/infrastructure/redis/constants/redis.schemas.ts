@@ -50,3 +50,12 @@ export const CustomerIndexSchema = {
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
+
+export const UserIndexSchema = {
+  '$.id': { type: 'TEXT', AS: 'id' },
+  '$.email': { type: 'TEXT', AS: 'email' },
+  '$.role': { type: 'TEXT', AS: 'role' },
+  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
+  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
+};

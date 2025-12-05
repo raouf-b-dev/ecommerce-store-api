@@ -51,6 +51,10 @@ export class IdGeneratorService {
     return this.generateId('REFUND', 'RE');
   }
 
+  async generateUserId(): Promise<string> {
+    return this.generateId('USER', 'US');
+  }
+
   private async generateId(
     entityType: string,
     prefix: string,

@@ -8,6 +8,7 @@ export class AddressMapper {
   static toDomain(entity: AddressEntity): Address {
     const props: AddressProps = {
       id: entity.id,
+      customerId: entity.customerId,
       street: entity.street,
       street2: entity.street2,
       city: entity.city,
@@ -27,8 +28,9 @@ export class AddressMapper {
   static toEntity(domain: Address): AddressEntity {
     const primitives = domain.toPrimitives();
 
-    const addressPayload: Omit<AddressCreate, 'customerId'> = {
-      id: primitives.id, // ID should be present when mapping to entity
+    const addressPayload: AddressCreate = {
+      id: primitives.id || '',
+      customerId: primitives.customerId,
       street: primitives.street,
       street2: primitives.street2,
       city: primitives.city,

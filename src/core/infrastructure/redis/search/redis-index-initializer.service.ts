@@ -7,6 +7,7 @@ import {
   CartIndexSchema,
   PaymentIndexSchema,
   CustomerIndexSchema,
+  UserIndexSchema,
 } from '../constants/redis.schemas';
 import {
   INVENTORY_REDIS,
@@ -15,6 +16,7 @@ import {
   CART_REDIS,
   PAYMENT_REDIS,
   CUSTOMER_REDIS,
+  USER_REDIS,
 } from '../constants/redis.constants';
 
 @Injectable()
@@ -58,6 +60,12 @@ export class RedisIndexInitializerService implements OnModuleInit {
       CUSTOMER_REDIS.INDEX,
       CustomerIndexSchema,
       CUSTOMER_REDIS.CACHE_KEY,
+    );
+
+    await this.ensureIndex(
+      USER_REDIS.INDEX,
+      UserIndexSchema,
+      USER_REDIS.CACHE_KEY,
     );
   }
 

@@ -40,6 +40,7 @@ import { SetDefaultAddressUseCase } from './application/usecases/set-default-add
     RedisModule,
     CoreModule,
   ],
+  exports: [CreateCustomerUseCase],
   controllers: [CustomersController],
   providers: [
     // Postgres Repo
