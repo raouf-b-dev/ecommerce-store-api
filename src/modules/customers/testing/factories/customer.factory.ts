@@ -24,6 +24,7 @@ export class CustomerTestFactory {
       addresses: [
         {
           id: 'address-123',
+          customerId: 'customer-123',
           street: '123 Main St',
           street2: null,
           city: 'New York',

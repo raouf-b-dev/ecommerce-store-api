@@ -7,9 +7,9 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { CreateCustomerDto } from '../../../presentation/dto/create-customer.dto';
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
-import { Customer } from '../../../domain/entities/customer';
-import { Address } from '../../../domain/entities/address';
-import { DomainError } from '../../../../../core/errors/domain.error';
+import { Customer, CustomerProps } from '../../../domain/entities/customer';
+import { Address, AddressProps } from '../../../domain/entities/address';
+import { AddressType } from '../../../domain/value-objects/address-type';
 
 @Injectable()
 export class CreateCustomerUseCase extends UseCase<
@@ -25,26 +25,35 @@ export class CreateCustomerUseCase extends UseCase<
     dto: CreateCustomerDto,
   ): Promise<Result<ICustomer, UseCaseError>> {
     try {
-      const customer = Customer.create(
-        null,
-        dto.firstName,
-        dto.lastName,
-        dto.email,
-        dto.phone ?? null,
-      );
+      const props: CustomerProps = {
+        id: null,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        phone: dto.phone ?? null,
+        addresses: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const customer = new Customer(props);
 
       if (dto.address) {
-        const address = Address.create(
-          dto.address.street,
-          dto.address.city,
-          dto.address.state,
-          dto.address.postalCode,
-          dto.address.country,
-          dto.address.type,
-          dto.address.street2,
-          dto.address.deliveryInstructions,
-          dto.address.isDefault ?? true,
-        );
+        const addressProps: AddressProps = {
+          id: null,
+          customerId: customer.id || '',
+          street: dto.address.street,
+          street2: dto.address.street2 ?? null,
+          city: dto.address.city,
+          state: dto.address.state,
+          postalCode: dto.address.postalCode,
+          country: dto.address.country,
+          type: dto.address.type || AddressType.HOME,
+          isDefault: dto.address.isDefault ?? true,
+          deliveryInstructions: dto.address.deliveryInstructions ?? null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        const address = new Address(addressProps);
 
         const addResult = customer.addAddress(address);
         if (isFailure(addResult)) return addResult;

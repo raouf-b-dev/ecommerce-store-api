@@ -1,7 +1,8 @@
 import { AddressType } from '../value-objects/address-type';
 
 export interface IAddress {
-  id: string;
+  id: string | null;
+  customerId: string;
   street: string;
   street2: string | null;
   city: string;

@@ -50,7 +50,7 @@ export class CustomerMapper {
     );
 
     const addressEntities: AddressEntity[] = AddressMapper.toEntityArray(
-      domain.addresses.map((addr) => domain.findAddress(addr.id)!),
+      domain.addresses.map((addr) => domain.findAddress(addr.id!)),
     );
 
     entity.addresses = addressEntities.map((addressEntity) => {

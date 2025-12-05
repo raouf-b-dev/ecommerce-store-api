@@ -7,6 +7,7 @@ import { AddressType } from '../value-objects/address-type';
 
 export interface AddressProps {
   id: string | null;
+  customerId: string;
   street: string;
   street2: string | null;
   city: string;
@@ -20,8 +21,9 @@ export interface AddressProps {
   updatedAt: Date | null;
 }
 
-export class Address {
+export class Address implements IAddress {
   private _id: string | null;
+  private _customerId: string;
   private _street: string;
   private _street2: string | null;
   private _city: string;
@@ -39,6 +41,7 @@ export class Address {
     if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id;
+    this._customerId = props.customerId;
     this._street = props.street.trim();
     this._street2 = props.street2?.trim() || null;
     this._city = props.city.trim();
@@ -80,6 +83,10 @@ export class Address {
   // Getters
   get id(): string | null {
     return this._id;
+  }
+
+  get customerId(): string {
+    return this._customerId;
   }
 
   get street(): string {
@@ -162,6 +169,7 @@ export class Address {
   ): Result<void, DomainError> {
     const updateProps: AddressProps = {
       id: this._id,
+      customerId: this._customerId,
       street,
       street2: street2?.trim() || null,
       city,
@@ -197,6 +205,7 @@ export class Address {
   toPrimitives(): IAddress {
     return {
       id: this._id || '',
+      customerId: this._customerId,
       street: this._street,
       street2: this._street2,
       city: this._city,
@@ -216,6 +225,7 @@ export class Address {
   }
 
   static create(
+    customerId: string,
     street: string,
     city: string,
     state: string,
@@ -228,6 +238,7 @@ export class Address {
   ): Address {
     const address = new Address({
       id: null,
+      customerId,
       street,
       street2: street2 || null,
       city,

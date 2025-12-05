@@ -38,6 +38,7 @@ export class AddAddressUseCase extends UseCase<
 
       // Create new address - repository will generate ID during save
       const address = Address.create(
+        customerId,
         dto.street,
         dto.city,
         dto.state,

@@ -38,15 +38,14 @@ describe('CreateCustomerController', () => {
     it('should return success result with customer response', async () => {
       const dto = CustomerDtoTestFactory.createCreateCustomerDto();
       const customerData = CustomerTestFactory.createMockCustomer();
-      const customer = Customer.fromPrimitives(customerData as any);
 
-      useCase.execute.mockResolvedValue(Result.success(customer));
+      useCase.execute.mockResolvedValue(Result.success(customerData));
 
       const result = await controller.handle(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(customer.id);
-      expect(result.value.email).toBe(customer.email);
+      expect(result.value.id).toBe(customerData.id);
+      expect(result.value.email).toBe(customerData.email);
       expect(useCase.execute).toHaveBeenCalledWith(dto);
     });
 
