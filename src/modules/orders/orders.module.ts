@@ -25,8 +25,6 @@ import { ListOrdersUsecase } from './application/usecases/list-orders/list-order
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
 import { ShippingAddressEntity } from './infrastructure/orm/shipping-address.schema';
-import { PaymentInfoEntity } from './infrastructure/orm/payment-info.schema';
-import { CustomerInfoEntity } from './infrastructure/orm/customer-info.schema';
 import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
 import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
@@ -35,6 +33,7 @@ import { DeliverOrderController } from './presentation/controllers/deliver-order
 import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
 import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
 import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
@@ -42,10 +41,9 @@ import { ProcessOrderController } from './presentation/controllers/process-order
       OrderEntity,
       OrderItemEntity,
       ShippingAddressEntity,
-      PaymentInfoEntity,
-      CustomerInfoEntity,
     ]),
     RedisModule,
+    PaymentsModule,
   ],
 
   controllers: [OrdersController],
