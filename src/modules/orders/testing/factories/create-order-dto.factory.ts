@@ -1,17 +1,13 @@
 // src/modules/order/testing/factories/create-order-dto.factory.ts
 
-import { PaymentMethod } from '../../domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../payments/domain';
 import { CreateOrderDto } from '../../presentation/dto/create-order.dto';
 import { DeliverOrderDto } from '../../presentation/dto/deliver-order.dto';
 
 export class CreateOrderDtoTestFactory {
   static createMockDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {
     const baseDto: CreateOrderDto = {
-      customerInfo: {
-        email: 'jane.smith@example.com',
-        firstName: 'Jane',
-        lastName: 'Smith',
-      },
+      customerId: 'CUST0000001',
       items: [
         {
           productId: 'PR3',
@@ -27,9 +23,7 @@ export class CreateOrderDtoTestFactory {
         postalCode: '90001',
         country: 'US',
       },
-      paymentInfo: {
-        method: PaymentMethod.CASH_ON_DELIVERY,
-      },
+      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
     };
 
     return { ...baseDto, ...overrides };
@@ -39,9 +33,7 @@ export class CreateOrderDtoTestFactory {
     overrides?: Partial<CreateOrderDto>,
   ): CreateOrderDto {
     return this.createMockDto({
-      paymentInfo: {
-        method: PaymentMethod.CREDIT_CARD,
-      },
+      paymentMethod: PaymentMethodType.CREDIT_CARD,
       ...overrides,
     });
   }
@@ -50,9 +42,21 @@ export class CreateOrderDtoTestFactory {
     overrides?: Partial<CreateOrderDto>,
   ): CreateOrderDto {
     return this.createMockDto({
-      paymentInfo: {
-        method: PaymentMethod.CASH_ON_DELIVERY,
-      },
+      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+      ...overrides,
+    });
+  }
+
+  static createStripeDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {
+    return this.createMockDto({
+      paymentMethod: PaymentMethodType.STRIPE,
+      ...overrides,
+    });
+  }
+
+  static createPayPalDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {
+    return this.createMockDto({
+      paymentMethod: PaymentMethodType.PAYPAL,
       ...overrides,
     });
   }
@@ -74,11 +78,7 @@ export class CreateOrderDtoTestFactory {
 
   static createInvalidDto(): CreateOrderDto {
     return {
-      customerInfo: {
-        email: 'invalid-email',
-        firstName: '',
-        lastName: '',
-      },
+      customerId: '',
       items: [],
       shippingAddress: {
         firstName: '',
@@ -89,9 +89,7 @@ export class CreateOrderDtoTestFactory {
         postalCode: '',
         country: '',
       },
-      paymentInfo: {
-        method: 'INVALID_METHOD' as any,
-      },
+      paymentMethod: 'INVALID_METHOD' as any,
     };
   }
 
