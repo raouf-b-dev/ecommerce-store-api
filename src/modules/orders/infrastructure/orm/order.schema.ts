@@ -39,7 +39,7 @@ export class OrderEntity {
   @Column({ name: 'customer_id' })
   customerId: string;
 
-  @Column({ name: 'payment_id', nullable: true })
+  @Column({ name: 'payment_id', type: 'varchar', nullable: true })
   paymentId: string | null;
 
   @Column({
