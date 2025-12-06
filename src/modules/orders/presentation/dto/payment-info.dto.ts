@@ -1,22 +1,14 @@
 // src/modules/orders/presentation/dto/payment-info.dto.ts
-import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod } from '../../domain/value-objects/payment-method';
+import { IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { PaymentMethodType } from '../../../payments/domain';
 
-export class PaymentInfoDto {
+export class PaymentMethodDto {
   @ApiProperty({
-    example: PaymentMethod.CASH_ON_DELIVERY,
+    example: PaymentMethodType.CASH_ON_DELIVERY,
     description: 'Payment method',
-    enum: PaymentMethod,
+    enum: PaymentMethodType,
   })
-  @IsEnum(PaymentMethod)
-  method: PaymentMethod;
-
-  @ApiPropertyOptional({
-    example: 'Payment confirmed by driver',
-    description: 'Payment notes',
-  })
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsEnum(PaymentMethodType)
+  paymentMethod: PaymentMethodType;
 }

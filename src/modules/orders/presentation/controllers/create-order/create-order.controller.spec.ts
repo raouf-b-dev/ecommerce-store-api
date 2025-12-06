@@ -7,6 +7,7 @@ import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('CreateOrderController', () => {
   let controller: CreateOrderController;
@@ -100,7 +101,9 @@ describe('CreateOrderController', () => {
       const result = await controller.handle(createOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
     });
 
     it('should create order with credit card', async () => {
@@ -114,7 +117,7 @@ describe('CreateOrderController', () => {
       const result = await controller.handle(createOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('credit_card');
+      expect(result.value.paymentMethod).toBe(PaymentMethodType.CREDIT_CARD);
     });
 
     it('should create order with multiple items', async () => {

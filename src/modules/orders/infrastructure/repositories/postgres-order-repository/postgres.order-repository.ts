@@ -9,6 +9,7 @@ import { Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { ProductEntity } from '../../../../products/infrastructure/orm/product.schema';
+import { InventoryEntity } from '../../../../inventory/infrastructure/orm/inventory.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { AggregatedOrderInput } from '../../../domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
@@ -17,9 +18,7 @@ import { Order } from '../../../domain/entities/order';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.dto';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { CustomerInfoProps } from '../../../domain/value-objects/customer-info';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
-import { PaymentInfoProps } from '../../../domain/value-objects/payment-info';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -45,7 +44,8 @@ export class PostgresOrderRepository implements OrderRepository {
 
       const queryBuilder = this.ormRepo
         .createQueryBuilder('order')
-        .leftJoinAndSelect('order.items', 'items');
+        .leftJoinAndSelect('order.items', 'items')
+        .leftJoinAndSelect('order.shippingAddress', 'shippingAddress');
 
       if (customerId) {
         queryBuilder.andWhere('order.customerId = :customerId', { customerId });
@@ -104,6 +104,8 @@ export class PostgresOrderRepository implements OrderRepository {
             );
           }
         }
+
+        // Stock reservation within transaction for atomicity
         for (const productId of productIds) {
           const itemDto = createOrderDto.items.find(
             (it) => it.productId === productId,
@@ -112,21 +114,21 @@ export class PostgresOrderRepository implements OrderRepository {
 
           const updateResult = await manager
             .createQueryBuilder()
-            .update(ProductEntity)
-            .set({ stockQuantity: () => `stock_quantity - ${qty}` })
-            .where('id = :id AND stock_quantity >= :quantity', {
+            .update(InventoryEntity)
+            .set({ availableQuantity: () => `available_quantity - ${qty}` })
+            .where('product_id = :id AND available_quantity >= :quantity', {
               id: productId,
               quantity: qty,
             })
             .execute();
 
           if (updateResult.affected === 0) {
-            const exists = await manager.exists(ProductEntity, {
-              where: { id: productId },
+            const exists = await manager.exists(InventoryEntity, {
+              where: { productId },
             });
             if (!exists) {
               throw new RepositoryError(
-                `PRODUCT_NOT_FOUND: Product ${productId} not found`,
+                `INVENTORY_NOT_FOUND: Inventory for product ${productId} not found`,
               );
             } else {
               throw new RepositoryError(
@@ -151,35 +153,21 @@ export class PostgresOrderRepository implements OrderRepository {
         );
 
         const orderId = await this.idGeneratorService.generateOrderId();
-        const customerId = await this.idGeneratorService.generateCustomerId();
-        const paymentInfoId = await this.idGeneratorService.generatePaymentId();
         const shippingAddressId =
           await this.idGeneratorService.generateShippingAddressId();
 
-        const customerInfoProps: CustomerInfoProps = {
-          ...createOrderDto.customerInfo,
-          customerId,
-          phone: createOrderDto.customerInfo.phone || null,
-        };
         const shippingAddressProps: ShippingAddressProps = {
           ...createOrderDto.shippingAddress,
           id: shippingAddressId,
           phone: createOrderDto.shippingAddress.phone || null,
         };
-        const paymentInfoProps: Omit<PaymentInfoProps, 'status' | 'amount'> = {
-          ...createOrderDto.paymentInfo,
-          id: paymentInfoId,
-          notes: createOrderDto.paymentInfo.notes || null,
-          transactionId: null,
-          paidAt: null,
-        };
 
         const domainOrder = Order.create({
           id: orderId,
+          customerId: createOrderDto.customerId,
+          paymentMethod: createOrderDto.paymentMethod,
           items: domainOrderItems,
-          customerInfo: customerInfoProps,
           shippingAddress: shippingAddressProps,
-          paymentInfo: paymentInfoProps,
           customerNotes: createOrderDto.customerNotes || null,
         });
 
@@ -220,6 +208,29 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
+  async updatePaymentId(
+    orderId: string,
+    paymentId: string,
+  ): Promise<Result<void, RepositoryError>> {
+    try {
+      const updateResult = await this.ormRepo.update(orderId, {
+        paymentId,
+        updatedAt: new Date(),
+      });
+
+      if (updateResult.affected === 0) {
+        return ErrorFactory.RepositoryError('Order not found');
+      }
+
+      return Result.success<void>(undefined);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to update order payment ID',
+        error,
+      );
+    }
+  }
+
   async updateItemsInfo(
     id: string,
     updateOrderItemDto: CreateOrderItemDto[],
@@ -229,7 +240,7 @@ export class PostgresOrderRepository implements OrderRepository {
         async (manager) => {
           const existingOrderEntity = await manager.findOne(OrderEntity, {
             where: { id },
-            relations: ['items'],
+            relations: ['items', 'shippingAddress'],
           });
 
           if (!existingOrderEntity) {
@@ -284,6 +295,7 @@ export class PostgresOrderRepository implements OrderRepository {
             }
           }
 
+          // Stock adjustment within transaction
           for (const productId of allProductIds) {
             const oldQty = oldMap.get(productId) ?? 0;
             const newQty = newMap.get(productId) ?? 0;
@@ -292,21 +304,23 @@ export class PostgresOrderRepository implements OrderRepository {
             if (delta > 0) {
               const updateResult = await manager
                 .createQueryBuilder()
-                .update(ProductEntity)
-                .set({ stockQuantity: () => `stock_quantity - ${delta}` })
-                .where('id = :id AND stock_quantity >= :quantity', {
+                .update(InventoryEntity)
+                .set({
+                  availableQuantity: () => `available_quantity - ${delta}`,
+                })
+                .where('product_id = :id AND available_quantity >= :quantity', {
                   id: productId,
                   quantity: delta,
                 })
                 .execute();
 
               if (updateResult.affected === 0) {
-                const exists = await manager.exists(ProductEntity, {
-                  where: { id: productId },
+                const exists = await manager.exists(InventoryEntity, {
+                  where: { productId },
                 });
                 if (!exists) {
                   throw new RepositoryError(
-                    `PRODUCT_NOT_FOUND: Product ${productId} not found`,
+                    `INVENTORY_NOT_FOUND: Inventory for product ${productId} not found`,
                   );
                 }
                 throw new RepositoryError(
@@ -317,9 +331,11 @@ export class PostgresOrderRepository implements OrderRepository {
               const returnQty = -delta;
               await manager
                 .createQueryBuilder()
-                .update(ProductEntity)
-                .set({ stockQuantity: () => `stock_quantity + ${returnQty}` })
-                .where('id = :id', { id: productId })
+                .update(InventoryEntity)
+                .set({
+                  availableQuantity: () => `available_quantity + ${returnQty}`,
+                })
+                .where('product_id = :id', { id: productId })
                 .execute();
             }
           }
@@ -364,38 +380,11 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
-  // let updatedCustomerInfo: ICustomerInfo =
-  //   existingPrimitives.customerInfo;
-  // let updatedPaymentInfo = existingPrimitives.paymentInfo;
-  // let updatedShippingAddress = existingPrimitives.shippingAddress;
-
-  // if (updateOrderDto.customerInfo) {
-  //   updatedCustomerInfo = {
-  //     customerId: existingPrimitives.customerInfo.customerId,
-  //     ...updateOrderDto.customerInfo,
-  //   };
-  // }
-
-  // if (updateOrderDto.paymentInfo) {
-  //   updatedPaymentInfo = {
-  //     ...existingPrimitives.paymentInfo,
-  //     method: updateOrderDto.paymentInfo.method,
-  //     notes: updateOrderDto.paymentInfo.notes,
-  //   };
-  // }
-
-  // if (updateOrderDto.shippingAddress) {
-  //   updatedShippingAddress = {
-  //     id: existingPrimitives.shippingAddress.id,
-  //     ...updateOrderDto.shippingAddress,
-  //   };
-  // }
-
   async findById(id: string): Promise<Result<Order, RepositoryError>> {
     try {
       const orderEntity = await this.ormRepo.findOne({
         where: { id },
-        relations: ['items'],
+        relations: ['items', 'shippingAddress'],
       });
       if (!orderEntity) {
         return ErrorFactory.RepositoryError('Order not found');
@@ -426,14 +415,15 @@ export class PostgresOrderRepository implements OrderRepository {
   ): Promise<Result<void, RepositoryError>> {
     try {
       await this.dataSource.transaction(async (manager) => {
+        // Release stock back to inventory
         for (const item of orderPrimitives.toPrimitives().items) {
           await manager
             .createQueryBuilder()
-            .update(ProductEntity)
+            .update(InventoryEntity)
             .set({
-              stockQuantity: () => `stock_quantity + ${item.quantity}`,
+              availableQuantity: () => `available_quantity + ${item.quantity}`,
             })
-            .where('id = :id', { id: item.productId })
+            .where('product_id = :id', { id: item.productId })
             .execute();
         }
 

@@ -8,6 +8,7 @@ import {
 import { OrderStatus } from '../value-objects/order-status';
 import { DomainError } from '../../../../core/errors/domain.error';
 import { CreateOrderDtoTestFactory } from '../../testing/factories/create-order-dto.factory';
+import { PaymentMethodType } from '../../../payments/domain';
 
 describe('OrderFactory', () => {
   let factory: OrderFactory;
@@ -66,9 +67,9 @@ describe('OrderFactory', () => {
       const aggregated = factory.createFromDto(dto);
 
       expect(aggregated.items).toHaveLength(1);
-      expect(aggregated.customerInfo).toEqual(dto.customerInfo);
+      expect(aggregated.customerId).toEqual(dto.customerId);
       expect(aggregated.shippingAddress).toEqual(dto.shippingAddress);
-      expect(aggregated.paymentInfo).toEqual(dto.paymentInfo);
+      expect(aggregated.paymentMethod).toEqual(dto.paymentMethod);
     });
 
     it('preserves customer notes when provided', () => {
@@ -87,8 +88,10 @@ describe('OrderFactory', () => {
       const ccAggregated = factory.createFromDto(creditCardDto);
       const codAggregated = factory.createFromDto(codDto);
 
-      expect(ccAggregated.paymentInfo.method).toBe('credit_card');
-      expect(codAggregated.paymentInfo.method).toBe('cash_on_delivery');
+      expect(ccAggregated.paymentMethod).toBe(PaymentMethodType.CREDIT_CARD);
+      expect(codAggregated.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
     });
   });
 
@@ -197,19 +200,12 @@ describe('OrderFactory', () => {
       expect(p1.quantity).toBe(1500);
     });
 
-    it('preserves all customer info fields', () => {
+    it('preserves customerId field', () => {
       const dto = CreateOrderDtoTestFactory.createMockDto();
-      dto.customerInfo = {
-        email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-      };
 
       const aggregated = factory.createFromDto(dto);
 
-      expect(aggregated.customerInfo.email).toBe('test@example.com');
-      expect(aggregated.customerInfo.firstName).toBe('Test');
-      expect(aggregated.customerInfo.lastName).toBe('User');
+      expect(aggregated.customerId).toBe(dto.customerId);
     });
   });
 });

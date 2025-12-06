@@ -8,6 +8,7 @@ import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('ShipOrderController', () => {
   let controller: ShipOrderController;
@@ -118,19 +119,16 @@ describe('ShipOrderController', () => {
       const result = await controller.handle(codOrder.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
     it('should ship order with completed online payment', async () => {
       const onlineOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PROCESSING,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'stripe' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_STRIPE_001',
       });
       const shippedOnline = {
         ...onlineOrder,
@@ -144,7 +142,7 @@ describe('ShipOrderController', () => {
       const result = await controller.handle(onlineOrder.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.status).toBe('completed');
+      expect(result.value.paymentId).toBeDefined();
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
     });
 
@@ -187,11 +185,7 @@ describe('ShipOrderController', () => {
       const processingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PROCESSING,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY001',
       };
       const shippedMultiItem = {
         ...processingMultiItem,

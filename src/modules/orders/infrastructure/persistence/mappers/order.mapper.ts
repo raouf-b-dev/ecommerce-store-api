@@ -1,16 +1,11 @@
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
 import { CreateFromEntity } from '../../../../../shared/infrastructure/mappers/utils/create-from-entity.type';
 import { Order, OrderProps } from '../../../domain/entities/order';
-import {
-  OrderItem,
-  OrderItemProps,
-} from '../../../domain/entities/order-items';
+import { OrderItemProps } from '../../../domain/entities/order-items';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
-import { CustomerInfoMapper } from './customer-info.mapper';
-import { OrderItemCreate, OrderItemMapper } from './order-item.mapper';
-import { PaymentInfoMapper } from './payment-info.mapper';
+import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
 
 type OrderCreate = CreateFromEntity<OrderEntity, 'items'>;
@@ -19,19 +14,15 @@ export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
   createdAt: number;
   updatedAt: number;
 };
+
 export class OrderMapper {
   static toDomain(entity: OrderEntity): Order {
     const props: OrderProps = {
       id: entity.id,
       customerId: entity.customerId,
-      paymentInfoId: entity.paymentInfoId,
+      paymentId: entity.paymentId,
+      paymentMethod: entity.paymentMethod,
       shippingAddressId: entity.shippingAddressId,
-      customerInfo: CustomerInfoMapper.toDomain(
-        entity.customerInfo,
-      ).toPrimitives(),
-      paymentInfo: PaymentInfoMapper.toDomain(
-        entity.paymentInfo,
-      ).toPrimitives(),
       shippingAddress: ShippingAddressMapper.toDomain(
         entity.shippingAddress,
       ).toPrimitives(),
@@ -54,10 +45,9 @@ export class OrderMapper {
     const orderPayload: OrderCreate = {
       id: primitives.id,
       customerId: primitives.customerId,
-      paymentInfoId: primitives.paymentInfoId,
+      paymentId: primitives.paymentId,
+      paymentMethod: primitives.paymentMethod,
       shippingAddressId: primitives.shippingAddressId,
-      customerInfo: CustomerInfoMapper.toEntity(primitives.customerInfo),
-      paymentInfo: PaymentInfoMapper.toEntity(primitives.paymentInfo),
       shippingAddress: ShippingAddressMapper.toEntity(
         primitives.shippingAddress,
       ),

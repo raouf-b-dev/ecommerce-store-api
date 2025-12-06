@@ -1,45 +1,27 @@
-// src/modules/orders/domain/entities/order.entity.ts
+// src/modules/orders/domain/entities/order.ts
 import { IOrder } from '../interfaces/order.interface';
 import { IOrderItem } from '../interfaces/order-item.interface';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { OrderItem, OrderItemProps } from './order-items';
 import {
-  CustomerInfo,
-  CustomerInfoProps,
-} from '../value-objects/customer-info';
-import {
   ShippingAddress,
   ShippingAddressProps,
 } from '../value-objects/shipping-address';
-import { PaymentInfo, PaymentInfoProps } from '../value-objects/payment-info';
-import {
-  ICustomerInfo,
-  ICustomerInfoEditable,
-} from '../interfaces/customer-info.interface';
-import {
-  IPaymentInfo,
-  IPaymentInfoEditable,
-} from '../interfaces/payment-info.interface';
-import {
-  PaymentStatus,
-  PaymentStatusVO,
-} from '../value-objects/payment-status';
-import { PaymentMethodVO } from '../value-objects/payment-method';
-import { OrderPricing } from '../value-objects/order-pricing';
 import { IShippingAddress } from '../interfaces/shipping-address.interface';
+import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { DomainError } from '../../../../core/errors/domain.error';
 import { Result } from '../../../../core/domain/result';
+import { PaymentMethodType } from '../../../payments/domain';
 
 export interface OrderProps {
   id: string;
   customerId: string;
-  paymentInfoId: string;
+  paymentId: string | null;
+  paymentMethod: PaymentMethodType;
   shippingAddressId: string;
-  customerInfo: CustomerInfoProps;
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
-  paymentInfo: PaymentInfoProps;
   customerNotes: string | null;
   status: string | OrderStatus;
   createdAt: Date | null;
@@ -49,12 +31,11 @@ export interface OrderProps {
 export class Order implements IOrder {
   private readonly _id: string;
   private readonly _customerId: string;
-  private readonly _paymentInfoId: string;
+  private _paymentId: string | null;
+  private readonly _paymentMethod: PaymentMethodType;
   private readonly _shippingAddressId: string;
-  private _customerInfo: CustomerInfo;
   private _items: OrderItem[];
   private _shippingAddress: ShippingAddress;
-  private _paymentInfo: PaymentInfo;
   private _customerNotes: string | null;
   private _status: OrderStatusVO;
   private readonly _createdAt: Date;
@@ -66,14 +47,13 @@ export class Order implements IOrder {
 
     this._id = props.id.trim();
     this._customerId = props.customerId.trim();
-    this._paymentInfoId = props.paymentInfoId.trim();
+    this._paymentId = props.paymentId?.trim() || null;
+    this._paymentMethod = props.paymentMethod;
     this._shippingAddressId = props.shippingAddressId.trim();
-    this._customerInfo = CustomerInfo.fromPrimitives(props.customerInfo);
     this._items = props.items.map((item) => new OrderItem(item));
     this._shippingAddress = ShippingAddress.fromPrimitives(
       props.shippingAddress,
     );
-    this._paymentInfo = PaymentInfo.fromPrimitives(props.paymentInfo);
     this._customerNotes = props.customerNotes
       ? props.customerNotes.trim()
       : null;
@@ -87,8 +67,8 @@ export class Order implements IOrder {
     if (!props.id?.trim()) {
       return ErrorFactory.DomainError('Order ID is required');
     }
-    if (!props.customerInfo) {
-      return ErrorFactory.DomainError('Customer information is required');
+    if (!props.customerId?.trim()) {
+      return ErrorFactory.DomainError('Customer ID is required');
     }
     if (!props.items || props.items.length === 0) {
       return ErrorFactory.DomainError('Order must have at least one item');
@@ -96,8 +76,8 @@ export class Order implements IOrder {
     if (!props.shippingAddress) {
       return ErrorFactory.DomainError('Shipping address is required');
     }
-    if (!props.paymentInfo) {
-      return ErrorFactory.DomainError('Payment information is required');
+    if (!props.paymentMethod) {
+      return ErrorFactory.DomainError('Payment method is required');
     }
 
     return Result.success(undefined);
@@ -107,53 +87,55 @@ export class Order implements IOrder {
   get id(): string {
     return this._id;
   }
+
   get customerId(): string {
     return this._customerId;
   }
-  get paymentInfoId(): string {
-    return this._paymentInfoId;
+
+  get paymentId(): string | null {
+    return this._paymentId;
   }
+
+  get paymentMethod(): PaymentMethodType {
+    return this._paymentMethod;
+  }
+
   get shippingAddressId(): string {
     return this._shippingAddressId;
   }
-  get customerInfo(): ICustomerInfo {
-    return this._customerInfo.toPrimitives();
-  }
+
   get items(): IOrderItem[] {
     return this._items.map((item) => item.toPrimitives());
   }
+
   get shippingAddress(): IShippingAddress {
     return this._shippingAddress.toPrimitives();
   }
-  get paymentInfo(): IPaymentInfo {
-    return {
-      id: this._paymentInfo.id,
-      method: this._paymentInfo.method,
-      status: this._paymentInfo.status,
-      amount: this._paymentInfo.amount,
-      transactionId: this._paymentInfo.transactionId,
-      paidAt: this._paymentInfo.paidAt,
-      notes: this._paymentInfo.notes,
-    };
-  }
+
   get customerNotes(): string | null {
     return this._customerNotes;
   }
+
   get status(): OrderStatus {
     return this._status.value;
   }
+
   get subtotal(): number {
     return this._pricing.subtotal;
   }
+
   get shippingCost(): number {
     return this._pricing.shippingCost;
   }
+
   get totalPrice(): number {
     return this._pricing.totalPrice;
   }
+
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
+
   get updatedAt(): Date {
     return new Date(this._updatedAt);
   }
@@ -162,47 +144,89 @@ export class Order implements IOrder {
     return this._pricing;
   }
 
-  private getPaymentMethod(): PaymentMethodVO {
-    return new PaymentMethodVO(this._paymentInfo.method);
+  // ==================== PAYMENT METHOD HELPERS ====================
+
+  /**
+   * Check if this order requires payment before confirmation (online payments)
+   */
+  requiresPaymentBeforeConfirmation(): boolean {
+    return [
+      PaymentMethodType.STRIPE,
+      PaymentMethodType.PAYPAL,
+      PaymentMethodType.CREDIT_CARD,
+      PaymentMethodType.DEBIT_CARD,
+      PaymentMethodType.BANK_TRANSFER,
+    ].includes(this._paymentMethod);
+  }
+
+  /**
+   * Check if this is a Cash on Delivery order
+   */
+  isCOD(): boolean {
+    return this._paymentMethod === PaymentMethodType.CASH_ON_DELIVERY;
+  }
+
+  /**
+   * Check if payment method requires a payment gateway
+   */
+  requiresPaymentGateway(): boolean {
+    return [
+      PaymentMethodType.STRIPE,
+      PaymentMethodType.PAYPAL,
+      PaymentMethodType.CREDIT_CARD,
+      PaymentMethodType.DEBIT_CARD,
+      PaymentMethodType.BANK_TRANSFER,
+    ].includes(this._paymentMethod);
+  }
+
+  // ==================== PAYMENT ASSOCIATION ====================
+
+  /**
+   * Associate a payment with this order
+   */
+  associatePayment(paymentId: string): Result<void, DomainError> {
+    if (!paymentId?.trim()) {
+      return ErrorFactory.DomainError('Payment ID is required');
+    }
+    this._paymentId = paymentId.trim();
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
+  hasPayment(): boolean {
+    return this._paymentId !== null;
   }
 
   // ==================== BUSINESS RULES ====================
+
   private assertCanBeUpdated(): Result<void, DomainError> {
     if (!this._status.isPending()) {
       return ErrorFactory.DomainError(
         'Order can only be updated when status is PENDING',
       );
     }
-
     return Result.success(undefined);
   }
 
+  /**
+   * Check if order can be confirmed.
+   * Note: For orders requiring payment before confirmation,
+   * the use case must verify payment status via PaymentsModule.
+   */
   canBeConfirmed(): boolean {
-    if (!this._status.isPending()) {
-      return false;
-    }
-
-    const paymentMethod = this.getPaymentMethod();
-
-    if (paymentMethod.requiresPaymentBeforeConfirmation()) {
-      return this._paymentInfo.isCompleted();
-    }
-
-    return true;
+    return this._status.isPending();
   }
 
   confirm(): Result<void, DomainError> {
     if (!this.canBeConfirmed()) {
-      const paymentMethod = this.getPaymentMethod();
-
-      if (paymentMethod.requiresPaymentBeforeConfirmation()) {
-        return ErrorFactory.DomainError(
-          'Cannot confirm order - payment must be completed first',
-        );
-      }
-
       return ErrorFactory.DomainError(
         'Order cannot be confirmed in current state',
+      );
+    }
+
+    if (this.requiresPaymentBeforeConfirmation() && !this.hasPayment()) {
+      return ErrorFactory.DomainError(
+        'Cannot confirm order - payment must be completed first',
       );
     }
 
@@ -236,42 +260,19 @@ export class Order implements IOrder {
   }
 
   canBeDelivered(): boolean {
-    if (!this._status.isShipped()) {
-      return false;
-    }
-
-    const paymentMethod = this.getPaymentMethod();
-
-    if (paymentMethod.requiresPaymentOnDelivery()) {
-      return (
-        this._paymentInfo.isPending() || this._paymentInfo.isNotRequiredYet()
-      );
-    }
-
-    return this._paymentInfo.isCompleted();
+    return this._status.isShipped();
   }
 
-  deliver(codPaymentDetails?: {
-    transactionId?: string;
-    notes?: string;
-  }): Result<void, DomainError> {
+  /**
+   * Mark order as delivered.
+   * Note: For COD orders, the use case must record payment via PaymentsModule.
+   */
+  deliver(): Result<void, DomainError> {
     if (!this.canBeDelivered()) {
       return ErrorFactory.DomainError(
         'Order cannot be delivered in current state',
       );
     }
-
-    const paymentMethod = this.getPaymentMethod();
-
-    if (paymentMethod.requiresPaymentOnDelivery()) {
-      if (!this._paymentInfo.isCompleted()) {
-        this._paymentInfo.markAsCompleted(
-          codPaymentDetails?.transactionId || `COD-${this._id}`,
-          codPaymentDetails?.notes || 'Payment collected on delivery',
-        );
-      }
-    }
-
     return this.changeStatus(OrderStatus.DELIVERED);
   }
 
@@ -297,42 +298,12 @@ export class Order implements IOrder {
         : `Cancellation reason: ${reason}`;
     }
 
-    const changeStatusResult = this.changeStatus(OrderStatus.CANCELLED);
-    if (changeStatusResult.isFailure) return changeStatusResult;
-
-    const paymentMethod = this.getPaymentMethod();
-    if (paymentMethod.supportsRefunds() && this._paymentInfo.isCompleted()) {
-      this._paymentInfo.updateTransactionInfo(
-        this._paymentInfo.transactionId || '',
-        'Refund initiated due to cancellation',
-      );
-    }
-
-    return Result.success(undefined);
-  }
-
-  requiresPayment(): boolean {
-    const paymentMethod = this.getPaymentMethod();
-
-    // Online payments require immediate payment
-    if (paymentMethod.requiresPaymentBeforeConfirmation()) {
-      return this._paymentInfo.isPending();
-    }
-
-    if (paymentMethod.requiresPaymentOnDelivery()) {
-      return this._status.isShipped() && !this._paymentInfo.isCompleted();
-    }
-
-    return false;
+    return this.changeStatus(OrderStatus.CANCELLED);
   }
 
   getNextExpectedAction(): string {
     if (this._status.isPending()) {
-      const paymentMethod = this.getPaymentMethod();
-      if (
-        paymentMethod.requiresPaymentBeforeConfirmation() &&
-        !this._paymentInfo.isCompleted()
-      ) {
+      if (this.requiresPaymentBeforeConfirmation() && !this._paymentId) {
         return 'Awaiting payment';
       }
       return 'Awaiting confirmation';
@@ -347,8 +318,7 @@ export class Order implements IOrder {
     }
 
     if (this._status.isShipped()) {
-      const paymentMethod = this.getPaymentMethod();
-      if (paymentMethod.requiresPaymentOnDelivery()) {
+      if (this.isCOD()) {
         return 'Awaiting delivery and payment collection';
       }
       return 'In transit';
@@ -367,14 +337,10 @@ export class Order implements IOrder {
     this._pricing = OrderPricing.recalculate(this._items);
   }
 
-  updateCustomerInfo(updates: ICustomerInfoEditable): void {
-    this.assertCanBeUpdated();
-    this._customerInfo.updateContactInfo(updates);
-    this._updatedAt = new Date();
-  }
-
   updateItems(items: OrderItemProps[]): Result<void, DomainError> {
-    this.assertCanBeUpdated();
+    const canUpdate = this.assertCanBeUpdated();
+    if (canUpdate.isFailure) return canUpdate;
+
     if (!items || items.length === 0) {
       return ErrorFactory.DomainError('Order must have at least one item');
     }
@@ -385,69 +351,22 @@ export class Order implements IOrder {
     return Result.success(undefined);
   }
 
-  updateShippingAddress(address: IShippingAddress): void {
-    this.assertCanBeUpdated();
+  updateShippingAddress(address: IShippingAddress): Result<void, DomainError> {
+    const canUpdate = this.assertCanBeUpdated();
+    if (canUpdate.isFailure) return canUpdate;
+
     this._shippingAddress = ShippingAddress.fromPrimitives(address);
     this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
-  updatePaymentInfo(paymentInfoUpdates: IPaymentInfoEditable): void {
-    this.assertCanBeUpdated();
+  updateCustomerNotes(notes?: string): Result<void, DomainError> {
+    const canUpdate = this.assertCanBeUpdated();
+    if (canUpdate.isFailure) return canUpdate;
 
-    if (paymentInfoUpdates.status) {
-      const status = new PaymentStatusVO(paymentInfoUpdates.status);
-      if (status.isCompleted()) {
-        this._paymentInfo.markAsCompleted(
-          paymentInfoUpdates.transactionId,
-          paymentInfoUpdates.notes,
-        );
-      } else if (status.isFailed()) {
-        this._paymentInfo.markAsFailed(paymentInfoUpdates.notes);
-      }
-    }
-
-    if (paymentInfoUpdates.transactionId || paymentInfoUpdates.notes) {
-      this._paymentInfo.updateTransactionInfo(
-        paymentInfoUpdates.transactionId ||
-          this._paymentInfo.transactionId ||
-          '',
-        paymentInfoUpdates.notes,
-      );
-    }
-
-    this._updatedAt = new Date();
-  }
-
-  updateCustomerNotes(notes?: string): void {
-    this.assertCanBeUpdated();
     this._customerNotes = notes ? notes.trim() : null;
     this._updatedAt = new Date();
-  }
-
-  updatePendingOrder(updates: {
-    customerInfo?: ICustomerInfoEditable;
-    items?: OrderItemProps[];
-    shippingAddress?: IShippingAddress;
-    paymentInfo?: IPaymentInfoEditable;
-    customerNotes?: string;
-  }): void {
-    this.assertCanBeUpdated();
-
-    if (updates.customerInfo) {
-      this.updateCustomerInfo(updates.customerInfo);
-    }
-    if (updates.items) {
-      this.updateItems(updates.items);
-    }
-    if (updates.shippingAddress) {
-      this.updateShippingAddress(updates.shippingAddress);
-    }
-    if (updates.paymentInfo) {
-      this.updatePaymentInfo(updates.paymentInfo);
-    }
-    if (updates.customerNotes !== undefined) {
-      this.updateCustomerNotes(updates.customerNotes);
-    }
+    return Result.success(undefined);
   }
 
   private changeStatus(
@@ -486,10 +405,11 @@ export class Order implements IOrder {
   }
 
   isCancelled(): boolean {
-    return this._status.isCancellable();
+    return this._status.isCancelled();
   }
 
   // ==================== SERIALIZATION ====================
+
   getItems(): OrderItem[] {
     return this._items;
   }
@@ -498,12 +418,11 @@ export class Order implements IOrder {
     return {
       id: this._id,
       customerId: this._customerId,
-      paymentInfoId: this._paymentInfoId,
+      paymentId: this._paymentId,
+      paymentMethod: this._paymentMethod,
       shippingAddressId: this._shippingAddressId,
-      customerInfo: this.customerInfo,
       items: this.items,
       shippingAddress: this.shippingAddress,
-      paymentInfo: this.paymentInfo,
       customerNotes: this._customerNotes,
       subtotal: this.subtotal,
       shippingCost: this.shippingCost,
@@ -520,44 +439,24 @@ export class Order implements IOrder {
 
   static create(props: {
     id: string;
+    customerId: string;
+    paymentMethod: PaymentMethodType;
     items: OrderItemProps[];
-    customerInfo: CustomerInfoProps;
     shippingAddress: ShippingAddressProps;
-    paymentInfo: Omit<PaymentInfoProps, 'status' | 'amount'>;
     customerNotes: string | null;
   }): Order {
-    const orderItems = props.items.map((item) => new OrderItem(item));
-    const pricing = OrderPricing.calculate(orderItems);
-    const paymentMethod = new PaymentMethodVO(props.paymentInfo.method);
-
-    const initialPaymentStatus = paymentMethod.requiresPaymentOnDelivery()
-      ? PaymentStatus.NOT_REQUIRED_YET
-      : PaymentStatus.PENDING;
-
-    const paymentInfo: PaymentInfoProps = {
-      id: props.paymentInfo.id,
-      method: props.paymentInfo.method,
-      status: initialPaymentStatus,
-      amount: pricing.totalPrice,
-      notes: props.paymentInfo.notes,
-      transactionId: props.paymentInfo.transactionId,
-      paidAt: props.paymentInfo.paidAt,
-    };
-
-    const payload: OrderProps = {
+    return new Order({
       id: props.id,
-      customerId: props.customerInfo.customerId,
-      paymentInfoId: props.paymentInfo.id,
+      customerId: props.customerId,
+      paymentId: null, // Payment created separately
+      paymentMethod: props.paymentMethod,
       shippingAddressId: props.shippingAddress.id,
-      customerInfo: props.customerInfo,
       items: props.items,
       shippingAddress: props.shippingAddress,
-      paymentInfo: paymentInfo,
       customerNotes: props.customerNotes,
       status: OrderStatus.PENDING,
       createdAt: null,
       updatedAt: null,
-    };
-    return new Order(payload);
+    });
   }
 }

@@ -7,6 +7,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { DomainError } from '../../../../../core/errors/domain.error';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('ShipOrderUseCase', () => {
   let useCase: ShipOrderUseCase;
@@ -203,18 +204,15 @@ describe('ShipOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
     });
 
     it('should ship order with online payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PROCESSING,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'stripe' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_STRIPE_001', // Payment already completed
       });
 
       mockOrderRepository.mockSuccessfulFind(stripeOrder);
@@ -231,11 +229,7 @@ describe('ShipOrderUseCase', () => {
       const processingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PROCESSING,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY001',
       };
 
       mockOrderRepository.mockSuccessfulFind(processingMultiItem);

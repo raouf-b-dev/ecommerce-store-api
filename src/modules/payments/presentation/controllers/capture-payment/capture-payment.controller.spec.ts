@@ -6,6 +6,7 @@ import { Payment } from '../../../domain/entities/payment';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
+import { PaymentMethodType } from '../../../domain';
 
 describe('CapturePaymentController', () => {
   let controller: CapturePaymentController;
@@ -36,7 +37,7 @@ describe('CapturePaymentController', () => {
       'order-1',
       100,
       'USD',
-      'CREDIT_CARD' as any,
+      PaymentMethodType.CREDIT_CARD,
       'cust-1',
     );
 

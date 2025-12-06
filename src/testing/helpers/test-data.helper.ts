@@ -12,7 +12,7 @@ export class TestDataHelper {
     const orderId = options?.orderId || 'OR0000001';
     const productId = options?.productId || 'PR3';
     const customerId = 'CUST0000001';
-    const paymentInfoId = 'PAY0000001';
+    const paymentId = 'PAY0000001';
     const shippingAddressId = 'ADDR0000001';
 
     const createOrderDto = options?.useCOD
@@ -27,7 +27,7 @@ export class TestDataHelper {
       ? OrderEntityTestFactory.createCODOrderEntity({
           id: orderId,
           customerId,
-          paymentInfoId,
+          paymentId: null,
           shippingAddressId,
           items: [
             OrderEntityTestFactory.createOrderItemEntity({
@@ -39,7 +39,7 @@ export class TestDataHelper {
       : OrderEntityTestFactory.createOrderEntity({
           id: orderId,
           customerId,
-          paymentInfoId,
+          paymentId,
           shippingAddressId,
           items: [
             OrderEntityTestFactory.createOrderItemEntity({
@@ -53,7 +53,7 @@ export class TestDataHelper {
       // IDs
       orderId,
       customerId,
-      paymentInfoId,
+      paymentId,
       shippingAddressId,
       productId,
 
@@ -65,8 +65,6 @@ export class TestDataHelper {
       productEntity,
 
       // Individual entities
-      customerInfoEntity: orderEntity.customerInfo,
-      paymentInfoEntity: orderEntity.paymentInfo,
       shippingAddressEntity: orderEntity.shippingAddress,
       orderItemEntity: orderEntity.items[0],
     };

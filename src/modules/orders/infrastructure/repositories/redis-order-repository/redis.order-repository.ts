@@ -154,6 +154,44 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
+  async updatePaymentId(
+    orderId: string,
+    paymentId: string,
+  ): Promise<Result<void, RepositoryError>> {
+    try {
+      const updateResult = await this.postgresRepo.updatePaymentId(
+        orderId,
+        paymentId,
+      );
+      if (updateResult.isFailure) return updateResult;
+
+      const cached = await this.cacheService.get<OrderForCache>(
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
+      );
+
+      if (cached) {
+        cached.paymentId = paymentId;
+        cached.updatedAt = Date.now();
+        await this.cacheService.set(
+          `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
+          cached,
+          {
+            ttl: ORDER_REDIS.EXPIRATION,
+          },
+        );
+      }
+
+      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
+
+      return Result.success<void>(undefined);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        `Failed to update order payment ID`,
+        error,
+      );
+    }
+  }
+
   async updateItemsInfo(
     id: string,
     updateOrderItemDto: CreateOrderItemDto[],

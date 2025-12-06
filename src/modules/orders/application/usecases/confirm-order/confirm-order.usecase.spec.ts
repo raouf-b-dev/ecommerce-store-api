@@ -7,6 +7,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { DomainError } from '../../../../../core/errors/domain.error';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
@@ -84,7 +85,7 @@ describe('ConfirmOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cannot confirm order - payment must be completed first',
+        'Order cannot be confirmed in current state',
         DomainError,
       );
 
@@ -120,7 +121,7 @@ describe('ConfirmOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cannot confirm order - payment must be completed first',
+        'Order cannot be confirmed in current state',
         DomainError,
       );
 
@@ -136,7 +137,7 @@ describe('ConfirmOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cannot confirm order - payment must be completed first',
+        'Order cannot be confirmed in current state',
         DomainError,
       );
 
@@ -183,12 +184,7 @@ describe('ConfirmOrderUseCase', () => {
     it('should confirm order with Stripe payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PENDING,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'stripe' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_STRIPE_001', // Payment already completed
       });
 
       mockOrderRepository.mockSuccessfulFind(stripeOrder);
@@ -203,12 +199,7 @@ describe('ConfirmOrderUseCase', () => {
     it('should confirm order with PayPal payment method', async () => {
       const paypalOrder = OrderTestFactory.createPayPalOrder({
         status: OrderStatus.PENDING,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'paypal' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_PAYPAL_001', // Payment already completed
       });
 
       mockOrderRepository.mockSuccessfulFind(paypalOrder);
@@ -224,11 +215,8 @@ describe('ConfirmOrderUseCase', () => {
       const pendingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PENDING,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          method: 'cash_on_delivery' as any,
-          status: 'not_required_yet' as any,
-        },
+        paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+        paymentId: null,
       };
 
       mockOrderRepository.mockSuccessfulFind(pendingMultiItem);

@@ -7,7 +7,7 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { DeliverOrderDto } from '../../dto/deliver-order.dto';
-import { PaymentMethod } from '../../../domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../payments/domain';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 
@@ -30,12 +30,8 @@ describe('DeliverOrderController', () => {
   describe('handle', () => {
     it('should return success if COD order is delivered', async () => {
       const deliveredOrder = OrderTestFactory.createDeliveredOrder({
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: PaymentMethod.CASH_ON_DELIVERY,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+        paymentId: 'PAY_COD_001',
       });
 
       const deliverOrderDto: DeliverOrderDto = {
@@ -158,11 +154,7 @@ describe('DeliverOrderController', () => {
       const deliveredCOD = {
         ...codOrder,
         status: OrderStatus.DELIVERED,
-        paymentInfo: {
-          ...codOrder.paymentInfo,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_COD_001',
       };
 
       const deliverOrderDto: DeliverOrderDto = {
@@ -179,7 +171,9 @@ describe('DeliverOrderController', () => {
       const result = await controller.handle(codOrder.id, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
     });
 
@@ -207,12 +201,7 @@ describe('DeliverOrderController', () => {
     it('should deliver order with completed online payment', async () => {
       const onlineOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'stripe' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY_STRIPE_001',
       });
       const deliveredOnline = {
         ...onlineOrder,
@@ -228,7 +217,7 @@ describe('DeliverOrderController', () => {
       const result = await controller.handle(onlineOrder.id, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.status).toBe('completed');
+      expect(result.value.paymentId).toBeDefined();
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
     });
 
@@ -303,11 +292,7 @@ describe('DeliverOrderController', () => {
       const shippedMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentId: 'PAY001',
       };
       const deliveredMultiItem = {
         ...shippedMultiItem,

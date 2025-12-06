@@ -1,12 +1,9 @@
 // src/modules/orders/testing/factories/order-entity.test.factory.ts
 import { OrderEntity } from '../../infrastructure/orm/order.schema';
 import { OrderStatus } from '../../domain/value-objects/order-status';
-import { PaymentMethod } from '../../domain/value-objects/payment-method';
-import { PaymentStatus } from '../../domain/value-objects/payment-status';
-import { CustomerInfoEntity } from '../../infrastructure/orm/customer-info.schema';
 import { OrderItemEntity } from '../../infrastructure/orm/order-item.schema';
-import { PaymentInfoEntity } from '../../infrastructure/orm/payment-info.schema';
 import { ShippingAddressEntity } from '../../infrastructure/orm/shipping-address.schema';
+import { PaymentMethodType } from '../../../payments/domain';
 
 /**
  * Factory for creating ORM entity mocks for testing
@@ -20,11 +17,10 @@ export class OrderEntityTestFactory {
     const defaultEntity: OrderEntity = {
       id: 'OR0000001',
       customerId: 'CUST0000001',
-      paymentInfoId: 'PAY0000001',
+      paymentId: null,
+      paymentMethod: PaymentMethodType.CREDIT_CARD,
       shippingAddressId: 'ADDR0000001',
 
-      customerInfo: this.createCustomerInfoEntity(),
-      paymentInfo: this.createPaymentInfoEntity(),
       shippingAddress: this.createShippingAddressEntity(),
       items: [this.createOrderItemEntity()],
 
@@ -39,58 +35,6 @@ export class OrderEntityTestFactory {
     };
 
     return { ...defaultEntity, ...overrides };
-  }
-
-  /**
-   * Creates CustomerInfoEntity
-   */
-  static createCustomerInfoEntity(
-    overrides?: Partial<CustomerInfoEntity>,
-  ): CustomerInfoEntity {
-    const defaultEntity: CustomerInfoEntity = {
-      customerId: 'CUST0000001',
-      email: 'customer@example.com',
-      phone: '+1234567890',
-      firstName: 'John',
-      lastName: 'Doe',
-    };
-
-    return { ...defaultEntity, ...overrides };
-  }
-
-  /**
-   * Creates PaymentInfoEntity
-   */
-  static createPaymentInfoEntity(
-    overrides?: Partial<PaymentInfoEntity>,
-  ): PaymentInfoEntity {
-    const defaultEntity: PaymentInfoEntity = {
-      id: 'PAY0000001',
-      method: PaymentMethod.CREDIT_CARD,
-      status: PaymentStatus.PENDING,
-      amount: 100,
-      transactionId: 'TXN123456',
-      paidAt: null,
-      notes: 'Payment pending',
-    };
-
-    return { ...defaultEntity, ...overrides };
-  }
-
-  /**
-   * Creates PaymentInfoEntity for COD orders
-   */
-  static createCODPaymentInfoEntity(
-    overrides?: Partial<PaymentInfoEntity>,
-  ): PaymentInfoEntity {
-    return this.createPaymentInfoEntity({
-      method: PaymentMethod.CASH_ON_DELIVERY,
-      status: PaymentStatus.NOT_REQUIRED_YET,
-      transactionId: undefined,
-      paidAt: undefined,
-      notes: 'Payment on delivery',
-      ...overrides,
-    });
   }
 
   /**
@@ -155,7 +99,8 @@ export class OrderEntityTestFactory {
    */
   static createCODOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
     return this.createOrderEntity({
-      paymentInfo: this.createCODPaymentInfoEntity(),
+      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+      paymentId: null,
       ...overrides,
     });
   }
@@ -167,19 +112,13 @@ export class OrderEntityTestFactory {
     status: OrderStatus,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
-    const paymentCompleted = ![
-      OrderStatus.PENDING,
-      OrderStatus.CANCELLED,
-    ].includes(status);
+    const hasPayment = ![OrderStatus.PENDING, OrderStatus.CANCELLED].includes(
+      status,
+    );
 
     return this.createOrderEntity({
       status,
-      paymentInfo: this.createPaymentInfoEntity({
-        status: paymentCompleted
-          ? PaymentStatus.COMPLETED
-          : PaymentStatus.PENDING,
-        paidAt: paymentCompleted ? new Date() : undefined,
-      }),
+      paymentId: hasPayment ? 'PAY0000001' : null,
       ...overrides,
     });
   }
@@ -207,7 +146,47 @@ export class OrderEntityTestFactory {
       subtotal,
       shippingCost,
       totalPrice,
-      paymentInfo: this.createPaymentInfoEntity({ amount: totalPrice }),
+    });
+  }
+
+  /**
+   * Creates OrderEntity with payment
+   */
+  static createOrderEntityWithPayment(
+    paymentId: string,
+    paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
+    overrides?: Partial<OrderEntity>,
+  ): OrderEntity {
+    return this.createOrderEntity({
+      paymentId,
+      paymentMethod,
+      ...overrides,
+    });
+  }
+
+  /**
+   * Creates Stripe OrderEntity
+   */
+  static createStripeOrderEntity(
+    overrides?: Partial<OrderEntity>,
+  ): OrderEntity {
+    return this.createOrderEntity({
+      paymentMethod: PaymentMethodType.STRIPE,
+      paymentId: 'PAY_STRIPE_001',
+      ...overrides,
+    });
+  }
+
+  /**
+   * Creates PayPal OrderEntity
+   */
+  static createPayPalOrderEntity(
+    overrides?: Partial<OrderEntity>,
+  ): OrderEntity {
+    return this.createOrderEntity({
+      paymentMethod: PaymentMethodType.PAYPAL,
+      paymentId: 'PAY_PAYPAL_001',
+      ...overrides,
     });
   }
 }

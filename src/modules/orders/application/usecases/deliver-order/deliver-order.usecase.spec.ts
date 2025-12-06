@@ -7,17 +7,25 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { DeliverOrderDto } from '../../../presentation/dto/deliver-order.dto';
-import { PaymentMethod } from '../../../domain/value-objects/payment-method';
-import { PaymentStatus } from '../../../domain/value-objects/payment-status';
+import { PaymentMethodType } from '../../../../payments/domain';
 import { DomainError } from '../../../../../core/errors/domain.error';
+import { RecordCodPaymentUseCase } from '../../../../payments/application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { Result } from '../../../../../core/domain/result';
 
 describe('DeliverOrderUseCase', () => {
   let useCase: DeliverOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
+  let mockRecordCodPaymentUseCase: jest.Mocked<RecordCodPaymentUseCase>;
 
   beforeEach(() => {
     mockOrderRepository = new MockOrderRepository();
-    useCase = new DeliverOrderUseCase(mockOrderRepository);
+    mockRecordCodPaymentUseCase = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<RecordCodPaymentUseCase>;
+    useCase = new DeliverOrderUseCase(
+      mockOrderRepository,
+      mockRecordCodPaymentUseCase,
+    );
   });
 
   afterEach(() => {
@@ -28,11 +36,6 @@ describe('DeliverOrderUseCase', () => {
     it('should return Success if COD order is delivered with payment collection', async () => {
       const shippedOrder = OrderTestFactory.createCashOnDeliveryOrder({
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: PaymentMethod.CASH_ON_DELIVERY,
-          status: 'not_required_yet' as any,
-        },
       });
 
       const deliverOrderDto: DeliverOrderDto = {
@@ -44,6 +47,12 @@ describe('DeliverOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.updatePaymentId.mockResolvedValue(
+        Result.success(undefined),
+      );
+      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+        Result.success({ id: 'PAY_COD_001' } as any),
+      );
 
       const result = await useCase.execute({
         id: shippedOrder.id,
@@ -57,22 +66,17 @@ describe('DeliverOrderUseCase', () => {
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         shippedOrder.id,
       );
+      expect(mockRecordCodPaymentUseCase.execute).toHaveBeenCalled();
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
         shippedOrder.id,
         OrderStatus.DELIVERED,
       );
-      expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
-      expect(mockOrderRepository.updateStatus).toHaveBeenCalledTimes(1);
     });
 
     it('should return Success if online payment order is delivered', async () => {
       const shippedOrder = OrderTestFactory.createShippedOrder({
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: PaymentMethod.CREDIT_CARD,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
+        paymentMethod: PaymentMethodType.CREDIT_CARD,
+        paymentId: 'PAY001',
       });
 
       const deliverOrderDto: DeliverOrderDto = {};
@@ -87,16 +91,13 @@ describe('DeliverOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
+      // Should NOT call RecordCodPaymentUseCase for non-COD orders
+      expect(mockRecordCodPaymentUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('should return Success if COD order is delivered without explicit payment details', async () => {
       const shippedOrder = OrderTestFactory.createCashOnDeliveryOrder({
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: PaymentMethod.CASH_ON_DELIVERY,
-          status: 'not_required_yet' as any,
-        },
       });
 
       const deliverOrderDto: DeliverOrderDto = {};
@@ -111,6 +112,8 @@ describe('DeliverOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
+      // Should NOT call RecordCodPaymentUseCase without codPayment in DTO
+      expect(mockRecordCodPaymentUseCase.execute).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is not found', async () => {
@@ -296,12 +299,6 @@ describe('DeliverOrderUseCase', () => {
     it('should deliver order with Stripe payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'stripe' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
       });
 
       const deliverOrderDto: DeliverOrderDto = {};
@@ -321,12 +318,6 @@ describe('DeliverOrderUseCase', () => {
     it('should deliver order with PayPal payment method', async () => {
       const paypalOrder = OrderTestFactory.createPayPalOrder({
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: 'paypal' as any,
-          status: 'completed' as any,
-          paidAt: new Date(),
-        },
       });
 
       const deliverOrderDto: DeliverOrderDto = {};
@@ -347,19 +338,10 @@ describe('DeliverOrderUseCase', () => {
       const shippedMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          method: 'cash_on_delivery' as any,
-          status: 'not_required_yet' as any,
-        },
+        paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       };
 
-      const deliverOrderDto: DeliverOrderDto = {
-        codPayment: {
-          transactionId: 'COD-789',
-          notes: 'Payment collected',
-        },
-      };
+      const deliverOrderDto: DeliverOrderDto = {}; // No COD payment details
 
       mockOrderRepository.mockSuccessfulFind(shippedMultiItem);
       mockOrderRepository.mockSuccessfulUpdateStatus();
@@ -389,6 +371,12 @@ describe('DeliverOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.updatePaymentId.mockResolvedValue(
+        Result.success(undefined),
+      );
+      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+        Result.success({ id: 'PAY_COD_001' } as any),
+      );
 
       const result = await useCase.execute({
         id: shippedOrder.id,
@@ -412,6 +400,12 @@ describe('DeliverOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.updatePaymentId.mockResolvedValue(
+        Result.success(undefined),
+      );
+      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+        Result.success({ id: 'PAY_COD_002' } as any),
+      );
 
       const result = await useCase.execute({
         id: shippedOrder.id,
@@ -420,29 +414,6 @@ describe('DeliverOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
-    });
-
-    it('should return Failure if COD order payment already completed', async () => {
-      const shippedOrder = OrderTestFactory.createCashOnDeliveryOrder({
-        status: OrderStatus.SHIPPED,
-        paymentInfo: {
-          ...OrderTestFactory.createMockOrder().paymentInfo,
-          method: PaymentMethod.CASH_ON_DELIVERY,
-          status: PaymentStatus.COMPLETED,
-          paidAt: new Date(),
-        },
-      });
-
-      const deliverOrderDto: DeliverOrderDto = {};
-
-      mockOrderRepository.mockSuccessfulFind(shippedOrder);
-
-      const result = await useCase.execute({
-        id: shippedOrder.id,
-        deliverOrderDto,
-      });
-
-      ResultAssertionHelper.assertResultFailure(result);
     });
   });
 });

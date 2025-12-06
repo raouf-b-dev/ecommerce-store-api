@@ -1,8 +1,7 @@
 // src/modules/order/testing/builders/order.test.builder.ts
 import { IOrder } from '../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../domain/value-objects/order-status';
-import { PaymentMethod } from '../../domain/value-objects/payment-method';
-import { PaymentStatus } from '../../domain/value-objects/payment-status';
+import { PaymentMethodType } from '../../../payments/domain';
 import { OrderTestFactory } from '../factories/order.factory';
 
 export class OrderBuilder {
@@ -24,32 +23,16 @@ export class OrderBuilder {
 
   withCustomerId(customerId: string): this {
     this.order.customerId = customerId;
-    this.order.customerInfo.customerId = customerId;
     return this;
   }
 
-  withPaymentMethod(method: PaymentMethod): this {
-    this.order.paymentInfo.method = method;
-
-    if (method === PaymentMethod.CASH_ON_DELIVERY) {
-      this.order.paymentInfo.status = PaymentStatus.NOT_REQUIRED_YET;
-      this.order.paymentInfo.transactionId = null;
-      this.order.paymentInfo.paidAt = null;
-      this.order.paymentInfo.notes = 'Payment on delivery';
-    } else {
-      this.order.paymentInfo.status = PaymentStatus.PENDING;
-    }
-
+  withPaymentId(paymentId: string | null): this {
+    this.order.paymentId = paymentId;
     return this;
   }
 
-  withPaymentStatus(status: PaymentStatus): this {
-    this.order.paymentInfo.status = status;
-
-    if (status === PaymentStatus.COMPLETED && !this.order.paymentInfo.paidAt) {
-      this.order.paymentInfo.paidAt = new Date();
-    }
-
+  withPaymentMethod(method: PaymentMethodType): this {
+    this.order.paymentMethod = method;
     return this;
   }
 
@@ -75,27 +58,35 @@ export class OrderBuilder {
   }
 
   asCancellable(): this {
-    return this.withStatus(OrderStatus.PENDING).withPaymentStatus(
-      PaymentStatus.PENDING,
-    );
+    return this.withStatus(OrderStatus.PENDING);
   }
 
   asNonCancellable(): this {
-    return this.withStatus(OrderStatus.DELIVERED).withPaymentStatus(
-      PaymentStatus.COMPLETED,
-    );
+    return this.withStatus(OrderStatus.DELIVERED).withPaymentId('PAY001');
   }
 
   asCODPending(): this {
-    return this.withPaymentMethod(PaymentMethod.CASH_ON_DELIVERY)
+    return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
       .withStatus(OrderStatus.PENDING)
-      .withPaymentStatus(PaymentStatus.NOT_REQUIRED_YET);
+      .withPaymentId(null);
   }
 
   asOnlinePaymentPending(): this {
-    return this.withPaymentMethod(PaymentMethod.STRIPE)
+    return this.withPaymentMethod(PaymentMethodType.STRIPE)
       .withStatus(OrderStatus.PENDING)
-      .withPaymentStatus(PaymentStatus.PENDING);
+      .withPaymentId(null);
+  }
+
+  asOnlinePaymentCompleted(): this {
+    return this.withPaymentMethod(PaymentMethodType.STRIPE)
+      .withStatus(OrderStatus.CONFIRMED)
+      .withPaymentId('PAY_STRIPE_001');
+  }
+
+  asCODDelivered(): this {
+    return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
+      .withStatus(OrderStatus.DELIVERED)
+      .withPaymentId('PAY_COD_001');
   }
 
   private recalculatePricing(): void {
@@ -104,7 +95,6 @@ export class OrderBuilder {
       0,
     );
     this.order.totalPrice = this.order.subtotal + this.order.shippingCost;
-    this.order.paymentInfo.amount = this.order.totalPrice;
   }
 
   build(): IOrder {

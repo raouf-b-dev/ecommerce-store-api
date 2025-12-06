@@ -8,6 +8,7 @@ import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('ConfirmOrderController', () => {
   let controller: ConfirmOrderController;
@@ -118,7 +119,9 @@ describe('ConfirmOrderController', () => {
       const result = await controller.handle(codOrder.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
     });
 
@@ -137,7 +140,7 @@ describe('ConfirmOrderController', () => {
       const result = await controller.handle(onlineOrder.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.status).toBe('completed');
+      expect(result.value.paymentId).toBeDefined();
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
     });
 
@@ -165,11 +168,8 @@ describe('ConfirmOrderController', () => {
       const pendingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PENDING,
-        paymentInfo: {
-          ...multiItemOrder.paymentInfo,
-          method: 'cash_on_delivery' as any,
-          status: 'not_required_yet' as any,
-        },
+        paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+        paymentId: null,
       };
       const confirmedMultiItem = {
         ...pendingMultiItem,

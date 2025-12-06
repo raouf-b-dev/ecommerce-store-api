@@ -14,6 +14,10 @@ export abstract class OrderRepository {
     id: string,
     status: OrderStatus,
   ): Promise<Result<void, RepositoryError>>;
+  abstract updatePaymentId(
+    orderId: string,
+    paymentId: string,
+  ): Promise<Result<void, RepositoryError>>;
   abstract updateItemsInfo(
     id: string,
     updateOrderItemDto: CreateOrderItemDto[],

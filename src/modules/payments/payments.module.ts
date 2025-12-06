@@ -82,5 +82,13 @@ import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payme
     VerifyPaymentUseCase,
     RecordCodPaymentUseCase,
   ],
+  exports: [
+    // Use cases for cross-module integration
+    CreatePaymentUseCase,
+    GetPaymentUseCase,
+    RecordCodPaymentUseCase,
+    // Repository for direct access when needed
+    PaymentRepository,
+  ],
 })
 export class PaymentsModule {}

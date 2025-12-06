@@ -1,20 +1,24 @@
 // src/modules/orders/presentation/dto/create-order.dto.ts
-import { IsArray, ValidateNested, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  ValidateNested,
+  IsOptional,
+  IsString,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateOrderItemDto } from './create-order-item.dto';
 import { ShippingAddressDto } from './shipping-address.dto';
-import { CustomerInfoDto } from './customer-info.dto';
-import { PaymentInfoDto } from './payment-info.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentMethodType } from '../../../payments/domain';
 
 export class CreateOrderDto {
   @ApiProperty({
-    type: CustomerInfoDto,
-    description: 'Customer information',
+    example: 'cust_abc123',
+    description: 'Customer ID placing the order',
   })
-  @ValidateNested()
-  @Type(() => CustomerInfoDto)
-  customerInfo: CustomerInfoDto;
+  @IsString()
+  customerId: string;
 
   @ApiProperty({
     type: [CreateOrderItemDto],
@@ -34,12 +38,12 @@ export class CreateOrderDto {
   shippingAddress: ShippingAddressDto;
 
   @ApiProperty({
-    type: PaymentInfoDto,
-    description: 'Payment information',
+    example: PaymentMethodType.CASH_ON_DELIVERY,
+    description: 'Payment method for the order',
+    enum: PaymentMethodType,
   })
-  @ValidateNested()
-  @Type(() => PaymentInfoDto)
-  paymentInfo: PaymentInfoDto;
+  @IsEnum(PaymentMethodType)
+  paymentMethod: PaymentMethodType;
 
   @ApiPropertyOptional({
     example: 'Please leave at the front door',

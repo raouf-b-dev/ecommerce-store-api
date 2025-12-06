@@ -7,6 +7,7 @@ import { ControllerError } from '../../../../../core/errors/controller.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('CancelOrderController', () => {
   let controller: CancelOrderController;
@@ -216,7 +217,9 @@ describe('CancelOrderController', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+        expect(result.value.paymentMethod).toBe(
+          PaymentMethodType.CASH_ON_DELIVERY,
+        );
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
       }
     });

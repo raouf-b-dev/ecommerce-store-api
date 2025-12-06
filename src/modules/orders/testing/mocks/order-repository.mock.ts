@@ -19,6 +19,10 @@ export class MockOrderRepository implements OrderRepository {
     Promise<Result<void, RepositoryError>>,
     [string, OrderStatus]
   >();
+  updatePaymentId = jest.fn<
+    Promise<Result<void, RepositoryError>>,
+    [string, string]
+  >();
   updateItemsInfo = jest.fn<
     Promise<Result<Order, RepositoryError>>,
     [string, CreateOrderItemDto[]]

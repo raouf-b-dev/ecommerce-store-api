@@ -43,7 +43,7 @@ export class OrderStatusVO {
     return this._status === OrderStatus.DELIVERED;
   }
 
-  isCancellable(): boolean {
+  isCancelled(): boolean {
     return this._status === OrderStatus.CANCELLED;
   }
 

@@ -1,24 +1,21 @@
-// src/modules/orders/domain/interfaces/IOrder.ts
+// src/modules/orders/domain/interfaces/order.interface.ts
 import { OrderStatus } from '../value-objects/order-status';
-import {
-  ICustomerInfo,
-  ICustomerInfoEditable,
-} from './customer-info.interface';
 import { IOrderItem } from './order-item.interface';
-import { IPaymentInfo, IPaymentInfoEditable } from './payment-info.interface';
 import {
   IShippingAddress,
   IShippingAddressEditable,
 } from './shipping-address.interface';
+import { PaymentMethodType } from '../../../payments/domain';
 
-export interface IOrder extends IOrderEditable {
+export interface IOrder {
   id: string;
   customerId: string;
-  paymentInfoId: string;
+  paymentId: string | null;
+  paymentMethod: PaymentMethodType;
   shippingAddressId: string;
-  customerInfo: ICustomerInfo;
-  paymentInfo: IPaymentInfo;
+  items: IOrderItem[];
   shippingAddress: IShippingAddress;
+  customerNotes: string | null;
   subtotal: number;
   shippingCost: number;
   totalPrice: number;
@@ -29,8 +26,6 @@ export interface IOrder extends IOrderEditable {
 
 export interface IOrderEditable {
   items: IOrderItem[];
-  customerInfo: ICustomerInfoEditable;
   shippingAddress: IShippingAddressEditable;
-  paymentInfo: IPaymentInfoEditable;
   customerNotes: string | null;
 }

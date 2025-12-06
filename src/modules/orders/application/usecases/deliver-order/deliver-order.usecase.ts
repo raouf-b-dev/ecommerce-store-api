@@ -8,6 +8,7 @@ import { Order } from '../../../domain/entities/order';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { DeliverOrderDto } from '../../../presentation/dto/deliver-order.dto';
+import { RecordCodPaymentUseCase } from '../../../../payments/application/usecases/record-cod-payment/record-cod-payment.usecase';
 
 @Injectable()
 export class DeliverOrderUseCase
@@ -18,7 +19,10 @@ export class DeliverOrderUseCase
       UseCaseError
     >
 {
-  constructor(private orderRepository: OrderRepository) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
+  ) {}
 
   async execute(input: {
     id: string;
@@ -32,10 +36,25 @@ export class DeliverOrderUseCase
 
       const order: Order = requestedOrder.value;
 
-      const deliverResult = order.deliver({
-        notes: input.deliverOrderDto.codPayment?.notes,
-        transactionId: input.deliverOrderDto.codPayment?.transactionId,
-      });
+      if (order.isCOD() && input.deliverOrderDto.codPayment) {
+        const codPaymentResult = await this.recordCodPaymentUseCase.execute({
+          orderId: order.id,
+          amountCollected: order.totalPrice,
+          currency: 'USD',
+          notes: input.deliverOrderDto.codPayment.notes,
+          collectedBy: input.deliverOrderDto.codPayment.collectedBy,
+        });
+        if (codPaymentResult.isFailure) {
+          return codPaymentResult;
+        }
+
+        const payment = codPaymentResult.value;
+        if (payment.id) {
+          await this.orderRepository.updatePaymentId(order.id, payment.id);
+        }
+      }
+
+      const deliverResult = order.deliver();
       if (deliverResult.isFailure) return deliverResult;
 
       const updateResult = await this.orderRepository.updateStatus(

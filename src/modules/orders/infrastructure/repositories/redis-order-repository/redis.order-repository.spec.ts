@@ -19,6 +19,7 @@ import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-ord
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('RedisOrderRepository', () => {
   let repository: RedisOrderRepository;
@@ -64,6 +65,7 @@ describe('RedisOrderRepository', () => {
       save: jest.fn(),
       updateItemsInfo: jest.fn(),
       updateStatus: jest.fn(),
+      updatePaymentId: jest.fn(),
       findById: jest.fn(),
       deleteById: jest.fn(),
       listOrders: jest.fn(),
@@ -145,7 +147,9 @@ describe('RedisOrderRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+        expect(result.value.paymentMethod).toBe(
+          PaymentMethodType.CASH_ON_DELIVERY,
+        );
       }
     });
   });

@@ -8,6 +8,7 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Order } from '../../../domain/entities/order';
+import { PaymentMethodType } from '../../../../payments/domain';
 
 describe('CreateOrderUseCase', () => {
   let useCase: CreateOrderUseCase;
@@ -92,7 +93,9 @@ describe('CreateOrderUseCase', () => {
       const result = await useCase.execute(createOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.paymentInfo.method).toBe('cash_on_delivery');
+      expect(result.value.paymentMethod).toBe(
+        PaymentMethodType.CASH_ON_DELIVERY,
+      );
     });
 
     it('should create order with multiple items', async () => {
