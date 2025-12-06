@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PostgresUserRepository } from './infrastructure/repositories/postgres-user-repository/postgres-user.repository';
 import { RedisUserRepository } from './infrastructure/repositories/redis-user-repository/redis-user.repository';
 import { BcryptService } from './infrastructure/services/bcrypt.service';
@@ -19,18 +18,18 @@ import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { RegisterUserController } from './presentation/controllers/register-user/register-user.controller';
 import { LoginUserController } from './presentation/controllers/login-user/login-user.controller';
+import { EnvConfigService } from '../../config/env-config.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'secretKey',
-        signOptions: { expiresIn: '1d' },
+      useFactory: (envConfigService: EnvConfigService) => ({
+        secret: envConfigService.jwt.secret,
+        signOptions: { expiresIn: envConfigService.jwt.expiresIn },
       }),
-      inject: [ConfigService],
+      inject: [EnvConfigService],
     }),
     CustomersModule,
     CoreModule,
