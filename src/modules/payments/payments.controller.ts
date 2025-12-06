@@ -1,5 +1,19 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreatePaymentDto } from './presentation/dto/create-payment.dto';
 import { ProcessRefundDto } from './presentation/dto/process-refund.dto';
 import { PaymentResponseDto } from './presentation/dto/payment-response.dto';
@@ -14,6 +28,8 @@ import { VerifyPaymentController } from './presentation/controllers/verify-payme
 import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
 
 @ApiTags('payments')
+@ApiBearerAuth()
+@UseGuards(JWTAuthGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(

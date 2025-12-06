@@ -1,4 +1,5 @@
 import { validateEnv } from './validate-env';
+import { StringValue } from 'ms';
 
 export interface IAppConfig {
   node: {
@@ -21,7 +22,7 @@ export interface IAppConfig {
   };
   jwt: {
     secret: string;
-    expiresIn: string;
+    expiresIn: StringValue;
   };
 }
 
@@ -51,7 +52,7 @@ export default (): IAppConfig => {
     },
     jwt: {
       secret: env.JWT_SECRET,
-      expiresIn: env.JWT_EXPIRES_IN,
+      expiresIn: env.JWT_EXPIRES_IN as StringValue,
     },
   };
 };

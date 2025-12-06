@@ -7,10 +7,17 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreateOrderDto } from './presentation/dto/create-order.dto';
 import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrderResponseDto } from './presentation/dto/order-response.dto';
 import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
@@ -22,6 +29,8 @@ import { DeliverOrderController } from './presentation/controllers/deliver-order
 import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 
 @ApiTags('orders')
+@ApiBearerAuth()
+@UseGuards(JWTAuthGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(

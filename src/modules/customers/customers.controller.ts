@@ -7,8 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreateCustomerDto } from './presentation/dto/create-customer.dto';
 import { UpdateCustomerDto } from './presentation/dto/update-customer.dto';
 import { AddAddressDto } from './presentation/dto/add-address.dto';
@@ -27,6 +34,8 @@ import { DeleteAddressController } from './presentation/controllers/delete-addre
 import { SetDefaultAddressController } from './presentation/controllers/set-default-address/set-default-address.controller';
 
 @ApiTags('customers')
+@ApiBearerAuth()
+@UseGuards(JWTAuthGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(

@@ -6,8 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreateCartDto } from './presentation/dto/create-cart.dto';
 import { AddCartItemDto } from './presentation/dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './presentation/dto/update-cart-item.dto';
@@ -82,6 +89,8 @@ export class CartsController {
   }
 
   @Post(':guestCartId/merge/:userCartId')
+  @ApiBearerAuth()
+  @UseGuards(JWTAuthGuard)
   @ApiOperation({ summary: 'Merge guest cart into user cart after login' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async mergeCarts(

@@ -6,8 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { UpdateProductDto } from './presentation/dto/update-product.dto';
 import { ProductResponseDto } from './presentation/dto/product-response.dto';
@@ -29,6 +36,8 @@ export class ProductsController {
   ) {}
 
   @Post()
+  @ApiBearerAuth()
+  @UseGuards(JWTAuthGuard)
   @ApiOperation({ summary: 'Create a new product' })
   @ApiResponse({ status: 201, type: ProductResponseDto })
   async createProduct(@Body() dto: CreateProductDto) {
@@ -50,6 +59,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JWTAuthGuard)
   @ApiOperation({ summary: 'Update product by ID' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
@@ -57,6 +68,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JWTAuthGuard)
   @ApiOperation({ summary: 'Delete product by ID' })
   @ApiResponse({ status: 204, description: 'Product deleted' })
   remove(@Param('id') id: string) {
