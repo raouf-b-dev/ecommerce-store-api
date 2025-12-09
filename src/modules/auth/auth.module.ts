@@ -8,7 +8,6 @@ import { BcryptService } from './infrastructure/services/bcrypt.service';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { UserEntity } from './infrastructure/orm/user.schema';
 import { CustomersModule } from '../customers/customers.module';
-import { CoreModule } from '../../core/core.module';
 import { UserRepository } from './domain/repositories/user.repository';
 import { AuthController } from './auth.controller';
 import { LoginUserUseCase } from './application/usecases/login-user/login-user.usecase';
@@ -32,7 +31,6 @@ import { EnvConfigService } from '../../config/env-config.service';
       inject: [EnvConfigService],
     }),
     CustomersModule,
-    CoreModule,
     RedisModule,
   ],
   controllers: [AuthController],

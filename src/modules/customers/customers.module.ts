@@ -13,7 +13,6 @@ import { UpdateCustomerController } from './presentation/controllers/update-cust
 import { CustomerEntity } from './infrastructure/orm/customer.schema';
 import { AddressEntity } from './infrastructure/orm/address.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
-import { CoreModule } from '../../core/core.module';
 import {
   POSTGRES_CUSTOMER_REPOSITORY,
   REDIS_CUSTOMER_REPOSITORY,
@@ -38,7 +37,6 @@ import { SetDefaultAddressUseCase } from './application/usecases/set-default-add
   imports: [
     TypeOrmModule.forFeature([CustomerEntity, AddressEntity]),
     RedisModule,
-    CoreModule,
   ],
   exports: [CreateCustomerUseCase],
   controllers: [CustomersController],

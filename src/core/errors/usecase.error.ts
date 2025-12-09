@@ -3,12 +3,13 @@ import { HttpStatus } from '@nestjs/common';
 import { AppError } from './app.error';
 
 export class UseCaseError extends AppError {
-  constructor(message: string, cause?: Error) {
+  constructor(message: string, cause?: Error, status?: HttpStatus) {
     super(
       message,
-      HttpStatus.UNPROCESSABLE_ENTITY, // Use case errors are business logic failures
+      status ?? HttpStatus.UNPROCESSABLE_ENTITY,
       'USECASE_ERROR',
       cause,
+      false,
     );
   }
 }

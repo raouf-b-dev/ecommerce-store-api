@@ -3,16 +3,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { EnvConfigModule } from './config/config.module';
-import { DatabaseModule } from './core/infrastructure/database/database.module';
-import { RedisModule } from './core/infrastructure/redis/redis.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ProductsModule } from './modules/products/products.module';
-import { CoreModule } from './core/core.module';
 import { CartsModule } from './modules/carts/carts.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { InfrastructureModule } from './core/infrastructure/infrastructure.module';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -21,9 +19,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
 @Module({
   imports: [
     EnvConfigModule,
-    CoreModule,
-    DatabaseModule,
-    RedisModule,
+    InfrastructureModule,
     ProductsModule,
     OrdersModule,
     CartsModule,

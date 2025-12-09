@@ -6,12 +6,14 @@ export abstract class AppError extends Error {
   public readonly cause?: Error;
   public readonly statusCode: HttpStatus;
   public readonly code: string;
+  public readonly retryable: boolean;
 
   protected constructor(
     message: string,
     statusCode: HttpStatus,
     code: string,
     cause?: Error,
+    retryable: boolean = true,
   ) {
     super(message);
     this.name = new.target.name;
@@ -20,5 +22,6 @@ export abstract class AppError extends Error {
     this.code = code;
     this.cause = cause;
     Error.captureStackTrace(this, this.constructor);
+    this.retryable = retryable;
   }
 }

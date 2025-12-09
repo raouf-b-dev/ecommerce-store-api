@@ -4,6 +4,12 @@ import { UseCaseError } from './usecase.error';
 import { RepositoryError } from './repository.error';
 import { ControllerError } from './controller.error';
 import { Result } from '../domain/result';
+import { HttpStatus } from '@nestjs/common';
+
+function isRetryableHttpStatus(status?: number): boolean {
+  if (!status) return true;
+  return status >= 500;
+}
 
 function toError(error: unknown): Error | undefined {
   if (!error) return undefined;
@@ -24,12 +30,24 @@ function toError(error: unknown): Error | undefined {
 }
 
 export const ErrorFactory = {
-  DomainError: (message: string, cause?: unknown) =>
-    Result.failure(new DomainError(message, toError(cause))),
-  UseCaseError: (message: string, cause?: unknown) =>
-    Result.failure(new UseCaseError(message, toError(cause))),
-  RepositoryError: (message: string, cause?: unknown) =>
-    Result.failure(new RepositoryError(message, toError(cause))),
-  ControllerError: (message: string, cause?: unknown) =>
-    Result.failure(new ControllerError(message, toError(cause))),
+  DomainError: (message: string, cause?: unknown, status?: HttpStatus) =>
+    Result.failure(new DomainError(message, toError(cause), status)),
+  UseCaseError: (message: string, cause?: unknown, status?: HttpStatus) =>
+    Result.failure(new UseCaseError(message, toError(cause), status)),
+  RepositoryError: (
+    message: string,
+    cause?: unknown,
+    status?: HttpStatus,
+    retryable?: boolean,
+  ) =>
+    Result.failure(
+      new RepositoryError(
+        message,
+        toError(cause),
+        status,
+        retryable ?? isRetryableHttpStatus(status),
+      ),
+    ),
+  ControllerError: (message: string, cause?: unknown, status?: HttpStatus) =>
+    Result.failure(new ControllerError(message, toError(cause), status)),
 };

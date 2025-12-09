@@ -11,7 +11,6 @@ import { VerifyPaymentController } from './presentation/controllers/verify-payme
 import { PaymentEntity } from './infrastructure/orm/payment.schema';
 import { RefundEntity } from './infrastructure/orm/refund.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
-import { CoreModule } from '../../core/core.module';
 import {
   POSTGRES_PAYMENT_REPOSITORY,
   REDIS_PAYMENT_REPOSITORY,
@@ -32,7 +31,6 @@ import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payme
   imports: [
     TypeOrmModule.forFeature([PaymentEntity, RefundEntity]),
     RedisModule,
-    CoreModule,
   ],
   controllers: [PaymentsController],
   providers: [
