@@ -1,20 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { EnvConfigService } from '../../../config/env-config.service';
 import { EnvConfigModule } from '../../../config/config.module';
+import { FlowProducerService } from './flow-producer.service';
+import { QueueEventsService } from './queue-events.service';
 
+@Global()
 @Module({
   imports: [
+    EnvConfigModule,
     BullModule.forRootAsync({
-      imports: [
-        EnvConfigModule,
-        BullModule.registerQueue({
-          name: 'checkout',
-        }),
-        BullModule.registerQueue({
-          name: 'notifications',
-        }),
-      ],
+      imports: [EnvConfigModule],
       useFactory: async (envConfigService: EnvConfigService) => ({
         connection: {
           host: envConfigService.redis.host,
@@ -26,7 +22,11 @@ import { EnvConfigModule } from '../../../config/config.module';
       }),
       inject: [EnvConfigService],
     }),
+    BullModule.registerQueue({
+      name: 'notifications',
+    }),
   ],
-  exports: [BullModule],
+  providers: [FlowProducerService, QueueEventsService],
+  exports: [BullModule, FlowProducerService, QueueEventsService],
 })
 export class QueueModule {}
