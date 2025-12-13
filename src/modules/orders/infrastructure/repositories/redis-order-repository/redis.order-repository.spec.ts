@@ -95,7 +95,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repository.save(mockCreateOrderDto);
+      const result = await repository.save(mockOrder);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(mockOrder);
@@ -114,7 +114,7 @@ describe('RedisOrderRepository', () => {
       const error = new RepositoryError('Postgres save failed');
       postgresRepo.save.mockResolvedValue(Result.failure(error));
 
-      const result = await repository.save(mockCreateOrderDto);
+      const result = await repository.save(mockOrder);
 
       ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.set).not.toHaveBeenCalled();
@@ -124,7 +124,7 @@ describe('RedisOrderRepository', () => {
       postgresRepo.save.mockResolvedValue(Result.success(mockOrder));
       cacheService.set.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repository.save(mockCreateOrderDto);
+      const result = await repository.save(mockOrder);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -143,7 +143,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repository.save(codDto);
+      const result = await repository.save(codOrder);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
@@ -601,7 +601,7 @@ describe('RedisOrderRepository', () => {
       const originalError = new Error('Unexpected');
       postgresRepo.save.mockRejectedValue(originalError);
 
-      const result = await repository.save(mockCreateOrderDto);
+      const result = await repository.save(mockOrder);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -615,7 +615,7 @@ describe('RedisOrderRepository', () => {
       postgresRepo.save.mockResolvedValue(Result.success(mockOrder));
       cacheService.set.mockRejectedValue(new Error('Redis connection lost'));
 
-      const result = await repository.save(mockCreateOrderDto);
+      const result = await repository.save(mockOrder);
 
       ResultAssertionHelper.assertResultFailure(result, 'Failed to save order');
     });
@@ -644,7 +644,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.save(mockCreateOrderDto);
+      await repository.save(mockOrder);
 
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.any(String),
@@ -658,7 +658,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.save(mockCreateOrderDto);
+      await repository.save(mockOrder);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -709,7 +709,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const createResult = await repository.save(mockCreateOrderDto);
+      const createResult = await repository.save(mockOrder);
       expect(createResult.isSuccess).toBe(true);
 
       // Find (from cache)

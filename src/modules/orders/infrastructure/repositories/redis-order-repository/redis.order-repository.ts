@@ -102,22 +102,20 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async save(
-    createOrderDto: AggregatedOrderInput,
-  ): Promise<Result<Order, RepositoryError>> {
+  async save(order: Order): Promise<Result<Order, RepositoryError>> {
     try {
-      const saveResult = await this.postgresRepo.save(createOrderDto);
+      const saveResult = await this.postgresRepo.save(order);
       if (saveResult.isFailure) return saveResult;
-      const order = saveResult.value;
+      const savedOrder = saveResult.value;
 
       await this.cacheService.set(
-        `${ORDER_REDIS.CACHE_KEY}:${order.id}`,
-        OrderCacheMapper.toCache(order),
+        `${ORDER_REDIS.CACHE_KEY}:${savedOrder.id}`,
+        OrderCacheMapper.toCache(savedOrder),
         { ttl: ORDER_REDIS.EXPIRATION },
       );
       await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<Order>(order);
+      return Result.success<Order>(savedOrder);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save order`, error);
     }
