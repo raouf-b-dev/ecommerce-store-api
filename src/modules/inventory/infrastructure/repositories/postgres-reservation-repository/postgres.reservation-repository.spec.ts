@@ -94,7 +94,7 @@ describe('PostgresReservationRepository', () => {
         InventoryEntity,
         expect.anything(),
       );
-      expect(entityManager.save).toHaveBeenCalledTimes(2); // Inventory + Reservation
+      expect(entityManager.save).toHaveBeenCalledTimes(2);
       expect(inventoryEntity.availableQuantity).toBe(
         10 - dto.items[0].quantity,
       );
@@ -105,7 +105,7 @@ describe('PostgresReservationRepository', () => {
       const dto = InventoryDtoTestFactory.createReserveStockDto();
       idGeneratorService.generateReservationId.mockResolvedValue('RES_NEW');
 
-      entityManager.find.mockResolvedValue([]); // No inventory found
+      entityManager.find.mockResolvedValue([]);
 
       const result = await repository.save(dto);
 
@@ -207,7 +207,7 @@ describe('PostgresReservationRepository', () => {
       const result = await repository.release(reservation);
 
       expect(result.isSuccess).toBe(true);
-      expect(entityManager.save).not.toHaveBeenCalled(); // Should not save if already released
+      expect(entityManager.save).not.toHaveBeenCalled();
     });
   });
 
@@ -217,6 +217,14 @@ describe('PostgresReservationRepository', () => {
       const reservationEntity = ReservationMapper.toEntity(reservation);
 
       entityManager.findOne.mockResolvedValue(reservationEntity);
+
+      const inventoryEntity = {
+        productId: reservation.items[0].productId,
+        availableQuantity: 10,
+        reservedQuantity: 5,
+      } as InventoryEntity;
+      entityManager.find.mockResolvedValue([inventoryEntity]);
+
       entityManager.save.mockImplementation((entity) =>
         Promise.resolve(entity),
       );

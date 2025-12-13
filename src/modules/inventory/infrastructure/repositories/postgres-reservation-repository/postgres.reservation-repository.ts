@@ -236,9 +236,26 @@ export class PostgresReservationRepository implements ReservationRepository {
             throw new RepositoryError('Reservation not found');
           }
 
-          // If already confirmed, just return
           if (currentEntity.status === ReservationStatus.CONFIRMED) {
             return currentEntity;
+          }
+
+          const items = reservation.items;
+          const productIds = items.map((i) => i.productId);
+          const inventoryItems = await manager.find(InventoryEntity, {
+            where: { productId: In(productIds) },
+            lock: { mode: 'pessimistic_write' },
+          });
+          const inventoryMap = new Map(
+            inventoryItems.map((i) => [i.productId, i]),
+          );
+
+          for (const item of items) {
+            const inventory = inventoryMap.get(item.productId);
+            if (inventory) {
+              inventory.reservedQuantity -= item.quantity;
+              await manager.save(inventory);
+            }
           }
 
           const entity = ReservationMapper.toEntity(reservation);
