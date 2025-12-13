@@ -1,13 +1,12 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
+  Body,
+  Post,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -16,10 +15,12 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { CreateOrderDto } from './presentation/dto/create-order.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
+import { CheckoutDto } from './presentation/dto/checkout.dto';
+import { CheckoutResponseDto } from './presentation/dto/checkout-response.dto';
 import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
 import { OrderResponseDto } from './presentation/dto/order-response.dto';
-import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
@@ -35,18 +36,23 @@ import { ProcessOrderController } from './presentation/controllers/process-order
 export class OrdersController {
   constructor(
     private getOrderController: GetOrderController,
-    private createOrderController: CreateOrderController,
     private listOrdersController: ListOrdersController,
     private confirmOrderController: ShipOrderController,
     private processOrderController: ProcessOrderController,
     private shipOrderController: ShipOrderController,
     private deliverOrderController: DeliverOrderController,
     private cancelOrderController: CancelOrderController,
+    private checkoutController: CheckoutController,
   ) {}
 
-  @Post()
-  createOrder(@Body() createOrderDto: CreateOrderDto) {
-    return this.createOrderController.handle(createOrderDto);
+  @Post('checkout')
+  @ApiOperation({ summary: 'Initiate checkout process' })
+  @ApiResponse({ status: 201, type: CheckoutResponseDto })
+  async checkout(
+    @Body() dto: CheckoutDto,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.checkoutController.handle(dto, userId);
   }
 
   @Get()
@@ -101,10 +107,5 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async cancelOrder(@Param('id') id: string) {
     return this.cancelOrderController.handle(id);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') _id: string) {
-    // return this.ordersService.remove(+id);
   }
 }

@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
-import { CreateOrderController } from './presentation/controllers/create-order/create-order.controller';
+import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
@@ -13,7 +13,7 @@ import { ProcessOrderController } from './presentation/controllers/process-order
 
 describe('OrdersController', () => {
   let controller: OrdersController;
-  let createOrderController: CreateOrderController;
+  let checkoutController: CheckoutController;
   let getOrderController: GetOrderController;
   let listOrdersController: ListOrdersController;
   let cancelOrderController: CancelOrderController;
@@ -27,6 +27,7 @@ describe('OrdersController', () => {
   let deliveredOrder;
   let createOrderDto;
   let createDeliveredOrderDto;
+  let checkoutDto;
 
   beforeEach(async () => {
     mockOrder = OrderTestFactory.createMockOrder();
@@ -36,14 +37,19 @@ describe('OrdersController', () => {
     deliveredOrder = OrderTestFactory.createDeliveredOrder();
     createOrderDto = CreateOrderDtoTestFactory.createMockDto();
     createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
+    checkoutDto = {
+      cartId: 'cart-123',
+      shippingAddressId: 'addr-123',
+      paymentMethod: 'credit_card',
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
         {
-          provide: CreateOrderController,
+          provide: CheckoutController,
           useValue: {
-            handle: jest.fn().mockResolvedValue(mockOrder),
+            handle: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -86,9 +92,7 @@ describe('OrdersController', () => {
     }).compile();
 
     controller = module.get<OrdersController>(OrdersController);
-    createOrderController = module.get<CreateOrderController>(
-      CreateOrderController,
-    );
+    checkoutController = module.get<CheckoutController>(CheckoutController);
     getOrderController = module.get<GetOrderController>(GetOrderController);
     listOrdersController =
       module.get<ListOrdersController>(ListOrdersController);
@@ -114,10 +118,10 @@ describe('OrdersController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should call CreateOrderController.handle when createOrder is called and return its result', async () => {
-    const res = await controller.createOrder(createOrderDto);
-    expect(createOrderController.handle).toHaveBeenCalledWith(createOrderDto);
-    expect(res).toEqual(mockOrder);
+  it('should call CheckoutController.handle when checkout is called', async () => {
+    const userId = 'user-123';
+    await controller.checkout(checkoutDto, userId);
+    expect(checkoutController.handle).toHaveBeenCalledWith(checkoutDto, userId);
   });
 
   it('should call GetOrderController.handle when findOne is called and return its result', async () => {
