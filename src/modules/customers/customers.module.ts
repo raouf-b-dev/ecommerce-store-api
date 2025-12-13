@@ -38,7 +38,7 @@ import { SetDefaultAddressUseCase } from './application/usecases/set-default-add
     TypeOrmModule.forFeature([CustomerEntity, AddressEntity]),
     RedisModule,
   ],
-  exports: [CreateCustomerUseCase],
+  exports: [CreateCustomerUseCase, GetCustomerUseCase],
   controllers: [CustomersController],
   providers: [
     // Postgres Repo

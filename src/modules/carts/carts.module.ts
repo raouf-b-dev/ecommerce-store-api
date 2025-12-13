@@ -83,5 +83,6 @@ import { ProductsModule } from '../products/products.module';
     ClearCartUseCase,
     MergeCartsUseCase,
   ],
+  exports: [GetCartUseCase, ClearCartUseCase],
 })
 export class CartsModule {}

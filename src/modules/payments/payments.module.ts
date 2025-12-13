@@ -26,14 +26,26 @@ import { CapturePaymentUseCase } from './application/usecases/capture-payment/ca
 import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
 import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { AuthModule } from '../auth/auth.module';
+import { PaymentGatewayFactory } from './infrastructure/gateways/payment-gateway.factory';
+import { CodGateway } from './infrastructure/gateways/cod.gateway';
+import { StripeGateway } from './infrastructure/gateways/stripe.gateway';
+import { PayPalGateway } from './infrastructure/gateways/paypal.gateway';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PaymentEntity, RefundEntity]),
     RedisModule,
+    AuthModule,
   ],
   controllers: [PaymentsController],
   providers: [
+    // Gateways
+    CodGateway,
+    StripeGateway,
+    PayPalGateway,
+    PaymentGatewayFactory,
+
     // Postgres Repo
     {
       provide: POSTGRES_PAYMENT_REPOSITORY,
@@ -81,12 +93,11 @@ import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payme
     RecordCodPaymentUseCase,
   ],
   exports: [
-    // Use cases for cross-module integration
-    CreatePaymentUseCase,
-    GetPaymentUseCase,
-    RecordCodPaymentUseCase,
-    // Repository for direct access when needed
     PaymentRepository,
+    CreatePaymentUseCase,
+    PaymentGatewayFactory,
+    RecordCodPaymentUseCase,
+    ProcessRefundUseCase,
   ],
 })
 export class PaymentsModule {}
