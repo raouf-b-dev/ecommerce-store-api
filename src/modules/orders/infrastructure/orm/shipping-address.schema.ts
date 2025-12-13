@@ -15,6 +15,9 @@ export class ShippingAddressEntity {
   @Column({ type: 'varchar' })
   street: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  street2: string | null;
+
   @Column({ type: 'varchar' })
   city: string;
 
@@ -29,4 +32,7 @@ export class ShippingAddressEntity {
 
   @Column({ type: 'varchar', nullable: true })
   phone: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  deliveryInstructions: string | null;
 }

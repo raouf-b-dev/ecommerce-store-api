@@ -13,11 +13,13 @@ export class ShippingAddressMapper {
       firstName: entity.firstName,
       lastName: entity.lastName,
       street: entity.street,
+      street2: entity.street2,
       city: entity.city,
       state: entity.state,
       postalCode: entity.postalCode,
       country: entity.country,
       phone: entity.phone,
+      deliveryInstructions: entity.deliveryInstructions,
     };
 
     return ShippingAddress.fromPrimitives(props);
@@ -29,11 +31,13 @@ export class ShippingAddressMapper {
       firstName: primitives.firstName,
       lastName: primitives.lastName,
       street: primitives.street,
+      street2: primitives.street2,
       city: primitives.city,
       state: primitives.state,
       postalCode: primitives.postalCode,
       country: primitives.country,
       phone: primitives.phone,
+      deliveryInstructions: primitives.deliveryInstructions,
     };
 
     return entity;
