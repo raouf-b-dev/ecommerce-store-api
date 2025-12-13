@@ -138,55 +138,33 @@ describe('PostgresOrderRepository', () => {
       mockManager.find.mockResolvedValue([testData.productEntity]);
       mockManager.save.mockResolvedValue(testData.orderEntity);
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(testData.orderEntity);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.id).toBe(testData.orderId);
         expect(result.value.customerId).toBe(testData.customerId);
       }
-      expect(mockIdGen.generateOrderId).toHaveBeenCalled();
       expect(mockManager.save).toHaveBeenCalled();
     });
 
     it('should fail if product not found', async () => {
       mockManager.find.mockResolvedValue([]);
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(testData.orderEntity);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultFailure(result, 'PRODUCT_NOT_FOUND');
-    });
-
-    it('should fail on invalid quantity', async () => {
-      const invalidDto = CreateOrderDtoTestFactory.createCashOnDeliveryDto();
-      invalidDto.items = [{ productId: testData.productId, quantity: 0 }];
-
-      mockManager.find.mockResolvedValue([testData.productEntity]);
-
-      const result = await repository.save(invalidDto as any);
-
-      ResultAssertionHelper.assertResultFailure(result, 'INVALID_QUANTITY');
-    });
-
-    it('should fail on insufficient stock', async () => {
-      mockManager.find.mockResolvedValue([testData.productEntity]);
-      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
-      mockManager.exists.mockResolvedValue(true);
-
-      const result = await repository.save(testData.createOrderDto as any);
-
-      ResultAssertionHelper.assertResultFailure(result, 'INSUFFICIENT_STOCK');
     });
 
     it('should return error on DB failure', async () => {
       mockManager.find.mockRejectedValue(new Error('DB Error'));
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(testData.orderEntity);
+      const result = await repository.save(order);
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to create order',
-      );
+      ResultAssertionHelper.assertResultFailure(result, 'Failed to save order');
     });
 
     it('should save order with multiple items', async () => {
@@ -195,7 +173,8 @@ describe('PostgresOrderRepository', () => {
       mockManager.find.mockResolvedValue(multiItemData.productEntities);
       mockManager.save.mockResolvedValue(multiItemData.orderEntity);
 
-      const result = await repository.save(multiItemData.createOrderDto as any);
+      const order = OrderMapper.toDomain(multiItemData.orderEntity);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
@@ -646,19 +625,10 @@ describe('PostgresOrderRepository', () => {
 
       mockManager.save.mockResolvedValue(orderWithSpecialNotes);
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(orderWithSpecialNotes);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultSuccess(result);
-    });
-
-    it('should handle concurrent stock updates gracefully', async () => {
-      // Simulate affected = 0 (stock already taken by another transaction)
-      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
-      mockManager.exists.mockResolvedValue(true);
-
-      const result = await repository.save(testData.createOrderDto as any);
-
-      ResultAssertionHelper.assertResultFailure(result, 'INSUFFICIENT_STOCK');
     });
 
     it('should handle orders with maximum allowed items', async () => {
@@ -667,7 +637,8 @@ describe('PostgresOrderRepository', () => {
       mockManager.find.mockResolvedValue(maxItems.productEntities);
       mockManager.save.mockResolvedValue(maxItems.orderEntity);
 
-      const result = await repository.save(maxItems.createOrderDto as any);
+      const order = OrderMapper.toDomain(maxItems.orderEntity);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
@@ -688,43 +659,30 @@ describe('PostgresOrderRepository', () => {
 
       mockManager.save.mockResolvedValue(minOrder);
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(minOrder);
+      const result = await repository.save(order);
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
   });
 
   describe('Transaction Handling', () => {
-    it('should rollback on product stock update failure', async () => {
-      mockManager.find.mockResolvedValue([testData.productEntity]);
-      mockQueryBuilder.execute.mockRejectedValue(
-        new Error('Stock update failed'),
-      );
-
-      const result = await repository.save(testData.createOrderDto as any);
-
-      ResultAssertionHelper.assertResultFailure(result);
-      expect(mockManager.save).not.toHaveBeenCalled();
-    });
-
     it('should rollback on save failure after stock update', async () => {
       mockManager.find.mockResolvedValue([testData.productEntity]);
       mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
       mockManager.save.mockRejectedValue(new Error('Save failed'));
 
-      const result = await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(testData.orderEntity);
+      const result = await repository.save(order);
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to create order',
-      );
+      ResultAssertionHelper.assertResultFailure(result, 'Failed to save order');
     });
 
     it('should handle transaction isolation correctly', async () => {
-      // Ensure transaction callback is called
       expect(mockDataSource.transaction).toBeDefined();
 
-      await repository.save(testData.createOrderDto as any);
+      const order = OrderMapper.toDomain(testData.orderEntity);
+      await repository.save(order);
 
       expect(mockDataSource.transaction).toHaveBeenCalled();
     });
@@ -737,18 +695,13 @@ describe('PostgresOrderRepository', () => {
       mockManager.find.mockResolvedValue(multiItemData.productEntities);
       mockManager.save.mockResolvedValue(multiItemData.orderEntity);
 
-      await repository.save(multiItemData.createOrderDto as any);
+      const order = OrderMapper.toDomain(multiItemData.orderEntity);
+      await repository.save(order);
 
-      // Should only call find once with all product IDs
       expect(mockManager.find).toHaveBeenCalledTimes(1);
     });
 
     it('should handle duplicate product IDs in order items', async () => {
-      const dto = CreateOrderDtoTestFactory.createMultiItemDto([
-        'PR1',
-        'PR1',
-        'PR2',
-      ]);
       const products = ProductEntityTestFactory.createProductEntities([
         'PR1',
         'PR2',
@@ -757,9 +710,24 @@ describe('PostgresOrderRepository', () => {
       mockManager.find.mockResolvedValue(products);
       mockManager.save.mockResolvedValue(testData.orderEntity);
 
-      const result = await repository.save(dto as any);
+      const item1 = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 'PR1',
+      });
+      const item2 = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 'PR1',
+      });
+      const item3 = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 'PR2',
+      });
 
-      // Should only look up unique product IDs
+      const customOrderEntity = OrderEntityTestFactory.createOrderEntity({
+        items: [item1, item2, item3],
+      });
+
+      const customOrder = OrderMapper.toDomain(customOrderEntity);
+
+      const result = await repository.save(customOrder);
+
       expect(mockManager.find).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({

@@ -73,13 +73,12 @@ export class PostgresOrderRepository implements OrderRepository {
     }
   }
 
-  async save(
-    createOrderDto: AggregatedOrderInput,
-  ): Promise<Result<Order, RepositoryError>> {
+  async save(order: Order): Promise<Result<Order, RepositoryError>> {
     try {
       const savedOrder = await this.dataSource.transaction(async (manager) => {
+        const orderItems = order.getItems();
         const productIds = Array.from(
-          new Set(createOrderDto.items.map((i) => i.productId)),
+          new Set(orderItems.map((i) => i.productId)),
         ).sort();
 
         const products = await manager.find(ProductEntity, {
@@ -97,81 +96,7 @@ export class PostgresOrderRepository implements OrderRepository {
           }
         }
 
-        for (const item of createOrderDto.items) {
-          if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-            throw new RepositoryError(
-              `INVALID_QUANTITY: quantity must be a positive integer for product ${item.productId}`,
-            );
-          }
-        }
-
-        // Stock reservation within transaction for atomicity
-        for (const productId of productIds) {
-          const itemDto = createOrderDto.items.find(
-            (it) => it.productId === productId,
-          )!;
-          const qty = itemDto.quantity;
-
-          const updateResult = await manager
-            .createQueryBuilder()
-            .update(InventoryEntity)
-            .set({ availableQuantity: () => `available_quantity - ${qty}` })
-            .where('product_id = :id AND available_quantity >= :quantity', {
-              id: productId,
-              quantity: qty,
-            })
-            .execute();
-
-          if (updateResult.affected === 0) {
-            const exists = await manager.exists(InventoryEntity, {
-              where: { productId },
-            });
-            if (!exists) {
-              throw new RepositoryError(
-                `INVENTORY_NOT_FOUND: Inventory for product ${productId} not found`,
-              );
-            } else {
-              throw new RepositoryError(
-                `INSUFFICIENT_STOCK: Not enough stock for product ${productId}`,
-              );
-            }
-          }
-        }
-
-        const domainOrderItems: OrderItemProps[] = createOrderDto.items.map(
-          (itemDto) => {
-            const product = productMap.get(itemDto.productId)!;
-            const props: OrderItemProps = {
-              id: null,
-              productId: product.id,
-              productName: product.name,
-              unitPrice: product.price,
-              quantity: itemDto.quantity,
-            };
-            return props;
-          },
-        );
-
-        const orderId = await this.idGeneratorService.generateOrderId();
-        const shippingAddressId =
-          await this.idGeneratorService.generateShippingAddressId();
-
-        const shippingAddressProps: ShippingAddressProps = {
-          ...createOrderDto.shippingAddress,
-          id: shippingAddressId,
-          phone: createOrderDto.shippingAddress.phone || null,
-        };
-
-        const domainOrder = Order.create({
-          id: orderId,
-          customerId: createOrderDto.customerId,
-          paymentMethod: createOrderDto.paymentMethod,
-          items: domainOrderItems,
-          shippingAddress: shippingAddressProps,
-          customerNotes: createOrderDto.customerNotes || null,
-        });
-
-        const orderEntity = OrderMapper.toEntity(domainOrder);
+        const orderEntity = OrderMapper.toEntity(order);
 
         return await manager.save(orderEntity);
       });
@@ -181,7 +106,7 @@ export class PostgresOrderRepository implements OrderRepository {
       return Result.success<Order>(domainOrder);
     } catch (error: any) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to create order', error);
+      return ErrorFactory.RepositoryError('Failed to save order', error);
     }
   }
 
