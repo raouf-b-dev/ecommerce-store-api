@@ -52,3 +52,13 @@ export const USER_REDIS: IRedisContstant = {
   IS_CACHED_FLAG: 'user_list:isCached',
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
+
+// Idempotency-specific constants (simpler structure)
+export const IDEMPOTENCY_REDIS = {
+  PREFIX: 'idempotency',
+  EXPIRATION: 3600 * 24, // 24 hours
+  STATUS: {
+    IN_PROGRESS: 'in-progress',
+    COMPLETED: 'completed',
+  },
+};
