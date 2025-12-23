@@ -6,6 +6,7 @@ export const JobNames = {
   CREATE_ORDER: 'create-order',
   PROCESS_PAYMENT: 'process-payment',
   CONFIRM_RESERVATION: 'confirm-reservation',
+  CONFIRM_ORDER: 'confirm-order',
   CLEAR_CART: 'clear-cart',
   FINALIZE_CHECKOUT: 'finalize-checkout', // Parent job at end of flow
   // Compensations
@@ -15,6 +16,10 @@ export const JobNames = {
 
   SEND_NOTIFICATION: 'send-notification',
   SAVE_NOTIFICATION_HISTORY: 'save-notification-history',
+
+  // Payment Events
+  PAYMENT_COMPLETED: 'payment-completed',
+  PAYMENT_FAILED: 'payment-failed',
 } as const;
 
 export type JobName = (typeof JobNames)[keyof typeof JobNames];
