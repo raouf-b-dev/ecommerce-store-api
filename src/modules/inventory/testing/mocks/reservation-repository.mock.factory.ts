@@ -14,6 +14,10 @@ export class MockReservationRepository implements ReservationRepository {
     Promise<Result<Reservation, RepositoryError>>,
     [number]
   >();
+  findAllByOrderId = jest.fn<
+    Promise<Result<Reservation[], RepositoryError>>,
+    [number]
+  >();
   update = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
     [Reservation]
@@ -62,6 +66,16 @@ export class MockReservationRepository implements ReservationRepository {
       Result.failure(
         new RepositoryError(`Reservation not found for order ${orderId}`),
       ),
+    );
+  }
+
+  mockSuccessfulFindAllByOrderId(reservations: Reservation[]): void {
+    this.findAllByOrderId.mockResolvedValue(Result.success(reservations));
+  }
+
+  mockFindAllByOrderIdFailure(errorMessage: string): void {
+    this.findAllByOrderId.mockResolvedValue(
+      Result.failure(new RepositoryError(errorMessage)),
     );
   }
 

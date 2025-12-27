@@ -12,6 +12,9 @@ export abstract class ReservationRepository {
   abstract findByOrderId(
     orderId: number,
   ): Promise<Result<Reservation, RepositoryError>>;
+  abstract findAllByOrderId(
+    orderId: number,
+  ): Promise<Result<Reservation[], RepositoryError>>;
   abstract update(
     reservation: Reservation,
   ): Promise<Result<Reservation, RepositoryError>>;

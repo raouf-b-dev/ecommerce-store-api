@@ -121,6 +121,17 @@ export class PostgresReservationRepository implements ReservationRepository {
     }
   }
 
+  async findAllByOrderId(
+    orderId: number,
+  ): Promise<Result<Reservation[], RepositoryError>> {
+    try {
+      const entities = await this.repository.find({ where: { orderId } });
+      return Result.success(entities.map(ReservationMapper.toDomain));
+    } catch (error) {
+      return ErrorFactory.RepositoryError('Failed to find reservations', error);
+    }
+  }
+
   async update(
     reservation: Reservation,
   ): Promise<Result<Reservation, RepositoryError>> {
