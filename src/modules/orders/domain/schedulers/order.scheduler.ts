@@ -4,15 +4,32 @@ import { PaymentMethodType } from '../../../payments/domain';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
-  cartId: string;
-  userId: string;
+  cartId: number;
+  userId: number;
   shippingAddress: ShippingAddressProps;
   paymentMethod: PaymentMethodType;
   customerNotes?: string;
+  orderId: number;
 }
 
 export abstract class OrderScheduler {
   abstract scheduleCheckout(
     props: ScheduleCheckoutProps,
+  ): Promise<Result<string, InfrastructureError>>;
+
+  abstract schedulePostPayment(
+    orderId: number,
+    reservationId: number,
+    cartId: number,
+  ): Promise<Result<string, InfrastructureError>>;
+
+  abstract scheduleStockRelease(
+    reservationId: number,
+  ): Promise<Result<string, InfrastructureError>>;
+
+  abstract schedulePostConfirmation(
+    orderId: number,
+    reservationId: number,
+    cartId: number,
   ): Promise<Result<string, InfrastructureError>>;
 }
