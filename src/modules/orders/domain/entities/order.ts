@@ -18,7 +18,6 @@ export interface OrderProps {
   id: number | null;
   customerId: number;
   paymentId: number | null;
-  reservationId: number | null;
   paymentMethod: PaymentMethodType;
   shippingAddressId: number | null;
   items: OrderItemProps[];
@@ -33,7 +32,6 @@ export class Order implements IOrder {
   private _id: number | null;
   private readonly _customerId: number;
   private _paymentId: number | null;
-  private _reservationId: number | null;
   private readonly _paymentMethod: PaymentMethodType;
   private _shippingAddressId: number | null;
   private _items: OrderItem[];
@@ -50,7 +48,6 @@ export class Order implements IOrder {
     this._id = props.id || null;
     this._customerId = props.customerId;
     this._paymentId = props.paymentId || null;
-    this._reservationId = props.reservationId || null;
     this._paymentMethod = props.paymentMethod;
     this._shippingAddressId = props.shippingAddressId || null;
     this._items = props.items.map((item) => new OrderItem(item));
@@ -101,15 +98,6 @@ export class Order implements IOrder {
 
   get paymentId(): number | null {
     return this._paymentId;
-  }
-
-  get reservationId(): number | null {
-    return this._reservationId;
-  }
-
-  setReservationId(reservationId: number): void {
-    this._reservationId = reservationId;
-    this._updatedAt = new Date();
   }
 
   get paymentMethod(): PaymentMethodType {
@@ -486,7 +474,6 @@ export class Order implements IOrder {
       id: this._id,
       customerId: this._customerId,
       paymentId: this._paymentId,
-      reservationId: this._reservationId,
       paymentMethod: this._paymentMethod,
       shippingAddressId: this._shippingAddressId,
       items: this.items,
@@ -519,7 +506,6 @@ export class Order implements IOrder {
       id: props.id,
       customerId: props.customerId,
       paymentId: null,
-      reservationId: null,
       paymentMethod: props.paymentMethod,
       shippingAddressId: props.shippingAddress.id,
       items: props.items,
@@ -544,7 +530,6 @@ export class Order implements IOrder {
       id: props.id,
       customerId: props.customerId,
       paymentId: null,
-      reservationId: null,
       paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       shippingAddressId: props.shippingAddress.id,
       items: props.items,

@@ -11,7 +11,6 @@ export interface IOrder {
   id: number | null;
   customerId: number;
   paymentId: number | null;
-  reservationId: number | null;
   paymentMethod: PaymentMethodType;
   shippingAddressId: number | null;
   items: IOrderItem[];

@@ -42,9 +42,6 @@ export class OrderEntity {
   @Column({ name: 'payment_id', type: 'int', nullable: true })
   paymentId: number | null;
 
-  @Column({ name: 'reservation_id', type: 'int', nullable: true })
-  reservationId: number | null;
-
   @Column({
     name: 'payment_method',
     type: 'varchar',

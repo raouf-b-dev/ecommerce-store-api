@@ -21,7 +21,6 @@ export class OrderMapper {
       id: entity.id,
       customerId: entity.customerId,
       paymentId: entity.paymentId,
-      reservationId: entity.reservationId,
       paymentMethod: entity.paymentMethod,
       shippingAddressId: entity.shippingAddressId,
       shippingAddress: ShippingAddressMapper.toDomain(
@@ -47,7 +46,6 @@ export class OrderMapper {
       id: primitives.id || 0,
       customerId: primitives.customerId,
       paymentId: primitives.paymentId,
-      reservationId: primitives.reservationId,
       paymentMethod: primitives.paymentMethod,
       shippingAddressId: primitives.shippingAddressId || 0,
       shippingAddress: ShippingAddressMapper.toEntity(
