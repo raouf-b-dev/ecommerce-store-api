@@ -31,8 +31,8 @@ describe('CreateCartController', () => {
   describe('handle', () => {
     it('should return success result with cart when use case succeeds', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
-      const mockCart: ICart = CartTestFactory.createUserCart('customer-123');
+      const dto: CreateCartDto = { customerId: 123 };
+      const mockCart: ICart = CartTestFactory.createUserCart(123);
 
       usecase.execute.mockResolvedValue(Result.success(mockCart));
 
@@ -47,8 +47,8 @@ describe('CreateCartController', () => {
 
     it('should create a guest cart when sessionId is provided', async () => {
       // Arrange
-      const dto: CreateCartDto = { sessionId: 'session-456' };
-      const mockCart: ICart = CartTestFactory.createGuestCart('session-456');
+      const dto: CreateCartDto = { sessionId: 456 };
+      const mockCart: ICart = CartTestFactory.createGuestCart(456);
 
       usecase.execute.mockResolvedValue(Result.success(mockCart));
 
@@ -58,12 +58,12 @@ describe('CreateCartController', () => {
       // Assert
       expect(usecase.execute).toHaveBeenCalledWith(dto);
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.sessionId).toBe('session-456');
+      expect(result.value.sessionId).toBe(456);
     });
 
     it('should return the specific failure result when use case fails', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
+      const dto: CreateCartDto = { customerId: 123 };
       const expectedError = new UseCaseError('Failed to create cart');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -80,7 +80,7 @@ describe('CreateCartController', () => {
 
     it('should catch unexpected exceptions and return a ControllerError', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
+      const dto: CreateCartDto = { customerId: 123 };
       const unexpectedError = new Error('Database connection failed');
 
       usecase.execute.mockRejectedValue(unexpectedError);

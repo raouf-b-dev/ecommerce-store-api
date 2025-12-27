@@ -9,8 +9,8 @@ import { ICart } from '../../../domain/interfaces/cart.interface';
 export class RemoveCartItemController {
   constructor(private readonly removeCartItemUseCase: RemoveCartItemUseCase) {}
   async handle(
-    id: string,
-    itemId: string,
+    id: number,
+    itemId: number,
   ): Promise<Result<ICart, ControllerError>> {
     try {
       const result = await this.removeCartItemUseCase.execute({

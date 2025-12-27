@@ -25,26 +25,20 @@ export class PostgresProductRepository implements ProductRepository {
       });
       const savedEntity = await this.ormRepo.save(entity);
 
-      // Map back to IProduct (domain interface)
-      // Note: savedEntity.id is number, IProduct.id is string.
-      // We need to ensure compatibility.
-      return Result.success<IProduct>({
-        ...savedEntity,
-        id: savedEntity.id.toString(),
-      });
+      return Result.success<IProduct>(savedEntity);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save the product`, error);
     }
   }
 
   async update(
-    id: string,
+    id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Ensure the product exists first
       const existing = await this.ormRepo.findOne({
-        where: { id: parseInt(id, 10) },
+        where: { id },
       });
       if (!existing) {
         return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
@@ -57,10 +51,7 @@ export class PostgresProductRepository implements ProductRepository {
       });
 
       await this.ormRepo.save(updatedProduct);
-      return Result.success<IProduct>({
-        ...updatedProduct,
-        id: updatedProduct.id.toString(),
-      });
+      return Result.success<IProduct>(updatedProduct);
     } catch (error) {
       return ErrorFactory.RepositoryError(
         `Failed to update the product`,
@@ -68,17 +59,14 @@ export class PostgresProductRepository implements ProductRepository {
       );
     }
   }
-  async findById(id: string): Promise<Result<IProduct, RepositoryError>> {
+  async findById(id: number): Promise<Result<IProduct, RepositoryError>> {
     try {
       const product = await this.ormRepo.findOne({
-        where: { id: parseInt(id, 10) },
+        where: { id },
       });
       if (!product) return ErrorFactory.RepositoryError('Product not found');
 
-      return Result.success<IProduct>({
-        ...product,
-        id: product.id.toString(),
-      });
+      return Result.success<IProduct>(product);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find the product`, error);
     }
@@ -90,18 +78,15 @@ export class PostgresProductRepository implements ProductRepository {
       if (productsList.length <= 0) {
         return ErrorFactory.RepositoryError('Did not find any products');
       }
-      const products = productsList.map((p) => ({
-        ...p,
-        id: p.id.toString(),
-      }));
+      const products = productsList;
       return Result.success<IProduct[]>(products);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find products`, error);
     }
   }
-  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     try {
-      await this.ormRepo.delete(parseInt(id, 10));
+      await this.ormRepo.delete(id);
       return Result.success<void>(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError(

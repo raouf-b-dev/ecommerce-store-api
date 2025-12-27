@@ -27,7 +27,7 @@ describe('GetCartUseCase', () => {
   describe('execute', () => {
     it('should return cart when found', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const mockCartData = CartTestFactory.createMockCart({ id: cartId });
       const mockCart = Cart.fromPrimitives(mockCartData);
 
@@ -44,7 +44,7 @@ describe('GetCartUseCase', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
+      const cartId = 404;
       const error = new RepositoryError('Cart not found');
 
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
@@ -63,7 +63,7 @@ describe('GetCartUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const cartId = 'cart-500';
+      const cartId = 500;
       const error = new Error('Database connection failed');
 
       mockCartRepository.findById.mockRejectedValue(error);

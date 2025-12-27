@@ -20,8 +20,8 @@ describe('RedisInventoryRepository', () => {
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: MockInventoryRepository;
 
-  const inventoryId = 'IN0000001';
-  const productId = 'PR0000001';
+  const inventoryId = 1;
+  const productId = 1;
   const inventoryPrimitives = new InventoryBuilder()
     .withId(inventoryId)
     .withProductId(productId)
@@ -31,8 +31,8 @@ describe('RedisInventoryRepository', () => {
   const cachedInventory: InventoryForCache =
     InventoryCacheMapper.toCache(domainInventory);
 
-  const idKey = (id: string) => `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
-  const productKey = (pid: string) =>
+  const idKey = (id: number) => `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
+  const productKey = (pid: number) =>
     `${INVENTORY_REDIS.CACHE_KEY}:product:${pid}`;
 
   const defaultLowStockQueryDto =
@@ -207,20 +207,20 @@ describe('RedisInventoryRepository', () => {
 
   // --- FindByProductIds Tests ---
   describe('findByProductIds', () => {
-    const productIds = ['PR0000001', 'PR0000002', 'PR0000003'];
+    const productIds = [1, 2, 3];
     const inv1 = new InventoryBuilder()
       .withProductId(productIds[0])
-      .withId('IN001')
+      .withId(101)
       .asInStock()
       .build();
     const inv2 = new InventoryBuilder()
       .withProductId(productIds[1])
-      .withId('IN002')
+      .withId(102)
       .asInStock()
       .build();
     const inv3 = new InventoryBuilder()
       .withProductId(productIds[2])
-      .withId('IN003')
+      .withId(103)
       .asInStock()
       .build();
     const domainInv1 = Inventory.fromPrimitives(inv1);
@@ -365,7 +365,7 @@ describe('RedisInventoryRepository', () => {
       // Arrange
 
       const lowStockInv = InventoryTestFactory.createLowStockInventory({
-        id: '1',
+        id: 1,
       });
       const domainLowStock = Inventory.fromPrimitives(lowStockInv);
       const cachedLowStock = InventoryCacheMapper.toCache(domainLowStock);
@@ -427,8 +427,8 @@ describe('RedisInventoryRepository', () => {
     it('should save to postgres, cache the result, and delete the cached flag', async () => {
       // Arrange
       const newInventory = new InventoryBuilder()
-        .withId('IN_NEW')
-        .withProductId('PR_NEW')
+        .withId(999)
+        .withProductId(888)
         .asZeroInventory()
         .build();
       const newDomainInventory = Inventory.fromPrimitives(newInventory);

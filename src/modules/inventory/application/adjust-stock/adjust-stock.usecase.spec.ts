@@ -13,8 +13,8 @@ describe('AdjustStockUseCase', () => {
   let mockRepository: MockInventoryRepository;
 
   const mockInventoryData = InventoryTestFactory.createInStockInventory({
-    id: 'INV-001',
-    productId: 'PROD-001',
+    id: 1,
+    productId: 1,
     availableQuantity: 100,
     reservedQuantity: 10,
   });
@@ -41,22 +41,22 @@ describe('AdjustStockUseCase', () => {
 
   describe('Repository Errors', () => {
     it('should handle inventory not found and update failures', async () => {
-      mockRepository.mockInventoryNotFoundForProduct('PROD-001');
+      mockRepository.mockInventoryNotFoundForProduct(1);
       const dto = InventoryDtoTestFactory.createAddStockDto(50);
 
-      let result = await useCase.execute({ productId: 'PROD-001', dto });
+      let result = await useCase.execute({ productId: 1, dto });
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Inventory not found for product PROD-001',
+        'Inventory not found for product 1',
       );
-      mockRepository.verifyFindByProductIdCalledWith('PROD-001');
+      mockRepository.verifyFindByProductIdCalledWith(1);
 
       mockRepository.reset();
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockUpdateFailure('Database connection failed');
 
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -73,7 +73,7 @@ describe('AdjustStockUseCase', () => {
       };
 
       let result = await useCase.execute({
-        productId: 'PROD-001',
+        productId: 1,
         dto: invalidDto,
       });
 
@@ -86,7 +86,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.findByProductId.mockRejectedValue(new Error('Unexpected'));
 
       result = await useCase.execute({
-        productId: 'PROD-001',
+        productId: 1,
         dto: InventoryDtoTestFactory.createAddStockDto(10),
       });
 
@@ -104,12 +104,12 @@ describe('AdjustStockUseCase', () => {
       const inventory = Inventory.fromPrimitives(mockInventoryData);
       mockRepository.mockSuccessfulUpdate(inventory);
 
-      const result = await useCase.execute({ productId: 'PROD-001', dto });
+      const result = await useCase.execute({ productId: 1, dto });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(150);
       expect(result.value.lastRestockDate).not.toBeNull();
-      mockRepository.verifyFindByProductIdCalledWith('PROD-001');
+      mockRepository.verifyFindByProductIdCalledWith(1);
     });
 
     it('should reject negative and zero quantities', async () => {
@@ -119,14 +119,14 @@ describe('AdjustStockUseCase', () => {
         quantity: -10,
         type: StockAdjustmentType.ADD,
       });
-      let result = await useCase.execute({ productId: 'PROD-001', dto });
+      let result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity cannot be negative',
       );
 
       dto = InventoryDtoTestFactory.createZeroQuantityAdjustDto();
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity to increase must be positive',
@@ -141,7 +141,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulUpdate(inventory);
 
       let dto = InventoryDtoTestFactory.createSubtractStockDto(30);
-      let result = await useCase.execute({ productId: 'PROD-001', dto });
+      let result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(70); // 100 - 30
 
@@ -149,7 +149,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulUpdate(inventory);
       dto = InventoryDtoTestFactory.createSubtractStockDto(100);
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(0);
     });
@@ -158,14 +158,14 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
 
       let dto = InventoryDtoTestFactory.createSubtractStockDto(200);
-      let result = await useCase.execute({ productId: 'PROD-001', dto });
+      let result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultFailure(result, 'Insufficient stock');
 
       dto = InventoryDtoTestFactory.createAdjustStockDto({
         quantity: -5,
         type: StockAdjustmentType.SUBTRACT,
       });
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity cannot be negative',
@@ -180,7 +180,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulUpdate(inventory);
 
       let dto = InventoryDtoTestFactory.createSetStockDto(250);
-      let result = await useCase.execute({ productId: 'PROD-001', dto });
+      let result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(250);
 
@@ -188,7 +188,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulUpdate(inventory);
       dto = InventoryDtoTestFactory.createSetStockDto(50);
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(50);
 
@@ -196,7 +196,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulUpdate(inventory);
       dto = InventoryDtoTestFactory.createSetStockDto(0);
-      result = await useCase.execute({ productId: 'PROD-001', dto });
+      result = await useCase.execute({ productId: 1, dto });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(0);
     });
@@ -208,7 +208,7 @@ describe('AdjustStockUseCase', () => {
         type: StockAdjustmentType.SET,
       });
 
-      const result = await useCase.execute({ productId: 'PROD-001', dto });
+      const result = await useCase.execute({ productId: 1, dto });
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -218,7 +218,7 @@ describe('AdjustStockUseCase', () => {
     it('should preserve reserved quantity during adjustments', async () => {
       const inventoryWithReservations =
         InventoryTestFactory.createInventoryWithReservations({
-          productId: 'PROD-001',
+          productId: 1,
           reservedQuantity: 20,
         });
       mockRepository.mockSuccessfulFindByProductId(inventoryWithReservations);
@@ -226,7 +226,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulUpdate(inventory);
 
       const dto = InventoryDtoTestFactory.createAddStockDto(50);
-      const result = await useCase.execute({ productId: 'PROD-001', dto });
+      const result = await useCase.execute({ productId: 1, dto });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.reservedQuantity).toBe(20);

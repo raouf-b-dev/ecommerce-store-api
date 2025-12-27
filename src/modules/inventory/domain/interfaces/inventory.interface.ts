@@ -1,7 +1,7 @@
 // src/modules/inventory/domain/interfaces/inventory.interface.ts
 export interface IInventory {
-  id: string | null;
-  productId: string;
+  id: number | null;
+  productId: number;
   availableQuantity: number;
   reservedQuantity: number;
   totalQuantity: number;

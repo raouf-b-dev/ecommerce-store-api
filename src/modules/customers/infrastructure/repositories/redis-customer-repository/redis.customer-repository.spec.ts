@@ -107,7 +107,7 @@ describe('RedisCustomerRepository', () => {
         Result.failure(new RepositoryError('Customer not found')),
       );
 
-      const result = await repository.findById('non-existent');
+      const result = await repository.findById(0);
 
       expect(result.isFailure).toBe(true);
     });

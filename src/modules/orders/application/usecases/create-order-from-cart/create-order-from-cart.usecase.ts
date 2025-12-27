@@ -12,11 +12,12 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 
 export interface CreateOrderFromCartDto {
-  cartId: string;
-  userId: string;
+  cartId: number;
+  userId: number;
   shippingAddress: ShippingAddressProps;
   paymentMethod: PaymentMethodType;
   customerNotes?: string;
+  orderId?: number;
 }
 
 @Injectable()
@@ -57,6 +58,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
         shippingAddress: dto.shippingAddress,
         paymentMethod: dto.paymentMethod,
         customerNotes: dto.customerNotes,
+        orderId: dto.orderId,
       });
 
       // 3. Save Order

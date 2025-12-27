@@ -7,6 +7,6 @@ export abstract class UserRepository {
   abstract findByEmail(
     email: string,
   ): Promise<Result<User | null, RepositoryError>>;
-  abstract findById(id: string): Promise<Result<User | null, RepositoryError>>;
-  abstract delete(id: string): Promise<Result<void, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<User | null, RepositoryError>>;
+  abstract delete(id: number): Promise<Result<void, RepositoryError>>;
 }

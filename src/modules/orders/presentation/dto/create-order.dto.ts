@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsEnum,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateOrderItemDto } from './create-order-item.dto';
@@ -14,11 +15,11 @@ import { PaymentMethodType } from '../../../payments/domain';
 
 export class CreateOrderDto {
   @ApiProperty({
-    example: 'cust_abc123',
+    example: 123,
     description: 'Customer ID placing the order',
   })
-  @IsString()
-  customerId: string;
+  @IsNumber()
+  customerId: number;
 
   @ApiProperty({
     type: [CreateOrderItemDto],

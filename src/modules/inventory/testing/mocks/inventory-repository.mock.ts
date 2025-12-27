@@ -7,16 +7,16 @@ import { IInventory } from '../../domain/interfaces/inventory.interface';
 import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
 
 export class MockInventoryRepository implements InventoryRepository {
-  findById = jest.fn<Promise<Result<Inventory, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Inventory, RepositoryError>>, [number]>();
 
   findByProductId = jest.fn<
     Promise<Result<Inventory, RepositoryError>>,
-    [string]
+    [number]
   >();
 
   findByProductIds = jest.fn<
     Promise<Result<Inventory[], RepositoryError>>,
-    [string[]]
+    [number[]]
   >();
 
   findLowStock = jest.fn<
@@ -28,14 +28,14 @@ export class MockInventoryRepository implements InventoryRepository {
 
   update = jest.fn<Promise<Result<Inventory, RepositoryError>>, [Inventory]>();
 
-  delete = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   mockSuccessfulFindById(inventoryPrimitives: IInventory): void {
     const domainInventory = Inventory.fromPrimitives(inventoryPrimitives);
     this.findById.mockResolvedValue(Result.success(domainInventory));
   }
 
-  mockInventoryNotFound(id: string): void {
+  mockInventoryNotFound(id: number): void {
     this.findById.mockResolvedValue(
       Result.failure(new RepositoryError(`Inventory with id ${id} not found`)),
     );
@@ -46,7 +46,7 @@ export class MockInventoryRepository implements InventoryRepository {
     this.findByProductId.mockResolvedValue(Result.success(domainInventory));
   }
 
-  mockInventoryNotFoundForProduct(productId: string): void {
+  mockInventoryNotFoundForProduct(productId: number): void {
     this.findByProductId.mockResolvedValue(
       Result.failure(
         new RepositoryError(`Inventory not found for product ${productId}`),
@@ -86,7 +86,7 @@ export class MockInventoryRepository implements InventoryRepository {
     );
   }
 
-  mockInventoryAlreadyExists(productId: string): void {
+  mockInventoryAlreadyExists(productId: number): void {
     this.save.mockResolvedValue(
       Result.failure(
         new RepositoryError(
@@ -106,7 +106,7 @@ export class MockInventoryRepository implements InventoryRepository {
     );
   }
 
-  mockInventoryNotFoundForUpdate(id: string): void {
+  mockInventoryNotFoundForUpdate(id: number): void {
     this.update.mockResolvedValue(
       Result.failure(
         new RepositoryError(
@@ -126,7 +126,7 @@ export class MockInventoryRepository implements InventoryRepository {
     );
   }
 
-  mockInventoryNotFoundForDelete(id: string): void {
+  mockInventoryNotFoundForDelete(id: number): void {
     this.delete.mockResolvedValue(
       Result.failure(new RepositoryError(`Inventory with id ${id} not found`)),
     );
@@ -146,11 +146,11 @@ export class MockInventoryRepository implements InventoryRepository {
     expect(this.delete).not.toHaveBeenCalled();
   }
 
-  verifyFindByIdCalledWith(id: string): void {
+  verifyFindByIdCalledWith(id: number): void {
     expect(this.findById).toHaveBeenCalledWith(id);
   }
 
-  verifyFindByProductIdCalledWith(productId: string): void {
+  verifyFindByProductIdCalledWith(productId: number): void {
     expect(this.findByProductId).toHaveBeenCalledWith(productId);
   }
 
@@ -158,7 +158,7 @@ export class MockInventoryRepository implements InventoryRepository {
     expect(this.update).toHaveBeenCalledWith(inventory);
   }
 
-  verifyDeleteCalledWith(id: string): void {
+  verifyDeleteCalledWith(id: number): void {
     expect(this.delete).toHaveBeenCalledWith(id);
   }
 }

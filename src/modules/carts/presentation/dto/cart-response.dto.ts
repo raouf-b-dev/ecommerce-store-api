@@ -11,7 +11,7 @@ export class CartResponseDto {
   id: string;
 
   @ApiPropertyOptional({
-    example: 'user-123',
+    example: 123,
     description: 'Customer ID',
   })
   customerId?: string;

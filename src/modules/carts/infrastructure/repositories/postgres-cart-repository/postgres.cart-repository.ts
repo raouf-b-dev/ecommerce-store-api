@@ -19,10 +19,10 @@ export class PostgresCartRepository implements CartRepository {
     private readonly repository: Repository<CartEntity>,
   ) {}
 
-  async findById(id: string): Promise<Result<Cart, RepositoryError>> {
+  async findById(id: number): Promise<Result<Cart, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
-        where: { id: parseInt(id, 10) },
+        where: { id },
       });
 
       if (!entity) {
@@ -36,7 +36,7 @@ export class PostgresCartRepository implements CartRepository {
   }
 
   async findByCustomerId(
-    customerId: string,
+    customerId: number,
   ): Promise<Result<Cart, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
@@ -57,7 +57,7 @@ export class PostgresCartRepository implements CartRepository {
   }
 
   async findBySessionId(
-    sessionId: string,
+    sessionId: number,
   ): Promise<Result<Cart, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
@@ -110,9 +110,9 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
-      const result = await this.repository.delete(parseInt(id, 10));
+      const result = await this.repository.delete(id);
       if (result.affected === 0) {
         return ErrorFactory.RepositoryError('Cart not found');
       }

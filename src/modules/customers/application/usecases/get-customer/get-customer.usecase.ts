@@ -9,7 +9,7 @@ import { ICustomer } from '../../../domain/interfaces/customer.interface';
 
 @Injectable()
 export class GetCustomerUseCase extends UseCase<
-  string,
+  number,
   ICustomer,
   UseCaseError
 > {
@@ -17,7 +17,7 @@ export class GetCustomerUseCase extends UseCase<
     super();
   }
 
-  async execute(id: string): Promise<Result<ICustomer, UseCaseError>> {
+  async execute(id: number): Promise<Result<ICustomer, UseCaseError>> {
     try {
       const customerResult = await this.customerRepository.findById(id);
 

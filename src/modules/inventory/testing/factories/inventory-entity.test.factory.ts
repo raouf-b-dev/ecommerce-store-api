@@ -7,7 +7,7 @@ export class InventoryEntityTestFactory {
   ): InventoryEntity {
     const defaultEntity: InventoryEntity = {
       id: 1,
-      productId: 'PR0000001',
+      productId: 1,
       availableQuantity: 100,
       reservedQuantity: 10,
       totalQuantity: 110,
@@ -78,7 +78,7 @@ export class InventoryEntityTestFactory {
   }
 
   static createEntityForProduct(
-    productId: string,
+    productId: number,
     quantity: number = 100,
   ): InventoryEntity {
     return this.createInventoryEntity({
@@ -93,7 +93,7 @@ export class InventoryEntityTestFactory {
     return Array.from({ length: count }, (_, i) =>
       this.createInventoryEntity({
         id: i + 1,
-        productId: `PR${(i + 1).toString().padStart(7, '0')}`,
+        productId: i + 1,
         availableQuantity: (i + 1) * 20,
         reservedQuantity: i * 2,
         totalQuantity: (i + 1) * 20 + i * 2,

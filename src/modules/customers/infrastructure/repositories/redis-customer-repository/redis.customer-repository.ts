@@ -19,7 +19,7 @@ export class RedisCustomerRepository implements CustomerRepository {
     private readonly logger: Logger,
   ) {}
 
-  async findById(id: string): Promise<Result<Customer, RepositoryError>> {
+  async findById(id: number): Promise<Result<Customer, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<CustomerForCache>(
         `${CUSTOMER_REDIS.CACHE_KEY}:${id}`,
@@ -211,7 +211,7 @@ export class RedisCustomerRepository implements CustomerRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.delete(id);
       if (deleteResult.isFailure) return deleteResult;

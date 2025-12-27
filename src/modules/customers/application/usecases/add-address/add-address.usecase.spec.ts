@@ -25,7 +25,7 @@ describe('AddAddressUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if address is added', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
@@ -48,7 +48,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should add home address', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
         type: AddressType.HOME,
       });
@@ -70,7 +70,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should add work address', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
         type: AddressType.WORK,
       });
@@ -92,7 +92,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should add address with delivery instructions', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
         deliveryInstructions: 'Leave at front door',
       });
@@ -114,7 +114,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
-      const customerId = 'non-existent-id';
+      const customerId = 0;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
 
       mockCustomerRepository.mockCustomerNotFound();
@@ -129,7 +129,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if update fails', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
 
       mockCustomerRepository.mockSuccessfulFind(
@@ -149,7 +149,7 @@ describe('AddAddressUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
       const repoError = new Error('Database connection failed');
 

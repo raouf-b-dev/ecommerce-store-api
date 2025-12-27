@@ -53,14 +53,14 @@ export class CartsController {
   @ApiOperation({ summary: 'Get cart by ID' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async getCart(@Param('id') id: string) {
-    return this.getCartController.handle(id);
+    return this.getCartController.handle(Number(id));
   }
 
   @Post(':id/items')
   @ApiOperation({ summary: 'Add item to cart' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async addItem(@Param('id') id: string, @Body() dto: AddCartItemDto) {
-    return this.addCartItemController.handle(id, dto);
+    return this.addCartItemController.handle(Number(id), dto);
   }
 
   @Patch(':id/items/:itemId')
@@ -71,21 +71,25 @@ export class CartsController {
     @Param('itemId') itemId: string,
     @Body() dto: UpdateCartItemDto,
   ) {
-    return this.updateCartItemController.handle(id, itemId, dto);
+    return this.updateCartItemController.handle(
+      Number(id),
+      Number(itemId),
+      dto,
+    );
   }
 
   @Delete(':id/items/:itemId')
   @ApiOperation({ summary: 'Remove item from cart' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async removeItem(@Param('id') id: string, @Param('itemId') itemId: string) {
-    return this.removeCartItemController.handle(id, itemId);
+    return this.removeCartItemController.handle(Number(id), Number(itemId));
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Clear cart (remove all items)' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async clearCart(@Param('id') id: string) {
-    return this.clearCartController.handle(id);
+    return this.clearCartController.handle(Number(id));
   }
 
   @Post(':guestCartId/merge/:userCartId')
@@ -97,6 +101,9 @@ export class CartsController {
     @Param('guestCartId') guestCartId: string,
     @Param('userCartId') userCartId: string,
   ) {
-    return this.mergeCartsController.handle(guestCartId, userCartId);
+    return this.mergeCartsController.handle(
+      Number(guestCartId),
+      Number(userCartId),
+    );
   }
 }

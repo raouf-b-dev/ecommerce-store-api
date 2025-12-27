@@ -11,7 +11,7 @@ export class OrderBuilder {
     this.order = OrderTestFactory.createMockOrder();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.order.id = id;
     return this;
   }
@@ -21,12 +21,12 @@ export class OrderBuilder {
     return this;
   }
 
-  withCustomerId(customerId: string): this {
+  withCustomerId(customerId: number): this {
     this.order.customerId = customerId;
     return this;
   }
 
-  withPaymentId(paymentId: string | null): this {
+  withPaymentId(paymentId: number | null): this {
     this.order.paymentId = paymentId;
     return this;
   }
@@ -38,8 +38,8 @@ export class OrderBuilder {
 
   withItems(count: number): this {
     const items = Array.from({ length: count }, (_, i) => ({
-      id: `item-${i + 1}`,
-      productId: `PR${i + 1}`,
+      id: i + 1,
+      productId: i + 1,
       productName: `Product ${i + 1}`,
       quantity: 1,
       unitPrice: 10,
@@ -58,35 +58,35 @@ export class OrderBuilder {
   }
 
   asCancellable(): this {
-    return this.withStatus(OrderStatus.PENDING);
+    return this.withStatus(OrderStatus.PENDING_PAYMENT);
   }
 
   asNonCancellable(): this {
-    return this.withStatus(OrderStatus.DELIVERED).withPaymentId('PAY001');
+    return this.withStatus(OrderStatus.DELIVERED).withPaymentId(1);
   }
 
   asCODPending(): this {
     return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
-      .withStatus(OrderStatus.PENDING)
+      .withStatus(OrderStatus.CONFIRMED) // COD starts confirmed
       .withPaymentId(null);
   }
 
   asOnlinePaymentPending(): this {
     return this.withPaymentMethod(PaymentMethodType.STRIPE)
-      .withStatus(OrderStatus.PENDING)
+      .withStatus(OrderStatus.PENDING_PAYMENT)
       .withPaymentId(null);
   }
 
   asOnlinePaymentCompleted(): this {
     return this.withPaymentMethod(PaymentMethodType.STRIPE)
       .withStatus(OrderStatus.CONFIRMED)
-      .withPaymentId('PAY_STRIPE_001');
+      .withPaymentId(1);
   }
 
   asCODDelivered(): this {
     return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
       .withStatus(OrderStatus.DELIVERED)
-      .withPaymentId('PAY_COD_001');
+      .withPaymentId(1);
   }
 
   private recalculatePricing(): void {

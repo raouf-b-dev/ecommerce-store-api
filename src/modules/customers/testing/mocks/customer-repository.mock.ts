@@ -6,7 +6,7 @@ import { ICustomer } from '../../domain/interfaces/customer.interface';
 
 export class MockCustomerRepository implements CustomerRepository {
   // Jest mock functions
-  findById = jest.fn<Promise<Result<Customer, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Customer, RepositoryError>>, [number]>();
   findByEmail = jest.fn<Promise<Result<Customer, RepositoryError>>, [string]>();
   findByPhone = jest.fn<Promise<Result<Customer, RepositoryError>>, [string]>();
   findAll = jest.fn<
@@ -15,7 +15,7 @@ export class MockCustomerRepository implements CustomerRepository {
   >();
   save = jest.fn<Promise<Result<Customer, RepositoryError>>, [Customer]>();
   update = jest.fn<Promise<Result<Customer, RepositoryError>>, [Customer]>();
-  delete = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(customerPrimitives: ICustomer): void {

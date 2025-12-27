@@ -12,7 +12,7 @@ type ReservationCreate = CreateFromEntity<ReservationEntity, 'items'>;
 export class ReservationMapper {
   static toDomain(entity: ReservationEntity): Reservation {
     const props: ReservationProps = {
-      id: entity.id.toString(),
+      id: entity.id,
       orderId: entity.orderId,
       items: ReservationItemMapper.toDomainArray(entity.items),
       status: entity.status,
@@ -25,7 +25,7 @@ export class ReservationMapper {
 
   static toEntity(domain: Reservation): ReservationEntity {
     const payload: ReservationCreate = {
-      id: domain.id ? parseInt(domain.id, 10) : 0,
+      id: domain.id || 0,
       orderId: domain.orderId,
       status: domain.status,
       expiresAt: domain.expiresAt,

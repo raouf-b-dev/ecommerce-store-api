@@ -28,7 +28,7 @@ describe('CheckStockController', () => {
 
   it('should return stock availability on success (with quantity)', async () => {
     // Arrange
-    const productId = 'PR001';
+    const productId = 1;
     const quantity = 5;
     const response: CheckStockResponse = {
       isAvailable: true,
@@ -48,7 +48,7 @@ describe('CheckStockController', () => {
 
   it('should return stock availability on success (without quantity)', async () => {
     // Arrange
-    const productId = 'PR001';
+    const productId = 1;
     const response: CheckStockResponse = {
       isAvailable: true,
       availableQuantity: 1,
@@ -70,7 +70,7 @@ describe('CheckStockController', () => {
 
   it('should return a failure if the use case fails', async () => {
     // Arrange
-    const productId = 'PR404';
+    const productId = 404;
     const quantity = 1;
     const useCaseError = ErrorFactory.UseCaseError('Inventory not found');
     usecase.execute.mockResolvedValue(useCaseError);
@@ -88,7 +88,7 @@ describe('CheckStockController', () => {
 
   it('should return a controller error on unexpected exceptions', async () => {
     // Arrange
-    const productId = 'PR500';
+    const productId = 500;
     const quantity = 1;
     const unexpectedError = new Error('Server exploded');
     usecase.execute.mockRejectedValue(unexpectedError);

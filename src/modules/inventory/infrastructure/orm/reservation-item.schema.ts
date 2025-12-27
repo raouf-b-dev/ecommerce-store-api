@@ -13,7 +13,7 @@ export class ReservationItemEntity {
   id: number;
 
   @Column({ name: 'product_id' })
-  productId: string;
+  productId: number;
 
   @Column({ type: 'int' })
   quantity: number;

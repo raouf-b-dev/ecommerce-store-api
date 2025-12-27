@@ -10,7 +10,7 @@ import { PaymentDtoMapper } from '../../mappers/payment-dto.mapper';
 export class CapturePaymentController {
   constructor(private readonly useCase: CapturePaymentUseCase) {}
   async handle(
-    id: string,
+    id: number,
   ): Promise<Result<PaymentResponseDto, ControllerError>> {
     try {
       const result = await this.useCase.execute(id);

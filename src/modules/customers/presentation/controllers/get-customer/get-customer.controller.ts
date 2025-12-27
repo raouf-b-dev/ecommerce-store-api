@@ -9,7 +9,7 @@ import { ICustomer } from '../../../domain/interfaces/customer.interface';
 export class GetCustomerController {
   constructor(private readonly useCase: GetCustomerUseCase) {}
 
-  async handle(id: string): Promise<Result<ICustomer, ControllerError>> {
+  async handle(id: number): Promise<Result<ICustomer, ControllerError>> {
     try {
       const result = await this.useCase.execute(id);
 

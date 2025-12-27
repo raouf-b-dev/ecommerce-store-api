@@ -1,7 +1,7 @@
 import {
   Entity,
   Column,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -9,8 +9,8 @@ import { UserRoleType } from '../../domain/value-objects/user-role';
 
 @Entity('users')
 export class UserEntity {
-  @PrimaryColumn()
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ unique: true })
   email: string;
@@ -22,7 +22,7 @@ export class UserEntity {
   role: UserRoleType;
 
   @Column({ type: 'text', nullable: true })
-  customerId: string | null;
+  customerId: number | null;
 
   @CreateDateColumn()
   createdAt: Date;

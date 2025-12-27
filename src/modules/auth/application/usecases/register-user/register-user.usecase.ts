@@ -13,7 +13,7 @@ import { UserRoleType } from '../../../domain/value-objects/user-role';
 @Injectable()
 export class RegisterUserUseCase extends UseCase<
   RegisterDto,
-  { user: User; customerId: string },
+  { user: User; customerId: number },
   UseCaseError
 > {
   constructor(
@@ -26,7 +26,7 @@ export class RegisterUserUseCase extends UseCase<
 
   async execute(
     dto: RegisterDto,
-  ): Promise<Result<{ user: User; customerId: string }, UseCaseError>> {
+  ): Promise<Result<{ user: User; customerId: number }, UseCaseError>> {
     try {
       // 1. Check if user exists
       const existingUser = await this.userRepository.findByEmail(dto.email);

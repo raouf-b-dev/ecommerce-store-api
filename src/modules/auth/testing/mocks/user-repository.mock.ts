@@ -10,8 +10,8 @@ export class MockUserRepository implements UserRepository {
     Promise<Result<User | null, RepositoryError>>,
     [string]
   >();
-  findById = jest.fn<Promise<Result<User | null, RepositoryError>>, [string]>();
-  delete = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<User | null, RepositoryError>>, [number]>();
+  delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   mockSuccessfulSave(user: User): void {
     this.save.mockResolvedValue(Result.success(user));
@@ -33,7 +33,7 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFindById(id: string): void {
+  mockSuccessfulFindById(id: number): void {
     const user = User.fromPrimitives(UserTestFactory.createMockUser());
     this.findById.mockResolvedValue(Result.success(user || null));
   }

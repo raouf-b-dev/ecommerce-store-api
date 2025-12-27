@@ -93,10 +93,10 @@ export class PostgresReservationRepository implements ReservationRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<Reservation, RepositoryError>> {
+  async findById(id: number): Promise<Result<Reservation, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
-        where: { id: parseInt(id, 10) },
+        where: { id },
       });
       if (!entity) {
         return ErrorFactory.RepositoryError('Reservation not found');
@@ -108,7 +108,7 @@ export class PostgresReservationRepository implements ReservationRepository {
   }
 
   async findByOrderId(
-    orderId: string,
+    orderId: number,
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({ where: { orderId } });
@@ -162,8 +162,11 @@ export class PostgresReservationRepository implements ReservationRepository {
       const savedReservation = await this.dataSource.transaction(
         async (manager) => {
           // Check current status in DB
+          if (!reservation.id) {
+            throw new RepositoryError('Reservation ID is required');
+          }
           const currentEntity = await manager.findOne(ReservationEntity, {
-            where: { id: parseInt(reservation.id!, 10) },
+            where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
           });
 
@@ -223,8 +226,11 @@ export class PostgresReservationRepository implements ReservationRepository {
     try {
       const savedReservation = await this.dataSource.transaction(
         async (manager) => {
+          if (!reservation.id) {
+            throw new RepositoryError('Reservation ID is required');
+          }
           const currentEntity = await manager.findOne(ReservationEntity, {
-            where: { id: parseInt(reservation.id!, 10) },
+            where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
           });
 

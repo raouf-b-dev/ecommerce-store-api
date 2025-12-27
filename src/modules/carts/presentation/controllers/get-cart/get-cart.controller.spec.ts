@@ -29,7 +29,7 @@ describe('GetCartController', () => {
 
   it('should return the cart on success', async () => {
     // Arrange
-    const cartId = 'cart-123';
+    const cartId = 123;
     const mockCart: ICart = CartTestFactory.createMockCart({ id: cartId });
 
     usecase.execute.mockResolvedValue(Result.success(mockCart));
@@ -45,7 +45,7 @@ describe('GetCartController', () => {
 
   it('should return a failure result if the use case fails', async () => {
     // Arrange
-    const cartId = 'cart-404';
+    const cartId = 404;
     const mockError = new UseCaseError('Cart not found');
 
     usecase.execute.mockResolvedValue(Result.failure(mockError));
@@ -60,7 +60,7 @@ describe('GetCartController', () => {
 
   it('should return a ControllerError on unexpected exceptions', async () => {
     // Arrange
-    const cartId = 'cart-500';
+    const cartId = 500;
     const mockError = new Error('Database connection failed');
 
     usecase.execute.mockRejectedValue(mockError);

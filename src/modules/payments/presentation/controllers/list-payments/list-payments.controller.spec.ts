@@ -34,16 +34,16 @@ describe('ListPaymentsController', () => {
 
   it('should list payments successfully', async () => {
     const dto: ListPaymentsQueryDto = {
-      orderId: 'order-1',
+      orderId: 1,
     };
 
     const payment = Payment.create(
-      'pay-1',
-      'order-1',
+      1,
+      1,
       100,
       'USD',
       PaymentMethodType.CREDIT_CARD,
-      'cust-1',
+      1,
     );
 
     useCase.execute.mockResolvedValue(Result.success([payment.toPrimitives()]));
@@ -52,13 +52,13 @@ describe('ListPaymentsController', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(1);
-    expect(result.value[0].id).toBe('pay-1');
+    expect(result.value[0].id).toBe(1);
     expect(useCase.execute).toHaveBeenCalledWith(dto);
   });
 
   it('should return Failure(ControllerError) if use case fails', async () => {
     const dto: ListPaymentsQueryDto = {
-      orderId: 'order-1',
+      orderId: 1,
     };
     const error = ErrorFactory.UseCaseError('List failed').error;
     useCase.execute.mockResolvedValue(Result.failure(error));
@@ -76,7 +76,7 @@ describe('ListPaymentsController', () => {
 
   it('should return Failure(ControllerError) if use case throws unexpected error', async () => {
     const dto: ListPaymentsQueryDto = {
-      orderId: 'order-1',
+      orderId: 1,
     };
     const error = new Error('Unexpected error');
     useCase.execute.mockRejectedValue(error);

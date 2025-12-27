@@ -16,7 +16,7 @@ import { DomainError } from '../../../../core/errors/domain.error';
 export class AdjustStockUseCase
   implements
     UseCase<
-      { productId: string; dto: AdjustStockDto },
+      { productId: number; dto: AdjustStockDto },
       IInventory,
       UseCaseError
     >
@@ -24,7 +24,7 @@ export class AdjustStockUseCase
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(input: {
-    productId: string;
+    productId: number;
     dto: AdjustStockDto;
   }): Promise<Result<IInventory, UseCaseError>> {
     try {

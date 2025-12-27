@@ -2,7 +2,7 @@
 import { IProduct } from '../interfaces/product.interface';
 
 export interface ProductProps {
-  id: string | null;
+  id: number | null;
   name: string;
   description?: string;
   price: number;
@@ -12,7 +12,7 @@ export interface ProductProps {
 }
 
 export class Product implements IProduct {
-  private readonly _id: string;
+  private readonly _id: number | null;
   private _name: string;
   private _description?: string;
   private _price: number;
@@ -23,7 +23,7 @@ export class Product implements IProduct {
   constructor(props: ProductProps) {
     this.validateProps(props);
 
-    this._id = props.id ? props.id.trim() : '';
+    this._id = props.id || null;
     this._name = props.name.trim();
     this._description = props.description?.trim();
     this._price = this.roundPrice(props.price);
@@ -47,7 +47,7 @@ export class Product implements IProduct {
   }
 
   // Getters
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
@@ -141,7 +141,7 @@ export class Product implements IProduct {
 
   static create(
     props: Omit<ProductProps, 'id' | 'createdAt' | 'updatedAt'> & {
-      id: string | null;
+      id: number | null;
     },
   ): Product {
     return new Product({

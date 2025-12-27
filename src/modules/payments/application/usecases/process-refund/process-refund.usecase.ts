@@ -11,7 +11,7 @@ import { PaymentGatewayFactory } from '../../../infrastructure/gateways/payment-
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
-  { id: string; dto: ProcessRefundDto },
+  { id: number; dto: ProcessRefundDto },
   IPayment,
   UseCaseError
 > {
@@ -23,7 +23,7 @@ export class ProcessRefundUseCase extends UseCase<
   }
 
   async execute(input: {
-    id: string;
+    id: number;
     dto: ProcessRefundDto;
   }): Promise<Result<IPayment, UseCaseError>> {
     try {

@@ -34,33 +34,33 @@ describe('GetPaymentUseCase', () => {
 
   it('should return a payment if found', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 'PA123',
+      id: 123,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
 
-    const result = await useCase.execute('PA123');
+    const result = await useCase.execute(123);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe('PA123');
-    expect(paymentRepository.findById).toHaveBeenCalledWith('PA123');
+    expect(result.value.id).toBe(123);
+    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
   });
 
   it('should fail if payment is not found', async () => {
-    paymentRepository.mockPaymentNotFound('PA123');
+    paymentRepository.mockPaymentNotFound(123);
 
-    const result = await useCase.execute('PA123');
+    const result = await useCase.execute(123);
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment with id PA123 not found',
+      'Payment with id 123 not found',
     );
-    expect(paymentRepository.findById).toHaveBeenCalledWith('PA123');
+    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
   });
 
   it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const paymentId = 'PA123';
+    const paymentId = 123;
     const repoError = new Error('Database connection failed');
 
     paymentRepository.findById.mockRejectedValue(repoError);

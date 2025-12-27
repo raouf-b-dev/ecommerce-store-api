@@ -8,11 +8,12 @@ import {
 import { PaymentMethodType } from '../../../payments/domain';
 
 export interface IOrder {
-  id: string;
-  customerId: string;
-  paymentId: string | null;
+  id: number | null;
+  customerId: number;
+  paymentId: number | null;
+  reservationId: number | null;
   paymentMethod: PaymentMethodType;
-  shippingAddressId: string;
+  shippingAddressId: number | null;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
   customerNotes: string | null;

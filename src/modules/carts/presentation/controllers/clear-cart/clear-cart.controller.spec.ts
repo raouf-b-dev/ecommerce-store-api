@@ -30,7 +30,7 @@ describe('ClearCartController', () => {
   describe('handle', () => {
     it('should return success result with empty cart when cart is cleared', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const mockCart: ICart = CartTestFactory.createEmptyCart({ id: cartId });
 
       usecase.execute.mockResolvedValue(Result.success(mockCart));
@@ -48,7 +48,7 @@ describe('ClearCartController', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
+      const cartId = 404;
       const expectedError = new UseCaseError('Cart not found');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -62,7 +62,7 @@ describe('ClearCartController', () => {
 
     it('should catch unexpected exceptions and return a ControllerError', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const unexpectedError = new Error('Database connection failed');
 
       usecase.execute.mockRejectedValue(unexpectedError);

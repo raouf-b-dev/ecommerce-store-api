@@ -9,8 +9,8 @@ import { ICart } from '../../../domain/interfaces/cart.interface';
 export class MergeCartsController {
   constructor(private readonly mergeCartsUseCase: MergeCartsUseCase) {}
   async handle(
-    guestCartId: string,
-    userCartId: string,
+    guestCartId: number,
+    userCartId: number,
   ): Promise<Result<ICart, ControllerError>> {
     try {
       const result = await this.mergeCartsUseCase.execute({

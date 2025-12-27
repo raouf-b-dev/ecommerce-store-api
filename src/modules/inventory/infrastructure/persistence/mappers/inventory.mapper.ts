@@ -12,7 +12,7 @@ export type InventoryForCache = Omit<IInventory, 'createdAt' | 'updatedAt'> & {
 export class InventoryMapper {
   static toDomain(entity: InventoryEntity): Inventory {
     const props: InventoryProps = {
-      id: entity.id.toString(),
+      id: entity.id,
       productId: entity.productId,
       availableQuantity: entity.availableQuantity,
       reservedQuantity: entity.reservedQuantity,
@@ -28,7 +28,7 @@ export class InventoryMapper {
   static toEntity(domain: Inventory): InventoryEntity {
     const primitives = domain.toPrimitives();
     const inventoryPayload: InventoryCreate = {
-      id: primitives.id ? parseInt(primitives.id, 10) : 0,
+      id: primitives.id || 0,
       productId: primitives.productId,
       availableQuantity: primitives.availableQuantity,
       reservedQuantity: primitives.reservedQuantity,

@@ -18,7 +18,7 @@ export class RedisUserRepository implements UserRepository {
     private readonly postgresRepo: UserRepository,
   ) {}
 
-  private idKey(id: string) {
+  private idKey(id: number) {
     return `${USER_REDIS.CACHE_KEY}:${id}`;
   }
 
@@ -75,7 +75,7 @@ export class RedisUserRepository implements UserRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<User | null, RepositoryError>> {
+  async findById(id: number): Promise<Result<User | null, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<UserForCache>(this.idKey(id));
       if (cached) {
@@ -100,7 +100,7 @@ export class RedisUserRepository implements UserRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       await this.cacheService.delete(this.idKey(id));
       return this.postgresRepo.delete(id);

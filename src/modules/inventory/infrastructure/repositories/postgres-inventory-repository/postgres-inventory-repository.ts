@@ -19,10 +19,10 @@ export class PostgresInventoryRepository implements InventoryRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findById(id: string): Promise<Result<Inventory, RepositoryError>> {
+  async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
     try {
       const entity = await this.ormRepo.findOne({
-        where: { id: parseInt(id, 10) },
+        where: { id },
       });
 
       if (!entity) {
@@ -37,7 +37,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findByProductId(
-    productId: string,
+    productId: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
       const entity = await this.ormRepo.findOne({
@@ -61,7 +61,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findByProductIds(
-    productIds: string[],
+    productIds: number[],
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       if (productIds.length === 0) {
@@ -147,8 +147,14 @@ export class PostgresInventoryRepository implements InventoryRepository {
     try {
       const updatedInventory = await this.dataSource.transaction(
         async (manager) => {
+          if (!inventory.id) {
+            throw new RepositoryError(
+              `INVENTORY_NOT_FOUND: Inventory with ID ${inventory.id} not found`,
+            );
+          }
+
           const existingEntity = await manager.findOne(InventoryEntity, {
-            where: { id: parseInt(inventory.id!, 10) },
+            where: { id: inventory.id },
           });
 
           if (!existingEntity) {
@@ -194,9 +200,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
-      const deleteResult = await this.ormRepo.delete({ id: parseInt(id, 10) });
+      const deleteResult = await this.ormRepo.delete({ id });
 
       if (deleteResult.affected === 0) {
         return ErrorFactory.RepositoryError('Inventory not found');

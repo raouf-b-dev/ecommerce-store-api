@@ -9,13 +9,11 @@ import {
   SelectQueryBuilder,
 } from 'typeorm';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import {
   createMockDataSource,
   createMockTransactionManager,
   createMockQueryBuilder,
 } from '../../../../../testing/mocks/typeorm.mocks';
-import { createMockIdGenerator } from '../../../../../testing/mocks/id-generator.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { InventoryEntityTestFactory } from '../../../testing/factories/inventory-entity.test.factory';
 import { Inventory } from '../../../domain/entities/inventory';
@@ -82,20 +80,20 @@ describe('PostgresInventoryRepository', () => {
       const mockEntity = InventoryEntityTestFactory.createInventoryEntity();
       mockOrmRepo.findOne.mockResolvedValue(mockEntity);
 
-      const result = await repository.findById(mockEntity.id.toString());
+      const result = await repository.findById(mockEntity.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.findOne).toHaveBeenCalledWith({
         where: { id: mockEntity.id },
       });
       expect(result.value).toBeInstanceOf(Inventory);
-      expect(result.value.id).toBe(mockEntity.id.toString());
+      expect(result.value.id).toBe(mockEntity.id);
     });
 
     it('should return a RepositoryError when not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('not-found-id');
+      const result = await repository.findById(404);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -108,7 +106,7 @@ describe('PostgresInventoryRepository', () => {
       const dbError = new Error('DB Error');
       mockOrmRepo.findOne.mockRejectedValue(dbError);
 
-      const result = await repository.findById('any-id');
+      const result = await repository.findById(500);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -139,11 +137,11 @@ describe('PostgresInventoryRepository', () => {
     it('should return a RepositoryError when not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByProductId('not-found-pid');
+      const result = await repository.findByProductId(404);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Inventory not found for product not-found-pid',
+        'Inventory not found for product 404',
         RepositoryError,
       );
     });
@@ -152,7 +150,7 @@ describe('PostgresInventoryRepository', () => {
       const dbError = new Error('DB Error');
       mockOrmRepo.findOne.mockRejectedValue(dbError);
 
-      const result = await repository.findByProductId('any-pid');
+      const result = await repository.findByProductId(500);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -169,22 +167,22 @@ describe('PostgresInventoryRepository', () => {
   describe('findByProductIds', () => {
     it('should return a list of inventories', async () => {
       const mockEntities = [
-        InventoryEntityTestFactory.createEntityForProduct('P1'),
-        InventoryEntityTestFactory.createEntityForProduct('P2'),
+        InventoryEntityTestFactory.createEntityForProduct(1),
+        InventoryEntityTestFactory.createEntityForProduct(2),
       ];
       mockQueryBuilder.getMany.mockResolvedValue(mockEntities);
 
-      const result = await repository.findByProductIds(['P1', 'P2']);
+      const result = await repository.findByProductIds([1, 2]);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.createQueryBuilder).toHaveBeenCalledWith('inventory');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'inventory.productId IN (:...productIds)',
-        { productIds: ['P1', 'P2'] },
+        { productIds: [1, 2] },
       );
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
       expect(result.value).toHaveLength(2);
-      expect(result.value[0].productId).toBe('P1');
+      expect(result.value[0].productId).toBe(1);
     });
 
     it('should return an empty array if no product IDs are provided', async () => {
@@ -199,7 +197,7 @@ describe('PostgresInventoryRepository', () => {
       const dbError = new Error('DB Error');
       mockQueryBuilder.getMany.mockRejectedValue(dbError);
 
-      const result = await repository.findByProductIds(['P1']);
+      const result = await repository.findByProductIds([1]);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -315,16 +313,16 @@ describe('PostgresInventoryRepository', () => {
       expect(mockTransactionManager.findOne).toHaveBeenCalledWith(
         InventoryEntity,
         {
-          where: { productId: 'PR0000001' },
+          where: { productId: 1 },
         },
       );
       expect(mockTransactionManager.save).toHaveBeenCalledWith(
         InventoryEntity,
         expect.objectContaining({
-          productId: 'PR0000001',
+          productId: 1,
         }),
       );
-      expect(result.value.id).toBe('1');
+      expect(result.value.id).toBe(1);
     });
 
     it('should return a RepositoryError if inventory for product already exists', async () => {
@@ -388,7 +386,7 @@ describe('PostgresInventoryRepository', () => {
         availableQuantity: 999,
       });
       const existingEntity = InventoryEntityTestFactory.createInventoryEntity({
-        id: parseInt(domainInventory.id!, 10),
+        id: domainInventory.id ?? undefined,
       });
       const updatedEntity = InventoryMapper.toEntity(
         Inventory.fromPrimitives(domainInventory),
@@ -408,12 +406,12 @@ describe('PostgresInventoryRepository', () => {
       expect(mockTransactionManager.findOne).toHaveBeenCalledWith(
         InventoryEntity,
         {
-          where: { id: parseInt(domainInventory.id!, 10) },
+          where: { id: domainInventory.id },
         },
       );
       expect(mockTransactionManager.update).toHaveBeenCalledWith(
         InventoryEntity,
-        { id: parseInt(domainInventory.id!, 10) },
+        { id: domainInventory.id },
         expect.objectContaining({
           availableQuantity: 999,
         }),
@@ -441,7 +439,7 @@ describe('PostgresInventoryRepository', () => {
     it('should return a RepositoryError if inventory not found after update', async () => {
       const domainInventory = InventoryTestFactory.createMockInventory();
       const existingEntity = InventoryEntityTestFactory.createInventoryEntity({
-        id: parseInt(domainInventory.id!, 10),
+        id: domainInventory.id ?? undefined,
       });
 
       mockTransactionManager.findOne
@@ -485,7 +483,7 @@ describe('PostgresInventoryRepository', () => {
     it('should delete an inventory', async () => {
       mockOrmRepo.delete.mockResolvedValue({ affected: 1 } as DeleteResult);
 
-      const result = await repository.delete('1');
+      const result = await repository.delete(1);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.delete).toHaveBeenCalledWith({ id: 1 });
@@ -495,7 +493,7 @@ describe('PostgresInventoryRepository', () => {
     it('should return a RepositoryError if inventory to delete is not found', async () => {
       mockOrmRepo.delete.mockResolvedValue({ affected: 0 } as DeleteResult);
 
-      const result = await repository.delete('not-found-id');
+      const result = await repository.delete(404);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -508,7 +506,7 @@ describe('PostgresInventoryRepository', () => {
       const dbError = new Error('DB Error');
       mockOrmRepo.delete.mockRejectedValue(dbError);
 
-      const result = await repository.delete('any-id');
+      const result = await repository.delete(500);
 
       ResultAssertionHelper.assertResultFailure(
         result,

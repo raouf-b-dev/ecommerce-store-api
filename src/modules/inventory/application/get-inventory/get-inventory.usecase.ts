@@ -8,11 +8,11 @@ import { IInventory } from '../../domain/interfaces/inventory.interface';
 
 @Injectable()
 export class GetInventoryUseCase
-  implements UseCase<string, IInventory, UseCaseError>
+  implements UseCase<number, IInventory, UseCaseError>
 {
   constructor(private inventoryRepository: InventoryRepository) {}
 
-  async execute(productId: string): Promise<Result<IInventory, UseCaseError>> {
+  async execute(productId: number): Promise<Result<IInventory, UseCaseError>> {
     try {
       const inventoryResult =
         await this.inventoryRepository.findByProductId(productId);

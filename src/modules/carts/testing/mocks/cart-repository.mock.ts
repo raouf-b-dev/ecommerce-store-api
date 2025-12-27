@@ -9,15 +9,15 @@ import { CreateCartDto } from '../../presentation/dto/create-cart.dto';
 export class MockCartRepository implements CartRepository {
   // Jest mock functions
   create = jest.fn<Promise<Result<Cart, RepositoryError>>, [CreateCartDto]>();
-  findById = jest.fn<Promise<Result<Cart, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
   update = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart]>();
   mergeCarts = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart, Cart]>();
   findByCustomerId = jest.fn<
     Promise<Result<Cart, RepositoryError>>,
-    [string]
+    [number]
   >();
-  findBySessionId = jest.fn<Promise<Result<Cart, RepositoryError>>, [string]>();
-  delete = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  findBySessionId = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
+  delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(cartPrimitives: ICart): void {

@@ -6,13 +6,13 @@ export class InventoryResponseDto {
     example: 'inv-123',
     description: 'Inventory record ID',
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
     example: 'prod-123',
     description: 'Product ID',
   })
-  productId: string;
+  productId: number;
 
   @ApiProperty({
     example: 'Wireless Headphones',

@@ -5,10 +5,10 @@ import { AddressResponseDto } from './address-response.dto';
 
 export class CustomerResponseDto {
   @ApiProperty({
-    example: 'cust-123',
+    example: 123,
     description: 'Customer ID',
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
     example: 'John',

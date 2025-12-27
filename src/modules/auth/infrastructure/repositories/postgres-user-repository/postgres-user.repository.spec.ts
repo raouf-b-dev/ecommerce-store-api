@@ -3,7 +3,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PostgresUserRepository } from './postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { UserTestFactory } from '../../../testing/factories/user.factory';
 import { User } from '../../../domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
@@ -13,7 +12,6 @@ import { UserMapper } from '../../persistence/mappers/user.mapper';
 describe('PostgresUserRepository', () => {
   let repository: PostgresUserRepository;
   let typeOrmRepository: jest.Mocked<Repository<UserEntity>>;
-  let idGeneratorService: jest.Mocked<IdGeneratorService>;
 
   const mockUser = User.fromPrimitives(UserTestFactory.createMockUser());
   const mockUserEntity = UserMapper.toEntity(mockUser);
@@ -30,18 +28,11 @@ describe('PostgresUserRepository', () => {
             delete: jest.fn(),
           },
         },
-        {
-          provide: IdGeneratorService,
-          useValue: {
-            generateUserId: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     repository = module.get<PostgresUserRepository>(PostgresUserRepository);
     typeOrmRepository = module.get(getRepositoryToken(UserEntity));
-    idGeneratorService = module.get(IdGeneratorService);
   });
 
   it('should be defined', () => {
@@ -50,17 +41,16 @@ describe('PostgresUserRepository', () => {
 
   describe('save', () => {
     it('should save a new user successfully', async () => {
-      idGeneratorService.generateUserId.mockResolvedValue('generated-id');
       typeOrmRepository.save.mockResolvedValue({
         ...mockUserEntity,
-        id: 'generated-id',
+        id: 1,
       });
 
       const newUser = User.create(null, 'test@example.com', 'hash');
       const result = await repository.save(newUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe('generated-id');
+      expect(result.value.id).toBe(1);
       expect(typeOrmRepository.save).toHaveBeenCalled();
     });
 
@@ -71,7 +61,6 @@ describe('PostgresUserRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(mockUser.id);
-      expect(idGeneratorService.generateUserId).not.toHaveBeenCalled();
     });
 
     it('should return failure if save fails', async () => {
@@ -134,7 +123,7 @@ describe('PostgresUserRepository', () => {
     it('should return null if user not found', async () => {
       typeOrmRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('not-found-id');
+      const result = await repository.findById(999);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toBeNull();

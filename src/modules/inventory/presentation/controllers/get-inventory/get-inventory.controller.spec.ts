@@ -31,7 +31,7 @@ describe('GetInventoryController', () => {
 
   it('should return the inventory on success', async () => {
     // Arrange
-    const productId = 'prod-123';
+    const productId = 123;
     const mockInventory: IInventory =
       inventoryFactory.createInventoryForProduct(productId);
 
@@ -48,7 +48,7 @@ describe('GetInventoryController', () => {
 
   it('should return a failure result if the use case fails', async () => {
     // Arrange
-    const productId = 'prod-404';
+    const productId = 404;
     const mockError = new RepositoryError('Inventory not found');
 
     usecase.execute.mockResolvedValue(Result.failure(mockError));
@@ -63,7 +63,7 @@ describe('GetInventoryController', () => {
 
   it('should return a ControllerError on unexpected exceptions', async () => {
     // Arrange
-    const productId = 'prod-500';
+    const productId = 500;
     const mockError = new Error('Database connection failed');
 
     usecase.execute.mockRejectedValue(mockError);

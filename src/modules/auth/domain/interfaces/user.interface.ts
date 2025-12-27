@@ -1,11 +1,11 @@
 import { UserRoleType } from '../value-objects/user-role';
 
 export interface IUser {
-  id: string | null;
+  id: number | null;
   email: string;
   passwordHash: string;
   role: UserRoleType;
-  customerId: string | null;
+  customerId: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

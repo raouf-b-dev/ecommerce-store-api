@@ -4,16 +4,16 @@ import { Cart } from '../entities/cart';
 import { CreateCartDto } from '../../presentation/dto/create-cart.dto';
 
 export abstract class CartRepository {
-  abstract findById(id: string): Promise<Result<Cart, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<Cart, RepositoryError>>;
   abstract findByCustomerId(
-    customerId: string,
+    customerId: number,
   ): Promise<Result<Cart, RepositoryError>>;
   abstract findBySessionId(
-    sessionId: string,
+    sessionId: number,
   ): Promise<Result<Cart, RepositoryError>>;
   abstract create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>>;
   abstract update(cart: Cart): Promise<Result<Cart, RepositoryError>>;
-  abstract delete(id: string): Promise<Result<void, RepositoryError>>;
+  abstract delete(id: number): Promise<Result<void, RepositoryError>>;
   abstract mergeCarts(
     guestCart: Cart,
     userCart: Cart,

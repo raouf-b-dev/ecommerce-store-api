@@ -1,10 +1,10 @@
 // src/modules/orders/infrastructure/orm/shipping-address.schema.ts
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'shipping_addresses' })
 export class ShippingAddressEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'varchar' })
   firstName: string;

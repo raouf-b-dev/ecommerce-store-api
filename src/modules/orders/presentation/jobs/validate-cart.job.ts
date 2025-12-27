@@ -8,8 +8,8 @@ import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
 
 export interface ValidateCartResult {
-  cartId: string;
-  cartItems: Array<{ productId: string; quantity: number; price: number }>;
+  cartId: number;
+  cartItems: Array<{ productId: number; quantity: number; price: number }>;
 }
 
 @Injectable()

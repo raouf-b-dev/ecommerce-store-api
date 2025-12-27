@@ -24,7 +24,7 @@ describe('UpdateCustomerUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if customer is updated', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto();
       const mockCustomerData = CustomerTestFactory.createMockCustomer({
         id: customerId,
@@ -44,7 +44,7 @@ describe('UpdateCustomerUseCase', () => {
     });
 
     it('should update only firstName and lastName', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto({
         firstName: 'Jane',
         lastName: 'Smith',
@@ -66,7 +66,7 @@ describe('UpdateCustomerUseCase', () => {
     });
 
     it('should update only phone number', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto({
         phone: '+9876543210',
       });
@@ -88,7 +88,7 @@ describe('UpdateCustomerUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
-      const customerId = 'non-existent-id';
+      const customerId = 0;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto();
 
       mockCustomerRepository.mockCustomerNotFound();
@@ -104,7 +104,7 @@ describe('UpdateCustomerUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if update fails', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto();
 
       mockCustomerRepository.mockSuccessfulFind(
@@ -124,7 +124,7 @@ describe('UpdateCustomerUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto();
       const repoError = new Error('Database connection failed');
 

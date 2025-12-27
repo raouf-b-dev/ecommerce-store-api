@@ -11,8 +11,8 @@ export class UpdateAddressController {
   constructor(private readonly useCase: UpdateAddressUseCase) {}
 
   async handle(
-    id: string,
-    addressId: string,
+    id: number,
+    addressId: number,
     dto: UpdateAddressDto,
   ): Promise<Result<IAddress, ControllerError>> {
     try {

@@ -10,17 +10,17 @@ export class PaymentBuilder {
     this.payment = PaymentTestFactory.createMockPayment();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.payment.id = id;
     return this;
   }
 
-  withOrderId(orderId: string): this {
+  withOrderId(orderId: number): this {
     this.payment.orderId = orderId;
     return this;
   }
 
-  withCustomerId(customerId: string): this {
+  withCustomerId(customerId: number): this {
     this.payment.customerId = customerId;
     return this;
   }

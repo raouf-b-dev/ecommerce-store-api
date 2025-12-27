@@ -30,8 +30,8 @@ describe('RemoveCartItemController', () => {
   describe('handle', () => {
     it('should return success result with updated cart when item is removed', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const mockCart: ICart = CartTestFactory.createCartWithItems(2, {
         id: cartId,
       });
@@ -49,8 +49,8 @@ describe('RemoveCartItemController', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
-      const itemId = 'item-1';
+      const cartId = 404;
+      const itemId = 1;
       const expectedError = new UseCaseError('Cart not found');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -64,8 +64,8 @@ describe('RemoveCartItemController', () => {
 
     it('should return failure when item not found in cart', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-404';
+      const cartId = 123;
+      const itemId = 404;
       const expectedError = new UseCaseError('Item not found in cart');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -82,8 +82,8 @@ describe('RemoveCartItemController', () => {
 
     it('should catch unexpected exceptions and return a ControllerError', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const unexpectedError = new Error('Database connection failed');
 
       usecase.execute.mockRejectedValue(unexpectedError);

@@ -39,7 +39,7 @@ export class RedisProductRepository implements ProductRepository {
   }
 
   async update(
-    id: string,
+    id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
@@ -61,7 +61,7 @@ export class RedisProductRepository implements ProductRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<IProduct, RepositoryError>> {
+  async findById(id: number): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Try cache first
       const cached = await this.cacheService.get<IProduct>(
@@ -127,7 +127,7 @@ export class RedisProductRepository implements ProductRepository {
     }
   }
 
-  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.deleteById(id);
       if (deleteResult.isFailure) return deleteResult;

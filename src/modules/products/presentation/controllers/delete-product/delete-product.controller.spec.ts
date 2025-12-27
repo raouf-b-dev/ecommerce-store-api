@@ -24,7 +24,7 @@ describe('DeleteProductController', () => {
 
   describe('handle', () => {
     it('should return success if Product is deleted', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockDeleteProductUseCase.execute.mockResolvedValue(
         Result.success(undefined),
@@ -39,7 +39,7 @@ describe('DeleteProductController', () => {
     });
 
     it('should return Failure(ControllerError) if product is not deleted', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockDeleteProductUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -59,7 +59,7 @@ describe('DeleteProductController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database connection failed');
 
       mockDeleteProductUseCase.execute.mockRejectedValue(error);

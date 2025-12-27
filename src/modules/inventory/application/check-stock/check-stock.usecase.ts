@@ -10,7 +10,7 @@ import { CheckStockResponse } from '../../presentation/dto/check-stock-response.
 export class CheckStockUseCase
   implements
     UseCase<
-      { productId: string; quantity?: number },
+      { productId: number; quantity?: number },
       CheckStockResponse,
       UseCaseError
     >
@@ -18,7 +18,7 @@ export class CheckStockUseCase
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(dto: {
-    productId: string;
+    productId: number;
     quantity?: number;
   }): Promise<Result<CheckStockResponse, UseCaseError>> {
     try {

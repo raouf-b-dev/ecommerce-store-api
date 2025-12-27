@@ -9,7 +9,7 @@ import { CheckStockResponse } from '../../dto/check-stock-response.dto';
 export class BulkCheckStockController {
   constructor(private bulkCheckStockUseCase: BulkCheckStockUseCase) {}
   async handle(
-    dto: { productId: string; quantity?: number }[],
+    dto: { productId: number; quantity?: number }[],
   ): Promise<Result<CheckStockResponse[], ControllerError>> {
     try {
       const result = await this.bulkCheckStockUseCase.execute(dto);

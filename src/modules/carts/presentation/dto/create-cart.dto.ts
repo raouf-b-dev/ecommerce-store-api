@@ -1,21 +1,21 @@
 // src/modules/carts/presentation/dto/create-cart.dto.ts
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsNumber } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCartDto {
   @ApiPropertyOptional({
-    example: 'user-123',
+    example: 123,
     description: 'Customer ID for authenticated users',
   })
   @IsOptional()
-  @IsString()
-  customerId?: string;
+  @IsNumber()
+  customerId?: number;
 
   @ApiPropertyOptional({
-    example: 'session-abc-xyz',
+    example: 123,
     description: 'Session ID for guest users',
   })
   @IsOptional()
-  @IsString()
-  sessionId?: string;
+  @IsNumber()
+  sessionId?: number;
 }

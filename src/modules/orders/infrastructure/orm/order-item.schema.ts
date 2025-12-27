@@ -12,11 +12,11 @@ import { ProductEntity } from '../../../products/infrastructure/orm/product.sche
 
 @Entity({ name: 'order_items' })
 export class OrderItemEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'product_id', type: 'varchar' })
-  productId: string;
+  @Column({ name: 'product_id', type: 'int' })
+  productId: number;
 
   @Column({ type: 'varchar', nullable: true })
   productName: string | null;

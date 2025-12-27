@@ -18,7 +18,7 @@ export class ReservationEntity {
   id: number;
 
   @Column({ name: 'order_id' })
-  orderId: string;
+  orderId: number;
 
   @Column({
     type: 'varchar',

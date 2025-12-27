@@ -8,7 +8,7 @@ import { DeleteCustomerUseCase } from '../../../application/usecases/delete-cust
 export class DeleteCustomerController {
   constructor(private readonly useCase: DeleteCustomerUseCase) {}
 
-  async handle(id: string): Promise<Result<void, ControllerError>> {
+  async handle(id: number): Promise<Result<void, ControllerError>> {
     try {
       const result = await this.useCase.execute(id);
 

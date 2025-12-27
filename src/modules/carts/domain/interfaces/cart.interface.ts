@@ -3,9 +3,9 @@
 import { ICartItem } from './cart-item.interface';
 
 export interface ICart {
-  id: string | null;
-  customerId: string | null;
-  sessionId: string | null;
+  id: number | null;
+  customerId: number | null;
+  sessionId: number | null;
   items: ICartItem[];
   itemCount: number;
   totalAmount: number;

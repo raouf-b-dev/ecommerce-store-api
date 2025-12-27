@@ -6,7 +6,7 @@ export class CartEntityTestFactory {
   static createCartEntity(overrides?: Partial<CartEntity>): CartEntity {
     const defaultEntity: CartEntity = {
       id: 123,
-      customerId: 'customer-123',
+      customerId: 123,
       sessionId: null,
       items: [],
       createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -21,7 +21,7 @@ export class CartEntityTestFactory {
   ): CartItemEntity {
     const defaultEntity: CartItemEntity = {
       id: 123,
-      productId: 'product-123',
+      productId: 123,
       productName: 'Test Product',
       price: 100,
       quantity: 1,
@@ -36,7 +36,7 @@ export class CartEntityTestFactory {
     const items = Array.from({ length: itemCount }, (_, i) =>
       this.createCartItemEntity({
         id: i + 1,
-        productId: `product-${i + 1}`,
+        productId: i + 1,
         productName: `Product ${i + 1}`,
         price: 10 * (i + 1),
         quantity: 1,

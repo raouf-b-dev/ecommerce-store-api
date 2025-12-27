@@ -28,8 +28,8 @@ describe('BulkCheckStockController', () => {
   it('should return the bulk stock check response on successful execution', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 1 },
-      { productId: 'PR2', quantity: 10 },
+      { productId: 1, quantity: 1 },
+      { productId: 2, quantity: 10 },
     ];
     const expectedResponse: CheckStockResponse[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 1 },
@@ -48,7 +48,7 @@ describe('BulkCheckStockController', () => {
 
   it('should return an empty array response when provided an empty input array', async () => {
     // Arrange
-    const input: { productId: string; quantity?: number }[] = [];
+    const input: { productId: number; quantity?: number }[] = [];
     const expectedResponse: CheckStockResponse[] = [];
     usecase.execute.mockResolvedValue(Result.success(expectedResponse));
 
@@ -63,7 +63,7 @@ describe('BulkCheckStockController', () => {
 
   it('should return a failure if the use case fails', async () => {
     // Arrange
-    const input = [{ productId: 'PR404', quantity: 1 }];
+    const input = [{ productId: 404, quantity: 1 }];
     const useCaseError = ErrorFactory.UseCaseError('Repository failed');
     usecase.execute.mockResolvedValue(useCaseError);
 
@@ -80,7 +80,7 @@ describe('BulkCheckStockController', () => {
 
   it('should return a controller error on unexpected exceptions', async () => {
     // Arrange
-    const input = [{ productId: 'PR500', quantity: 1 }];
+    const input = [{ productId: 500, quantity: 1 }];
     const unexpectedError = new Error('Unexpected runtime crash');
     usecase.execute.mockRejectedValue(unexpectedError);
 

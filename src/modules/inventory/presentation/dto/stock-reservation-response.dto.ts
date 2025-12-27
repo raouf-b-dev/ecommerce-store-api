@@ -6,13 +6,13 @@ export class StockReservationResponseDto {
     example: 'res-123',
     description: 'Reservation ID',
   })
-  reservationId: string;
+  reservationId: number;
 
   @ApiProperty({
     example: 'order-123',
     description: 'Order ID',
   })
-  orderId: string;
+  orderId: number;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00Z',

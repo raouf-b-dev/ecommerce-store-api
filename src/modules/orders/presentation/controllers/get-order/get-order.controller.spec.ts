@@ -21,7 +21,7 @@ describe('GetOrderController', () => {
 
   describe('handle', () => {
     it('should return success if order is found', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const mockOrder = OrderTestFactory.createMockOrder({ id: orderId });
 
       mockGetOrderUseCase.execute.mockResolvedValue(Result.success(mockOrder));
@@ -36,7 +36,7 @@ describe('GetOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if order is not found', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
 
       const usecaseError = Result.failure(
         ErrorFactory.UseCaseError(`Order with id ${orderId} not found`).error,
@@ -57,7 +57,7 @@ describe('GetOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const error = new Error('Database connection failed');
 
       mockGetOrderUseCase.execute.mockRejectedValue(error);

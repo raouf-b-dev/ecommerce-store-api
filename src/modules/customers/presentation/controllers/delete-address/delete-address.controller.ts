@@ -9,8 +9,8 @@ export class DeleteAddressController {
   constructor(private readonly useCase: DeleteAddressUseCase) {}
 
   async handle(
-    id: string,
-    addressId: string,
+    id: number,
+    addressId: number,
   ): Promise<Result<void, ControllerError>> {
     try {
       const result = await this.useCase.execute({

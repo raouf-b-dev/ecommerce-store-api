@@ -7,12 +7,12 @@ import { isFailure, Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 @Injectable()
-export class ClearCartUseCase extends UseCase<string, ICart, UseCaseError> {
+export class ClearCartUseCase extends UseCase<number, ICart, UseCaseError> {
   constructor(private readonly cartRepository: CartRepository) {
     super();
   }
 
-  async execute(cartId: string): Promise<Result<ICart, UseCaseError>> {
+  async execute(cartId: number): Promise<Result<ICart, UseCaseError>> {
     try {
       const cartResult = await this.cartRepository.findById(cartId);
 

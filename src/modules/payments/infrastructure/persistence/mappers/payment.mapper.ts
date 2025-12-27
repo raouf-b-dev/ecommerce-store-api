@@ -29,6 +29,8 @@ export class PaymentMapper {
       paymentMethod: entity.paymentMethod,
       status: entity.status,
       transactionId: entity.transactionId,
+      gatewayPaymentIntentId: entity.gatewayPaymentIntentId || null,
+      gatewayClientSecret: entity.gatewayClientSecret || null,
       paymentMethodInfo: entity.paymentMethodInfo,
       refundedAmount: Number(entity.refundedAmount),
       refunds: entity.refunds
@@ -47,7 +49,7 @@ export class PaymentMapper {
     const primitives = domain.toPrimitives();
 
     const paymentPayload: PaymentCreate = {
-      id: primitives.id || '',
+      id: primitives.id || 0,
       orderId: primitives.orderId,
       customerId: primitives.customerId,
       amount: primitives.amount,
@@ -55,6 +57,8 @@ export class PaymentMapper {
       paymentMethod: primitives.paymentMethod,
       status: primitives.status,
       transactionId: primitives.transactionId,
+      gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,
+      gatewayClientSecret: primitives.gatewayClientSecret,
       paymentMethodInfo: primitives.paymentMethodInfo,
       refundedAmount: primitives.refundedAmount,
       failureReason: primitives.failureReason,

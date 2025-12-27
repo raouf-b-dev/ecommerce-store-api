@@ -35,8 +35,8 @@ describe('SetDefaultAddressController', () => {
 
   describe('handle', () => {
     it('should return success result when address is set as default', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
 
       useCase.execute.mockResolvedValue(Result.success(undefined));
 
@@ -47,8 +47,8 @@ describe('SetDefaultAddressController', () => {
     });
 
     it('should return controller error if use case fails', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
       const error = ErrorFactory.UseCaseError('Address not found');
 
       useCase.execute.mockResolvedValue(error);
@@ -63,8 +63,8 @@ describe('SetDefaultAddressController', () => {
     });
 
     it('should return controller error if unexpected error occurs', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
       const error = new Error('Unexpected error');
 
       useCase.execute.mockRejectedValue(error);

@@ -8,17 +8,15 @@ import { Customer } from '../../../domain/entities/customer';
 import { CustomerRepository } from '../../../domain/repositories/customer.repository';
 import { CustomerEntity } from '../../orm/customer.schema';
 import { CustomerMapper } from '../../persistence/mappers/customer.mapper';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 @Injectable()
 export class PostgresCustomerRepository implements CustomerRepository {
   constructor(
     @InjectRepository(CustomerEntity)
     private readonly repository: Repository<CustomerEntity>,
-    private readonly idGenerator: IdGeneratorService,
   ) {}
 
-  async findById(id: string): Promise<Result<Customer, RepositoryError>> {
+  async findById(id: number): Promise<Result<Customer, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
         where: { id },
@@ -94,22 +92,6 @@ export class PostgresCustomerRepository implements CustomerRepository {
   async save(customer: Customer): Promise<Result<Customer, RepositoryError>> {
     try {
       const customerPrimitives = customer.toPrimitives();
-      if (!customerPrimitives.id || customerPrimitives.id === '') {
-        customerPrimitives.id = await this.idGenerator.generateCustomerId();
-      }
-
-      const addressesWithIds = await Promise.all(
-        customerPrimitives.addresses.map(async (addr) => {
-          if (!addr.id || addr.id === '') {
-            return {
-              ...addr,
-              id: await this.idGenerator.generateShippingAddressId(),
-            };
-          }
-          return addr;
-        }),
-      );
-      customerPrimitives.addresses = addressesWithIds;
 
       const customerWithIds = Customer.fromPrimitives(customerPrimitives);
       const entity = CustomerMapper.toEntity(customerWithIds);
@@ -123,18 +105,6 @@ export class PostgresCustomerRepository implements CustomerRepository {
   async update(customer: Customer): Promise<Result<Customer, RepositoryError>> {
     try {
       const customerPrimitives = customer.toPrimitives();
-      const addressesWithIds = await Promise.all(
-        customerPrimitives.addresses.map(async (addr) => {
-          if (!addr.id || addr.id === '') {
-            return {
-              ...addr,
-              id: await this.idGenerator.generateShippingAddressId(),
-            };
-          }
-          return addr;
-        }),
-      );
-      customerPrimitives.addresses = addressesWithIds;
 
       const customerWithIds = Customer.fromPrimitives(
         customerPrimitives as any,
@@ -147,7 +117,7 @@ export class PostgresCustomerRepository implements CustomerRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const result = await this.repository.delete(id);
       if (result.affected === 0) {

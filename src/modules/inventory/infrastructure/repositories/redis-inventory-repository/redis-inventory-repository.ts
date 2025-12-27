@@ -20,15 +20,15 @@ export class RedisInventoryRepository implements InventoryRepository {
     private readonly postgresRepo: InventoryRepository,
   ) {}
 
-  private idKey(id: string) {
+  private idKey(id: number) {
     return `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
   }
 
-  private productKey(productId: string) {
+  private productKey(productId: number) {
     return `${INVENTORY_REDIS.CACHE_KEY}:product:${productId}`;
   }
 
-  async findById(id: string): Promise<Result<Inventory, RepositoryError>> {
+  async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
@@ -70,7 +70,7 @@ export class RedisInventoryRepository implements InventoryRepository {
   }
 
   async findByProductId(
-    productId: string,
+    productId: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
@@ -116,24 +116,24 @@ export class RedisInventoryRepository implements InventoryRepository {
   }
 
   async findByProductIds(
-    productIds: string[],
+    productIds: number[],
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       if (productIds.length === 0) return Result.success<Inventory[]>([]);
 
-      const foundMap = new Map<string, Inventory>();
-      const misses: string[] = [];
+      const foundMap = new Map<number, Inventory>();
+      const misses: number[] = [];
 
       await Promise.all(
-        productIds.map(async (pid) => {
+        productIds.map(async (productId) => {
           const cached = await this.cacheService.get<InventoryForCache>(
-            this.productKey(pid),
+            this.productKey(productId),
           );
 
           if (cached) {
-            foundMap.set(pid, InventoryCacheMapper.fromCache(cached));
+            foundMap.set(productId, InventoryCacheMapper.fromCache(cached));
           } else {
-            misses.push(pid);
+            misses.push(productId);
           }
         }),
       );
@@ -294,7 +294,7 @@ export class RedisInventoryRepository implements InventoryRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),

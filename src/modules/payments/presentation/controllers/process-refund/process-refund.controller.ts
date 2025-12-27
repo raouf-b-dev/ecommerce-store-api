@@ -11,7 +11,7 @@ import { PaymentDtoMapper } from '../../mappers/payment-dto.mapper';
 export class ProcessRefundController {
   constructor(private readonly useCase: ProcessRefundUseCase) {}
   async handle(
-    id: string,
+    id: number,
     dto: ProcessRefundDto,
   ): Promise<Result<PaymentResponseDto, ControllerError>> {
     try {

@@ -27,8 +27,8 @@ describe('RemoveCartItemUseCase', () => {
   describe('execute', () => {
     it('should remove item from cart successfully', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
         id: cartId,
@@ -49,8 +49,8 @@ describe('RemoveCartItemUseCase', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
-      const itemId = 'item-1';
+      const cartId = 404;
+      const itemId = 1;
       const error = new RepositoryError('Cart not found');
 
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
@@ -70,8 +70,8 @@ describe('RemoveCartItemUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const error = new Error('Database connection failed');
 
       mockCartRepository.findById.mockRejectedValue(error);

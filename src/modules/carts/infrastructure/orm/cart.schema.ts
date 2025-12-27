@@ -17,11 +17,11 @@ export class CartEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'customer_id', type: 'varchar', nullable: true })
-  customerId: string | null;
+  @Column({ name: 'customer_id', type: 'int', nullable: true })
+  customerId: number | null;
 
-  @Column({ name: 'session_id', type: 'varchar', nullable: true })
-  sessionId: string | null;
+  @Column({ name: 'session_id', type: 'int', nullable: true })
+  sessionId: number | null;
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, {
     cascade: true,

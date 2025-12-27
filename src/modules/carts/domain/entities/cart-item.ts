@@ -6,8 +6,8 @@ import { Quantity } from '../../../../shared/domain/value-objects/quantity';
 import { ICartItem } from '../interfaces/cart-item.interface';
 
 export interface CartItemProps {
-  id: string | null;
-  productId: string;
+  id: number | null;
+  productId: number;
   productName: string;
   price: number;
   quantity: number;
@@ -15,8 +15,8 @@ export interface CartItemProps {
 }
 
 export class CartItem implements ICartItem {
-  private _id: string | null;
-  private readonly _productId: string;
+  private _id: number | null;
+  private readonly _productId: number;
   private _productName: string;
   private _price: number;
   private _quantity: Quantity;
@@ -27,7 +27,7 @@ export class CartItem implements ICartItem {
     if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id || null;
-    this._productId = props.productId.trim();
+    this._productId = props.productId;
     this._productName = props.productName.trim();
     this._price = this.roundPrice(props.price);
     this._quantity = Quantity.from(props.quantity);
@@ -35,7 +35,7 @@ export class CartItem implements ICartItem {
   }
 
   private validateProps(props: CartItemProps): Result<void, DomainError> {
-    if (!props.productId?.trim()) {
+    if (!props.productId) {
       return ErrorFactory.DomainError('Product ID is required');
     }
     if (!props.productName?.trim()) {
@@ -67,11 +67,11 @@ export class CartItem implements ICartItem {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
-  get productId(): string {
+  get productId(): number {
     return this._productId;
   }
 
@@ -166,7 +166,7 @@ export class CartItem implements ICartItem {
     return Result.success(undefined);
   }
 
-  isSameProduct(productId: string): boolean {
+  isSameProduct(productId: number): boolean {
     return this._productId === productId;
   }
 
@@ -199,7 +199,7 @@ export class CartItem implements ICartItem {
   }
 
   static create(
-    productId: string,
+    productId: number,
     productName: string,
     price: number,
     quantity: number,

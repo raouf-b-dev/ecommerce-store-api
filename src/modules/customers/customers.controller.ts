@@ -68,7 +68,7 @@ export class CustomersController {
   @ApiOperation({ summary: 'Get customer by ID' })
   @ApiResponse({ status: 200, type: CustomerResponseDto })
   async getCustomer(@Param('id') id: string) {
-    return this.getCustomerController.handle(id);
+    return this.getCustomerController.handle(Number(id));
   }
 
   @Patch(':id')
@@ -78,21 +78,21 @@ export class CustomersController {
     @Param('id') id: string,
     @Body() dto: UpdateCustomerDto,
   ) {
-    return this.updateCustomerController.handle(id, dto);
+    return this.updateCustomerController.handle(Number(id), dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete customer' })
   @ApiResponse({ status: 204, description: 'Customer deleted' })
   async deleteCustomer(@Param('id') id: string) {
-    return this.deleteCustomerController.handle(id);
+    return this.deleteCustomerController.handle(Number(id));
   }
 
   @Post(':id/addresses')
   @ApiOperation({ summary: 'Add address to customer' })
   @ApiResponse({ status: 201, type: AddressResponseDto })
   async addAddress(@Param('id') id: string, @Body() dto: AddAddressDto) {
-    return this.addAddressController.handle(id, dto);
+    return this.addAddressController.handle(Number(id), dto);
   }
 
   @Patch(':id/addresses/:addressId')
@@ -103,7 +103,11 @@ export class CustomersController {
     @Param('addressId') addressId: string,
     @Body() dto: UpdateAddressDto,
   ) {
-    return this.updateAddressController.handle(id, addressId, dto);
+    return this.updateAddressController.handle(
+      Number(id),
+      Number(addressId),
+      dto,
+    );
   }
 
   @Delete(':id/addresses/:addressId')
@@ -113,7 +117,7 @@ export class CustomersController {
     @Param('id') id: string,
     @Param('addressId') addressId: string,
   ) {
-    return this.deleteAddressController.handle(id, addressId);
+    return this.deleteAddressController.handle(Number(id), Number(addressId));
   }
 
   @Patch(':id/addresses/:addressId/set-default')
@@ -123,6 +127,9 @@ export class CustomersController {
     @Param('id') id: string,
     @Param('addressId') addressId: string,
   ) {
-    return this.setDefaultAddressController.handle(id, addressId);
+    return this.setDefaultAddressController.handle(
+      Number(id),
+      Number(addressId),
+    );
   }
 }

@@ -34,15 +34,15 @@ describe('CreatePaymentController', () => {
 
   it('should create a payment successfully', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'cust-1',
+      customerId: 1,
     };
 
     const payment = Payment.create(
-      'pay-1',
+      1,
       dto.orderId,
       dto.amount,
       dto.currency,
@@ -55,17 +55,17 @@ describe('CreatePaymentController', () => {
     const result = await controller.handle(dto);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe('pay-1');
+    expect(result.value.id).toBe(1);
     expect(useCase.execute).toHaveBeenCalledWith(dto);
   });
 
   it('should return Failure(ControllerError) if use case fails', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'cust-1',
+      customerId: 1,
     };
     const error = ErrorFactory.UseCaseError('Creation failed').error;
     useCase.execute.mockResolvedValue(Result.failure(error));
@@ -83,11 +83,11 @@ describe('CreatePaymentController', () => {
 
   it('should return Failure(ControllerError) if use case throws unexpected error', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'cust-1',
+      customerId: 1,
     };
     const error = new Error('Unexpected error');
     useCase.execute.mockRejectedValue(error);

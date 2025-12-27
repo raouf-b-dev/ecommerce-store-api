@@ -4,7 +4,6 @@ import { DataSource, Repository, EntityManager } from 'typeorm';
 import { PostgresReservationRepository } from './postgres.reservation-repository';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { ReservationTestFactory } from '../../../testing/factories/reservation.test.factory';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
@@ -60,7 +59,7 @@ describe('PostgresReservationRepository', () => {
   describe('save', () => {
     it('should save reservation and update inventory successfully', async () => {
       const dto = InventoryDtoTestFactory.createReserveStockDto();
-      const reservationId = '1';
+      const reservationId = 1;
 
       const inventoryEntity = {
         productId: dto.items[0].productId,
@@ -143,7 +142,7 @@ describe('PostgresReservationRepository', () => {
     it('should return failure if not found', async () => {
       typeOrmRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('RES_NOT_FOUND');
+      const result = await repository.findById(404);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) {

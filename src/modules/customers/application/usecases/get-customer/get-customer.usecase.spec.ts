@@ -20,7 +20,7 @@ describe('GetCustomerUseCase', () => {
 
   describe('execute', () => {
     it('should return Success with customer if found', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const mockCustomerData = CustomerTestFactory.createMockCustomer({
         id: customerId,
       });
@@ -35,7 +35,7 @@ describe('GetCustomerUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
-      const customerId = 'non-existent-id';
+      const customerId = 0;
 
       mockCustomerRepository.mockCustomerNotFound();
 
@@ -49,7 +49,7 @@ describe('GetCustomerUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const repoError = new Error('Database connection failed');
 
       mockCustomerRepository.findById.mockRejectedValue(repoError);

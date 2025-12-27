@@ -10,8 +10,8 @@ import { ICart } from '../../../domain/interfaces/cart.interface';
 export class UpdateCartItemController {
   constructor(private readonly updateCartItemUseCase: UpdateCartItemUseCase) {}
   async handle(
-    id: string,
-    itemId: string,
+    id: number,
+    itemId: number,
     dto: UpdateCartItemDto,
   ): Promise<Result<ICart, ControllerError>> {
     try {

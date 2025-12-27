@@ -11,9 +11,9 @@ export class TestDataHelper {
   }) {
     const orderId = options?.orderId || 1;
     const productId = options?.productId || 3;
-    const customerId = 'CUST0000001';
-    const paymentId = 'PAY0000001';
-    const shippingAddressId = 'ADDR0000001';
+    const customerId = 1;
+    const paymentId = 1;
+    const shippingAddressId = 1;
 
     const createOrderDto = options?.useCOD
       ? CreateOrderDtoTestFactory.createCashOnDeliveryDto()
@@ -76,7 +76,7 @@ export class TestDataHelper {
     return {
       productIds,
       createOrderDto: CreateOrderDtoTestFactory.createMultiItemDto(
-        productIds.map((id) => id.toString()),
+        productIds.map((id) => id),
       ),
       productEntities:
         ProductEntityTestFactory.createProductEntities(productIds),

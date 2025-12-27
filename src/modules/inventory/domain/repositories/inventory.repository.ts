@@ -5,14 +5,14 @@ import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
 import { Inventory } from '../entities/inventory';
 
 export abstract class InventoryRepository {
-  abstract findById(id: string): Promise<Result<Inventory, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<Inventory, RepositoryError>>;
 
   abstract findByProductId(
-    productId: string,
+    productId: number,
   ): Promise<Result<Inventory, RepositoryError>>;
 
   abstract findByProductIds(
-    productIds: string[],
+    productIds: number[],
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract findLowStock(
@@ -27,5 +27,5 @@ export abstract class InventoryRepository {
     inventory: Inventory,
   ): Promise<Result<Inventory, RepositoryError>>;
 
-  abstract delete(id: string): Promise<Result<void, RepositoryError>>;
+  abstract delete(id: number): Promise<Result<void, RepositoryError>>;
 }

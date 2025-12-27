@@ -14,8 +14,8 @@ export class CartItemEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'product_id', type: 'varchar' })
-  productId: string;
+  @Column({ name: 'product_id', type: 'int' })
+  productId: number;
 
   @Column({ name: 'product_name', type: 'varchar' })
   productName: string;

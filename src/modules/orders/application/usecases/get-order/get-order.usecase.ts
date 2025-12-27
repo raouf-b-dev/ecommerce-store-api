@@ -8,12 +8,12 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 
 @Injectable()
-export class GetOrderUseCase extends UseCase<string, IOrder, UseCaseError> {
+export class GetOrderUseCase extends UseCase<number, IOrder, UseCaseError> {
   constructor(private readonly orderRepository: OrderRepository) {
     super();
   }
 
-  async execute(id: string): Promise<Result<IOrder, UseCaseError>> {
+  async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
     try {
       const orderResult = await this.orderRepository.findById(id);
 

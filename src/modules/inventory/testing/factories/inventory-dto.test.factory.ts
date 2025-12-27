@@ -48,10 +48,10 @@ export class InventoryDtoTestFactory {
     overrides?: Partial<ReserveStockDto>,
   ): ReserveStockDto {
     const baseDto: ReserveStockDto = {
-      orderId: 'OR0000001',
+      orderId: 1,
       items: [
         {
-          productId: 'PR0000001',
+          productId: 1,
           quantity: 2,
         },
       ],
@@ -64,7 +64,7 @@ export class InventoryDtoTestFactory {
     overrides?: Partial<ReserveStockItemDto>,
   ): ReserveStockItemDto {
     const baseDto: ReserveStockItemDto = {
-      productId: 'PR0000001',
+      productId: 1,
       quantity: 1,
     };
 
@@ -73,7 +73,7 @@ export class InventoryDtoTestFactory {
 
   static createMultiItemReserveDto(itemCount: number = 3): ReserveStockDto {
     const items = Array.from({ length: itemCount }, (_, i) => ({
-      productId: `PR${(i + 1).toString().padStart(7, '0')}`,
+      productId: i + 1,
       quantity: i + 1,
     }));
 
@@ -83,8 +83,8 @@ export class InventoryDtoTestFactory {
   }
 
   static createReserveForOrder(
-    orderId: string,
-    productId: string,
+    orderId: number,
+    productId: number,
     quantity: number,
   ): ReserveStockDto {
     return this.createReserveStockDto({
@@ -126,7 +126,7 @@ export class InventoryDtoTestFactory {
 
   static createInvalidReserveStockDto(): ReserveStockDto {
     return {
-      orderId: '',
+      orderId: 0,
       items: [],
     };
   }

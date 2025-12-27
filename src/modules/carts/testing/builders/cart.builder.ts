@@ -9,18 +9,18 @@ export class CartBuilder {
     this.cart = CartTestFactory.createMockCart();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.cart.id = id;
     return this;
   }
 
-  withCustomerId(customerId: string): this {
+  withCustomerId(customerId: number): this {
     this.cart.customerId = customerId;
     this.cart.sessionId = null;
     return this;
   }
 
-  withSessionId(sessionId: string): this {
+  withSessionId(sessionId: number): this {
     this.cart.sessionId = sessionId;
     this.cart.customerId = null;
     return this;
@@ -28,8 +28,8 @@ export class CartBuilder {
 
   withItems(count: number): this {
     const items = Array.from({ length: count }, (_, i) => ({
-      id: `item-${i + 1}`,
-      productId: `product-${i + 1}`,
+      id: i + 1,
+      productId: i + 1,
       productName: `Product ${i + 1}`,
       price: 10 * (i + 1),
       quantity: 1,

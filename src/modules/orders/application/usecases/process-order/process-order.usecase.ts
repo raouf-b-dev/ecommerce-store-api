@@ -9,10 +9,10 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 
 @Injectable()
 export class ProcessOrderUseCase
-  implements UseCase<string, IOrder, UseCaseError>
+  implements UseCase<number, IOrder, UseCaseError>
 {
   constructor(private orderRepository: OrderRepository) {}
-  async execute(id: string): Promise<Result<IOrder, UseCaseError>> {
+  async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
     try {
       const orderResult = await this.orderRepository.findById(id);
       if (orderResult.isFailure) return orderResult;
@@ -23,7 +23,7 @@ export class ProcessOrderUseCase
       if (processResult.isFailure) return processResult;
 
       const updateResult = await this.orderRepository.updateStatus(
-        order.id,
+        id,
         order.status,
       );
       if (updateResult.isFailure) return updateResult;

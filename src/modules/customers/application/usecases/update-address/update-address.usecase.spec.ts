@@ -24,8 +24,8 @@ describe('UpdateAddressUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if address is updated', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'address-123';
+      const customerId = 123;
+      const addressId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
@@ -49,8 +49,8 @@ describe('UpdateAddressUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
-      const customerId = 'non-existent-id';
-      const addressId = 'address-123';
+      const customerId = 0;
+      const addressId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
 
       mockCustomerRepository.mockCustomerNotFound();
@@ -69,8 +69,8 @@ describe('UpdateAddressUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if address not found', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'non-existent-address';
+      const customerId = 123;
+      const addressId = 0;
       const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
 
       mockCustomerRepository.mockSuccessfulFind(
@@ -91,8 +91,8 @@ describe('UpdateAddressUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if update fails', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'address-123';
+      const customerId = 123;
+      const addressId = 123;
       const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
 
       mockCustomerRepository.mockSuccessfulFind(

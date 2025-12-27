@@ -9,10 +9,10 @@ export class MockReservationRepository implements ReservationRepository {
     Promise<Result<Reservation, RepositoryError>>,
     [ReserveStockDto]
   >();
-  findById = jest.fn<Promise<Result<Reservation, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Reservation, RepositoryError>>, [number]>();
   findByOrderId = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
-    [string]
+    [number]
   >();
   update = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
@@ -45,7 +45,7 @@ export class MockReservationRepository implements ReservationRepository {
     this.findById.mockResolvedValue(Result.success(reservation));
   }
 
-  mockReservationNotFound(id: string): void {
+  mockReservationNotFound(id: number): void {
     this.findById.mockResolvedValue(
       Result.failure(
         new RepositoryError(`Reservation with id ${id} not found`),
@@ -57,7 +57,7 @@ export class MockReservationRepository implements ReservationRepository {
     this.findByOrderId.mockResolvedValue(Result.success(reservation));
   }
 
-  mockReservationNotFoundForOrder(orderId: string): void {
+  mockReservationNotFoundForOrder(orderId: number): void {
     this.findByOrderId.mockResolvedValue(
       Result.failure(
         new RepositoryError(`Reservation not found for order ${orderId}`),

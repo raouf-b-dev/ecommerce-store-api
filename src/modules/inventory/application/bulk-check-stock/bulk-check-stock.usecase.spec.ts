@@ -29,16 +29,16 @@ describe('BulkCheckStockUseCase', () => {
   it('should return available for all items when stock is sufficient', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 5 },
-      { productId: 'PR2', quantity: 20 },
+      { productId: 1, quantity: 5 },
+      { productId: 2, quantity: 20 },
     ];
 
     const inv1Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR1',
+      productId: 1,
       availableQuantity: 10,
     });
     const inv2Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR2',
+      productId: 2,
       availableQuantity: 30,
     });
 
@@ -57,7 +57,7 @@ describe('BulkCheckStockUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith(['PR1', 'PR2']);
+    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 2]);
 
     const expected: CheckStockResponse[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },
@@ -69,21 +69,21 @@ describe('BulkCheckStockUseCase', () => {
   it('should handle mixed availability (available, unavailable, and default quantity)', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 5 },
-      { productId: 'PR2', quantity: 30 },
-      { productId: 'PR3' },
+      { productId: 1, quantity: 5 },
+      { productId: 2, quantity: 30 },
+      { productId: 3 },
     ];
 
     const inv1Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR1',
+      productId: 1,
       availableQuantity: 10,
     });
     const inv2Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR2',
+      productId: 2,
       availableQuantity: 20,
     });
     const inv3Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR3',
+      productId: 3,
       availableQuantity: 5,
     });
 
@@ -121,12 +121,12 @@ describe('BulkCheckStockUseCase', () => {
   it('should handle missing inventory records correctly', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 5 },
-      { productId: 'PR_MISSING', quantity: 10 },
+      { productId: 1, quantity: 5 },
+      { productId: 999, quantity: 10 },
     ];
 
     const inv1Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR1',
+      productId: 1,
       availableQuantity: 10,
     });
     const inv1Domain = Inventory.fromPrimitives(inv1Primitives);
@@ -139,10 +139,7 @@ describe('BulkCheckStockUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([
-      'PR1',
-      'PR_MISSING',
-    ]);
+    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 999]);
 
     const expected: CheckStockResponse[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },
@@ -154,17 +151,17 @@ describe('BulkCheckStockUseCase', () => {
   it('should handle duplicate productIds in input DTO and call repo once', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 1 },
-      { productId: 'PR2', quantity: 10 },
-      { productId: 'PR1', quantity: 5 },
+      { productId: 1, quantity: 1 },
+      { productId: 2, quantity: 10 },
+      { productId: 1, quantity: 5 },
     ];
 
     const inv1Primitives = InventoryTestFactory.createInStockInventory({
-      productId: 'PR1',
+      productId: 1,
       availableQuantity: 10,
     });
     const inv2Primitives = InventoryTestFactory.createLowStockInventory({
-      productId: 'PR2',
+      productId: 2,
       availableQuantity: 5,
     });
 
@@ -191,7 +188,7 @@ describe('BulkCheckStockUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith(['PR1', 'PR2']);
+    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 2]);
 
     const expected: CheckStockResponse[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 1 },
@@ -203,7 +200,7 @@ describe('BulkCheckStockUseCase', () => {
 
   it('should return a failure if the repository fails to fetch inventories', async () => {
     // Arrange
-    const input = [{ productId: 'PR1', quantity: 1 }];
+    const input = [{ productId: 1, quantity: 1 }];
     const repoError = ErrorFactory.RepositoryError(
       'Database connection failed',
     );
@@ -214,21 +211,21 @@ describe('BulkCheckStockUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultFailureWithError(result, repoError.error);
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith(['PR1']);
+    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1]);
   });
 
   it('should return a failure if the domain check fails for any item', async () => {
     // Arrange
     const input = [
-      { productId: 'PR1', quantity: 1 },
-      { productId: 'PR2', quantity: -5 },
+      { productId: 1, quantity: 1 },
+      { productId: 2, quantity: -5 },
     ];
 
     const inv1Domain = Inventory.fromPrimitives(
-      InventoryTestFactory.createInStockInventory({ productId: 'PR1' }),
+      InventoryTestFactory.createInStockInventory({ productId: 1 }),
     );
     const inv2Domain = Inventory.fromPrimitives(
-      InventoryTestFactory.createInStockInventory({ productId: 'PR2' }),
+      InventoryTestFactory.createInStockInventory({ productId: 2 }),
     );
 
     const domainError = ErrorFactory.DomainError('Quantity cannot be negative');
@@ -252,7 +249,7 @@ describe('BulkCheckStockUseCase', () => {
 
   it('should return a use case error on unexpected exceptions', async () => {
     // Arrange
-    const input = [{ productId: 'PR_ERROR', quantity: 1 }];
+    const input = [{ productId: 888, quantity: 1 }];
     const unexpectedError = new Error('A terrible server error occurred');
     mockRepo.findByProductIds.mockRejectedValue(unexpectedError);
 
@@ -266,6 +263,6 @@ describe('BulkCheckStockUseCase', () => {
       UseCaseError,
       unexpectedError,
     );
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith(['PR_ERROR']);
+    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([888]);
   });
 });

@@ -11,7 +11,7 @@ import { CheckStockUseCase } from '../../../../inventory/application/check-stock
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
-  { cartId: string; dto: AddCartItemDto },
+  { cartId: number; dto: AddCartItemDto },
   ICart,
   UseCaseError
 > {
@@ -24,7 +24,7 @@ export class AddCartItemUseCase extends UseCase<
   }
 
   async execute(input: {
-    cartId: string;
+    cartId: number;
     dto: AddCartItemDto;
   }): Promise<Result<ICart, UseCaseError>> {
     const { cartId, dto } = input;
@@ -68,11 +68,11 @@ export class AddCartItemUseCase extends UseCase<
       }
 
       const addResult = cart.addItem(
-        product.id,
+        product.id!,
         product.name,
         product.price,
         dto.quantity,
-        undefined, // imageUrl not available in IProduct interface yet
+        undefined,
       );
 
       if (isFailure(addResult)) return addResult;

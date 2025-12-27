@@ -10,7 +10,7 @@ import { CheckStockUseCase } from '../../../../inventory/application/check-stock
 
 @Injectable()
 export class UpdateCartItemUseCase extends UseCase<
-  { cartId: string; itemId: string; dto: UpdateCartItemDto },
+  { cartId: number; itemId: number; dto: UpdateCartItemDto },
   ICart,
   UseCaseError
 > {
@@ -22,8 +22,8 @@ export class UpdateCartItemUseCase extends UseCase<
   }
 
   async execute(input: {
-    cartId: string;
-    itemId: string;
+    cartId: number;
+    itemId: number;
     dto: UpdateCartItemDto;
   }): Promise<Result<ICart, UseCaseError>> {
     const { cartId, itemId, dto } = input;

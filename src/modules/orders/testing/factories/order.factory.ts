@@ -7,18 +7,19 @@ export class OrderTestFactory {
   static createMockOrder(overrides?: Partial<IOrder>): IOrder {
     const baseOrder: IOrder = {
       // Basic identifiers
-      id: 'OR0001',
-      customerId: 'CUST1',
+      id: 1,
+      customerId: 1,
       paymentId: null,
+      reservationId: null,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      shippingAddressId: 'ADDR001',
+      shippingAddressId: 1,
 
       // Order items
       items: [
         {
-          id: 'item-1',
-          productId: 'PR1',
-          productName: 'P1',
+          id: 1,
+          productId: 1,
+          productName: 'Product 1',
           quantity: 1,
           unitPrice: 10,
           lineTotal: 10,
@@ -27,7 +28,7 @@ export class OrderTestFactory {
 
       // Shipping address
       shippingAddress: {
-        id: 'ADDR001',
+        id: 1,
         firstName: 'John',
         lastName: 'Doe',
         street: '123 Main Street',
@@ -46,7 +47,7 @@ export class OrderTestFactory {
       totalPrice: 10,
 
       // Order status and timestamps
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_PAYMENT,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
 
@@ -57,9 +58,16 @@ export class OrderTestFactory {
     return { ...baseOrder, ...overrides };
   }
 
-  static createPendingOrder(overrides?: Partial<IOrder>): IOrder {
+  static createPendingPaymentOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_PAYMENT,
+      ...overrides,
+    });
+  }
+
+  static createPaymentFailedOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.PAYMENT_FAILED,
       ...overrides,
     });
   }
@@ -67,7 +75,7 @@ export class OrderTestFactory {
   static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.CONFIRMED,
-      paymentId: 'PAY001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -75,7 +83,7 @@ export class OrderTestFactory {
   static createProcessingOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PROCESSING,
-      paymentId: 'PAY001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -83,7 +91,7 @@ export class OrderTestFactory {
   static createShippedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.SHIPPED,
-      paymentId: 'PAY001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -91,7 +99,7 @@ export class OrderTestFactory {
   static createDeliveredOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.DELIVERED,
-      paymentId: 'PAY001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -105,7 +113,7 @@ export class OrderTestFactory {
   }
 
   static createCancellableOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createPendingOrder(overrides);
+    return this.createPendingPaymentOrder(overrides);
   }
 
   static createNonCancellableOrder(overrides?: Partial<IOrder>): IOrder {
@@ -116,6 +124,7 @@ export class OrderTestFactory {
     return this.createMockOrder({
       paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       paymentId: null, // No payment until delivery
+      status: OrderStatus.PENDING_CONFIRMATION, // COD orders start as pending confirmation
       ...overrides,
     });
   }
@@ -123,7 +132,7 @@ export class OrderTestFactory {
   static createStripeOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 'PAY_STRIPE_001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -131,15 +140,15 @@ export class OrderTestFactory {
   static createPayPalOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       paymentMethod: PaymentMethodType.PAYPAL,
-      paymentId: 'PAY_PAYPAL_001',
+      paymentId: 1,
       ...overrides,
     });
   }
 
   static createMultiItemOrder(itemCount: number = 3): IOrder {
     const items = Array.from({ length: itemCount }, (_, i) => ({
-      id: `item-${i + 1}`,
-      productId: `PR${i + 1}`,
+      id: i + 1,
+      productId: i + 1,
       productName: `Product ${i + 1}`,
       quantity: i + 1,
       unitPrice: 10 * (i + 1),
@@ -158,30 +167,43 @@ export class OrderTestFactory {
   }
 
   static createCODOrderReadyForConfirmation(): IOrder {
-    return this.createCashOnDeliveryOrder({
-      status: OrderStatus.PENDING,
+    // COD orders can be confirmed immediately - they start in PENDING_CONFIRMATION
+    return this.createMockOrder({
+      status: OrderStatus.PENDING_CONFIRMATION,
+      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+      paymentId: null,
     });
   }
 
   static createOnlineOrderReadyForConfirmation(): IOrder {
+    // Online orders ready for confirmation have completed payment
     return this.createMockOrder({
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_PAYMENT,
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 'PAY_STRIPE_001', // Has payment
+      paymentId: 1, // Payment is complete - ready to confirm
     });
   }
 
   static createOnlineOrderNotReadyForConfirmation(): IOrder {
+    // Online orders not ready for confirmation still have pending payment
     return this.createMockOrder({
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_PAYMENT,
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: null, // No payment yet
+      paymentId: null, // No payment yet - cannot confirm
+    });
+  }
+
+  static createRefundedOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.REFUNDED,
+      paymentId: 1,
+      ...overrides,
     });
   }
 
   // Additional helper for orders with payment
   static createOrderWithPayment(
-    paymentId: string,
+    paymentId: number,
     paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
     overrides?: Partial<IOrder>,
   ): IOrder {

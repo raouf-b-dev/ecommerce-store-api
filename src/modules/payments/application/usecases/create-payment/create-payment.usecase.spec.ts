@@ -56,11 +56,11 @@ describe('CreatePaymentUseCase', () => {
 
   it('should create a payment successfully', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'CU123',
+      customerId: 123,
       paymentMethodDetails: { cardLast4: '4242' },
     };
 
@@ -86,11 +86,11 @@ describe('CreatePaymentUseCase', () => {
 
   it('should fail if save fails', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'CU123',
+      customerId: 123,
     };
 
     paymentRepository.mockSaveFailure('Save failed');
@@ -103,11 +103,11 @@ describe('CreatePaymentUseCase', () => {
 
   it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
     const dto: CreatePaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 'CU123',
+      customerId: 123,
     };
     const repoError = new Error('Database connection failed');
 

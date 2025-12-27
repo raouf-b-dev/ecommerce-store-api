@@ -24,8 +24,8 @@ describe('SetDefaultAddressUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if address is set as default', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'address-123';
+      const customerId = 123;
+      const addressId = 123;
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -44,8 +44,8 @@ describe('SetDefaultAddressUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
-      const customerId = 'non-existent-id';
-      const addressId = 'address-123';
+      const customerId = 0;
+      const addressId = 123;
 
       mockCustomerRepository.mockCustomerNotFound();
 
@@ -59,8 +59,8 @@ describe('SetDefaultAddressUseCase', () => {
     });
 
     it('should return Failure(DomainError) if address not found', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'non-existent-address';
+      const customerId = 123;
+      const addressId = 0;
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -76,8 +76,8 @@ describe('SetDefaultAddressUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if update fails', async () => {
-      const customerId = 'customer-123';
-      const addressId = 'address-123';
+      const customerId = 123;
+      const addressId = 123;
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createCustomerWithAddress({ id: customerId }),

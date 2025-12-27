@@ -33,10 +33,10 @@ describe('ListLowStockUseCase', () => {
       threshold: 10,
     });
     const lowStockPrimitive1 = InventoryTestFactory.createLowStockInventory({
-      id: 'IN001',
+      id: 1,
     });
     const lowStockPrimitive2 = InventoryTestFactory.createLowStockInventory({
-      id: 'IN002',
+      id: 2,
     });
 
     // Use the mock helper

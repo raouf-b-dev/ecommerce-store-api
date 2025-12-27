@@ -21,7 +21,7 @@ describe('UpdateProductUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if product is updated', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
@@ -39,7 +39,7 @@ describe('UpdateProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not updated', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
 
       mockRepository.mockUpdateFailure('Failed to update product');
@@ -54,7 +54,7 @@ describe('UpdateProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const repoError = new Error('Database connection failed');
 
@@ -71,7 +71,7 @@ describe('UpdateProductUseCase', () => {
     });
 
     it('should update only price', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,

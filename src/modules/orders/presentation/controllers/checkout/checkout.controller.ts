@@ -12,7 +12,7 @@ export class CheckoutController {
 
   async handle(
     dto: CheckoutDto,
-    userId: string,
+    userId: number,
   ): Promise<Result<CheckoutResponseDto, ControllerError>> {
     try {
       return this.checkoutUseCase.execute({ dto, userId });

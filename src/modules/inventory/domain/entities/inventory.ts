@@ -6,8 +6,8 @@ import { Quantity } from '../../../../shared/domain/value-objects/quantity';
 import { IInventory } from '../interfaces/inventory.interface';
 
 export interface InventoryProps {
-  id: string | null;
-  productId: string;
+  id: number | null;
+  productId: number;
   availableQuantity: number;
   reservedQuantity: number;
   lowStockThreshold: number;
@@ -17,8 +17,8 @@ export interface InventoryProps {
 }
 
 export class Inventory implements IInventory {
-  private readonly _id: string | null;
-  private readonly _productId: string;
+  private readonly _id: number | null;
+  private readonly _productId: number;
   private _availableQuantity: Quantity;
   private _reservedQuantity: Quantity;
   private _lowStockThreshold: Quantity;
@@ -30,8 +30,8 @@ export class Inventory implements IInventory {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id ? props.id.trim() : null;
-    this._productId = props.productId.trim();
+    this._id = props.id ? props.id : null;
+    this._productId = props.productId;
     this._availableQuantity = Quantity.from(props.availableQuantity);
     this._reservedQuantity = Quantity.from(props.reservedQuantity);
     this._lowStockThreshold = Quantity.from(props.lowStockThreshold);
@@ -42,7 +42,7 @@ export class Inventory implements IInventory {
 
   private validateProps(props: InventoryProps): Result<void, DomainError> {
     // ID is optional for new inventory
-    if (!props.productId?.trim()) {
+    if (!props.productId) {
       return ErrorFactory.DomainError('Product ID is required');
     }
     if (props.availableQuantity < 0) {
@@ -70,11 +70,11 @@ export class Inventory implements IInventory {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
-  get productId(): string {
+  get productId(): number {
     return this._productId;
   }
 
@@ -290,7 +290,7 @@ export class Inventory implements IInventory {
   }
 
   static createForProduct(
-    productId: string,
+    productId: number,
     initialQuantity: number = 0,
     lowStockThreshold: number = 10,
   ): Inventory {

@@ -26,7 +26,7 @@ describe('UpdateProductController', () => {
 
   describe('handle', () => {
     it('should return success if product is updated', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const product = ProductTestFactory.createMockProduct({ id: productId });
 
@@ -46,7 +46,7 @@ describe('UpdateProductController', () => {
     });
 
     it('should return Failure(ControllerError) if product is not updated', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
 
       mockUpdateProductUseCase.execute.mockResolvedValue(
@@ -69,7 +69,7 @@ describe('UpdateProductController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const error = new Error('Database connection failed');
 
@@ -86,7 +86,7 @@ describe('UpdateProductController', () => {
     });
 
     it('should update only price', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
       const product = ProductTestFactory.createMockProduct({
         id: productId,

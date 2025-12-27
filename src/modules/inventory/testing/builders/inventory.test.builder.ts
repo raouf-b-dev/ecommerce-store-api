@@ -9,12 +9,12 @@ export class InventoryBuilder {
     this.inventory = InventoryTestFactory.createMockInventory();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.inventory.id = id;
     return this;
   }
 
-  withProductId(productId: string): this {
+  withProductId(productId: number): this {
     this.inventory.productId = productId;
     return this;
   }

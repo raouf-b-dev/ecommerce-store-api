@@ -7,8 +7,8 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 export interface DeleteAddressInput {
-  customerId: string;
-  addressId: string;
+  customerId: number;
+  addressId: number;
 }
 
 @Injectable()

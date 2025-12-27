@@ -33,7 +33,7 @@ describe('DeleteCustomerController', () => {
 
   describe('handle', () => {
     it('should return success result when customer is deleted', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
 
       useCase.execute.mockResolvedValue(Result.success(undefined));
 
@@ -44,7 +44,7 @@ describe('DeleteCustomerController', () => {
     });
 
     it('should return controller error if use case fails', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
       const error = ErrorFactory.UseCaseError('Customer not found');
 
       useCase.execute.mockResolvedValue(error);
@@ -59,7 +59,7 @@ describe('DeleteCustomerController', () => {
     });
 
     it('should return controller error if unexpected error occurs', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
       const error = new Error('Unexpected error');
 
       useCase.execute.mockRejectedValue(error);

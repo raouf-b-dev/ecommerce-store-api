@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../core/infrastructure/jobs/base-job.handler';
-import { CreatePaymentUseCase } from '../../../payments/application/usecases/create-payment/create-payment.usecase';
+import { CreatePaymentIntentUseCase } from '../../../payments/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { Result, isFailure } from '../../../../core/domain/result';
 import { AppError } from '../../../../core/errors/app.error';
 import { ErrorFactory } from '../../../../core/errors/error.factory';
@@ -9,7 +9,8 @@ import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
 import { CreateOrderResult } from './create-order.job';
 
 export interface ProcessPaymentResult extends CreateOrderResult {
-  paymentId: string;
+  paymentId: number;
+  clientSecret: string;
 }
 
 @Injectable()
@@ -19,7 +20,9 @@ export class ProcessPaymentStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ProcessPaymentStep.name);
 
-  constructor(private readonly createPaymentUseCase: CreatePaymentUseCase) {
+  constructor(
+    private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
+  ) {
     super();
   }
 
@@ -38,27 +41,32 @@ export class ProcessPaymentStep extends BaseJobHandler<
       );
     }
 
-    const { orderId, orderTotal, orderCurrency } = childData;
-    this.logger.log(`Processing payment for order ${orderId}...`);
+    const { orderId, orderTotal, orderCurrency, reservationId } = childData;
+    this.logger.log(`Creating payment intent for order ${orderId}...`);
 
-    const paymentResult = await this.createPaymentUseCase.execute({
+    const paymentResult = await this.createPaymentIntentUseCase.execute({
       orderId,
       amount: orderTotal,
       currency: orderCurrency,
       paymentMethod,
       customerId: userId,
+      metadata: {
+        orderId,
+        reservationId,
+      },
     });
 
     if (isFailure(paymentResult)) {
       return Result.failure(paymentResult.error);
     }
 
-    const payment = paymentResult.value;
-    this.logger.log(`Payment processed. Payment ID: ${payment.id}`);
+    const { paymentId, clientSecret } = paymentResult.value;
+    this.logger.log(`Payment intent created. Payment ID: ${paymentId}`);
 
     return Result.success({
       ...childData,
-      paymentId: payment.id!,
+      paymentId,
+      clientSecret,
     });
   }
 }

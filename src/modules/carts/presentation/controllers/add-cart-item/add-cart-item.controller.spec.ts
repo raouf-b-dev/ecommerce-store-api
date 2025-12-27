@@ -31,9 +31,9 @@ describe('AddCartItemController', () => {
   describe('handle', () => {
     it('should return success result with updated cart when use case succeeds', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 2,
       };
       const mockCart: ICart = CartTestFactory.createCartWithItems(1, {
@@ -53,9 +53,9 @@ describe('AddCartItemController', () => {
 
     it('should return failure when product not found', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-404',
+        productId: 404,
         quantity: 1,
       };
       const expectedError = new UseCaseError('Product not found');
@@ -71,9 +71,9 @@ describe('AddCartItemController', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
+      const cartId = 404;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 1,
       };
       const expectedError = new UseCaseError('Cart not found');
@@ -89,9 +89,9 @@ describe('AddCartItemController', () => {
 
     it('should catch unexpected exceptions and return a ControllerError', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 1,
       };
       const unexpectedError = new Error('Database connection failed');

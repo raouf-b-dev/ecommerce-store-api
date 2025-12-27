@@ -9,7 +9,7 @@ import { UpdateCustomerDto } from '../../../presentation/dto/update-customer.dto
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
 
 export interface UpdateCustomerInput {
-  id: string;
+  id: number;
   dto: UpdateCustomerDto;
 }
 

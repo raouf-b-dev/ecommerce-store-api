@@ -16,7 +16,7 @@ export type CartForCache = Omit<ICart, 'createdAt' | 'updatedAt'> & {
 export class CartMapper {
   static toDomain(entity: CartEntity): Cart {
     const props: CartProps = {
-      id: entity.id ? entity.id.toString() : null,
+      id: entity.id || null,
       customerId: entity.customerId,
       sessionId: entity.sessionId,
       items: entity.items.map((item) => CartItemMapper.toDomain(item).props),
@@ -31,13 +31,12 @@ export class CartMapper {
     const primitives = domain.toPrimitives();
 
     const cartPayload: CartCreate = {
-      // If ID is present, convert to number. If null, leave undefined for auto-increment.
-      id: primitives.id ? parseInt(primitives.id, 10) : undefined,
+      id: primitives.id || 0,
       customerId: primitives.customerId,
       sessionId: primitives.sessionId,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
-    } as any; // Cast to any because id type mismatch in CartCreate vs CartEntity (number vs string in type definition?)
+    };
 
     const entity: CartEntity = Object.assign(new CartEntity(), cartPayload);
 

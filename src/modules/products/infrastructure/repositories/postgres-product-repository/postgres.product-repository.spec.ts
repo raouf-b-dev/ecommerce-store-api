@@ -66,7 +66,7 @@ describe('PostgresProductRepository', () => {
       const result = await repository.save(createDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(generatedId.toString());
+      expect(result.value.id).toBe(generatedId);
       expect(ormRepo.create).toHaveBeenCalledWith({
         ...createDto,
         createdAt: expect.any(Date),
@@ -111,7 +111,7 @@ describe('PostgresProductRepository', () => {
 
   describe('update', () => {
     it('should successfully update a product', async () => {
-      const productId = '1';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const updatedEntity = {
         ...mockProductEntity,
@@ -128,7 +128,7 @@ describe('PostgresProductRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.name).toBe(updateDto.name);
       expect(ormRepo.findOne).toHaveBeenCalledWith({
-        where: { id: parseInt(productId, 10) },
+        where: { id: productId },
       });
       expect(ormRepo.merge).toHaveBeenCalledWith(mockProductEntity, {
         ...updateDto,
@@ -138,7 +138,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should update only price', async () => {
-      const productId = '1';
+      const productId = 1;
       const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
       const updatedEntity = {
         ...mockProductEntity,
@@ -157,7 +157,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when product not found', async () => {
-      const productId = 'PR0000999';
+      const productId = 999;
       const updateDto = UpdateProductDtoFactory.createMockDto();
 
       ormRepo.findOne.mockResolvedValue(null);
@@ -174,7 +174,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database update fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const error = new Error('Database update failed');
 
@@ -194,7 +194,7 @@ describe('PostgresProductRepository', () => {
 
   describe('findById', () => {
     it('should successfully find a product by id', async () => {
-      const productId = '1';
+      const productId = 1;
 
       ormRepo.findOne.mockResolvedValue(mockProductEntity);
 
@@ -203,12 +203,12 @@ describe('PostgresProductRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(productId);
       expect(ormRepo.findOne).toHaveBeenCalledWith({
-        where: { id: parseInt(productId, 10) },
+        where: { id: productId },
       });
     });
 
     it('should return failure when product not found', async () => {
-      const productId = 'PR0000999';
+      const productId = 999;
 
       ormRepo.findOne.mockResolvedValue(null);
 
@@ -222,7 +222,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database query fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database query failed');
 
       ormRepo.findOne.mockRejectedValue(error);
@@ -299,7 +299,7 @@ describe('PostgresProductRepository', () => {
 
   describe('deleteById', () => {
     it('should successfully delete a product', async () => {
-      const productId = '1';
+      const productId = 1;
 
       ormRepo.delete.mockResolvedValue({ affected: 1, raw: {} });
 
@@ -307,11 +307,11 @@ describe('PostgresProductRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toBeUndefined();
-      expect(ormRepo.delete).toHaveBeenCalledWith(parseInt(productId, 10));
+      expect(ormRepo.delete).toHaveBeenCalledWith(productId);
     });
 
     it('should return failure when database delete fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database delete failed');
 
       ormRepo.delete.mockRejectedValue(error);

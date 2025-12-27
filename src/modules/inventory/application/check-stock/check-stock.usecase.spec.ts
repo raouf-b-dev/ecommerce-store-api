@@ -28,7 +28,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return available when stock is sufficient for a given quantity', async () => {
     // Arrange
-    const productId = 'PR001';
+    const productId = 1;
     const requestedQuantity = 5;
     const mockInventory = InventoryTestFactory.createInStockInventory({
       productId,
@@ -65,7 +65,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return available when stock is sufficient for default quantity (1)', async () => {
     // Arrange
-    const productId = 'PR001';
+    const productId = 1;
     const mockInventory = InventoryTestFactory.createInStockInventory({
       productId,
       availableQuantity: 1,
@@ -95,7 +95,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return unavailable when stock is insufficient', async () => {
     // Arrange
-    const productId = 'PR002';
+    const productId = 2;
     const requestedQuantity = 15;
     const mockInventory = InventoryTestFactory.createInStockInventory({
       productId,
@@ -132,7 +132,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return a failure if the inventory is not found', async () => {
     // Arrange
-    const productId = 'PR404';
+    const productId = 404;
     const repoError = ErrorFactory.RepositoryError('Inventory not found');
     mockRepo.findByProductId.mockResolvedValue(repoError);
 
@@ -146,7 +146,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return a failure if the domain check fails', async () => {
     // Arrange
-    const productId = 'PR001';
+    const productId = 1;
     const requestedQuantity = -5; // Invalid quantity
     const mockInventory = InventoryTestFactory.createInStockInventory({
       productId,
@@ -178,7 +178,7 @@ describe('CheckStockUseCase', () => {
 
   it('should return a use case error on unexpected repository exceptions', async () => {
     // Arrange
-    const productId = 'PR500';
+    const productId = 500;
     const unexpectedError = new Error('Database connection failed');
     mockRepo.findByProductId.mockRejectedValue(unexpectedError);
 

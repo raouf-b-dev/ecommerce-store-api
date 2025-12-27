@@ -10,7 +10,7 @@ import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
-  { id: string; dto: UpdateProductDto },
+  { id: number; dto: UpdateProductDto },
   IProduct,
   UseCaseError
 > {
@@ -19,7 +19,7 @@ export class UpdateProductUseCase extends UseCase<
   }
 
   async execute(input: {
-    id: string;
+    id: number;
     dto: UpdateProductDto;
   }): Promise<Result<IProduct, UseCaseError>> {
     try {

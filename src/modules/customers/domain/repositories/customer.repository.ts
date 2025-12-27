@@ -4,7 +4,7 @@ import { RepositoryError } from '../../../../core/errors/repository.error';
 import { Customer } from '../entities/customer';
 
 export abstract class CustomerRepository {
-  abstract findById(id: string): Promise<Result<Customer, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<Customer, RepositoryError>>;
   abstract findByEmail(
     email: string,
   ): Promise<Result<Customer, RepositoryError>>;
@@ -19,5 +19,5 @@ export abstract class CustomerRepository {
   abstract update(
     customer: Customer,
   ): Promise<Result<Customer, RepositoryError>>;
-  abstract delete(id: string): Promise<Result<void, RepositoryError>>;
+  abstract delete(id: number): Promise<Result<void, RepositoryError>>;
 }

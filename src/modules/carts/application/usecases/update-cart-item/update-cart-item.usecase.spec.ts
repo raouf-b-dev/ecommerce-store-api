@@ -35,8 +35,8 @@ describe('UpdateCartItemUseCase', () => {
   describe('execute', () => {
     it('should update item quantity successfully', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const dto: UpdateCartItemDto = { quantity: 5 };
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
@@ -65,8 +65,8 @@ describe('UpdateCartItemUseCase', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
-      const itemId = 'item-1';
+      const cartId = 404;
+      const itemId = 1;
       const dto: UpdateCartItemDto = { quantity: 2 };
       const error = new RepositoryError('Cart not found');
 
@@ -87,8 +87,8 @@ describe('UpdateCartItemUseCase', () => {
 
     it('should return failure when stock is insufficient', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const dto: UpdateCartItemDto = { quantity: 20 };
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
@@ -110,7 +110,7 @@ describe('UpdateCartItemUseCase', () => {
 
       // Assert
       expect(mockCheckStockUseCase.execute).toHaveBeenCalledWith({
-        productId: expect.any(String),
+        productId: expect.any(Number),
         quantity: dto.quantity,
       });
       ResultAssertionHelper.assertResultFailure(
@@ -122,8 +122,8 @@ describe('UpdateCartItemUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const cartId = 'cart-123';
-      const itemId = 'item-1';
+      const cartId = 123;
+      const itemId = 1;
       const dto: UpdateCartItemDto = { quantity: 2 };
       const error = new Error('Database connection failed');
 

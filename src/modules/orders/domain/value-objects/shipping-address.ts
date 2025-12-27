@@ -2,7 +2,7 @@ import { IShippingAddress } from '../interfaces/shipping-address.interface';
 
 // src/modules/orders/domain/value-objects/shipping-address.ts
 export interface ShippingAddressProps {
-  id: string;
+  id: number | null;
   firstName: string;
   lastName: string;
   street: string;
@@ -16,7 +16,7 @@ export interface ShippingAddressProps {
 }
 
 export class ShippingAddress implements IShippingAddress {
-  private readonly _id: string;
+  private readonly _id: number | null;
   private readonly _firstName: string;
   private readonly _lastName: string;
   private readonly _street: string;
@@ -93,7 +93,7 @@ export class ShippingAddress implements IShippingAddress {
     }
   }
 
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 

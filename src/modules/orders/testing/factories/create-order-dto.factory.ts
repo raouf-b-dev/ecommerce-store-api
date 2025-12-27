@@ -7,10 +7,10 @@ import { DeliverOrderDto } from '../../presentation/dto/deliver-order.dto';
 export class CreateOrderDtoTestFactory {
   static createMockDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {
     const baseDto: CreateOrderDto = {
-      customerId: 'CUST0000001',
+      customerId: 1,
       items: [
         {
-          productId: 'PR3',
+          productId: 3,
           quantity: 1,
         },
       ],
@@ -63,7 +63,7 @@ export class CreateOrderDtoTestFactory {
     });
   }
 
-  static createMultiItemDto(productIds: string[]): CreateOrderDto {
+  static createMultiItemDto(productIds: number[]): CreateOrderDto {
     return this.createMockDto({
       items: productIds.map((productId, index) => ({
         productId,
@@ -80,7 +80,7 @@ export class CreateOrderDtoTestFactory {
 
   static createInvalidDto(): CreateOrderDto {
     return {
-      customerId: '',
+      customerId: 0,
       items: [],
       shippingAddress: {
         firstName: '',

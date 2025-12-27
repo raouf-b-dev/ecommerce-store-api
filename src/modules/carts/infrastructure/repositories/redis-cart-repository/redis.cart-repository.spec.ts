@@ -63,7 +63,7 @@ describe('RedisCartRepository', () => {
 
   describe('create', () => {
     it('should create cart in postgres and cache', async () => {
-      const dto = { customerId: 'cust-123' };
+      const dto = { customerId: 123 };
       postgresRepo.create.mockResolvedValue(Result.success(mockCart));
       cacheService.set.mockResolvedValue(undefined);
 
@@ -79,7 +79,7 @@ describe('RedisCartRepository', () => {
     });
 
     it('should return failure if postgres create fails', async () => {
-      const dto = { customerId: 'cust-123' };
+      const dto = { customerId: 123 };
       const error = new RepositoryError('Postgres create failed');
       postgresRepo.create.mockResolvedValue(Result.failure(error));
 
@@ -142,22 +142,22 @@ describe('RedisCartRepository', () => {
   describe('findBySessionId', () => {
     it('should return cart from cache (search)', async () => {
       const sessionCart = Cart.fromPrimitives(
-        CartTestFactory.createGuestCart('session-123'),
+        CartTestFactory.createGuestCart(123),
       );
       const sessionCachedCart = CartCacheMapper.toCache(sessionCart);
       cacheService.search.mockResolvedValue([sessionCachedCart]);
 
-      const result = await repository.findBySessionId('session-123');
+      const result = await repository.findBySessionId(123);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.sessionId).toBe('session-123');
+        expect(result.value.sessionId).toBe(123);
       }
     });
 
     it('should fetch from postgres and cache if not found in cache', async () => {
       const sessionCart = Cart.fromPrimitives(
-        CartTestFactory.createGuestCart('session-123'),
+        CartTestFactory.createGuestCart(123),
       );
       cacheService.search.mockResolvedValue([]);
       postgresRepo.findBySessionId.mockResolvedValue(
@@ -165,7 +165,7 @@ describe('RedisCartRepository', () => {
       );
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repository.findBySessionId('session-123');
+      const result = await repository.findBySessionId(123);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.set).toHaveBeenCalled();

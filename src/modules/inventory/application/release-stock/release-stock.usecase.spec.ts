@@ -52,7 +52,7 @@ describe('ReleaseStockUseCase', () => {
     });
 
     it('should return failure if reservation not found', async () => {
-      const reservationId = 'RES_NOT_FOUND';
+      const reservationId = 404;
       reservationRepository.mockReservationNotFound(reservationId);
 
       const result = await useCase.execute(reservationId);
@@ -86,7 +86,7 @@ describe('ReleaseStockUseCase', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const reservationId = 'RES_ERROR';
+      const reservationId = 500;
       const error = new Error('Unexpected error');
       reservationRepository.findById.mockRejectedValue(error);
 

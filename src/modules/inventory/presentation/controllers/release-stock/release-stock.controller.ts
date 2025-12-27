@@ -7,7 +7,7 @@ import { ReleaseStockUseCase } from '../../../application/release-stock/release-
 @Injectable()
 export class ReleaseStockController {
   constructor(private releaseStockUseCase: ReleaseStockUseCase) {}
-  async handle(reservationId: string): Promise<Result<void, ControllerError>> {
+  async handle(reservationId: number): Promise<Result<void, ControllerError>> {
     try {
       const result = await this.releaseStockUseCase.execute(reservationId);
       if (result.isFailure) return result;

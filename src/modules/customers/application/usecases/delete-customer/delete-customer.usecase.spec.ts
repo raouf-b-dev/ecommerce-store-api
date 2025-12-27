@@ -22,7 +22,7 @@ describe('DeleteCustomerUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if customer is deleted', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
 
       mockCustomerRepository.delete.mockResolvedValue(
         Result.success(undefined),
@@ -35,7 +35,7 @@ describe('DeleteCustomerUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if deletion fails', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
 
       mockCustomerRepository.delete.mockResolvedValue(
         ErrorFactory.RepositoryError('Failed to delete customer'),
@@ -51,7 +51,7 @@ describe('DeleteCustomerUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 'customer-123';
+      const customerId = 123;
       const repoError = new Error('Database connection failed');
 
       mockCustomerRepository.delete.mockRejectedValue(repoError);

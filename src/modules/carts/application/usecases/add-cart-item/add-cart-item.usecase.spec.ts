@@ -17,7 +17,7 @@ describe('AddCartItemUseCase', () => {
   let mockCheckStockUseCase: any;
 
   const mockProduct: IProduct = {
-    id: 'product-1',
+    id: 1,
     name: 'Test Product',
     description: 'Test Description',
     price: 29.99,
@@ -57,9 +57,9 @@ describe('AddCartItemUseCase', () => {
   describe('execute', () => {
     it('should add item to cart successfully', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 2,
       };
 
@@ -93,9 +93,9 @@ describe('AddCartItemUseCase', () => {
 
     it('should return failure when cart not found', async () => {
       // Arrange
-      const cartId = 'cart-404';
+      const cartId = 404;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 1,
       };
       const error = new RepositoryError('Cart not found');
@@ -117,9 +117,9 @@ describe('AddCartItemUseCase', () => {
 
     it('should return failure when product not found', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-404',
+        productId: 404,
         quantity: 1,
       };
 
@@ -146,9 +146,9 @@ describe('AddCartItemUseCase', () => {
 
     it('should return failure when stock is insufficient', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 20,
       };
 
@@ -184,9 +184,9 @@ describe('AddCartItemUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const cartId = 'cart-123';
+      const cartId = 123;
       const dto: AddCartItemDto = {
-        productId: 'product-1',
+        productId: 1,
         quantity: 1,
       };
       const error = new Error('Database connection failed');

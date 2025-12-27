@@ -4,11 +4,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RecordCodPaymentDto {
   @ApiProperty({
-    example: 'order-123',
+    example: 123,
     description: 'Order ID',
   })
-  @IsString()
-  orderId: string;
+  @IsNumber()
+  orderId: number;
 
   @ApiProperty({
     example: 299.99,
