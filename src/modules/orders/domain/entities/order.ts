@@ -15,11 +15,12 @@ import { Result } from '../../../../core/domain/result';
 import { PaymentMethodType } from '../../../payments/domain';
 
 export interface OrderProps {
-  id: string;
-  customerId: string;
-  paymentId: string | null;
+  id: number | null;
+  customerId: number;
+  paymentId: number | null;
+  reservationId: number | null;
   paymentMethod: PaymentMethodType;
-  shippingAddressId: string;
+  shippingAddressId: number | null;
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
   customerNotes: string | null;
@@ -29,11 +30,12 @@ export interface OrderProps {
 }
 
 export class Order implements IOrder {
-  private readonly _id: string;
-  private readonly _customerId: string;
-  private _paymentId: string | null;
+  private _id: number | null;
+  private readonly _customerId: number;
+  private _paymentId: number | null;
+  private _reservationId: number | null;
   private readonly _paymentMethod: PaymentMethodType;
-  private readonly _shippingAddressId: string;
+  private _shippingAddressId: number | null;
   private _items: OrderItem[];
   private _shippingAddress: ShippingAddress;
   private _customerNotes: string | null;
@@ -45,11 +47,12 @@ export class Order implements IOrder {
   constructor(props: OrderProps) {
     this.validateProps(props);
 
-    this._id = props.id.trim();
-    this._customerId = props.customerId.trim();
-    this._paymentId = props.paymentId?.trim() || null;
+    this._id = props.id || null;
+    this._customerId = props.customerId;
+    this._paymentId = props.paymentId || null;
+    this._reservationId = props.reservationId || null;
     this._paymentMethod = props.paymentMethod;
-    this._shippingAddressId = props.shippingAddressId.trim();
+    this._shippingAddressId = props.shippingAddressId || null;
     this._items = props.items.map((item) => new OrderItem(item));
     this._shippingAddress = ShippingAddress.fromPrimitives(
       props.shippingAddress,
@@ -57,17 +60,17 @@ export class Order implements IOrder {
     this._customerNotes = props.customerNotes
       ? props.customerNotes.trim()
       : null;
-    this._status = new OrderStatusVO(props.status || OrderStatus.PENDING);
+    this._status = new OrderStatusVO(
+      props.status || OrderStatus.PENDING_PAYMENT,
+    );
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
     this._pricing = OrderPricing.calculate(this._items);
   }
 
   private validateProps(props: OrderProps): Result<void, DomainError> {
-    if (!props.id?.trim()) {
-      return ErrorFactory.DomainError('Order ID is required');
-    }
-    if (!props.customerId?.trim()) {
+    // ID can be null initially
+    if (!props.customerId) {
       return ErrorFactory.DomainError('Customer ID is required');
     }
     if (!props.items || props.items.length === 0) {
@@ -84,23 +87,36 @@ export class Order implements IOrder {
   }
 
   // Getters
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
-  get customerId(): string {
+  setId(id: number): void {
+    this._id = id;
+  }
+
+  get customerId(): number {
     return this._customerId;
   }
 
-  get paymentId(): string | null {
+  get paymentId(): number | null {
     return this._paymentId;
+  }
+
+  get reservationId(): number | null {
+    return this._reservationId;
+  }
+
+  setReservationId(reservationId: number): void {
+    this._reservationId = reservationId;
+    this._updatedAt = new Date();
   }
 
   get paymentMethod(): PaymentMethodType {
     return this._paymentMethod;
   }
 
-  get shippingAddressId(): string {
+  get shippingAddressId(): number | null {
     return this._shippingAddressId;
   }
 
@@ -184,11 +200,11 @@ export class Order implements IOrder {
   /**
    * Associate a payment with this order
    */
-  associatePayment(paymentId: string): Result<void, DomainError> {
-    if (!paymentId?.trim()) {
+  associatePayment(paymentId: number): Result<void, DomainError> {
+    if (!paymentId) {
       return ErrorFactory.DomainError('Payment ID is required');
     }
-    this._paymentId = paymentId.trim();
+    this._paymentId = paymentId;
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
@@ -200,36 +216,66 @@ export class Order implements IOrder {
   // ==================== BUSINESS RULES ====================
 
   private assertCanBeUpdated(): Result<void, DomainError> {
-    if (!this._status.isPending()) {
+    if (!this._status.isPendingPayment() && !this._status.isPaymentFailed()) {
       return ErrorFactory.DomainError(
-        'Order can only be updated when status is PENDING',
+        'Order can only be updated when awaiting payment',
       );
     }
     return Result.success(undefined);
   }
 
-  /**
-   * Check if order can be confirmed.
-   * Note: For orders requiring payment before confirmation,
-   * the use case must verify payment status via PaymentsModule.
-   */
+  isPendingPayment(): boolean {
+    return this._status.isPendingPayment();
+  }
+
+  confirmPayment(paymentId: number): Result<void, DomainError> {
+    if (!this._status.isPendingPayment()) {
+      return ErrorFactory.DomainError(
+        'Payment can only be confirmed when order is pending payment',
+      );
+    }
+
+    this._paymentId = paymentId;
+    return this.changeStatus(OrderStatus.CONFIRMED);
+  }
+
+  markPaymentFailed(): Result<void, DomainError> {
+    if (!this._status.isPendingPayment()) {
+      return ErrorFactory.DomainError(
+        'Can only mark payment as failed when pending payment',
+      );
+    }
+    return this.changeStatus(OrderStatus.PAYMENT_FAILED);
+  }
+
+  retryPayment(): Result<void, DomainError> {
+    if (!this._status.isPaymentFailed()) {
+      return ErrorFactory.DomainError(
+        'Can only retry payment when previous payment failed',
+      );
+    }
+    return this.changeStatus(OrderStatus.PENDING_PAYMENT);
+  }
+
   canBeConfirmed(): boolean {
-    return this._status.isPending();
+    return (
+      this.isCOD() ||
+      this._status.isPendingPayment() ||
+      this._status.isPendingConfirmation()
+    );
   }
 
   confirm(): Result<void, DomainError> {
-    if (!this.canBeConfirmed()) {
+    if (!this.isCOD()) {
       return ErrorFactory.DomainError(
-        'Order cannot be confirmed in current state',
+        'Online payment orders must use confirmPayment() after payment webhook',
       );
     }
-
-    if (this.requiresPaymentBeforeConfirmation() && !this.hasPayment()) {
+    if (!this._status.isPendingConfirmation()) {
       return ErrorFactory.DomainError(
-        'Cannot confirm order - payment must be completed first',
+        'Only orders in pending confirmation can be confirmed manually',
       );
     }
-
     return this.changeStatus(OrderStatus.CONFIRMED);
   }
 
@@ -263,10 +309,6 @@ export class Order implements IOrder {
     return this._status.isShipped();
   }
 
-  /**
-   * Mark order as delivered.
-   * Note: For COD orders, the use case must record payment via PaymentsModule.
-   */
   deliver(): Result<void, DomainError> {
     if (!this.canBeDelivered()) {
       return ErrorFactory.DomainError(
@@ -278,7 +320,9 @@ export class Order implements IOrder {
 
   isCancellable(): boolean {
     return (
-      this._status.isPending() ||
+      this._status.isPendingPayment() ||
+      this._status.isPendingConfirmation() ||
+      this._status.isPaymentFailed() ||
       this._status.isConfirmed() ||
       this._status.isProcessing() ||
       this._status.isShipped()
@@ -301,12 +345,31 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.CANCELLED);
   }
 
+  refund(reason?: string): Result<void, DomainError> {
+    if (!this._status.isDelivered()) {
+      return ErrorFactory.DomainError('Only delivered orders can be refunded');
+    }
+
+    if (reason) {
+      this._customerNotes = this._customerNotes
+        ? `${this._customerNotes}\n\nRefund reason: ${reason}`
+        : `Refund reason: ${reason}`;
+    }
+
+    return this.changeStatus(OrderStatus.REFUNDED);
+  }
+
   getNextExpectedAction(): string {
-    if (this._status.isPending()) {
-      if (this.requiresPaymentBeforeConfirmation() && !this._paymentId) {
-        return 'Awaiting payment';
-      }
-      return 'Awaiting confirmation';
+    if (this._status.isPendingPayment()) {
+      return 'Awaiting payment confirmation';
+    }
+
+    if (this._status.isPendingConfirmation()) {
+      return 'Awaiting manual confirmation';
+    }
+
+    if (this._status.isPaymentFailed()) {
+      return 'Payment failed - awaiting retry or cancellation';
     }
 
     if (this._status.isConfirmed()) {
@@ -326,6 +389,10 @@ export class Order implements IOrder {
 
     if (this._status.isDelivered()) {
       return 'Completed';
+    }
+
+    if (this._status.isRefunded()) {
+      return 'Refunded';
     }
 
     return 'Cancelled';
@@ -389,7 +456,7 @@ export class Order implements IOrder {
   // ==================== QUERY METHODS ====================
 
   isEditable(): boolean {
-    return this._status.isPending();
+    return this._status.isPendingPayment() || this._status.isPaymentFailed();
   }
 
   isInProgress(): boolean {
@@ -419,6 +486,7 @@ export class Order implements IOrder {
       id: this._id,
       customerId: this._customerId,
       paymentId: this._paymentId,
+      reservationId: this._reservationId,
       paymentMethod: this._paymentMethod,
       shippingAddressId: this._shippingAddressId,
       items: this.items,
@@ -438,9 +506,36 @@ export class Order implements IOrder {
   }
 
   static create(props: {
-    id: string;
-    customerId: string;
+    id: number | null;
+    customerId: number;
     paymentMethod: PaymentMethodType;
+    items: OrderItemProps[];
+    shippingAddress: ShippingAddressProps;
+    customerNotes: string | null;
+  }): Order {
+    const isCOD = props.paymentMethod === PaymentMethodType.CASH_ON_DELIVERY;
+
+    return new Order({
+      id: props.id,
+      customerId: props.customerId,
+      paymentId: null,
+      reservationId: null,
+      paymentMethod: props.paymentMethod,
+      shippingAddressId: props.shippingAddress.id,
+      items: props.items,
+      shippingAddress: props.shippingAddress,
+      customerNotes: props.customerNotes,
+      status: isCOD
+        ? OrderStatus.PENDING_CONFIRMATION
+        : OrderStatus.PENDING_PAYMENT,
+      createdAt: null,
+      updatedAt: null,
+    });
+  }
+
+  static createForCOD(props: {
+    id: number | null;
+    customerId: number;
     items: OrderItemProps[];
     shippingAddress: ShippingAddressProps;
     customerNotes: string | null;
@@ -448,13 +543,14 @@ export class Order implements IOrder {
     return new Order({
       id: props.id,
       customerId: props.customerId,
-      paymentId: null, // Payment created separately
-      paymentMethod: props.paymentMethod,
+      paymentId: null,
+      reservationId: null,
+      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       shippingAddressId: props.shippingAddress.id,
       items: props.items,
       shippingAddress: props.shippingAddress,
       customerNotes: props.customerNotes,
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_CONFIRMATION,
       createdAt: null,
       updatedAt: null,
     });
