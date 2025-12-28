@@ -7,6 +7,8 @@ import { ListPaymentsController } from './presentation/controllers/list-payments
 import { ProcessRefundController } from './presentation/controllers/process-refund/process-refund.controller';
 import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
 import { VerifyPaymentController } from './presentation/controllers/verify-payment/verify-payment.controller';
+import { StripeWebhookController } from './presentation/controllers/webhook/stripe-webhook.controller';
+import { PayPalWebhookController } from './presentation/controllers/webhook/paypal-webhook.controller';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
@@ -62,7 +64,19 @@ describe('PaymentsController', () => {
         {
           provide: RecordCodPaymentController,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            handle: jest.fn(),
+          },
+        },
+        {
+          provide: StripeWebhookController,
+          useValue: {
+            handle: jest.fn(),
+          },
+        },
+        {
+          provide: PayPalWebhookController,
+          useValue: {
+            handle: jest.fn(),
           },
         },
       ],

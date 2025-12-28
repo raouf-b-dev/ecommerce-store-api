@@ -5,13 +5,16 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiResponse,
   ApiOperation,
   ApiBearerAuth,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreatePaymentDto } from './presentation/dto/create-payment.dto';
@@ -26,10 +29,10 @@ import { CapturePaymentController } from './presentation/controllers/capture-pay
 import { ProcessRefundController } from './presentation/controllers/process-refund/process-refund.controller';
 import { VerifyPaymentController } from './presentation/controllers/verify-payment/verify-payment.controller';
 import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
+import { StripeWebhookController } from './presentation/controllers/webhook/stripe-webhook.controller';
+import { PayPalWebhookController } from './presentation/controllers/webhook/paypal-webhook.controller';
 
 @ApiTags('payments')
-@ApiBearerAuth()
-@UseGuards(JWTAuthGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(
@@ -40,9 +43,30 @@ export class PaymentsController {
     private readonly processRefundController: ProcessRefundController,
     private readonly verifyPaymentController: VerifyPaymentController,
     private readonly recordCodPaymentController: RecordCodPaymentController,
+    private readonly stripeWebhookController: StripeWebhookController,
+    private readonly payPalWebhookController: PayPalWebhookController,
   ) {}
 
+  @Post('webhooks/stripe')
+  @HttpCode(200)
+  @ApiExcludeEndpoint()
+  async handleStripeWebhook(
+    @Headers('stripe-signature') signature: string,
+    @Body() body: any,
+  ) {
+    return this.stripeWebhookController.handle(signature, body);
+  }
+
+  @Post('webhooks/paypal')
+  @HttpCode(200)
+  @ApiExcludeEndpoint()
+  async handlePayPalWebhook(@Headers() headers: any, @Body() body: any) {
+    return this.payPalWebhookController.handle(headers, body);
+  }
+
   @Post()
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async createPayment(@Body() dto: CreatePaymentDto) {
@@ -50,13 +74,17 @@ export class PaymentsController {
   }
 
   @Get(':id')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async getPayment(@Param('id') id: string) {
-    return this.getPaymentController.handle(id);
+    return this.getPaymentController.handle(Number(id));
   }
 
   @Get()
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async listPayments(@Query() query: ListPaymentsQueryDto) {
@@ -64,27 +92,35 @@ export class PaymentsController {
   }
 
   @Post(':id/capture')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async capturePayment(@Param('id') id: string) {
-    return this.capturePaymentController.handle(id);
+    return this.capturePaymentController.handle(Number(id));
   }
 
   @Post(':id/refund')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async processRefund(@Param('id') id: string, @Body() dto: ProcessRefundDto) {
-    return this.processRefundController.handle(id, dto);
+    return this.processRefundController.handle(Number(id), dto);
   }
 
   @Post(':id/verify')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async verifyPayment(@Param('id') id: string) {
-    return this.verifyPaymentController.handle(id);
+    return this.verifyPaymentController.handle(Number(id));
   }
 
   @Post('cod/record')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async recordCodPayment(@Body() dto: RecordCodPaymentDto) {
@@ -92,9 +128,11 @@ export class PaymentsController {
   }
 
   @Get('orders/:orderId')
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async getOrderPayments(@Param('orderId') orderId: string) {
-    return this.listPaymentsController.handle({ orderId });
+    return this.listPaymentsController.handle({ orderId: Number(orderId) });
   }
 }
