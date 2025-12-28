@@ -9,7 +9,7 @@ import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
 import { ValidateCartResult } from './validate-cart.job';
 
 export interface ReserveStockResult extends ValidateCartResult {
-  reservationId: string;
+  reservationId: number;
 }
 
 @Injectable()
@@ -45,8 +45,14 @@ export class ReserveStockStep extends BaseJobHandler<
       quantity: item.quantity,
     }));
 
+    const { orderId } = job.data;
+
+    if (!orderId) {
+      return ErrorFactory.ServiceError('Order ID is required for reservation');
+    }
+
     const reservationResult = await this.reserveStockUseCase.execute({
-      orderId: cartId,
+      orderId,
       items,
     });
 
@@ -55,11 +61,17 @@ export class ReserveStockStep extends BaseJobHandler<
     }
 
     const reservation = reservationResult.value;
-    this.logger.log(`Stock reserved. Reservation ID: ${reservation.id}`);
+
+    if (!reservation.id) {
+      return ErrorFactory.ServiceError('Reservation created without ID');
+    }
+
+    const reservationId = reservation.id;
+    this.logger.log(`Stock reserved. Reservation ID: ${reservationId}`);
 
     return Result.success({
       ...childData,
-      reservationId: reservation.id,
+      reservationId,
     });
   }
 }
