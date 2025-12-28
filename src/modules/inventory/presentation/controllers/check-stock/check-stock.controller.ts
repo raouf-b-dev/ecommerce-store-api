@@ -9,7 +9,7 @@ import { CheckStockResponse } from '../../dto/check-stock-response.dto';
 export class CheckStockController {
   constructor(private checkStockUseCase: CheckStockUseCase) {}
   async handle(
-    productId: string,
+    productId: number,
     quantity?: number,
   ): Promise<Result<CheckStockResponse, ControllerError>> {
     try {

@@ -10,7 +10,7 @@ import { ICart } from '../../../domain/interfaces/cart.interface';
 export class AddCartItemController {
   constructor(private readonly addCartItemUseCase: AddCartItemUseCase) {}
   async handle(
-    id: string,
+    id: number,
     dto: AddCartItemDto,
   ): Promise<Result<ICart, ControllerError>> {
     try {

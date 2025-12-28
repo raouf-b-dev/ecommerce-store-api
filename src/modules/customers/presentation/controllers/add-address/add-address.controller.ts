@@ -11,7 +11,7 @@ export class AddAddressController {
   constructor(private readonly useCase: AddAddressUseCase) {}
 
   async handle(
-    id: string,
+    id: number,
     dto: AddAddressDto,
   ): Promise<Result<IAddress, ControllerError>> {
     try {

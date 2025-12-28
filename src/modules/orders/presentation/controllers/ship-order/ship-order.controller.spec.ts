@@ -34,20 +34,20 @@ describe('ShipOrderController', () => {
         Result.success(shippedOrder),
       );
 
-      const result = await controller.handle(shippedOrder.id);
+      const result = await controller.handle(shippedOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toBe(shippedOrder);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
 
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledWith(
-        shippedOrder.id,
+        shippedOrder.id!,
       );
       expect(mockShipOrderUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
     it('should return Failure(UseCaseError) if order shipping fails', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
 
       mockShipOrderUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -68,7 +68,7 @@ describe('ShipOrderController', () => {
     });
 
     it('should return Failure(UseCaseError) if order not found', async () => {
-      const orderId = 'OR9999';
+      const orderId = 999;
 
       const usecaseError = Result.failure(
         ErrorFactory.UseCaseError('Order with id OR9999 not found').error,
@@ -85,7 +85,7 @@ describe('ShipOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       const error = new Error('Database connection failed');
 
       mockShipOrderUseCase.execute.mockRejectedValue(error);
@@ -116,7 +116,7 @@ describe('ShipOrderController', () => {
         Result.success(shippedCOD),
       );
 
-      const result = await controller.handle(codOrder.id);
+      const result = await controller.handle(codOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentMethod).toBe(
@@ -128,7 +128,7 @@ describe('ShipOrderController', () => {
     it('should ship order with completed online payment', async () => {
       const onlineOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PROCESSING,
-        paymentId: 'PAY_STRIPE_001',
+        paymentId: 1,
       });
       const shippedOnline = {
         ...onlineOrder,
@@ -139,7 +139,7 @@ describe('ShipOrderController', () => {
         Result.success(shippedOnline),
       );
 
-      const result = await controller.handle(onlineOrder.id);
+      const result = await controller.handle(onlineOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentId).toBeDefined();
@@ -147,7 +147,7 @@ describe('ShipOrderController', () => {
     });
 
     it('should fail to ship order in PENDING status', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
 
       mockShipOrderUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -155,7 +155,7 @@ describe('ShipOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(pendingOrder.id);
+      const result = await controller.handle(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -172,7 +172,7 @@ describe('ShipOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(confirmedOrder.id);
+      const result = await controller.handle(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -185,7 +185,7 @@ describe('ShipOrderController', () => {
       const processingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PROCESSING,
-        paymentId: 'PAY001',
+        paymentId: 1,
       };
       const shippedMultiItem = {
         ...processingMultiItem,
@@ -196,7 +196,7 @@ describe('ShipOrderController', () => {
         Result.success(shippedMultiItem),
       );
 
-      const result = await controller.handle(processingMultiItem.id);
+      const result = await controller.handle(processingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.items).toHaveLength(3);
@@ -212,7 +212,7 @@ describe('ShipOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(shippedOrder.id);
+      const result = await controller.handle(shippedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -226,7 +226,7 @@ describe('ShipOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(deliveredOrder.id);
+      const result = await controller.handle(deliveredOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -240,7 +240,7 @@ describe('ShipOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(cancelledOrder.id);
+      const result = await controller.handle(cancelledOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });

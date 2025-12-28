@@ -25,7 +25,7 @@ export class ReservationMapper {
 
   static toEntity(domain: Reservation): ReservationEntity {
     const payload: ReservationCreate = {
-      id: domain.id,
+      id: domain.id || 0,
       orderId: domain.orderId,
       status: domain.status,
       expiresAt: domain.expiresAt,

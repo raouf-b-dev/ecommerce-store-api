@@ -8,7 +8,7 @@ export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
 export class CartItemMapper {
   static toDomain(entity: CartItemEntity): CartItem {
     const props: CartItemProps = {
-      id: entity.id,
+      id: entity.id ? entity.id : null,
       productId: entity.productId,
       productName: entity.productName,
       price: entity.price,
@@ -22,7 +22,7 @@ export class CartItemMapper {
   static toEntity(domain: CartItem): CartItemEntity {
     const primitives = domain.toPrimitives();
     const itemPayload: CartItemCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       productId: primitives.productId,
       productName: primitives.productName,
       price: primitives.price,

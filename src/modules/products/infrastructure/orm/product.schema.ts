@@ -1,12 +1,12 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
-import { Column, Entity, PrimaryColumn } from 'typeorm';
-import { IProduct } from '../../domain/interfaces/product.interface';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+
 import { numericToNumber } from '../../../../core/infrastructure/database/number.transformer';
 
 @Entity({ name: 'products' })
-export class ProductEntity implements IProduct {
-  @PrimaryColumn('varchar')
-  id: string;
+export class ProductEntity {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column()
   name: string;

@@ -5,7 +5,7 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CartItemEntity } from './cart-item.schema';
@@ -14,14 +14,14 @@ import { CartItemEntity } from './cart-item.schema';
 @Index('idx_carts_customer_id', ['customerId'])
 @Index('idx_carts_session_id', ['sessionId'])
 export class CartEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'customer_id', type: 'varchar', nullable: true })
-  customerId: string | null;
+  @Column({ name: 'customer_id', type: 'int', nullable: true })
+  customerId: number | null;
 
-  @Column({ name: 'session_id', type: 'varchar', nullable: true })
-  sessionId: string | null;
+  @Column({ name: 'session_id', type: 'int', nullable: true })
+  sessionId: number | null;
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, {
     cascade: true,

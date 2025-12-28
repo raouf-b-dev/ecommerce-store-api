@@ -11,7 +11,6 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
 import { InventoryEntity } from '../../orm/inventory.schema';
 
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { ReserveStockDto } from '../../../presentation/dto/reserve-stock.dto';
 
 @Injectable()
@@ -20,18 +19,13 @@ export class PostgresReservationRepository implements ReservationRepository {
     @InjectRepository(ReservationEntity)
     private readonly repository: Repository<ReservationEntity>,
     private readonly dataSource: DataSource,
-    private readonly idGeneratorService: IdGeneratorService,
   ) {}
 
   async save(
     dto: ReserveStockDto,
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
-      const reservationId =
-        await this.idGeneratorService.generateReservationId();
-
       const reservationResult = Reservation.create({
-        id: reservationId,
         orderId: dto.orderId,
         items: dto.items.map((item) => ({
           ...item,
@@ -99,9 +93,11 @@ export class PostgresReservationRepository implements ReservationRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<Reservation, RepositoryError>> {
+  async findById(id: number): Promise<Result<Reservation, RepositoryError>> {
     try {
-      const entity = await this.repository.findOne({ where: { id } });
+      const entity = await this.repository.findOne({
+        where: { id },
+      });
       if (!entity) {
         return ErrorFactory.RepositoryError('Reservation not found');
       }
@@ -112,7 +108,7 @@ export class PostgresReservationRepository implements ReservationRepository {
   }
 
   async findByOrderId(
-    orderId: string,
+    orderId: number,
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({ where: { orderId } });
@@ -122,6 +118,17 @@ export class PostgresReservationRepository implements ReservationRepository {
       return Result.success(ReservationMapper.toDomain(entity));
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to find reservation', error);
+    }
+  }
+
+  async findAllByOrderId(
+    orderId: number,
+  ): Promise<Result<Reservation[], RepositoryError>> {
+    try {
+      const entities = await this.repository.find({ where: { orderId } });
+      return Result.success(entities.map(ReservationMapper.toDomain));
+    } catch (error) {
+      return ErrorFactory.RepositoryError('Failed to find reservations', error);
     }
   }
 
@@ -166,6 +173,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       const savedReservation = await this.dataSource.transaction(
         async (manager) => {
           // Check current status in DB
+          if (!reservation.id) {
+            throw new RepositoryError('Reservation ID is required');
+          }
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
@@ -227,6 +237,9 @@ export class PostgresReservationRepository implements ReservationRepository {
     try {
       const savedReservation = await this.dataSource.transaction(
         async (manager) => {
+          if (!reservation.id) {
+            throw new RepositoryError('Reservation ID is required');
+          }
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },

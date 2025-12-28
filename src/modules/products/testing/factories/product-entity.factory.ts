@@ -9,7 +9,7 @@ export class ProductEntityTestFactory {
     overrides?: Partial<ProductEntity>,
   ): ProductEntity {
     const defaultEntity: ProductEntity = {
-      id: 'PR3',
+      id: 3,
       name: 'Test Product',
       description: 'A test product for unit tests',
       price: 100,
@@ -25,7 +25,7 @@ export class ProductEntityTestFactory {
    * Creates multiple ProductEntities
    */
   static createProductEntities(
-    productIds: string[],
+    productIds: number[],
     baseOverrides?: Partial<ProductEntity>,
   ): ProductEntity[] {
     return productIds.map((id) =>

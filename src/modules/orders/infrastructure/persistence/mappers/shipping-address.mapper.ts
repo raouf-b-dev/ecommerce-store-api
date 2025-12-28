@@ -27,7 +27,7 @@ export class ShippingAddressMapper {
 
   static toEntity(primitives: IShippingAddress): ShippingAddressEntity {
     const entity: ShippingAddressEntity = {
-      id: primitives.id,
+      id: primitives.id || 0,
       firstName: primitives.firstName,
       lastName: primitives.lastName,
       street: primitives.street,

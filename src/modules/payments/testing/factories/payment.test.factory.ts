@@ -5,14 +5,16 @@ import { PaymentStatusType } from '../../domain/value-objects/payment-status';
 export class PaymentTestFactory {
   static createMockPayment(overrides?: Partial<IPayment>): IPayment {
     const basePayment: IPayment = {
-      id: 'PA0000001',
-      orderId: 'OR0000001',
-      customerId: 'CU0000001',
+      id: 1,
+      orderId: 1,
+      customerId: 1,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
       status: PaymentStatusType.COMPLETED,
       transactionId: 'tx_123456789',
+      gatewayPaymentIntentId: null,
+      gatewayClientSecret: null,
       paymentMethodInfo: null,
       refundedAmount: 0,
       refunds: [],

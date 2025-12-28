@@ -9,8 +9,8 @@ import { UpdateAddressDto } from '../../../presentation/dto/update-address.dto';
 import { IAddress } from '../../../domain/interfaces/address.interface';
 
 export interface UpdateAddressInput {
-  customerId: string;
-  addressId: string;
+  customerId: number;
+  addressId: number;
   dto: UpdateAddressDto;
 }
 

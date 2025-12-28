@@ -3,7 +3,6 @@ import { OrderRepository } from '../../domain/repositories/order-repository';
 import { Result } from '../../../../core/domain/result';
 import { RepositoryError } from '../../../../core/errors/repository.error';
 import { Order } from '../../domain/entities/order';
-import { AggregatedOrderInput } from '../../domain/factories/order.factory';
 import { CreateOrderItemDto } from '../../presentation/dto/create-order-item.dto';
 import { ListOrdersQueryDto } from '../../presentation/dto/list-orders-query.dto';
 import { OrderStatus } from '../../domain/value-objects/order-status';
@@ -14,23 +13,27 @@ export class MockOrderRepository implements OrderRepository {
   save = jest.fn<Promise<Result<Order, RepositoryError>>, [Order]>();
   updateStatus = jest.fn<
     Promise<Result<void, RepositoryError>>,
-    [string, OrderStatus]
+    [number, OrderStatus]
   >();
   updatePaymentId = jest.fn<
     Promise<Result<void, RepositoryError>>,
-    [string, string]
+    [number, number]
   >();
   updateItemsInfo = jest.fn<
     Promise<Result<Order, RepositoryError>>,
-    [string, CreateOrderItemDto[]]
+    [number, CreateOrderItemDto[]]
   >();
-  findById = jest.fn<Promise<Result<Order, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Order, RepositoryError>>, [number]>();
   listOrders = jest.fn<
     Promise<Result<Order[], RepositoryError>>,
     [ListOrdersQueryDto]
   >();
   cancelOrder = jest.fn<Promise<Result<void, RepositoryError>>, [Order]>();
-  deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
+  findByStatusBefore = jest.fn<
+    Promise<Result<Order[], RepositoryError>>,
+    [OrderStatus, Date]
+  >();
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(orderPrimitives: IOrder): void {
@@ -38,7 +41,7 @@ export class MockOrderRepository implements OrderRepository {
     this.findById.mockResolvedValue(Result.success(domainOrder));
   }
 
-  mockOrderNotFound(orderId: string): void {
+  mockOrderNotFound(orderId: number): void {
     this.findById.mockResolvedValue(
       Result.failure(new RepositoryError(`Order with id ${orderId} not found`)),
     );

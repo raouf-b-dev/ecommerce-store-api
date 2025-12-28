@@ -1,34 +1,29 @@
 import { Result } from '../../../../core/domain/result';
 import { DomainError } from '../../../../core/errors/domain.error';
 import { IReservationItem } from '../interfaces/reservation-item.interface';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface ReservationItemProps {
-  id: string | null;
-  productId: string;
+  id: number | null;
+  productId: number;
   quantity: number;
 }
 
 export class ReservationItem implements IReservationItem {
-  private readonly _id: string;
-  private readonly _productId: string;
+  private readonly _id: number | null;
+  private readonly _productId: number;
   private readonly _quantity: number;
 
   constructor(props: ReservationItemProps) {
-    this._id = props.id || this.generateUuid();
+    this._id = props.id || null;
     this._productId = props.productId;
     this._quantity = props.quantity;
   }
 
-  private generateUuid(): string {
-    return uuidv4();
-  }
-
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
-  get productId(): string {
+  get productId(): number {
     return this._productId;
   }
 
@@ -65,8 +60,8 @@ export class ReservationItem implements IReservationItem {
   }
 
   public static create(props: {
-    id: string | null;
-    productId: string;
+    id: number | null;
+    productId: number;
     quantity: number;
   }): Result<ReservationItem, DomainError> {
     const reservation = new ReservationItem({

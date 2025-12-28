@@ -57,7 +57,7 @@ describe('RedisUserRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(postgresRepo.save).toHaveBeenCalledWith(mockUser);
       expect(cacheService.set).toHaveBeenCalledWith(
-        expect.stringContaining(mockUser.id!),
+        expect.stringContaining(String(mockUser.id!)),
         mockUserCache,
         expect.any(Object),
       );
@@ -106,7 +106,7 @@ describe('RedisUserRepository', () => {
       expect(result.value).toBeDefined();
       expect(result.value!.email).toBe(mockUser.email);
       expect(cacheService.set).toHaveBeenCalledWith(
-        expect.stringContaining(mockUser.id!),
+        expect.stringContaining(String(mockUser.id!)),
         mockUserCache,
         expect.any(Object),
       );
@@ -145,7 +145,7 @@ describe('RedisUserRepository', () => {
       expect(result.value).toBeDefined();
       expect(result.value!.id).toBe(mockUser.id);
       expect(cacheService.set).toHaveBeenCalledWith(
-        expect.stringContaining(mockUser.id!),
+        expect.stringContaining(String(mockUser.id!)),
         mockUserCache,
         expect.any(Object),
       );
@@ -161,7 +161,7 @@ describe('RedisUserRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.delete).toHaveBeenCalledWith(
-        expect.stringContaining(mockUser.id!),
+        expect.stringContaining(String(mockUser.id!)),
       );
       expect(postgresRepo.delete).toHaveBeenCalledWith(mockUser.id);
     });

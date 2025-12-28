@@ -8,7 +8,7 @@ import { IOrder } from '../../../domain/interfaces/order.interface';
 @Injectable()
 export class CancelOrderController {
   constructor(private cancelOrderUseCase: CancelOrderUseCase) {}
-  async handle(id: string): Promise<Result<IOrder, ControllerError>> {
+  async handle(id: number): Promise<Result<IOrder, ControllerError>> {
     try {
       const cancelRequest = await this.cancelOrderUseCase.execute(id);
       if (cancelRequest.isFailure) return cancelRequest;

@@ -5,16 +5,16 @@ import { PaymentStatusType } from '../../domain/value-objects/payment-status';
 
 export class PaymentResponseDto {
   @ApiProperty({
-    example: 'pay-123',
+    example: 123,
     description: 'Payment ID',
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
-    example: 'order-123',
+    example: 123,
     description: 'Order ID',
   })
-  orderId: string;
+  orderId: number;
 
   @ApiProperty({
     example: 299.99,
@@ -49,10 +49,10 @@ export class PaymentResponseDto {
   transactionId?: string;
 
   @ApiPropertyOptional({
-    example: 'user-123',
+    example: 123,
     description: 'Customer ID',
   })
-  customerId?: string;
+  customerId?: number;
 
   @ApiPropertyOptional({
     example: '**** 1234',

@@ -10,7 +10,7 @@ import { IProduct } from '../../../domain/interfaces/product.interface';
 export class UpdateProductController {
   constructor(private updateProductUseCase: UpdateProductUseCase) {}
   async handle(
-    id: string,
+    id: number,
     dto: UpdateProductDto,
   ): Promise<Result<IProduct, ControllerError>> {
     try {

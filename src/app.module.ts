@@ -11,6 +11,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InfrastructureModule } from './core/infrastructure/infrastructure.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -18,6 +19,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     EnvConfigModule,
     InfrastructureModule,
     ProductsModule,

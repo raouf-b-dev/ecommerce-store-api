@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
 import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
+import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
 import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
@@ -10,6 +11,7 @@ import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.
 import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
 import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
+import { IdempotencyStore } from '../../core/domain/stores/idempotency.store';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -38,14 +40,22 @@ describe('OrdersController', () => {
     createOrderDto = CreateOrderDtoTestFactory.createMockDto();
     createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
     checkoutDto = {
-      cartId: 'cart-123',
-      shippingAddressId: 'addr-123',
+      cartId: 123,
+      shippingAddressId: 123,
       paymentMethod: 'credit_card',
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
+        {
+          provide: IdempotencyStore,
+          useValue: {
+            checkAndLock: jest.fn(),
+            complete: jest.fn(),
+            release: jest.fn(),
+          },
+        },
         {
           provide: CheckoutController,
           useValue: {
@@ -88,6 +98,12 @@ describe('OrdersController', () => {
             handle: jest.fn().mockResolvedValue(deliveredOrder),
           },
         },
+        {
+          provide: ShipOrderController,
+          useValue: {
+            handle: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -119,9 +135,12 @@ describe('OrdersController', () => {
   });
 
   it('should call CheckoutController.handle when checkout is called', async () => {
-    const userId = 'user-123';
+    const userId = '123';
     await controller.checkout(checkoutDto, userId);
-    expect(checkoutController.handle).toHaveBeenCalledWith(checkoutDto, userId);
+    expect(checkoutController.handle).toHaveBeenCalledWith(
+      checkoutDto,
+      Number(userId),
+    );
   });
 
   it('should call GetOrderController.handle when findOne is called and return its result', async () => {
@@ -149,6 +168,8 @@ describe('OrdersController', () => {
     const res = await controller.confirmOrder(confirmedOrder.id);
     expect(confirmOrderController.handle).toHaveBeenCalledWith(
       confirmedOrder.id,
+      undefined,
+      undefined,
     );
     expect(res).toEqual(confirmedOrder);
   });

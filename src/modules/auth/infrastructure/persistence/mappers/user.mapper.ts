@@ -22,7 +22,7 @@ export class UserMapper {
     const primitives = domain.toPrimitives();
 
     const userPayload: UserCreate = {
-      id: primitives.id || '',
+      id: primitives.id ?? 0,
       email: primitives.email,
       passwordHash: primitives.passwordHash,
       role: primitives.role,
@@ -35,11 +35,11 @@ export class UserMapper {
   }
 }
 export interface UserForCache {
-  id: string;
+  id: number;
   email: string;
   passwordHash: string;
   role: string;
-  customerId: string | null;
+  customerId: number | null;
   createdAt: string;
   updatedAt: string;
 }

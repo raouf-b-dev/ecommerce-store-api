@@ -1,5 +1,5 @@
 // src/modules/carts/presentation/dto/add-cart-item.dto.ts
-import { IsString, IsNumber, IsPositive, Min } from 'class-validator';
+import { IsNumber, IsPositive, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddCartItemDto {
@@ -7,8 +7,8 @@ export class AddCartItemDto {
     example: 'prod-123',
     description: 'Product ID',
   })
-  @IsString()
-  productId: string;
+  @IsNumber()
+  productId: number;
 
   @ApiProperty({
     example: 2,

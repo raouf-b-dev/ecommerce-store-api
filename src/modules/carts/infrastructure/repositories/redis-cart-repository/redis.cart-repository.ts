@@ -22,7 +22,7 @@ export class RedisCartRepository implements CartRepository {
     private readonly logger: Logger,
   ) {}
 
-  async findById(id: string): Promise<Result<Cart, RepositoryError>> {
+  async findById(id: number): Promise<Result<Cart, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<CartForCache>(
         `${CART_REDIS.CACHE_KEY}:${id}`,
@@ -48,7 +48,7 @@ export class RedisCartRepository implements CartRepository {
   }
 
   async findByCustomerId(
-    customerId: string,
+    customerId: number,
   ): Promise<Result<Cart, RepositoryError>> {
     try {
       const cachedCarts = await this.cacheService.search<CartForCache>(
@@ -80,7 +80,7 @@ export class RedisCartRepository implements CartRepository {
   }
 
   async findBySessionId(
-    sessionId: string,
+    sessionId: number,
   ): Promise<Result<Cart, RepositoryError>> {
     try {
       const cachedCarts = await this.cacheService.search<CartForCache>(
@@ -147,7 +147,7 @@ export class RedisCartRepository implements CartRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.delete(id);
       if (deleteResult.isFailure) return deleteResult;

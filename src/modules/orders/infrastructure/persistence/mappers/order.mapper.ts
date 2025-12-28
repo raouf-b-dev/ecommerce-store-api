@@ -43,11 +43,11 @@ export class OrderMapper {
     const primitives = domain.toPrimitives();
 
     const orderPayload: OrderCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       customerId: primitives.customerId,
       paymentId: primitives.paymentId,
       paymentMethod: primitives.paymentMethod,
-      shippingAddressId: primitives.shippingAddressId,
+      shippingAddressId: primitives.shippingAddressId || 0,
       shippingAddress: ShippingAddressMapper.toEntity(
         primitives.shippingAddress,
       ),

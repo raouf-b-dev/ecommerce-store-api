@@ -11,7 +11,7 @@ export class UpdateCustomerController {
   constructor(private readonly useCase: UpdateCustomerUseCase) {}
 
   async handle(
-    id: string,
+    id: number,
     dto: UpdateCustomerDto,
   ): Promise<Result<ICustomer, ControllerError>> {
     try {

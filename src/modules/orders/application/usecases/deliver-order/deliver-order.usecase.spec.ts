@@ -51,11 +51,11 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockRecordCodPaymentUseCase.execute.mockResolvedValue(
-        Result.success({ id: 'PAY_COD_001' } as any),
+        Result.success({ id: 1 } as any),
       );
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -64,11 +64,11 @@ describe('DeliverOrderUseCase', () => {
       expect(result.value.id).toBe(shippedOrder.id);
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
-        shippedOrder.id,
+        shippedOrder.id!,
       );
       expect(mockRecordCodPaymentUseCase.execute).toHaveBeenCalled();
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        shippedOrder.id,
+        shippedOrder.id!,
         OrderStatus.DELIVERED,
       );
     });
@@ -76,7 +76,7 @@ describe('DeliverOrderUseCase', () => {
     it('should return Success if online payment order is delivered', async () => {
       const shippedOrder = OrderTestFactory.createShippedOrder({
         paymentMethod: PaymentMethodType.CREDIT_CARD,
-        paymentId: 'PAY001',
+        paymentId: 1,
       });
 
       const deliverOrderDto: DeliverOrderDto = {};
@@ -85,7 +85,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -106,7 +106,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -117,7 +117,7 @@ describe('DeliverOrderUseCase', () => {
     });
 
     it('should return Failure if order is not found', async () => {
-      const orderId = 'OR9999';
+      const orderId = 999;
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockOrderRepository.mockOrderNotFound(orderId);
@@ -135,13 +135,13 @@ describe('DeliverOrderUseCase', () => {
     });
 
     it('should return Failure if order cannot be delivered (not in SHIPPED status)', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
       const result = await useCase.execute({
-        id: pendingOrder.id,
+        id: pendingOrder.id!,
         deliverOrderDto,
       });
 
@@ -152,19 +152,19 @@ describe('DeliverOrderUseCase', () => {
       );
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
-        pendingOrder.id,
+        pendingOrder.id!,
       );
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is in PENDING status', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
       const result = await useCase.execute({
-        id: pendingOrder.id,
+        id: pendingOrder.id!,
         deliverOrderDto,
       });
 
@@ -183,7 +183,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(confirmedOrder);
 
       const result = await useCase.execute({
-        id: confirmedOrder.id,
+        id: confirmedOrder.id!,
         deliverOrderDto,
       });
 
@@ -202,7 +202,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(processingOrder);
 
       const result = await useCase.execute({
-        id: processingOrder.id,
+        id: processingOrder.id!,
         deliverOrderDto,
       });
 
@@ -221,7 +221,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(deliveredOrder);
 
       const result = await useCase.execute({
-        id: deliveredOrder.id,
+        id: deliveredOrder.id!,
         deliverOrderDto,
       });
 
@@ -240,7 +240,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(cancelledOrder);
 
       const result = await useCase.execute({
-        id: cancelledOrder.id,
+        id: cancelledOrder.id!,
         deliverOrderDto,
       });
 
@@ -260,7 +260,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockUpdateStatusFailure('Database error');
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -271,7 +271,7 @@ describe('DeliverOrderUseCase', () => {
       );
 
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        shippedOrder.id,
+        shippedOrder.id!,
         OrderStatus.DELIVERED,
       );
     });
@@ -284,7 +284,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.findById.mockRejectedValue(unexpectedError);
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -307,7 +307,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
-        id: stripeOrder.id,
+        id: stripeOrder.id!,
         deliverOrderDto,
       });
 
@@ -326,7 +326,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
-        id: paypalOrder.id,
+        id: paypalOrder.id!,
         deliverOrderDto,
       });
 
@@ -347,7 +347,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
-        id: shippedMultiItem.id,
+        id: shippedMultiItem.id!,
         deliverOrderDto,
       });
 
@@ -375,11 +375,11 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockRecordCodPaymentUseCase.execute.mockResolvedValue(
-        Result.success({ id: 'PAY_COD_001' } as any),
+        Result.success({ id: 1 } as any),
       );
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 
@@ -408,7 +408,7 @@ describe('DeliverOrderUseCase', () => {
       );
 
       const result = await useCase.execute({
-        id: shippedOrder.id,
+        id: shippedOrder.id!,
         deliverOrderDto,
       });
 

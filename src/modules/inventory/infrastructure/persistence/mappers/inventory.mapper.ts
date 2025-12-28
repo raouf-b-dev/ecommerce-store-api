@@ -28,7 +28,7 @@ export class InventoryMapper {
   static toEntity(domain: Inventory): InventoryEntity {
     const primitives = domain.toPrimitives();
     const inventoryPayload: InventoryCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       productId: primitives.productId,
       availableQuantity: primitives.availableQuantity,
       reservedQuantity: primitives.reservedQuantity,

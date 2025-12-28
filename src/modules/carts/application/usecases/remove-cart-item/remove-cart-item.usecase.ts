@@ -8,7 +8,7 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 @Injectable()
 export class RemoveCartItemUseCase extends UseCase<
-  { cartId: string; itemId: string },
+  { cartId: number; itemId: number },
   ICart,
   UseCaseError
 > {
@@ -17,8 +17,8 @@ export class RemoveCartItemUseCase extends UseCase<
   }
 
   async execute(input: {
-    cartId: string;
-    itemId: string;
+    cartId: number;
+    itemId: number;
   }): Promise<Result<ICart, UseCaseError>> {
     const { cartId, itemId } = input;
     try {

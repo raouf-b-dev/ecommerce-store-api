@@ -3,7 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -11,11 +11,11 @@ import {
 @Index(['productId'], { unique: true })
 @Index(['availableQuantity'])
 export class InventoryEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'product_id', type: 'varchar' })
-  productId: string;
+  @Column({ name: 'product_id', type: 'int' })
+  productId: number;
 
   @Column({ type: 'int' })
   availableQuantity: number;

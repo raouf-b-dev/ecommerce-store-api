@@ -19,7 +19,7 @@ export class ReserveStockController {
 
       const reservation = result.value;
       const response: StockReservationResponseDto = {
-        reservationId: reservation.id,
+        reservationId: reservation.id!,
         orderId: reservation.orderId,
         expiresAt: reservation.expiresAt,
         success: true,

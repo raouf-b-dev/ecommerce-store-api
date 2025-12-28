@@ -4,7 +4,7 @@ import { AddressType } from '../../domain/value-objects/address-type';
 export class CustomerTestFactory {
   static createMockCustomer(overrides?: Partial<ICustomer>): ICustomer {
     const baseCustomer: ICustomer = {
-      id: 'customer-123',
+      id: 123,
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
@@ -23,8 +23,8 @@ export class CustomerTestFactory {
     return this.createMockCustomer({
       addresses: [
         {
-          id: 'address-123',
-          customerId: 'customer-123',
+          id: 123,
+          customerId: 123,
           street: '123 Main St',
           street2: null,
           city: 'New York',
@@ -44,7 +44,7 @@ export class CustomerTestFactory {
 
   static createMockAddress(overrides?: Partial<any>): any {
     const baseAddress = {
-      id: 'address-123',
+      id: 123,
       street: '123 Main St',
       street2: null,
       city: 'New York',

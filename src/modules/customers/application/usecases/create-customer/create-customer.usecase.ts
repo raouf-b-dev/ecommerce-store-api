@@ -40,7 +40,7 @@ export class CreateCustomerUseCase extends UseCase<
       if (dto.address) {
         const addressProps: AddressProps = {
           id: null,
-          customerId: customer.id || '',
+          customerId: customer.id || 0,
           street: dto.address.street,
           street2: dto.address.street2 ?? null,
           city: dto.address.city,

@@ -8,7 +8,7 @@ import { ICart } from '../../../domain/interfaces/cart.interface';
 @Injectable()
 export class ClearCartController {
   constructor(private readonly clearCartUseCase: ClearCartUseCase) {}
-  async handle(id: string): Promise<Result<ICart, ControllerError>> {
+  async handle(id: number): Promise<Result<ICart, ControllerError>> {
     try {
       const result = await this.clearCartUseCase.execute(id);
 

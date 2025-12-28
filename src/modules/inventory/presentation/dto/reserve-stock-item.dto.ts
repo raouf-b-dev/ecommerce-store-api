@@ -8,7 +8,7 @@ export class ReserveStockItemDto {
     description: 'Product ID',
   })
   @IsString()
-  productId: string;
+  productId: number;
 
   @ApiProperty({
     example: 2,

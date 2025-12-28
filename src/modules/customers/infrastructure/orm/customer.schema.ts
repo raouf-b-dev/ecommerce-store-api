@@ -3,15 +3,15 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { AddressEntity } from './address.schema';
 
 @Entity({ name: 'customers' })
 export class CustomerEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ name: 'first_name', type: 'varchar' })
   firstName: string;

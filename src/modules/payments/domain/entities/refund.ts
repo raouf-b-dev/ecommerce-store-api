@@ -7,8 +7,8 @@ import { Money } from '../../../../shared/domain/value-objects/money';
 import { RefundStatus, RefundStatusType } from '../value-objects/refund-status';
 
 export interface RefundProps {
-  id: string | null;
-  paymentId: string;
+  id: number | null;
+  paymentId: number;
   amount: number;
   currency: string;
   reason: string;
@@ -18,8 +18,8 @@ export interface RefundProps {
 }
 
 export class Refund implements IRefund {
-  private readonly _id: string | null;
-  private readonly _paymentId: string;
+  private readonly _id: number | null;
+  private readonly _paymentId: number;
   private _amount: Money;
   private _reason: string;
   private _status: RefundStatus;
@@ -30,8 +30,8 @@ export class Refund implements IRefund {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id?.trim() || null;
-    this._paymentId = props.paymentId.trim();
+    this._id = props.id || null;
+    this._paymentId = props.paymentId;
     this._amount = Money.from(props.amount, props.currency);
     this._reason = props.reason.trim();
     this._status = new RefundStatus(props.status);
@@ -40,10 +40,10 @@ export class Refund implements IRefund {
   }
 
   private validateProps(props: RefundProps): Result<void, DomainError> {
-    if (props.id !== null && !props.id?.trim()) {
+    if (props.id !== null && !props.id) {
       return ErrorFactory.DomainError('Refund ID is required');
     }
-    if (!props.paymentId?.trim()) {
+    if (!props.paymentId) {
       return ErrorFactory.DomainError('Payment ID is required');
     }
     if (props.amount < 0) {
@@ -60,11 +60,11 @@ export class Refund implements IRefund {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
-  get paymentId(): string {
+  get paymentId(): number {
     return this._paymentId;
   }
 
@@ -155,8 +155,8 @@ export class Refund implements IRefund {
   }
 
   static create(
-    id: string | null,
-    paymentId: string,
+    id: number | null,
+    paymentId: number,
     amount: number,
     currency: string,
     reason: string,

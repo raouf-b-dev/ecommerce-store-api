@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { JobNames } from '../../core/infrastructure/jobs/job-names';
 import { ValidateCartStep } from './presentation/jobs/validate-cart.job';
-import { ReserveStockStep } from './presentation/jobs/reserve-stock.job';
+import { ReserveStockStep } from './presentation/jobs/reserve-stock-job/reserve-stock.job';
 import { CreateOrderStep } from './presentation/jobs/create-order.job';
 import { ProcessPaymentStep } from './presentation/jobs/process-payment.job';
 import { ConfirmReservationStep } from './presentation/jobs/confirm-reservation.job';
@@ -12,6 +12,8 @@ import { ReleaseStockStep } from './presentation/jobs/release-stock.job';
 import { CancelOrderStep } from './presentation/jobs/cancel-order.job';
 import { RefundPaymentStep } from './presentation/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './presentation/jobs/finalize-checkout.job';
+import { ConfirmOrderStep } from './presentation/jobs/confirm-order.job';
+import { ReleaseOrderStockJob } from './presentation/jobs/release-order-stock.job';
 
 @Processor('checkout')
 @Injectable()
@@ -29,6 +31,8 @@ export class OrdersProcessor extends WorkerHost {
     private readonly cancelOrderStep: CancelOrderStep,
     private readonly refundPaymentStep: RefundPaymentStep,
     private readonly finalizeCheckoutStep: FinalizeCheckoutStep,
+    private readonly confirmOrderStep: ConfirmOrderStep,
+    private readonly releaseOrderStockJob: ReleaseOrderStockJob,
   ) {
     super();
   }
@@ -51,6 +55,8 @@ export class OrdersProcessor extends WorkerHost {
         return this.clearCartStep.handle(job);
       case JobNames.FINALIZE_CHECKOUT:
         return this.finalizeCheckoutStep.handle(job);
+      case JobNames.CONFIRM_ORDER:
+        return this.confirmOrderStep.handle(job);
 
       // Compensations
       case JobNames.RELEASE_STOCK:
@@ -59,6 +65,8 @@ export class OrdersProcessor extends WorkerHost {
         return this.cancelOrderStep.handle(job);
       case JobNames.REFUND_PAYMENT:
         return this.refundPaymentStep.handle(job);
+      case JobNames.RELEASE_ORDER_STOCK:
+        return this.releaseOrderStockJob.handle(job);
 
       default:
         this.logger.warn(`Unknown job name: ${job.name}`);

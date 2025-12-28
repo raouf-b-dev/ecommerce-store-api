@@ -7,14 +7,26 @@ import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { DomainError } from '../../../../../core/errors/domain.error';
+import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
+import { Result } from '../../../../../core/domain/result';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
   let mockRepository: MockOrderRepository;
+  let mockOrderScheduler: jest.Mocked<OrderScheduler>;
 
   beforeEach(() => {
     mockRepository = new MockOrderRepository();
-    useCase = new CancelOrderUseCase(mockRepository);
+    mockOrderScheduler = {
+      scheduleOrderStockRelease: jest
+        .fn()
+        .mockResolvedValue(Result.success('job-id')),
+      scheduleCheckout: jest.fn(),
+      schedulePostPayment: jest.fn(),
+      scheduleStockRelease: jest.fn(),
+      schedulePostConfirmation: jest.fn(),
+    } as unknown as jest.Mocked<OrderScheduler>;
+    useCase = new CancelOrderUseCase(mockRepository, mockOrderScheduler);
   });
 
   afterEach(() => {
@@ -22,7 +34,7 @@ describe('CancelOrderUseCase', () => {
   });
 
   it('should cancel the order and return its data on success', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const cancellableOrder = OrderTestFactory.createCancellableOrder({
       id: orderId,
     });
@@ -34,6 +46,9 @@ describe('CancelOrderUseCase', () => {
 
     expect(mockRepository.findById).toHaveBeenCalledWith(orderId);
     expect(mockRepository.cancelOrder).toHaveBeenCalled();
+    expect(mockOrderScheduler.scheduleOrderStockRelease).toHaveBeenCalledWith(
+      orderId,
+    );
     ResultAssertionHelper.assertResultSuccess(result);
     if (result.isSuccess) {
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
@@ -41,22 +56,23 @@ describe('CancelOrderUseCase', () => {
   });
 
   it('should return a failure result if the order is not found', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     mockRepository.mockOrderNotFound(orderId);
 
     const result = await useCase.execute(orderId);
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Order with id OR0000001 not found',
+      'Order with id 1 not found',
       RepositoryError,
     );
 
     expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
+    expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
   it('should return a failure result if the Order cannot be cancelled in current state', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 123;
     const nonCancellableOrder = OrderTestFactory.createNonCancellableOrder({
       id: orderId,
     });
@@ -72,10 +88,11 @@ describe('CancelOrderUseCase', () => {
     );
 
     expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
+    expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
   it('should return a failure result if the repository fails to save the cancellation', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const cancellableOrder = OrderTestFactory.createCancellableOrder({
       id: orderId,
     });
@@ -90,10 +107,11 @@ describe('CancelOrderUseCase', () => {
       'DB write failed',
       RepositoryError,
     );
+    expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
   it('should return a failure result on an unexpected error', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const errorCause = new Error('Database connection lost');
 
     mockRepository.findById.mockRejectedValue(errorCause);
@@ -111,7 +129,7 @@ describe('CancelOrderUseCase', () => {
   describe('complex scenarios', () => {
     it('should cancel multi-item order successfully', async () => {
       const orderPrimitives = new OrderBuilder()
-        .withId('OR0000001')
+        .withId(1)
         .withItems(5)
         .asCancellable()
         .build();
@@ -119,15 +137,15 @@ describe('CancelOrderUseCase', () => {
       mockRepository.mockSuccessfulFind(orderPrimitives);
       mockRepository.mockSuccessfulCancel();
 
-      const result = await useCase.execute(orderPrimitives.id);
+      const result = await useCase.execute(orderPrimitives.id!);
 
       // Test the outcome
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
-        expect(result.value.id).toBe('OR0000001');
+        expect(result.value.id).toBe(1);
       }
-      expect(mockRepository.findById).toHaveBeenCalledWith('OR0000001');
+      expect(mockRepository.findById).toHaveBeenCalledWith(1);
       expect(mockRepository.cancelOrder).toHaveBeenCalledTimes(1);
 
       const passedPrimitives = mockRepository.cancelOrder.mock.calls[0][0];
@@ -135,14 +153,11 @@ describe('CancelOrderUseCase', () => {
     });
 
     it('should not cancel shipped order', async () => {
-      const order = new OrderBuilder()
-        .withId('OR0000001')
-        .asNonCancellable()
-        .build();
+      const order = new OrderBuilder().withId(1).asNonCancellable().build();
 
       mockRepository.mockSuccessfulFind(order);
 
-      const result = await useCase.execute(order.id);
+      const result = await useCase.execute(order.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
 

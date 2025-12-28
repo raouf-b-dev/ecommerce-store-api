@@ -9,10 +9,10 @@ export abstract class ProductRepository {
     product: CreateProductDto,
   ): Promise<Result<IProduct, RepositoryError>>;
   abstract update(
-    id: string,
+    id: number,
     product: UpdateProductDto,
   ): Promise<Result<IProduct, RepositoryError>>;
-  abstract findById(id: string): Promise<Result<IProduct, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<IProduct, RepositoryError>>;
   abstract findAll(): Promise<Result<IProduct[], RepositoryError>>;
-  abstract deleteById(id: string): Promise<Result<void, RepositoryError>>;
+  abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
 }

@@ -7,8 +7,8 @@ import { ReservationItem, ReservationItemProps } from './reservation-item';
 import { IReservationItem } from '../interfaces/reservation-item.interface';
 
 export interface ReservationProps {
-  id: string;
-  orderId: string;
+  id: number | null;
+  orderId: number;
   items: ReservationItemProps[];
   status: ReservationStatus;
   expiresAt: Date;
@@ -17,8 +17,8 @@ export interface ReservationProps {
 }
 
 export class Reservation implements IReservation {
-  private readonly _id: string;
-  private readonly _orderId: string;
+  private readonly _id: number | null;
+  private readonly _orderId: number;
   private readonly _items: ReservationItem[];
   private _status: ReservationStatus;
   private readonly _expiresAt: Date;
@@ -63,11 +63,11 @@ export class Reservation implements IReservation {
     return Result.success(undefined);
   }
 
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
-  get orderId(): string {
+  get orderId(): number {
     return this._orderId;
   }
 
@@ -170,8 +170,7 @@ export class Reservation implements IReservation {
   }
 
   public static create(props: {
-    id: string;
-    orderId: string;
+    orderId: number;
     items: ReservationItemProps[];
     ttlMinutes: number;
   }): Result<Reservation, DomainError> {
@@ -179,7 +178,7 @@ export class Reservation implements IReservation {
     expiresAt.setMinutes(expiresAt.getMinutes() + props.ttlMinutes);
 
     const reservation = new Reservation({
-      id: props.id,
+      id: null,
       orderId: props.orderId,
       items: props.items,
       status: ReservationStatus.PENDING,

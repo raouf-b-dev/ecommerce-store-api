@@ -34,20 +34,22 @@ describe('ConfirmOrderController', () => {
         Result.success(confirmedOrder),
       );
 
-      const result = await controller.handle(confirmedOrder.id);
+      const result = await controller.handle(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toBe(confirmedOrder);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
 
-      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith(
-        confirmedOrder.id,
-      );
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId: confirmedOrder.id!,
+        reservationId: undefined,
+        cartId: undefined,
+      });
       expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
     it('should return Failure(UseCaseError) if order confirmation fails', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
 
       mockConfirmOrderUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -64,12 +66,16 @@ describe('ConfirmOrderController', () => {
         UseCaseError,
       );
 
-      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith(orderId);
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId,
+        reservationId: undefined,
+        cartId: undefined,
+      });
       expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
     it('should return Failure(UseCaseError) if order not found', async () => {
-      const orderId = 'OR9999';
+      const orderId = 999;
 
       mockConfirmOrderUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -87,7 +93,7 @@ describe('ConfirmOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       const error = new Error('Database connection failed');
 
       mockConfirmOrderUseCase.execute.mockRejectedValue(error);
@@ -101,7 +107,11 @@ describe('ConfirmOrderController', () => {
         error,
       );
 
-      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith(orderId);
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId,
+        reservationId: undefined,
+        cartId: undefined,
+      });
       expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledTimes(1);
     });
 
@@ -116,13 +126,19 @@ describe('ConfirmOrderController', () => {
         Result.success(confirmedCOD),
       );
 
-      const result = await controller.handle(codOrder.id);
+      const result = await controller.handle(codOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentMethod).toBe(
         PaymentMethodType.CASH_ON_DELIVERY,
       );
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
+
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId: codOrder.id!,
+        reservationId: undefined,
+        cartId: undefined,
+      });
     });
 
     it('should confirm online payment order with completed payment', async () => {
@@ -137,11 +153,17 @@ describe('ConfirmOrderController', () => {
         Result.success(confirmedOnline),
       );
 
-      const result = await controller.handle(onlineOrder.id);
+      const result = await controller.handle(onlineOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentId).toBeDefined();
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
+
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId: onlineOrder.id!,
+        reservationId: undefined,
+        cartId: undefined,
+      });
     });
 
     it('should fail to confirm online payment order with pending payment', async () => {
@@ -155,7 +177,7 @@ describe('ConfirmOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(onlineOrder.id);
+      const result = await controller.handle(onlineOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -167,7 +189,7 @@ describe('ConfirmOrderController', () => {
       const multiItemOrder = OrderTestFactory.createMultiItemOrder(3);
       const pendingMultiItem = {
         ...multiItemOrder,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.PENDING_PAYMENT,
         paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
         paymentId: null,
       };
@@ -180,11 +202,17 @@ describe('ConfirmOrderController', () => {
         Result.success(confirmedMultiItem),
       );
 
-      const result = await controller.handle(pendingMultiItem.id);
+      const result = await controller.handle(pendingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.items).toHaveLength(3);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
+
+      expect(mockConfirmOrderUseCase.execute).toHaveBeenCalledWith({
+        orderId: pendingMultiItem.id!,
+        reservationId: undefined,
+        cartId: undefined,
+      });
     });
 
     it('should fail to confirm already confirmed order', async () => {
@@ -197,7 +225,7 @@ describe('ConfirmOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(confirmedOrder.id);
+      const result = await controller.handle(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -212,7 +240,7 @@ describe('ConfirmOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(deliveredOrder.id);
+      const result = await controller.handle(deliveredOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -227,7 +255,7 @@ describe('ConfirmOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(cancelledOrder.id);
+      const result = await controller.handle(cancelledOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(result);
     });

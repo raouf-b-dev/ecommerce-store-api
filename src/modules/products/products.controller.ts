@@ -55,7 +55,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get product by ID' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   findOne(@Param('id') id: string) {
-    return this.getProductController.handle(id);
+    return this.getProductController.handle(Number(id));
   }
 
   @Patch(':id')
@@ -64,7 +64,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Update product by ID' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.updateProductController.handle(id, updateProductDto);
+    return this.updateProductController.handle(Number(id), updateProductDto);
   }
 
   @Delete(':id')
@@ -73,6 +73,6 @@ export class ProductsController {
   @ApiOperation({ summary: 'Delete product by ID' })
   @ApiResponse({ status: 204, description: 'Product deleted' })
   remove(@Param('id') id: string) {
-    return this.deleteProductController.handle(id);
+    return this.deleteProductController.handle(Number(id));
   }
 }

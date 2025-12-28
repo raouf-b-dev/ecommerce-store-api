@@ -14,7 +14,7 @@ import { RecordCodPaymentUseCase } from '../../../../payments/application/usecas
 export class DeliverOrderUseCase
   implements
     UseCase<
-      { id: string; deliverOrderDto: DeliverOrderDto },
+      { id: number; deliverOrderDto: DeliverOrderDto },
       IOrder,
       UseCaseError
     >
@@ -25,7 +25,7 @@ export class DeliverOrderUseCase
   ) {}
 
   async execute(input: {
-    id: string;
+    id: number;
     deliverOrderDto: DeliverOrderDto;
   }): Promise<Result<IOrder, UseCaseError>> {
     try {
@@ -38,7 +38,7 @@ export class DeliverOrderUseCase
 
       if (order.isCOD() && input.deliverOrderDto.codPayment) {
         const codPaymentResult = await this.recordCodPaymentUseCase.execute({
-          orderId: order.id,
+          orderId: input.id,
           amountCollected: order.totalPrice,
           currency: 'USD',
           notes: input.deliverOrderDto.codPayment.notes,
@@ -50,7 +50,7 @@ export class DeliverOrderUseCase
 
         const payment = codPaymentResult.value;
         if (payment.id) {
-          await this.orderRepository.updatePaymentId(order.id, payment.id);
+          await this.orderRepository.updatePaymentId(input.id, payment.id);
         }
       }
 
@@ -58,7 +58,7 @@ export class DeliverOrderUseCase
       if (deliverResult.isFailure) return deliverResult;
 
       const updateResult = await this.orderRepository.updateStatus(
-        order.id,
+        input.id,
         order.status,
       );
       if (updateResult.isFailure) {

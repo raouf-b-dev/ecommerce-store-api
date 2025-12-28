@@ -20,7 +20,7 @@ describe('GetProductUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if product is found', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const product = ProductTestFactory.createMockProduct({ id: productId });
 
       mockRepository.mockSuccessfulFind(product);
@@ -34,7 +34,7 @@ describe('GetProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not found', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockRepository.mockProductNotFound(productId);
 
@@ -48,7 +48,7 @@ describe('GetProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const repoError = new Error('Database connection failed');
 
       mockRepository.findById.mockRejectedValue(repoError);

@@ -22,10 +22,10 @@ describe('ProductsController', () => {
   let productsList: Product[];
   let createProductDto: CreateProductDto;
   let updateProductDto: UpdateProductDto;
-  let id: string;
+  let id: number;
 
   beforeEach(async () => {
-    id = 'PR0000001';
+    id = 1;
     product = new Product({
       id,
       name: 'Car',

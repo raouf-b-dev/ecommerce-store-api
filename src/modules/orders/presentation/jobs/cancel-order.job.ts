@@ -8,7 +8,7 @@ import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
 
 @Injectable()
 export class CancelOrderStep extends BaseJobHandler<
-  ScheduleCheckoutProps & { orderId?: string },
+  ScheduleCheckoutProps & { orderId?: number },
   void
 > {
   protected readonly logger = new Logger(CancelOrderStep.name);
@@ -18,7 +18,7 @@ export class CancelOrderStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<ScheduleCheckoutProps & { orderId?: string }>,
+    job: Job<ScheduleCheckoutProps & { orderId?: number }>,
   ): Promise<Result<void, AppError>> {
     const { orderId } = job.data;
 

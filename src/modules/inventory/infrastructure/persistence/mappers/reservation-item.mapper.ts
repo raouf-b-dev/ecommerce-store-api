@@ -25,7 +25,7 @@ export class ReservationItemMapper {
   static toEntity(domain: ReservationItem): ReservationItemEntity {
     const primitives = domain.toPrimitives();
     const payload: ReservationItemCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       productId: primitives.productId,
       quantity: primitives.quantity,
     };

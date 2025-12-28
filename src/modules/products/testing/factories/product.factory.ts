@@ -4,7 +4,7 @@ import { IProduct } from '../../domain/interfaces/product.interface';
 export class ProductTestFactory {
   static createMockProduct(overrides?: Partial<IProduct>): IProduct {
     const baseProduct: IProduct = {
-      id: 'PR0000001',
+      id: 1,
       name: 'Test Product',
       description: 'A test product for testing purposes',
       price: 100,
@@ -73,7 +73,7 @@ export class ProductTestFactory {
 
   static createProductList(count: number = 5): IProduct[] {
     return Array.from({ length: count }, (_, i) => ({
-      id: `PR${String(i + 1).padStart(7, '0')}`,
+      id: i + 1,
       name: `Product ${i + 1}`,
       description: `Description for product ${i + 1}`,
       price: (i + 1) * 10,

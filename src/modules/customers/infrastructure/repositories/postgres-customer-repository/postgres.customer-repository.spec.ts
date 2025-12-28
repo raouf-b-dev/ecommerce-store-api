@@ -7,7 +7,6 @@ import { CustomerTestFactory } from '../../../testing/factories/customer.factory
 import { CustomerMapper } from '../../persistence/mappers/customer.mapper';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { Customer } from '../../../domain/entities/customer';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 describe('PostgresCustomerRepository', () => {
   let repository: PostgresCustomerRepository;
@@ -27,13 +26,6 @@ describe('PostgresCustomerRepository', () => {
         {
           provide: getRepositoryToken(CustomerEntity),
           useValue: mockTypeOrmRepository,
-        },
-        {
-          provide: IdGeneratorService,
-          useValue: {
-            generateCustomerId: jest.fn().mockReturnValue('CUST0000001'),
-            generateAddressId: jest.fn().mockReturnValue('ADDR0000001'),
-          },
         },
       ],
     }).compile();
@@ -68,7 +60,7 @@ describe('PostgresCustomerRepository', () => {
     it('should return error when customer not found', async () => {
       mockTypeOrmRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('non-existent');
+      const result = await repository.findById(0);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) {

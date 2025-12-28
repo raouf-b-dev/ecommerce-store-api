@@ -9,23 +9,27 @@ import { OrderStatus } from '../value-objects/order-status';
 export abstract class OrderRepository {
   abstract save(order: Order): Promise<Result<Order, RepositoryError>>;
   abstract updateStatus(
-    id: string,
+    id: number,
     status: OrderStatus,
   ): Promise<Result<void, RepositoryError>>;
   abstract updatePaymentId(
-    orderId: string,
-    paymentId: string,
+    orderId: number,
+    paymentId: number,
   ): Promise<Result<void, RepositoryError>>;
   abstract updateItemsInfo(
-    id: string,
+    id: number,
     updateOrderItemDto: CreateOrderItemDto[],
   ): Promise<Result<Order, RepositoryError>>;
-  abstract findById(id: string): Promise<Result<Order, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<Order, RepositoryError>>;
   abstract listOrders(
     listOrdersQueryDto: ListOrdersQueryDto,
   ): Promise<Result<Order[], RepositoryError>>;
   abstract cancelOrder(
     orderPrimitives: Order,
   ): Promise<Result<void, RepositoryError>>;
-  abstract deleteById(id: string): Promise<Result<void, RepositoryError>>;
+  abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
+  abstract findByStatusBefore(
+    status: OrderStatus,
+    before: Date,
+  ): Promise<Result<Order[], RepositoryError>>;
 }

@@ -19,7 +19,7 @@ describe('DeleteProductUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if product is deleted', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockRepository.mockSuccessfulDelete();
 
@@ -32,7 +32,7 @@ describe('DeleteProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not deleted', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockRepository.mockDeleteFailure(
         `Product with id ${productId} not deleted`,
@@ -42,13 +42,13 @@ describe('DeleteProductUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Product with id PR0000001 not deleted',
+        'Product with id 1 not deleted',
         UseCaseError,
       );
     });
 
     it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const repoError = new Error('Database connection failed');
 
       mockRepository.deleteById.mockRejectedValue(repoError);

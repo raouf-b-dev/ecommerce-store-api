@@ -5,7 +5,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { PaymentEntity } from './payment.schema';
@@ -13,11 +13,11 @@ import { PaymentEntity } from './payment.schema';
 @Entity({ name: 'refunds' })
 @Index('idx_refunds_payment_id', ['paymentId'])
 export class RefundEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'payment_id', type: 'varchar' })
-  paymentId: string;
+  @Column({ name: 'payment_id', type: 'int' })
+  paymentId: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;

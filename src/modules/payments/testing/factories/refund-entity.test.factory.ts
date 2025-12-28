@@ -5,8 +5,8 @@ import { PaymentEntity } from '../../infrastructure/orm/payment.schema';
 export class RefundEntityTestFactory {
   static createRefundEntity(overrides?: Partial<RefundEntity>): RefundEntity {
     const defaultEntity: RefundEntity = {
-      id: 'RE0000001',
-      paymentId: 'PA0000001',
+      id: 1,
+      paymentId: 1,
       amount: 50,
       currency: 'USD',
       reason: 'Defective product',

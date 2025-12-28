@@ -11,12 +11,12 @@ export class UserBuilder {
     this.user = UserTestFactory.createMockUser();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.user.id = id;
     return this;
   }
 
-  withCustomerId(customerId: string): this {
+  withCustomerId(customerId: number): this {
     this.user.customerId = customerId;
     return this;
   }

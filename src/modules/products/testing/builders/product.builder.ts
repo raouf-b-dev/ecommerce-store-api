@@ -9,7 +9,7 @@ export class ProductBuilder {
     this.product = ProductTestFactory.createMockProduct();
   }
 
-  withId(id: string): this {
+  withId(id: number): this {
     this.product.id = id;
     return this;
   }

@@ -10,7 +10,7 @@ import { PaymentDtoMapper } from '../../mappers/payment-dto.mapper';
 export class VerifyPaymentController {
   constructor(private readonly useCase: VerifyPaymentUseCase) {}
   async handle(
-    id: string,
+    id: number,
   ): Promise<Result<PaymentResponseDto, ControllerError>> {
     try {
       const result = await this.useCase.execute(id);

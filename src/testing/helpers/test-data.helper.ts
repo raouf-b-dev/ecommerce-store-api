@@ -5,15 +5,15 @@ import { ProductEntityTestFactory } from '../../modules/products/testing/factori
 
 export class TestDataHelper {
   static createRepositoryTestData(options?: {
-    orderId?: string;
-    productId?: string;
+    orderId?: number;
+    productId?: number;
     useCOD?: boolean;
   }) {
-    const orderId = options?.orderId || 'OR0000001';
-    const productId = options?.productId || 'PR3';
-    const customerId = 'CUST0000001';
-    const paymentId = 'PAY0000001';
-    const shippingAddressId = 'ADDR0000001';
+    const orderId = options?.orderId || 1;
+    const productId = options?.productId || 3;
+    const customerId = 1;
+    const paymentId = 1;
+    const shippingAddressId = 1;
 
     const createOrderDto = options?.useCOD
       ? CreateOrderDtoTestFactory.createCashOnDeliveryDto()
@@ -71,14 +71,13 @@ export class TestDataHelper {
   }
 
   static createMultiItemTestData(itemCount: number = 3) {
-    const productIds = Array.from(
-      { length: itemCount },
-      (_, i) => `PR${i + 1}`,
-    );
+    const productIds = Array.from({ length: itemCount }, (_, i) => i + 1);
 
     return {
       productIds,
-      createOrderDto: CreateOrderDtoTestFactory.createMultiItemDto(productIds),
+      createOrderDto: CreateOrderDtoTestFactory.createMultiItemDto(
+        productIds.map((id) => id),
+      ),
       productEntities:
         ProductEntityTestFactory.createProductEntities(productIds),
       orderEntity: OrderEntityTestFactory.createMultiItemOrderEntity(itemCount),

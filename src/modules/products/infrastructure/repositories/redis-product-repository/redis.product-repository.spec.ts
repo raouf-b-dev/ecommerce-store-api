@@ -131,7 +131,7 @@ describe('RedisProductRepository', () => {
 
   describe('update', () => {
     it('should update to postgres and cache', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       postgresRepo.update.mockResolvedValue(Result.success(mockProduct));
       cacheService.set.mockResolvedValue(undefined);
@@ -153,7 +153,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should update only price', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
@@ -171,7 +171,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if postgres update fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new RepositoryError('Update failed');
 
       postgresRepo.update.mockResolvedValue(Result.failure(error));
@@ -187,7 +187,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if cache.set throws during update', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       postgresRepo.update.mockResolvedValue(Result.success(mockProduct));
       cacheService.set.mockRejectedValue(new Error('Cache error'));
@@ -204,7 +204,7 @@ describe('RedisProductRepository', () => {
 
   describe('findById', () => {
     it('should return cached product if found', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       cacheService.get.mockResolvedValue(mockProduct);
 
@@ -219,7 +219,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should fetch from postgres if not cached and then cache it', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(Result.success(mockProduct));
@@ -238,7 +238,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if postgres findById fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new RepositoryError('Not found');
 
       cacheService.get.mockResolvedValue(null);
@@ -255,7 +255,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if cache.set throws after postgres success', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(Result.success(mockProduct));
@@ -384,7 +384,7 @@ describe('RedisProductRepository', () => {
 
   describe('deleteById', () => {
     it('should delete from postgres and cache and clear list flag', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockResolvedValue(undefined);
@@ -402,7 +402,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if postgres delete fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new RepositoryError('Delete failed');
 
       postgresRepo.deleteById.mockResolvedValue(Result.failure(error));
@@ -418,7 +418,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if cache.delete for individual product throws', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockImplementation((key: string) => {
@@ -438,7 +438,7 @@ describe('RedisProductRepository', () => {
     });
 
     it('should return failure if cache.delete for IS_CACHED_FLAG throws', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockImplementation((key: string) => {

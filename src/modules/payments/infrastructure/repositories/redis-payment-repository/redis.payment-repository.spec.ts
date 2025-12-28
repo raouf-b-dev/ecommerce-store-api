@@ -22,8 +22,8 @@ describe('RedisPaymentRepository', () => {
   let postgresRepo: MockPaymentRepository;
   let logger: jest.Mocked<Logger>;
 
-  const paymentId = 'PA0000001';
-  const orderId = 'OR0000001';
+  const paymentId = 1;
+  const orderId = 1;
   const transactionId = 'tx_123';
   const paymentPrimitives = new PaymentBuilder()
     .withId(paymentId)
@@ -35,7 +35,7 @@ describe('RedisPaymentRepository', () => {
   const cachedPayment: PaymentForCache =
     PaymentCacheMapper.toCache(domainPayment);
 
-  const idKey = (id: string) => `${PAYMENT_REDIS.CACHE_KEY}:${id}`;
+  const idKey = (id: number) => `${PAYMENT_REDIS.CACHE_KEY}:${id}`;
 
   beforeEach(() => {
     // Mock CacheService methods
@@ -233,7 +233,7 @@ describe('RedisPaymentRepository', () => {
   describe('save', () => {
     it('should save to postgres and cache the result', async () => {
       // Arrange
-      const newPayment = new PaymentBuilder().withId('PA_NEW').build();
+      const newPayment = new PaymentBuilder().withId(123).build();
       const newDomainPayment = Payment.fromPrimitives(newPayment);
       const newCachedPayment = PaymentCacheMapper.toCache(newDomainPayment);
 

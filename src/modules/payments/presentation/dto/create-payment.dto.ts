@@ -22,11 +22,11 @@ export enum PaymentMethod {
 
 export class CreatePaymentDto {
   @ApiProperty({
-    example: 'order-123',
+    example: 123,
     description: 'Order ID',
   })
-  @IsString()
-  orderId: string;
+  @IsNumber()
+  orderId: number;
 
   @ApiProperty({
     example: 299.99,
@@ -61,10 +61,10 @@ export class CreatePaymentDto {
   paymentMethodDetails?: PaymentMethodDetailsDto;
 
   @ApiPropertyOptional({
-    example: 'user-123',
+    example: 123,
     description: 'Customer ID',
   })
   @IsOptional()
-  @IsString()
-  customerId?: string;
+  @IsNumber()
+  customerId?: number;
 }

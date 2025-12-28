@@ -8,14 +8,14 @@ import { POSTGRES_RESERVATION_REPOSITORY } from '../../inventory.token';
 
 @Injectable()
 export class ReleaseStockUseCase
-  implements UseCase<string, void, UseCaseError>
+  implements UseCase<number, void, UseCaseError>
 {
   constructor(
     @Inject(POSTGRES_RESERVATION_REPOSITORY)
     private readonly reservationRepository: ReservationRepository,
   ) {}
 
-  async execute(reservationId: string): Promise<Result<void, UseCaseError>> {
+  async execute(reservationId: number): Promise<Result<void, UseCaseError>> {
     try {
       const reservationResult =
         await this.reservationRepository.findById(reservationId);

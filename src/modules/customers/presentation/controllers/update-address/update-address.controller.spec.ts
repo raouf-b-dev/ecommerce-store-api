@@ -35,8 +35,8 @@ describe('UpdateAddressController', () => {
 
   describe('handle', () => {
     it('should return success result with updated address', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
       const dto = CustomerDtoTestFactory.createUpdateAddressDto();
       const addressData = CustomerTestFactory.createMockAddress({
         id: addressId,
@@ -57,8 +57,8 @@ describe('UpdateAddressController', () => {
     });
 
     it('should return controller error if use case fails', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
       const dto = CustomerDtoTestFactory.createUpdateAddressDto();
       const error = ErrorFactory.UseCaseError('Address not found');
 
@@ -74,8 +74,8 @@ describe('UpdateAddressController', () => {
     });
 
     it('should return controller error if unexpected error occurs', async () => {
-      const customerId = 'cust-123';
-      const addressId = 'addr-123';
+      const customerId = 123;
+      const addressId = 123;
       const dto = CustomerDtoTestFactory.createUpdateAddressDto();
       const error = new Error('Unexpected error');
 

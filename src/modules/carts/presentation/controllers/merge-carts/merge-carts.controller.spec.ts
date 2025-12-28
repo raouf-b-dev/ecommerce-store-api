@@ -30,11 +30,11 @@ describe('MergeCartsController', () => {
   describe('handle', () => {
     it('should return success result with merged cart', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 123;
+      const userCartId = 456;
       const mockMergedCart: ICart = CartTestFactory.createCartWithItems(3, {
         id: userCartId,
-        customerId: 'customer-123',
+        customerId: 123,
       });
 
       usecase.execute.mockResolvedValue(Result.success(mockMergedCart));
@@ -49,13 +49,13 @@ describe('MergeCartsController', () => {
       });
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toEqual(mockMergedCart);
-      expect(result.value.customerId).toBe('customer-123');
+      expect(result.value.customerId).toBe(123);
     });
 
     it('should return failure when guest cart not found', async () => {
       // Arrange
-      const guestCartId = 'cart-404';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 404;
+      const userCartId = 456;
       const expectedError = new UseCaseError('Cart not found');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -69,8 +69,8 @@ describe('MergeCartsController', () => {
 
     it('should return failure when user cart not found', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-404';
+      const guestCartId = 123;
+      const userCartId = 404;
       const expectedError = new UseCaseError('Cart not found');
 
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
@@ -84,8 +84,8 @@ describe('MergeCartsController', () => {
 
     it('should catch unexpected exceptions and return a ControllerError', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 123;
+      const userCartId = 456;
       const unexpectedError = new Error('Database connection failed');
 
       usecase.execute.mockRejectedValue(unexpectedError);

@@ -8,9 +8,9 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { Order } from '../../../domain/entities/order';
 
 @Injectable()
-export class ShipOrderUseCase implements UseCase<string, IOrder, UseCaseError> {
+export class ShipOrderUseCase implements UseCase<number, IOrder, UseCaseError> {
   constructor(private orderRepository: OrderRepository) {}
-  async execute(id: string): Promise<Result<IOrder, UseCaseError>> {
+  async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
     try {
       const requestedOrder = await this.orderRepository.findById(id);
       if (requestedOrder.isFailure) return requestedOrder;
@@ -21,7 +21,7 @@ export class ShipOrderUseCase implements UseCase<string, IOrder, UseCaseError> {
       if (shipResult.isFailure) return shipResult;
 
       const updateResult = await this.orderRepository.updateStatus(
-        order.id,
+        id,
         order.status,
       );
       if (updateResult.isFailure) return updateResult;

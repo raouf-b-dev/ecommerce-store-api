@@ -11,7 +11,7 @@ import { Inventory } from '../../domain/entities/inventory';
 export class BulkCheckStockUseCase
   implements
     UseCase<
-      { productId: string; quantity?: number }[],
+      { productId: number; quantity?: number }[],
       CheckStockResponse[],
       UseCaseError
     >
@@ -19,7 +19,7 @@ export class BulkCheckStockUseCase
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(
-    dto: { productId: string; quantity?: number }[],
+    dto: { productId: number; quantity?: number }[],
   ): Promise<Result<CheckStockResponse[], UseCaseError>> {
     try {
       const productIds = Array.from(new Set(dto.map((item) => item.productId)));
@@ -30,7 +30,7 @@ export class BulkCheckStockUseCase
 
       const inventories: Inventory[] = inventoryResult.value;
 
-      const inventoryMap = new Map<string, Inventory>(
+      const inventoryMap = new Map<number, Inventory>(
         inventories.map((inv) => [inv.productId, inv]),
       );
 

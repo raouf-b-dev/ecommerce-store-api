@@ -41,7 +41,7 @@ describe('ConfirmReservationUseCase', () => {
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulConfirm(reservation);
 
-      const result = await useCase.execute(reservation.id);
+      const result = await useCase.execute(reservation.id!);
 
       expect(result.isSuccess).toBe(true);
       expect(reservationRepository.findById).toHaveBeenCalledWith(
@@ -52,7 +52,7 @@ describe('ConfirmReservationUseCase', () => {
     });
 
     it('should return failure if reservation not found', async () => {
-      const reservationId = 'RES_NOT_FOUND';
+      const reservationId = 404;
       reservationRepository.mockReservationNotFound(reservationId);
 
       const result = await useCase.execute(reservationId);
@@ -73,7 +73,7 @@ describe('ConfirmReservationUseCase', () => {
       });
       reservationRepository.mockSuccessfulFindById(reservation);
 
-      const result = await useCase.execute(reservation.id);
+      const result = await useCase.execute(reservation.id!);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) {
@@ -89,7 +89,7 @@ describe('ConfirmReservationUseCase', () => {
       const reservation = ReservationTestFactory.createConfirmedReservation();
       reservationRepository.mockSuccessfulFindById(reservation);
 
-      const result = await useCase.execute(reservation.id);
+      const result = await useCase.execute(reservation.id!);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) {
@@ -107,7 +107,7 @@ describe('ConfirmReservationUseCase', () => {
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockConfirmFailure(errorMessage);
 
-      const result = await useCase.execute(reservation.id);
+      const result = await useCase.execute(reservation.id!);
 
       expect(result.isFailure).toBe(true);
       if (result.isFailure) {
@@ -120,7 +120,7 @@ describe('ConfirmReservationUseCase', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const reservationId = 'RES_ERROR';
+      const reservationId = 500;
       const error = new Error('Unexpected error');
       reservationRepository.findById.mockRejectedValue(error);
 

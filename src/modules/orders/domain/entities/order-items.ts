@@ -5,39 +5,39 @@ import { v4 as uuidv4 } from 'uuid';
 import { IOrderItem } from '../interfaces/order-item.interface';
 
 export interface OrderItemProps {
-  id: string | null;
-  productId: string;
+  id: number | null;
+  productId: number;
   productName: string | null;
   unitPrice: number;
   quantity: number;
 }
 
 export class OrderItem implements IOrderItem {
-  private readonly _id: string;
-  private readonly _productId: string;
+  private readonly _id: number | null;
+  private readonly _productId: number;
   private readonly _productName: string | null;
   private readonly _unitPrice: Money;
   private readonly _quantity: Quantity;
   private readonly _lineTotal: Money;
 
   constructor(props: OrderItemProps) {
-    if (!props.productId?.trim()) {
+    if (!props.productId) {
       throw new Error('Product ID is required');
     }
 
-    this._id = props.id || this.generateId();
-    this._productId = props.productId.trim();
+    this._id = props.id;
+    this._productId = props.productId;
     this._productName = props.productName ? props.productName.trim() : null;
     this._unitPrice = Money.from(props.unitPrice);
     this._quantity = Quantity.from(props.quantity);
     this._lineTotal = this._unitPrice.multiply(this._quantity.value);
   }
 
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
-  get productId(): string {
+  get productId(): number {
     return this._productId;
   }
 

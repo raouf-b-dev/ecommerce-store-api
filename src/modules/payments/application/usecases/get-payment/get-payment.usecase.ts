@@ -7,12 +7,12 @@ import { PaymentRepository } from '../../../domain/repositories/payment.reposito
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 
 @Injectable()
-export class GetPaymentUseCase extends UseCase<string, IPayment, UseCaseError> {
+export class GetPaymentUseCase extends UseCase<number, IPayment, UseCaseError> {
   constructor(private readonly paymentRepository: PaymentRepository) {
     super();
   }
 
-  async execute(id: string): Promise<Result<IPayment, UseCaseError>> {
+  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
     try {
       const result = await this.paymentRepository.findById(id);
 

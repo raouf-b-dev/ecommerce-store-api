@@ -16,7 +16,7 @@ export type CartForCache = Omit<ICart, 'createdAt' | 'updatedAt'> & {
 export class CartMapper {
   static toDomain(entity: CartEntity): Cart {
     const props: CartProps = {
-      id: entity.id,
+      id: entity.id || null,
       customerId: entity.customerId,
       sessionId: entity.sessionId,
       items: entity.items.map((item) => CartItemMapper.toDomain(item).props),
@@ -31,7 +31,7 @@ export class CartMapper {
     const primitives = domain.toPrimitives();
 
     const cartPayload: CartCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       customerId: primitives.customerId,
       sessionId: primitives.sessionId,
       createdAt: primitives.createdAt,

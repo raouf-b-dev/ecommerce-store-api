@@ -5,8 +5,8 @@ import { CartEntity } from '../../infrastructure/orm/cart.schema';
 export class CartEntityTestFactory {
   static createCartEntity(overrides?: Partial<CartEntity>): CartEntity {
     const defaultEntity: CartEntity = {
-      id: 'cart-123',
-      customerId: 'customer-123',
+      id: 123,
+      customerId: 123,
       sessionId: null,
       items: [],
       createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -20,8 +20,8 @@ export class CartEntityTestFactory {
     overrides?: Partial<CartItemEntity>,
   ): CartItemEntity {
     const defaultEntity: CartItemEntity = {
-      id: 'item-123',
-      productId: 'product-123',
+      id: 123,
+      productId: 123,
       productName: 'Test Product',
       price: 100,
       quantity: 1,
@@ -35,8 +35,8 @@ export class CartEntityTestFactory {
   static createCartEntityWithItems(itemCount: number = 3): CartEntity {
     const items = Array.from({ length: itemCount }, (_, i) =>
       this.createCartItemEntity({
-        id: `item-${i + 1}`,
-        productId: `product-${i + 1}`,
+        id: i + 1,
+        productId: i + 1,
         productName: `Product ${i + 1}`,
         price: 10 * (i + 1),
         quantity: 1,

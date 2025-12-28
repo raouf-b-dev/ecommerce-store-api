@@ -43,9 +43,9 @@ describe('ListOrdersUsecase', () => {
   it('returns success with multiple orders', async () => {
     const dto: ListOrdersQueryDto = {};
     const orders = [
-      OrderTestFactory.createPendingOrder({ id: 'OR0001' }),
-      OrderTestFactory.createShippedOrder({ id: 'OR0002' }),
-      OrderTestFactory.createCancelledOrder({ id: 'OR0003' }),
+      OrderTestFactory.createPendingPaymentOrder({ id: 1 }),
+      OrderTestFactory.createShippedOrder({ id: 2 }),
+      OrderTestFactory.createCancelledOrder({ id: 3 }),
     ];
 
     mockRepository.mockSuccessfulList(orders);
@@ -54,9 +54,9 @@ describe('ListOrdersUsecase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(3);
-    expect(result.value[0].id).toBe('OR0001');
-    expect(result.value[1].id).toBe('OR0002');
-    expect(result.value[2].id).toBe('OR0003');
+    expect(result.value[0].id).toBe(1);
+    expect(result.value[1].id).toBe(2);
+    expect(result.value[2].id).toBe(3);
   });
 
   it('returns success with empty list when no orders exist', async () => {
@@ -108,10 +108,10 @@ describe('ListOrdersUsecase', () => {
   describe('filtering and querying', () => {
     it('should pass query parameters to repository', async () => {
       const dto: ListOrdersQueryDto = {
-        status: OrderStatus.PENDING,
-        customerId: 'CUST1',
+        status: OrderStatus.PENDING_PAYMENT,
+        customerId: 1,
       };
-      const orders = [OrderTestFactory.createPendingOrder()];
+      const orders = [OrderTestFactory.createPendingPaymentOrder()];
 
       mockRepository.mockSuccessfulList(orders);
 
@@ -127,7 +127,7 @@ describe('ListOrdersUsecase', () => {
         limit: 10,
       };
       const orders = Array.from({ length: 10 }, (_, i) =>
-        OrderTestFactory.createMockOrder({ id: `OR000${i}` }),
+        OrderTestFactory.createMockOrder({ id: i }),
       );
 
       mockRepository.mockSuccessfulList(orders);
@@ -144,7 +144,7 @@ describe('ListOrdersUsecase', () => {
     it('should handle repository returning orders with different statuses', async () => {
       const dto: ListOrdersQueryDto = {};
       const orders = [
-        OrderTestFactory.createPendingOrder(),
+        OrderTestFactory.createPendingPaymentOrder(),
         OrderTestFactory.createShippedOrder(),
         OrderTestFactory.createCancelledOrder(),
       ];
@@ -155,7 +155,7 @@ describe('ListOrdersUsecase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toHaveLength(3);
-      expect(result.value.map((o) => o.status)).toContain('pending');
+      expect(result.value.map((o) => o.status)).toContain('pending_payment');
       expect(result.value.map((o) => o.status)).toContain('shipped');
       expect(result.value.map((o) => o.status)).toContain('cancelled');
     });

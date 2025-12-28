@@ -6,8 +6,8 @@ import { IAddress } from '../interfaces/address.interface';
 import { AddressType } from '../value-objects/address-type';
 
 export interface AddressProps {
-  id: string | null;
-  customerId: string;
+  id: number | null;
+  customerId: number;
   street: string;
   street2: string | null;
   city: string;
@@ -22,8 +22,8 @@ export interface AddressProps {
 }
 
 export class Address implements IAddress {
-  private _id: string | null;
-  private _customerId: string;
+  private _id: number | null;
+  private _customerId: number;
   private _street: string;
   private _street2: string | null;
   private _city: string;
@@ -81,11 +81,11 @@ export class Address implements IAddress {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
-  get customerId(): string {
+  get customerId(): number {
     return this._customerId;
   }
 
@@ -204,7 +204,7 @@ export class Address implements IAddress {
   // Serialization
   toPrimitives(): IAddress {
     return {
-      id: this._id || '',
+      id: this._id || null,
       customerId: this._customerId,
       street: this._street,
       street2: this._street2,
@@ -225,7 +225,7 @@ export class Address implements IAddress {
   }
 
   static create(
-    customerId: string,
+    customerId: number,
     street: string,
     city: string,
     state: string,

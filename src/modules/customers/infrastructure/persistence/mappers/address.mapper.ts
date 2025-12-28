@@ -29,7 +29,7 @@ export class AddressMapper {
     const primitives = domain.toPrimitives();
 
     const addressPayload: AddressCreate = {
-      id: primitives.id || '',
+      id: primitives.id || 0,
       customerId: primitives.customerId,
       street: primitives.street,
       street2: primitives.street2,

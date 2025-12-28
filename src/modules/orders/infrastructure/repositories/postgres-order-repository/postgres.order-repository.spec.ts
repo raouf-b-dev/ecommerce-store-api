@@ -10,19 +10,14 @@ import { CreateOrderItemDto } from '../../../presentation/dto/create-order-item.
 import { ListOrdersQueryDto } from '../../../presentation/dto/list-orders-query.dto';
 import {
   TestDataHelper,
-  createMockIdGenerator,
   createMockQueryBuilder,
   createMockTransactionManager,
   createMockDataSource,
   ResultAssertionHelper,
 } from '../../../../../testing';
 import { ProductEntityTestFactory } from '../../../../products/testing';
-import {
-  CreateOrderDtoTestFactory,
-  OrderEntityTestFactory,
-} from '../../../testing';
+import { OrderEntityTestFactory } from '../../../testing';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 
 describe('PostgresOrderRepository', () => {
@@ -30,12 +25,6 @@ describe('PostgresOrderRepository', () => {
   let mockOrmRepo: jest.Mocked<Repository<OrderEntity>>;
 
   const testData = TestDataHelper.createRepositoryTestData({ useCOD: true });
-  const mockIdGen = createMockIdGenerator({
-    orderId: testData.orderId,
-    customerId: testData.customerId,
-    paymentId: testData.paymentId,
-    shippingAddressId: testData.shippingAddressId,
-  });
 
   let mockQueryBuilder: ReturnType<typeof createMockQueryBuilder>;
   let mockManager: ReturnType<typeof createMockTransactionManager>;
@@ -69,7 +58,6 @@ describe('PostgresOrderRepository', () => {
         PostgresOrderRepository,
         { provide: getRepositoryToken(OrderEntity), useValue: mockOrmRepo },
         { provide: DataSource, useValue: mockDataSource },
-        { provide: IdGeneratorService, useValue: mockIdGen },
       ],
     }).compile();
 
@@ -105,7 +93,7 @@ describe('PostgresOrderRepository', () => {
         page: 2,
         limit: 5,
         customerId: testData.customerId,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.PENDING_PAYMENT,
         sortBy: 'totalPrice',
         sortOrder: 'asc',
       };
@@ -357,9 +345,7 @@ describe('PostgresOrderRepository', () => {
       mockManager.findOne.mockResolvedValue(testData.orderEntity);
       mockManager.find.mockResolvedValue([]);
 
-      const updateDto: CreateOrderItemDto[] = [
-        { productId: 'PR999', quantity: 1 },
-      ];
+      const updateDto: CreateOrderItemDto[] = [{ productId: 999, quantity: 1 }];
 
       const result = await repository.updateItemsInfo(
         testData.orderId,
@@ -433,7 +419,7 @@ describe('PostgresOrderRepository', () => {
 
     it('should find orders with different statuses', async () => {
       const statuses = [
-        OrderStatus.PENDING,
+        OrderStatus.PENDING_PAYMENT,
         OrderStatus.CONFIRMED,
         OrderStatus.PROCESSING,
         OrderStatus.SHIPPED,
@@ -556,7 +542,7 @@ describe('PostgresOrderRepository', () => {
 
       const cancelledEntity = OrderEntityTestFactory.createCancelledOrderEntity(
         {
-          id: multiItemOrder.id,
+          id: multiItemOrder.id || 1,
         },
       );
       mockManager.save.mockResolvedValue(cancelledEntity);
@@ -589,7 +575,7 @@ describe('PostgresOrderRepository', () => {
 
     it('should cancel order at different stages', async () => {
       const cancellableStatuses = [
-        OrderStatus.PENDING,
+        OrderStatus.PENDING_PAYMENT,
         OrderStatus.CONFIRMED,
         OrderStatus.PROCESSING,
         OrderStatus.SHIPPED,
@@ -597,7 +583,7 @@ describe('PostgresOrderRepository', () => {
 
       for (const status of cancellableStatuses) {
         const order = OrderTestFactory.createMockOrder({
-          id: `OR${status}`,
+          id: testData.orderId,
           status,
         });
         const cancelledOrder = Order.fromPrimitives(order);
@@ -605,7 +591,7 @@ describe('PostgresOrderRepository', () => {
 
         const cancelledEntity =
           OrderEntityTestFactory.createCancelledOrderEntity({
-            id: order.id,
+            id: testData.orderId,
           });
         mockManager.save.mockResolvedValue(cancelledEntity);
 
@@ -702,22 +688,19 @@ describe('PostgresOrderRepository', () => {
     });
 
     it('should handle duplicate product IDs in order items', async () => {
-      const products = ProductEntityTestFactory.createProductEntities([
-        'PR1',
-        'PR2',
-      ]);
+      const products = ProductEntityTestFactory.createProductEntities([1, 2]);
 
       mockManager.find.mockResolvedValue(products);
       mockManager.save.mockResolvedValue(testData.orderEntity);
 
       const item1 = OrderEntityTestFactory.createOrderItemEntity({
-        productId: 'PR1',
+        productId: 1,
       });
       const item2 = OrderEntityTestFactory.createOrderItemEntity({
-        productId: 'PR1',
+        productId: 1,
       });
       const item3 = OrderEntityTestFactory.createOrderItemEntity({
-        productId: 'PR2',
+        productId: 2,
       });
 
       const customOrderEntity = OrderEntityTestFactory.createOrderEntity({

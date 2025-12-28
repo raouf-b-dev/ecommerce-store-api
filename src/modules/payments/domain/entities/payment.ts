@@ -16,14 +16,16 @@ import {
 import { Refund, RefundProps } from './refund';
 
 export interface PaymentProps {
-  id: string | null;
-  orderId: string;
-  customerId: string | null;
+  id: number | null;
+  orderId: number;
+  customerId: number | null;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
   status: PaymentStatusType;
   transactionId: string | null;
+  gatewayPaymentIntentId: string | null; // Stripe/PayPal payment intent ID
+  gatewayClientSecret: string | null; // Client secret for frontend confirmation
   paymentMethodInfo: string | null;
   refundedAmount: number;
   refunds: RefundProps[];
@@ -34,13 +36,15 @@ export interface PaymentProps {
 }
 
 export class Payment implements IPayment {
-  private readonly _id: string | null;
-  private readonly _orderId: string;
-  private _customerId: string | null;
+  private readonly _id: number | null;
+  private readonly _orderId: number;
+  private _customerId: number | null;
   private _amount: Money;
   private _paymentMethod: PaymentMethod;
   private _status: PaymentStatus;
   private _transactionId: string | null;
+  private _gatewayPaymentIntentId: string | null;
+  private _gatewayClientSecret: string | null;
   private _paymentMethodInfo: string | null;
   private _refundedAmount: Money;
   private _refunds: Refund[];
@@ -53,13 +57,15 @@ export class Payment implements IPayment {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id?.trim() || null;
-    this._orderId = props.orderId.trim();
-    this._customerId = props.customerId?.trim() || null;
+    this._id = props.id || null;
+    this._orderId = props.orderId;
+    this._customerId = props.customerId || null;
     this._amount = Money.from(props.amount, props.currency);
     this._paymentMethod = new PaymentMethod(props.paymentMethod);
     this._status = new PaymentStatus(props.status);
     this._transactionId = props.transactionId?.trim() || null;
+    this._gatewayPaymentIntentId = props.gatewayPaymentIntentId?.trim() || null;
+    this._gatewayClientSecret = props.gatewayClientSecret?.trim() || null;
     this._paymentMethodInfo = props.paymentMethodInfo?.trim() || null;
     this._refundedAmount = Money.from(props.refundedAmount, props.currency);
     this._refunds = props.refunds
@@ -72,10 +78,10 @@ export class Payment implements IPayment {
   }
 
   private validateProps(props: PaymentProps): Result<void, DomainError> {
-    if (props.id !== null && !props.id?.trim()) {
+    if (props.id !== null && !props.id) {
       return ErrorFactory.DomainError('Payment ID is required');
     }
-    if (!props.orderId?.trim()) {
+    if (!props.orderId) {
       return ErrorFactory.DomainError('Order ID is required');
     }
     if (props.amount < 0) {
@@ -97,15 +103,15 @@ export class Payment implements IPayment {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
-  get orderId(): string {
+  get orderId(): number {
     return this._orderId;
   }
 
-  get customerId(): string | null {
+  get customerId(): number | null {
     return this._customerId;
   }
 
@@ -127,6 +133,14 @@ export class Payment implements IPayment {
 
   get transactionId(): string | null {
     return this._transactionId;
+  }
+
+  get gatewayPaymentIntentId(): string | null {
+    return this._gatewayPaymentIntentId;
+  }
+
+  get gatewayClientSecret(): string | null {
+    return this._gatewayClientSecret;
   }
 
   get paymentMethodInfo(): string | null {
@@ -159,6 +173,35 @@ export class Payment implements IPayment {
   }
 
   // Business logic methods
+
+  /**
+   * Set the payment intent details from gateway response.
+   * Called after creating a payment intent with Stripe/PayPal.
+   */
+  setPaymentIntent(
+    paymentIntentId: string,
+    clientSecret: string,
+  ): Result<void, DomainError> {
+    if (!paymentIntentId?.trim()) {
+      return ErrorFactory.DomainError('Payment intent ID is required');
+    }
+    if (!clientSecret?.trim()) {
+      return ErrorFactory.DomainError('Client secret is required');
+    }
+
+    if (!this._status.isPending()) {
+      return ErrorFactory.DomainError(
+        'Can only set payment intent on pending payments',
+      );
+    }
+
+    this._gatewayPaymentIntentId = paymentIntentId.trim();
+    this._gatewayClientSecret = clientSecret.trim();
+    this._updatedAt = new Date();
+
+    return Result.success(undefined);
+  }
+
   authorize(transactionId: string): Result<void, DomainError> {
     if (!transactionId?.trim()) {
       return ErrorFactory.DomainError('Transaction ID is required');
@@ -318,6 +361,8 @@ export class Payment implements IPayment {
       paymentMethod: this._paymentMethod.type,
       status: this._status.status,
       transactionId: this._transactionId,
+      gatewayPaymentIntentId: this._gatewayPaymentIntentId,
+      gatewayClientSecret: this._gatewayClientSecret,
       paymentMethodInfo: this._paymentMethodInfo,
       refundedAmount: this._refundedAmount.amount,
       refunds: this._refunds.map((r) => r.toPrimitives()),
@@ -333,12 +378,12 @@ export class Payment implements IPayment {
   }
 
   static create(
-    id: string | null,
-    orderId: string,
+    id: number | null,
+    orderId: number,
     amount: number,
     currency: string,
     paymentMethod: PaymentMethodType,
-    customerId?: string,
+    customerId?: number,
     paymentMethodInfo?: string,
   ): Payment {
     return new Payment({
@@ -350,6 +395,8 @@ export class Payment implements IPayment {
       paymentMethod,
       status: PaymentStatusType.PENDING,
       transactionId: null,
+      gatewayPaymentIntentId: null,
+      gatewayClientSecret: null,
       paymentMethodInfo: paymentMethodInfo || null,
       refundedAmount: 0,
       refunds: [],
@@ -361,11 +408,11 @@ export class Payment implements IPayment {
   }
 
   static createCOD(
-    id: string | null,
-    orderId: string,
+    id: number | null,
+    orderId: number,
     amount: number,
     currency: string,
-    customerId?: string,
+    customerId?: number,
   ): Payment {
     return new Payment({
       id,
@@ -376,6 +423,8 @@ export class Payment implements IPayment {
       paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       status: PaymentStatusType.NOT_REQUIRED_YET,
       transactionId: null,
+      gatewayPaymentIntentId: null,
+      gatewayClientSecret: null,
       paymentMethodInfo: null,
       refundedAmount: 0,
       refunds: [],

@@ -9,7 +9,7 @@ import { IPayment } from '../../../domain/interfaces/payment.interface';
 
 @Injectable()
 export class CapturePaymentUseCase extends UseCase<
-  string,
+  number,
   IPayment,
   UseCaseError
 > {
@@ -17,7 +17,7 @@ export class CapturePaymentUseCase extends UseCase<
     super();
   }
 
-  async execute(id: string): Promise<Result<IPayment, UseCaseError>> {
+  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
     try {
       const paymentResult = await this.paymentRepository.findById(id);
       if (isFailure(paymentResult)) return paymentResult;

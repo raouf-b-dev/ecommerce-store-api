@@ -1,6 +1,5 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bullmq';
 
 import { OrdersController } from './orders.controller';
 import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
@@ -36,12 +35,27 @@ import { PaymentsModule } from '../payments/payments.module';
 import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
 import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
 import { CreateOrderFromCartUseCase } from './application/usecases/create-order-from-cart/create-order-from-cart.usecase';
+import { CustomersModule } from '../customers/customers.module';
+import { CheckoutFailureListener } from './presentation/listeners/checkout-failure.listener';
+import { CartsModule } from '../carts/carts.module';
+import { InventoryModule } from '../inventory/inventory.module';
 import { OrderScheduler } from './domain/schedulers/order.scheduler';
 import { BullMqOrderScheduler } from './infrastructure/schedulers/bullmq-checkout.scheduler';
-import { CustomersModule } from '../customers/customers.module';
-import { OrdersProcessor } from './orders.processor';
+import { BullModule } from '@nestjs/bullmq';
+import { PaymentEventsProcessor } from './payment-events.processor';
+import { HandlePaymentCompletedUseCase } from './application/usecases/handle-payment-completed/handle-payment-completed.usecase';
+import { HandlePaymentFailedUseCase } from './application/usecases/handle-payment-failed/handle-payment-failed.usecase';
+import { ExpirePendingOrdersUseCase } from './application/usecases/expire-pending-orders/expire-pending-orders.usecase';
+import { PaymentCompletedStep } from './presentation/jobs/payment-completed.job';
+import { PaymentFailedStep } from './presentation/jobs/payment-failed.job';
+import { ExpirePendingOrdersJob } from './presentation/jobs/expire-pending-orders.job';
+import { ReleaseOrderStockJob } from './presentation/jobs/release-order-stock.job';
+import { ReleaseOrderStockUseCase } from './application/usecases/release-order-stock/release-order-stock.usecase';
+import { ShippingAddressResolver } from './domain/services/shipping-address-resolver';
+import { PaymentMethodPolicy } from './domain/services/payment-method-policy';
+import { ValidateCheckoutUseCase } from './application/usecases/validate-checkout/validate-checkout.usecase';
 import { ValidateCartStep } from './presentation/jobs/validate-cart.job';
-import { ReserveStockStep } from './presentation/jobs/reserve-stock.job';
+import { ReserveStockStep } from './presentation/jobs/reserve-stock-job/reserve-stock.job';
 import { CreateOrderStep } from './presentation/jobs/create-order.job';
 import { ProcessPaymentStep } from './presentation/jobs/process-payment.job';
 import { ConfirmReservationStep } from './presentation/jobs/confirm-reservation.job';
@@ -50,10 +64,8 @@ import { ReleaseStockStep } from './presentation/jobs/release-stock.job';
 import { CancelOrderStep } from './presentation/jobs/cancel-order.job';
 import { RefundPaymentStep } from './presentation/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './presentation/jobs/finalize-checkout.job';
-import { CheckoutFailureListener } from './presentation/listeners/checkout-failure.listener';
-import { CartsModule } from '../carts/carts.module';
-import { InventoryModule } from '../inventory/inventory.module';
-
+import { ConfirmOrderStep } from './presentation/jobs/confirm-order.job';
+import { OrdersProcessor } from './orders.processor';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -61,6 +73,7 @@ import { InventoryModule } from '../inventory/inventory.module';
       OrderItemEntity,
       ShippingAddressEntity,
     ]),
+    RedisModule,
     RedisModule,
     PaymentsModule,
     CustomersModule,
@@ -107,6 +120,8 @@ import { InventoryModule } from '../inventory/inventory.module';
 
     // Domain
     OrderFactory,
+    ShippingAddressResolver,
+    PaymentMethodPolicy,
 
     // Use cases
     GetOrderUseCase,
@@ -118,6 +133,28 @@ import { InventoryModule } from '../inventory/inventory.module';
     ProcessOrderUseCase,
     CheckoutUseCase,
     CreateOrderFromCartUseCase,
+    HandlePaymentCompletedUseCase,
+    HandlePaymentFailedUseCase,
+    ExpirePendingOrdersUseCase,
+    ReleaseOrderStockUseCase,
+    ValidateCheckoutUseCase,
+
+    // Job Handlers
+    PaymentCompletedStep,
+    PaymentFailedStep,
+    ExpirePendingOrdersJob,
+    ReleaseOrderStockJob,
+    ValidateCartStep,
+    ReserveStockStep,
+    CreateOrderStep,
+    ProcessPaymentStep,
+    ConfirmReservationStep,
+    ClearCartStep,
+    ReleaseStockStep,
+    CancelOrderStep,
+    RefundPaymentStep,
+    FinalizeCheckoutStep,
+    ConfirmOrderStep,
 
     // Controllers
     CheckoutController,
@@ -129,21 +166,13 @@ import { InventoryModule } from '../inventory/inventory.module';
     ShipOrderController,
     ProcessOrderController,
 
-    // Saga Steps
-    ValidateCartStep,
-    ReserveStockStep,
-    CreateOrderStep,
-    ProcessPaymentStep,
-    ConfirmReservationStep,
-    ClearCartStep,
-    ReleaseStockStep,
-    CancelOrderStep,
-    RefundPaymentStep,
-    FinalizeCheckoutStep,
-
-    // Processor & Listeners
-    OrdersProcessor,
+    // Listeners
     CheckoutFailureListener,
+
+    // Processors
+    PaymentEventsProcessor,
+    OrdersProcessor,
   ],
+  exports: [OrderRepository],
 })
 export class OrdersModule {}

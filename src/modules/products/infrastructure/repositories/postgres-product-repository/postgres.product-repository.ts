@@ -9,35 +9,30 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { CreateProductDto } from '../../../presentation/dto/create-product.dto';
 import { UpdateProductDto } from '../../../presentation/dto/update-product.dto';
 import { IProduct } from '../../../domain/interfaces/product.interface';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 export class PostgresProductRepository implements ProductRepository {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly ormRepo: Repository<ProductEntity>,
-    private idGeneratorService: IdGeneratorService,
   ) {}
   async save(
     createProductDto: CreateProductDto,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
-      const id = await this.idGeneratorService.generateProductId();
-
       const entity = this.ormRepo.create({
-        id,
         ...createProductDto,
         createdAt: new Date(),
       });
-      await this.ormRepo.save(entity);
+      const savedEntity = await this.ormRepo.save(entity);
 
-      return Result.success<IProduct>(entity);
+      return Result.success<IProduct>(savedEntity);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save the product`, error);
     }
   }
 
   async update(
-    id: string,
+    id: number,
     updateProductDto: UpdateProductDto,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
@@ -64,9 +59,11 @@ export class PostgresProductRepository implements ProductRepository {
       );
     }
   }
-  async findById(id: string): Promise<Result<IProduct, RepositoryError>> {
+  async findById(id: number): Promise<Result<IProduct, RepositoryError>> {
     try {
-      const product = await this.ormRepo.findOne({ where: { id } });
+      const product = await this.ormRepo.findOne({
+        where: { id },
+      });
       if (!product) return ErrorFactory.RepositoryError('Product not found');
 
       return Result.success<IProduct>(product);
@@ -81,12 +78,13 @@ export class PostgresProductRepository implements ProductRepository {
       if (productsList.length <= 0) {
         return ErrorFactory.RepositoryError('Did not find any products');
       }
-      return Result.success<IProduct[]>(productsList);
+      const products = productsList;
+      return Result.success<IProduct[]>(products);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find products`, error);
     }
   }
-  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     try {
       await this.ormRepo.delete(id);
       return Result.success<void>(undefined);

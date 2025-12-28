@@ -11,7 +11,6 @@ import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundEntity } from '../../orm/refund.schema';
 import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 
 @Injectable()
 export class PostgresPaymentRepository implements PaymentRepository {
@@ -21,10 +20,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
     @InjectRepository(RefundEntity)
     private readonly refundRepo: Repository<RefundEntity>,
     private readonly dataSource: DataSource,
-    private readonly idGeneratorService: IdGeneratorService,
   ) {}
 
-  async findById(id: string): Promise<Result<Payment, RepositoryError>> {
+  async findById(id: number): Promise<Result<Payment, RepositoryError>> {
     try {
       const entity = await this.paymentRepo.findOne({
         where: { id },
@@ -42,7 +40,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
   }
 
   async findByOrderId(
-    orderId: string,
+    orderId: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     try {
       const entities = await this.paymentRepo.find({
@@ -81,8 +79,32 @@ export class PostgresPaymentRepository implements PaymentRepository {
     }
   }
 
+  async findByGatewayPaymentIntentId(
+    paymentIntentId: string,
+  ): Promise<Result<Payment, RepositoryError>> {
+    try {
+      const entity = await this.paymentRepo.findOne({
+        where: { gatewayPaymentIntentId: paymentIntentId },
+        relations: ['refunds'],
+      });
+
+      if (!entity) {
+        return ErrorFactory.RepositoryError(
+          `Payment not found for intent: ${paymentIntentId}`,
+        );
+      }
+
+      return Result.success(PaymentMapper.toDomain(entity));
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to find payment by gateway intent ID',
+        error,
+      );
+    }
+  }
+
   async findByCustomerId(
-    customerId: string,
+    customerId: number,
     page?: number,
     limit?: number,
   ): Promise<Result<Payment[], RepositoryError>> {
@@ -123,9 +145,6 @@ export class PostgresPaymentRepository implements PaymentRepository {
             );
           }
 
-          const paymentId = await this.idGeneratorService.generatePaymentId();
-          entity.id = paymentId;
-
           const saved = await manager.save(PaymentEntity, entity);
           return saved;
         },
@@ -163,7 +182,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const result = await this.paymentRepo.delete(id);
       if (result.affected === 0) {
@@ -176,7 +195,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
   }
 
   async findRefundById(
-    refundId: string,
+    refundId: number,
   ): Promise<Result<Refund, RepositoryError>> {
     try {
       const entity = await this.refundRepo.findOne({
@@ -207,9 +226,6 @@ export class PostgresPaymentRepository implements PaymentRepository {
             `Refund with ID ${entity.id} already exists`,
           );
         }
-
-        const refundId = await this.idGeneratorService.generateRefundId();
-        entity.id = refundId;
 
         const saved = await manager.save(RefundEntity, entity);
         return saved;

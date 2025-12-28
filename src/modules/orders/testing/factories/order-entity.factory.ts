@@ -15,11 +15,11 @@ export class OrderEntityTestFactory {
    */
   static createOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
     const defaultEntity: OrderEntity = {
-      id: 'OR0000001',
-      customerId: 'CUST0000001',
+      id: 1,
+      customerId: 1,
       paymentId: null,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      shippingAddressId: 'ADDR0000001',
+      shippingAddressId: 1,
 
       shippingAddress: this.createShippingAddressEntity(),
       items: [this.createOrderItemEntity()],
@@ -28,7 +28,7 @@ export class OrderEntityTestFactory {
       subtotal: 100,
       shippingCost: 0,
       totalPrice: 100,
-      status: OrderStatus.PENDING,
+      status: OrderStatus.PENDING_PAYMENT,
 
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
@@ -44,7 +44,7 @@ export class OrderEntityTestFactory {
     overrides?: Partial<ShippingAddressEntity>,
   ): ShippingAddressEntity {
     const defaultEntity: ShippingAddressEntity = {
-      id: 'ADDR0000001',
+      id: 1,
       firstName: 'John',
       lastName: 'Doe',
       street: '123 Main Street',
@@ -67,8 +67,8 @@ export class OrderEntityTestFactory {
     overrides?: Partial<OrderItemEntity>,
   ): OrderItemEntity {
     const defaultEntity: OrderItemEntity = {
-      id: 'item-1',
-      productId: 'PR3',
+      id: 1,
+      productId: 3,
       productName: 'Test Product',
       unitPrice: 100,
       quantity: 1,
@@ -86,8 +86,8 @@ export class OrderEntityTestFactory {
   static createOrderItemEntities(count: number): OrderItemEntity[] {
     return Array.from({ length: count }, (_, i) =>
       this.createOrderItemEntity({
-        id: `item-${i + 1}`,
-        productId: `PR${i + 1}`,
+        id: i + 1,
+        productId: i + 1,
         productName: `Product ${i + 1}`,
         quantity: i + 1,
         unitPrice: 10 * (i + 1),
@@ -114,13 +114,15 @@ export class OrderEntityTestFactory {
     status: OrderStatus,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
-    const hasPayment = ![OrderStatus.PENDING, OrderStatus.CANCELLED].includes(
-      status,
-    );
+    const hasPayment = ![
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CANCELLED,
+    ].includes(status);
 
     return this.createOrderEntity({
       status,
-      paymentId: hasPayment ? 'PAY0000001' : null,
+      paymentId: hasPayment ? 1 : null,
       ...overrides,
     });
   }
@@ -155,7 +157,7 @@ export class OrderEntityTestFactory {
    * Creates OrderEntity with payment
    */
   static createOrderEntityWithPayment(
-    paymentId: string,
+    paymentId: number,
     paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
@@ -174,7 +176,7 @@ export class OrderEntityTestFactory {
   ): OrderEntity {
     return this.createOrderEntity({
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 'PAY_STRIPE_001',
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -187,7 +189,7 @@ export class OrderEntityTestFactory {
   ): OrderEntity {
     return this.createOrderEntity({
       paymentMethod: PaymentMethodType.PAYPAL,
-      paymentId: 'PAY_PAYPAL_001',
+      paymentId: 1,
       ...overrides,
     });
   }

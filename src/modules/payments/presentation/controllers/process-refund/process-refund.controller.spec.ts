@@ -39,21 +39,21 @@ describe('ProcessRefundController', () => {
     };
 
     const payment = Payment.create(
-      'pay-1',
-      'order-1',
+      1,
+      1,
       100,
       'USD',
       PaymentMethodType.CREDIT_CARD,
-      'cust-1',
+      1,
     );
 
     useCase.execute.mockResolvedValue(Result.success(payment.toPrimitives()));
 
-    const result = await controller.handle('pay-1', dto);
+    const result = await controller.handle(1, dto);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe('pay-1');
-    expect(useCase.execute).toHaveBeenCalledWith({ id: 'pay-1', dto });
+    expect(result.value.id).toBe(1);
+    expect(useCase.execute).toHaveBeenCalledWith({ id: 1, dto });
   });
 
   it('should return Failure(ControllerError) if use case fails', async () => {
@@ -64,7 +64,7 @@ describe('ProcessRefundController', () => {
     const error = ErrorFactory.UseCaseError('Refund failed').error;
     useCase.execute.mockResolvedValue(Result.failure(error));
 
-    const result = await controller.handle('pay-1', dto);
+    const result = await controller.handle(1, dto);
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -72,7 +72,7 @@ describe('ProcessRefundController', () => {
       ControllerError,
       error,
     );
-    expect(useCase.execute).toHaveBeenCalledWith({ id: 'pay-1', dto });
+    expect(useCase.execute).toHaveBeenCalledWith({ id: 1, dto });
   });
 
   it('should return Failure(ControllerError) if use case throws unexpected error', async () => {
@@ -83,7 +83,7 @@ describe('ProcessRefundController', () => {
     const error = new Error('Unexpected error');
     useCase.execute.mockRejectedValue(error);
 
-    const result = await controller.handle('pay-1', dto);
+    const result = await controller.handle(1, dto);
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -91,6 +91,6 @@ describe('ProcessRefundController', () => {
       ControllerError,
       error,
     );
-    expect(useCase.execute).toHaveBeenCalledWith({ id: 'pay-1', dto });
+    expect(useCase.execute).toHaveBeenCalledWith({ id: 1, dto });
   });
 });

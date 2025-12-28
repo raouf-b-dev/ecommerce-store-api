@@ -46,9 +46,9 @@ describe('ListOrdersController', () => {
   it('returns success with multiple orders', async () => {
     const dto: ListOrdersQueryDto = {};
     const orders = [
-      OrderTestFactory.createPendingOrder({ id: 'OR0001' }),
-      OrderTestFactory.createShippedOrder({ id: 'OR0002' }),
-      OrderTestFactory.createCancelledOrder({ id: 'OR0003' }),
+      OrderTestFactory.createPendingPaymentOrder({ id: 1 }),
+      OrderTestFactory.createShippedOrder({ id: 2 }),
+      OrderTestFactory.createCancelledOrder({ id: 3 }),
     ];
 
     mockUsecase.execute.mockResolvedValue(Result.success(orders));
@@ -58,7 +58,7 @@ describe('ListOrdersController', () => {
     expect(isSuccess(res)).toBe(true);
     if (isSuccess(res)) {
       expect(res.value).toHaveLength(3);
-      expect(res.value[0].status).toBe(OrderStatus.PENDING);
+      expect(res.value[0].status).toBe(OrderStatus.PENDING_PAYMENT);
       expect(res.value[1].status).toBe(OrderStatus.SHIPPED);
       expect(res.value[2].status).toBe(OrderStatus.CANCELLED);
     }
@@ -113,8 +113,8 @@ describe('ListOrdersController', () => {
 
   describe('with query parameters', () => {
     it('should pass status filter to usecase', async () => {
-      const dto: ListOrdersQueryDto = { status: OrderStatus.PENDING };
-      const orders = [OrderTestFactory.createPendingOrder()];
+      const dto: ListOrdersQueryDto = { status: OrderStatus.PENDING_PAYMENT };
+      const orders = [OrderTestFactory.createPendingPaymentOrder()];
 
       mockUsecase.execute.mockResolvedValue(Result.success(orders));
 
@@ -127,7 +127,7 @@ describe('ListOrdersController', () => {
     it('should pass pagination parameters to usecase', async () => {
       const dto: ListOrdersQueryDto = { page: 1, limit: 10 };
       const orders = Array.from({ length: 10 }, (_, i) =>
-        OrderTestFactory.createMockOrder({ id: `OR${i}` }),
+        OrderTestFactory.createMockOrder({ id: i }),
       );
 
       mockUsecase.execute.mockResolvedValue(Result.success(orders));
@@ -142,10 +142,8 @@ describe('ListOrdersController', () => {
     });
 
     it('should handle customer filter', async () => {
-      const dto: ListOrdersQueryDto = { customerId: 'CUST1' };
-      const orders = [
-        OrderTestFactory.createMockOrder({ customerId: 'CUST1' }),
-      ];
+      const dto: ListOrdersQueryDto = { customerId: 1 };
+      const orders = [OrderTestFactory.createMockOrder({ customerId: 1 })];
 
       mockUsecase.execute.mockResolvedValue(Result.success(orders));
 

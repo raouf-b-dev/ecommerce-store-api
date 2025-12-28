@@ -4,8 +4,8 @@ import { RefundStatusType } from '../../domain/value-objects/refund-status';
 export class RefundTestFactory {
   static createMockRefund(overrides?: Partial<IRefund>): IRefund {
     const baseRefund: IRefund = {
-      id: 'RE0000001',
-      paymentId: 'PA0000001',
+      id: 1,
+      paymentId: 1,
       amount: 50,
       currency: 'USD',
       reason: 'Defective product',

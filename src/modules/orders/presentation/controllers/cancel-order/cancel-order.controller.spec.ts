@@ -26,7 +26,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should return success result when use case succeeds', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const cancelledOrder = OrderTestFactory.createCancelledOrder({
       id: orderId,
     });
@@ -45,7 +45,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should cancel pending order successfully', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const cancelledOrder = OrderTestFactory.createCancelledOrder({
       id: orderId,
     });
@@ -62,7 +62,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should return failure result when use case fails', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const useCaseError = new UseCaseError('Order cannot be cancelled');
 
     mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
@@ -78,7 +78,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should return failure when order not found', async () => {
-    const orderId = 'OR9999999';
+    const orderId = 99999999;
     const useCaseError = new UseCaseError(`Order with id ${orderId} not found`);
 
     mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
@@ -89,7 +89,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should return failure when order is not cancellable', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const useCaseError = new UseCaseError(
       'Order is not in a cancellable state',
     );
@@ -105,7 +105,7 @@ describe('CancelOrderController', () => {
   });
 
   it('should catch unexpected errors and wrap in ControllerError', async () => {
-    const orderId = 'OR0000001';
+    const orderId = 1;
     const unexpectedError = new Error('Unexpected database error');
 
     mockUseCase.execute.mockRejectedValue(unexpectedError);
@@ -122,7 +122,7 @@ describe('CancelOrderController', () => {
 
   describe('edge cases', () => {
     it('should handle empty order ID', async () => {
-      const emptyId = '';
+      const emptyId = 0;
       const useCaseError = new UseCaseError('Invalid order ID');
 
       mockUseCase.execute.mockResolvedValue(Result.failure(useCaseError));
@@ -147,7 +147,7 @@ describe('CancelOrderController', () => {
     });
 
     it('should handle network timeout error', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const timeoutError = new Error('Request timeout');
 
       mockUseCase.execute.mockRejectedValue(timeoutError);
@@ -165,7 +165,7 @@ describe('CancelOrderController', () => {
 
   describe('order cancellation scenarios', () => {
     it('should cancel order with single item', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const cancelledOrder = OrderTestFactory.createCancelledOrder({
         id: orderId,
         items: [OrderTestFactory.createMockOrder().items[0]],
@@ -183,7 +183,7 @@ describe('CancelOrderController', () => {
     });
 
     it('should cancel order with multiple items', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const multiItemOrder = OrderTestFactory.createMultiItemOrder(5);
       const cancelledOrder = {
         ...multiItemOrder,
@@ -203,7 +203,7 @@ describe('CancelOrderController', () => {
     });
 
     it('should cancel cash on delivery order', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const codOrder = OrderTestFactory.createCashOnDeliveryOrder();
       const cancelledOrder = {
         ...codOrder,

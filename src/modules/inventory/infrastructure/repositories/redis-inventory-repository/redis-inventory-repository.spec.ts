@@ -20,8 +20,8 @@ describe('RedisInventoryRepository', () => {
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: MockInventoryRepository;
 
-  const inventoryId = 'IN0000001';
-  const productId = 'PR0000001';
+  const inventoryId = 1;
+  const productId = 1;
   const inventoryPrimitives = new InventoryBuilder()
     .withId(inventoryId)
     .withProductId(productId)
@@ -31,8 +31,8 @@ describe('RedisInventoryRepository', () => {
   const cachedInventory: InventoryForCache =
     InventoryCacheMapper.toCache(domainInventory);
 
-  const idKey = (id: string) => `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
-  const productKey = (pid: string) =>
+  const idKey = (id: number) => `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
+  const productKey = (pid: number) =>
     `${INVENTORY_REDIS.CACHE_KEY}:product:${pid}`;
 
   const defaultLowStockQueryDto =
@@ -207,20 +207,20 @@ describe('RedisInventoryRepository', () => {
 
   // --- FindByProductIds Tests ---
   describe('findByProductIds', () => {
-    const productIds = ['PR0000001', 'PR0000002', 'PR0000003'];
+    const productIds = [1, 2, 3];
     const inv1 = new InventoryBuilder()
       .withProductId(productIds[0])
-      .withId('IN001')
+      .withId(101)
       .asInStock()
       .build();
     const inv2 = new InventoryBuilder()
       .withProductId(productIds[1])
-      .withId('IN002')
+      .withId(102)
       .asInStock()
       .build();
     const inv3 = new InventoryBuilder()
       .withProductId(productIds[2])
-      .withId('IN003')
+      .withId(103)
       .asInStock()
       .build();
     const domainInv1 = Inventory.fromPrimitives(inv1);
@@ -288,9 +288,9 @@ describe('RedisInventoryRepository', () => {
 
       const expectedEntries = [
         { key: productKey(productIds[1]), value: cachedInv2 },
-        { key: idKey(inv2.id), value: cachedInv2 },
+        { key: idKey(inv2.id!), value: cachedInv2 },
         { key: productKey(productIds[2]), value: cachedInv3 },
-        { key: idKey(inv3.id), value: cachedInv3 },
+        { key: idKey(inv3.id!), value: cachedInv3 },
       ];
       expect(cacheService.setAll).toHaveBeenCalledWith(expectedEntries, {
         ttl: INVENTORY_REDIS.EXPIRATION,
@@ -364,7 +364,9 @@ describe('RedisInventoryRepository', () => {
     it('should fetch from postgres, cache results, and return low stock inventories', async () => {
       // Arrange
 
-      const lowStockInv = InventoryTestFactory.createLowStockInventory();
+      const lowStockInv = InventoryTestFactory.createLowStockInventory({
+        id: 1,
+      });
       const domainLowStock = Inventory.fromPrimitives(lowStockInv);
       const cachedLowStock = InventoryCacheMapper.toCache(domainLowStock);
 
@@ -382,8 +384,8 @@ describe('RedisInventoryRepository', () => {
       );
 
       const expectedEntries = [
-        { key: idKey(lowStockInv.id), value: cachedLowStock },
         { key: productKey(lowStockInv.productId), value: cachedLowStock },
+        { key: idKey(lowStockInv.id!), value: cachedLowStock },
       ];
       expect(cacheService.setAll).toHaveBeenCalledWith(expectedEntries, {
         ttl: INVENTORY_REDIS.EXPIRATION,
@@ -425,8 +427,8 @@ describe('RedisInventoryRepository', () => {
     it('should save to postgres, cache the result, and delete the cached flag', async () => {
       // Arrange
       const newInventory = new InventoryBuilder()
-        .withId('IN_NEW')
-        .withProductId('PR_NEW')
+        .withId(999)
+        .withProductId(888)
         .asZeroInventory()
         .build();
       const newDomainInventory = Inventory.fromPrimitives(newInventory);
@@ -444,7 +446,7 @@ describe('RedisInventoryRepository', () => {
       expect(postgresRepo.save).toHaveBeenCalledWith(newDomainInventory);
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(newInventory.id),
+        idKey(newInventory.id!),
         newCachedInventory,
         { ttl: INVENTORY_REDIS.EXPIRATION },
       );
@@ -493,7 +495,7 @@ describe('RedisInventoryRepository', () => {
       expect(postgresRepo.update).toHaveBeenCalledWith(updatedInventory);
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(updatedInventory.id),
+        idKey(updatedInventory.id!),
         updatedCachedInventory,
         { ttl: INVENTORY_REDIS.EXPIRATION },
       );

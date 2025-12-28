@@ -8,7 +8,7 @@ import { AddressType } from '../value-objects/address-type';
 import { Address, AddressProps } from './address';
 
 export interface CustomerProps {
-  id: string | null;
+  id: number | null;
   firstName: string;
   lastName: string;
   email: string;
@@ -19,7 +19,7 @@ export interface CustomerProps {
 }
 
 export class Customer implements ICustomer {
-  private readonly _id: string | null;
+  private readonly _id: number | null;
   private _firstName: string;
   private _lastName: string;
   private readonly _email: string;
@@ -34,7 +34,7 @@ export class Customer implements ICustomer {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id?.trim() || null;
+    this._id = props.id || null;
     this._firstName = props.firstName.trim();
     this._lastName = props.lastName.trim();
     this._email = props.email.trim().toLowerCase();
@@ -47,7 +47,7 @@ export class Customer implements ICustomer {
   }
 
   private validateProps(props: CustomerProps): Result<void, DomainError> {
-    if (props.id !== null && !props.id?.trim()) {
+    if (props.id !== null && !props.id) {
       return ErrorFactory.DomainError('Customer ID is required');
     }
     if (!props.firstName?.trim()) {
@@ -76,7 +76,7 @@ export class Customer implements ICustomer {
   }
 
   // Getters
-  get id(): string | null {
+  get id(): number | null {
     return this._id;
   }
 
@@ -133,7 +133,7 @@ export class Customer implements ICustomer {
     return this._addresses.find((addr) => addr.isDefault)!;
   }
 
-  findAddress(addressId: string): Address {
+  findAddress(addressId: number): Address {
     return this._addresses.find((addr) => addr.id === addressId)!;
   }
 
@@ -155,7 +155,7 @@ export class Customer implements ICustomer {
   }
 
   updateAddress(
-    addressId: string,
+    addressId: number,
     street: string,
     city: string,
     state: string,
@@ -186,7 +186,7 @@ export class Customer implements ICustomer {
     return Result.success(undefined);
   }
 
-  removeAddress(addressId: string): Result<void, DomainError> {
+  removeAddress(addressId: number): Result<void, DomainError> {
     const index = this._addresses.findIndex((addr) => addr.id === addressId);
     if (index === -1) {
       return ErrorFactory.DomainError(`Address with ID ${addressId} not found`);
@@ -204,7 +204,7 @@ export class Customer implements ICustomer {
     return Result.success(undefined);
   }
 
-  setDefaultAddress(addressId: string): Result<void, DomainError> {
+  setDefaultAddress(addressId: number): Result<void, DomainError> {
     const address = this.findAddress(addressId);
     if (!address) {
       return ErrorFactory.DomainError(`Address with ID ${addressId} not found`);
@@ -273,7 +273,7 @@ export class Customer implements ICustomer {
   }
 
   static create(
-    id: string | null,
+    id: number | null,
     firstName: string,
     lastName: string,
     email: string,

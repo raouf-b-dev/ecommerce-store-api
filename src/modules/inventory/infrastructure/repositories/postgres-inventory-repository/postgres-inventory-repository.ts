@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';
 import { Inventory } from '../../../domain/entities/inventory';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
+
 import { Result } from '../../../../../core/domain/result';
 import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
@@ -17,10 +17,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
     @InjectRepository(InventoryEntity)
     private readonly ormRepo: Repository<InventoryEntity>,
     private readonly dataSource: DataSource,
-    private readonly idGeneratorService: IdGeneratorService,
   ) {}
 
-  async findById(id: string): Promise<Result<Inventory, RepositoryError>> {
+  async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
     try {
       const entity = await this.ormRepo.findOne({
         where: { id },
@@ -38,7 +37,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findByProductId(
-    productId: string,
+    productId: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
       const entity = await this.ormRepo.findOne({
@@ -62,7 +61,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findByProductIds(
-    productIds: string[],
+    productIds: number[],
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       if (productIds.length === 0) {
@@ -128,11 +127,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
             );
           }
 
-          const inventoryId =
-            await this.idGeneratorService.generateInventoryId();
-
           const entity = InventoryMapper.toEntity(inventory);
-          entity.id = inventoryId;
           return await manager.save(InventoryEntity, entity);
         },
       );
@@ -152,6 +147,12 @@ export class PostgresInventoryRepository implements InventoryRepository {
     try {
       const updatedInventory = await this.dataSource.transaction(
         async (manager) => {
+          if (!inventory.id) {
+            throw new RepositoryError(
+              `INVENTORY_NOT_FOUND: Inventory with ID ${inventory.id} not found`,
+            );
+          }
+
           const existingEntity = await manager.findOne(InventoryEntity, {
             where: { id: inventory.id },
           });
@@ -199,7 +200,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.ormRepo.delete({ id });
 

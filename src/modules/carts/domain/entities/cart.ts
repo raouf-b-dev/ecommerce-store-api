@@ -7,18 +7,18 @@ import { ICart } from '../interfaces/cart.interface';
 import { CartItem, CartItemProps } from './cart-item';
 
 export interface CartProps {
-  id: string;
-  customerId: string | null;
-  sessionId: string | null;
+  id: number | null;
+  customerId: number | null;
+  sessionId: number | null;
   items: CartItemProps[];
   createdAt: Date | null;
   updatedAt: Date | null;
 }
 
 export class Cart implements ICart {
-  private readonly _id: string;
-  private _customerId: string | null;
-  private _sessionId: string | null;
+  private readonly _id: number | null;
+  private _customerId: number | null;
+  private _sessionId: number | null;
   private _items: CartItem[];
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -27,18 +27,16 @@ export class Cart implements ICart {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id.trim();
-    this._customerId = props.customerId?.trim() || null;
-    this._sessionId = props.sessionId?.trim() || null;
+    this._id = props.id ? props.id : null;
+    this._customerId = props.customerId ? props.customerId : null;
+    this._sessionId = props.sessionId ? props.sessionId : null;
     this._items = props.items.map((item) => CartItem.fromPrimitives(item));
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
 
   private validateProps(props: CartProps): Result<void, DomainError> {
-    if (!props.id?.trim()) {
-      return ErrorFactory.DomainError('Cart ID is required');
-    }
+    // ID is optional for new carts
     if (!props.customerId && !props.sessionId) {
       return ErrorFactory.DomainError(
         'Either customerId or sessionId must be provided',
@@ -58,15 +56,15 @@ export class Cart implements ICart {
   }
 
   // Getters
-  get id(): string {
+  get id(): number | null {
     return this._id;
   }
 
-  get customerId(): string | null {
+  get customerId(): number | null {
     return this._customerId;
   }
 
-  get sessionId(): string | null {
+  get sessionId(): number | null {
     return this._sessionId;
   }
 
@@ -96,20 +94,20 @@ export class Cart implements ICart {
     return this._items.length === 0;
   }
 
-  hasItem(productId: string): boolean {
+  hasItem(productId: number): boolean {
     return this._items.some((item) => item.isSameProduct(productId));
   }
 
-  findItem(productId: string): CartItem | undefined {
+  findItem(productId: number): CartItem | undefined {
     return this._items.find((item) => item.isSameProduct(productId));
   }
 
-  findItemById(itemId: string): CartItem | undefined {
+  findItemById(itemId: number): CartItem | undefined {
     return this._items.find((item) => item.id === itemId);
   }
 
   addItem(
-    productId: string,
+    productId: number,
     productName: string,
     price: number,
     quantity: number,
@@ -143,7 +141,7 @@ export class Cart implements ICart {
   }
 
   updateItemQuantity(
-    productId: string,
+    productId: number,
     quantity: number,
   ): Result<void, DomainError> {
     const item = this.findItem(productId);
@@ -161,7 +159,7 @@ export class Cart implements ICart {
     return Result.success(undefined);
   }
 
-  removeItem(productId: string): Result<void, DomainError> {
+  removeItem(productId: number): Result<void, DomainError> {
     const index = this._items.findIndex((item) =>
       item.isSameProduct(productId),
     );
@@ -177,7 +175,7 @@ export class Cart implements ICart {
     return Result.success(undefined);
   }
 
-  removeItemById(itemId: string): Result<void, DomainError> {
+  removeItemById(itemId: number): Result<void, DomainError> {
     const index = this._items.findIndex((item) => item.id === itemId);
 
     if (index === -1) {
@@ -228,8 +226,8 @@ export class Cart implements ICart {
     return Result.success(undefined);
   }
 
-  convertToUserCart(customerId: string): Result<void, DomainError> {
-    if (!customerId?.trim()) {
+  convertToUserCart(customerId: number): Result<void, DomainError> {
+    if (!customerId) {
       return ErrorFactory.DomainError('Customer ID is required');
     }
     if (this._customerId) {
@@ -238,7 +236,7 @@ export class Cart implements ICart {
       );
     }
 
-    this._customerId = customerId.trim();
+    this._customerId = customerId;
     this._sessionId = null;
     this._updatedAt = new Date();
     return Result.success(undefined);
@@ -293,9 +291,9 @@ export class Cart implements ICart {
     });
   }
 
-  static createGuestCart(id: string, sessionId: string): Cart {
+  static createGuestCart(sessionId: number): Cart {
     return new Cart({
-      id,
+      id: null,
       customerId: null,
       sessionId,
       items: [],
@@ -304,9 +302,9 @@ export class Cart implements ICart {
     });
   }
 
-  static createUserCart(id: string, customerId: string): Cart {
+  static createUserCart(customerId: number): Cart {
     return new Cart({
-      id,
+      id: null,
       customerId,
       sessionId: null,
       items: [],

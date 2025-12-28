@@ -27,7 +27,7 @@ describe('GetInventoryUseCase', () => {
 
   it('should return the inventory primitives on success', async () => {
     // Arrange
-    const productId = 'prod-123';
+    const productId = 123;
     const mockInventory: IInventory =
       inventoryFactory.createInventoryForProduct(productId);
 
@@ -47,7 +47,7 @@ describe('GetInventoryUseCase', () => {
 
   it('should return a failure result if the inventory is not found', async () => {
     // Arrange
-    const productId = 'prod-not-found';
+    const productId = 404;
     const expectedMsg = `Inventory not found for product ${productId}`;
 
     mockInventoryRepository.mockInventoryNotFoundForProduct(productId);
@@ -68,7 +68,7 @@ describe('GetInventoryUseCase', () => {
 
   it('should return a UseCaseError on unexpected exceptions', async () => {
     // Arrange
-    const productId = 'prod-error';
+    const productId = 500;
     const mockError = new Error('Database connection failed');
 
     mockInventoryRepository.findByProductId.mockRejectedValue(mockError);

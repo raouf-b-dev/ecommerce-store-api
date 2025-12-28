@@ -10,7 +10,7 @@ import { DeliverOrderDto } from '../../dto/deliver-order.dto';
 export class DeliverOrderController {
   constructor(private deliverOrderUseCase: DeliverOrderUseCase) {}
   async handle(
-    id: string,
+    id: number,
     deliverOrderDto: DeliverOrderDto,
   ): Promise<Result<IOrder, ControllerError>> {
     try {

@@ -31,7 +31,7 @@ describe('DeliverOrderController', () => {
     it('should return success if COD order is delivered', async () => {
       const deliveredOrder = OrderTestFactory.createDeliveredOrder({
         paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-        paymentId: 'PAY_COD_001',
+        paymentId: 1,
       });
 
       const deliverOrderDto: DeliverOrderDto = {
@@ -46,7 +46,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        deliveredOrder.id,
+        deliveredOrder.id!,
         deliverOrderDto,
       );
 
@@ -55,7 +55,7 @@ describe('DeliverOrderController', () => {
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
 
       expect(mockDeliverOrderUseCase.execute).toHaveBeenCalledWith({
-        id: deliveredOrder.id,
+        id: deliveredOrder.id!,
         deliverOrderDto,
       });
       expect(mockDeliverOrderUseCase.execute).toHaveBeenCalledTimes(1);
@@ -70,7 +70,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        deliveredOrder.id,
+        deliveredOrder.id!,
         deliverOrderDto,
       );
 
@@ -79,7 +79,7 @@ describe('DeliverOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if order delivery fails', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockDeliverOrderUseCase.execute.mockResolvedValue(
@@ -106,7 +106,7 @@ describe('DeliverOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if order not found', async () => {
-      const orderId = 'OR9999';
+      const orderId = 999;
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockDeliverOrderUseCase.execute.mockResolvedValue(
@@ -125,7 +125,7 @@ describe('DeliverOrderController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       const deliverOrderDto: DeliverOrderDto = {};
       const error = new Error('Database connection failed');
 
@@ -154,7 +154,7 @@ describe('DeliverOrderController', () => {
       const deliveredCOD = {
         ...codOrder,
         status: OrderStatus.DELIVERED,
-        paymentId: 'PAY_COD_001',
+        paymentId: 1,
       };
 
       const deliverOrderDto: DeliverOrderDto = {
@@ -168,7 +168,7 @@ describe('DeliverOrderController', () => {
         Result.success(deliveredCOD),
       );
 
-      const result = await controller.handle(codOrder.id, deliverOrderDto);
+      const result = await controller.handle(codOrder.id!, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentMethod).toBe(
@@ -192,7 +192,7 @@ describe('DeliverOrderController', () => {
         Result.success(deliveredCOD),
       );
 
-      const result = await controller.handle(codOrder.id, deliverOrderDto);
+      const result = await controller.handle(codOrder.id!, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
@@ -201,7 +201,7 @@ describe('DeliverOrderController', () => {
     it('should deliver order with completed online payment', async () => {
       const onlineOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.SHIPPED,
-        paymentId: 'PAY_STRIPE_001',
+        paymentId: 1,
       });
       const deliveredOnline = {
         ...onlineOrder,
@@ -214,7 +214,7 @@ describe('DeliverOrderController', () => {
         Result.success(deliveredOnline),
       );
 
-      const result = await controller.handle(onlineOrder.id, deliverOrderDto);
+      const result = await controller.handle(onlineOrder.id!, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.paymentId).toBeDefined();
@@ -222,7 +222,7 @@ describe('DeliverOrderController', () => {
     });
 
     it('should fail to deliver order in PENDING status', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockDeliverOrderUseCase.execute.mockResolvedValue(
@@ -233,7 +233,7 @@ describe('DeliverOrderController', () => {
         ),
       );
 
-      const result = await controller.handle(pendingOrder.id, deliverOrderDto);
+      const result = await controller.handle(pendingOrder.id!, deliverOrderDto);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -254,7 +254,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        confirmedOrder.id,
+        confirmedOrder.id!,
         deliverOrderDto,
       );
 
@@ -277,7 +277,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        processingOrder.id,
+        processingOrder.id!,
         deliverOrderDto,
       );
 
@@ -292,7 +292,7 @@ describe('DeliverOrderController', () => {
       const shippedMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.SHIPPED,
-        paymentId: 'PAY001',
+        paymentId: 1,
       };
       const deliveredMultiItem = {
         ...shippedMultiItem,
@@ -306,7 +306,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        shippedMultiItem.id,
+        shippedMultiItem.id!,
         deliverOrderDto,
       );
 
@@ -328,7 +328,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        deliveredOrder.id,
+        deliveredOrder.id!,
         deliverOrderDto,
       );
 
@@ -348,7 +348,7 @@ describe('DeliverOrderController', () => {
       );
 
       const result = await controller.handle(
-        cancelledOrder.id,
+        cancelledOrder.id!,
         deliverOrderDto,
       );
 
@@ -356,7 +356,7 @@ describe('DeliverOrderController', () => {
     });
 
     it('should convert UseCaseError to ControllerError', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       const deliverOrderDto: DeliverOrderDto = {};
 
       mockDeliverOrderUseCase.execute.mockResolvedValue(
@@ -397,7 +397,7 @@ describe('DeliverOrderController', () => {
         Result.success(deliveredCOD),
       );
 
-      const result = await controller.handle(codOrder.id, deliverOrderDto);
+      const result = await controller.handle(codOrder.id!, deliverOrderDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);

@@ -43,7 +43,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Get inventory details for a product' })
   @ApiResponse({ status: 200, type: InventoryResponseDto })
   async getInventory(@Param('productId') productId: string) {
-    return this.getInventoryController.handle(productId);
+    return this.getInventoryController.handle(Number(productId));
   }
 
   @Post('products/:productId/adjust')
@@ -55,7 +55,7 @@ export class InventoryController {
     @Param('productId') productId: string,
     @Body() dto: AdjustStockDto,
   ) {
-    return this.adjustStockController.handle(productId, dto);
+    return this.adjustStockController.handle(Number(productId), dto);
   }
 
   @Post('reserve')
@@ -73,7 +73,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Release reserved stock (if order cancelled)' })
   @ApiResponse({ status: 200, description: 'Stock released successfully' })
   async releaseStock(@Param('reservationId') reservationId: string) {
-    return this.releaseStockController.handle(reservationId);
+    return this.releaseStockController.handle(Number(reservationId));
   }
 
   @Get('check/:productId')
@@ -83,14 +83,14 @@ export class InventoryController {
     @Param('productId') productId: string,
     @Query('quantity') quantity?: number,
   ) {
-    return this.checkStockController.handle(productId, quantity);
+    return this.checkStockController.handle(Number(productId), quantity);
   }
 
   @Post('check/bulk')
   @ApiOperation({ summary: 'Check stock for multiple products' })
   @ApiResponse({ status: 200, description: 'Bulk stock availability status' })
   async bulkCheckStock(
-    @Body() dto: { productId: string; quantity?: number }[],
+    @Body() dto: { productId: number; quantity?: number }[],
   ) {
     return this.bulkCheckStockController.handle(dto);
   }

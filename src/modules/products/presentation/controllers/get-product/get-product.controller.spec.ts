@@ -25,7 +25,7 @@ describe('GetProductController', () => {
 
   describe('handle', () => {
     it('should return success if Product is found', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const product = ProductTestFactory.createMockProduct({ id: productId });
 
       mockGetProductUseCase.execute.mockResolvedValue(Result.success(product));
@@ -39,7 +39,7 @@ describe('GetProductController', () => {
     });
 
     it('should return Failure(ControllerError) if product is not found', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       mockGetProductUseCase.execute.mockResolvedValue(
         Result.failure(
@@ -58,7 +58,7 @@ describe('GetProductController', () => {
     });
 
     it('should return Failure(ControllerError) if usecase throws unexpected error', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database connection failed');
 
       mockGetProductUseCase.execute.mockRejectedValue(error);

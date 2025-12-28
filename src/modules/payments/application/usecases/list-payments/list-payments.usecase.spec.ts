@@ -35,23 +35,23 @@ describe('ListPaymentsUseCase', () => {
 
   it('should list payments by orderId', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      orderId: 'OR123',
+      orderId: 123,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindByOrderId([payment.toPrimitives()]);
 
-    const result = await useCase.execute({ orderId: 'OR123' });
+    const result = await useCase.execute({ orderId: 123 });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(1);
-    expect(result.value[0].orderId).toBe('OR123');
-    expect(paymentRepository.findByOrderId).toHaveBeenCalledWith('OR123');
+    expect(result.value[0].orderId).toBe(123);
+    expect(paymentRepository.findByOrderId).toHaveBeenCalledWith(123);
   });
 
   it('should list payments by customerId', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      customerId: 'CU123',
+      customerId: 123,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
@@ -60,12 +60,12 @@ describe('ListPaymentsUseCase', () => {
       Result.success([payment]),
     );
 
-    const result = await useCase.execute({ customerId: 'CU123' });
+    const result = await useCase.execute({ customerId: 123 });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(1);
     expect(paymentRepository.findByCustomerId).toHaveBeenCalledWith(
-      'CU123',
+      123,
       undefined,
       undefined,
     );
@@ -83,7 +83,7 @@ describe('ListPaymentsUseCase', () => {
 
     paymentRepository.findByOrderId.mockRejectedValue(repoError);
 
-    const result = await useCase.execute({ orderId: 'OR123' });
+    const result = await useCase.execute({ orderId: 123 });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -91,6 +91,6 @@ describe('ListPaymentsUseCase', () => {
       UseCaseError,
       repoError,
     );
-    expect(paymentRepository.findByOrderId).toHaveBeenCalledWith('OR123');
+    expect(paymentRepository.findByOrderId).toHaveBeenCalledWith(123);
   });
 });

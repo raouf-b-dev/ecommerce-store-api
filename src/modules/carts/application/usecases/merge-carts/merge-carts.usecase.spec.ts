@@ -27,22 +27,22 @@ describe('MergeCartsUseCase', () => {
   describe('execute', () => {
     it('should merge carts successfully', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 123;
+      const userCartId = 456;
 
-      const guestCartData = CartTestFactory.createGuestCart('session-123', {
+      const guestCartData = CartTestFactory.createGuestCart(123, {
         id: guestCartId,
       });
       const guestCart = Cart.fromPrimitives(guestCartData);
 
-      const userCartData = CartTestFactory.createUserCart('customer-123', {
+      const userCartData = CartTestFactory.createUserCart(123, {
         id: userCartId,
       });
       const userCart = Cart.fromPrimitives(userCartData);
 
       const mergedCartData = CartTestFactory.createCartWithItems(3, {
         id: userCartId,
-        customerId: 'customer-123',
+        customerId: 123,
       });
       const mergedCart = Cart.fromPrimitives(mergedCartData);
 
@@ -68,8 +68,8 @@ describe('MergeCartsUseCase', () => {
 
     it('should return failure when guest cart not found', async () => {
       // Arrange
-      const guestCartId = 'cart-404';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 404;
+      const userCartId = 456;
       const error = new RepositoryError('Cart not found');
 
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
@@ -89,10 +89,10 @@ describe('MergeCartsUseCase', () => {
 
     it('should return failure when user cart not found', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-404';
+      const guestCartId = 123;
+      const userCartId = 404;
 
-      const guestCartData = CartTestFactory.createGuestCart('session-123', {
+      const guestCartData = CartTestFactory.createGuestCart(123, {
         id: guestCartId,
       });
       const guestCart = Cart.fromPrimitives(guestCartData);
@@ -117,8 +117,8 @@ describe('MergeCartsUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const guestCartId = 'cart-guest-123';
-      const userCartId = 'cart-user-456';
+      const guestCartId = 123;
+      const userCartId = 456;
       const error = new Error('Database connection failed');
 
       mockCartRepository.findById.mockRejectedValue(error);

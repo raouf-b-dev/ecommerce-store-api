@@ -28,8 +28,8 @@ describe('CreateCartUseCase', () => {
   describe('execute', () => {
     it('should create a user cart successfully', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
-      const mockCartData = CartTestFactory.createUserCart('customer-123');
+      const dto: CreateCartDto = { customerId: 123 };
+      const mockCartData = CartTestFactory.createUserCart(123);
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
@@ -40,14 +40,14 @@ describe('CreateCartUseCase', () => {
       // Assert
       expect(mockCartRepository.create).toHaveBeenCalledWith(dto);
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.customerId).toBe('customer-123');
+      expect(result.value.customerId).toBe(123);
       expect(result.value.sessionId).toBeNull();
     });
 
     it('should create a guest cart successfully', async () => {
       // Arrange
-      const dto: CreateCartDto = { sessionId: 'session-456' };
-      const mockCartData = CartTestFactory.createGuestCart('session-456');
+      const dto: CreateCartDto = { sessionId: 456 };
+      const mockCartData = CartTestFactory.createGuestCart(456);
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
@@ -58,13 +58,13 @@ describe('CreateCartUseCase', () => {
       // Assert
       expect(mockCartRepository.create).toHaveBeenCalledWith(dto);
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.sessionId).toBe('session-456');
+      expect(result.value.sessionId).toBe(456);
       expect(result.value.customerId).toBeNull();
     });
 
     it('should return failure when repository fails', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
+      const dto: CreateCartDto = { customerId: 123 };
       const error = new RepositoryError('Failed to create cart');
 
       mockCartRepository.create.mockResolvedValue(Result.failure(error));
@@ -83,7 +83,7 @@ describe('CreateCartUseCase', () => {
 
     it('should handle unexpected errors', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 'customer-123' };
+      const dto: CreateCartDto = { customerId: 123 };
       const error = new Error('Database connection failed');
 
       mockCartRepository.create.mockRejectedValue(error);

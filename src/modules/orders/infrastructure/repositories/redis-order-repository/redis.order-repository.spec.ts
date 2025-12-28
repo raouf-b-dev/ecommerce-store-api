@@ -31,14 +31,15 @@ describe('RedisOrderRepository', () => {
   const mockOrder: Order = Order.fromPrimitives(
     OrderTestFactory.createMockOrder(),
   );
+
+  const orderId = 1;
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
-  const mockCreateOrderDto = CreateOrderDtoTestFactory.createMockDto();
   const mockUpdateOrderDto: CreateOrderItemDto[] = [
-    { productId: 'product-1', quantity: 3 },
+    { productId: 1, quantity: 3 },
   ];
   const cancelledOrder = Order.fromPrimitives(
     OrderTestFactory.createCancelledOrder({
-      id: mockOrder.id,
+      id: orderId,
     }),
   );
 
@@ -70,6 +71,7 @@ describe('RedisOrderRepository', () => {
       deleteById: jest.fn(),
       listOrders: jest.fn(),
       cancelOrder: jest.fn(),
+      findByStatusBefore: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,7 +103,7 @@ describe('RedisOrderRepository', () => {
       if (result.isSuccess) expect(result.value).toEqual(mockOrder);
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
         OrderCacheMapper.toCache(mockOrder),
         { ttl: ORDER_REDIS.EXPIRATION },
       );
@@ -164,18 +166,18 @@ describe('RedisOrderRepository', () => {
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repository.updateStatus(
-        mockOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(postgresRepo.updateStatus).toHaveBeenCalledWith(
-        mockOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
         expect.objectContaining({
           status: OrderStatus.CONFIRMED,
           updatedAt: expect.any(Number),
@@ -192,7 +194,7 @@ describe('RedisOrderRepository', () => {
       postgresRepo.updateStatus.mockResolvedValue(Result.failure(error));
 
       const result = await repository.updateStatus(
-        mockOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
@@ -207,7 +209,7 @@ describe('RedisOrderRepository', () => {
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repository.updateStatus(
-        mockOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
@@ -227,7 +229,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.updateStatus(mockOrder.id, OrderStatus.CONFIRMED);
+      await repository.updateStatus(orderId, OrderStatus.CONFIRMED);
 
       const setCall = cacheService.set.mock.calls[0];
       const updatedCache = setCall[1] as OrderForCache;
@@ -241,7 +243,7 @@ describe('RedisOrderRepository', () => {
       cacheService.get.mockRejectedValue(new Error('Redis error'));
 
       const result = await repository.updateStatus(
-        mockOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
@@ -259,7 +261,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.updateStatus(mockOrder.id, OrderStatus.CONFIRMED);
+      await repository.updateStatus(orderId, OrderStatus.CONFIRMED);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -268,7 +270,7 @@ describe('RedisOrderRepository', () => {
 
     it('should update status from PENDING to CONFIRMED', async () => {
       const pendingOrder = Order.fromPrimitives(
-        OrderTestFactory.createPendingOrder(),
+        OrderTestFactory.createPendingPaymentOrder(),
       );
       const cachedOrder = OrderCacheMapper.toCache(pendingOrder);
 
@@ -278,7 +280,7 @@ describe('RedisOrderRepository', () => {
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repository.updateStatus(
-        pendingOrder.id,
+        orderId,
         OrderStatus.CONFIRMED,
       );
 
@@ -293,7 +295,7 @@ describe('RedisOrderRepository', () => {
     it('should update order and cache', async () => {
       const updatedOrder = Order.fromPrimitives(
         OrderTestFactory.createMockOrder({
-          id: mockOrder.id,
+          id: orderId,
           status: OrderStatus.CONFIRMED,
         }),
       );
@@ -306,14 +308,14 @@ describe('RedisOrderRepository', () => {
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repository.updateItemsInfo(
-        updatedOrder.id,
+        orderId,
         mockUpdateOrderDto,
       );
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(updatedOrder);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${updatedOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
         updatedCachedOrder,
         { ttl: ORDER_REDIS.EXPIRATION },
       );
@@ -327,7 +329,7 @@ describe('RedisOrderRepository', () => {
       postgresRepo.updateItemsInfo.mockResolvedValue(Result.failure(error));
 
       const result = await repository.updateItemsInfo(
-        mockOrder.id,
+        orderId,
         mockUpdateOrderDto,
       );
 
@@ -340,7 +342,7 @@ describe('RedisOrderRepository', () => {
     it('should return order from cache', async () => {
       cacheService.get.mockResolvedValue(mockCachedOrder);
 
-      const result = await repository.findById(mockOrder.id);
+      const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
@@ -356,13 +358,13 @@ describe('RedisOrderRepository', () => {
       postgresRepo.findById.mockResolvedValue(Result.success(order));
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repository.findById(mockOrder.id);
+      const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) expect(result.value).toEqual(order);
       const expectedCached = OrderCacheMapper.toCache(order);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
         expectedCached,
         { ttl: ORDER_REDIS.EXPIRATION },
       );
@@ -370,17 +372,17 @@ describe('RedisOrderRepository', () => {
 
     it('should find pending order from cache', async () => {
       const pendingOrder = Order.fromPrimitives(
-        OrderTestFactory.createPendingOrder(),
+        OrderTestFactory.createPendingPaymentOrder(),
       );
       const cachedPending = OrderCacheMapper.toCache(pendingOrder);
 
       cacheService.get.mockResolvedValue(cachedPending);
 
-      const result = await repository.findById(pendingOrder.id);
+      const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.status).toBe(OrderStatus.PENDING);
+        expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
       }
     });
   });
@@ -390,11 +392,11 @@ describe('RedisOrderRepository', () => {
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repository.deleteById(mockOrder.id);
+      const result = await repository.deleteById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.delete).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -405,7 +407,7 @@ describe('RedisOrderRepository', () => {
       const error = new RepositoryError('Delete failed');
       postgresRepo.deleteById.mockResolvedValue(Result.failure(error));
 
-      const result = await repository.deleteById(mockOrder.id);
+      const result = await repository.deleteById(orderId);
 
       ResultAssertionHelper.assertResultFailureWithError(result, error);
       expect(cacheService.delete).not.toHaveBeenCalled();
@@ -448,9 +450,9 @@ describe('RedisOrderRepository', () => {
 
     it('should return multiple orders with different statuses', async () => {
       const orders = [
-        OrderTestFactory.createPendingOrder({ id: 'OR0001' }),
-        OrderTestFactory.createShippedOrder({ id: 'OR0002' }),
-        OrderTestFactory.createCancelledOrder({ id: 'OR0003' }),
+        OrderTestFactory.createPendingPaymentOrder({ id: 1 }),
+        OrderTestFactory.createShippedOrder({ id: 2 }),
+        OrderTestFactory.createCancelledOrder({ id: 3 }),
       ];
 
       cacheService.get.mockResolvedValue(null);
@@ -465,7 +467,7 @@ describe('RedisOrderRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
         expect(result.value).toHaveLength(3);
-        expect(result.value[0].status).toBe(OrderStatus.PENDING);
+        expect(result.value[0].status).toBe(OrderStatus.PENDING_PAYMENT);
         expect(result.value[1].status).toBe(OrderStatus.SHIPPED);
         expect(result.value[2].status).toBe(OrderStatus.CANCELLED);
       }
@@ -500,8 +502,8 @@ describe('RedisOrderRepository', () => {
 
     it('should fetch from postgres when filters are applied', async () => {
       const dto: ListOrdersQueryDto = {
-        status: OrderStatus.PENDING,
-        customerId: 'CUST1',
+        status: OrderStatus.PENDING_PAYMENT,
+        customerId: 1,
       };
 
       postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
@@ -520,7 +522,7 @@ describe('RedisOrderRepository', () => {
       };
 
       const orders = Array.from({ length: 10 }, (_, i) =>
-        OrderTestFactory.createMockOrder({ id: `OR${i}` }),
+        OrderTestFactory.createMockOrder({ id: i }),
       );
 
       postgresRepo.listOrders.mockResolvedValue(
@@ -547,7 +549,7 @@ describe('RedisOrderRepository', () => {
       if (result.isSuccess) expect(result.value).toBe(undefined);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
-        `${ORDER_REDIS.CACHE_KEY}:${mockOrder.id}`,
+        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -567,7 +569,7 @@ describe('RedisOrderRepository', () => {
     it('should cancel multi-item order and clear cache', async () => {
       const multiItemCancelledOrder: Order = Order.fromPrimitives(
         new OrderBuilder()
-          .withId('OR0000001')
+          .withId(1)
           .withItems(5)
           .withStatus(OrderStatus.CANCELLED)
           .build(),
@@ -627,7 +629,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockRejectedValue(new Error('Cache write failed'));
 
       const result = await repository.updateItemsInfo(
-        mockOrder.id,
+        orderId,
         mockUpdateOrderDto,
       );
 
@@ -672,7 +674,7 @@ describe('RedisOrderRepository', () => {
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.updateItemsInfo(mockOrder.id, mockUpdateOrderDto);
+      await repository.updateItemsInfo(orderId, mockUpdateOrderDto);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -683,7 +685,7 @@ describe('RedisOrderRepository', () => {
       postgresRepo.deleteById.mockResolvedValue(Result.success(undefined));
       cacheService.delete.mockResolvedValue(undefined);
 
-      await repository.deleteById(mockOrder.id);
+      await repository.deleteById(orderId);
 
       expect(cacheService.delete).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -716,7 +718,7 @@ describe('RedisOrderRepository', () => {
       const cachedOrder = OrderCacheMapper.toCache(mockOrder);
       cacheService.get.mockResolvedValue(cachedOrder);
 
-      const findResult = await repository.findById(mockOrder.id);
+      const findResult = await repository.findById(orderId);
       expect(findResult.isSuccess).toBe(true);
 
       // Cancel

@@ -56,7 +56,7 @@ describe('AdjustStockController', () => {
       usecase.execute.mockResolvedValue(Result.failure(expectedError));
 
       // Act
-      const result = await controller.handle('PR0000001', dto);
+      const result = await controller.handle(123, dto);
 
       // Assert
       ResultAssertionHelper.assertResultFailure(
@@ -74,7 +74,7 @@ describe('AdjustStockController', () => {
       usecase.execute.mockRejectedValue(unexpectedError);
 
       // Act
-      const result = await controller.handle('PR0000001', dto);
+      const result = await controller.handle(123, dto);
 
       // Assert
       ResultAssertionHelper.assertResultFailure(

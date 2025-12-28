@@ -4,14 +4,16 @@ import { PaymentStatusType } from '../value-objects/payment-status';
 import { IRefund } from './refund.interface';
 
 export interface IPayment {
-  id: string | null;
-  orderId: string;
-  customerId: string | null;
+  id: number | null;
+  orderId: number;
+  customerId: number | null;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
   status: PaymentStatusType;
   transactionId: string | null;
+  gatewayPaymentIntentId: string | null;
+  gatewayClientSecret: string | null;
   paymentMethodInfo: string | null;
   refundedAmount: number;
   refunds: IRefund[];

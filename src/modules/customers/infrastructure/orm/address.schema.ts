@@ -4,7 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CustomerEntity } from './customer.schema';
@@ -12,8 +12,8 @@ import { AddressType } from '../../domain/value-objects/address-type';
 
 @Entity({ name: 'customer_addresses' })
 export class AddressEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'varchar' })
   street: string;
@@ -42,8 +42,8 @@ export class AddressEntity {
   @Column({ name: 'delivery_instructions', type: 'text', nullable: true })
   deliveryInstructions: string | null;
 
-  @Column({ name: 'customer_id', type: 'varchar' })
-  customerId: string;
+  @Column({ name: 'customer_id', type: 'int' })
+  customerId: number;
 
   @ManyToOne(() => CustomerEntity, (customer) => customer.addresses, {
     onDelete: 'CASCADE',

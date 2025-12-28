@@ -35,13 +35,13 @@ describe('RecordCodPaymentController', () => {
 
   it('should record a COD payment successfully', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amountCollected: 100,
       currency: 'USD',
     };
 
     const payment = Payment.createCOD(
-      'pay-1',
+      1,
       dto.orderId,
       dto.amountCollected,
       dto.currency,
@@ -52,13 +52,13 @@ describe('RecordCodPaymentController', () => {
     const result = await controller.handle(dto);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe('pay-1');
+    expect(result.value.id).toBe(1);
     expect(useCase.execute).toHaveBeenCalledWith(dto);
   });
 
   it('should return Failure(ControllerError) if use case fails', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amountCollected: 100,
       currency: 'USD',
     };
@@ -78,7 +78,7 @@ describe('RecordCodPaymentController', () => {
 
   it('should return Failure(ControllerError) if use case throws unexpected error', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'order-1',
+      orderId: 1,
       amountCollected: 100,
       currency: 'USD',
     };

@@ -1,5 +1,5 @@
 export interface IShippingAddress extends IShippingAddressEditable {
-  id: string;
+  id: number | null;
 }
 export interface IShippingAddressEditable {
   firstName: string;

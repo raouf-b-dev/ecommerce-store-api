@@ -10,7 +10,7 @@ import { IAddress } from '../../../domain/interfaces/address.interface';
 import { Address } from '../../../domain/entities/address';
 
 export interface AddAddressInput {
-  customerId: string;
+  customerId: number;
   dto: AddAddressDto;
 }
 

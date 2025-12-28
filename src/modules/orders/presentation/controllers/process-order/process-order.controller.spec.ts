@@ -33,7 +33,7 @@ describe('ProcessOrderController', () => {
     mockProcessOrderUseCase.execute.mockResolvedValue(successResult);
 
     // Act:
-    const result = await controller.handle(orderId);
+    const result = await controller.handle(orderId!);
 
     // Assert:
     ResultAssertionHelper.assertResultSuccess(result);
@@ -43,7 +43,7 @@ describe('ProcessOrderController', () => {
 
   it('should return a failure result if the use case fails', async () => {
     // Arrange:
-    const orderId = 'wrong-id';
+    const orderId = 1;
     const error = ErrorFactory.UseCaseError('Order not found');
     mockProcessOrderUseCase.execute.mockResolvedValue(error);
 
@@ -56,7 +56,7 @@ describe('ProcessOrderController', () => {
 
   it('should return a ControllerError if the use case throws an unexpected error', async () => {
     // Arrange:
-    const orderId = 'any-id';
+    const orderId = 1;
     const error = new Error('Something exploded');
     mockProcessOrderUseCase.execute.mockRejectedValue(error);
 

@@ -1,6 +1,7 @@
 // src/modules/orders/presentation/dto/shipping-address.dto.ts
 import { IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';
 
 export class ShippingAddressDto {
   @ApiProperty({ example: 'John', description: 'First name' })
@@ -60,4 +61,19 @@ export class ShippingAddressDto {
   @IsOptional()
   @IsString()
   deliveryInstructions?: string;
+
+  static fromDomain(props: ShippingAddressProps): ShippingAddressDto {
+    return {
+      firstName: props.firstName,
+      lastName: props.lastName,
+      street: props.street,
+      street2: props.street2 ?? undefined,
+      city: props.city,
+      state: props.state,
+      postalCode: props.postalCode,
+      country: props.country,
+      phone: props.phone ?? undefined,
+      deliveryInstructions: props.deliveryInstructions ?? undefined,
+    };
+  }
 }

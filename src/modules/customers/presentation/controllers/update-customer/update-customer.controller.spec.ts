@@ -35,7 +35,7 @@ describe('UpdateCustomerController', () => {
 
   describe('handle', () => {
     it('should return success result with updated customer', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
       const dto = CustomerDtoTestFactory.createUpdateCustomerDto();
       const customerData = CustomerTestFactory.createMockCustomer({
         id: customerId,
@@ -52,7 +52,7 @@ describe('UpdateCustomerController', () => {
     });
 
     it('should return controller error if use case fails', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
       const dto = CustomerDtoTestFactory.createUpdateCustomerDto();
       const error = ErrorFactory.UseCaseError('Customer not found');
 
@@ -68,7 +68,7 @@ describe('UpdateCustomerController', () => {
     });
 
     it('should return controller error if unexpected error occurs', async () => {
-      const customerId = 'cust-123';
+      const customerId = 123;
       const dto = CustomerDtoTestFactory.createUpdateCustomerDto();
       const error = new Error('Unexpected error');
 

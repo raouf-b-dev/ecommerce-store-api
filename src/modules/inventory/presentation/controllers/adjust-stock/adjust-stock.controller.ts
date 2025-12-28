@@ -10,7 +10,7 @@ import { IInventory } from '../../../domain/interfaces/inventory.interface';
 export class AdjustStockController {
   constructor(private adjustStockUseCase: AdjustStockUseCase) {}
   async handle(
-    productId: string,
+    productId: number,
     dto: AdjustStockDto,
   ): Promise<Result<IInventory, ControllerError>> {
     try {

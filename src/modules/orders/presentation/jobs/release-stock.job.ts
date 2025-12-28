@@ -8,7 +8,7 @@ import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
 
 @Injectable()
 export class ReleaseStockStep extends BaseJobHandler<
-  ScheduleCheckoutProps & { reservationId?: string },
+  ScheduleCheckoutProps & { reservationId?: number },
   void
 > {
   protected readonly logger = new Logger(ReleaseStockStep.name);
@@ -18,7 +18,7 @@ export class ReleaseStockStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<ScheduleCheckoutProps & { reservationId?: string }>,
+    job: Job<ScheduleCheckoutProps & { reservationId?: number }>,
   ): Promise<Result<void, AppError>> {
     const { reservationId } = job.data;
 

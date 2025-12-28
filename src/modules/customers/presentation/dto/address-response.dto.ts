@@ -4,10 +4,10 @@ import { AddressType } from '../../domain/value-objects/address-type';
 
 export class AddressResponseDto {
   @ApiProperty({
-    example: 'addr-123',
+    example: 123,
     description: 'Address ID',
   })
-  id: string;
+  id: number;
 
   @ApiProperty({
     example: '123 Main Street',

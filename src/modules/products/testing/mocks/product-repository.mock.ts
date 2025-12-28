@@ -14,18 +14,18 @@ export class MockProductRepository implements ProductRepository {
   >();
   update = jest.fn<
     Promise<Result<IProduct, RepositoryError>>,
-    [string, UpdateProductDto]
+    [number, UpdateProductDto]
   >();
-  findById = jest.fn<Promise<Result<IProduct, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<IProduct, RepositoryError>>, [number]>();
   findAll = jest.fn<Promise<Result<IProduct[], RepositoryError>>, []>();
-  deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(product: IProduct): void {
     this.findById.mockResolvedValue(Result.success(product));
   }
 
-  mockProductNotFound(productId: string): void {
+  mockProductNotFound(productId: number): void {
     this.findById.mockResolvedValue(
       Result.failure(
         new RepositoryError(`Product with id ${productId} not found`),

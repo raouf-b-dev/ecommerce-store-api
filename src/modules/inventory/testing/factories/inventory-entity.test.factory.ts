@@ -6,8 +6,8 @@ export class InventoryEntityTestFactory {
     overrides?: Partial<InventoryEntity>,
   ): InventoryEntity {
     const defaultEntity: InventoryEntity = {
-      id: 'IN0000001',
-      productId: 'PR0000001',
+      id: 1,
+      productId: 1,
       availableQuantity: 100,
       reservedQuantity: 10,
       totalQuantity: 110,
@@ -78,7 +78,7 @@ export class InventoryEntityTestFactory {
   }
 
   static createEntityForProduct(
-    productId: string,
+    productId: number,
     quantity: number = 100,
   ): InventoryEntity {
     return this.createInventoryEntity({
@@ -92,8 +92,8 @@ export class InventoryEntityTestFactory {
   static createInventoryEntities(count: number): InventoryEntity[] {
     return Array.from({ length: count }, (_, i) =>
       this.createInventoryEntity({
-        id: `IN${(i + 1).toString().padStart(7, '0')}`,
-        productId: `PR${(i + 1).toString().padStart(7, '0')}`,
+        id: i + 1,
+        productId: i + 1,
         availableQuantity: (i + 1) * 20,
         reservedQuantity: i * 2,
         totalQuantity: (i + 1) * 20 + i * 2,

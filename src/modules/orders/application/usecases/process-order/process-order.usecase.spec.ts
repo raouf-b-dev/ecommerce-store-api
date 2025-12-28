@@ -27,20 +27,20 @@ describe('ProcessOrderUseCase', () => {
     mockOrderRepo.mockSuccessfulUpdateStatus();
 
     // Act:
-    const result = await useCase.execute(mockOrder.id);
+    const result = await useCase.execute(mockOrder.id!);
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.status).toBe(OrderStatus.PROCESSING);
-    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id);
+    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id!);
     expect(mockOrderRepo.updateStatus).toHaveBeenCalledWith(
-      mockOrder.id,
+      mockOrder.id!,
       OrderStatus.PROCESSING,
     );
   });
 
   it('should return failure if order is not found', async () => {
     // Arrange:
-    const orderId = 'NOT_FOUND_ID';
+    const orderId = 1;
     mockOrderRepo.mockOrderNotFound(orderId);
 
     // Act:
@@ -56,11 +56,11 @@ describe('ProcessOrderUseCase', () => {
 
   it('should return failure if order is not in a processable state (e.g., PENDING)', async () => {
     // Arrange:
-    const pendingOrder = OrderTestFactory.createPendingOrder();
+    const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
     mockOrderRepo.mockSuccessfulFind(pendingOrder);
 
     // Act:
-    const result = await useCase.execute(pendingOrder.id);
+    const result = await useCase.execute(pendingOrder.id!);
 
     // Assert:
     ResultAssertionHelper.assertResultFailure(
@@ -77,7 +77,7 @@ describe('ProcessOrderUseCase', () => {
     mockOrderRepo.mockSuccessfulFind(shippedOrder);
 
     // Act:
-    const result = await useCase.execute(shippedOrder.id);
+    const result = await useCase.execute(shippedOrder.id!);
 
     // Assert:
     ResultAssertionHelper.assertResultFailure(
@@ -94,13 +94,13 @@ describe('ProcessOrderUseCase', () => {
     mockOrderRepo.mockUpdateStatusFailure('Database update error');
 
     // Act:
-    const result = await useCase.execute(mockOrder.id);
+    const result = await useCase.execute(mockOrder.id!);
 
     // Assert:
     ResultAssertionHelper.assertResultFailure(result, 'Database update error');
-    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id);
+    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id!);
     expect(mockOrderRepo.updateStatus).toHaveBeenCalledWith(
-      mockOrder.id,
+      mockOrder.id!,
       OrderStatus.PROCESSING,
     );
   });
@@ -111,7 +111,7 @@ describe('ProcessOrderUseCase', () => {
     mockOrderRepo.findById.mockRejectedValue(error);
 
     // Act:
-    const result = await useCase.execute('any-id');
+    const result = await useCase.execute(1);
 
     // Assert:
     ResultAssertionHelper.assertResultFailure(

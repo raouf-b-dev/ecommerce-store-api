@@ -4,7 +4,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PostgresProductRepository } from './postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
 import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
 import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
@@ -14,11 +13,10 @@ import { ResultAssertionHelper } from '../../../../../testing';
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;
   let ormRepo: jest.Mocked<Repository<ProductEntity>>;
-  let idGeneratorService: jest.Mocked<IdGeneratorService>;
 
   const mockProduct = ProductTestFactory.createMockProduct();
   const mockProductEntity: ProductEntity = {
-    id: mockProduct.id,
+    id: 1,
     name: mockProduct.name,
     description: mockProduct.description,
     price: mockProduct.price,
@@ -37,29 +35,20 @@ describe('PostgresProductRepository', () => {
       merge: jest.fn(),
     };
 
-    const mockIdGenerator = {
-      generateProductId: jest.fn(),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresProductRepository,
         {
           provide: getRepositoryToken(ProductEntity),
           useValue: mockOrmRepo,
         },
-        {
-          provide: IdGeneratorService,
-          useValue: mockIdGenerator,
-        },
       ],
     }).compile();
 
-    repository = module.get<PostgresProductRepository>(
+    repository = testingModule.get<PostgresProductRepository>(
       PostgresProductRepository,
     );
-    ormRepo = module.get(getRepositoryToken(ProductEntity));
-    idGeneratorService = module.get(IdGeneratorService);
+    ormRepo = testingModule.get(getRepositoryToken(ProductEntity));
   });
 
   afterEach(() => {
@@ -69,19 +58,16 @@ describe('PostgresProductRepository', () => {
   describe('save', () => {
     it('should successfully save a product', async () => {
       const createDto = CreateProductDtoFactory.createMockDto();
-      const generatedId = 'PR0000001';
+      const generatedId = 1;
 
-      idGeneratorService.generateProductId.mockResolvedValue(generatedId);
       ormRepo.create.mockReturnValue(mockProductEntity);
-      ormRepo.save.mockResolvedValue(mockProductEntity);
+      ormRepo.save.mockResolvedValue({ ...mockProductEntity, id: generatedId });
 
       const result = await repository.save(createDto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(generatedId);
-      expect(idGeneratorService.generateProductId).toHaveBeenCalledTimes(1);
       expect(ormRepo.create).toHaveBeenCalledWith({
-        id: generatedId,
         ...createDto,
         createdAt: expect.any(Date),
       });
@@ -91,11 +77,12 @@ describe('PostgresProductRepository', () => {
     it('should save expensive product', async () => {
       const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();
-      const expensiveEntity = { ...mockProductEntity, ...expensiveProduct };
+      const expensiveEntity = {
+        ...mockProductEntity,
+        ...expensiveProduct,
+        id: 2,
+      };
 
-      idGeneratorService.generateProductId.mockResolvedValue(
-        expensiveProduct.id,
-      );
       ormRepo.create.mockReturnValue(expensiveEntity);
       ormRepo.save.mockResolvedValue(expensiveEntity);
 
@@ -105,28 +92,10 @@ describe('PostgresProductRepository', () => {
       expect(result.value.price).toBe(35000);
     });
 
-    it('should return failure when id generation fails', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
-      const error = new Error('ID generation failed');
-
-      idGeneratorService.generateProductId.mockRejectedValue(error);
-
-      const result = await repository.save(createDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to save the product',
-        RepositoryError,
-      );
-      expect(ormRepo.create).not.toHaveBeenCalled();
-      expect(ormRepo.save).not.toHaveBeenCalled();
-    });
-
     it('should return failure when database save fails', async () => {
       const createDto = CreateProductDtoFactory.createMockDto();
       const error = new Error('Database save failed');
 
-      idGeneratorService.generateProductId.mockResolvedValue('PR0000001');
       ormRepo.create.mockReturnValue(mockProductEntity);
       ormRepo.save.mockRejectedValue(error);
 
@@ -142,7 +111,7 @@ describe('PostgresProductRepository', () => {
 
   describe('update', () => {
     it('should successfully update a product', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const updatedEntity = {
         ...mockProductEntity,
@@ -169,7 +138,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should update only price', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
       const updatedEntity = {
         ...mockProductEntity,
@@ -188,7 +157,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when product not found', async () => {
-      const productId = 'PR0000999';
+      const productId = 999;
       const updateDto = UpdateProductDtoFactory.createMockDto();
 
       ormRepo.findOne.mockResolvedValue(null);
@@ -205,7 +174,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database update fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const updateDto = UpdateProductDtoFactory.createMockDto();
       const error = new Error('Database update failed');
 
@@ -225,7 +194,7 @@ describe('PostgresProductRepository', () => {
 
   describe('findById', () => {
     it('should successfully find a product by id', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       ormRepo.findOne.mockResolvedValue(mockProductEntity);
 
@@ -239,7 +208,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when product not found', async () => {
-      const productId = 'PR0000999';
+      const productId = 999;
 
       ormRepo.findOne.mockResolvedValue(null);
 
@@ -253,7 +222,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database query fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database query failed');
 
       ormRepo.findOne.mockRejectedValue(error);
@@ -271,7 +240,10 @@ describe('PostgresProductRepository', () => {
   describe('findAll', () => {
     it('should successfully find all products', async () => {
       const mockProducts = ProductTestFactory.createProductList(3);
-      const mockEntities = mockProducts.map((p) => ({ ...p }));
+      const mockEntities = mockProducts.map((p, index) => ({
+        ...p,
+        id: index + 1,
+      }));
 
       ormRepo.find.mockResolvedValue(mockEntities);
 
@@ -288,7 +260,7 @@ describe('PostgresProductRepository', () => {
         ProductTestFactory.createLowStockProduct(),
         ProductTestFactory.createOutOfStockProduct(),
       ];
-      const entities = products.map((p) => ({ ...p }));
+      const entities = products.map((p, index) => ({ ...p, id: index + 1 }));
 
       ormRepo.find.mockResolvedValue(entities);
 
@@ -327,7 +299,7 @@ describe('PostgresProductRepository', () => {
 
   describe('deleteById', () => {
     it('should successfully delete a product', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
 
       ormRepo.delete.mockResolvedValue({ affected: 1, raw: {} });
 
@@ -339,7 +311,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database delete fails', async () => {
-      const productId = 'PR0000001';
+      const productId = 1;
       const error = new Error('Database delete failed');
 
       ormRepo.delete.mockRejectedValue(error);

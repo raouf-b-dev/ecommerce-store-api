@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../core/infrastructure/jobs/base-job.handler';
-import { GetCartUseCase } from '../../../carts/application/usecases/get-cart/get-cart.usecase';
+import { ValidateCheckoutUseCase } from '../../application/usecases/validate-checkout/validate-checkout.usecase';
 import { Result, isFailure } from '../../../../core/domain/result';
 import { AppError } from '../../../../core/errors/app.error';
-import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { ScheduleCheckoutProps } from '../../domain/schedulers/order.scheduler';
+import { ShippingAddressDto } from '../dto/shipping-address.dto';
 
 export interface ValidateCartResult {
-  cartId: string;
-  cartItems: Array<{ productId: string; quantity: number; price: number }>;
+  cartId: number;
+  cartItems: Array<{ productId: number; quantity: number; price: number }>;
 }
 
 @Injectable()
@@ -19,26 +19,31 @@ export class ValidateCartStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ValidateCartStep.name);
 
-  constructor(private readonly getCartUseCase: GetCartUseCase) {
+  constructor(
+    private readonly validateCheckoutUseCase: ValidateCheckoutUseCase,
+  ) {
     super();
   }
 
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,
   ): Promise<Result<ValidateCartResult, AppError>> {
-    const { cartId } = job.data;
-    this.logger.log(`Validating cart ${cartId} for checkout...`);
+    const { cartId, userId, shippingAddress } = job.data;
+    this.logger.log(`Validating checkout context for cart ${cartId}...`);
 
-    const cartResult = await this.getCartUseCase.execute(cartId);
-    if (isFailure(cartResult)) {
-      return Result.failure(cartResult.error);
+    const validationResult = await this.validateCheckoutUseCase.execute({
+      cartId,
+      userId,
+      shippingAddress: shippingAddress
+        ? ShippingAddressDto.fromDomain(shippingAddress)
+        : undefined,
+    });
+
+    if (isFailure(validationResult)) {
+      return Result.failure(validationResult.error);
     }
 
-    const cart = cartResult.value;
-
-    if (cart.items.length === 0) {
-      return ErrorFactory.ServiceError('Cart is empty');
-    }
+    const { cart } = validationResult.value;
 
     this.logger.log(
       `Cart ${cartId} validated with ${cart.items.length} items.`,

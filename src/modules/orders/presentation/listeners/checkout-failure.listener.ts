@@ -5,6 +5,7 @@ import { ReleaseStockUseCase } from '../../../inventory/application/release-stoc
 import { CancelOrderUseCase } from '../../application/usecases/cancel-order/cancel-order.usecase';
 import { ProcessRefundUseCase } from '../../../payments/application/usecases/process-refund/process-refund.usecase';
 import { QueueEventsService } from '../../../../core/infrastructure/queue/queue-events.service';
+import { GetOrderReservationsUseCase } from '../../../inventory/application/get-order-reservations/get-order-reservations.usecase';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -16,6 +17,7 @@ export class CheckoutFailureListener implements OnModuleInit {
     private readonly releaseStockUseCase: ReleaseStockUseCase,
     private readonly cancelOrderUseCase: CancelOrderUseCase,
     private readonly processRefundUseCase: ProcessRefundUseCase,
+    private readonly getOrderReservationsUseCase: GetOrderReservationsUseCase,
   ) {}
 
   async onModuleInit() {
@@ -33,7 +35,24 @@ export class CheckoutFailureListener implements OnModuleInit {
             return;
           }
 
-          const { reservationId, orderId, paymentId, orderTotal } = job.data;
+          let { reservationId } = job.data;
+          const { orderId, paymentId, orderTotal } = job.data;
+
+          if (!reservationId && orderId) {
+            const reservationResult =
+              await this.getOrderReservationsUseCase.execute(orderId);
+            if (
+              reservationResult.isSuccess &&
+              reservationResult.value.length > 0
+            ) {
+              reservationId = reservationResult.value[0].id || undefined;
+              if (reservationId) {
+                this.logger.log(
+                  `Retrieved reservationId ${reservationId} for order ${orderId}`,
+                );
+              }
+            }
+          }
 
           if (paymentId) {
             this.logger.log(`Refunding payment ${paymentId}...`);

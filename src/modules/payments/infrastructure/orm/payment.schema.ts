@@ -4,7 +4,7 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { RefundEntity } from './refund.schema';
@@ -15,15 +15,16 @@ import { PaymentStatusType } from '../../domain/value-objects/payment-status';
 @Index('idx_payments_order_id', ['orderId'])
 @Index('idx_payments_customer_id', ['customerId'])
 @Index('idx_payments_transaction_id', ['transactionId'])
+@Index('idx_payments_gateway_intent_id', ['gatewayPaymentIntentId'])
 export class PaymentEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'order_id', type: 'varchar' })
-  orderId: string;
+  @Column({ name: 'order_id', type: 'int' })
+  orderId: number;
 
-  @Column({ name: 'customer_id', type: 'varchar', nullable: true })
-  customerId: string | null;
+  @Column({ name: 'customer_id', type: 'int', nullable: true })
+  customerId: number | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
@@ -39,6 +40,16 @@ export class PaymentEntity {
 
   @Column({ name: 'transaction_id', type: 'varchar', nullable: true })
   transactionId: string | null;
+
+  @Column({
+    name: 'gateway_payment_intent_id',
+    type: 'varchar',
+    nullable: true,
+  })
+  gatewayPaymentIntentId: string | null;
+
+  @Column({ name: 'gateway_client_secret', type: 'varchar', nullable: true })
+  gatewayClientSecret: string | null;
 
   @Column({ name: 'payment_method_info', type: 'text', nullable: true })
   paymentMethodInfo: string | null;

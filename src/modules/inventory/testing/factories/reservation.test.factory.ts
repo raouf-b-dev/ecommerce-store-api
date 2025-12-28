@@ -7,12 +7,12 @@ import { ReservationStatus } from '../../domain/value-objects/reservation-status
 export class ReservationTestFactory {
   static createReservation(overrides?: Partial<ReservationProps>): Reservation {
     const defaultProps: ReservationProps = {
-      id: 'RES0000001',
-      orderId: 'OR0000001',
+      id: 1,
+      orderId: 1,
       items: [
         {
           id: null,
-          productId: 'PR0000001',
+          productId: 1,
           quantity: 2,
         },
       ],
@@ -63,7 +63,7 @@ export class ReservationTestFactory {
   }
 
   static createReservationWithItems(
-    items: { productId: string; quantity: number }[],
+    items: { productId: number; quantity: number }[],
     overrides?: Partial<ReservationProps>,
   ): Reservation {
     const reservationItems = items.map((item) => ({

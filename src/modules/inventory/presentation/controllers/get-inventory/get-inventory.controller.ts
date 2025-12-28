@@ -9,7 +9,7 @@ import { IInventory } from '../../../domain/interfaces/inventory.interface';
 export class GetInventoryController {
   constructor(private getInventoryUseCase: GetInventoryUseCase) {}
   async handle(
-    productId: string,
+    productId: number,
   ): Promise<Result<IInventory, ControllerError>> {
     try {
       const result = await this.getInventoryUseCase.execute(productId);

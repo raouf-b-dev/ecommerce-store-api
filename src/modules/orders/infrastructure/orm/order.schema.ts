@@ -7,8 +7,8 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
-  PrimaryColumn,
   UpdateDateColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
@@ -33,14 +33,14 @@ import { PaymentMethodType } from '../../../payments/domain';
 ])
 @Index('idx_orders_status_total_price', ['status', 'totalPrice'])
 export class OrderEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ name: 'customer_id' })
-  customerId: string;
+  customerId: number;
 
-  @Column({ name: 'payment_id', type: 'varchar', nullable: true })
-  paymentId: string | null;
+  @Column({ name: 'payment_id', type: 'int', nullable: true })
+  paymentId: number | null;
 
   @Column({
     name: 'payment_method',
@@ -49,7 +49,7 @@ export class OrderEntity {
   paymentMethod: PaymentMethodType;
 
   @Column({ name: 'shipping_address_id' })
-  shippingAddressId: string;
+  shippingAddressId: number;
 
   // Relations
   @OneToMany(() => OrderItemEntity, (item: OrderItemEntity) => item.order, {
@@ -96,7 +96,7 @@ export class OrderEntity {
   @Column({
     type: 'varchar',
     enum: OrderStatus,
-    default: OrderStatus.PENDING,
+    default: OrderStatus.PENDING_PAYMENT,
   })
   status: OrderStatus;
 

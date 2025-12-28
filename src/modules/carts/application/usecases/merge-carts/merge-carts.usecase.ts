@@ -8,7 +8,7 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 
 @Injectable()
 export class MergeCartsUseCase extends UseCase<
-  { guestCartId: string; userCartId: string },
+  { guestCartId: number; userCartId: number },
   ICart,
   UseCaseError
 > {
@@ -17,8 +17,8 @@ export class MergeCartsUseCase extends UseCase<
   }
 
   async execute(input: {
-    guestCartId: string;
-    userCartId: string;
+    guestCartId: number;
+    userCartId: number;
   }): Promise<Result<ICart, UseCaseError>> {
     const { guestCartId, userCartId } = input;
     try {

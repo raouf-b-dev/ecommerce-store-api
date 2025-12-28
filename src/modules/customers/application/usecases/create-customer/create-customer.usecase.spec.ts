@@ -20,7 +20,7 @@ describe('CreateCustomerUseCase', () => {
     mockCustomerRepository.save.mockImplementation((customer) => {
       const primitives = customer.toPrimitives();
       if (!primitives.id) {
-        primitives.id = 'generated-id';
+        primitives.id = 123;
       }
       return Promise.resolve(
         Result.success(Customer.fromPrimitives(primitives)),

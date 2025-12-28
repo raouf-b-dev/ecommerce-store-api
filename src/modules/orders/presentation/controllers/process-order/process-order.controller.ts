@@ -8,7 +8,7 @@ import { IOrder } from '../../../domain/interfaces/order.interface';
 @Injectable()
 export class ProcessOrderController {
   constructor(private processOrderUseCase: ProcessOrderUseCase) {}
-  async handle(id: string): Promise<Result<IOrder, ControllerError>> {
+  async handle(id: number): Promise<Result<IOrder, ControllerError>> {
     try {
       const processRequest = await this.processOrderUseCase.execute(id);
       if (processRequest.isFailure) return processRequest;

@@ -122,7 +122,7 @@ export class RedisOrderRepository implements OrderRepository {
   }
 
   async updateStatus(
-    id: string,
+    id: number,
     status: OrderStatus,
   ): Promise<Result<void, RepositoryError>> {
     try {
@@ -153,8 +153,8 @@ export class RedisOrderRepository implements OrderRepository {
   }
 
   async updatePaymentId(
-    orderId: string,
-    paymentId: string,
+    orderId: number,
+    paymentId: number,
   ): Promise<Result<void, RepositoryError>> {
     try {
       const updateResult = await this.postgresRepo.updatePaymentId(
@@ -191,7 +191,7 @@ export class RedisOrderRepository implements OrderRepository {
   }
 
   async updateItemsInfo(
-    id: string,
+    id: number,
     updateOrderItemDto: CreateOrderItemDto[],
   ): Promise<Result<Order, RepositoryError>> {
     try {
@@ -218,7 +218,7 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<Order, RepositoryError>> {
+  async findById(id: number): Promise<Result<Order, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<OrderForCache>(
         `${ORDER_REDIS.CACHE_KEY}:${id}`,
@@ -243,7 +243,7 @@ export class RedisOrderRepository implements OrderRepository {
     }
   }
 
-  async deleteById(id: string): Promise<Result<void, RepositoryError>> {
+  async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.deleteById(id);
       if (deleteResult.isFailure) return deleteResult;
@@ -272,5 +272,13 @@ export class RedisOrderRepository implements OrderRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to cancel order`, error);
     }
+  }
+
+  async findByStatusBefore(
+    status: OrderStatus,
+    before: Date,
+  ): Promise<Result<Order[], RepositoryError>> {
+    // Delegate directly to Postgres - no caching for this query
+    return this.postgresRepo.findByStatusBefore(status, before);
   }
 }

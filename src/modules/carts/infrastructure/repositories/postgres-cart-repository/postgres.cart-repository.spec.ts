@@ -7,16 +7,11 @@ import { PostgresCartRepository } from './postgres.cart-repository';
 import { Cart } from '../../../domain/entities/cart';
 import { CartEntityTestFactory } from '../../../testing/factories/cart-entity.factory';
 import { CartTestFactory } from '../../../testing/factories/cart.factory';
-import {
-  ResultAssertionHelper,
-  createMockIdGenerator,
-} from '../../../../../testing';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('PostgresCartRepository', () => {
   let repository: PostgresCartRepository;
   let mockOrmRepo: jest.Mocked<Repository<CartEntity>>;
-  let mockIdGenerator: jest.Mocked<IdGeneratorService>;
 
   const mockCartEntity = CartEntityTestFactory.createCartEntityWithItems();
   const mockCart = Cart.fromPrimitives(
@@ -27,8 +22,6 @@ describe('PostgresCartRepository', () => {
   );
 
   beforeEach(async () => {
-    mockIdGenerator = createMockIdGenerator({ cartId: 'CA0000001' });
-
     mockOrmRepo = {
       save: jest.fn(),
       findOne: jest.fn(),
@@ -39,7 +32,6 @@ describe('PostgresCartRepository', () => {
       providers: [
         PostgresCartRepository,
         { provide: getRepositoryToken(CartEntity), useValue: mockOrmRepo },
-        { provide: IdGeneratorService, useValue: mockIdGenerator },
       ],
     }).compile();
 
@@ -50,18 +42,17 @@ describe('PostgresCartRepository', () => {
 
   describe('create', () => {
     it('should create cart successfully', async () => {
-      const dto = { customerId: 'cust-123' };
+      const dto = { customerId: 123 };
       mockOrmRepo.save.mockResolvedValue(mockCartEntity);
 
       const result = await repository.create(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.save).toHaveBeenCalled();
-      expect(mockIdGenerator.generateCartId).toHaveBeenCalled();
     });
 
     it('should return error on DB failure', async () => {
-      const dto = { customerId: 'cust-123' };
+      const dto = { customerId: 123 };
       mockOrmRepo.save.mockRejectedValue(new Error('DB Error'));
 
       const result = await repository.create(dto);
@@ -89,7 +80,7 @@ describe('PostgresCartRepository', () => {
     it('should return error if cart not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('non-existent-id');
+      const result = await repository.findById(123);
 
       ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
     });
@@ -120,7 +111,7 @@ describe('PostgresCartRepository', () => {
     it('should return error if cart not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByCustomerId('non-existent-customer');
+      const result = await repository.findByCustomerId(0);
 
       ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
     });
@@ -129,23 +120,23 @@ describe('PostgresCartRepository', () => {
   describe('findBySessionId', () => {
     it('should find cart by sessionId successfully', async () => {
       const sessionCartEntity = CartEntityTestFactory.createCartEntity({
-        sessionId: 'session-123',
+        sessionId: 123,
         customerId: null,
       });
       mockOrmRepo.findOne.mockResolvedValue(sessionCartEntity);
 
-      const result = await repository.findBySessionId('session-123');
+      const result = await repository.findBySessionId(123);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
-        expect(result.value.sessionId).toBe('session-123');
+        expect(result.value.sessionId).toBe(123);
       }
     });
 
     it('should return error if cart not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findBySessionId('non-existent-session');
+      const result = await repository.findBySessionId(0);
 
       ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
     });
@@ -163,7 +154,7 @@ describe('PostgresCartRepository', () => {
     it('should return error if cart not found', async () => {
       mockOrmRepo.delete.mockResolvedValue({ raw: [], affected: 0 });
 
-      const result = await repository.delete('non-existent-id');
+      const result = await repository.delete(0);
 
       ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
     });

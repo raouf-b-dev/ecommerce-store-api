@@ -29,17 +29,17 @@ describe('ShipOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(processingOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
-      const result = await useCase.execute(processingOrder.id);
+      const result = await useCase.execute(processingOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
       expect(result.value.id).toBe(processingOrder.id);
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
-        processingOrder.id,
+        processingOrder.id!,
       );
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        processingOrder.id,
+        processingOrder.id!,
         OrderStatus.SHIPPED,
       );
       expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
@@ -47,7 +47,7 @@ describe('ShipOrderUseCase', () => {
     });
 
     it('should return Failure if order is not found', async () => {
-      const orderId = 'OR9999';
+      const orderId = 999;
       mockOrderRepository.mockOrderNotFound(orderId);
 
       const result = await useCase.execute(orderId);
@@ -62,11 +62,11 @@ describe('ShipOrderUseCase', () => {
     });
 
     it('should return Failure if order cannot be shipped (not in PROCESSING status)', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
-      const result = await useCase.execute(pendingOrder.id);
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -74,17 +74,17 @@ describe('ShipOrderUseCase', () => {
         DomainError,
       );
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
-        pendingOrder.id,
+        pendingOrder.id!,
       );
       expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is in PENDING status', async () => {
-      const pendingOrder = OrderTestFactory.createPendingOrder();
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
-      const result = await useCase.execute(pendingOrder.id);
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -99,7 +99,7 @@ describe('ShipOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(confirmedOrder);
 
-      const result = await useCase.execute(confirmedOrder.id);
+      const result = await useCase.execute(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -115,7 +115,7 @@ describe('ShipOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
 
-      const result = await useCase.execute(shippedOrder.id);
+      const result = await useCase.execute(shippedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -131,7 +131,7 @@ describe('ShipOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(deliveredOrder);
 
-      const result = await useCase.execute(deliveredOrder.id);
+      const result = await useCase.execute(deliveredOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -147,7 +147,7 @@ describe('ShipOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFind(cancelledOrder);
 
-      const result = await useCase.execute(cancelledOrder.id);
+      const result = await useCase.execute(cancelledOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -163,7 +163,7 @@ describe('ShipOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(processingOrder);
       mockOrderRepository.mockUpdateStatusFailure('Database error');
 
-      const result = await useCase.execute(processingOrder.id);
+      const result = await useCase.execute(processingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -171,7 +171,7 @@ describe('ShipOrderUseCase', () => {
         RepositoryError,
       );
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        processingOrder.id,
+        processingOrder.id!,
         OrderStatus.SHIPPED,
       );
     });
@@ -182,7 +182,7 @@ describe('ShipOrderUseCase', () => {
 
       mockOrderRepository.findById.mockRejectedValue(unexpectedError);
 
-      const result = await useCase.execute(processingOrder.id);
+      const result = await useCase.execute(processingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -200,7 +200,7 @@ describe('ShipOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(codOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
-      const result = await useCase.execute(codOrder.id);
+      const result = await useCase.execute(codOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
@@ -212,13 +212,13 @@ describe('ShipOrderUseCase', () => {
     it('should ship order with online payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PROCESSING,
-        paymentId: 'PAY_STRIPE_001', // Payment already completed
+        paymentId: 1, // Payment already completed
       });
 
       mockOrderRepository.mockSuccessfulFind(stripeOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
-      const result = await useCase.execute(stripeOrder.id);
+      const result = await useCase.execute(stripeOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
@@ -229,13 +229,13 @@ describe('ShipOrderUseCase', () => {
       const processingMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.PROCESSING,
-        paymentId: 'PAY001',
+        paymentId: 1,
       };
 
       mockOrderRepository.mockSuccessfulFind(processingMultiItem);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
-      const result = await useCase.execute(processingMultiItem.id);
+      const result = await useCase.execute(processingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.items).toHaveLength(5);
@@ -243,7 +243,7 @@ describe('ShipOrderUseCase', () => {
     });
 
     it('should return RepositoryError when findById fails', async () => {
-      const orderId = 'OR0001';
+      const orderId = 1;
       mockOrderRepository.mockOrderNotFound(orderId);
 
       const result = await useCase.execute(orderId);
@@ -261,7 +261,7 @@ describe('ShipOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFind(processingOrder);
       mockOrderRepository.mockUpdateStatusFailure('Database connection lost');
 
-      const result = await useCase.execute(processingOrder.id);
+      const result = await useCase.execute(processingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,

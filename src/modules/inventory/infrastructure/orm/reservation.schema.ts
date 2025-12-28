@@ -4,7 +4,7 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ReservationStatus } from '../../domain/value-objects/reservation-status';
@@ -14,11 +14,11 @@ import { ReservationItemEntity } from './reservation-item.schema';
 @Index('idx_reservations_order_id', ['orderId'])
 @Index('idx_reservations_status_expires_at', ['status', 'expiresAt'])
 export class ReservationEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ name: 'order_id' })
-  orderId: string;
+  orderId: number;
 
   @Column({
     type: 'varchar',

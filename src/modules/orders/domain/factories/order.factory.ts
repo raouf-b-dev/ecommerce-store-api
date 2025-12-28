@@ -6,10 +6,10 @@ import { CreateOrderItemDto } from '../../presentation/dto/create-order-item.dto
 import { DomainError } from '../../../../core/errors/domain.error';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { Order } from '../entities/order';
-import { v4 as uuidv4 } from 'uuid';
 import { ICart } from '../../../carts/domain/interfaces/cart.interface';
 import { PaymentMethodType } from '../../../payments/domain';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
+import { OrderItemProps } from '../entities/order-items';
 
 export interface AggregatedOrderInput extends Omit<CreateOrderDto, 'items'> {
   items: CreateOrderItemDto[];
@@ -23,22 +23,24 @@ export interface AggregatedUpdateInput extends Omit<UpdateOrderDto, 'items'> {
 export class OrderFactory {
   createFromCart(props: {
     cart: ICart;
-    userId: string;
+    userId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;
     customerNotes?: string;
+    orderId?: number | null;
   }): Order {
-    const items = props.cart.items.map((item) => ({
-      id: uuidv4(),
-      productId: item.productId,
-      productName: item.productName,
-      unitPrice: item.price,
-      quantity: item.quantity,
-      price: item.price,
-    }));
+    const items = props.cart.items.map((item) => {
+      const prop: OrderItemProps = {
+        id: 0,
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.price,
+        quantity: item.quantity,
+      };
+      return prop;
+    });
 
-    const id = uuidv4();
-
+    const id = props.orderId || null;
     return Order.create({
       id,
       customerId: props.userId,
@@ -50,7 +52,7 @@ export class OrderFactory {
   }
 
   private aggregateItems(items: CreateOrderItemDto[]): CreateOrderItemDto[] {
-    const map = new Map<string, CreateOrderItemDto>();
+    const map = new Map<number, CreateOrderItemDto>();
 
     for (const item of items || []) {
       const existing = map.get(item.productId);
@@ -83,8 +85,8 @@ export class OrderFactory {
   ): AggregatedUpdateInput | DomainError {
     const status = new OrderStatusVO(orderStatus);
 
-    if (!status.isPending()) {
-      return new DomainError('Only orders with status PENDING can be updated.');
+    if (!status.isAwaitingPayment()) {
+      return new DomainError('Only orders awaiting payment can be updated.');
     }
 
     if (!dto.items) {

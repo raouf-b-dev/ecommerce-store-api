@@ -22,7 +22,7 @@ describe('GetOrderUseCase', () => {
 
   describe('execute', () => {
     it('should return Success with order when order is found', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({ id: orderId });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -31,7 +31,7 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
-      expect(result.value.status).toBe(OrderStatus.PENDING);
+      expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
       expect(result.value.items).toBeDefined();
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
@@ -39,7 +39,7 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should return Failure with UseCaseError when order is not found', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       mockOrderRepository.mockOrderNotFound(orderId);
 
       const result = await useCase.execute(orderId);
@@ -54,7 +54,7 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const repoError = new Error('Database connection failed');
 
       mockOrderRepository.findById.mockRejectedValue(repoError);
@@ -72,7 +72,7 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should handle empty order ID gracefully', async () => {
-      const emptyId = '';
+      const emptyId = 0;
       mockOrderRepository.mockOrderNotFound(emptyId);
 
       const result = await useCase.execute(emptyId);
@@ -100,10 +100,10 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should return order with correct properties', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 'CU0000001',
+        customerId: 1,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -112,12 +112,12 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
-      expect(result.value.customerId).toBe('CU0000001');
+      expect(result.value.customerId).toBe(1);
       expect(result.value.items).toHaveLength(1);
     });
 
     it('should return order data correctly for multiple items', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMultiItemOrder(2);
       orderPrimitives.id = orderId;
 
@@ -133,7 +133,7 @@ describe('GetOrderUseCase', () => {
 
   describe('edge cases', () => {
     it('should handle repository returning different error types', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const customError = new Error('Custom repository error');
       customError.name = 'CustomRepositoryError';
 
@@ -150,7 +150,7 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should handle very long order IDs', async () => {
-      const longId = 'OR' + '0'.repeat(1000);
+      const longId = 10000000;
       mockOrderRepository.mockOrderNotFound(longId);
 
       const result = await useCase.execute(longId);
@@ -160,19 +160,21 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should retrieve pending order successfully', async () => {
-      const orderId = 'OR0000001';
-      const pendingOrder = OrderTestFactory.createPendingOrder({ id: orderId });
+      const orderId = 1;
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+      });
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
       const result = await useCase.execute(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.status).toBe(OrderStatus.PENDING);
+      expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
     });
 
     it('should retrieve shipped order successfully', async () => {
-      const orderId = 'OR0000001';
+      const orderId = 1;
       const shippedOrder = OrderTestFactory.createShippedOrder({ id: orderId });
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
@@ -187,19 +189,19 @@ describe('GetOrderUseCase', () => {
   describe('complex scenarios with builder', () => {
     it('should retrieve order with custom configuration', async () => {
       const orderPrimitives = new OrderBuilder()
-        .withId('OR0000001')
-        .withCustomerId('CUST999')
+        .withId(1)
+        .withCustomerId(999)
         .withItems(5)
-        .withStatus(OrderStatus.PENDING)
+        .withStatus(OrderStatus.PENDING_PAYMENT)
         .build();
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
 
-      const result = await useCase.execute(orderPrimitives.id);
+      const result = await useCase.execute(orderPrimitives.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe('OR0000001');
-      expect(result.value.customerId).toBe('CUST999');
+      expect(result.value.id).toBe(1);
+      expect(result.value.customerId).toBe(999);
       expect(result.value.items).toHaveLength(5);
     });
   });

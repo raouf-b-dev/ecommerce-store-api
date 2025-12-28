@@ -4,8 +4,8 @@ import { ICart } from '../../domain/interfaces/cart.interface';
 export class CartTestFactory {
   static createMockCart(overrides?: Partial<ICart>): ICart {
     const baseCart: ICart = {
-      id: 'cart-123',
-      customerId: 'customer-123',
+      id: 123,
+      customerId: 123,
       sessionId: null,
       items: [],
       itemCount: 0,
@@ -31,8 +31,8 @@ export class CartTestFactory {
     overrides?: Partial<ICart>,
   ): ICart {
     const items = Array.from({ length: itemCount }, (_, i) => ({
-      id: `item-${i + 1}`,
-      productId: `product-${i + 1}`,
+      id: i + 1,
+      productId: i + 1,
       productName: `Product ${i + 1}`,
       price: 10 * (i + 1),
       quantity: 1,
@@ -50,7 +50,7 @@ export class CartTestFactory {
     });
   }
 
-  static createGuestCart(sessionId: string, overrides?: Partial<ICart>): ICart {
+  static createGuestCart(sessionId: number, overrides?: Partial<ICart>): ICart {
     return this.createMockCart({
       customerId: null,
       sessionId,
@@ -58,7 +58,7 @@ export class CartTestFactory {
     });
   }
 
-  static createUserCart(customerId: string, overrides?: Partial<ICart>): ICart {
+  static createUserCart(customerId: number, overrides?: Partial<ICart>): ICart {
     return this.createMockCart({
       customerId,
       sessionId: null,

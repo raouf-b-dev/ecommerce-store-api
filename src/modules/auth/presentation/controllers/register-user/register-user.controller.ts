@@ -12,7 +12,7 @@ export class RegisterUserController {
 
   async handle(
     dto: RegisterDto,
-  ): Promise<Result<{ user: IUser; customerId: string }, ControllerError>> {
+  ): Promise<Result<{ user: IUser; customerId: number }, ControllerError>> {
     try {
       const result = await this.registerUseCase.execute(dto);
 

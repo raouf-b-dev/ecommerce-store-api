@@ -1,15 +1,21 @@
 // src/modules/carts/infrastructure/orm/cart-item.schema.ts
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { CartEntity } from './cart.schema';
 import { numericToNumber } from '../../../../core/infrastructure/database/number.transformer';
 
 @Entity({ name: 'cart_items' })
 export class CartItemEntity {
-  @PrimaryColumn('varchar')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'product_id', type: 'varchar' })
-  productId: string;
+  @Column({ name: 'product_id', type: 'int' })
+  productId: number;
 
   @Column({ name: 'product_name', type: 'varchar' })
   productName: string;

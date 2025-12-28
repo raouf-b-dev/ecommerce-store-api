@@ -9,8 +9,8 @@ export class SetDefaultAddressController {
   constructor(private readonly useCase: SetDefaultAddressUseCase) {}
 
   async handle(
-    id: string,
-    addressId: string,
+    id: number,
+    addressId: number,
   ): Promise<Result<void, ControllerError>> {
     try {
       const result = await this.useCase.execute({

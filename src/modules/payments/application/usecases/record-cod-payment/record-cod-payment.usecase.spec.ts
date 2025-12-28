@@ -36,7 +36,7 @@ describe('RecordCodPaymentUseCase', () => {
 
   it('should record a COD payment successfully', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amountCollected: 100,
       currency: 'USD',
     };
@@ -64,7 +64,7 @@ describe('RecordCodPaymentUseCase', () => {
 
   it('should fail if save fails', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amountCollected: 100,
       currency: 'USD',
     };
@@ -79,7 +79,7 @@ describe('RecordCodPaymentUseCase', () => {
 
   it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
     const dto: RecordCodPaymentDto = {
-      orderId: 'OR123',
+      orderId: 123,
       amountCollected: 100,
       currency: 'USD',
     };

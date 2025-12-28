@@ -24,7 +24,7 @@ export class OrderItemMapper {
   static toEntity(domain: OrderItem): OrderItemEntity {
     const primitives = domain.toPrimitives();
     const itemPayload: OrderItemCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       productId: primitives.productId,
       productName: primitives.productName,
       unitPrice: primitives.unitPrice,

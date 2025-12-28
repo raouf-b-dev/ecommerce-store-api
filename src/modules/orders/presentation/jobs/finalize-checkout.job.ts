@@ -8,9 +8,9 @@ import { ClearCartResult } from './clear-cart.job';
 
 export interface FinalizeCheckoutResult {
   success: boolean;
-  orderId: string;
-  paymentId: string;
-  reservationId: string;
+  orderId: number;
+  paymentId: number;
+  reservationId: number;
 }
 
 @Injectable()
@@ -36,9 +36,9 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
 
     return Result.success({
       success: true,
-      orderId: orderId || 'unknown',
-      paymentId: paymentId || 'unknown',
-      reservationId: reservationId || 'unknown',
+      orderId: orderId || 0,
+      paymentId: paymentId || 0,
+      reservationId: reservationId || 0,
     });
   }
 }

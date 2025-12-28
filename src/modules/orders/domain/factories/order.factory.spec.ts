@@ -19,11 +19,7 @@ describe('OrderFactory', () => {
 
   describe('createFromDto', () => {
     it('aggregates duplicate items by productId when creating from DTO', () => {
-      const dto = CreateOrderDtoTestFactory.createMultiItemDto([
-        'P1',
-        'P1',
-        'P2',
-      ]);
+      const dto = CreateOrderDtoTestFactory.createMultiItemDto([1, 1, 2]);
       // Manually adjust quantities to test aggregation
       dto.items[0].quantity = 2;
       dto.items[1].quantity = 3;
@@ -32,8 +28,8 @@ describe('OrderFactory', () => {
       const aggregated = factory.createFromDto(dto);
 
       expect(aggregated.items).toHaveLength(2);
-      const p1 = aggregated.items.find((i) => i.productId === 'P1')!;
-      const p2 = aggregated.items.find((i) => i.productId === 'P2')!;
+      const p1 = aggregated.items.find((i) => i.productId === 1)!;
+      const p2 = aggregated.items.find((i) => i.productId === 2)!;
       expect(p1.quantity).toBe(5);
       expect(p2.quantity).toBe(1);
 
@@ -52,13 +48,13 @@ describe('OrderFactory', () => {
     });
 
     it('returns aggregated items and does not compute totalPrice (create)', () => {
-      const dto = CreateOrderDtoTestFactory.createMultiItemDto(['P3', 'P4']);
+      const dto = CreateOrderDtoTestFactory.createMultiItemDto([1, 2]);
 
       const aggregated: AggregatedOrderInput = factory.createFromDto(dto);
 
       expect(aggregated.items).toHaveLength(2);
-      expect(aggregated.items[0].productId).toBe('P3');
-      expect(aggregated.items[1].productId).toBe('P4');
+      expect(aggregated.items[0].productId).toBe(1);
+      expect(aggregated.items[1].productId).toBe(2);
     });
 
     it('handles single item order', () => {
@@ -101,7 +97,7 @@ describe('OrderFactory', () => {
 
       const result = factory.updateFromDto(
         updateDto,
-        OrderStatus.PENDING,
+        OrderStatus.PENDING_PAYMENT,
       ) as AggregatedUpdateInput;
 
       expect(result.items).toBeUndefined();
@@ -110,46 +106,49 @@ describe('OrderFactory', () => {
     it('aggregates duplicate items by productId when updating from DTO', () => {
       const updateDto: UpdateOrderDto = {
         items: [
-          { productId: 'PX', quantity: 2 },
-          { productId: 'PX', quantity: 4 },
-          { productId: 'PY', quantity: 3 },
+          { productId: 1, quantity: 2 },
+          { productId: 1, quantity: 4 },
+          { productId: 2, quantity: 3 },
         ],
       };
 
       const aggregated = factory.updateFromDto(
         updateDto,
-        OrderStatus.PENDING,
+        OrderStatus.PENDING_PAYMENT,
       ) as AggregatedUpdateInput;
 
       expect(aggregated.items).toHaveLength(2);
-      const px = aggregated.items?.find((i) => i.productId === 'PX');
+      const px = aggregated.items?.find((i) => i.productId === 1);
       expect(px).toBeDefined();
       expect(px!.quantity).toBe(6);
 
-      const py = aggregated.items?.find((i) => i.productId === 'PY');
+      const py = aggregated.items?.find((i) => i.productId === 2);
       expect(py).toBeDefined();
       expect(py!.quantity).toBe(3);
     });
 
-    it('updateFromDto returns a DomainError when order status is not PENDING', () => {
+    it('updateFromDto returns a DomainError when order status is not awaiting payment', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 'PZ', quantity: 1 }],
+        items: [{ productId: 2, quantity: 1 }],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.DELIVERED);
 
       expect(result instanceof DomainError).toBeTruthy();
       expect((result as DomainError).message).toBe(
-        'Only orders with status PENDING can be updated.',
+        'Only orders awaiting payment can be updated.',
       );
     });
 
-    it('allows update when status is PENDING', () => {
+    it('allows update when status is PENDING_PAYMENT', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 'PZ', quantity: 1 }],
+        items: [{ productId: 2, quantity: 1 }],
       };
 
-      const result = factory.updateFromDto(updateDto, OrderStatus.PENDING);
+      const result = factory.updateFromDto(
+        updateDto,
+        OrderStatus.PENDING_PAYMENT,
+      );
 
       expect(result instanceof DomainError).toBeFalsy();
       expect((result as AggregatedUpdateInput).items).toHaveLength(1);
@@ -157,7 +156,7 @@ describe('OrderFactory', () => {
 
     it('returns DomainError for SHIPPED status', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 'PZ', quantity: 1 }],
+        items: [{ productId: 2, quantity: 1 }],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.SHIPPED);
@@ -167,7 +166,7 @@ describe('OrderFactory', () => {
 
     it('returns DomainError for CANCELLED status', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 'PZ', quantity: 1 }],
+        items: [{ productId: 2, quantity: 1 }],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.CANCELLED);
@@ -180,7 +179,10 @@ describe('OrderFactory', () => {
         items: [],
       };
 
-      const result = factory.updateFromDto(updateDto, OrderStatus.PENDING);
+      const result = factory.updateFromDto(
+        updateDto,
+        OrderStatus.PENDING_PAYMENT,
+      );
 
       expect((result as AggregatedUpdateInput).items).toEqual([]);
     });
@@ -190,13 +192,13 @@ describe('OrderFactory', () => {
     it('handles large quantities in aggregation', () => {
       const dto = CreateOrderDtoTestFactory.createMockDto();
       dto.items = [
-        { productId: 'P1', quantity: 1000 },
-        { productId: 'P1', quantity: 500 },
+        { productId: 1, quantity: 1000 },
+        { productId: 1, quantity: 500 },
       ];
 
       const aggregated = factory.createFromDto(dto);
 
-      const p1 = aggregated.items.find((i) => i.productId === 'P1')!;
+      const p1 = aggregated.items.find((i) => i.productId === 1)!;
       expect(p1.quantity).toBe(1500);
     });
 

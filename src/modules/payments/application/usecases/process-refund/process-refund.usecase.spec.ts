@@ -55,7 +55,7 @@ describe('ProcessRefundUseCase', () => {
 
   it('should process a refund successfully', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 'PA123',
+      id: 123,
       amount: 100,
       refundedAmount: 0,
     });
@@ -70,35 +70,35 @@ describe('ProcessRefundUseCase', () => {
       reason: 'Defective product',
     };
 
-    const result = await useCase.execute({ id: 'PA123', dto });
+    const result = await useCase.execute({ id: 123, dto });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(paymentRepository.findById).toHaveBeenCalledWith('PA123');
+    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
     expect(paymentRepository.update).toHaveBeenCalled();
     const updatedPayment = result.value;
     expect(updatedPayment.refundedAmount).toBe(50);
   });
 
   it('should fail if payment is not found', async () => {
-    paymentRepository.mockPaymentNotFound('PA123');
+    paymentRepository.mockPaymentNotFound(123);
 
     const dto: ProcessRefundDto = {
       amount: 50,
     };
 
-    const result = await useCase.execute({ id: 'PA123', dto });
+    const result = await useCase.execute({ id: 123, dto });
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment with id PA123 not found',
+      'Payment with id 123 not found',
     );
-    expect(paymentRepository.findById).toHaveBeenCalledWith('PA123');
+    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
   it('should fail if refund amount exceeds payment amount', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 'PA123',
+      id: 123,
       amount: 100,
       refundedAmount: 0,
     });
@@ -110,14 +110,14 @@ describe('ProcessRefundUseCase', () => {
       amount: 150,
     };
 
-    const result = await useCase.execute({ id: 'PA123', dto });
+    const result = await useCase.execute({ id: 123, dto });
 
     ResultAssertionHelper.assertResultFailure(result);
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
   it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const paymentId = 'PA123';
+    const paymentId = 123;
     const dto: ProcessRefundDto = {
       amount: 50,
     };

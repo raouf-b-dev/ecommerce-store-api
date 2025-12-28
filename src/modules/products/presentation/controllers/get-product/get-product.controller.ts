@@ -8,7 +8,7 @@ import { IProduct } from '../../../domain/interfaces/product.interface';
 @Injectable()
 export class GetProductController {
   constructor(private getProductUseCase: GetProductUseCase) {}
-  async handle(id: string): Promise<Result<IProduct, ControllerError>> {
+  async handle(id: number): Promise<Result<IProduct, ControllerError>> {
     try {
       const productResult = await this.getProductUseCase.execute(id);
       if (isFailure(productResult)) {
