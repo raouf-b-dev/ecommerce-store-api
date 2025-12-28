@@ -38,22 +38,48 @@ export class ProductsController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JWTAuthGuard)
-  @ApiOperation({ summary: 'Create a new product' })
-  @ApiResponse({ status: 201, type: ProductResponseDto })
+  @ApiOperation({
+    summary: 'Create a new product',
+    description:
+      'Creates a new product in the catalog. Requires admin privileges.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Product created successfully.',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid product data.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async createProduct(@Body() dto: CreateProductDto) {
     return this.createProductController.handle(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all products' })
-  @ApiResponse({ status: 200, type: [ProductResponseDto] })
+  @ApiOperation({
+    summary: 'List all products',
+    description: 'Retrieves a list of all products in the catalog.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of products retrieved successfully.',
+    type: [ProductResponseDto],
+  })
   findAll() {
     return this.listProductsController.handle();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
-  @ApiResponse({ status: 200, type: ProductResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Product found.',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
   findOne(@Param('id') id: string) {
     return this.getProductController.handle(Number(id));
   }
@@ -61,8 +87,21 @@ export class ProductsController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(JWTAuthGuard)
-  @ApiOperation({ summary: 'Update product by ID' })
-  @ApiResponse({ status: 200, type: ProductResponseDto })
+  @ApiOperation({
+    summary: 'Update product by ID',
+    description: 'Updates an existing product. Requires admin privileges.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product updated successfully.',
+    type: ProductResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.updateProductController.handle(Number(id), updateProductDto);
   }
@@ -70,8 +109,18 @@ export class ProductsController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(JWTAuthGuard)
-  @ApiOperation({ summary: 'Delete product by ID' })
-  @ApiResponse({ status: 204, description: 'Product deleted' })
+  @ApiOperation({
+    summary: 'Delete product by ID',
+    description:
+      'Deletes a product from the catalog. Requires admin privileges.',
+  })
+  @ApiResponse({ status: 204, description: 'Product deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   remove(@Param('id') id: string) {
     return this.deleteProductController.handle(Number(id));
   }
