@@ -1,8 +1,8 @@
 # 🛒 E-commerce MVP API
 
-<p align="center"> <a href="https://github.com/PrimeRaouf/ecommerce-store-api/actions"><img src="https://github.com/PrimeRaouf/ecommerce-store-api/actions/workflows/CI.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
+<p align="center"> <a href="https://github.com/PrimeRaouf/ecommerce-store-api/actions"><img src="https://github.com/PrimeRaouf/ecommerce-store-api/actions/workflows/CI.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
 
-> A production-ready NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
+> An enterprise-level NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
 
 ## 📋 Table of Contents
 
@@ -19,7 +19,8 @@
 - [🚦 API Endpoints](#-api-endpoints)
 - [🔐 Security & Best Practices](#-security--best-practices)
 - [🛠️ Troubleshooting](#troubleshooting)
-- [📊 Project Statistics](#-project-statistics)
+- [� Roadmap](#-roadmap)
+- [�📊 Project Statistics](#-project-statistics)
 - [📄 License](#-license)
 - [🤝 Acknowledgments](#-acknowledgments)
 - [📞 Support](#-support)
@@ -478,6 +479,29 @@ npm run d:reset:test
 
 ---
 
+## 🚧 Roadmap
+
+This project is continuously evolving. Here are the planned features and improvements:
+
+### 🔹 Core Features
+
+- [ ] **Real Payment Integration**: Support for Stripe, PayPal, and other gateways.
+- [ ] **Advanced Analytics**: Reporting dashboard for sales, inventory, and customer behavior.
+- [ ] **Real-time Notifications**: WebSockets/SSE for order status updates and stock alerts.
+
+### 🔹 Engineering & DevOps
+
+- [ ] **E2E Testing Suite**: Comprehensive end-to-end tests using Supertest and Testcontainers.
+- [ ] **Performance Benchmarking**: Detailed load testing and optimization reports.
+- [ ] **API Versioning**: Implementing a robust versioning strategy for long-term support.
+
+### 🔹 Ecosystem
+
+- [ ] **Admin Dashboard**: A modern frontend for store management (Angular/React).
+- [ ] **Customer Storefront**: A high-performance web application built with Angular.
+
+---
+
 ## 📊 Project Statistics
 
 - **Languages**: TypeScript 100%
@@ -515,4 +539,4 @@ For questions, issues, or contributions:
 
 **Built with ❤️ by [PrimeRaouf](https://github.com/PrimeRaouf)**
 
-_Crafting production-ready APIs with clean architecture and modern best practices_
+_Crafting enterprise-level APIs with clean architecture and modern best practices_
