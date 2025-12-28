@@ -8,3 +8,9 @@ export interface PaymentResult {
   metadata?: Record<string, any>;
   errorMessage?: string;
 }
+
+export interface PaymentIntentResult {
+  paymentIntentId: string;
+  clientSecret: string;
+  status: PaymentStatusType;
+}
