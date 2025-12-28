@@ -28,6 +28,7 @@ import { ReleaseStockUseCase } from './application/release-stock/release-stock.u
 import { ConfirmReservationUseCase } from './application/confirm-reservation/confirm-reservation.usecase';
 import { ReservationEntity } from './infrastructure/orm/reservation.schema';
 import { ReservationItemEntity } from './infrastructure/orm/reservation-item.schema';
+import { GetOrderReservationsUseCase } from './application/get-order-reservations/get-order-reservations.usecase';
 import { POSTGRES_RESERVATION_REPOSITORY } from './inventory.token';
 import { PostgresReservationRepository } from './infrastructure/repositories/postgres-reservation-repository/postgres.reservation-repository';
 import { ReservationRepository } from './domain/repositories/reservation.repository';
@@ -86,6 +87,7 @@ import { ReservationRepository } from './domain/repositories/reservation.reposit
     ListLowStockUseCase,
     BulkCheckStockUseCase,
     ConfirmReservationUseCase,
+    GetOrderReservationsUseCase,
 
     //Controllers
     GetInventoryController,
@@ -101,6 +103,7 @@ import { ReservationRepository } from './domain/repositories/reservation.reposit
     ReserveStockUseCase,
     ReleaseStockUseCase,
     ConfirmReservationUseCase,
+    GetOrderReservationsUseCase,
   ],
 })
 export class InventoryModule {}
