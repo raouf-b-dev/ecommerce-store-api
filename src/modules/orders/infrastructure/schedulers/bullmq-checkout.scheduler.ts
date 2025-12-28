@@ -10,13 +10,14 @@ import { InfrastructureError } from '../../../../core/errors/infrastructure-erro
 import { ErrorFactory } from '../../../../core/errors/error.factory';
 import { JobNames } from '../../../../core/infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../core/infrastructure/queue/flow-producer.service';
-import { PaymentMethodType } from '../../../payments/domain/value-objects/payment-method';
+import { PaymentMethodPolicy } from '../../domain/services/payment-method-policy';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler {
   constructor(
     private readonly jobConfig: JobConfigService,
     private readonly flowProducerService: FlowProducerService,
+    private readonly paymentPolicy: PaymentMethodPolicy,
   ) {}
 
   async scheduleCheckout(
@@ -24,7 +25,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
-      const isOnline = this.isOnlinePayment(props.paymentMethod);
+      const isOnline = this.paymentPolicy.isOnlinePayment(props.paymentMethod);
 
       let flowDefinition: FlowJob;
 
@@ -222,15 +223,6 @@ export class BullMqOrderScheduler implements OrderScheduler {
         error,
       );
     }
-  }
-
-  private isOnlinePayment(method: PaymentMethodType): boolean {
-    return (
-      method === PaymentMethodType.CREDIT_CARD ||
-      method === PaymentMethodType.DEBIT_CARD ||
-      method === PaymentMethodType.PAYPAL ||
-      method === PaymentMethodType.DIGITAL_WALLET
-    );
   }
 
   async scheduleStockRelease(
