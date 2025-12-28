@@ -91,7 +91,7 @@ If you are a recruiter or hiring manager, here is why this project demonstrates 
 1.  **Architectural Depth**: Most "e-commerce" tutorials stop at simple controllers. This project implements full **DDD**, showing an understanding of how to manage complexity in large-scale systems.
 2.  **Reliability Engineering**: The use of **Idempotency** and **Compensation Logic** shows a "production-first" mindset where data consistency and system reliability are prioritized.
 3.  **Modern Infrastructure**: Proficiency with **Redis Stack**, **BullMQ**, and **Docker** demonstrates the ability to design and manage modern, scalable infrastructure.
-4.  **Testing Excellence**: High test coverage (Unit, Integration, and E2E) proves a commitment to code quality and long-term maintainability.
+4.  **Testing Excellence**: High test coverage (Unit) proves a commitment to code quality and long-term maintainability.
 
 ---
 
