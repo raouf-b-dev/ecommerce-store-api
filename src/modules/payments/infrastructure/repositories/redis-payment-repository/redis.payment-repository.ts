@@ -20,7 +20,7 @@ export class RedisPaymentRepository implements PaymentRepository {
     private readonly logger: Logger,
   ) {}
 
-  async findById(id: string): Promise<Result<Payment, RepositoryError>> {
+  async findById(id: number): Promise<Result<Payment, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<PaymentForCache>(
         `${PAYMENT_REDIS.CACHE_KEY}:${id}`,
@@ -46,7 +46,7 @@ export class RedisPaymentRepository implements PaymentRepository {
   }
 
   async findByOrderId(
-    orderId: string,
+    orderId: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     try {
       const cachedPayments = await this.cacheService.search<PaymentForCache>(
@@ -116,11 +116,18 @@ export class RedisPaymentRepository implements PaymentRepository {
   }
 
   async findByCustomerId(
-    customerId: string,
+    customerId: number,
     page?: number,
     limit?: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     return this.postgresRepo.findByCustomerId(customerId, page, limit);
+  }
+
+  async findByGatewayPaymentIntentId(
+    paymentIntentId: string,
+  ): Promise<Result<Payment, RepositoryError>> {
+    // Delegate to postgres - intent ID lookups are webhook-driven and rare
+    return this.postgresRepo.findByGatewayPaymentIntentId(paymentIntentId);
   }
 
   async save(payment: Payment): Promise<Result<Payment, RepositoryError>> {
@@ -159,7 +166,7 @@ export class RedisPaymentRepository implements PaymentRepository {
     }
   }
 
-  async delete(id: string): Promise<Result<void, RepositoryError>> {
+  async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const deleteResult = await this.postgresRepo.delete(id);
       if (deleteResult.isFailure) return deleteResult;
@@ -173,7 +180,7 @@ export class RedisPaymentRepository implements PaymentRepository {
   }
 
   async findRefundById(
-    refundId: string,
+    refundId: number,
   ): Promise<Result<Refund, RepositoryError>> {
     return this.postgresRepo.findRefundById(refundId);
   }

@@ -4,8 +4,6 @@ import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { PostgresPaymentRepository } from './postgres.payment-repository';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundEntity } from '../../orm/refund.schema';
-import { IdGeneratorService } from '../../../../../core/infrastructure/orm/id-generator.service';
-import { createMockIdGenerator } from '../../../../../testing/mocks/id-generator.mocks';
 import { Payment } from '../../../domain/entities/payment';
 import { Refund } from '../../../domain/entities/refund';
 import { PaymentEntityTestFactory } from '../../../testing/factories/payment-entity.test.factory';
@@ -27,7 +25,6 @@ describe('PostgresPaymentRepository', () => {
   let mockOrmRepo: jest.Mocked<Repository<PaymentEntity>>;
   let mockRefundRepo: jest.Mocked<Repository<RefundEntity>>;
   let mockDataSource: jest.Mocked<DataSource>;
-  let mockIdGenerator: jest.Mocked<IdGeneratorService>;
   let mockTransactionManager: any;
   let mockQueryBuilder: jest.Mocked<SelectQueryBuilder<PaymentEntity>>;
 
@@ -35,10 +32,6 @@ describe('PostgresPaymentRepository', () => {
     mockQueryBuilder = createMockQueryBuilder<PaymentEntity>();
     mockTransactionManager = createMockTransactionManager({ mockQueryBuilder });
     mockDataSource = createMockDataSource(mockTransactionManager) as any;
-    mockIdGenerator = createMockIdGenerator({
-      paymentId: 'new-pay-123',
-      refundId: 'new-ref-123',
-    });
 
     mockOrmRepo = {
       findOne: jest.fn(),
@@ -67,10 +60,6 @@ describe('PostgresPaymentRepository', () => {
           provide: DataSource,
           useValue: mockDataSource,
         },
-        {
-          provide: IdGeneratorService,
-          useValue: mockIdGenerator,
-        },
       ],
     }).compile();
 
@@ -85,10 +74,9 @@ describe('PostgresPaymentRepository', () => {
 
   describe('save', () => {
     it('should save a new payment with generated ID inside transaction', async () => {
-      const paymentProps = PaymentTestFactory.createMockPayment();
+      const paymentProps = PaymentTestFactory.createMockPayment({ id: 123 });
       const payment = Payment.fromPrimitives(paymentProps);
       const entityToSave = PaymentMapper.toEntity(payment);
-      entityToSave.id = 'new-pay-123';
 
       mockTransactionManager.findOne.mockResolvedValue(null); // No existing payment
       mockTransactionManager.save.mockResolvedValue(entityToSave);
@@ -97,19 +85,18 @@ describe('PostgresPaymentRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockIdGenerator.generatePaymentId).toHaveBeenCalled();
       expect(mockTransactionManager.save).toHaveBeenCalledWith(
         PaymentEntity,
-        expect.objectContaining({ id: 'new-pay-123' }),
+        expect.objectContaining({ id: 123 }),
       );
-      expect(result.value.id).toBe('new-pay-123');
+      expect(result.value.id).toBe(123);
     });
 
     it('should fail if payment already exists', async () => {
       const paymentProps = PaymentTestFactory.createMockPayment();
       const payment = Payment.fromPrimitives(paymentProps);
       const existingEntity = PaymentEntityTestFactory.createPaymentEntity({
-        id: 'new-pay-123',
+        id: 123,
       });
 
       mockTransactionManager.findOne.mockResolvedValue(existingEntity); // Existing payment
@@ -143,10 +130,9 @@ describe('PostgresPaymentRepository', () => {
 
   describe('saveRefund', () => {
     it('should save a new refund with generated ID inside transaction', async () => {
-      const refundProps = RefundTestFactory.createMockRefund();
+      const refundProps = RefundTestFactory.createMockRefund({ id: 123 });
       const refund = Refund.fromPrimitives(refundProps);
       const entityToSave = RefundMapper.toEntity(refund);
-      entityToSave.id = 'new-ref-123';
 
       mockTransactionManager.findOne.mockResolvedValue(null); // No existing refund
       mockTransactionManager.save.mockResolvedValue(entityToSave);
@@ -155,19 +141,18 @@ describe('PostgresPaymentRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockIdGenerator.generateRefundId).toHaveBeenCalled();
       expect(mockTransactionManager.save).toHaveBeenCalledWith(
         RefundEntity,
-        expect.objectContaining({ id: 'new-ref-123' }),
+        expect.objectContaining({ id: 123 }),
       );
-      expect(result.value.id).toBe('new-ref-123');
+      expect(result.value.id).toBe(123);
     });
 
     it('should fail if refund already exists', async () => {
       const refundProps = RefundTestFactory.createMockRefund();
       const refund = Refund.fromPrimitives(refundProps);
       const existingEntity = RefundEntityTestFactory.createRefundEntity({
-        id: 'new-ref-123',
+        id: 123,
       });
 
       mockTransactionManager.findOne.mockResolvedValue(existingEntity);
@@ -196,7 +181,7 @@ describe('PostgresPaymentRepository', () => {
     it('should return error if not found', async () => {
       mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.findById('not-found');
+      const result = await repository.findById(0);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -209,7 +194,7 @@ describe('PostgresPaymentRepository', () => {
       const dbError = new Error('DB Error');
       mockOrmRepo.findOne.mockRejectedValue(dbError);
 
-      const result = await repository.findById('any-id');
+      const result = await repository.findById(0);
 
       ResultAssertionHelper.assertResultFailure(
         result,

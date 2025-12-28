@@ -6,25 +6,29 @@ import { Refund } from '../../domain/entities/refund';
 import { IPayment } from '../../domain/interfaces/payment.interface';
 
 export class MockPaymentRepository implements PaymentRepository {
-  findById = jest.fn<Promise<Result<Payment, RepositoryError>>, [string]>();
+  findById = jest.fn<Promise<Result<Payment, RepositoryError>>, [number]>();
   findByOrderId = jest.fn<
     Promise<Result<Payment[], RepositoryError>>,
-    [string]
+    [number]
   >();
   findByTransactionId = jest.fn<
     Promise<Result<Payment, RepositoryError>>,
     [string]
   >();
+  findByGatewayPaymentIntentId = jest.fn<
+    Promise<Result<Payment, RepositoryError>>,
+    [string]
+  >();
   findByCustomerId = jest.fn<
     Promise<Result<Payment[], RepositoryError>>,
-    [string, number?, number?]
+    [number, number?, number?]
   >();
   save = jest.fn<Promise<Result<Payment, RepositoryError>>, [Payment]>();
   update = jest.fn<Promise<Result<Payment, RepositoryError>>, [Payment]>();
-  delete = jest.fn<Promise<Result<void, RepositoryError>>, [string]>();
+  delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
   findRefundById = jest.fn<
     Promise<Result<Refund, RepositoryError>>,
-    [string]
+    [number]
   >();
   saveRefund = jest.fn<Promise<Result<Refund, RepositoryError>>, [Refund]>();
 
@@ -33,7 +37,7 @@ export class MockPaymentRepository implements PaymentRepository {
     this.findById.mockResolvedValue(Result.success(domainPayment));
   }
 
-  mockPaymentNotFound(id: string): void {
+  mockPaymentNotFound(id: number): void {
     this.findById.mockResolvedValue(
       Result.failure(new RepositoryError(`Payment with id ${id} not found`)),
     );
