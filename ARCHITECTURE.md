@@ -92,14 +92,14 @@ sequenceDiagram
     CheckoutUC->>BullMQ: Schedule SAGA Process
     CheckoutUC-->>Client: 201 Created (Payment Pending)
 
-    rect rgb(200, 255, 200)
+    rect rgba(0, 255, 0, 0.1)
     Note over Worker,Inventory: Async Phase 1: Reservations
     BullMQ->>Worker: Process Job
     Worker->>Inventory: Reserve Stock logic
     Inventory-->>Worker: Confirmed
     end
 
-    rect rgb(200, 200, 255)
+    rect rgba(0, 0, 255, 0.1)
     Note over Worker,Payment: Async Phase 2: Payment
     Worker->>Payment: Process Payment logic
     Payment-->>Worker: Success
