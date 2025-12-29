@@ -57,14 +57,24 @@ I built this to prove (to myself and future employers) that I can handle complex
 
 ```mermaid
 graph TD
-    Client --> API[NestJS API]
-    API --> Postgres
-    API --> Redis[Redis Stack]
-    API --> BullMQ
-    BullMQ --> Workers
+    Client[Client App] --> API[NestJS API Gateway]
+
+    subgraph "Infrastructure Layer"
+        API --> PG[(PostgreSQL)]
+        API --> Redis[(Redis Stack)]
+        API --> BullMQ[BullMQ Job Queue]
+    end
+
+    subgraph "External Services"
+        Payment[Payment Gateway Mock]
+    end
+
+    API <--> Payment
 ```
 
-See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for detailed Sequence and Class diagrams.
+> **Key Strength**: Fully supports **[Hybrid Payment Orchestration](#-hybrid-payment-orchestration-cod--online)** (Online + Cash-on-Delivery), handling complex state transitions for both synchronous and asynchronous flows.
+
+See the full [**System Architecture & Diagrams**](ARCHITECTURE.md) for detailed Sequence and Class diagrams.
 
 ### 🛠️ **Technology Stack**
 
