@@ -1,12 +1,14 @@
 # 🛒 E-commerce MVP API
 
-<p align="center"> <a href="https://github.com/PrimeRaouf/ecommerce-store-api/actions"><img src="https://github.com/PrimeRaouf/ecommerce-store-api/actions/workflows/CI.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-Private-red.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
+<p align="center"> <a href="https://github.com/PrimeRaouf/ecommerce-store-api/actions"><img src="https://github.com/PrimeRaouf/ecommerce-store-api/actions/workflows/CI.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
 
-> A production-ready NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
+> An enterprise-level NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
 
 ## 📋 Table of Contents
 
 - [🌟 Key Features](#-key-features)
+- [🚀 Advanced Engineering Features](#-advanced-engineering-features)
+- [🎯 Recruiter's Guide](#-recruiters-guide)
 - [🚀 Quick Start](#-quick-start)
 - [🧪 Testing](#-testing)
 - [🗄️ Database Management](#database-management)
@@ -17,10 +19,28 @@
 - [🚦 API Endpoints](#-api-endpoints)
 - [🔐 Security & Best Practices](#-security--best-practices)
 - [🛠️ Troubleshooting](#troubleshooting)
-- [📊 Project Statistics](#-project-statistics)
+- [� Roadmap](#-roadmap)
+- [�📊 Project Statistics](#-project-statistics)
+- [👋 Contributing](CONTRIBUTING.md)
+- [🏗️ System Architecture](docs/ARCHITECTURE.md)
 - [📄 License](#-license)
 - [🤝 Acknowledgments](#-acknowledgments)
 - [📞 Support](#-support)
+
+---
+
+## 🌟 Why This Project? (A Learning Journey)
+
+> "The main goal when I started building this API was to learn new stuff that I did not know before... I reinforced my knowledge on DDD, I learned how to effectively create a scalable system, separate concerns, separate business logic from technical logic..."
+
+I spent 5 months building this project not just as another e-commerce demo, but as a deep dive into **Enterprise Node.js Architecture**. My goal was to bridge the gap between "tutorial code" and "production systems" by implementing the hard parts that most courses skip:
+
+- **Distributed Systems**: Handling eventual consistency with SAGA pattern & RabbitMQ/BullMQ.
+- **Fail-Safe Mechanisms**: Designing compensation flows when things go wrong (e.g., payment succeeds but inventory fails).
+- **Strict DDD**: Enforcing boundaries between Domain, Application, and Infrastructure layers.
+- **Testing Culture**: Writing 50+ test suites because in the real world, tests are not optional.
+
+I built this to prove (to myself and future employers) that I can handle complex, scalable backend systems. I hope it serves as a valuable reference for others on the same journey!
 
 ---
 
@@ -28,18 +48,41 @@
 
 ### 🏗️ **Architecture & Design**
 
-- **Domain-Driven Design (DDD)** with clear layer separation
-- **Clean Architecture** principles (presentation, application, domain, infrastructure)
-- **Result Pattern** for consistent error handling
-- **TypeScript** for type safety and better developer experience
+- **Domain-Driven Design (DDD)** with clear layer separation (Domain, Application, Infrastructure, Presentation)
+- **Clean Architecture** principles ensuring the core logic is independent of frameworks and external tools
+- **Result Pattern** for consistent, type-safe error handling across the entire application
+- **Hexagonal Architecture (Ports & Adapters)** for easy swapping of infrastructure components (e.g., switching between Postgres and Redis repositories)
+
+### Architecture at a Glance
+
+```mermaid
+graph TD
+    Client[Client App] --> API[NestJS API Gateway]
+
+    subgraph "Infrastructure Layer"
+        API --> PG[(PostgreSQL)]
+        API --> Redis[(Redis Stack)]
+        API --> BullMQ[BullMQ Job Queue]
+    end
+
+    subgraph "External Services"
+        Payment[Payment Gateway Mock]
+    end
+
+    API <--> Payment
+```
+
+> **Key Strength**: Fully supports **[Hybrid Payment Orchestration](#-hybrid-payment-orchestration-cod--online)** (Online + Cash-on-Delivery), handling complex state transitions for both synchronous and asynchronous flows.
+
+See the full [**System Architecture & Diagrams**](ARCHITECTURE.md) for detailed Sequence and Class diagrams.
 
 ### 🛠️ **Technology Stack**
 
-- **NestJS** - Scalable Node.js framework
-- **PostgreSQL** with **TypeORM** - Robust relational database with migrations
-- **Redis** with **RedisJSON & RedisSearch** - Advanced caching and search capabilities
-- **Docker Compose** - Containerized development environment
-- **Swagger/OpenAPI** - Auto-generated API documentation
+- **NestJS** - Enterprise-grade Node.js framework
+- **PostgreSQL** with **TypeORM** - Relational data with automated migrations
+- **Redis Stack** - Utilizing **RedisJSON** for document storage and **RedisSearch** for ultra-fast product indexing
+- **BullMQ** - Robust message queue for handling asynchronous background jobs and distributed tasks
+- **Docker Compose** - Fully containerized environment for consistent development and deployment
 
 ### 🧪 **Quality Assurance**
 
@@ -55,6 +98,49 @@
 - **Order Processing** - Order lifecycle management
 - **Authentication** - JWT-based security
 - **Validation** - Request/response validation with class-validator
+
+---
+
+## 🚀 Advanced Engineering Features
+
+This project goes beyond a simple CRUD API by implementing complex distributed systems patterns:
+
+### 🛡️ **Strict Idempotency**
+
+- **Problem**: Network retries can lead to duplicate orders or payments.
+- **Solution**: Implemented a custom `@Idempotent()` decorator and interceptor using Redis as a distributed lock and result cache. This ensures that critical operations (like checkout) are executed exactly once, even if the client retries the request.
+
+### 🔄 **Event-Driven Compensation (SAGA Pattern)**
+
+- **Problem**: In a distributed system, if one step of a multi-stage process (like checkout) fails, the system must revert previous successful steps.
+- **Solution**: Implemented a `CheckoutFailureListener` that monitors BullMQ job failures. If a checkout fails after payment or stock reservation, it automatically triggers compensation logic:
+  - Releasing stock reservations
+  - Processing payment refunds
+  - Cancelling the pending order
+
+### ⚡ **Redis Stack Integration**
+
+- **RedisJSON**: Stores complex product and cart data as JSON documents, reducing the need for expensive SQL joins for frequently accessed data.
+- **RedisSearch**: Provides full-text search and advanced filtering on product data directly from Redis, significantly improving performance compared to traditional SQL `LIKE` queries.
+
+### 💳 **Hybrid Payment Orchestration (COD + Online)**
+
+- **Problem**: Real-world e-commerce systems need to handle both immediate payments (Credit Card) and deferred confirmations (Cash on Delivery) without duplicating business logic.
+- **Solution**: Designed a unified **Strategy Pattern** for checkout flows.
+  - **Online**: Full SAGA (Validate -> Reserve -> Pay -> Confirm).
+  - **COD**: Async Pause (Validate -> Reserve -> **Stop & Wait** -> Manual Confirm).
+  - Checks shared stock availability logic while respecting different lifecycle requirements.
+
+---
+
+## 🎯 Recruiter's Guide
+
+If you are a recruiter or hiring manager, here is why this project demonstrates senior-level engineering skills:
+
+1.  **Architectural Depth**: Most "e-commerce" tutorials stop at simple controllers. This project implements full **DDD**, showing an understanding of how to manage complexity in large-scale systems.
+2.  **Reliability Engineering**: The use of **Idempotency** and **Compensation Logic** shows a "production-first" mindset where data consistency and system reliability are prioritized.
+3.  **Modern Infrastructure**: Proficiency with **Redis Stack**, **BullMQ**, and **Docker** demonstrates the ability to design and manage modern, scalable infrastructure.
+4.  **Testing Excellence**: High test coverage (Unit, Integration, and E2E) proves a commitment to code quality and long-term maintainability.
 
 ---
 
@@ -227,17 +313,22 @@ npm run d:up:test
 
 ```
 src/
-├── modules/                 # Feature modules
-│   ├── product/            # Product domain module
-│   │   ├── application/    # Use cases & DTOs
-│   │   ├── domain/         # Entities & domain logic
-│   │   ├── infrastructure/ # Repositories & external services
-│   │   └── presentation/   # Controllers & validation
-│   └── order/              # Order domain module
-├── shared/                 # Shared utilities & types
-├── config/                 # Configuration modules
-└── main.ts                 # Application bootstrap
-
+├── core/                    # Shared kernel & cross-cutting concerns
+│   ├── domain/              # Base entities, value objects, & Result pattern
+│   ├── application/         # Common application services & interfaces
+│   └── infrastructure/      # Shared persistence, decorators, & interceptors
+├── modules/                 # Feature-based modules (Bounded Contexts)
+│   ├── [module]/            # e.g., orders, products, inventory
+│   │   ├── domain/          # Entities, Value Objects, & Repository interfaces
+│   │   ├── application/     # Use Cases & Application services
+│   │   ├── infrastructure/  # Repository implementations & external clients
+│   │   ├── presentation/    # Controllers, DTOs, Listeners, & Jobs
+│   │   ├── testing/         # Module-specific factories, mocks, & builders
+│   │   └── [module].module.ts
+├── config/                  # Global configuration & environment validation
+├── shared/                  # Generic utilities & helper functions
+├── testing/                 # Root-level testing utilities & E2E setup
+└── main.ts                  # Application bootstrap
 ```
 
 ### Design Principles
@@ -441,6 +532,29 @@ npm run d:reset:test
 
 ---
 
+## 🚧 Roadmap
+
+This project is continuously evolving. Here are the planned features and improvements:
+
+### 🔹 Core Features
+
+- [ ] **Real Payment Integration**: Support for Stripe, PayPal, and other gateways.
+- [ ] **Advanced Analytics**: Reporting dashboard for sales, inventory, and customer behavior.
+- [ ] **Real-time Notifications**: WebSockets/SSE for order status updates and stock alerts.
+
+### 🔹 Engineering & DevOps
+
+- [ ] **E2E Testing Suite**: Comprehensive end-to-end tests using Supertest and Testcontainers.
+- [ ] **Performance Benchmarking**: Detailed load testing and optimization reports.
+- [ ] **API Versioning**: Implementing a robust versioning strategy for long-term support.
+
+### 🔹 Ecosystem
+
+- [ ] **Admin Dashboard**: A modern frontend for store management (Angular/React).
+- [ ] **Customer Storefront**: A high-performance web application built with Angular.
+
+---
+
 ## 📊 Project Statistics
 
 - **Languages**: TypeScript 100%
@@ -452,9 +566,7 @@ npm run d:reset:test
 
 ## 📄 License
 
-**All rights reserved © 2025 PrimeRaouf.**
-
-This repository is private. Do not copy, distribute, or use this code without explicit permission.
+Released under the [MIT License](LICENSE). Feel free to use, modify, and distribute this code for personal or commercial projects.
 
 ---
 
@@ -478,4 +590,4 @@ For questions, issues, or contributions:
 
 **Built with ❤️ by [PrimeRaouf](https://github.com/PrimeRaouf)**
 
-_Crafting production-ready APIs with clean architecture and modern best practices_
+_Crafting enterprise-level APIs with clean architecture and modern best practices_

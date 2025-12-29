@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderItemResponseDto } from './order-item-response.dto';
+import { OrderStatus } from '../../domain/value-objects/order-status';
 
 export class OrderResponseDto {
   @ApiProperty({ example: 'ord_123' })
@@ -11,8 +12,8 @@ export class OrderResponseDto {
   @ApiProperty({ type: [OrderItemResponseDto] })
   items: OrderItemResponseDto[];
 
-  @ApiProperty({ enum: ['pending', 'paid', 'shipped', 'cancelled'] })
-  status: 'pending' | 'paid' | 'shipped' | 'cancelled';
+  @ApiProperty({ enum: OrderStatus })
+  status: OrderStatus;
 
   @ApiProperty({ example: 2400 })
   totalPrice: number;
