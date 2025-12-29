@@ -1,10 +1,32 @@
 {
   "name": "ecommerce-store-api",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "description": "Enterprise-level NestJS e-commerce API built with Domain-Driven Design, SAGA pattern with compensation, Redis Stack, and BullMQ for background processing",
+  "author": "PrimeRaouf <https://github.com/PrimeRaouf>",
+  "private": false,
+  "license": "MIT",
+  "homepage": "https://github.com/PrimeRaouf/ecommerce-store-api#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrimeRaouf/ecommerce-store-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PrimeRaouf/ecommerce-store-api/issues"
+  },
+  "keywords": [
+    "nestjs",
+    "ecommerce",
+    "api",
+    "ddd",
+    "domain-driven-design",
+    "saga-pattern",
+    "clean-architecture",
+    "typescript",
+    "redis",
+    "bullmq",
+    "postgresql",
+    "typeorm"
+  ],
   "scripts": {
     "start": "cross-env NODE_ENV=development nest start",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
