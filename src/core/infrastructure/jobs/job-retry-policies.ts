@@ -127,6 +127,18 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     maxDelay: 5000,
     multiplier: 2,
   },
+  [JobNames.UPDATE_NOTIFICATION_STATUS]: {
+    maxAttempts: 3,
+    backoffStrategy: BackoffStrategy.EXPONENTIAL,
+    initialDelay: 1000,
+    maxDelay: 5000,
+    multiplier: 2,
+  },
+  [JobNames.CLEANUP_NOTIFICATIONS]: {
+    maxAttempts: 1,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 0,
+  },
 };
 
 export function getRetryPolicy(jobName: JobName): RetryConfig {

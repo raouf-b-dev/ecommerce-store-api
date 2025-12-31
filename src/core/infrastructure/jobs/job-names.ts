@@ -17,6 +17,8 @@ export const JobNames = {
 
   SEND_NOTIFICATION: 'send-notification',
   SAVE_NOTIFICATION_HISTORY: 'save-notification-history',
+  UPDATE_NOTIFICATION_STATUS: 'update-notification-status',
+  CLEANUP_NOTIFICATIONS: 'cleanup-notifications',
 
   // Payment Events
   PAYMENT_COMPLETED: 'payment-completed',
