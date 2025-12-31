@@ -1,0 +1,9 @@
+#!/bin/sh
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$current_branch" = "master" ] || [ "$current_branch" = "develop" ]; then
+  echo "❌ Error: Direct pushes to '$current_branch' are not allowed. Please use a feature branch and create a Pull Request."
+  exit 1
+fi
+
+exit 0
