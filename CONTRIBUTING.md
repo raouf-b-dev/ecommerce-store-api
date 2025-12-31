@@ -64,7 +64,7 @@ The API will be available at `http://localhost:3000` with Swagger docs at `http:
 
 ## Making Changes
 
-1. **Create a new branch** from `master`:
+1. **Create a new branch** from `develop`:
 
    ```bash
    git checkout -b feature/your-feature-name
