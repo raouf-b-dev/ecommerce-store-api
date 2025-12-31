@@ -4,7 +4,6 @@
 
 > An enterprise-level NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
 
-## 📋 Table of Contents
 
 - [🌟 Key Features](#-key-features)
 - [🚀 Advanced Engineering Features](#-advanced-engineering-features)
