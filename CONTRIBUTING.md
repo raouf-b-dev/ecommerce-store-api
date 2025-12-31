@@ -29,7 +29,7 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
    ```
 3. **Add the upstream repository** as a remote:
    ```bash
-   git remote add upstream https://github.com/PrimeRaouf/ecommerce-store-api.git
+   git remote add upstream https://github.com/raouf-b-dev/ecommerce-store-api.git
    ```
 
 ## Development Setup
