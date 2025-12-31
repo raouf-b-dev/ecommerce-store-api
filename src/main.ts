@@ -4,6 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResultInterceptor } from './core/interceptors/result.interceptor';
+import { RedisIoAdapter } from './core/infrastructure/websocket/adapters/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   const configService = app.get(EnvConfigService);
   const nodeEnv = configService.node.env;
