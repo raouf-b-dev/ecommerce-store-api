@@ -12,6 +12,8 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InfrastructureModule } from './core/infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { WebsocketModule } from './core/infrastructure/websocket/websocket.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -29,6 +31,8 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     InventoryModule,
     CustomersModule,
     AuthModule,
+    WebsocketModule,
+    NotificationsModule,
 
     ConfigModule.forRoot({
       isGlobal: true,
