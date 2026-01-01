@@ -9,7 +9,7 @@ This document provides a high-level overview of the **ecommerce-store-api** arch
 - [Component Dependencies](#-component-dependencies-c4-level-2)
 - [Checkout Sequence Diagram](#-checkout-sequence-diagram-online-flow)
 - [SAGA Compensation Flow](#-saga-compensation-flow-failure-handling)
-- [Key Patterns Implemented](#-key-patterns-implemented)
+- [Key Patterns Implemented](#key-patterns-implemented)
 - [Online vs COD Checkout Logic](#-online-vs-cod-checkout-logic)
 - [Payment Event Handling](#-payment-event-handling-async)
 - [Idempotency Logic](#-idempotency-logic)
@@ -183,6 +183,8 @@ sequenceDiagram
 
     Listener-->>Listener: Log Compensation Success
 ```
+
+<a id="key-patterns-implemented"></a>
 
 ## 🛡️ Key Patterns Implemented
 
