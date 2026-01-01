@@ -68,6 +68,6 @@ import { EnvConfigService } from '../../config/env-config.service';
     RegisterUserController,
     LoginUserController,
   ],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule {}

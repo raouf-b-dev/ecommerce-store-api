@@ -2,6 +2,42 @@
 
 This document provides a high-level overview of the **ecommerce-store-api** architecture, design decisions, and system flows.
 
+## 📋 Table of Contents
+
+- [System Context](#-system-context-c4-level-1)
+- [High-Level Architecture](#-high-level-architecture)
+- [Component Dependencies](#-component-dependencies-c4-level-2)
+- [Checkout Sequence Diagram](#-checkout-sequence-diagram-online-flow)
+- [SAGA Compensation Flow](#-saga-compensation-flow-failure-handling)
+- [Key Patterns Implemented](#key-patterns-implemented)
+- [Online vs COD Checkout Logic](#-online-vs-cod-checkout-logic)
+- [Payment Event Handling](#-payment-event-handling-async)
+- [Idempotency Logic](#-idempotency-logic)
+- [Notification System Architecture](#-notification-system-architecture)
+
+## 🌍 System Context (C4 Level 1)
+
+A high-level view of how the E-commerce API fits into the existing landscape.
+
+```mermaid
+C4Context
+    title System Context Diagram for E-commerce Store API
+
+    Person(customer, "Customer", "A user of the e-commerce store")
+    System(ecommerce, "E-commerce API", "Handles orders, payments, inventory, and products")
+
+    System_Ext(stripe, "Stripe", "Payment Gateway")
+    System_Ext(paypal, "PayPal", "Payment Gateway")
+    System_Ext(redis, "Redis Stack", "Cache, Search, & Queue")
+    System_Ext(postgres, "PostgreSQL", "Primary Database")
+
+    Rel(customer, ecommerce, "Uses", "HTTPS/WSS")
+    Rel(ecommerce, stripe, "Processes payments", "HTTPS")
+    Rel(ecommerce, paypal, "Processes payments", "HTTPS")
+    Rel(ecommerce, redis, "Reads/Writes", "TCP")
+    Rel(ecommerce, postgres, "Persists data", "TCP")
+```
+
 ## 📐 High-Level Architecture
 
 The system is built as a modular monolith using **NestJS**, designed for scalability and maintainability. It uses **PostgreSQL** as the primary data store and **Redis Stack** for high-performance caching, search, and message brokering.
@@ -46,51 +82,43 @@ graph TD
 
 > **Key Strength**: This system implements a **Hybrid Payment Architecture**, orchestrating both synchronous online payments (Stripe/PayPal imitation) and asynchronous manual confirmations (Cash on Delivery) via unified SAGA flows.
 
-## 🧩 DDD Module Structure
+## 🧩 Component Dependencies (C4 Level 2)
 
-The application is structured into **Bounded Contexts** (Modules), each with its own Domain, Application, and Infrastructure layers.
+The application is structured into **Bounded Contexts** (Modules). This diagram shows the actual dependencies between modules, highlighting the orchestration role of the `Orders` module.
 
 ```mermaid
-classDiagram
-    class Core {
-        +Shared Kernel
-        +Base Classes
-        +Common Utilities
-    }
+graph TD
+    subgraph "Orchestration Layer"
+        Orders["📦 Orders Module"]
+    end
 
-    class Orders {
-        +Checkout UseCase
-        +Order Management
-        +SAGA Orchestration
-    }
+    subgraph "Core Domains"
+        Inventory["🏭 Inventory Module"]
+        Payments["💳 Payments Module"]
+        Products["🏷️ Products Module"]
+        Customers["👥 Customers Module"]
+        Carts["🛒 Carts Module"]
+    end
 
-    class Inventory {
-        +Stock Management
-        +Reservations
-    }
+    subgraph "Support"
+        Auth["🔐 Auth Module"]
+        Notifications["🔔 Notifications Module"]
+    end
 
-    class Payments {
-        +Transaction Processing
-        +Refunds
-    }
+    %% Orders Dependencies
+    Orders -->|Reserves Stock| Inventory
+    Orders -->|Processes Payment| Payments
+    Orders -->|Validates User| Customers
+    Orders -->|Retrieves Cart| Carts
+    Orders -->|Triggers| Notifications
 
-    class Carts {
-        +Cart Management
-        +Redis Persistence
-    }
+    %% Carts Dependencies
+    Carts -->|Checks Stock| Inventory
+    Carts -->|Validates Item| Products
 
-    class Products {
-        +Catalog Management
-        +Redis Search Indexing
-    }
-
-    Orders --> Inventory : Reserves Stock
-    Orders --> Payments : Processes Payment
-    Orders --> Carts : Retrieves Items
-    Orders --> Products : Validates Items
-    Core <|-- Orders
-    Core <|-- Inventory
-    Core <|-- Payments
+    %% Auth Dependencies
+    Auth -->|Manages| Customers
+    Payments -->|Verifies| Auth
 ```
 
 ## 🛒 Checkout Sequence Diagram (Online Flow)
@@ -155,6 +183,8 @@ sequenceDiagram
 
     Listener-->>Listener: Log Compensation Success
 ```
+
+<a id="key-patterns-implemented"></a>
 
 ## 🛡️ Key Patterns Implemented
 

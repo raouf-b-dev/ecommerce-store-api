@@ -1,0 +1,4 @@
+# .github/CODEOWNERS
+# This file ensures that any changes to the CI/CD workflows require approval from the owner.
+
+.github/workflows/ @raouf-b-dev
