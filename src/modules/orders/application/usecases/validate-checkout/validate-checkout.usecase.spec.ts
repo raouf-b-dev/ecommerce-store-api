@@ -3,8 +3,6 @@ import {
   ValidateCheckoutUseCase,
   ValidateCheckoutInput,
 } from './validate-checkout.usecase';
-import { GetCustomerUseCase } from '../../../../customers/application/usecases/get-customer/get-customer.usecase';
-import { GetCartUseCase } from '../../../../carts/application/usecases/get-cart/get-cart.usecase';
 import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
 import { Result } from '../../../../../core/domain/result';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
@@ -12,11 +10,14 @@ import { CustomerTestFactory } from '../../../../customers/testing/factories/cus
 import { Customer } from '../../../../customers/domain/entities/customer';
 import { CartTestFactory } from '../../../../carts/testing/factories/cart.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
+import { CustomerGateway } from '../../ports/customer.gateway';
+import { CartGateway } from '../../ports/cart.gateway';
+import { CART_GATEWAY, CUSTOMER_GATEWAY } from '../../../order.token';
 
 describe('ValidateCheckoutUseCase', () => {
   let useCase: ValidateCheckoutUseCase;
-  let getCustomerUseCase: jest.Mocked<GetCustomerUseCase>;
-  let getCartUseCase: jest.Mocked<GetCartUseCase>;
+  let customerGateway: jest.Mocked<CustomerGateway>;
+  let cartGateway: jest.Mocked<CartGateway>;
   let addressResolver: jest.Mocked<ShippingAddressResolver>;
 
   const mockUserId = 123;
@@ -34,12 +35,12 @@ describe('ValidateCheckoutUseCase', () => {
     OrderTestFactory.createMockOrder().shippingAddress;
 
   beforeEach(async () => {
-    const mockGetCustomerUseCase = {
-      execute: jest.fn(),
+    const mockCustomerGateway = {
+      validateCustomer: jest.fn(),
     };
 
-    const mockGetCartUseCase = {
-      execute: jest.fn(),
+    const mockCartGateway = {
+      validateCart: jest.fn(),
     };
 
     const mockAddressResolver = {
@@ -51,27 +52,24 @@ describe('ValidateCheckoutUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateCheckoutUseCase,
-        { provide: GetCustomerUseCase, useValue: mockGetCustomerUseCase },
-        { provide: GetCartUseCase, useValue: mockGetCartUseCase },
+        { provide: CUSTOMER_GATEWAY, useValue: mockCustomerGateway },
+        { provide: CART_GATEWAY, useValue: mockCartGateway },
         { provide: ShippingAddressResolver, useValue: mockAddressResolver },
       ],
     }).compile();
 
     useCase = module.get<ValidateCheckoutUseCase>(ValidateCheckoutUseCase);
-    getCustomerUseCase = module.get(GetCustomerUseCase);
-    getCartUseCase = module.get(GetCartUseCase);
+    customerGateway = module.get(CUSTOMER_GATEWAY);
+    cartGateway = module.get(CART_GATEWAY);
     addressResolver = module.get(ShippingAddressResolver);
   });
 
   describe('successful validation', () => {
     it('should return validated context when all validations pass', async () => {
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.success(mockCustomer),
       );
-      getCartUseCase.execute.mockResolvedValue({
-        isSuccess: true,
-        value: mockCart,
-      } as any);
+      cartGateway.validateCart.mockResolvedValue(Result.success(mockCart));
       addressResolver.resolve.mockReturnValue(mockResolvedAddress);
 
       const input: ValidateCheckoutInput = {
@@ -98,13 +96,10 @@ describe('ValidateCheckoutUseCase', () => {
         country: 'USA',
       };
 
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.success(mockCustomer),
       );
-      getCartUseCase.execute.mockResolvedValue({
-        isSuccess: true,
-        value: mockCart,
-      } as any);
+      cartGateway.validateCart.mockResolvedValue(Result.success(mockCart));
       addressResolver.resolve.mockReturnValue(mockResolvedAddress);
 
       const input: ValidateCheckoutInput = {
@@ -124,7 +119,7 @@ describe('ValidateCheckoutUseCase', () => {
 
   describe('validation failures', () => {
     it('should return failure when customer not found', async () => {
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.failure({ message: 'Customer not found' } as any),
       );
 
@@ -136,14 +131,14 @@ describe('ValidateCheckoutUseCase', () => {
       const result = await useCase.execute(input);
 
       ResultAssertionHelper.assertResultFailure(result);
-      expect(getCartUseCase.execute).not.toHaveBeenCalled();
+      expect(cartGateway.validateCart).not.toHaveBeenCalled();
     });
 
     it('should return failure when cart not found', async () => {
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.success(mockCustomer),
       );
-      getCartUseCase.execute.mockResolvedValue(
+      cartGateway.validateCart.mockResolvedValue(
         Result.failure({ message: 'Cart not found' } as any),
       );
 
@@ -158,13 +153,12 @@ describe('ValidateCheckoutUseCase', () => {
     });
 
     it('should return failure when cart is empty', async () => {
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.success(mockCustomer),
       );
-      getCartUseCase.execute.mockResolvedValue({
-        isSuccess: true,
-        value: { ...mockCart, items: [] },
-      } as any);
+      cartGateway.validateCart.mockResolvedValue(
+        Result.success({ ...mockCart, items: [] }),
+      );
 
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
@@ -177,13 +171,10 @@ describe('ValidateCheckoutUseCase', () => {
     });
 
     it('should return failure when no shipping address can be resolved', async () => {
-      getCustomerUseCase.execute.mockResolvedValue(
+      customerGateway.validateCustomer.mockResolvedValue(
         Result.success(mockCustomer),
       );
-      getCartUseCase.execute.mockResolvedValue({
-        isSuccess: true,
-        value: mockCart,
-      } as any);
+      cartGateway.validateCart.mockResolvedValue(Result.success(mockCart));
       addressResolver.resolve.mockReturnValue(null);
 
       const input: ValidateCheckoutInput = {

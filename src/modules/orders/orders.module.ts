@@ -9,10 +9,14 @@ import { OrderRepository } from './domain/repositories/order-repository';
 import {
   POSTGRES_ORDER_REPOSITORY,
   REDIS_ORDER_REPOSITORY,
+  CUSTOMER_GATEWAY,
+  CART_GATEWAY,
 } from './order.token';
 
 import { RedisOrderRepository } from './infrastructure/repositories/redis-order-repository/redis.order-repository';
 import { PostgresOrderRepository } from './infrastructure/repositories/postgres-order-repository/postgres.order-repository';
+import { ModuleCustomerGateway } from './infrastructure/adapters/module-customer.gateway';
+import { ModuleCartGateway } from './infrastructure/adapters/module-cart.gateway';
 import { OrderEntity } from './infrastructure/orm/order.schema';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
@@ -104,6 +108,16 @@ import { OrdersProcessor } from './orders.processor';
         return new RedisOrderRepository(cacheService, postgresRepo, logger);
       },
       inject: [CacheService, POSTGRES_ORDER_REPOSITORY],
+    },
+
+    // Gateways
+    {
+      provide: CUSTOMER_GATEWAY,
+      useClass: ModuleCustomerGateway,
+    },
+    {
+      provide: CART_GATEWAY,
+      useClass: ModuleCartGateway,
     },
 
     // Default Repository Binding

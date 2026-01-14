@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../core/application/use-cases/base.usecase';
 import { Result, isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
-import { GetCustomerUseCase } from '../../../../customers/application/usecases/get-customer/get-customer.usecase';
-import { GetCartUseCase } from '../../../../carts/application/usecases/get-cart/get-cart.usecase';
 import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
 import { ShippingAddressDto } from '../../../presentation/dto/shipping-address.dto';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ICustomer } from '../../../../customers/domain/interfaces/customer.interface';
 import { ICart } from '../../../../carts/domain/interfaces/cart.interface';
+import { CustomerGateway } from '../../ports/customer.gateway';
+import { CartGateway } from '../../ports/cart.gateway';
+import { CART_GATEWAY, CUSTOMER_GATEWAY } from '../../../order.token';
 
 export interface ValidateCheckoutInput {
   cartId: number;
@@ -30,8 +31,8 @@ export class ValidateCheckoutUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    private readonly getCustomerUseCase: GetCustomerUseCase,
-    private readonly getCartUseCase: GetCartUseCase,
+    @Inject(CUSTOMER_GATEWAY) private readonly customerGateway: CustomerGateway,
+    @Inject(CART_GATEWAY) private readonly cartGateway: CartGateway,
     private readonly addressResolver: ShippingAddressResolver,
   ) {
     super();
@@ -43,14 +44,14 @@ export class ValidateCheckoutUseCase extends UseCase<
     const { cartId, userId, shippingAddress } = input;
 
     // 1. Validate Customer exists
-    const customerResult = await this.getCustomerUseCase.execute(userId);
+    const customerResult = await this.customerGateway.validateCustomer(userId);
     if (isFailure(customerResult)) {
       return Result.failure(customerResult.error);
     }
     const customer = customerResult.value;
 
     // 2. Validate Cart exists and is not empty
-    const cartResult = await this.getCartUseCase.execute(cartId);
+    const cartResult = await this.cartGateway.validateCart(cartId);
     if (isFailure(cartResult)) {
       return Result.failure(cartResult.error);
     }

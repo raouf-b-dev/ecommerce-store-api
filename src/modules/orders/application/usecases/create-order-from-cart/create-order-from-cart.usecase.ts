@@ -1,15 +1,16 @@
 // src/modules/orders/application/usecases/create-order-from-cart/create-order-from-cart.usecase.ts
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../core/application/use-cases/base.usecase';
 import { Result, isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
-import { GetCartUseCase } from '../../../../carts/application/usecases/get-cart/get-cart.usecase';
 import { PaymentMethodType } from '../../../../payments/domain';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
+import { CartGateway } from '../../ports/cart.gateway';
+import { CART_GATEWAY } from '../../../order.token';
 
 export interface CreateOrderFromCartDto {
   cartId: number;
@@ -29,7 +30,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly orderFactory: OrderFactory,
-    private readonly getCartUseCase: GetCartUseCase,
+    @Inject(CART_GATEWAY) private readonly cartGateway: CartGateway,
   ) {
     super();
   }
@@ -39,7 +40,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
   ): Promise<Result<IOrder, UseCaseError>> {
     try {
       // 1. Get Cart
-      const cartResult = await this.getCartUseCase.execute(dto.cartId);
+      const cartResult = await this.cartGateway.getCart(dto.cartId);
       if (isFailure(cartResult)) {
         return ErrorFactory.UseCaseError(
           'Failed to fetch cart',
