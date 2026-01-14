@@ -9,12 +9,13 @@ import { RepositoryError } from '../../../../../core/errors/repository.error';
 import { AddCartItemDto } from '../../../presentation/dto/add-cart-item.dto';
 import { ProductRepository } from '../../../../products/domain/repositories/product-repository';
 import { IProduct } from '../../../../products/domain/interfaces/product.interface';
+import { InventoryGateway } from '../../ports/inventory.gateway';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
   let mockCartRepository: MockCartRepository;
   let mockProductRepository: jest.Mocked<ProductRepository>;
-  let mockCheckStockUseCase: any;
+  let mockInventoryGateway: jest.Mocked<InventoryGateway>;
 
   const mockProduct: IProduct = {
     id: 1,
@@ -35,14 +36,14 @@ describe('AddCartItemUseCase', () => {
       findAll: jest.fn(),
       deleteById: jest.fn(),
     } as any;
-    mockCheckStockUseCase = {
-      execute: jest.fn(),
+    mockInventoryGateway = {
+      checkStock: jest.fn(),
     };
 
     usecase = new AddCartItemUseCase(
       mockCartRepository,
       mockProductRepository,
-      mockCheckStockUseCase,
+      mockInventoryGateway,
     );
   });
 
@@ -70,7 +71,7 @@ describe('AddCartItemUseCase', () => {
       mockProductRepository.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
-      mockCheckStockUseCase.execute.mockResolvedValue(
+      mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: true,
           availableQuantity: 10,
@@ -159,7 +160,7 @@ describe('AddCartItemUseCase', () => {
       mockProductRepository.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
-      mockCheckStockUseCase.execute.mockResolvedValue(
+      mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: false,
           availableQuantity: 5,
@@ -171,10 +172,10 @@ describe('AddCartItemUseCase', () => {
       const result = await usecase.execute({ cartId, dto });
 
       // Assert
-      expect(mockCheckStockUseCase.execute).toHaveBeenCalledWith({
-        productId: dto.productId,
-        quantity: dto.quantity,
-      });
+      expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(
+        dto.productId,
+        dto.quantity,
+      );
       ResultAssertionHelper.assertResultFailure(
         result,
         'Insufficient stock',

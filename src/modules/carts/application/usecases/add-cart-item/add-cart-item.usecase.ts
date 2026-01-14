@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../core/application/use-cases/base.usecase';
 import { AddCartItemDto } from '../../../presentation/dto/add-cart-item.dto';
 import { ICart } from '../../../domain/interfaces/cart.interface';
@@ -7,7 +7,8 @@ import { CartRepository } from '../../../domain/repositories/cart.repository';
 import { ProductRepository } from '../../../../products/domain/repositories/product-repository';
 import { isFailure, Result } from '../../../../../core/domain/result';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
-import { CheckStockUseCase } from '../../../../inventory/application/check-stock/check-stock.usecase';
+import { InventoryGateway } from '../../ports/inventory.gateway';
+import { INVENTORY_GATEWAY } from '../../../carts.token';
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
@@ -18,7 +19,8 @@ export class AddCartItemUseCase extends UseCase<
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
-    private readonly checkStockUseCase: CheckStockUseCase,
+    @Inject(INVENTORY_GATEWAY)
+    private readonly inventoryGateway: InventoryGateway,
   ) {
     super();
   }
@@ -52,10 +54,10 @@ export class AddCartItemUseCase extends UseCase<
       }
 
       // Check stock availability
-      const stockCheckResult = await this.checkStockUseCase.execute({
-        productId: dto.productId,
-        quantity: dto.quantity,
-      });
+      const stockCheckResult = await this.inventoryGateway.checkStock(
+        dto.productId,
+        dto.quantity,
+      );
 
       if (isFailure(stockCheckResult)) {
         return ErrorFactory.UseCaseError(stockCheckResult.error.message);

@@ -11,9 +11,14 @@ import { UpdateCartItemController } from './presentation/controllers/update-cart
 import { CartEntity } from './infrastructure/orm/cart.schema';
 import { CartItemEntity } from './infrastructure/orm/cart-item.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
-import { POSTGRES_CART_REPOSITORY, REDIS_CART_REPOSITORY } from './carts.token';
+import {
+  POSTGRES_CART_REPOSITORY,
+  REDIS_CART_REPOSITORY,
+  INVENTORY_GATEWAY,
+} from './carts.token';
 import { PostgresCartRepository } from './infrastructure/repositories/postgres-cart-repository/postgres.cart-repository';
 import { RedisCartRepository } from './infrastructure/repositories/redis-cart-repository/redis.cart-repository';
+import { ModuleInventoryGateway } from './infrastructure/adapters/module-inventory.gateway';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
 import { CartRepository } from './domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
@@ -56,6 +61,12 @@ import { ProductsModule } from '../products/products.module';
         );
       },
       inject: [CacheService, POSTGRES_CART_REPOSITORY],
+    },
+
+    // Gateways
+    {
+      provide: INVENTORY_GATEWAY,
+      useClass: ModuleInventoryGateway,
     },
 
     // Default Repository Binding
