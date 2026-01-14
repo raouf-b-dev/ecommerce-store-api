@@ -117,10 +117,14 @@ See the full [**System Architecture & Diagrams**](ARCHITECTURE.md) for detailed 
 
 ### 📦 **Core Modules**
 
-- **Product Management** - Complete CRUD with advanced filtering
-- **Order Processing** - Order lifecycle management
-- **Authentication** - JWT-based security
-- **Validation** - Request/response validation with class-validator
+- **Order Processing** - Complex order lifecycle with SAGA orchestration and compensation logic
+- **Product Catalog** - Advanced product management with RedisSearch indexing and filtering
+- **Shopping Carts** - High-performance cart management with RedisJSON persistence
+- **Inventory Management** - Real-time stock tracking and reservation system
+- **Customer Profiles** - Management of user data, shipping addresses, and preferences
+- **Payment Orchestration** - Strategy-based handling of Online and COD payment flows
+- **Authentication** - Secure JWT-based identity and access management
+- **Notifications** - Real-time WebSocket and background alert delivery system
 
 ---
 

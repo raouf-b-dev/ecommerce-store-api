@@ -25,11 +25,13 @@ We utilize **Strategic DDD** to define boundaries and relationships between diff
 | Subdomain         | Type            | Description                                                                                                              |
 | :---------------- | :-------------- | :----------------------------------------------------------------------------------------------------------------------- |
 | **Orders**        | **Core Domain** | The heart of the business. Handles the complex lifecycle of customer orders, SAGA orchestration, and revenue generation. |
-| **Inventory**     | Supporting      | Manages stock levels. Essential but not the primary competitive advantage.                                               |
-| **Products**      | Supporting      | Manages the catalog. Supports the core selling process.                                                                  |
+| **Carts**         | Supporting      | Manages temporary shopping sessions, item selection, and cart persistence.                                               |
+| **Inventory**     | Supporting      | Manages stock levels and reservations. Essential but not the primary competitive advantage.                              |
+| **Products**      | Supporting      | Manages the product catalog, categories, and search indexing. Supports the core selling process.                         |
+| **Customers**     | Supporting      | Manages user profiles, shipping addresses, and customer preferences. Custom-built to support specific business needs.    |
 | **Payments**      | Generic         | Handles transaction processing. Uses standard patterns (Stripe/PayPal) that can be bought/outsourced.                    |
 | **Auth**          | Generic         | Identity and Access Management. Standard JWT implementation.                                                             |
-| **Notifications** | Generic         | Delivery mechanism for alerts.                                                                                           |
+| **Notifications** | Generic         | Delivery mechanism for real-time and background alerts.                                                                  |
 
 ### Bounded Contexts & Context Mapping
 
@@ -45,25 +47,33 @@ graph TD
         Inventory[Inventory Context]
         Products[Products Context]
         Carts[Carts Context]
+        Customers[Customers Context]
     end
 
     subgraph "Generic Subdomains"
-        Customers[Customers Context]
         Payments[Payments Context]
+        Auth[Auth Context]
+        Notifications[Notifications Context]
     end
 
     %% Relationships
     Orders -->|ACL / CustomerGateway| Customers
     Orders -->|ACL / CartGateway| Carts
+    Orders -->|Event / IntegrationEvent| Notifications
+
     Carts -->|ACL / InventoryGateway| Inventory
+    Carts -->|Shared Data / ProductRepo| Products
+
+    Auth -->|Identity| Customers
+    Payments -->|Verify| Auth
 
     classDef core fill:#ff9999,stroke:#333,stroke-width:2px;
     classDef support fill:#99ff99,stroke:#333,stroke-width:1px;
     classDef generic fill:#9999ff,stroke:#333,stroke-width:1px;
 
     class Orders core;
-    class Inventory,Products,Carts support;
-    class Customers,Payments generic;
+    class Inventory,Products,Carts,Customers support;
+    class Payments,Auth,Notifications generic;
 ```
 
 > **Anti-Corruption Layer (ACL)**: The `Orders` context does **not** directly depend on the implementation of `Customers` or `Carts`. Instead, it defines its own **Ports** (Gateways), and we implement **Adapters** that translate external models into the Order domain's language. This protects the Core Domain from changes in upstream modules.
