@@ -1,15 +1,6 @@
 import { Logger, Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
-import { CapturePaymentController } from './presentation/controllers/capture-payment/capture-payment.controller';
-import { CreatePaymentController } from './presentation/controllers/create-payment/create-payment.controller';
-import { GetPaymentController } from './presentation/controllers/get-payment/get-payment.controller';
-import { ListPaymentsController } from './presentation/controllers/list-payments/list-payments.controller';
-import { ProcessRefundController } from './presentation/controllers/process-refund/process-refund.controller';
-import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
-import { VerifyPaymentController } from './presentation/controllers/verify-payment/verify-payment.controller';
-import { StripeWebhookController } from './presentation/controllers/webhook/stripe-webhook.controller';
-import { PayPalWebhookController } from './presentation/controllers/webhook/paypal-webhook.controller';
 import { PaymentEntity } from './infrastructure/orm/payment.schema';
 import { RefundEntity } from './infrastructure/orm/refund.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
@@ -97,17 +88,6 @@ import { BullMqPaymentEventsScheduler } from './infrastructure/schedulers/bullmq
       provide: PaymentRepository,
       useExisting: REDIS_PAYMENT_REPOSITORY,
     },
-
-    // Controllers
-    CreatePaymentController,
-    GetPaymentController,
-    ListPaymentsController,
-    CapturePaymentController,
-    ProcessRefundController,
-    VerifyPaymentController,
-    RecordCodPaymentController,
-    StripeWebhookController,
-    PayPalWebhookController,
 
     // Use Cases
     CreatePaymentUseCase,

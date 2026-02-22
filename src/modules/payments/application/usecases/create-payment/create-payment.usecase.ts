@@ -6,14 +6,15 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { CreatePaymentDto } from '../../../presentation/dto/create-payment.dto';
 import { Payment } from '../../../domain/entities/payment';
-import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentGatewayFactory } from '../../../infrastructure/gateways/payment-gateway.factory';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
+import { PaymentDtoMapper } from '../../../presentation/mappers/payment-dto.mapper';
+import { PaymentResponseDto } from '../../../presentation/dto/payment-response.dto';
 
 @Injectable()
 export class CreatePaymentUseCase extends UseCase<
   CreatePaymentDto,
-  IPayment,
+  PaymentResponseDto,
   UseCaseError
 > {
   constructor(
@@ -25,7 +26,7 @@ export class CreatePaymentUseCase extends UseCase<
 
   async execute(
     dto: CreatePaymentDto,
-  ): Promise<Result<IPayment, UseCaseError>> {
+  ): Promise<Result<PaymentResponseDto, UseCaseError>> {
     try {
       // 1. Get Gateway
       const gateway = this.paymentGatewayFactory.getGateway(dto.paymentMethod);
@@ -98,7 +99,9 @@ export class CreatePaymentUseCase extends UseCase<
 
       if (isFailure(saveResult)) return saveResult;
 
-      return Result.success(saveResult.value.toPrimitives());
+      return Result.success(
+        PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
+      );
     } catch (error) {
       return ErrorFactory.UseCaseError(
         'Unexpected error creating payment',

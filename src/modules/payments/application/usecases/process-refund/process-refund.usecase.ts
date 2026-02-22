@@ -6,13 +6,14 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { ProcessRefundDto } from '../../../presentation/dto/process-refund.dto';
 import { Refund } from '../../../domain/entities/refund';
-import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentGatewayFactory } from '../../../infrastructure/gateways/payment-gateway.factory';
+import { PaymentDtoMapper } from '../../../presentation/mappers/payment-dto.mapper';
+import { PaymentResponseDto } from '../../../presentation/dto/payment-response.dto';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
   { id: number; dto: ProcessRefundDto },
-  IPayment,
+  PaymentResponseDto,
   UseCaseError
 > {
   constructor(
@@ -25,7 +26,7 @@ export class ProcessRefundUseCase extends UseCase<
   async execute(input: {
     id: number;
     dto: ProcessRefundDto;
-  }): Promise<Result<IPayment, UseCaseError>> {
+  }): Promise<Result<PaymentResponseDto, UseCaseError>> {
     try {
       const paymentResult = await this.paymentRepository.findById(input.id);
       if (isFailure(paymentResult)) return paymentResult;
@@ -82,7 +83,9 @@ export class ProcessRefundUseCase extends UseCase<
       const saveResult = await this.paymentRepository.update(payment);
       if (isFailure(saveResult)) return saveResult;
 
-      return Result.success(saveResult.value.toPrimitives());
+      return Result.success(
+        PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
+      );
     } catch (error) {
       return ErrorFactory.UseCaseError(
         'Unexpected error processing refund',

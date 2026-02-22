@@ -1,82 +1,86 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from './payments.controller';
-import { CapturePaymentController } from './presentation/controllers/capture-payment/capture-payment.controller';
-import { CreatePaymentController } from './presentation/controllers/create-payment/create-payment.controller';
-import { GetPaymentController } from './presentation/controllers/get-payment/get-payment.controller';
-import { ListPaymentsController } from './presentation/controllers/list-payments/list-payments.controller';
-import { ProcessRefundController } from './presentation/controllers/process-refund/process-refund.controller';
-import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
-import { VerifyPaymentController } from './presentation/controllers/verify-payment/verify-payment.controller';
-import { StripeWebhookController } from './presentation/controllers/webhook/stripe-webhook.controller';
-import { PayPalWebhookController } from './presentation/controllers/webhook/paypal-webhook.controller';
+import { Result } from '../../core/domain/result';
+
+import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
+import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
+import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
+import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
+import { HandleStripeWebhookUseCase } from './application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { HandlePayPalWebhookUseCase } from './application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
 
-  let createPaymentController: CreatePaymentController;
-  let getPaymentController: GetPaymentController;
-  let listPaymentsController: ListPaymentsController;
-  let capturePaymentController: CapturePaymentController;
-  let processRefundController: ProcessRefundController;
-  let verifyPaymentController: VerifyPaymentController;
-  let recordCodPaymentController: RecordCodPaymentController;
+  let createPaymentUseCase: CreatePaymentUseCase;
+  let getPaymentUseCase: GetPaymentUseCase;
+  let listPaymentsUseCase: ListPaymentsUseCase;
+  let capturePaymentUseCase: CapturePaymentUseCase;
+  let processRefundUseCase: ProcessRefundUseCase;
+  let verifyPaymentUseCase: VerifyPaymentUseCase;
+  let recordCodPaymentUseCase: RecordCodPaymentUseCase;
+  let handleStripeWebhookUseCase: HandleStripeWebhookUseCase;
+  let handlePayPalWebhookUseCase: HandlePayPalWebhookUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PaymentsController],
       providers: [
         {
-          provide: CreatePaymentController,
+          provide: CreatePaymentUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: GetPaymentController,
+          provide: GetPaymentUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ListPaymentsController,
+          provide: ListPaymentsUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: CapturePaymentController,
+          provide: CapturePaymentUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ProcessRefundController,
+          provide: ProcessRefundUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: VerifyPaymentController,
+          provide: VerifyPaymentUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: RecordCodPaymentController,
+          provide: RecordCodPaymentUseCase,
           useValue: {
-            handle: jest.fn(),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: StripeWebhookController,
+          provide: HandleStripeWebhookUseCase,
           useValue: {
-            handle: jest.fn(),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: PayPalWebhookController,
+          provide: HandlePayPalWebhookUseCase,
           useValue: {
-            handle: jest.fn(),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
@@ -84,25 +88,25 @@ describe('PaymentsController', () => {
 
     controller = module.get<PaymentsController>(PaymentsController);
 
-    createPaymentController = module.get<CreatePaymentController>(
-      CreatePaymentController,
+    createPaymentUseCase =
+      module.get<CreatePaymentUseCase>(CreatePaymentUseCase);
+    getPaymentUseCase = module.get<GetPaymentUseCase>(GetPaymentUseCase);
+    listPaymentsUseCase = module.get<ListPaymentsUseCase>(ListPaymentsUseCase);
+    capturePaymentUseCase = module.get<CapturePaymentUseCase>(
+      CapturePaymentUseCase,
     );
-    getPaymentController =
-      module.get<GetPaymentController>(GetPaymentController);
-    listPaymentsController = module.get<ListPaymentsController>(
-      ListPaymentsController,
+    processRefundUseCase =
+      module.get<ProcessRefundUseCase>(ProcessRefundUseCase);
+    verifyPaymentUseCase =
+      module.get<VerifyPaymentUseCase>(VerifyPaymentUseCase);
+    recordCodPaymentUseCase = module.get<RecordCodPaymentUseCase>(
+      RecordCodPaymentUseCase,
     );
-    capturePaymentController = module.get<CapturePaymentController>(
-      CapturePaymentController,
+    handleStripeWebhookUseCase = module.get<HandleStripeWebhookUseCase>(
+      HandleStripeWebhookUseCase,
     );
-    processRefundController = module.get<ProcessRefundController>(
-      ProcessRefundController,
-    );
-    verifyPaymentController = module.get<VerifyPaymentController>(
-      VerifyPaymentController,
-    );
-    recordCodPaymentController = module.get<RecordCodPaymentController>(
-      RecordCodPaymentController,
+    handlePayPalWebhookUseCase = module.get<HandlePayPalWebhookUseCase>(
+      HandlePayPalWebhookUseCase,
     );
   });
 

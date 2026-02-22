@@ -4,19 +4,20 @@ import { Result, isFailure } from '../../../../../core/domain/result';
 import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentDtoMapper } from '../../../presentation/mappers/payment-dto.mapper';
+import { PaymentResponseDto } from '../../../presentation/dto/payment-response.dto';
 
 @Injectable()
 export class VerifyPaymentUseCase extends UseCase<
   number,
-  IPayment,
+  PaymentResponseDto,
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
+  async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
     try {
       const result = await this.paymentRepository.findById(id);
 
@@ -25,7 +26,9 @@ export class VerifyPaymentUseCase extends UseCase<
       // Logic to verify payment status with external provider could be added here
       // For now, we just return the payment
 
-      return Result.success(result.value.toPrimitives());
+      return Result.success(
+        PaymentDtoMapper.toResponse(result.value.toPrimitives()),
+      );
     } catch (error) {
       return ErrorFactory.UseCaseError(
         'Unexpected error verifying payment',

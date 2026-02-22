@@ -6,12 +6,13 @@ import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { RecordCodPaymentDto } from '../../../presentation/dto/record-cod-payment.dto';
 import { Payment } from '../../../domain/entities/payment';
-import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentDtoMapper } from '../../../presentation/mappers/payment-dto.mapper';
+import { PaymentResponseDto } from '../../../presentation/dto/payment-response.dto';
 
 @Injectable()
 export class RecordCodPaymentUseCase extends UseCase<
   RecordCodPaymentDto,
-  IPayment,
+  PaymentResponseDto,
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
@@ -20,7 +21,7 @@ export class RecordCodPaymentUseCase extends UseCase<
 
   async execute(
     dto: RecordCodPaymentDto,
-  ): Promise<Result<IPayment, UseCaseError>> {
+  ): Promise<Result<PaymentResponseDto, UseCaseError>> {
     try {
       const payment = Payment.createCOD(
         null,
@@ -33,7 +34,9 @@ export class RecordCodPaymentUseCase extends UseCase<
 
       if (isFailure(saveResult)) return saveResult;
 
-      return Result.success(saveResult.value.toPrimitives());
+      return Result.success(
+        PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
+      );
     } catch (error) {
       return ErrorFactory.UseCaseError(
         'Unexpected error recording COD payment',

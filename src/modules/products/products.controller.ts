@@ -18,21 +18,22 @@ import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { UpdateProductDto } from './presentation/dto/update-product.dto';
 import { ProductResponseDto } from './presentation/dto/product-response.dto';
-import { GetProductController } from './presentation/controllers/get-product/get-product.controller';
-import { CreateProductController } from './presentation/controllers/create-product/create-product.controller';
-import { DeleteProductController } from './presentation/controllers/delete-product/delete-product.controller';
-import { ListProductsController } from './presentation/controllers/list-products/list-products.controller';
-import { UpdateProductController } from './presentation/controllers/update-product/update-product.controller';
+import { CreateProductUseCase } from './application/usecases/create-product/create-product.usecase';
+import { GetProductUseCase } from './application/usecases/get-product/get-product.usecase';
+import { ListProductsUseCase } from './application/usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from './application/usecases/update-product/update-product.usecase';
+import { DeleteProductUseCase } from './application/usecases/delete-product/delete-product.usecase';
+import { isFailure } from '../../core/domain/result';
 
 @ApiTags('products')
 @Controller('products')
 export class ProductsController {
   constructor(
-    private readonly createProductController: CreateProductController,
-    private readonly getProductController: GetProductController,
-    private readonly listProductsController: ListProductsController,
-    private readonly updateProductController: UpdateProductController,
-    private readonly deleteProductController: DeleteProductController,
+    private readonly createProductUseCase: CreateProductUseCase,
+    private readonly getProductUseCase: GetProductUseCase,
+    private readonly listProductsUseCase: ListProductsUseCase,
+    private readonly updateProductUseCase: UpdateProductUseCase,
+    private readonly deleteProductUseCase: DeleteProductUseCase,
   ) {}
 
   @Post()
@@ -55,7 +56,7 @@ export class ProductsController {
     description: 'Forbidden - Admin access required.',
   })
   async createProduct(@Body() dto: CreateProductDto) {
-    return this.createProductController.handle(dto);
+    return await this.createProductUseCase.execute(dto);
   }
 
   @Get()
@@ -68,8 +69,8 @@ export class ProductsController {
     description: 'List of products retrieved successfully.',
     type: [ProductResponseDto],
   })
-  findAll() {
-    return this.listProductsController.handle();
+  async findAll() {
+    return await this.listProductsUseCase.execute();
   }
 
   @Get(':id')
@@ -80,8 +81,8 @@ export class ProductsController {
     type: ProductResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  findOne(@Param('id') id: string) {
-    return this.getProductController.handle(Number(id));
+  async findOne(@Param('id') id: string) {
+    return await this.getProductUseCase.execute(Number(id));
   }
 
   @Patch(':id')
@@ -102,8 +103,14 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.updateProductController.handle(Number(id), updateProductDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return await this.updateProductUseCase.execute({
+      id: Number(id),
+      dto: updateProductDto,
+    });
   }
 
   @Delete(':id')
@@ -121,7 +128,7 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  remove(@Param('id') id: string) {
-    return this.deleteProductController.handle(Number(id));
+  async remove(@Param('id') id: string) {
+    return await this.deleteProductUseCase.execute(Number(id));
   }
 }

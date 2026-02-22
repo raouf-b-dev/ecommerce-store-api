@@ -1,22 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
-import { GetProductController } from './presentation/controllers/get-product/get-product.controller';
-import { CreateProductController } from './presentation/controllers/create-product/create-product.controller';
+import { GetProductUseCase } from './application/usecases/get-product/get-product.usecase';
+import { CreateProductUseCase } from './application/usecases/create-product/create-product.usecase';
 import { CreateProductDto } from './presentation/dto/create-product.dto';
 import { Product } from './domain/entities/product';
-import { DeleteProductController } from './presentation/controllers/delete-product/delete-product.controller';
-import { ListProductsController } from './presentation/controllers/list-products/list-products.controller';
-import { UpdateProductController } from './presentation/controllers/update-product/update-product.controller';
+import { DeleteProductUseCase } from './application/usecases/delete-product/delete-product.usecase';
+import { ListProductsUseCase } from './application/usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from './application/usecases/update-product/update-product.usecase';
 import { UpdateProductDto } from './presentation/dto/update-product.dto';
+import { Result } from '../../core/domain/result';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
 
-  let createProductController: CreateProductController;
-  let getProductController: GetProductController;
-  let listProductsController: ListProductsController;
-  let updateProductController: UpdateProductController;
-  let deleteProductController: DeleteProductController;
+  let createProductUseCase: CreateProductUseCase;
+  let getProductUseCase: GetProductUseCase;
+  let listProductsUseCase: ListProductsUseCase;
+  let updateProductUseCase: UpdateProductUseCase;
+  let deleteProductUseCase: DeleteProductUseCase;
 
   let product: Product;
   let productsList: Product[];
@@ -56,33 +57,33 @@ describe('ProductsController', () => {
       controllers: [ProductsController],
       providers: [
         {
-          provide: GetProductController,
+          provide: GetProductUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(product),
+            execute: jest.fn().mockResolvedValue(Result.success(product)),
           },
         },
         {
-          provide: ListProductsController,
+          provide: ListProductsUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(productsList),
+            execute: jest.fn().mockResolvedValue(Result.success(productsList)),
           },
         },
         {
-          provide: CreateProductController,
+          provide: CreateProductUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(product),
+            execute: jest.fn().mockResolvedValue(Result.success(product)),
           },
         },
         {
-          provide: UpdateProductController,
+          provide: UpdateProductUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(product),
+            execute: jest.fn().mockResolvedValue(Result.success(product)),
           },
         },
         {
-          provide: DeleteProductController,
+          provide: DeleteProductUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
@@ -90,56 +91,45 @@ describe('ProductsController', () => {
 
     controller = module.get<ProductsController>(ProductsController);
 
-    getProductController =
-      module.get<GetProductController>(GetProductController);
-
-    listProductsController = module.get<ListProductsController>(
-      ListProductsController,
-    );
-
-    createProductController = module.get<CreateProductController>(
-      CreateProductController,
-    );
-    updateProductController = module.get<UpdateProductController>(
-      UpdateProductController,
-    );
-
-    deleteProductController = module.get<DeleteProductController>(
-      DeleteProductController,
-    );
+    getProductUseCase = module.get<GetProductUseCase>(GetProductUseCase);
+    listProductsUseCase = module.get<ListProductsUseCase>(ListProductsUseCase);
+    createProductUseCase =
+      module.get<CreateProductUseCase>(CreateProductUseCase);
+    updateProductUseCase =
+      module.get<UpdateProductUseCase>(UpdateProductUseCase);
+    deleteProductUseCase =
+      module.get<DeleteProductUseCase>(DeleteProductUseCase);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should call GetProductController.handle when findOne is called', async () => {
+  it('should call GetProductUseCase.execute when findOne is called', async () => {
     await controller.findOne(id.toString());
-    expect(getProductController.handle).toHaveBeenCalledWith(id);
+    expect(getProductUseCase.execute).toHaveBeenCalledWith(id);
   });
 
-  it('should call ListProductsController.handle when findAll is called', async () => {
+  it('should call ListProductsUseCase.execute when findAll is called', async () => {
     await controller.findAll();
-    expect(listProductsController.handle).toHaveBeenCalledWith();
+    expect(listProductsUseCase.execute).toHaveBeenCalledWith();
   });
 
-  it('should call CreateProductController.handle when createProduct is called', async () => {
+  it('should call CreateProductUseCase.execute when createProduct is called', async () => {
     await controller.createProduct(createProductDto);
-    expect(createProductController.handle).toHaveBeenCalledWith(
-      createProductDto,
-    );
+    expect(createProductUseCase.execute).toHaveBeenCalledWith(createProductDto);
   });
 
-  it('should call UpdateProductController.handle when createProduct is called', async () => {
+  it('should call UpdateProductUseCase.execute when createProduct is called', async () => {
     await controller.update(id.toString(), updateProductDto);
-    expect(updateProductController.handle).toHaveBeenCalledWith(
-      id,
-      updateProductDto,
-    );
+    expect(updateProductUseCase.execute).toHaveBeenCalledWith({
+      id: id,
+      dto: updateProductDto,
+    });
   });
 
-  it('should call DeleteProductController.handle when remove is called', async () => {
+  it('should call DeleteProductUseCase.execute when remove is called', async () => {
     await controller.remove(id.toString());
-    expect(deleteProductController.handle).toHaveBeenCalledWith(id);
+    expect(deleteProductUseCase.execute).toHaveBeenCalledWith(id);
   });
 });
