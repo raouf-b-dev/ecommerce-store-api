@@ -15,8 +15,6 @@ import { RegisterUserUseCase } from './application/usecases/register-user/regist
 import { POSTGRES_USER_REPOSITORY, REDIS_USER_REPOSITORY } from './auth.tokens';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
-import { RegisterUserController } from './presentation/controllers/register-user/register-user.controller';
-import { LoginUserController } from './presentation/controllers/login-user/login-user.controller';
 import { EnvConfigService } from '../../config/env-config.service';
 
 @Module({
@@ -35,8 +33,6 @@ import { EnvConfigService } from '../../config/env-config.service';
   ],
   controllers: [AuthController],
   providers: [
-    RegisterUserUseCase,
-    LoginUserUseCase,
     BcryptService,
     JwtStrategy,
     {
@@ -58,15 +54,9 @@ import { EnvConfigService } from '../../config/env-config.service';
       useExisting: REDIS_USER_REPOSITORY,
     },
 
-    // usecases
-
+    // Use Cases
     RegisterUserUseCase,
     LoginUserUseCase,
-
-    // controllers
-
-    RegisterUserController,
-    LoginUserController,
   ],
   exports: [JwtStrategy, PassportModule, JwtModule],
 })

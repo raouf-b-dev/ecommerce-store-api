@@ -1,68 +1,70 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartsController } from './carts.controller';
-import { AddCartItemController } from './presentation/controllers/add-cart-item/add-cart-item.controller';
-import { ClearCartController } from './presentation/controllers/clear-cart/clear-cart.controller';
-import { CreateCartController } from './presentation/controllers/create-cart/create-cart.controller';
-import { GetCartController } from './presentation/controllers/get-cart/get-cart.controller';
-import { MergeCartsController } from './presentation/controllers/merge-carts/merge-carts.controller';
-import { RemoveCartItemController } from './presentation/controllers/remove-cart-item/remove-cart-item.controller';
-import { UpdateCartItemController } from './presentation/controllers/update-cart-item/update-cart-item.controller';
+import { Result } from '../../core/domain/result';
+
+import { AddCartItemUseCase } from './application/usecases/add-cart-item/add-cart-item.usecase';
+import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
+import { CreateCartUseCase } from './application/usecases/create-cart/create-cart.usecase';
+import { GetCartUseCase } from './application/usecases/get-cart/get-cart.usecase';
+import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
+import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
+import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/update-cart-item.usecase';
 
 describe('CartsController', () => {
   let controller: CartsController;
 
-  let getCartController: GetCartController;
-  let createCartController: CreateCartController;
-  let addCartItemController: AddCartItemController;
-  let updateCartItemController: UpdateCartItemController;
-  let removeCartItemController: RemoveCartItemController;
-  let clearCartController: ClearCartController;
-  let mergeCartsController: MergeCartsController;
+  let getCartUseCase: GetCartUseCase;
+  let createCartUseCase: CreateCartUseCase;
+  let addCartItemUseCase: AddCartItemUseCase;
+  let updateCartItemUseCase: UpdateCartItemUseCase;
+  let removeCartItemUseCase: RemoveCartItemUseCase;
+  let clearCartUseCase: ClearCartUseCase;
+  let mergeCartsUseCase: MergeCartsUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CartsController],
       providers: [
         {
-          provide: GetCartController,
+          provide: GetCartUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: CreateCartController,
+          provide: CreateCartUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: AddCartItemController,
+          provide: AddCartItemUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: UpdateCartItemController,
+          provide: UpdateCartItemUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: RemoveCartItemController,
+          provide: RemoveCartItemUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ClearCartController,
+          provide: ClearCartUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: MergeCartsController,
+          provide: MergeCartsUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
@@ -70,21 +72,17 @@ describe('CartsController', () => {
 
     controller = module.get<CartsController>(CartsController);
 
-    getCartController = module.get<GetCartController>(GetCartController);
-    createCartController =
-      module.get<CreateCartController>(CreateCartController);
-    addCartItemController = module.get<AddCartItemController>(
-      AddCartItemController,
+    getCartUseCase = module.get<GetCartUseCase>(GetCartUseCase);
+    createCartUseCase = module.get<CreateCartUseCase>(CreateCartUseCase);
+    addCartItemUseCase = module.get<AddCartItemUseCase>(AddCartItemUseCase);
+    updateCartItemUseCase = module.get<UpdateCartItemUseCase>(
+      UpdateCartItemUseCase,
     );
-    updateCartItemController = module.get<UpdateCartItemController>(
-      UpdateCartItemController,
+    removeCartItemUseCase = module.get<RemoveCartItemUseCase>(
+      RemoveCartItemUseCase,
     );
-    removeCartItemController = module.get<RemoveCartItemController>(
-      RemoveCartItemController,
-    );
-    clearCartController = module.get<ClearCartController>(ClearCartController);
-    mergeCartsController =
-      module.get<MergeCartsController>(MergeCartsController);
+    clearCartUseCase = module.get<ClearCartUseCase>(ClearCartUseCase);
+    mergeCartsUseCase = module.get<MergeCartsUseCase>(MergeCartsUseCase);
   });
 
   it('should be defined', () => {

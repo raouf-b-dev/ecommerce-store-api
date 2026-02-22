@@ -1,15 +1,6 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomersController } from './customers.controller';
-import { AddAddressController } from './presentation/controllers/add-address/add-address.controller';
-import { CreateCustomerController } from './presentation/controllers/create-customer/create-customer.controller';
-import { DeleteAddressController } from './presentation/controllers/delete-address/delete-address.controller';
-import { DeleteCustomerController } from './presentation/controllers/delete-customer/delete-customer.controller';
-import { GetCustomerController } from './presentation/controllers/get-customer/get-customer.controller';
-import { ListCustomersController } from './presentation/controllers/list-customers/list-customers.controller';
-import { SetDefaultAddressController } from './presentation/controllers/set-default-address/set-default-address.controller';
-import { UpdateAddressController } from './presentation/controllers/update-address/update-address.controller';
-import { UpdateCustomerController } from './presentation/controllers/update-customer/update-customer.controller';
 import { CustomerEntity } from './infrastructure/orm/customer.schema';
 import { AddressEntity } from './infrastructure/orm/address.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
@@ -77,17 +68,6 @@ import { SetDefaultAddressUseCase } from './application/usecases/set-default-add
     UpdateAddressUseCase,
     DeleteAddressUseCase,
     SetDefaultAddressUseCase,
-
-    // Individual Controllers (needed as providers for CustomersController)
-    CreateCustomerController,
-    GetCustomerController,
-    ListCustomersController,
-    UpdateCustomerController,
-    DeleteCustomerController,
-    AddAddressController,
-    UpdateAddressController,
-    DeleteAddressController,
-    SetDefaultAddressController,
   ],
 })
 export class CustomersModule {}

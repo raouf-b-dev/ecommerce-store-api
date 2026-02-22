@@ -1,84 +1,86 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomersController } from './customers.controller';
-import { AddAddressController } from './presentation/controllers/add-address/add-address.controller';
-import { CreateCustomerController } from './presentation/controllers/create-customer/create-customer.controller';
-import { DeleteAddressController } from './presentation/controllers/delete-address/delete-address.controller';
-import { DeleteCustomerController } from './presentation/controllers/delete-customer/delete-customer.controller';
-import { GetCustomerController } from './presentation/controllers/get-customer/get-customer.controller';
-import { ListCustomersController } from './presentation/controllers/list-customers/list-customers.controller';
-import { SetDefaultAddressController } from './presentation/controllers/set-default-address/set-default-address.controller';
-import { UpdateAddressController } from './presentation/controllers/update-address/update-address.controller';
-import { UpdateCustomerController } from './presentation/controllers/update-customer/update-customer.controller';
+import { Result } from '../../core/domain/result';
+
+import { CreateCustomerUseCase } from './application/usecases/create-customer/create-customer.usecase';
+import { GetCustomerUseCase } from './application/usecases/get-customer/get-customer.usecase';
+import { ListCustomersUseCase } from './application/usecases/list-customers/list-customers.usecase';
+import { UpdateCustomerUseCase } from './application/usecases/update-customer/update-customer.usecase';
+import { DeleteCustomerUseCase } from './application/usecases/delete-customer/delete-customer.usecase';
+import { AddAddressUseCase } from './application/usecases/add-address/add-address.usecase';
+import { UpdateAddressUseCase } from './application/usecases/update-address/update-address.usecase';
+import { DeleteAddressUseCase } from './application/usecases/delete-address/delete-address.usecase';
+import { SetDefaultAddressUseCase } from './application/usecases/set-default-address/set-default-address.usecase';
 
 describe('CustomersController', () => {
   let controller: CustomersController;
 
-  let createCustomerController: CreateCustomerController;
-  let getCustomerController: GetCustomerController;
-  let listCustomersController: ListCustomersController;
-  let updateCustomerController: UpdateCustomerController;
-  let deleteCustomerController: DeleteCustomerController;
-  let addAddressController: AddAddressController;
-  let updateAddressController: UpdateAddressController;
-  let deleteAddressController: DeleteAddressController;
-  let setDefaultAddressController: SetDefaultAddressController;
+  let createCustomerUseCase: CreateCustomerUseCase;
+  let getCustomerUseCase: GetCustomerUseCase;
+  let listCustomersUseCase: ListCustomersUseCase;
+  let updateCustomerUseCase: UpdateCustomerUseCase;
+  let deleteCustomerUseCase: DeleteCustomerUseCase;
+  let addAddressUseCase: AddAddressUseCase;
+  let updateAddressUseCase: UpdateAddressUseCase;
+  let deleteAddressUseCase: DeleteAddressUseCase;
+  let setDefaultAddressUseCase: SetDefaultAddressUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CustomersController],
       providers: [
         {
-          provide: CreateCustomerController,
+          provide: CreateCustomerUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: GetCustomerController,
+          provide: GetCustomerUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ListCustomersController,
+          provide: ListCustomersUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: UpdateCustomerController,
+          provide: UpdateCustomerUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: DeleteCustomerController,
+          provide: DeleteCustomerUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: AddAddressController,
+          provide: AddAddressUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: UpdateAddressController,
+          provide: UpdateAddressUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: DeleteAddressController,
+          provide: DeleteAddressUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: SetDefaultAddressController,
+          provide: SetDefaultAddressUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
@@ -86,31 +88,25 @@ describe('CustomersController', () => {
 
     controller = module.get<CustomersController>(CustomersController);
 
-    createCustomerController = module.get<CreateCustomerController>(
-      CreateCustomerController,
+    createCustomerUseCase = module.get<CreateCustomerUseCase>(
+      CreateCustomerUseCase,
     );
-    getCustomerController = module.get<GetCustomerController>(
-      GetCustomerController,
+    getCustomerUseCase = module.get<GetCustomerUseCase>(GetCustomerUseCase);
+    listCustomersUseCase =
+      module.get<ListCustomersUseCase>(ListCustomersUseCase);
+    updateCustomerUseCase = module.get<UpdateCustomerUseCase>(
+      UpdateCustomerUseCase,
     );
-    listCustomersController = module.get<ListCustomersController>(
-      ListCustomersController,
+    deleteCustomerUseCase = module.get<DeleteCustomerUseCase>(
+      DeleteCustomerUseCase,
     );
-    updateCustomerController = module.get<UpdateCustomerController>(
-      UpdateCustomerController,
-    );
-    deleteCustomerController = module.get<DeleteCustomerController>(
-      DeleteCustomerController,
-    );
-    addAddressController =
-      module.get<AddAddressController>(AddAddressController);
-    updateAddressController = module.get<UpdateAddressController>(
-      UpdateAddressController,
-    );
-    deleteAddressController = module.get<DeleteAddressController>(
-      DeleteAddressController,
-    );
-    setDefaultAddressController = module.get<SetDefaultAddressController>(
-      SetDefaultAddressController,
+    addAddressUseCase = module.get<AddAddressUseCase>(AddAddressUseCase);
+    updateAddressUseCase =
+      module.get<UpdateAddressUseCase>(UpdateAddressUseCase);
+    deleteAddressUseCase =
+      module.get<DeleteAddressUseCase>(DeleteAddressUseCase);
+    setDefaultAddressUseCase = module.get<SetDefaultAddressUseCase>(
+      SetDefaultAddressUseCase,
     );
   });
 

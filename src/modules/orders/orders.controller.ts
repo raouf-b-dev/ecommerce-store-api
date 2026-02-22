@@ -16,20 +16,22 @@ import {
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
 import { CheckoutDto } from './presentation/dto/checkout.dto';
 import { CheckoutResponseDto } from './presentation/dto/checkout-response.dto';
-import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
 import { OrderResponseDto } from './presentation/dto/order-response.dto';
-import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
-import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
-import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
-import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
 import { DeliverOrderDto } from './presentation/dto/deliver-order.dto';
-import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
-import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 import { Idempotent } from '../../core/infrastructure/decorators/idempotent.decorator';
+
+import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
+import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
+import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
+import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
+import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
+import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
+import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
+import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
+import { isFailure } from '../../core/domain/result';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -37,14 +39,14 @@ import { Idempotent } from '../../core/infrastructure/decorators/idempotent.deco
 @Controller('orders')
 export class OrdersController {
   constructor(
-    private getOrderController: GetOrderController,
-    private listOrdersController: ListOrdersController,
-    private confirmOrderController: ConfirmOrderController,
-    private processOrderController: ProcessOrderController,
-    private shipOrderController: ShipOrderController,
-    private deliverOrderController: DeliverOrderController,
-    private cancelOrderController: CancelOrderController,
-    private checkoutController: CheckoutController,
+    private readonly getOrderUseCase: GetOrderUseCase,
+    private readonly listOrdersUseCase: ListOrdersUsecase,
+    private readonly confirmOrderUseCase: ConfirmOrderUseCase,
+    private readonly processOrderUseCase: ProcessOrderUseCase,
+    private readonly shipOrderUseCase: ShipOrderUseCase,
+    private readonly deliverOrderUseCase: DeliverOrderUseCase,
+    private readonly cancelOrderUseCase: CancelOrderUseCase,
+    private readonly checkoutUseCase: CheckoutUseCase,
   ) {}
 
   @Post('checkout')
@@ -76,7 +78,10 @@ export class OrdersController {
     @Body() dto: CheckoutDto,
     @CurrentUser('userId') userId: string,
   ) {
-    return this.checkoutController.handle(dto, Number(userId));
+    return await this.checkoutUseCase.execute({
+      dto,
+      userId: Number(userId),
+    });
   }
 
   @Get()
@@ -91,7 +96,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findAll(@Query() query: ListOrdersQueryDto) {
-    return this.listOrdersController.handle(query);
+    return await this.listOrdersUseCase.execute(query);
   }
 
   @Get(':id')
@@ -104,7 +109,7 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findOne(@Param('id') id: string) {
-    return this.getOrderController.handle(Number(id));
+    return await this.getOrderUseCase.execute(Number(id));
   }
 
   @Patch(':id/confirm')
@@ -124,11 +129,11 @@ export class OrdersController {
     @Param('id') id: string,
     @Body() body?: { reservationId?: number; cartId?: number },
   ) {
-    return this.confirmOrderController.handle(
-      Number(id),
-      body?.reservationId,
-      body?.cartId,
-    );
+    return await this.confirmOrderUseCase.execute({
+      orderId: Number(id),
+      reservationId: body?.reservationId,
+      cartId: body?.cartId,
+    });
   }
 
   @Patch(':id/process')
@@ -143,7 +148,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async processOrder(@Param('id') id: string) {
-    return this.processOrderController.handle(Number(id));
+    return await this.processOrderUseCase.execute(Number(id));
   }
 
   @Patch(':id/ship')
@@ -155,7 +160,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async shipOrder(@Param('id') id: string) {
-    return this.shipOrderController.handle(Number(id));
+    return await this.shipOrderUseCase.execute(Number(id));
   }
 
   @Patch(':id/deliver')
@@ -174,7 +179,10 @@ export class OrdersController {
     @Param('id') id: string,
     @Body() deliverOrderDto: DeliverOrderDto,
   ) {
-    return this.deliverOrderController.handle(Number(id), deliverOrderDto);
+    return await this.deliverOrderUseCase.execute({
+      id: Number(id),
+      deliverOrderDto,
+    });
   }
 
   @Patch(':id/cancel')
@@ -190,6 +198,6 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })
   async cancelOrder(@Param('id') id: string) {
-    return this.cancelOrderController.handle(Number(id));
+    return await this.cancelOrderUseCase.execute(Number(id));
   }
 }

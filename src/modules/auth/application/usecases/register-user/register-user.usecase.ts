@@ -9,11 +9,12 @@ import { BcryptService } from '../../../infrastructure/services/bcrypt.service';
 import { RegisterDto } from '../../../presentation/dto/register.dto';
 import { CreateCustomerUseCase } from '../../../../customers/application/usecases/create-customer/create-customer.usecase';
 import { UserRoleType } from '../../../domain/value-objects/user-role';
+import { IUser } from 'src/modules/auth/domain/interfaces/user.interface';
 
 @Injectable()
 export class RegisterUserUseCase extends UseCase<
   RegisterDto,
-  { user: User; customerId: number },
+  { user: IUser; customerId: number },
   UseCaseError
 > {
   constructor(
@@ -26,7 +27,7 @@ export class RegisterUserUseCase extends UseCase<
 
   async execute(
     dto: RegisterDto,
-  ): Promise<Result<{ user: User; customerId: number }, UseCaseError>> {
+  ): Promise<Result<{ user: IUser; customerId: number }, UseCaseError>> {
     try {
       // 1. Check if user exists
       const existingUser = await this.userRepository.findByEmail(dto.email);
@@ -62,7 +63,7 @@ export class RegisterUserUseCase extends UseCase<
       if (isFailure(saveResult)) return saveResult;
 
       return Result.success({
-        user: saveResult.value,
+        user: saveResult.value.toPrimitives(),
         customerId: customer.id!,
       });
     } catch (error) {

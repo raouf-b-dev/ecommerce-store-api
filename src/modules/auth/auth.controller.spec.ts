@@ -1,22 +1,24 @@
 // src/modules/auth/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { RegisterUserController } from './presentation/controllers/register-user/register-user.controller';
-import { LoginUserController } from './presentation/controllers/login-user/login-user.controller';
+import { RegisterUserUseCase } from './application/usecases/register-user/register-user.usecase';
+import { LoginUserUseCase } from './application/usecases/login-user/login-user.usecase';
 import { UserTestFactory } from './testing/factories/user.factory';
 import { RegisterDtoTestFactory } from './testing/factories/register-dto.factory';
 import { LoginDtoTestFactory } from './testing/factories/login-dto.factory';
+import { Result } from '../../core/domain/result';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let registerController: RegisterUserController;
-  let loginController: LoginUserController;
+  let registerUseCase: RegisterUserUseCase;
+  let loginUseCase: LoginUserUseCase;
   let mockUser;
   let registerDto;
   let loginDto;
 
   beforeEach(async () => {
     mockUser = UserTestFactory.createMockUser();
+    mockUser.toPrimitives = jest.fn().mockReturnValue(mockUser);
     registerDto = RegisterDtoTestFactory.createRegisterDto();
     loginDto = LoginDtoTestFactory.createLoginDto();
 
@@ -24,28 +26,30 @@ describe('AuthController', () => {
       controllers: [AuthController],
       providers: [
         {
-          provide: RegisterUserController,
+          provide: RegisterUserUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue({
-              user: mockUser,
-              customerId: mockUser.customerId,
-            }),
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                user: mockUser,
+                customerId: mockUser.customerId,
+              }),
+            ),
           },
         },
         {
-          provide: LoginUserController,
+          provide: LoginUserUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue({ accessToken: '123' }),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success({ accessToken: '123' })),
           },
         },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    registerController = module.get<RegisterUserController>(
-      RegisterUserController,
-    );
-    loginController = module.get<LoginUserController>(LoginUserController);
+    registerUseCase = module.get<RegisterUserUseCase>(RegisterUserUseCase);
+    loginUseCase = module.get<LoginUserUseCase>(LoginUserUseCase);
   });
 
   afterEach(() => {
@@ -56,15 +60,20 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should call RegisterUserController.handle when register is called and return its result', async () => {
+  it('should call RegisterUserUseCase.execute when register is called and return its result', async () => {
     const res = await controller.register(registerDto);
-    expect(registerController.handle).toHaveBeenCalledWith(registerDto);
-    expect(res).toEqual({ user: mockUser, customerId: mockUser.customerId });
+    expect(registerUseCase.execute).toHaveBeenCalledWith(registerDto);
+    expect(res).toEqual(
+      Result.success({
+        user: mockUser.toPrimitives(),
+        customerId: mockUser.customerId,
+      }),
+    );
   });
 
-  it('should call LoginUserController.handle when login is called and return its result', async () => {
+  it('should call LoginUserUseCase.execute when login is called and return its result', async () => {
     const res = await controller.login(loginDto);
-    expect(loginController.handle).toHaveBeenCalledWith(loginDto);
-    expect(res).toEqual({ accessToken: '123' });
+    expect(loginUseCase.execute).toHaveBeenCalledWith(loginDto);
+    expect(res).toEqual(Result.success({ accessToken: '123' }));
   });
 });

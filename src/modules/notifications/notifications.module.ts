@@ -14,8 +14,6 @@ import { CleanupExpiredNotificationsService } from './application/services/clean
 import { GetUserNotificationsUseCase } from './application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './application/usecases/mark-notification-as-read.usecase';
 import { NotificationsController } from './notifications.controller';
-import { GetUserNotificationsController } from './presentation/controllers/get-user-notifications.controller';
-import { MarkNotificationAsReadController } from './presentation/controllers/mark-notification-as-read.controller';
 import { NotificationScheduler } from './domain/schedulers/notification.scheduler';
 import { BullMqNotificationScheduler } from './infrastructure/schedulers/bullmq.notification-scheduler';
 import { DeliverNotificationProcess } from './presentation/jobs/deliver-notification.process';
@@ -57,10 +55,6 @@ import { NotificationsProcessor } from './notifications.processor';
     // Use Cases
     GetUserNotificationsUseCase,
     MarkNotificationAsReadUseCase,
-
-    // Controllers (Delegates)
-    GetUserNotificationsController,
-    MarkNotificationAsReadController,
 
     // Jobs (Processes)
     DeliverNotificationProcess,
