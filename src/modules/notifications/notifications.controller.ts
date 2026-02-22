@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JWTAuthGuard } from 'src/modules/auth/guards/auth.guard';
-import { GetUserNotificationsController } from './presentation/controllers/get-user-notifications.controller';
-import { MarkNotificationAsReadController } from './presentation/controllers/mark-notification-as-read.controller';
+import { GetUserNotificationsUseCase } from './application/usecases/get-user-notifications.usecase';
+import { MarkNotificationAsReadUseCase } from './application/usecases/mark-notification-as-read.usecase';
 import { NotificationStatus } from './domain/enums/notification-status.enum';
 import { isFailure } from 'src/core/domain/result';
 
@@ -20,8 +20,8 @@ import { isFailure } from 'src/core/domain/result';
 @Controller('notifications')
 export class NotificationsController {
   constructor(
-    private readonly getUserNotificationsController: GetUserNotificationsController,
-    private readonly markNotificationAsReadController: MarkNotificationAsReadController,
+    private readonly getUserNotificationsUseCase: GetUserNotificationsUseCase,
+    private readonly markNotificationAsReadUseCase: MarkNotificationAsReadUseCase,
   ) {}
 
   @Get()
@@ -32,12 +32,12 @@ export class NotificationsController {
     @Query('limit') limit = 20,
     @Query('status') status?: NotificationStatus,
   ) {
-    const result = await this.getUserNotificationsController.handle(
-      req.user.userId,
-      Number(page),
-      Number(limit),
+    const result = await this.getUserNotificationsUseCase.execute({
+      userId: req.user.userId,
+      page: Number(page),
+      limit: Number(limit),
       status,
-    );
+    });
     if (isFailure(result)) throw result.error;
     return {
       ...result.value,
@@ -48,11 +48,9 @@ export class NotificationsController {
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   async markAsRead(@Request() req, @Param('id') id: string) {
-    const result = await this.markNotificationAsReadController.handle(
+    return await this.markNotificationAsReadUseCase.execute(
       id,
       req.user.userId,
     );
-    if (isFailure(result)) throw result.error;
-    return result.value;
   }
 }

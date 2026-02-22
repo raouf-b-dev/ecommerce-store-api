@@ -18,32 +18,33 @@ import { AdjustStockDto } from './presentation/dto/adjust-stock.dto';
 import { ReserveStockDto } from './presentation/dto/reserve-stock.dto';
 import { InventoryResponseDto } from './presentation/dto/inventory-response.dto';
 import { LowStockQueryDto } from './presentation/dto/low-stock-query.dto';
-import { GetInventoryController } from './presentation/controllers/get-inventory/get-inventory.controller';
-import { AdjustStockController } from './presentation/controllers/adjust-stock/adjust-stock.controller';
-import { ReserveStockController } from './presentation/controllers/reserve-stock/reserve-stock.controller';
-import { ReleaseStockController } from './presentation/controllers/release-stock/release-stock.controller';
-import { CheckStockController } from './presentation/controllers/check-stock/check-stock.controller';
-import { ListLowStockController } from './presentation/controllers/list-low-stock/list-low-stock.controller';
-import { BulkCheckStockController } from './presentation/controllers/bulk-check-stock/bulk-check-stock.controller';
+import { GetInventoryUseCase } from './application/get-inventory/get-inventory.usecase';
+import { AdjustStockUseCase } from './application/adjust-stock/adjust-stock.usecase';
+import { ReserveStockUseCase } from './application/reserve-stock/reserve-stock.usecase';
+import { ReleaseStockUseCase } from './application/release-stock/release-stock.usecase';
+import { CheckStockUseCase } from './application/check-stock/check-stock.usecase';
+import { ListLowStockUseCase } from './application/list-low-stock/list-low-stock.usecase';
+import { BulkCheckStockUseCase } from './application/bulk-check-stock/bulk-check-stock.usecase';
+import { isFailure } from '../../core/domain/result';
 
 @ApiTags('inventory')
 @Controller('inventory')
 export class InventoryController {
   constructor(
-    private readonly getInventoryController: GetInventoryController,
-    private readonly adjustStockController: AdjustStockController,
-    private readonly reserveStockController: ReserveStockController,
-    private readonly releaseStockController: ReleaseStockController,
-    private readonly checkStockController: CheckStockController,
-    private readonly listLowStockController: ListLowStockController,
-    private readonly bulkCheckStockController: BulkCheckStockController,
+    private readonly getInventoryUseCase: GetInventoryUseCase,
+    private readonly adjustStockUseCase: AdjustStockUseCase,
+    private readonly reserveStockUseCase: ReserveStockUseCase,
+    private readonly releaseStockUseCase: ReleaseStockUseCase,
+    private readonly checkStockUseCase: CheckStockUseCase,
+    private readonly listLowStockUseCase: ListLowStockUseCase,
+    private readonly bulkCheckStockUseCase: BulkCheckStockUseCase,
   ) {}
 
   @Get('products/:productId')
   @ApiOperation({ summary: 'Get inventory details for a product' })
   @ApiResponse({ status: 200, type: InventoryResponseDto })
   async getInventory(@Param('productId') productId: string) {
-    return this.getInventoryController.handle(Number(productId));
+    return await this.getInventoryUseCase.execute(Number(productId));
   }
 
   @Post('products/:productId/adjust')
@@ -55,7 +56,10 @@ export class InventoryController {
     @Param('productId') productId: string,
     @Body() dto: AdjustStockDto,
   ) {
-    return this.adjustStockController.handle(Number(productId), dto);
+    return await this.adjustStockUseCase.execute({
+      productId: Number(productId),
+      dto,
+    });
   }
 
   @Post('reserve')
@@ -64,7 +68,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Reserve stock for an order (temporary hold)' })
   @ApiResponse({ status: 200, description: 'Stock reserved successfully' })
   async reserveStock(@Body() dto: ReserveStockDto) {
-    return this.reserveStockController.handle(dto);
+    return await this.reserveStockUseCase.execute(dto);
   }
 
   @Post('release/:reservationId')
@@ -73,7 +77,7 @@ export class InventoryController {
   @ApiOperation({ summary: 'Release reserved stock (if order cancelled)' })
   @ApiResponse({ status: 200, description: 'Stock released successfully' })
   async releaseStock(@Param('reservationId') reservationId: string) {
-    return this.releaseStockController.handle(Number(reservationId));
+    return await this.releaseStockUseCase.execute(Number(reservationId));
   }
 
   @Get('check/:productId')
@@ -83,7 +87,10 @@ export class InventoryController {
     @Param('productId') productId: string,
     @Query('quantity') quantity?: number,
   ) {
-    return this.checkStockController.handle(Number(productId), quantity);
+    return await this.checkStockUseCase.execute({
+      productId: Number(productId),
+      quantity: quantity ? Number(quantity) : undefined,
+    });
   }
 
   @Post('check/bulk')
@@ -92,7 +99,7 @@ export class InventoryController {
   async bulkCheckStock(
     @Body() dto: { productId: number; quantity?: number }[],
   ) {
-    return this.bulkCheckStockController.handle(dto);
+    return await this.bulkCheckStockUseCase.execute(dto);
   }
 
   @Get('low-stock')
@@ -101,6 +108,6 @@ export class InventoryController {
   @ApiOperation({ summary: 'List products with low stock' })
   @ApiResponse({ status: 200, type: [InventoryResponseDto] })
   async listLowStock(@Query() query: LowStockQueryDto) {
-    return this.listLowStockController.handle(query);
+    return await this.listLowStockUseCase.execute(query);
   }
 }

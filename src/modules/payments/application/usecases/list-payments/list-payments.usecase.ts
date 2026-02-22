@@ -5,13 +5,13 @@ import { UseCaseError } from '../../../../../core/errors/usecase.error';
 import { ErrorFactory } from '../../../../../core/errors/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { ListPaymentsQueryDto } from '../../../presentation/dto/list-payments-query.dto';
-
-import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentDtoMapper } from '../../../presentation/mappers/payment-dto.mapper';
+import { PaymentResponseDto } from '../../../presentation/dto/payment-response.dto';
 
 @Injectable()
 export class ListPaymentsUseCase extends UseCase<
   ListPaymentsQueryDto,
-  IPayment[],
+  PaymentResponseDto[],
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
@@ -20,12 +20,16 @@ export class ListPaymentsUseCase extends UseCase<
 
   async execute(
     dto: ListPaymentsQueryDto,
-  ): Promise<Result<IPayment[], UseCaseError>> {
+  ): Promise<Result<PaymentResponseDto[], UseCaseError>> {
     try {
       if (dto.orderId) {
         const result = await this.paymentRepository.findByOrderId(dto.orderId);
         if (isFailure(result)) return result;
-        return Result.success(result.value.map((p) => p.toPrimitives()));
+        return Result.success(
+          PaymentDtoMapper.toResponseList(
+            result.value.map((p) => p.toPrimitives()),
+          ),
+        );
       }
 
       if (dto.customerId) {
@@ -35,7 +39,11 @@ export class ListPaymentsUseCase extends UseCase<
           dto.limit,
         );
         if (isFailure(result)) return result;
-        return Result.success(result.value.map((p) => p.toPrimitives()));
+        return Result.success(
+          PaymentDtoMapper.toResponseList(
+            result.value.map((p) => p.toPrimitives()),
+          ),
+        );
       }
 
       // TODO: Implement general findAll if needed, or return empty array

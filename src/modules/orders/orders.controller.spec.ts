@@ -1,33 +1,35 @@
 // src/modules/orders/orders.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
-import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
-import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
-import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
-import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
-import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
-import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
-import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 import { IdempotencyStore } from '../../core/domain/stores/idempotency.store';
+import { Result } from '../../core/domain/result';
+
+import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
+import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
+import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
+import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
+import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
+import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
+import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
+import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
-  let checkoutController: CheckoutController;
-  let getOrderController: GetOrderController;
-  let listOrdersController: ListOrdersController;
-  let cancelOrderController: CancelOrderController;
-  let confirmOrderController: ConfirmOrderController;
-  let processOrderController: ProcessOrderController;
-  let deliverOrderController: DeliverOrderController;
+  let checkoutUseCase: CheckoutUseCase;
+  let getOrderUseCase: GetOrderUseCase;
+  let listOrdersUseCase: ListOrdersUsecase;
+  let cancelOrderUseCase: CancelOrderUseCase;
+  let confirmOrderUseCase: ConfirmOrderUseCase;
+  let processOrderUseCase: ProcessOrderUseCase;
+  let deliverOrderUseCase: DeliverOrderUseCase;
+  let shipOrderUseCase: ShipOrderUseCase;
   let mockOrder;
   let cancelledOrder;
   let confirmedOrder;
   let processingOrder;
   let deliveredOrder;
-  let createOrderDto;
   let createDeliveredOrderDto;
   let checkoutDto;
 
@@ -37,7 +39,6 @@ describe('OrdersController', () => {
     confirmedOrder = OrderTestFactory.createConfirmedOrder();
     processingOrder = OrderTestFactory.createProcessingOrder();
     deliveredOrder = OrderTestFactory.createDeliveredOrder();
-    createOrderDto = CreateOrderDtoTestFactory.createMockDto();
     createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
     checkoutDto = {
       cartId: 123,
@@ -57,73 +58,73 @@ describe('OrdersController', () => {
           },
         },
         {
-          provide: CheckoutController,
+          provide: CheckoutUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: GetOrderController,
+          provide: GetOrderUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(mockOrder),
+            execute: jest.fn().mockResolvedValue(Result.success(mockOrder)),
           },
         },
         {
-          provide: ListOrdersController,
+          provide: ListOrdersUsecase,
           useValue: {
-            handle: jest.fn().mockResolvedValue([mockOrder]),
+            execute: jest.fn().mockResolvedValue(Result.success([mockOrder])),
           },
         },
         {
-          provide: CancelOrderController,
+          provide: CancelOrderUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(cancelledOrder),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success(cancelledOrder)),
           },
         },
         {
-          provide: ConfirmOrderController,
+          provide: ConfirmOrderUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(confirmedOrder),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success(confirmedOrder)),
           },
         },
         {
-          provide: ProcessOrderController,
+          provide: ProcessOrderUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(processingOrder),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success(processingOrder)),
           },
         },
         {
-          provide: DeliverOrderController,
+          provide: DeliverOrderUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(deliveredOrder),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success(deliveredOrder)),
           },
         },
         {
-          provide: ShipOrderController,
+          provide: ShipOrderUseCase,
           useValue: {
-            handle: jest.fn(),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
     }).compile();
 
     controller = module.get<OrdersController>(OrdersController);
-    checkoutController = module.get<CheckoutController>(CheckoutController);
-    getOrderController = module.get<GetOrderController>(GetOrderController);
-    listOrdersController =
-      module.get<ListOrdersController>(ListOrdersController);
-    cancelOrderController = module.get<CancelOrderController>(
-      CancelOrderController,
-    );
-    confirmOrderController = module.get<ConfirmOrderController>(
-      ConfirmOrderController,
-    );
-    processOrderController = module.get<ProcessOrderController>(
-      ProcessOrderController,
-    );
-    deliverOrderController = module.get<DeliverOrderController>(
-      DeliverOrderController,
-    );
+    checkoutUseCase = module.get<CheckoutUseCase>(CheckoutUseCase);
+    getOrderUseCase = module.get<GetOrderUseCase>(GetOrderUseCase);
+    listOrdersUseCase = module.get<ListOrdersUsecase>(ListOrdersUsecase);
+    cancelOrderUseCase = module.get<CancelOrderUseCase>(CancelOrderUseCase);
+    confirmOrderUseCase = module.get<ConfirmOrderUseCase>(ConfirmOrderUseCase);
+    processOrderUseCase = module.get<ProcessOrderUseCase>(ProcessOrderUseCase);
+    deliverOrderUseCase = module.get<DeliverOrderUseCase>(DeliverOrderUseCase);
+    shipOrderUseCase = module.get<ShipOrderUseCase>(ShipOrderUseCase);
   });
 
   afterEach(() => {
@@ -134,63 +135,63 @@ describe('OrdersController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should call CheckoutController.handle when checkout is called', async () => {
+  it('should call CheckoutUseCase.execute when checkout is called', async () => {
     const userId = '123';
     await controller.checkout(checkoutDto, userId);
-    expect(checkoutController.handle).toHaveBeenCalledWith(
-      checkoutDto,
-      Number(userId),
-    );
+    expect(checkoutUseCase.execute).toHaveBeenCalledWith({
+      dto: checkoutDto,
+      userId: Number(userId),
+    });
   });
 
-  it('should call GetOrderController.handle when findOne is called and return its result', async () => {
+  it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
     const res = await controller.findOne(mockOrder.id);
-    expect(getOrderController.handle).toHaveBeenCalledWith(mockOrder.id);
-    expect(res).toEqual(mockOrder);
+    expect(getOrderUseCase.execute).toHaveBeenCalledWith(Number(mockOrder.id));
+    expect(res).toEqual(Result.success(mockOrder));
   });
 
-  it('should call ListOrdersController.handle when findAll is called and return its result', async () => {
+  it('should call ListOrdersUseCase.execute when findAll is called and return its result', async () => {
     const query = {} as any;
     const res = await controller.findAll(query);
-    expect(listOrdersController.handle).toHaveBeenCalledWith(query);
-    expect(res).toEqual([mockOrder]);
+    expect(listOrdersUseCase.execute).toHaveBeenCalledWith(query);
+    expect(res).toEqual(Result.success([mockOrder]));
   });
 
-  it('should call CancelOrderController.handle when cancelOrder is called and return its result', async () => {
+  it('should call CancelOrderUseCase.execute when cancelOrder is called and return its result', async () => {
     const res = await controller.cancelOrder(cancelledOrder.id);
-    expect(cancelOrderController.handle).toHaveBeenCalledWith(
-      cancelledOrder.id,
+    expect(cancelOrderUseCase.execute).toHaveBeenCalledWith(
+      Number(cancelledOrder.id),
     );
-    expect(res).toEqual(cancelledOrder);
+    expect(res).toEqual(Result.success(cancelledOrder));
   });
 
-  it('should call ConfirmOrderController.handle when confirmOrder is called and return its result', async () => {
+  it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
     const res = await controller.confirmOrder(confirmedOrder.id);
-    expect(confirmOrderController.handle).toHaveBeenCalledWith(
-      confirmedOrder.id,
-      undefined,
-      undefined,
-    );
-    expect(res).toEqual(confirmedOrder);
+    expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: Number(confirmedOrder.id),
+      reservationId: undefined,
+      cartId: undefined,
+    });
+    expect(res).toEqual(Result.success(confirmedOrder));
   });
 
-  it('should call ProcessOrderController.handle when processOrder is called and return its result', async () => {
+  it('should call ProcessOrderUseCase.execute when processOrder is called and return its result', async () => {
     const res = await controller.processOrder(processingOrder.id);
-    expect(processOrderController.handle).toHaveBeenCalledWith(
-      processingOrder.id,
+    expect(processOrderUseCase.execute).toHaveBeenCalledWith(
+      Number(processingOrder.id),
     );
-    expect(res).toEqual(processingOrder);
+    expect(res).toEqual(Result.success(processingOrder));
   });
 
-  it('should call DeliverOrderController.handle when deliverOrder is called and return its result', async () => {
+  it('should call DeliverOrderUseCase.execute when deliverOrder is called and return its result', async () => {
     const res = await controller.deliverOrder(
       deliveredOrder.id,
       createDeliveredOrderDto,
     );
-    expect(deliverOrderController.handle).toHaveBeenCalledWith(
-      deliveredOrder.id,
-      createDeliveredOrderDto,
-    );
-    expect(res).toEqual(deliveredOrder);
+    expect(deliverOrderUseCase.execute).toHaveBeenCalledWith({
+      id: Number(deliveredOrder.id),
+      deliverOrderDto: createDeliveredOrderDto,
+    });
+    expect(res).toEqual(Result.success(deliveredOrder));
   });
 });

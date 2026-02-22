@@ -1,25 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller';
-import { AdjustStockController } from './presentation/controllers/adjust-stock/adjust-stock.controller';
-import { BulkCheckStockController } from './presentation/controllers/bulk-check-stock/bulk-check-stock.controller';
-import { CheckStockController } from './presentation/controllers/check-stock/check-stock.controller';
-import { GetInventoryController } from './presentation/controllers/get-inventory/get-inventory.controller';
-import { ListLowStockController } from './presentation/controllers/list-low-stock/list-low-stock.controller';
-import { ReleaseStockController } from './presentation/controllers/release-stock/release-stock.controller';
-import { ReserveStockController } from './presentation/controllers/reserve-stock/reserve-stock.controller';
 import { IInventory } from './domain/interfaces/inventory.interface';
 import { InventoryTestFactory } from './testing/factories/inventory.test.factory';
+import { Result } from '../../core/domain/result';
+
+import { AdjustStockUseCase } from './application/adjust-stock/adjust-stock.usecase';
+import { BulkCheckStockUseCase } from './application/bulk-check-stock/bulk-check-stock.usecase';
+import { CheckStockUseCase } from './application/check-stock/check-stock.usecase';
+import { GetInventoryUseCase } from './application/get-inventory/get-inventory.usecase';
+import { ListLowStockUseCase } from './application/list-low-stock/list-low-stock.usecase';
+import { ReleaseStockUseCase } from './application/release-stock/release-stock.usecase';
+import { ReserveStockUseCase } from './application/reserve-stock/reserve-stock.usecase';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
 
-  let getInventoryController: GetInventoryController;
-  let adjustStockController: AdjustStockController;
-  let reserveStockController: ReserveStockController;
-  let releaseStockController: ReleaseStockController;
-  let checkStockController: CheckStockController;
-  let listLowStockController: ListLowStockController;
-  let bulkCheckStockController: BulkCheckStockController;
+  let getInventoryUseCase: GetInventoryUseCase;
+  let adjustStockUseCase: AdjustStockUseCase;
+  let reserveStockUseCase: ReserveStockUseCase;
+  let releaseStockUseCase: ReleaseStockUseCase;
+  let checkStockUseCase: CheckStockUseCase;
+  let listLowStockUseCase: ListLowStockUseCase;
+  let bulkCheckStockUseCase: BulkCheckStockUseCase;
 
   let mockInventory: IInventory;
   let mockLowStockInventory: IInventory;
@@ -32,45 +34,47 @@ describe('InventoryController', () => {
       controllers: [InventoryController],
       providers: [
         {
-          provide: GetInventoryController,
+          provide: GetInventoryUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(mockInventory),
+            execute: jest.fn().mockResolvedValue(Result.success(mockInventory)),
           },
         },
         {
-          provide: AdjustStockController,
+          provide: AdjustStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(mockInventory),
+            execute: jest.fn().mockResolvedValue(Result.success(mockInventory)),
           },
         },
         {
-          provide: ReserveStockController,
+          provide: ReserveStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ReleaseStockController,
+          provide: ReleaseStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: CheckStockController,
+          provide: CheckStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
         {
-          provide: ListLowStockController,
+          provide: ListLowStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue([mockLowStockInventory]),
+            execute: jest
+              .fn()
+              .mockResolvedValue(Result.success([mockLowStockInventory])),
           },
         },
         {
-          provide: BulkCheckStockController,
+          provide: BulkCheckStockUseCase,
           useValue: {
-            handle: jest.fn().mockResolvedValue(undefined),
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
       ],
@@ -78,25 +82,14 @@ describe('InventoryController', () => {
 
     controller = module.get<InventoryController>(InventoryController);
 
-    getInventoryController = module.get<GetInventoryController>(
-      GetInventoryController,
-    );
-    adjustStockController = module.get<AdjustStockController>(
-      AdjustStockController,
-    );
-    reserveStockController = module.get<ReserveStockController>(
-      ReserveStockController,
-    );
-    releaseStockController = module.get<ReleaseStockController>(
-      ReleaseStockController,
-    );
-    checkStockController =
-      module.get<CheckStockController>(CheckStockController);
-    listLowStockController = module.get<ListLowStockController>(
-      ListLowStockController,
-    );
-    bulkCheckStockController = module.get<BulkCheckStockController>(
-      BulkCheckStockController,
+    getInventoryUseCase = module.get<GetInventoryUseCase>(GetInventoryUseCase);
+    adjustStockUseCase = module.get<AdjustStockUseCase>(AdjustStockUseCase);
+    reserveStockUseCase = module.get<ReserveStockUseCase>(ReserveStockUseCase);
+    releaseStockUseCase = module.get<ReleaseStockUseCase>(ReleaseStockUseCase);
+    checkStockUseCase = module.get<CheckStockUseCase>(CheckStockUseCase);
+    listLowStockUseCase = module.get<ListLowStockUseCase>(ListLowStockUseCase);
+    bulkCheckStockUseCase = module.get<BulkCheckStockUseCase>(
+      BulkCheckStockUseCase,
     );
   });
 

@@ -2,7 +2,6 @@ import { Logger, Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersController } from './orders.controller';
-import { GetOrderController } from './presentation/controllers/get-order/get-order.controller';
 import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
 
 import { OrderRepository } from './domain/repositories/order-repository';
@@ -22,21 +21,14 @@ import { CacheService } from '../../core/infrastructure/redis/cache/cache.servic
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
 import { OrderItemEntity } from './infrastructure/orm/order-item.schema';
 import { OrderFactory } from './domain/factories/order.factory';
-import { ListOrdersController } from './presentation/controllers/list-orders/list-orders.controller';
 import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
-import { CancelOrderController } from './presentation/controllers/cancel-order/cancel-order.controller';
 import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
 import { ShippingAddressEntity } from './infrastructure/orm/shipping-address.schema';
-import { ConfirmOrderController } from './presentation/controllers/confirm-order/confirm-order.controller';
 import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
 import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
-import { ShipOrderController } from './presentation/controllers/ship-order/ship-order.controller';
-import { DeliverOrderController } from './presentation/controllers/deliver-order/deliver-order.controller';
 import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
 import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
-import { ProcessOrderController } from './presentation/controllers/process-order/process-order.controller';
 import { PaymentsModule } from '../payments/payments.module';
-import { CheckoutController } from './presentation/controllers/checkout/checkout.controller';
 import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
 import { CreateOrderFromCartUseCase } from './application/usecases/create-order-from-cart/create-order-from-cart.usecase';
 import { CustomersModule } from '../customers/customers.module';
@@ -70,6 +62,7 @@ import { RefundPaymentStep } from './presentation/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './presentation/jobs/finalize-checkout.job';
 import { ConfirmOrderStep } from './presentation/jobs/confirm-order.job';
 import { OrdersProcessor } from './orders.processor';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -169,16 +162,6 @@ import { OrdersProcessor } from './orders.processor';
     RefundPaymentStep,
     FinalizeCheckoutStep,
     ConfirmOrderStep,
-
-    // Controllers
-    CheckoutController,
-    GetOrderController,
-    ListOrdersController,
-    CancelOrderController,
-    ConfirmOrderController,
-    DeliverOrderController,
-    ShipOrderController,
-    ProcessOrderController,
 
     // Listeners
     CheckoutFailureListener,

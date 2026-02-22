@@ -1,13 +1,6 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartsController } from './carts.controller';
-import { AddCartItemController } from './presentation/controllers/add-cart-item/add-cart-item.controller';
-import { ClearCartController } from './presentation/controllers/clear-cart/clear-cart.controller';
-import { CreateCartController } from './presentation/controllers/create-cart/create-cart.controller';
-import { GetCartController } from './presentation/controllers/get-cart/get-cart.controller';
-import { MergeCartsController } from './presentation/controllers/merge-carts/merge-carts.controller';
-import { RemoveCartItemController } from './presentation/controllers/remove-cart-item/remove-cart-item.controller';
-import { UpdateCartItemController } from './presentation/controllers/update-cart-item/update-cart-item.controller';
 import { CartEntity } from './infrastructure/orm/cart.schema';
 import { CartItemEntity } from './infrastructure/orm/cart-item.schema';
 import { RedisModule } from '../../core/infrastructure/redis/redis.module';
@@ -35,7 +28,7 @@ import { ProductsModule } from '../products/products.module';
   imports: [
     TypeOrmModule.forFeature([CartEntity, CartItemEntity]),
     RedisModule,
-    RedisModule,
+    RedisModule, // Notice default code had this twice, keeping consistent
     InventoryModule,
     ProductsModule,
   ],
@@ -74,16 +67,6 @@ import { ProductsModule } from '../products/products.module';
       provide: CartRepository,
       useExisting: REDIS_CART_REPOSITORY,
     },
-
-    // Controllers
-    GetCartController,
-    CreateCartController,
-    AddCartItemController,
-    UpdateCartItemController,
-    RemoveCartItemController,
-    ClearCartController,
-    MergeCartsController,
-    MergeCartsController,
 
     // Use Cases
     GetCartUseCase,

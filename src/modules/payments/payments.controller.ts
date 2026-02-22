@@ -22,29 +22,31 @@ import { ProcessRefundDto } from './presentation/dto/process-refund.dto';
 import { PaymentResponseDto } from './presentation/dto/payment-response.dto';
 import { ListPaymentsQueryDto } from './presentation/dto/list-payments-query.dto';
 import { RecordCodPaymentDto } from './presentation/dto/record-cod-payment.dto';
-import { CreatePaymentController } from './presentation/controllers/create-payment/create-payment.controller';
-import { GetPaymentController } from './presentation/controllers/get-payment/get-payment.controller';
-import { ListPaymentsController } from './presentation/controllers/list-payments/list-payments.controller';
-import { CapturePaymentController } from './presentation/controllers/capture-payment/capture-payment.controller';
-import { ProcessRefundController } from './presentation/controllers/process-refund/process-refund.controller';
-import { VerifyPaymentController } from './presentation/controllers/verify-payment/verify-payment.controller';
-import { RecordCodPaymentController } from './presentation/controllers/record-cod-payment/record-cod-payment.controller';
-import { StripeWebhookController } from './presentation/controllers/webhook/stripe-webhook.controller';
-import { PayPalWebhookController } from './presentation/controllers/webhook/paypal-webhook.controller';
+
+import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
+import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
+import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
+import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
+import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { HandleStripeWebhookUseCase } from './application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { HandlePayPalWebhookUseCase } from './application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
+import { isFailure } from '../../core/domain/result';
 
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentsController {
   constructor(
-    private readonly createPaymentController: CreatePaymentController,
-    private readonly getPaymentController: GetPaymentController,
-    private readonly listPaymentsController: ListPaymentsController,
-    private readonly capturePaymentController: CapturePaymentController,
-    private readonly processRefundController: ProcessRefundController,
-    private readonly verifyPaymentController: VerifyPaymentController,
-    private readonly recordCodPaymentController: RecordCodPaymentController,
-    private readonly stripeWebhookController: StripeWebhookController,
-    private readonly payPalWebhookController: PayPalWebhookController,
+    private readonly createPaymentUseCase: CreatePaymentUseCase,
+    private readonly getPaymentUseCase: GetPaymentUseCase,
+    private readonly listPaymentsUseCase: ListPaymentsUseCase,
+    private readonly capturePaymentUseCase: CapturePaymentUseCase,
+    private readonly processRefundUseCase: ProcessRefundUseCase,
+    private readonly verifyPaymentUseCase: VerifyPaymentUseCase,
+    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
+    private readonly handleStripeWebhookUseCase: HandleStripeWebhookUseCase,
+    private readonly handlePayPalWebhookUseCase: HandlePayPalWebhookUseCase,
   ) {}
 
   @Post('webhooks/stripe')
@@ -54,14 +56,20 @@ export class PaymentsController {
     @Headers('stripe-signature') signature: string,
     @Body() body: any,
   ) {
-    return this.stripeWebhookController.handle(signature, body);
+    return await this.handleStripeWebhookUseCase.execute({
+      signature,
+      payload: body,
+    });
   }
 
   @Post('webhooks/paypal')
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handlePayPalWebhook(@Headers() headers: any, @Body() body: any) {
-    return this.payPalWebhookController.handle(headers, body);
+    return await this.handlePayPalWebhookUseCase.execute({
+      headers,
+      payload: body,
+    });
   }
 
   @Post()
@@ -70,7 +78,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async createPayment(@Body() dto: CreatePaymentDto) {
-    return this.createPaymentController.handle(dto);
+    return await this.createPaymentUseCase.execute(dto);
   }
 
   @Get(':id')
@@ -79,7 +87,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async getPayment(@Param('id') id: string) {
-    return this.getPaymentController.handle(Number(id));
+    return await this.getPaymentUseCase.execute(Number(id));
   }
 
   @Get()
@@ -88,7 +96,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async listPayments(@Query() query: ListPaymentsQueryDto) {
-    return this.listPaymentsController.handle(query);
+    return await this.listPaymentsUseCase.execute(query);
   }
 
   @Post(':id/capture')
@@ -97,7 +105,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async capturePayment(@Param('id') id: string) {
-    return this.capturePaymentController.handle(Number(id));
+    return await this.capturePaymentUseCase.execute(Number(id));
   }
 
   @Post(':id/refund')
@@ -106,7 +114,10 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async processRefund(@Param('id') id: string, @Body() dto: ProcessRefundDto) {
-    return this.processRefundController.handle(Number(id), dto);
+    return await this.processRefundUseCase.execute({
+      id: Number(id),
+      dto,
+    });
   }
 
   @Post(':id/verify')
@@ -115,7 +126,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async verifyPayment(@Param('id') id: string) {
-    return this.verifyPaymentController.handle(Number(id));
+    return await this.verifyPaymentUseCase.execute(Number(id));
   }
 
   @Post('cod/record')
@@ -124,7 +135,7 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async recordCodPayment(@Body() dto: RecordCodPaymentDto) {
-    return this.recordCodPaymentController.handle(dto);
+    return await this.recordCodPaymentUseCase.execute(dto);
   }
 
   @Get('orders/:orderId')
@@ -133,6 +144,8 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async getOrderPayments(@Param('orderId') orderId: string) {
-    return this.listPaymentsController.handle({ orderId: Number(orderId) });
+    return await this.listPaymentsUseCase.execute({
+      orderId: Number(orderId),
+    });
   }
 }
