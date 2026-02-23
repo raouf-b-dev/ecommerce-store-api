@@ -2,7 +2,6 @@
 import { DomainError } from './domain.error';
 import { UseCaseError } from './usecase.error';
 import { RepositoryError } from './repository.error';
-import { ControllerError } from './controller.error';
 import { Result } from '../domain/result';
 import { HttpStatus } from '@nestjs/common';
 import { ServiceError } from './service-error';
@@ -38,8 +37,6 @@ export const ErrorFactory = {
     Result.failure(new UseCaseError(message, toError(cause), status)),
   ServiceError: (message: string, cause?: unknown, status?: HttpStatus) =>
     Result.failure(new ServiceError(message, toError(cause), status)),
-  ControllerError: (message: string, cause?: unknown, status?: HttpStatus) =>
-    Result.failure(new ControllerError(message, toError(cause), status)),
   RepositoryError: (
     message: string,
     cause?: unknown,
