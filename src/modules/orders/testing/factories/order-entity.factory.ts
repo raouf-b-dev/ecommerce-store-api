@@ -1,9 +1,9 @@
 // src/modules/orders/testing/factories/order-entity.test.factory.ts
-import { OrderEntity } from '../../infrastructure/orm/order.schema';
-import { OrderStatus } from '../../domain/value-objects/order-status';
-import { OrderItemEntity } from '../../infrastructure/orm/order-item.schema';
-import { ShippingAddressEntity } from '../../infrastructure/orm/shipping-address.schema';
-import { PaymentMethodType } from '../../../payments/domain';
+import { OrderEntity } from '../../secondary-adapters/orm/order.schema';
+import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { OrderItemEntity } from '../../secondary-adapters/orm/order-item.schema';
+import { ShippingAddressEntity } from '../../secondary-adapters/orm/shipping-address.schema';
+import { PaymentMethodType } from '../../../payments/core/domain';
 
 /**
  * Factory for creating ORM entity mocks for testing

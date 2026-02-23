@@ -1,7 +1,7 @@
-import { UserRepository } from '../../domain/repositories/user.repository';
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { User } from '../../domain/entities/user';
+import { UserRepository } from '../../core/domain/repositories/user.repository';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { User } from '../../core/domain/entities/user';
 import { UserTestFactory } from '../factories/user.factory';
 
 export class MockUserRepository implements UserRepository {

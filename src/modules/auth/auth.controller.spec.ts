@@ -1,12 +1,12 @@
 // src/modules/auth/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { RegisterUserUseCase } from './application/usecases/register-user/register-user.usecase';
-import { LoginUserUseCase } from './application/usecases/login-user/login-user.usecase';
+import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
+import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
 import { UserTestFactory } from './testing/factories/user.factory';
 import { RegisterDtoTestFactory } from './testing/factories/register-dto.factory';
 import { LoginDtoTestFactory } from './testing/factories/login-dto.factory';
-import { Result } from '../../core/domain/result';
+import { Result } from '../../shared-kernel/domain/result';
 
 describe('AuthController', () => {
   let controller: AuthController;

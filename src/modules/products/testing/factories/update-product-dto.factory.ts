@@ -1,6 +1,6 @@
 // src/modules/products/testing/factories/update-product-dto.factory.ts
 
-import { UpdateProductDto } from '../../presentation/dto/update-product.dto';
+import { UpdateProductDto } from '../../primary-adapters/dto/update-product.dto';
 
 export class UpdateProductDtoFactory {
   /**

@@ -1,6 +1,6 @@
-import { RefundEntity } from '../../infrastructure/orm/refund.schema';
-import { RefundStatusType } from '../../domain/value-objects/refund-status';
-import { PaymentEntity } from '../../infrastructure/orm/payment.schema';
+import { RefundEntity } from '../../secondary-adapters/orm/refund.schema';
+import { RefundStatusType } from '../../core/domain/value-objects/refund-status';
+import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';
 
 export class RefundEntityTestFactory {
   static createRefundEntity(overrides?: Partial<RefundEntity>): RefundEntity {

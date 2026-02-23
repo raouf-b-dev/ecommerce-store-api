@@ -1,5 +1,5 @@
-import { ICustomer } from '../../domain/interfaces/customer.interface';
-import { AddressType } from '../../domain/value-objects/address-type';
+import { ICustomer } from '../../core/domain/interfaces/customer.interface';
+import { AddressType } from '../../core/domain/value-objects/address-type';
 
 export class CustomerTestFactory {
   static createMockCustomer(overrides?: Partial<ICustomer>): ICustomer {

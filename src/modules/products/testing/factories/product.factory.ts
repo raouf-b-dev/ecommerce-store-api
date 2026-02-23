@@ -1,5 +1,5 @@
 // src/modules/products/testing/factories/product.factory.ts
-import { IProduct } from '../../domain/interfaces/product.interface';
+import { IProduct } from '../../core/domain/interfaces/product.interface';
 
 export class ProductTestFactory {
   static createMockProduct(overrides?: Partial<IProduct>): IProduct {

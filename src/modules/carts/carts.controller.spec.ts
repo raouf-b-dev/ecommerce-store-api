@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartsController } from './carts.controller';
-import { Result } from '../../core/domain/result';
+import { Result } from '../../shared-kernel/domain/result';
 
-import { AddCartItemUseCase } from './application/usecases/add-cart-item/add-cart-item.usecase';
-import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
-import { CreateCartUseCase } from './application/usecases/create-cart/create-cart.usecase';
-import { GetCartUseCase } from './application/usecases/get-cart/get-cart.usecase';
-import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
-import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
-import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/update-cart-item.usecase';
+import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/add-cart-item.usecase';
+import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
+import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
+import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
+import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
+import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
+import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
 
 describe('CartsController', () => {
   let controller: CartsController;

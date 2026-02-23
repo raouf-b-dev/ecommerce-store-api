@@ -1,10 +1,10 @@
 // src/modules/carts/testing/mocks/cart-repository.mock.ts
-import { CartRepository } from '../../domain/repositories/cart.repository';
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { Cart } from '../../domain/entities/cart';
-import { ICart } from '../../domain/interfaces/cart.interface';
-import { CreateCartDto } from '../../presentation/dto/create-cart.dto';
+import { CartRepository } from '../../core/domain/repositories/cart.repository';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { Cart } from '../../core/domain/entities/cart';
+import { ICart } from '../../core/domain/interfaces/cart.interface';
+import { CreateCartDto } from '../../primary-adapters/dto/create-cart.dto';
 
 export class MockCartRepository implements CartRepository {
   // Jest mock functions

@@ -1,12 +1,12 @@
 // src/modules/orders/testing/mocks/order-repository.mock.ts
-import { OrderRepository } from '../../domain/repositories/order-repository';
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { Order } from '../../domain/entities/order';
-import { CreateOrderItemDto } from '../../presentation/dto/create-order-item.dto';
-import { ListOrdersQueryDto } from '../../presentation/dto/list-orders-query.dto';
-import { OrderStatus } from '../../domain/value-objects/order-status';
-import { IOrder } from '../../domain/interfaces/order.interface';
+import { OrderRepository } from '../../core/domain/repositories/order-repository';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { Order } from '../../core/domain/entities/order';
+import { CreateOrderItemDto } from '../../primary-adapters/dto/create-order-item.dto';
+import { ListOrdersQueryDto } from '../../primary-adapters/dto/list-orders-query.dto';
+import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { IOrder } from '../../core/domain/interfaces/order.interface';
 
 export class MockOrderRepository implements OrderRepository {
   // Jest mock functions

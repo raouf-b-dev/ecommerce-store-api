@@ -16,22 +16,22 @@ import {
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CheckoutDto } from './presentation/dto/checkout.dto';
-import { CheckoutResponseDto } from './presentation/dto/checkout-response.dto';
-import { OrderResponseDto } from './presentation/dto/order-response.dto';
-import { ListOrdersQueryDto } from './presentation/dto/list-orders-query.dto';
-import { DeliverOrderDto } from './presentation/dto/deliver-order.dto';
-import { Idempotent } from '../../core/infrastructure/decorators/idempotent.decorator';
+import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
+import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
+import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
+import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
+import { DeliverOrderDto } from './primary-adapters/dto/deliver-order.dto';
+import { Idempotent } from '../../shared-kernel/infrastructure/decorators/idempotent.decorator';
 
-import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
-import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
-import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
-import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
-import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
-import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
-import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
-import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
-import { isFailure } from '../../core/domain/result';
+import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
+import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
+import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
+import { ConfirmOrderUseCase } from './core/application/usecases/confirm-order/confirm-order.usecase';
+import { ProcessOrderUseCase } from './core/application/usecases/process-order/process-order.usecase';
+import { ShipOrderUseCase } from './core/application/usecases/ship-order/ship-order.usecase';
+import { DeliverOrderUseCase } from './core/application/usecases/deliver-order/deliver-order.usecase';
+import { CancelOrderUseCase } from './core/application/usecases/cancel-order/cancel-order.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('orders')
 @ApiBearerAuth()

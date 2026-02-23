@@ -10,9 +10,9 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { InfrastructureModule } from './core/infrastructure/infrastructure.module';
+import { InfrastructureModule } from './shared-kernel/infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { WebsocketModule } from './core/infrastructure/websocket/websocket.module';
+import { WebsocketModule } from './shared-kernel/infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
 const env = process.env.NODE_ENV || 'development';

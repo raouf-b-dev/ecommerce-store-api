@@ -1,5 +1,5 @@
 // src/modules/carts/testing/builders/cart.builder.ts
-import { ICart } from '../../domain/interfaces/cart.interface';
+import { ICart } from '../../core/domain/interfaces/cart.interface';
 import { CartTestFactory } from '../factories/cart.factory';
 
 export class CartBuilder {

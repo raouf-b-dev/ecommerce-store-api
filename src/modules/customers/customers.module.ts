@@ -1,28 +1,28 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomersController } from './customers.controller';
-import { CustomerEntity } from './infrastructure/orm/customer.schema';
-import { AddressEntity } from './infrastructure/orm/address.schema';
-import { RedisModule } from '../../core/infrastructure/redis/redis.module';
+import { CustomerEntity } from './secondary-adapters/orm/customer.schema';
+import { AddressEntity } from './secondary-adapters/orm/address.schema';
+import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
 import {
   POSTGRES_CUSTOMER_REPOSITORY,
   REDIS_CUSTOMER_REPOSITORY,
 } from './customer.tokens';
-import { PostgresCustomerRepository } from './infrastructure/repositories/postgres-customer-repository/postgres.customer-repository';
-import { RedisCustomerRepository } from './infrastructure/repositories/redis-customer-repository/redis.customer-repository';
-import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
-import { CustomerRepository } from './domain/repositories/customer.repository';
+import { PostgresCustomerRepository } from './secondary-adapters/repositories/postgres-customer-repository/postgres.customer-repository';
+import { RedisCustomerRepository } from './secondary-adapters/repositories/redis-customer-repository/redis.customer-repository';
+import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CustomerRepository } from './core/domain/repositories/customer.repository';
 
 // Use Cases
-import { CreateCustomerUseCase } from './application/usecases/create-customer/create-customer.usecase';
-import { GetCustomerUseCase } from './application/usecases/get-customer/get-customer.usecase';
-import { ListCustomersUseCase } from './application/usecases/list-customers/list-customers.usecase';
-import { UpdateCustomerUseCase } from './application/usecases/update-customer/update-customer.usecase';
-import { DeleteCustomerUseCase } from './application/usecases/delete-customer/delete-customer.usecase';
-import { AddAddressUseCase } from './application/usecases/add-address/add-address.usecase';
-import { UpdateAddressUseCase } from './application/usecases/update-address/update-address.usecase';
-import { DeleteAddressUseCase } from './application/usecases/delete-address/delete-address.usecase';
-import { SetDefaultAddressUseCase } from './application/usecases/set-default-address/set-default-address.usecase';
+import { CreateCustomerUseCase } from './core/application/usecases/create-customer/create-customer.usecase';
+import { GetCustomerUseCase } from './core/application/usecases/get-customer/get-customer.usecase';
+import { ListCustomersUseCase } from './core/application/usecases/list-customers/list-customers.usecase';
+import { UpdateCustomerUseCase } from './core/application/usecases/update-customer/update-customer.usecase';
+import { DeleteCustomerUseCase } from './core/application/usecases/delete-customer/delete-customer.usecase';
+import { AddAddressUseCase } from './core/application/usecases/add-address/add-address.usecase';
+import { UpdateAddressUseCase } from './core/application/usecases/update-address/update-address.usecase';
+import { DeleteAddressUseCase } from './core/application/usecases/delete-address/delete-address.usecase';
+import { SetDefaultAddressUseCase } from './core/application/usecases/set-default-address/set-default-address.usecase';
 
 @Module({
   imports: [

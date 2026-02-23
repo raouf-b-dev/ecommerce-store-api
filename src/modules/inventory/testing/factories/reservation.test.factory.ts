@@ -1,8 +1,8 @@
 import {
   Reservation,
   ReservationProps,
-} from '../../domain/entities/reservation';
-import { ReservationStatus } from '../../domain/value-objects/reservation-status';
+} from '../../core/domain/entities/reservation';
+import { ReservationStatus } from '../../core/domain/value-objects/reservation-status';
 
 export class ReservationTestFactory {
   static createReservation(overrides?: Partial<ReservationProps>): Reservation {

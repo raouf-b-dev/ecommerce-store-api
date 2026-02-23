@@ -1,9 +1,9 @@
 // src/testing/helpers/result-assertion.helper.ts
-import { AppError } from '../../core/errors/app.error';
-import { ControllerError } from '../../core/errors/controller.error';
-import { DomainError } from '../../core/errors/domain.error';
-import { RepositoryError } from '../../core/errors/repository.error';
-import { UseCaseError } from '../../core/errors/usecase.error';
+import { AppError } from '../../shared-kernel/errors/app.error';
+import { ControllerError } from '../../shared-kernel/errors/controller.error';
+import { DomainError } from '../../shared-kernel/errors/domain.error';
+import { RepositoryError } from '../../shared-kernel/errors/repository.error';
+import { UseCaseError } from '../../shared-kernel/errors/usecase.error';
 
 type ErrorConstructor =
   | typeof RepositoryError

@@ -1,19 +1,19 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JobNames } from '../../core/infrastructure/jobs/job-names';
-import { ValidateCartStep } from './presentation/jobs/validate-cart.job';
-import { ReserveStockStep } from './presentation/jobs/reserve-stock-job/reserve-stock.job';
-import { CreateOrderStep } from './presentation/jobs/create-order.job';
-import { ProcessPaymentStep } from './presentation/jobs/process-payment.job';
-import { ConfirmReservationStep } from './presentation/jobs/confirm-reservation.job';
-import { ClearCartStep } from './presentation/jobs/clear-cart.job';
-import { ReleaseStockStep } from './presentation/jobs/release-stock.job';
-import { CancelOrderStep } from './presentation/jobs/cancel-order.job';
-import { RefundPaymentStep } from './presentation/jobs/refund-payment.job';
-import { FinalizeCheckoutStep } from './presentation/jobs/finalize-checkout.job';
-import { ConfirmOrderStep } from './presentation/jobs/confirm-order.job';
-import { ReleaseOrderStockJob } from './presentation/jobs/release-order-stock.job';
+import { JobNames } from '../../shared-kernel/infrastructure/jobs/job-names';
+import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
+import { ReserveStockStep } from './primary-adapters/jobs/reserve-stock-job/reserve-stock.job';
+import { CreateOrderStep } from './primary-adapters/jobs/create-order.job';
+import { ProcessPaymentStep } from './primary-adapters/jobs/process-payment.job';
+import { ConfirmReservationStep } from './primary-adapters/jobs/confirm-reservation.job';
+import { ClearCartStep } from './primary-adapters/jobs/clear-cart.job';
+import { ReleaseStockStep } from './primary-adapters/jobs/release-stock.job';
+import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
+import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
+import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
+import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
+import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 
 @Processor('checkout')
 @Injectable()

@@ -1,7 +1,7 @@
-import { IPayment } from '../../domain/interfaces/payment.interface';
+import { IPayment } from '../../core/domain/interfaces/payment.interface';
 import { PaymentTestFactory } from '../factories/payment.test.factory';
-import { PaymentMethodType } from '../../domain/value-objects/payment-method';
-import { PaymentStatusType } from '../../domain/value-objects/payment-status';
+import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class PaymentBuilder {
   private payment: IPayment;

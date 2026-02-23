@@ -15,15 +15,15 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { CreateProductDto } from './presentation/dto/create-product.dto';
-import { UpdateProductDto } from './presentation/dto/update-product.dto';
-import { ProductResponseDto } from './presentation/dto/product-response.dto';
-import { CreateProductUseCase } from './application/usecases/create-product/create-product.usecase';
-import { GetProductUseCase } from './application/usecases/get-product/get-product.usecase';
-import { ListProductsUseCase } from './application/usecases/list-products/list-products.usecase';
-import { UpdateProductUseCase } from './application/usecases/update-product/update-product.usecase';
-import { DeleteProductUseCase } from './application/usecases/delete-product/delete-product.usecase';
-import { isFailure } from '../../core/domain/result';
+import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
+import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
+import { ProductResponseDto } from './primary-adapters/dto/product-response.dto';
+import { CreateProductUseCase } from './core/application/usecases/create-product/create-product.usecase';
+import { GetProductUseCase } from './core/application/usecases/get-product/get-product.usecase';
+import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
+import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('products')
 @Controller('products')

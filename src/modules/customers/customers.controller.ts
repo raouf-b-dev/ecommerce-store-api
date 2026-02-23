@@ -16,24 +16,24 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { CreateCustomerDto } from './presentation/dto/create-customer.dto';
-import { UpdateCustomerDto } from './presentation/dto/update-customer.dto';
-import { AddAddressDto } from './presentation/dto/add-address.dto';
-import { UpdateAddressDto } from './presentation/dto/update-address.dto';
-import { CustomerResponseDto } from './presentation/dto/customer-response.dto';
-import { AddressResponseDto } from './presentation/dto/address-response.dto';
-import { ListCustomersQueryDto } from './presentation/dto/list-customers-query.dto';
+import { CreateCustomerDto } from './primary-adapters/dto/create-customer.dto';
+import { UpdateCustomerDto } from './primary-adapters/dto/update-customer.dto';
+import { AddAddressDto } from './primary-adapters/dto/add-address.dto';
+import { UpdateAddressDto } from './primary-adapters/dto/update-address.dto';
+import { CustomerResponseDto } from './primary-adapters/dto/customer-response.dto';
+import { AddressResponseDto } from './primary-adapters/dto/address-response.dto';
+import { ListCustomersQueryDto } from './primary-adapters/dto/list-customers-query.dto';
 
-import { CreateCustomerUseCase } from './application/usecases/create-customer/create-customer.usecase';
-import { GetCustomerUseCase } from './application/usecases/get-customer/get-customer.usecase';
-import { ListCustomersUseCase } from './application/usecases/list-customers/list-customers.usecase';
-import { UpdateCustomerUseCase } from './application/usecases/update-customer/update-customer.usecase';
-import { DeleteCustomerUseCase } from './application/usecases/delete-customer/delete-customer.usecase';
-import { AddAddressUseCase } from './application/usecases/add-address/add-address.usecase';
-import { UpdateAddressUseCase } from './application/usecases/update-address/update-address.usecase';
-import { DeleteAddressUseCase } from './application/usecases/delete-address/delete-address.usecase';
-import { SetDefaultAddressUseCase } from './application/usecases/set-default-address/set-default-address.usecase';
-import { isFailure } from '../../core/domain/result';
+import { CreateCustomerUseCase } from './core/application/usecases/create-customer/create-customer.usecase';
+import { GetCustomerUseCase } from './core/application/usecases/get-customer/get-customer.usecase';
+import { ListCustomersUseCase } from './core/application/usecases/list-customers/list-customers.usecase';
+import { UpdateCustomerUseCase } from './core/application/usecases/update-customer/update-customer.usecase';
+import { DeleteCustomerUseCase } from './core/application/usecases/delete-customer/delete-customer.usecase';
+import { AddAddressUseCase } from './core/application/usecases/add-address/add-address.usecase';
+import { UpdateAddressUseCase } from './core/application/usecases/update-address/update-address.usecase';
+import { DeleteAddressUseCase } from './core/application/usecases/delete-address/delete-address.usecase';
+import { SetDefaultAddressUseCase } from './core/application/usecases/set-default-address/set-default-address.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('customers')
 @ApiBearerAuth()

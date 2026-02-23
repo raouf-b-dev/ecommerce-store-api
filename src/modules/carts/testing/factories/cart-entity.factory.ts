@@ -1,6 +1,6 @@
 // src/modules/carts/testing/factories/cart-entity.factory.ts
-import { CartItemEntity } from '../../infrastructure/orm/cart-item.schema';
-import { CartEntity } from '../../infrastructure/orm/cart.schema';
+import { CartItemEntity } from '../../secondary-adapters/orm/cart-item.schema';
+import { CartEntity } from '../../secondary-adapters/orm/cart.schema';
 
 export class CartEntityTestFactory {
   static createCartEntity(overrides?: Partial<CartEntity>): CartEntity {

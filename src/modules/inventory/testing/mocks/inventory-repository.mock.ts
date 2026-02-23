@@ -1,10 +1,10 @@
 // src/modules/inventory/testing/mocks/inventory-repository.mock.ts
-import { InventoryRepository } from '../../domain/repositories/inventory.repository';
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { Inventory } from '../../domain/entities/inventory';
-import { IInventory } from '../../domain/interfaces/inventory.interface';
-import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
+import { InventoryRepository } from '../../core/domain/repositories/inventory.repository';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { Inventory } from '../../core/domain/entities/inventory';
+import { IInventory } from '../../core/domain/interfaces/inventory.interface';
+import { LowStockQueryDto } from '../../primary-adapters/dto/low-stock-query.dto';
 
 export class MockInventoryRepository implements InventoryRepository {
   findById = jest.fn<Promise<Result<Inventory, RepositoryError>>, [number]>();

@@ -1,27 +1,27 @@
 import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartsController } from './carts.controller';
-import { CartEntity } from './infrastructure/orm/cart.schema';
-import { CartItemEntity } from './infrastructure/orm/cart-item.schema';
-import { RedisModule } from '../../core/infrastructure/redis/redis.module';
+import { CartEntity } from './secondary-adapters/orm/cart.schema';
+import { CartItemEntity } from './secondary-adapters/orm/cart-item.schema';
+import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
 import {
   POSTGRES_CART_REPOSITORY,
   REDIS_CART_REPOSITORY,
   INVENTORY_GATEWAY,
 } from './carts.token';
-import { PostgresCartRepository } from './infrastructure/repositories/postgres-cart-repository/postgres.cart-repository';
-import { RedisCartRepository } from './infrastructure/repositories/redis-cart-repository/redis.cart-repository';
-import { ModuleInventoryGateway } from './infrastructure/adapters/module-inventory.gateway';
-import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
-import { CartRepository } from './domain/repositories/cart.repository';
+import { PostgresCartRepository } from './secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository';
+import { RedisCartRepository } from './secondary-adapters/repositories/redis-cart-repository/redis.cart-repository';
+import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
+import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CartRepository } from './core/domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
-import { GetCartUseCase } from './application/usecases/get-cart/get-cart.usecase';
-import { CreateCartUseCase } from './application/usecases/create-cart/create-cart.usecase';
-import { AddCartItemUseCase } from './application/usecases/add-cart-item/add-cart-item.usecase';
-import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/update-cart-item.usecase';
-import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
-import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
-import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
+import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
+import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
+import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/add-cart-item.usecase';
+import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
+import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
+import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
+import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { ProductsModule } from '../products/products.module';
 
 @Module({

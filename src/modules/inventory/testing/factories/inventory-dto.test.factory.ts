@@ -2,10 +2,10 @@
 import {
   AdjustStockDto,
   StockAdjustmentType,
-} from '../../presentation/dto/adjust-stock.dto';
-import { ReserveStockDto } from '../../presentation/dto/reserve-stock.dto';
-import { ReserveStockItemDto } from '../../presentation/dto/reserve-stock-item.dto';
-import { LowStockQueryDto } from '../../presentation/dto/low-stock-query.dto';
+} from '../../primary-adapters/dto/adjust-stock.dto';
+import { ReserveStockDto } from '../../primary-adapters/dto/reserve-stock.dto';
+import { ReserveStockItemDto } from '../../primary-adapters/dto/reserve-stock-item.dto';
+import { LowStockQueryDto } from '../../primary-adapters/dto/low-stock-query.dto';
 
 export class InventoryDtoTestFactory {
   static createAdjustStockDto(

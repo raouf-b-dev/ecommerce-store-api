@@ -1,5 +1,5 @@
-import { IUser } from '../../domain/interfaces/user.interface';
-import { UserRoleType } from '../../domain/value-objects/user-role';
+import { IUser } from '../../core/domain/interfaces/user.interface';
+import { UserRoleType } from '../../core/domain/value-objects/user-role';
 
 export class UserTestFactory {
   static createMockUser(overrides?: Partial<IUser>): IUser {

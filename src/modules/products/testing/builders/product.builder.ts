@@ -1,5 +1,5 @@
 // src/modules/products/testing/builders/product.builder.ts
-import { IProduct } from '../../domain/interfaces/product.interface';
+import { IProduct } from '../../core/domain/interfaces/product.interface';
 import { ProductTestFactory } from '../factories/product.factory';
 
 export class ProductBuilder {

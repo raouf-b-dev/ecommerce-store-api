@@ -1,5 +1,5 @@
 // src/modules/carts/testing/factories/cart.factory.ts
-import { ICart } from '../../domain/interfaces/cart.interface';
+import { ICart } from '../../core/domain/interfaces/cart.interface';
 
 export class CartTestFactory {
   static createMockCart(overrides?: Partial<ICart>): ICart {
