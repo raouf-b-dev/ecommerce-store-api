@@ -1,6 +1,6 @@
-import { IPayment } from '../../domain/interfaces/payment.interface';
-import { PaymentMethodType } from '../../domain/value-objects/payment-method';
-import { PaymentStatusType } from '../../domain/value-objects/payment-status';
+import { IPayment } from '../../core/domain/interfaces/payment.interface';
+import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class PaymentTestFactory {
   static createMockPayment(overrides?: Partial<IPayment>): IPayment {

@@ -1,8 +1,8 @@
 // src/modules/order/testing/factories/create-order-dto.factory.ts
 
-import { PaymentMethodType } from '../../../payments/domain';
-import { CreateOrderDto } from '../../presentation/dto/create-order.dto';
-import { DeliverOrderDto } from '../../presentation/dto/deliver-order.dto';
+import { PaymentMethodType } from '../../../payments/core/domain';
+import { CreateOrderDto } from '../../primary-adapters/dto/create-order.dto';
+import { DeliverOrderDto } from '../../primary-adapters/dto/deliver-order.dto';
 
 export class CreateOrderDtoTestFactory {
   static createMockDto(overrides?: Partial<CreateOrderDto>): CreateOrderDto {

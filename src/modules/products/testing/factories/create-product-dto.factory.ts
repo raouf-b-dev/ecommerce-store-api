@@ -1,6 +1,6 @@
 // src/modules/products/testing/factories/create-product-dto.factory.ts
 
-import { CreateProductDto } from '../../presentation/dto/create-product.dto';
+import { CreateProductDto } from '../../primary-adapters/dto/create-product.dto';
 
 export class CreateProductDtoFactory {
   static createMockDto(

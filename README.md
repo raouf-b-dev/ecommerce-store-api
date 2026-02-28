@@ -340,20 +340,42 @@ npm run d:up:test
 
 ```
 src/
-├── core/                    # Shared kernel & cross-cutting concerns
-│   ├── domain/              # Base entities, value objects, & Result pattern
-│   ├── application/         # Common application services & interfaces
-│   └── infrastructure/      # Shared persistence, decorators, & interceptors
-├── modules/                 # Feature-based modules (Bounded Contexts)
-│   ├── [module]/            # e.g., orders, products, inventory
-│   │   ├── domain/          # Entities, Value Objects, & Repository interfaces
-│   │   ├── application/     # Use Cases & Application services
-│   │   ├── infrastructure/  # Repository implementations & external clients
-│   │   ├── presentation/    # Controllers, DTOs, Listeners, & Jobs
-│   │   ├── testing/         # Module-specific factories, mocks, & builders
+├── shared-kernel/           # True DDD Shared Kernel — pure domain building blocks
+│   └── domain/              # Result pattern, base UseCase, Value Objects (Money, Quantity),
+│                            # Error hierarchy, IdempotencyStore port
+│
+├── infrastructure/          # Global Secondary Adapters (driven side)
+│   ├── database/            # TypeORM connection config
+│   ├── redis/               # Redis Stack (RedisJSON, RediSearch, Cache)
+│   ├── queue/               # BullMQ queue config, FlowProducer
+│   ├── jobs/                # Base job handler, retry policies
+│   ├── idempotency/         # Idempotency service (Redis-backed)
+│   ├── interceptors/        # Idempotency interceptor
+│   ├── decorators/          # @Idempotent() decorator
+│   ├── mappers/             # Shared mapper utilities
+│   ├── websocket/           # WebSocket gateway, Redis IO adapter
+│   └── infrastructure.module.ts
+│
+├── interceptors/            # Global Result Interceptor (app-level primary adapter)
+│
+├── modules/                 # Feature Modules (Bounded Contexts)
+│   ├── [module]/
+│   │   ├── core/
+│   │   │   ├── domain/      # Entities, Value Objects, Repository Interfaces
+│   │   │   └── application/ # Use Cases & Application Services
+│   │   ├── primary-adapters/
+│   │   │   ├── dtos/        # Request/Response DTOs
+│   │   │   ├── jobs/        # BullMQ job handlers
+│   │   │   └── listeners/   # Event listeners
+│   │   ├── secondary-adapters/
+│   │   │   ├── repositories/  # PostgreSQL & Redis repository implementations
+│   │   │   ├── persistence/   # ORM mappers
+│   │   │   ├── gateways/      # External service implementations
+│   │   │   └── schedulers/    # BullMQ scheduler implementations
+│   │   ├── testing/         # Module-specific mocks & factories
 │   │   └── [module].module.ts
+│
 ├── config/                  # Global configuration & environment validation
-├── shared/                  # Generic utilities & helper functions
 ├── testing/                 # Root-level testing utilities & E2E setup
 └── main.ts                  # Application bootstrap
 ```
@@ -364,6 +386,8 @@ src/
 - **Single Responsibility**: Each class has one reason to change
 - **Open/Closed**: Open for extension, closed for modification
 - **Interface Segregation**: Many client-specific interfaces
+
+> For strict academic DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md).
 
 ---
 

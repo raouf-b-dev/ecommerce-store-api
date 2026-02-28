@@ -1,11 +1,11 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
-import { DeliverNotificationProcess } from './presentation/jobs/deliver-notification.process';
-import { SaveNotificationHistoryProcess } from './presentation/jobs/save-notification-history.process';
-import { UpdateNotificationStatusProcess } from './presentation/jobs/update-notification-status.process';
-import { CleanupExpiredNotificationsProcess } from './presentation/jobs/cleanup-expired-notifications.process';
-import { JobNames } from 'src/core/infrastructure/jobs/job-names';
+import { DeliverNotificationProcess } from './primary-adapters/jobs/deliver-notification.process';
+import { SaveNotificationHistoryProcess } from './primary-adapters/jobs/save-notification-history.process';
+import { UpdateNotificationStatusProcess } from './primary-adapters/jobs/update-notification-status.process';
+import { CleanupExpiredNotificationsProcess } from './primary-adapters/jobs/cleanup-expired-notifications.process';
+import { JobNames } from 'src/infrastructure/jobs/job-names';
 
 @Processor('notifications', { concurrency: 10 })
 export class NotificationsProcessor extends WorkerHost {

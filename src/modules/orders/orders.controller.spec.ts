@@ -3,17 +3,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
-import { IdempotencyStore } from '../../core/domain/stores/idempotency.store';
-import { Result } from '../../core/domain/result';
+import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
+import { Result } from '../../shared-kernel/domain/result';
 
-import { GetOrderUseCase } from './application/usecases/get-order/get-order.usecase';
-import { CheckoutUseCase } from './application/usecases/checkout/checkout.usecase';
-import { ShipOrderUseCase } from './application/usecases/ship-order/ship-order.usecase';
-import { ListOrdersUsecase } from './application/usecases/list-orders/list-orders.usecase';
-import { CancelOrderUseCase } from './application/usecases/cancel-order/cancel-order.usecase';
-import { ConfirmOrderUseCase } from './application/usecases/confirm-order/confirm-order.usecase';
-import { DeliverOrderUseCase } from './application/usecases/deliver-order/deliver-order.usecase';
-import { ProcessOrderUseCase } from './application/usecases/process-order/process-order.usecase';
+import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
+import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
+import { ShipOrderUseCase } from './core/application/usecases/ship-order/ship-order.usecase';
+import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
+import { CancelOrderUseCase } from './core/application/usecases/cancel-order/cancel-order.usecase';
+import { ConfirmOrderUseCase } from './core/application/usecases/confirm-order/confirm-order.usecase';
+import { DeliverOrderUseCase } from './core/application/usecases/deliver-order/deliver-order.usecase';
+import { ProcessOrderUseCase } from './core/application/usecases/process-order/process-order.usecase';
 
 describe('OrdersController', () => {
   let controller: OrdersController;

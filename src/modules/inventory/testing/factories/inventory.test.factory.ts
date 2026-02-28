@@ -1,5 +1,5 @@
 // src/modules/inventory/testing/factories/inventory.test.factory.ts
-import { IInventory } from '../../domain/interfaces/inventory.interface';
+import { IInventory } from '../../core/domain/interfaces/inventory.interface';
 
 export class InventoryTestFactory {
   static createMockInventory(overrides?: Partial<IInventory>): IInventory {

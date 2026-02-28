@@ -1,38 +1,38 @@
 import { Logger, Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
-import { PaymentEntity } from './infrastructure/orm/payment.schema';
-import { RefundEntity } from './infrastructure/orm/refund.schema';
-import { RedisModule } from '../../core/infrastructure/redis/redis.module';
+import { PaymentEntity } from './secondary-adapters/orm/payment.schema';
+import { RefundEntity } from './secondary-adapters/orm/refund.schema';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_PAYMENT_REPOSITORY,
   REDIS_PAYMENT_REPOSITORY,
 } from './payment.token';
-import { PostgresPaymentRepository } from './infrastructure/repositories/postgres-payment-repository/postgres.payment-repository';
-import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
-import { RedisPaymentRepository } from './infrastructure/repositories/redis-payment-repository/redis.payment-repository';
-import { PaymentRepository } from './domain/repositories/payment.repository';
-import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
-import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
-import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
-import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
-import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
-import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
-import { HandlePaymentWebhookService } from './application/services/handle-payment-webhook/handle-payment-webhook.service';
-import { HandleStripeWebhookUseCase } from './application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
-import { CreatePaymentIntentUseCase } from './application/usecases/create-payment-intent/create-payment-intent.usecase';
+import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { RedisPaymentRepository } from './secondary-adapters/repositories/redis-payment-repository/redis.payment-repository';
+import { PaymentRepository } from './core/domain/repositories/payment.repository';
+import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
+import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
+import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
+import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
+import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { HandlePaymentWebhookService } from './core/application/services/handle-payment-webhook/handle-payment-webhook.service';
+import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
+import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { AuthModule } from '../auth/auth.module';
-import { PaymentGatewayFactory } from './infrastructure/gateways/payment-gateway.factory';
-import { CodGateway } from './infrastructure/gateways/cod.gateway';
-import { StripeGateway } from './infrastructure/gateways/stripe.gateway';
-import { PayPalGateway } from './infrastructure/gateways/paypal.gateway';
-import { StripeSignatureService } from './infrastructure/services/stripe-signature.service';
-import { PayPalSignatureService } from './infrastructure/services/paypal-signature.service';
+import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
+import { CodGateway } from './secondary-adapters/gateways/cod.gateway';
+import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
+import { PayPalGateway } from './secondary-adapters/gateways/paypal.gateway';
+import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
+import { PayPalSignatureService } from './secondary-adapters/services/paypal-signature.service';
 import { BullModule } from '@nestjs/bullmq';
-import { PaymentEventsScheduler } from './domain/schedulers/payment-events.scheduler';
-import { BullMqPaymentEventsScheduler } from './infrastructure/schedulers/bullmq-payment-events.scheduler';
+import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
+import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
 
 @Module({
   imports: [

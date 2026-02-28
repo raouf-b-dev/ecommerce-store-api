@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller';
-import { IInventory } from './domain/interfaces/inventory.interface';
+import { IInventory } from './core/domain/interfaces/inventory.interface';
 import { InventoryTestFactory } from './testing/factories/inventory.test.factory';
-import { Result } from '../../core/domain/result';
+import { Result } from '../../shared-kernel/domain/result';
 
-import { AdjustStockUseCase } from './application/adjust-stock/adjust-stock.usecase';
-import { BulkCheckStockUseCase } from './application/bulk-check-stock/bulk-check-stock.usecase';
-import { CheckStockUseCase } from './application/check-stock/check-stock.usecase';
-import { GetInventoryUseCase } from './application/get-inventory/get-inventory.usecase';
-import { ListLowStockUseCase } from './application/list-low-stock/list-low-stock.usecase';
-import { ReleaseStockUseCase } from './application/release-stock/release-stock.usecase';
-import { ReserveStockUseCase } from './application/reserve-stock/reserve-stock.usecase';
+import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
+import { BulkCheckStockUseCase } from './core/application/bulk-check-stock/bulk-check-stock.usecase';
+import { CheckStockUseCase } from './core/application/check-stock/check-stock.usecase';
+import { GetInventoryUseCase } from './core/application/get-inventory/get-inventory.usecase';
+import { ListLowStockUseCase } from './core/application/list-low-stock/list-low-stock.usecase';
+import { ReleaseStockUseCase } from './core/application/release-stock/release-stock.usecase';
+import { ReserveStockUseCase } from './core/application/reserve-stock/reserve-stock.usecase';
 
 describe('InventoryController', () => {
   let controller: InventoryController;

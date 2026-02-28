@@ -1,21 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ProductsController } from './products.controller';
-import { GetProductUseCase } from './application/usecases/get-product/get-product.usecase';
+import { GetProductUseCase } from './core/application/usecases/get-product/get-product.usecase';
 import {
   POSTGRES_PRODUCT_REPOSITORY,
   REDIS_PRODUCT_REPOSITORY,
 } from './product.tokens';
-import { ProductRepository } from './domain/repositories/product-repository';
-import { RedisProductRepository } from './infrastructure/repositories/redis-product-repository/redis.product-repository';
-import { CacheService } from '../../core/infrastructure/redis/cache/cache.service';
-import { PostgresProductRepository } from './infrastructure/repositories/postgres-product-repository/postgres.product-repository';
+import { ProductRepository } from './core/domain/repositories/product-repository';
+import { RedisProductRepository } from './secondary-adapters/repositories/redis-product-repository/redis.product-repository';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from '../../core/infrastructure/redis/redis.module';
-import { ProductEntity } from './infrastructure/orm/product.schema';
-import { CreateProductUseCase } from './application/usecases/create-product/create-product.usecase';
-import { DeleteProductUseCase } from './application/usecases/delete-product/delete-product.usecase';
-import { ListProductsUseCase } from './application/usecases/list-products/list-products.usecase';
-import { UpdateProductUseCase } from './application/usecases/update-product/update-product.usecase';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
+import { ProductEntity } from './secondary-adapters/orm/product.schema';
+import { CreateProductUseCase } from './core/application/usecases/create-product/create-product.usecase';
+import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
+import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductEntity]), RedisModule],

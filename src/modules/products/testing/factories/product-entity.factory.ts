@@ -1,5 +1,5 @@
 // src/modules/products/testing/factories/product-entity.factory.ts
-import { ProductEntity } from '../../infrastructure/orm/product.schema';
+import { ProductEntity } from '../../secondary-adapters/orm/product.schema';
 
 /**
  * Factory for creating ProductEntity mocks for testing

@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomersController } from './customers.controller';
-import { Result } from '../../core/domain/result';
+import { Result } from '../../shared-kernel/domain/result';
 
-import { CreateCustomerUseCase } from './application/usecases/create-customer/create-customer.usecase';
-import { GetCustomerUseCase } from './application/usecases/get-customer/get-customer.usecase';
-import { ListCustomersUseCase } from './application/usecases/list-customers/list-customers.usecase';
-import { UpdateCustomerUseCase } from './application/usecases/update-customer/update-customer.usecase';
-import { DeleteCustomerUseCase } from './application/usecases/delete-customer/delete-customer.usecase';
-import { AddAddressUseCase } from './application/usecases/add-address/add-address.usecase';
-import { UpdateAddressUseCase } from './application/usecases/update-address/update-address.usecase';
-import { DeleteAddressUseCase } from './application/usecases/delete-address/delete-address.usecase';
-import { SetDefaultAddressUseCase } from './application/usecases/set-default-address/set-default-address.usecase';
+import { CreateCustomerUseCase } from './core/application/usecases/create-customer/create-customer.usecase';
+import { GetCustomerUseCase } from './core/application/usecases/get-customer/get-customer.usecase';
+import { ListCustomersUseCase } from './core/application/usecases/list-customers/list-customers.usecase';
+import { UpdateCustomerUseCase } from './core/application/usecases/update-customer/update-customer.usecase';
+import { DeleteCustomerUseCase } from './core/application/usecases/delete-customer/delete-customer.usecase';
+import { AddAddressUseCase } from './core/application/usecases/add-address/add-address.usecase';
+import { UpdateAddressUseCase } from './core/application/usecases/update-address/update-address.usecase';
+import { DeleteAddressUseCase } from './core/application/usecases/delete-address/delete-address.usecase';
+import { SetDefaultAddressUseCase } from './core/application/usecases/set-default-address/set-default-address.usecase';
 
 describe('CustomersController', () => {
   let controller: CustomersController;

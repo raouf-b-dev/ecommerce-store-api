@@ -1,5 +1,5 @@
-import { IRefund } from '../../domain/interfaces/refund.interface';
-import { RefundStatusType } from '../../domain/value-objects/refund-status';
+import { IRefund } from '../../core/domain/interfaces/refund.interface';
+import { RefundStatusType } from '../../core/domain/value-objects/refund-status';
 
 export class RefundTestFactory {
   static createMockRefund(overrides?: Partial<IRefund>): IRefund {

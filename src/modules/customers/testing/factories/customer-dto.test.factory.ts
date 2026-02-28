@@ -1,9 +1,9 @@
-import { CreateCustomerDto } from '../../presentation/dto/create-customer.dto';
-import { UpdateCustomerDto } from '../../presentation/dto/update-customer.dto';
-import { AddAddressDto } from '../../presentation/dto/add-address.dto';
-import { UpdateAddressDto } from '../../presentation/dto/update-address.dto';
-import { ListCustomersQueryDto } from '../../presentation/dto/list-customers-query.dto';
-import { AddressType } from '../../domain/value-objects/address-type';
+import { CreateCustomerDto } from '../../primary-adapters/dto/create-customer.dto';
+import { UpdateCustomerDto } from '../../primary-adapters/dto/update-customer.dto';
+import { AddAddressDto } from '../../primary-adapters/dto/add-address.dto';
+import { UpdateAddressDto } from '../../primary-adapters/dto/update-address.dto';
+import { ListCustomersQueryDto } from '../../primary-adapters/dto/list-customers-query.dto';
+import { AddressType } from '../../core/domain/value-objects/address-type';
 
 export class CustomerDtoTestFactory {
   static createCreateCustomerDto(

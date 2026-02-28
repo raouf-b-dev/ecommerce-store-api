@@ -1,4 +1,4 @@
-import { RegisterDto } from '../../presentation/dto/register.dto';
+import { RegisterDto } from '../../primary-adapters/dto/register.dto';
 
 export class RegisterDtoTestFactory {
   static createRegisterDto(overrides?: Partial<RegisterDto>): RegisterDto {

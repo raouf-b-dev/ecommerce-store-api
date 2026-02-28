@@ -14,18 +14,18 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { AdjustStockDto } from './presentation/dto/adjust-stock.dto';
-import { ReserveStockDto } from './presentation/dto/reserve-stock.dto';
-import { InventoryResponseDto } from './presentation/dto/inventory-response.dto';
-import { LowStockQueryDto } from './presentation/dto/low-stock-query.dto';
-import { GetInventoryUseCase } from './application/get-inventory/get-inventory.usecase';
-import { AdjustStockUseCase } from './application/adjust-stock/adjust-stock.usecase';
-import { ReserveStockUseCase } from './application/reserve-stock/reserve-stock.usecase';
-import { ReleaseStockUseCase } from './application/release-stock/release-stock.usecase';
-import { CheckStockUseCase } from './application/check-stock/check-stock.usecase';
-import { ListLowStockUseCase } from './application/list-low-stock/list-low-stock.usecase';
-import { BulkCheckStockUseCase } from './application/bulk-check-stock/bulk-check-stock.usecase';
-import { isFailure } from '../../core/domain/result';
+import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
+import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
+import { InventoryResponseDto } from './primary-adapters/dto/inventory-response.dto';
+import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
+import { GetInventoryUseCase } from './core/application/get-inventory/get-inventory.usecase';
+import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
+import { ReserveStockUseCase } from './core/application/reserve-stock/reserve-stock.usecase';
+import { ReleaseStockUseCase } from './core/application/release-stock/release-stock.usecase';
+import { CheckStockUseCase } from './core/application/check-stock/check-stock.usecase';
+import { ListLowStockUseCase } from './core/application/list-low-stock/list-low-stock.usecase';
+import { BulkCheckStockUseCase } from './core/application/bulk-check-stock/bulk-check-stock.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('inventory')
 @Controller('inventory')
