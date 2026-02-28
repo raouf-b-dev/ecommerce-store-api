@@ -3,8 +3,8 @@ import { MockInventoryRepository } from '../../../testing/mocks/inventory-reposi
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/errors/usecase.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Inventory } from '../../domain/entities/inventory';
 import { CheckStockResponse } from '../../../primary-adapters/dto/check-stock-response.dto';
 

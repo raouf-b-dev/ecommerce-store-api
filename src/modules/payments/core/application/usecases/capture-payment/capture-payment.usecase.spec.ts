@@ -7,7 +7,7 @@ import { PaymentStatusType } from '../../../domain/value-objects/payment-status'
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('CapturePaymentUseCase', () => {
   let useCase: CapturePaymentUseCase;

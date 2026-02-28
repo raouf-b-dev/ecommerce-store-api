@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
-import { WebsocketModule } from 'src/shared-kernel/infrastructure/websocket/websocket.module';
+import { WebsocketModule } from 'src/infrastructure/websocket/websocket.module';
 import { NotificationEntity } from './secondary-adapters/orm/notification.schema';
 import { PostgresNotificationRepository } from './secondary-adapters/repositories/postgres.notification.repository';
 import { NotificationRepository } from './core/domain/repositories/notification.repository';

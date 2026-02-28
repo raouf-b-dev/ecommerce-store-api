@@ -1,11 +1,11 @@
 import { ListCustomersUseCase } from './list-customers.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('ListCustomersUseCase', () => {
   let useCase: ListCustomersUseCase;

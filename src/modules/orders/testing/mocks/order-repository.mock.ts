@@ -1,7 +1,7 @@
 // src/modules/orders/testing/mocks/order-repository.mock.ts
 import { OrderRepository } from '../../core/domain/repositories/order-repository';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Order } from '../../core/domain/entities/order';
 import { CreateOrderItemDto } from '../../primary-adapters/dto/create-order-item.dto';
 import { ListOrdersQueryDto } from '../../primary-adapters/dto/list-orders-query.dto';

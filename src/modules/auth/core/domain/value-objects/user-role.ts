@@ -1,4 +1,4 @@
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 
 export enum UserRoleType {
   ADMIN = 'ADMIN',

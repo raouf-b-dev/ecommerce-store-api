@@ -3,14 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomersController } from './customers.controller';
 import { CustomerEntity } from './secondary-adapters/orm/customer.schema';
 import { AddressEntity } from './secondary-adapters/orm/address.schema';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_CUSTOMER_REPOSITORY,
   REDIS_CUSTOMER_REPOSITORY,
 } from './customer.tokens';
 import { PostgresCustomerRepository } from './secondary-adapters/repositories/postgres-customer-repository/postgres.customer-repository';
 import { RedisCustomerRepository } from './secondary-adapters/repositories/redis-customer-repository/redis.customer-repository';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { CustomerRepository } from './core/domain/repositories/customer.repository';
 
 // Use Cases

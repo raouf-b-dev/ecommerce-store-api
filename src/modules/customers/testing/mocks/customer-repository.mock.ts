@@ -1,6 +1,6 @@
 import { CustomerRepository } from '../../core/domain/repositories/customer.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Customer } from '../../core/domain/entities/customer';
 import { ICustomer } from '../../core/domain/interfaces/customer.interface';
 

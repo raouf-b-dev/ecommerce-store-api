@@ -1,7 +1,7 @@
 // src/modules/payments/core/domain/entities/payment.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IPayment } from '../interfaces/payment.interface';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import {

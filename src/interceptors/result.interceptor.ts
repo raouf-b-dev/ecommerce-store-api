@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Result, isFailure } from '../../shared-kernel/domain/result';
-import { AppError } from '../../shared-kernel/errors/app.error';
+import { Result, isFailure } from 'src/shared-kernel/domain/result';
+import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 
 @Injectable()
 export class ResultInterceptor implements NestInterceptor {

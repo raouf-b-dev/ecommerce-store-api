@@ -5,7 +5,7 @@ import { PostgresCustomerRepository } from './postgres.customer-repository';
 import { CustomerEntity } from '../../orm/customer.schema';
 import { CustomerTestFactory } from '../../../testing/factories/customer.factory';
 import { CustomerMapper } from '../../persistence/mappers/customer.mapper';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Customer } from '../../../core/domain/entities/customer';
 
 describe('PostgresCustomerRepository', () => {

@@ -2,7 +2,7 @@
 import { PaymentResult, PaymentIntentResult } from './payment-result';
 import { PaymentMethodType } from '../value-objects/payment-method';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { InfrastructureError } from '../../../../../shared-kernel/errors/infrastructure-error';
+import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
 export interface IPaymentGateway {
   getMethod(): PaymentMethodType;

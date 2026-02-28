@@ -4,7 +4,7 @@ import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
 import {
   IdempotencyStore,
   IdempotencyResult,
-} from '../../domain/stores/idempotency.store';
+} from '../../shared-kernel/domain/stores/idempotency.store';
 
 @Injectable()
 export class IdempotencyService extends IdempotencyStore {

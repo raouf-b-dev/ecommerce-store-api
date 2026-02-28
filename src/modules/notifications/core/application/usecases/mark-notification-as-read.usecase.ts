@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Result } from 'src/shared-kernel/domain/result';
-import { UseCaseError } from 'src/shared-kernel/errors/usecase.error';
-import { ErrorFactory } from 'src/shared-kernel/errors/error.factory';
+import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 import { NotificationRepository } from '../../domain/repositories/notification.repository';
 
 @Injectable()

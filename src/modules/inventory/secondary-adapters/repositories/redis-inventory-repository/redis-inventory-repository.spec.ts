@@ -1,14 +1,14 @@
-// src/modules/inventory/infrastructure/repositories/redis-inventory-repository.spec.ts
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+// src/modules/inventory/secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository.spec.ts
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
   InventoryCacheMapper,
   InventoryForCache,
 } from '../../persistence/mappers/inventory.mapper';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
-import { INVENTORY_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
 import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { RedisInventoryRepository } from './redis-inventory-repository';

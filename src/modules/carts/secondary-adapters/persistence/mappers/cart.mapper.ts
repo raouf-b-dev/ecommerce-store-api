@@ -1,5 +1,5 @@
 // src/modules/carts/infrastructure/persistence/mappers/cart.mapper.ts
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Cart, CartProps } from '../../../core/domain/entities/cart';
 import { ICart } from '../../../core/domain/interfaces/cart.interface';
 import { CartEntity } from '../../orm/cart.schema';

@@ -1,5 +1,5 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { Order } from '../entities/order';

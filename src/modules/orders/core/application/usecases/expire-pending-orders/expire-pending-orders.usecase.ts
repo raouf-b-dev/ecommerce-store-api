@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
 
 export interface ExpirePendingOrdersDto {

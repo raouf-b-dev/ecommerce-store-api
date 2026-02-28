@@ -1,6 +1,6 @@
 import { PaymentRepository } from '../../core/domain/repositories/payment.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Payment } from '../../core/domain/entities/payment';
 import { Refund } from '../../core/domain/entities/refund';
 import { IPayment } from '../../core/domain/interfaces/payment.interface';

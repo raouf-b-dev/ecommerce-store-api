@@ -5,7 +5,7 @@ import { MockPaymentRepository } from '../../../../testing/mocks/payment-reposit
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('VerifyPaymentUseCase', () => {
   let useCase: VerifyPaymentUseCase;

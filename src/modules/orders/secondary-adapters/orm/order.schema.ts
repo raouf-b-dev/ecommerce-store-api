@@ -12,7 +12,7 @@ import {
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
-import { numericToNumber } from '../../../../shared-kernel/infrastructure/database/number.transformer';
+import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { PaymentMethodType } from '../../../payments/core/domain';
 

@@ -1,6 +1,6 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IUser } from '../interfaces/user.interface';
 import { UserRole, UserRoleType } from '../value-objects/user-role';
 

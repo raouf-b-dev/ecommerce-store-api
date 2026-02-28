@@ -1,5 +1,5 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { InfrastructureError } from '../../../../../shared-kernel/errors/infrastructure-error';
+import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { PaymentMethodType } from '../../../../payments/core/domain';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 

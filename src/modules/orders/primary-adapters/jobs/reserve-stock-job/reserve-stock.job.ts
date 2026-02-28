@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { BaseJobHandler } from '../../../../../shared-kernel/infrastructure/jobs/base-job.handler';
+import { BaseJobHandler } from '../../../../../infrastructure/jobs/base-job.handler';
 import { ReserveStockUseCase } from '../../../../inventory/core/application/reserve-stock/reserve-stock.usecase';
 import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
-import { AppError } from '../../../../../shared-kernel/errors/app.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../../core/domain/schedulers/order.scheduler';
 import { ValidateCartResult } from '../validate-cart.job';
 

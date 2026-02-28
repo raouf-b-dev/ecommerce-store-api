@@ -1,11 +1,11 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { GetOrderReservationsUseCase } from '../../../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 

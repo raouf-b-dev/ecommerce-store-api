@@ -17,8 +17,8 @@ import { PostgresOrderRepository } from './secondary-adapters/repositories/postg
 import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderItemEntity } from './secondary-adapters/orm/order-item.schema';
 import { OrderFactory } from './core/domain/factories/order.factory';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';

@@ -1,7 +1,7 @@
 // src/modules/customers/domain/value-objects/email.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 
 export class Email {
   private readonly _value: string;

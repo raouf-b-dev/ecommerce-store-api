@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { BaseJobHandler } from '../../../../shared-kernel/infrastructure/jobs/base-job.handler';
+import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import {
   HandlePaymentFailedUseCase,
   HandlePaymentFailedDto,
   HandlePaymentFailedResult,
 } from '../../core/application/usecases/handle-payment-failed/handle-payment-failed.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
-import { AppError } from '../../../../shared-kernel/errors/app.error';
+import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 
 @Injectable()
 export class PaymentFailedStep extends BaseJobHandler<

@@ -16,7 +16,7 @@ import {
   createMockTransactionManager,
 } from '../../../../../testing/mocks/typeorm.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
 

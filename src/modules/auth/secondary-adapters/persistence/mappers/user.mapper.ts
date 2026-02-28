@@ -1,6 +1,6 @@
 import { User, UserProps } from '../../../core/domain/entities/user';
 import { UserEntity } from '../../orm/user.schema';
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 
 type UserCreate = CreateFromEntity<UserEntity>;
 

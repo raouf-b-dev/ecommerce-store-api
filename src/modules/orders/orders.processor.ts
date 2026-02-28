@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JobNames } from '../../shared-kernel/infrastructure/jobs/job-names';
+import { JobNames } from '../../infrastructure/jobs/job-names';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
 import { ReserveStockStep } from './primary-adapters/jobs/reserve-stock-job/reserve-stock.job';
 import { CreateOrderStep } from './primary-adapters/jobs/create-order.job';

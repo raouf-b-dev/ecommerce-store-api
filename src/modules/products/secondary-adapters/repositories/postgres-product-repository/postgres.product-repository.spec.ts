@@ -7,7 +7,7 @@ import { ProductEntity } from '../../orm/product.schema';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
 import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
 import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('PostgresProductRepository', () => {

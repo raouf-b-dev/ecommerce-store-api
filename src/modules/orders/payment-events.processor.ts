@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JobNames } from '../../shared-kernel/infrastructure/jobs/job-names';
+import { JobNames } from '../../infrastructure/jobs/job-names';
 import { PaymentCompletedStep } from './primary-adapters/jobs/payment-completed.job';
 import { PaymentFailedStep } from './primary-adapters/jobs/payment-failed.job';
 

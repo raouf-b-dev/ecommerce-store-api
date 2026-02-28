@@ -1,7 +1,7 @@
 import { ReservationStatus } from '../value-objects/reservation-status';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IReservation } from '../interfaces/reservation.interface';
 import { ReservationItem, ReservationItemProps } from './reservation-item';
 import { IReservationItem } from '../interfaces/reservation-item.interface';

@@ -1,6 +1,6 @@
 // src/modules/products/testing/mocks/product-repository.mock.ts
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { IProduct } from '../../core/domain/interfaces/product.interface';
 import { ProductRepository } from '../../core/domain/repositories/product-repository';
 import { CreateProductDto } from '../../primary-adapters/dto/create-product.dto';

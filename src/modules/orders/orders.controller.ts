@@ -21,7 +21,7 @@ import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dt
 import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 import { DeliverOrderDto } from './primary-adapters/dto/deliver-order.dto';
-import { Idempotent } from '../../shared-kernel/infrastructure/decorators/idempotent.decorator';
+import { Idempotent } from '../../infrastructure/decorators/idempotent.decorator';
 
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';

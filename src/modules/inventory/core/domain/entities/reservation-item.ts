@@ -1,5 +1,5 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { IReservationItem } from '../interfaces/reservation-item.interface';
 
 export interface ReservationItemProps {

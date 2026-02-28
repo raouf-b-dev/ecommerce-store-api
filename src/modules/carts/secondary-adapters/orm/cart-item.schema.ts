@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { CartEntity } from './cart.schema';
-import { numericToNumber } from '../../../../shared-kernel/infrastructure/database/number.transformer';
+import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
 @Entity({ name: 'cart_items' })
 export class CartItemEntity {

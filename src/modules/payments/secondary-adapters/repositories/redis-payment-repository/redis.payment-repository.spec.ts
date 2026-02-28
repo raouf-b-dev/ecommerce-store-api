@@ -1,13 +1,13 @@
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Payment } from '../../../core/domain/entities/payment';
 import {
   PaymentCacheMapper,
   PaymentForCache,
 } from '../../persistence/mappers/payment.mapper';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
-import { PAYMENT_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { PaymentBuilder } from '../../../testing/builders/payment.test.builder';
 import { MockPaymentRepository } from '../../../testing/mocks/payment-repository.mock';
 import { RedisPaymentRepository } from './redis.payment-repository';

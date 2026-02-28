@@ -6,8 +6,8 @@ import { Reservation } from '../../../core/domain/entities/reservation';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
 import { InventoryEntity } from '../../orm/inventory.schema';
 

@@ -3,8 +3,8 @@ import { CartGateway } from '../../core/application/ports/cart.gateway';
 import { GetCartUseCase } from '../../../carts/core/application/usecases/get-cart/get-cart.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { ICart } from '../../../carts/core/domain/interfaces/cart.interface';
-import { InfrastructureError } from '../../../../shared-kernel/errors/infrastructure-error';
-import { ErrorFactory } from '../../../../shared-kernel/errors/error.factory';
+import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
 export class ModuleCartGateway implements CartGateway {

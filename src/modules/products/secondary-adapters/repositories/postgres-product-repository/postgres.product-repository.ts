@@ -1,11 +1,11 @@
 // src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
 import { Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { ProductEntity } from '../../orm/product.schema';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from '../../../primary-adapters/dto/update-product.dto';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';

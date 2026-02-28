@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AppError } from 'src/shared-kernel/errors/app.error';
+import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 import { Result } from 'src/shared-kernel/domain/result';
-import { BaseJobHandler } from 'src/shared-kernel/infrastructure/jobs/base-job.handler';
+import { BaseJobHandler } from 'src/infrastructure/jobs/base-job.handler';
 import { UpdateNotificationStatusService } from '../../core/application/services/update-notification-status.service';
 import { Job } from 'bullmq';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';

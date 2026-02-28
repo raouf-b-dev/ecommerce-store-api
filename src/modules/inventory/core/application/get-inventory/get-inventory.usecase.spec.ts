@@ -2,8 +2,8 @@ import { MockInventoryRepository } from '../../../testing/mocks/inventory-reposi
 import { GetInventoryUseCase } from './get-inventory.usecase';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { IInventory } from '../../domain/interfaces/inventory.interface';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { UseCaseError } from '../../../../../shared-kernel/errors/usecase.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 
 describe('GetInventoryUseCase', () => {

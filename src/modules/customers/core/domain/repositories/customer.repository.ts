@@ -1,6 +1,6 @@
 // src/modules/customers/domain/interfaces/customer.repository.interface.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Customer } from '../entities/customer';
 
 export abstract class CustomerRepository {

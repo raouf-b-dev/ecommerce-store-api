@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/errors/usecase.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ReserveStockDto } from '../../../primary-adapters/dto/reserve-stock.dto';
-import { UseCase } from '../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { ReservationRepository } from '../../domain/repositories/reservation.repository';
 import { Reservation } from '../../domain/entities/reservation';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../inventory.token';

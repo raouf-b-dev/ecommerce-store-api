@@ -1,11 +1,11 @@
-// src/modules/inventory/infrastructure/repositories/redis-inventory.repository.ts
+// src/modules/inventory/secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository.ts
 import { Injectable } from '@nestjs/common';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { INVENTORY_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
   InventoryForCache,
   InventoryCacheMapper,

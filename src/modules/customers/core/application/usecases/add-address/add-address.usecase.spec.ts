@@ -2,13 +2,13 @@ import { AddAddressUseCase } from './add-address.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerTestFactory } from '../../../../testing/factories/customer.factory';
 import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Customer } from '../../../domain/entities/customer';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { AddressType } from '../../../domain/value-objects/address-type';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('AddAddressUseCase', () => {
   let useCase: AddAddressUseCase;

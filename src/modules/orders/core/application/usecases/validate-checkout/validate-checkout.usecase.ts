@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
 import { ShippingAddressDto } from '../../../../primary-adapters/dto/shipping-address.dto';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';

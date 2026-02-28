@@ -3,7 +3,7 @@ import { CreateProductUseCase } from './create-product.usecase';
 import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { ProductTestFactory } from '../../../../testing/factories/product.factory';
 import { CreateProductDtoFactory } from '../../../../testing/factories/create-product-dto.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('CreateProductUseCase', () => {

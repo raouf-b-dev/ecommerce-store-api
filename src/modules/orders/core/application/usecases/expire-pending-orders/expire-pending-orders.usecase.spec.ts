@@ -3,11 +3,11 @@ import { MockOrderRepository } from '../../../../testing/mocks/order-repository.
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Order } from '../../../domain/entities/order';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('ExpirePendingOrdersUseCase', () => {
   let useCase: ExpirePendingOrdersUseCase;

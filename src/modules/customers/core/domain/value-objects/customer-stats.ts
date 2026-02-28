@@ -1,5 +1,5 @@
 // src/modules/customers/domain/value-objects/customer-stats.ts
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 
 export class CustomerStats {
   private readonly _totalOrders: number;

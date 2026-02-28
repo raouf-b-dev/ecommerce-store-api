@@ -1,5 +1,5 @@
 // core/domain/result.ts
-import { AppError } from '../errors/app.error';
+import { AppError } from './exceptions/app.error';
 
 export type Result<T, E extends AppError = AppError> = Success<T> | Failure<E>;
 

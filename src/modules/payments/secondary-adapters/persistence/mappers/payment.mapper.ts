@@ -1,4 +1,4 @@
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentMethodType } from '../../../core/domain/value-objects/payment-method';

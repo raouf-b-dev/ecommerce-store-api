@@ -1,6 +1,6 @@
 // src/modules/payments/core/domain/repositories/payment.repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Payment } from '../entities/payment';
 import { Refund } from '../entities/refund';
 

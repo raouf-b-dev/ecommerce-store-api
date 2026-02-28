@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { BaseJobHandler } from '../../../../shared-kernel/infrastructure/jobs/base-job.handler';
+import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import { ClearCartUseCase } from '../../../carts/core/application/usecases/clear-cart/clear-cart.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
-import { AppError } from '../../../../shared-kernel/errors/app.error';
+import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ConfirmReservationResult } from './confirm-reservation.job';
 

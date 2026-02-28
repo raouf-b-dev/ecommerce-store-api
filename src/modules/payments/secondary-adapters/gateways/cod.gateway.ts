@@ -9,8 +9,8 @@ import {
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { v4 as uuidv4 } from 'uuid';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../shared-kernel/errors/error.factory';
-import { InfrastructureError } from '../../../../shared-kernel/errors/infrastructure-error';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
 @Injectable()
 export class CodGateway implements IPaymentGateway {

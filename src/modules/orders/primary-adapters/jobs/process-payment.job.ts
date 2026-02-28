@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { BaseJobHandler } from '../../../../shared-kernel/infrastructure/jobs/base-job.handler';
+import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import { CreatePaymentIntentUseCase } from '../../../payments/core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { GetOrderUseCase } from '../../core/application/usecases/get-order/get-order.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
-import { AppError } from '../../../../shared-kernel/errors/app.error';
-import { ErrorFactory } from '../../../../shared-kernel/errors/error.factory';
+import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
 

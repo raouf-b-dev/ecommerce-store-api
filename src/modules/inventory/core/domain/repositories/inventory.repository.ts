@@ -1,6 +1,6 @@
 // src/modules/inventory/domain/repositories/inventory.repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
 import { Inventory } from '../entities/inventory';
 

@@ -19,7 +19,7 @@ import { InventoryEntityTestFactory } from '../../../testing/factories/inventory
 import { Inventory } from '../../../core/domain/entities/inventory';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
 import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';

@@ -1,10 +1,10 @@
 // src/order/infrastructure/__tests__/redis-order.repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { ORDER_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { RedisOrderRepository } from './redis.order-repository';

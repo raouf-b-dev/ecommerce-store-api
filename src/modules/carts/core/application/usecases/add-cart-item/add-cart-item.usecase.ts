@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { AddCartItemDto } from '../../../../primary-adapters/dto/add-cart-item.dto';
 import { ICart } from '../../../domain/interfaces/cart.interface';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import { ProductRepository } from '../../../../../products/core/domain/repositories/product-repository';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { InventoryGateway } from '../../ports/inventory.gateway';
 import { INVENTORY_GATEWAY } from '../../../../carts.token';
 

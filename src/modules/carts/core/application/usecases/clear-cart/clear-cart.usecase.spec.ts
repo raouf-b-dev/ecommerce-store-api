@@ -4,8 +4,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
 import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('ClearCartUseCase', () => {
   let usecase: ClearCartUseCase;

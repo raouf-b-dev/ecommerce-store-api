@@ -3,7 +3,7 @@ import {
   ReservationProps,
 } from '../../../core/domain/entities/reservation';
 import { ReservationEntity } from '../../orm/reservation.schema';
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { ReservationItemEntity } from '../../orm/reservation-item.schema';
 import { ReservationItemMapper } from './reservation-item.mapper';
 

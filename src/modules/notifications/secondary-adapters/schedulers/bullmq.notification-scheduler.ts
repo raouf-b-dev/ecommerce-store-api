@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Result } from 'src/shared-kernel/domain/result';
-import { InfrastructureError } from 'src/shared-kernel/errors/infrastructure-error';
-import { ErrorFactory } from 'src/shared-kernel/errors/error.factory';
-import { JobNames } from 'src/shared-kernel/infrastructure/jobs/job-names';
-import { FlowProducerService } from 'src/shared-kernel/infrastructure/queue/flow-producer.service';
-import { JobConfigService } from 'src/shared-kernel/infrastructure/jobs/job-config.service';
+import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
+import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
+import { JobNames } from 'src/infrastructure/jobs/job-names';
+import { FlowProducerService } from 'src/infrastructure/queue/flow-producer.service';
+import { JobConfigService } from 'src/infrastructure/jobs/job-config.service';
 import { FlowJob, Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Notification } from '../../core/domain/entities/notification';

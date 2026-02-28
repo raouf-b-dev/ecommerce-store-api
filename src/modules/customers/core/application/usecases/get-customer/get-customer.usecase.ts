@@ -1,13 +1,13 @@
 // src/modules/customers/application/usecases/get-customer/get-customer.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { CustomerRepository } from '../../../domain/repositories/customer.repository';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
 
 @Injectable()

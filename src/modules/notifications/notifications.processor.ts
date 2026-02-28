@@ -5,7 +5,7 @@ import { DeliverNotificationProcess } from './primary-adapters/jobs/deliver-noti
 import { SaveNotificationHistoryProcess } from './primary-adapters/jobs/save-notification-history.process';
 import { UpdateNotificationStatusProcess } from './primary-adapters/jobs/update-notification-status.process';
 import { CleanupExpiredNotificationsProcess } from './primary-adapters/jobs/cleanup-expired-notifications.process';
-import { JobNames } from 'src/shared-kernel/infrastructure/jobs/job-names';
+import { JobNames } from 'src/infrastructure/jobs/job-names';
 
 @Processor('notifications', { concurrency: 10 })
 export class NotificationsProcessor extends WorkerHost {

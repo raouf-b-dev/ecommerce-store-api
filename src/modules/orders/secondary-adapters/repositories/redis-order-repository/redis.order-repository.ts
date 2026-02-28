@@ -1,11 +1,11 @@
 // src/order/infrastructure/redis-order.repository.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { ORDER_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { AggregatedOrderInput } from '../../../core/domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import {

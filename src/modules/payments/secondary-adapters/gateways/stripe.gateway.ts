@@ -9,7 +9,7 @@ import {
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { v4 as uuidv4 } from 'uuid';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { InfrastructureError } from '../../../../shared-kernel/errors/infrastructure-error';
+import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
 @Injectable()
 export class StripeGateway implements IPaymentGateway {

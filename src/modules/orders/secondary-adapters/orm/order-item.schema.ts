@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { OrderEntity } from './order.schema';
-import { numericToNumber } from '../../../../shared-kernel/infrastructure/database/number.transformer';
+import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
 
 @Entity({ name: 'order_items' })

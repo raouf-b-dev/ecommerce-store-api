@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisUserRepository } from './redis-user.repository';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
 import { UserTestFactory } from '../../../testing/factories/user.factory';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
-import { USER_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
 
 describe('RedisUserRepository', () => {

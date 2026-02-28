@@ -7,10 +7,10 @@ import {
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { RedisProductRepository } from './secondary-adapters/repositories/redis-product-repository/redis.product-repository';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { ProductEntity } from './secondary-adapters/orm/product.schema';
 import { CreateProductUseCase } from './core/application/usecases/create-product/create-product.usecase';
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';

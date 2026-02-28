@@ -1,7 +1,7 @@
 // src/modules/customers/domain/entities/customer.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IAddress } from '../interfaces/address.interface';
 import { ICustomer } from '../interfaces/customer.interface';
 import { AddressType } from '../value-objects/address-type';

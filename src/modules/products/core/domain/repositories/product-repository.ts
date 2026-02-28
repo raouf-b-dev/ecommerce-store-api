@@ -1,5 +1,5 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from '../../../primary-adapters/dto/update-product.dto';
 import { IProduct } from '../interfaces/product.interface';

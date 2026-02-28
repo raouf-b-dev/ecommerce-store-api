@@ -2,7 +2,7 @@
 import { DomainError } from './domain.error';
 import { UseCaseError } from './usecase.error';
 import { RepositoryError } from './repository.error';
-import { Result } from '../domain/result';
+import { Result } from '../result';
 import { HttpStatus } from '@nestjs/common';
 import { ServiceError } from './service-error';
 import { InfrastructureError } from './infrastructure-error';

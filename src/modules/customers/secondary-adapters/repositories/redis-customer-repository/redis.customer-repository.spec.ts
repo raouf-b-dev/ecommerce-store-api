@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { CUSTOMER_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CUSTOMER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Customer } from '../../../core/domain/entities/customer';
 import { CustomerRepository } from '../../../core/domain/repositories/customer.repository';
 import { CustomerTestFactory } from '../../../testing/factories/customer.factory';

@@ -6,7 +6,7 @@ import { UserEntity } from '../../orm/user.schema';
 import { UserTestFactory } from '../../../testing/factories/user.factory';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UserMapper } from '../../persistence/mappers/user.mapper';
 
 describe('PostgresUserRepository', () => {

@@ -7,8 +7,8 @@ import { NotificationStatus } from '../../core/domain/enums/notification-status.
 import { NotificationEntity } from '../orm/notification.schema';
 import { NotificationMapper } from '../persistence/mappers/notification.mapper';
 import { Result } from 'src/shared-kernel/domain/result';
-import { RepositoryError } from 'src/shared-kernel/errors/repository.error';
-import { ErrorFactory } from 'src/shared-kernel/errors/error.factory';
+import { RepositoryError } from 'src/shared-kernel/domain/exceptions/repository.error';
+import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
 export class PostgresNotificationRepository implements NotificationRepository {

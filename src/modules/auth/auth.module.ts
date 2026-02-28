@@ -13,8 +13,8 @@ import { AuthController } from './auth.controller';
 import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
 import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
 import { POSTGRES_USER_REPOSITORY, REDIS_USER_REPOSITORY } from './auth.tokens';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { EnvConfigService } from '../../config/env-config.service';
 
 @Module({

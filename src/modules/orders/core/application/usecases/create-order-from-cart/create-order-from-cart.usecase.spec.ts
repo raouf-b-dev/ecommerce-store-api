@@ -10,7 +10,7 @@ import { CartTestFactory } from '../../../../../carts/testing/factories/cart.fac
 import { PaymentMethodType } from '../../../../../payments/core/domain';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('CreateOrderFromCartUseCase', () => {
   let useCase: CreateOrderFromCartUseCase;

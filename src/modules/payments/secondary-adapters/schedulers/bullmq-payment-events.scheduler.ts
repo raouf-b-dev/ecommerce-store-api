@@ -7,9 +7,9 @@ import {
   PaymentFailedProps,
 } from '../../core/domain/schedulers/payment-events.scheduler';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { InfrastructureError } from '../../../../shared-kernel/errors/infrastructure-error';
-import { JobNames } from '../../../../shared-kernel/infrastructure/jobs/job-names';
-import { ErrorFactory } from '../../../../shared-kernel/errors/error.factory';
+import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
 export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {

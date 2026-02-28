@@ -1,12 +1,12 @@
 // src/modules/orders/application/usecases/create-order-from-cart/create-order-from-cart.usecase.ts
 import { Inject, Injectable } from '@nestjs/common';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentMethodType } from '../../../../../payments/core/domain';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { IOrder } from '../../../domain/interfaces/order.interface';

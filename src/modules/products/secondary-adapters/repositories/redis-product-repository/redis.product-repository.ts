@@ -1,9 +1,9 @@
 // src\modules\products\infrastructure\repositories\RedisProductRepository\redis.product-repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { PRODUCT_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';

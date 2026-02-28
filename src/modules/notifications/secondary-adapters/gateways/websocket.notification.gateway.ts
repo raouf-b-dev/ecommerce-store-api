@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationGateway } from '../../core/domain/gateways/notification.gateway.interface';
-import { WebsocketConnectionGateway } from 'src/shared-kernel/infrastructure/websocket/websocket.connection.gateway';
+import { WebsocketConnectionGateway } from 'src/infrastructure/websocket/websocket.connection.gateway';
 
 @Injectable()
 export class WebsocketNotificationGateway implements NotificationGateway {

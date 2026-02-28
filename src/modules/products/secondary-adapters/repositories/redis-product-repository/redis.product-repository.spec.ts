@@ -1,13 +1,13 @@
 // src/modules/products/infrastructure/repositories/RedisProductRepository/redis.product-repository.spec.ts
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
-import { PRODUCT_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { RedisProductRepository } from './redis.product-repository';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
 import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
 import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('RedisProductRepository', () => {

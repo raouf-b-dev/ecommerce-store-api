@@ -1,7 +1,7 @@
 // src/core/infrastructure/redis/redis.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from './redis.service';
-import { EnvConfigService } from '../../../config/env-config.service';
+import { EnvConfigService } from '../../config/env-config.service';
 import { createClient } from 'redis';
 import { Logger } from '@nestjs/common';
 

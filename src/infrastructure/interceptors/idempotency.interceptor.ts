@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable, from, throwError, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { IdempotencyStore } from '../../domain/stores/idempotency.store';
+import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {

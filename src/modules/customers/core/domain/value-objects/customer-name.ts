@@ -1,5 +1,5 @@
 // src/modules/customers/domain/value-objects/customer-name.ts
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 
 export class CustomerName {
   private readonly _firstName: string;

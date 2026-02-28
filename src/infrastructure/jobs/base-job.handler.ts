@@ -1,7 +1,7 @@
 import { Job, UnrecoverableError } from 'bullmq';
 import { Logger } from '@nestjs/common';
-import { Result } from '../../domain/result';
-import { AppError } from '../../errors/app.error';
+import { Result } from 'src/shared-kernel/domain/result';
+import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 
 export abstract class BaseJobHandler<TData, TResult> {
   protected abstract readonly logger: Logger;

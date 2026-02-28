@@ -1,10 +1,10 @@
-// src/modules/carts/infrastructure/repositories/redis-cart-repository/redis.cart-repository.spec.ts
+// src/modules/carts/secondary-adapters/repositories/redis-cart-repository/redis.cart-repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { CART_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { RedisCartRepository } from './redis.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
 import { CartTestFactory } from '../../../testing/factories/cart.factory';

@@ -2,11 +2,11 @@
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { DomainError } from '../../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { PaymentMethodType } from '../../../../../payments/core/domain';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 

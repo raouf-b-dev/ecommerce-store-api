@@ -6,8 +6,8 @@ import { Inventory } from '../../../core/domain/entities/inventory';
 import { InventoryEntity } from '../../orm/inventory.schema';
 
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
 import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
 

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutFailureListener } from './checkout-failure.listener';
 import { getQueueToken } from '@nestjs/bullmq';
-import { QueueEventsService } from '../../../../shared-kernel/infrastructure/queue/queue-events.service';
+import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
 import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
 import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';

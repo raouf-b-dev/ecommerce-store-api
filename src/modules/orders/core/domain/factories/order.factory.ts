@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from '../../../primary-adapters/dto/create-order.dto';
 import { UpdateOrderDto } from '../../../primary-adapters/dto/update-order.dto';
 import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { Order } from '../entities/order';
 import { ICart } from '../../../../carts/core/domain/interfaces/cart.interface';

@@ -1,10 +1,10 @@
 // src/modules/carts/infrastructure/repositories/redis-cart-repository/redis.cart-repository.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { CART_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Cart } from '../../../core/domain/entities/cart';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
 import {

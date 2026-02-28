@@ -6,7 +6,7 @@ import {
   OrderFactory,
 } from './order.factory';
 import { OrderStatus } from '../value-objects/order-status';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { PaymentMethodType } from '../../../../payments/core/domain';
 

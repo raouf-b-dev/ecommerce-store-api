@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { FlowProducer, FlowJob, FlowOpts } from 'bullmq';
-import { EnvConfigService } from '../../../config/env-config.service';
+import { EnvConfigService } from 'src/config/env-config.service';
 
 @Injectable()
 export class FlowProducerService implements OnModuleDestroy {

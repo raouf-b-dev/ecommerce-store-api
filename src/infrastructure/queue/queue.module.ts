@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { EnvConfigService } from '../../../config/env-config.service';
-import { EnvConfigModule } from '../../../config/config.module';
+import { EnvConfigService } from 'src/config/env-config.service';
+import { EnvConfigModule } from 'src/config/config.module';
 import { FlowProducerService } from './flow-producer.service';
 import { QueueEventsService } from './queue-events.service';
 

@@ -1,7 +1,7 @@
 // src/modules/carts/domain/entities/cart.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { DomainError } from '../../../../../shared-kernel/errors/domain.error';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ICartItem } from '../interfaces/cart-item.interface';
 import { ICart } from '../interfaces/cart.interface';
 import { CartItem, CartItemProps } from './cart-item';

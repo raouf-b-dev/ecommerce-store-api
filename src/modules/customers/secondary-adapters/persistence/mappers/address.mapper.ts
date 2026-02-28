@@ -1,4 +1,4 @@
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Address, AddressProps } from '../../../core/domain/entities/address';
 import { AddressEntity } from '../../orm/address.schema';
 

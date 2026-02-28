@@ -3,10 +3,10 @@ import { MockOrderRepository } from '../../../../testing/mocks/order-repository.
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderBuilder } from '../../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { DomainError } from '../../../../../../shared-kernel/errors/domain.error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 

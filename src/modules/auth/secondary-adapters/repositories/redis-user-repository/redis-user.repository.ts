@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../shared-kernel/errors/repository.error';
-import { CacheService } from '../../../../../shared-kernel/infrastructure/redis/cache/cache.service';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { USER_REDIS } from '../../../../../shared-kernel/infrastructure/redis/constants/redis.constants';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { User } from '../../../core/domain/entities/user';
 import {
   UserCacheMapper,

@@ -7,9 +7,9 @@ import {
 } from './inventory.token';
 import { PostgresInventoryRepository } from './secondary-adapters/repositories/postgres-inventory-repository/postgres-inventory-repository';
 import { RedisInventoryRepository } from './secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { InventoryRepository } from './core/domain/repositories/inventory.repository';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { InventoryEntity } from './secondary-adapters/orm/inventory.schema';
 import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
 import { GetInventoryUseCase } from './core/application/get-inventory/get-inventory.usecase';

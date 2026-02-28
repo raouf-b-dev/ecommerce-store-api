@@ -5,7 +5,7 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 
 describe('LoginUserUseCase', () => {

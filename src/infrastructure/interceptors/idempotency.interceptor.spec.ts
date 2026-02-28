@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IdempotencyInterceptor } from './idempotency.interceptor';
-import { IdempotencyStore } from '../../domain/stores/idempotency.store';
+import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import {
   ExecutionContext,
   CallHandler,

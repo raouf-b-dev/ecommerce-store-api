@@ -4,7 +4,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
 import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';
-import { QueueEventsService } from '../../../../shared-kernel/infrastructure/queue/queue-events.service';
+import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
 import { GetOrderReservationsUseCase } from '../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
 
 @Injectable()

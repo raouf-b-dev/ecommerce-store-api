@@ -1,6 +1,6 @@
 import { ReservationRepository } from '../../core/domain/repositories/reservation.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Reservation } from '../../core/domain/entities/reservation';
 import { ReserveStockDto } from '../../primary-adapters/dto/reserve-stock.dto';
 

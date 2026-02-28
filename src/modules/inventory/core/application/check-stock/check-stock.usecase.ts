@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/errors/usecase.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { UseCase } from '../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
 import { CheckStockResponse } from '../../../primary-adapters/dto/check-stock-response.dto';
 

@@ -1,6 +1,6 @@
 import { UserRepository } from '../../core/domain/repositories/user.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { User } from '../../core/domain/entities/user';
 import { UserTestFactory } from '../factories/user.factory';
 

@@ -1,4 +1,4 @@
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Refund, RefundProps } from '../../../core/domain/entities/refund';
 import { RefundStatusType } from '../../../core/domain/value-objects/refund-status';
 import { RefundEntity } from '../../orm/refund.schema';

@@ -1,4 +1,4 @@
-import { CreateFromEntity } from 'src/shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from 'src/infrastructure/mappers/utils/create-from-entity.type';
 import { Notification } from '../../../core/domain/entities/notification';
 import { NotificationEntity } from '../../orm/notification.schema';
 import { NotificationStatus } from '../../../core/domain/enums/notification-status.enum';

@@ -4,12 +4,12 @@ import {
   OrderScheduler,
   ScheduleCheckoutProps,
 } from '../../core/domain/schedulers/order.scheduler';
-import { JobConfigService } from '../../../../shared-kernel/infrastructure/jobs/job-config.service';
+import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { InfrastructureError } from '../../../../shared-kernel/errors/infrastructure-error';
-import { ErrorFactory } from '../../../../shared-kernel/errors/error.factory';
-import { JobNames } from '../../../../shared-kernel/infrastructure/jobs/job-names';
-import { FlowProducerService } from '../../../../shared-kernel/infrastructure/queue/flow-producer.service';
+import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
+import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { PaymentMethodPolicy } from '../../core/domain/services/payment-method-policy';
 
 @Injectable()

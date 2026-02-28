@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { QueueEvents } from 'bullmq';
-import { EnvConfigService } from '../../../config/env-config.service';
+import { EnvConfigService } from '../../config/env-config.service';
 
 export type QueueEventHandler = (args: {
   jobId: string;

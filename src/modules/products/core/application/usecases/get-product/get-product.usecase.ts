@@ -1,13 +1,13 @@
 // src/modules/Products/application/usecases/GetProduct/get-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
-import { UseCase } from '../../../../../../shared-kernel/application/use-cases/base.usecase';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { IdempotencyService } from './idempotency.service';
-import { IdempotencyStore } from '../../domain/stores/idempotency.store';
+import { IdempotencyStore } from 'src/shared-kernel/domain/stores/idempotency.store';
 import { RedisModule } from '../redis/redis.module';
 
 @Global()

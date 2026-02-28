@@ -4,7 +4,7 @@ import { MockOrderRepository } from '../../../../testing/mocks/order-repository.
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderBuilder } from '../../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('GetOrderUseCase', () => {

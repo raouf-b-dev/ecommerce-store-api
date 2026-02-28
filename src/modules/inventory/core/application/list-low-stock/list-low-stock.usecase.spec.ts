@@ -1,6 +1,6 @@
 import { ListLowStockUseCase } from './list-low-stock.usecase';
-import { ErrorFactory } from '../../../../../shared-kernel/errors/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/errors/usecase.error';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';

@@ -1,5 +1,5 @@
 import { Result } from 'src/shared-kernel/domain/result';
-import { InfrastructureError } from 'src/shared-kernel/errors/infrastructure-error';
+import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { Notification } from '../entities/notification';
 
 export abstract class NotificationScheduler {

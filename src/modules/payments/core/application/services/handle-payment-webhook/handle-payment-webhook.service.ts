@@ -4,13 +4,13 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/errors/error.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentEventsScheduler } from '../../../domain/schedulers/payment-events.scheduler';
 import { PaymentEventType } from '../../../domain/value-objects/payment-event-type';
-import { ServiceError } from '../../../../../../shared-kernel/errors/service-error';
+import { ServiceError } from '../../../../../../shared-kernel/domain/exceptions/service-error';
 
 export interface PaymentWebhookDto {
   paymentIntentId: string;

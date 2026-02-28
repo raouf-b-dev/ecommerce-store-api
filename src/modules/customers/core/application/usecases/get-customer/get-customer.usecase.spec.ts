@@ -1,9 +1,9 @@
 import { GetCustomerUseCase } from './get-customer.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerTestFactory } from '../../../../testing/factories/customer.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/errors/usecase.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { RepositoryError } from '../../../../../../shared-kernel/errors/repository.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('GetCustomerUseCase', () => {
   let useCase: GetCustomerUseCase;

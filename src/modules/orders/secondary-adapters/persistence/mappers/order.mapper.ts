@@ -1,5 +1,5 @@
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
-import { CreateFromEntity } from '../../../../../shared-kernel/infrastructure/mappers/utils/create-from-entity.type';
+import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Order, OrderProps } from '../../../core/domain/entities/order';
 import { OrderItemProps } from '../../../core/domain/entities/order-items';
 import { IOrder } from '../../../core/domain/interfaces/order.interface';

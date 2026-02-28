@@ -3,13 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
 import { PaymentEntity } from './secondary-adapters/orm/payment.schema';
 import { RefundEntity } from './secondary-adapters/orm/refund.schema';
-import { RedisModule } from '../../shared-kernel/infrastructure/redis/redis.module';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_PAYMENT_REPOSITORY,
   REDIS_PAYMENT_REPOSITORY,
 } from './payment.token';
 import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
-import { CacheService } from '../../shared-kernel/infrastructure/redis/cache/cache.service';
+import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { RedisPaymentRepository } from './secondary-adapters/repositories/redis-payment-repository/redis.payment-repository';
 import { PaymentRepository } from './core/domain/repositories/payment.repository';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
