@@ -1,7 +1,7 @@
 // src/modules/order/testing/builders/order.test.builder.ts
-import { IOrder } from '../../domain/interfaces/order.interface';
-import { OrderStatus } from '../../domain/value-objects/order-status';
-import { PaymentMethodType } from '../../../payments/domain';
+import { IOrder } from '../../core/domain/interfaces/order.interface';
+import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { PaymentMethodType } from '../../../payments/core/domain';
 import { OrderTestFactory } from '../factories/order.factory';
 
 export class OrderBuilder {

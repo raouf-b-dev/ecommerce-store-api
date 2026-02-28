@@ -115,12 +115,13 @@ npm run format
 
 ### Architecture Guidelines
 
-This project follows **Domain-Driven Design (DDD)** principles. Please ensure:
+This project follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture** (Ports & Adapters). Please ensure:
 
-- **Domain Layer**: Contains only pure business logic (entities, value objects, repository interfaces)
-- **Application Layer**: Contains use cases that orchestrate domain logic
-- **Infrastructure Layer**: Contains implementations (database repositories, external services)
-- **Presentation Layer**: Contains controllers, DTOs, and API-related code
+- **Core** (`core/domain/`): Pure business logic — entities, value objects, repository interfaces. Zero external dependencies.
+- **Core** (`core/application/`): Use cases that orchestrate domain logic. Depends only on Domain.
+- **Primary Adapters** (`primary-adapters/`): Driving adapters — DTOs, job handlers, event listeners. NestJS Controllers live at the module root and inject Use Cases directly (no intermediate controller classes).
+- **Secondary Adapters** (`secondary-adapters/`): Driven adapters — repository implementations, ORM entities, mappers, external service integrations.
+- **Shared Kernel** (`src/shared-kernel/`): Cross-cutting infrastructure (database, Redis, jobs, error types, interceptors).
 
 ## Testing
 

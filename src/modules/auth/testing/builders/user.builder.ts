@@ -1,7 +1,7 @@
 // src/modules/auth/testing/builders/user.builder.ts
 
-import { IUser } from '../../domain/interfaces/user.interface';
-import { UserRoleType } from '../../domain/value-objects/user-role';
+import { IUser } from '../../core/domain/interfaces/user.interface';
+import { UserRoleType } from '../../core/domain/value-objects/user-role';
 import { UserTestFactory } from '../factories/user.factory';
 
 export class UserBuilder {

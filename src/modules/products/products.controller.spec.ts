@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
-import { GetProductUseCase } from './application/usecases/get-product/get-product.usecase';
-import { CreateProductUseCase } from './application/usecases/create-product/create-product.usecase';
-import { CreateProductDto } from './presentation/dto/create-product.dto';
-import { Product } from './domain/entities/product';
-import { DeleteProductUseCase } from './application/usecases/delete-product/delete-product.usecase';
-import { ListProductsUseCase } from './application/usecases/list-products/list-products.usecase';
-import { UpdateProductUseCase } from './application/usecases/update-product/update-product.usecase';
-import { UpdateProductDto } from './presentation/dto/update-product.dto';
-import { Result } from '../../core/domain/result';
+import { GetProductUseCase } from './core/application/usecases/get-product/get-product.usecase';
+import { CreateProductUseCase } from './core/application/usecases/create-product/create-product.usecase';
+import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
+import { Product } from './core/domain/entities/product';
+import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
+import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
+import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
+import { Result } from '../../shared-kernel/domain/result';
 
 describe('ProductsController', () => {
   let controller: ProductsController;

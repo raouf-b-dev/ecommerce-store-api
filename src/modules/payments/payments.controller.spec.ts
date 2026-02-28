@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from './payments.controller';
-import { Result } from '../../core/domain/result';
+import { Result } from '../../shared-kernel/domain/result';
 
-import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
-import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
-import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
-import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
-import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
-import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
-import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
-import { HandleStripeWebhookUseCase } from './application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
+import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
+import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
+import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
+import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
+import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;

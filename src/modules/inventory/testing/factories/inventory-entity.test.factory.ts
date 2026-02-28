@@ -1,5 +1,5 @@
 // src/modules/inventory/testing/factories/inventory-entity.test.factory.ts
-import { InventoryEntity } from '../../infrastructure/orm/inventory.schema';
+import { InventoryEntity } from '../../secondary-adapters/orm/inventory.schema';
 
 export class InventoryEntityTestFactory {
   static createInventoryEntity(

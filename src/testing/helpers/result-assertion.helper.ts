@@ -1,15 +1,13 @@
 // src/testing/helpers/result-assertion.helper.ts
-import { AppError } from '../../core/errors/app.error';
-import { ControllerError } from '../../core/errors/controller.error';
-import { DomainError } from '../../core/errors/domain.error';
-import { RepositoryError } from '../../core/errors/repository.error';
-import { UseCaseError } from '../../core/errors/usecase.error';
+import { AppError } from '../../shared-kernel/domain/exceptions/app.error';
+import { DomainError } from '../../shared-kernel/domain/exceptions/domain.error';
+import { RepositoryError } from '../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
 
 type ErrorConstructor =
   | typeof RepositoryError
   | typeof UseCaseError
-  | typeof DomainError
-  | typeof ControllerError;
+  | typeof DomainError;
 
 export class ResultAssertionHelper {
   static assertResultSuccess<T>(

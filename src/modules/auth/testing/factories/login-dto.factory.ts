@@ -1,4 +1,4 @@
-import { LoginDto } from '../../presentation/dto/login.dto';
+import { LoginDto } from '../../primary-adapters/dto/login.dto';
 
 export class LoginDtoTestFactory {
   static createLoginDto(overrides?: Partial<LoginDto>): LoginDto {

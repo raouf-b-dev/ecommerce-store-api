@@ -3,8 +3,8 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ResultInterceptor } from './core/interceptors/result.interceptor';
-import { RedisIoAdapter } from './core/infrastructure/websocket/adapters/redis-io.adapter';
+import { ResultInterceptor } from './interceptors/result.interceptor';
+import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

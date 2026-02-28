@@ -1,6 +1,6 @@
-import { PaymentEntity } from '../../infrastructure/orm/payment.schema';
-import { PaymentMethodType } from '../../domain/value-objects/payment-method';
-import { PaymentStatusType } from '../../domain/value-objects/payment-status';
+import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';
+import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class PaymentEntityTestFactory {
   static createPaymentEntity(

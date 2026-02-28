@@ -1,10 +1,10 @@
 // src/modules/products/testing/mocks/product-repository.mock.ts
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { IProduct } from '../../domain/interfaces/product.interface';
-import { ProductRepository } from '../../domain/repositories/product-repository';
-import { CreateProductDto } from '../../presentation/dto/create-product.dto';
-import { UpdateProductDto } from '../../presentation/dto/update-product.dto';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
+import { IProduct } from '../../core/domain/interfaces/product.interface';
+import { ProductRepository } from '../../core/domain/repositories/product-repository';
+import { CreateProductDto } from '../../primary-adapters/dto/create-product.dto';
+import { UpdateProductDto } from '../../primary-adapters/dto/update-product.dto';
 
 export class MockProductRepository implements ProductRepository {
   // Jest mock functions matching the actual repository interface

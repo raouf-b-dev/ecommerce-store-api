@@ -1,8 +1,8 @@
-import { CustomerRepository } from '../../domain/repositories/customer.repository';
-import { Result } from '../../../../core/domain/result';
-import { RepositoryError } from '../../../../core/errors/repository.error';
-import { Customer } from '../../domain/entities/customer';
-import { ICustomer } from '../../domain/interfaces/customer.interface';
+import { CustomerRepository } from '../../core/domain/repositories/customer.repository';
+import { Result } from '../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
+import { Customer } from '../../core/domain/entities/customer';
+import { ICustomer } from '../../core/domain/interfaces/customer.interface';
 
 export class MockCustomerRepository implements CustomerRepository {
   // Jest mock functions

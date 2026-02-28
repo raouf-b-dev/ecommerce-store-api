@@ -17,22 +17,22 @@ import {
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { CreatePaymentDto } from './presentation/dto/create-payment.dto';
-import { ProcessRefundDto } from './presentation/dto/process-refund.dto';
-import { PaymentResponseDto } from './presentation/dto/payment-response.dto';
-import { ListPaymentsQueryDto } from './presentation/dto/list-payments-query.dto';
-import { RecordCodPaymentDto } from './presentation/dto/record-cod-payment.dto';
+import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
+import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
+import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
+import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
+import { RecordCodPaymentDto } from './primary-adapters/dto/record-cod-payment.dto';
 
-import { CreatePaymentUseCase } from './application/usecases/create-payment/create-payment.usecase';
-import { GetPaymentUseCase } from './application/usecases/get-payment/get-payment.usecase';
-import { ListPaymentsUseCase } from './application/usecases/list-payments/list-payments.usecase';
-import { CapturePaymentUseCase } from './application/usecases/capture-payment/capture-payment.usecase';
-import { ProcessRefundUseCase } from './application/usecases/process-refund/process-refund.usecase';
-import { VerifyPaymentUseCase } from './application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './application/usecases/record-cod-payment/record-cod-payment.usecase';
-import { HandleStripeWebhookUseCase } from './application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
-import { isFailure } from '../../core/domain/result';
+import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
+import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
+import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
+import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
+import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
+import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
+import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('payments')
 @Controller('payments')

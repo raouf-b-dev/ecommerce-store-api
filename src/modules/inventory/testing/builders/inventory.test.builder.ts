@@ -1,5 +1,5 @@
 // src/modules/inventory/testing/builders/inventory.test.builder.ts
-import { IInventory } from '../../domain/interfaces/inventory.interface';
+import { IInventory } from '../../core/domain/interfaces/inventory.interface';
 import { InventoryTestFactory } from '../factories/inventory.test.factory';
 
 export class InventoryBuilder {

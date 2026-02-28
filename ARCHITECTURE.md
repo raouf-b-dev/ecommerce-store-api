@@ -126,7 +126,7 @@ graph TD
         Orders -->|Event| Notifications
     end
 
-    subgraph "Infrastructure Layer"
+    subgraph "Secondary Adapters (Infrastructure)"
         Auth -->|Persist| PG["🐘 PostgreSQL"]
         Orders -->|Persist| PG
         Products -->|Persist| PG
@@ -372,30 +372,30 @@ flowchart TD
 
 The notification system is designed for **reliability** and **real-time delivery**, ensuring no notifications are lost even if the user is offline. It uses a **Nested BullMQ Flow** to guarantee the order of operations: `Save -> Send -> Update`.
 
-### Module Structure (Layered Architecture)
+### Module Structure (Hexagonal Architecture)
 
-The module follows strict DDD layering, separating business rules from technical implementation.
+The module follows strict **Ports & Adapters** layering, separating business rules from technical implementation.
 
 ```mermaid
 graph TD
-    subgraph "Presentation Layer"
+    subgraph "Primary Adapters (Driving)"
         NC[NotificationsController]
         NP[NotificationsProcessor]
     end
 
-    subgraph "Application Layer"
+    subgraph "Core / Application"
         DNS[DeliverNotificationService]
         GUC[GetNotificationsUseCase]
         MUC[MarkAsReadUseCase]
     end
 
-    subgraph "Domain Layer"
+    subgraph "Core / Domain"
         NE[Notification Entity]
         RI[NotificationRepository Interface]
         SI[NotificationScheduler Interface]
     end
 
-    subgraph "Infrastructure Layer"
+    subgraph "Secondary Adapters (Driven)"
         PR[PostgresNotificationRepository]
         BS[BullMqNotificationScheduler]
         WG[WebsocketGateway]

@@ -1,4 +1,4 @@
-import { BcryptService } from '../../infrastructure/services/bcrypt.service';
+import { BcryptService } from '../../secondary-adapters/services/bcrypt.service';
 
 export class MockBcryptService extends BcryptService {
   hash = jest.fn<Promise<string>, [string]>();

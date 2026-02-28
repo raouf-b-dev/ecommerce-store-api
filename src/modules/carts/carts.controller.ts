@@ -15,18 +15,18 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from '../auth/guards/auth.guard';
-import { CreateCartDto } from './presentation/dto/create-cart.dto';
-import { AddCartItemDto } from './presentation/dto/add-cart-item.dto';
-import { UpdateCartItemDto } from './presentation/dto/update-cart-item.dto';
-import { CartResponseDto } from './presentation/dto/cart-response.dto';
-import { GetCartUseCase } from './application/usecases/get-cart/get-cart.usecase';
-import { CreateCartUseCase } from './application/usecases/create-cart/create-cart.usecase';
-import { AddCartItemUseCase } from './application/usecases/add-cart-item/add-cart-item.usecase';
-import { UpdateCartItemUseCase } from './application/usecases/update-cart-item/update-cart-item.usecase';
-import { RemoveCartItemUseCase } from './application/usecases/remove-cart-item/remove-cart-item.usecase';
-import { ClearCartUseCase } from './application/usecases/clear-cart/clear-cart.usecase';
-import { MergeCartsUseCase } from './application/usecases/merge-carts/merge-carts.usecase';
-import { isFailure } from '../../core/domain/result';
+import { CreateCartDto } from './primary-adapters/dto/create-cart.dto';
+import { AddCartItemDto } from './primary-adapters/dto/add-cart-item.dto';
+import { UpdateCartItemDto } from './primary-adapters/dto/update-cart-item.dto';
+import { CartResponseDto } from './primary-adapters/dto/cart-response.dto';
+import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
+import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
+import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/add-cart-item.usecase';
+import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
+import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
+import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
+import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
+import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('carts')
 @Controller('carts')
