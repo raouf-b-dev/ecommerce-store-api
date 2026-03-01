@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UpdateCartItemDto } from '../../../../primary-adapters/dto/update-cart-item.dto';
 import { ICart } from '../../../domain/interfaces/cart.interface';
@@ -9,7 +9,8 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { CheckStockUseCase } from '../../../../../inventory/core/application/check-stock/check-stock.usecase';
+import { InventoryGateway } from '../../ports/inventory.gateway';
+import { INVENTORY_GATEWAY } from '../../../../carts.token';
 
 @Injectable()
 export class UpdateCartItemUseCase extends UseCase<
@@ -19,7 +20,8 @@ export class UpdateCartItemUseCase extends UseCase<
 > {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly checkStockUseCase: CheckStockUseCase,
+    @Inject(INVENTORY_GATEWAY)
+    private readonly inventoryGateway: InventoryGateway,
   ) {
     super();
   }
@@ -40,10 +42,6 @@ export class UpdateCartItemUseCase extends UseCase<
         return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
       }
 
-      // We need to find the product ID from the item ID because updateItemQuantity uses productId
-      // Or we should add updateItemQuantityById to Cart entity.
-      // Let's check Cart entity again.
-
       const item = cart.findItemById(itemId);
       if (!item) {
         return ErrorFactory.UseCaseError(
@@ -52,10 +50,10 @@ export class UpdateCartItemUseCase extends UseCase<
       }
 
       // Check stock availability
-      const stockCheckResult = await this.checkStockUseCase.execute({
-        productId: item.productId,
-        quantity: dto.quantity,
-      });
+      const stockCheckResult = await this.inventoryGateway.checkStock(
+        item.productId,
+        dto.quantity,
+      );
 
       if (isFailure(stockCheckResult)) {
         return ErrorFactory.UseCaseError(stockCheckResult.error.message);

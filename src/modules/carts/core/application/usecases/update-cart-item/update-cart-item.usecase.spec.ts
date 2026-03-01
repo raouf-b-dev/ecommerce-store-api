@@ -7,20 +7,21 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UpdateCartItemDto } from '../../../../primary-adapters/dto/update-cart-item.dto';
+import { InventoryGateway } from '../../ports/inventory.gateway';
 
 describe('UpdateCartItemUseCase', () => {
   let usecase: UpdateCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockCheckStockUseCase: any;
+  let mockInventoryGateway: jest.Mocked<InventoryGateway>;
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockCheckStockUseCase = {
-      execute: jest.fn(),
+    mockInventoryGateway = {
+      checkStock: jest.fn(),
     };
     usecase = new UpdateCartItemUseCase(
       mockCartRepository,
-      mockCheckStockUseCase,
+      mockInventoryGateway,
     );
   });
 
@@ -45,7 +46,7 @@ describe('UpdateCartItemUseCase', () => {
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockCheckStockUseCase.execute.mockResolvedValue(
+      mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: true,
           availableQuantity: 10,
@@ -97,7 +98,7 @@ describe('UpdateCartItemUseCase', () => {
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockCheckStockUseCase.execute.mockResolvedValue(
+      mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: false,
           availableQuantity: 5,
@@ -109,10 +110,10 @@ describe('UpdateCartItemUseCase', () => {
       const result = await usecase.execute({ cartId, itemId, dto });
 
       // Assert
-      expect(mockCheckStockUseCase.execute).toHaveBeenCalledWith({
-        productId: expect.any(Number),
-        quantity: dto.quantity,
-      });
+      expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(
+        expect.any(Number),
+        dto.quantity,
+      );
       ResultAssertionHelper.assertResultFailure(
         result,
         'Insufficient stock',

@@ -10,12 +10,16 @@ import {
   REDIS_ORDER_REPOSITORY,
   CUSTOMER_GATEWAY,
   CART_GATEWAY,
+  INVENTORY_RESERVATION_GATEWAY,
+  PAYMENT_GATEWAY,
 } from './order.token';
 
 import { RedisOrderRepository } from './secondary-adapters/repositories/redis-order-repository/redis.order-repository';
 import { PostgresOrderRepository } from './secondary-adapters/repositories/postgres-order-repository/postgres.order-repository';
 import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
+import { ModuleInventoryReservationGateway } from './secondary-adapters/adapters/module-inventory-reservation.gateway';
+import { ModulePaymentGateway } from './secondary-adapters/adapters/module-payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -111,6 +115,14 @@ import { OrdersProcessor } from './orders.processor';
     {
       provide: CART_GATEWAY,
       useClass: ModuleCartGateway,
+    },
+    {
+      provide: INVENTORY_RESERVATION_GATEWAY,
+      useClass: ModuleInventoryReservationGateway,
+    },
+    {
+      provide: PAYMENT_GATEWAY,
+      useClass: ModulePaymentGateway,
     },
 
     // Default Repository Binding
