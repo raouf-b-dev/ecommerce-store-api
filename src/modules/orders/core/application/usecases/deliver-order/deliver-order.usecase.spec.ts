@@ -9,23 +9,21 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { DeliverOrderDto } from '../../../../primary-adapters/dto/deliver-order.dto';
 import { PaymentMethodType } from '../../../../../payments/core/domain';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
-import { RecordCodPaymentUseCase } from '../../../../../payments/core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { PaymentGateway } from '../../ports/payment.gateway';
+import { PAYMENT_GATEWAY } from '../../../../order.token';
 
 describe('DeliverOrderUseCase', () => {
   let useCase: DeliverOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
-  let mockRecordCodPaymentUseCase: jest.Mocked<RecordCodPaymentUseCase>;
+  let mockPaymentGateway: jest.Mocked<PaymentGateway>;
 
   beforeEach(() => {
     mockOrderRepository = new MockOrderRepository();
-    mockRecordCodPaymentUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<RecordCodPaymentUseCase>;
-    useCase = new DeliverOrderUseCase(
-      mockOrderRepository,
-      mockRecordCodPaymentUseCase,
-    );
+    mockPaymentGateway = {
+      recordCodPayment: jest.fn(),
+    } as unknown as jest.Mocked<PaymentGateway>;
+    useCase = new DeliverOrderUseCase(mockOrderRepository, mockPaymentGateway);
   });
 
   afterEach(() => {
@@ -50,7 +48,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.updatePaymentId.mockResolvedValue(
         Result.success(undefined),
       );
-      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+      mockPaymentGateway.recordCodPayment.mockResolvedValue(
         Result.success({ id: 1 } as any),
       );
 
@@ -66,7 +64,7 @@ describe('DeliverOrderUseCase', () => {
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(
         shippedOrder.id!,
       );
-      expect(mockRecordCodPaymentUseCase.execute).toHaveBeenCalled();
+      expect(mockPaymentGateway.recordCodPayment).toHaveBeenCalled();
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
         shippedOrder.id!,
         OrderStatus.DELIVERED,
@@ -92,7 +90,7 @@ describe('DeliverOrderUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
       // Should NOT call RecordCodPaymentUseCase for non-COD orders
-      expect(mockRecordCodPaymentUseCase.execute).not.toHaveBeenCalled();
+      expect(mockPaymentGateway.recordCodPayment).not.toHaveBeenCalled();
     });
 
     it('should return Success if COD order is delivered without explicit payment details', async () => {
@@ -113,7 +111,7 @@ describe('DeliverOrderUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
       // Should NOT call RecordCodPaymentUseCase without codPayment in DTO
-      expect(mockRecordCodPaymentUseCase.execute).not.toHaveBeenCalled();
+      expect(mockPaymentGateway.recordCodPayment).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is not found', async () => {
@@ -374,7 +372,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.updatePaymentId.mockResolvedValue(
         Result.success(undefined),
       );
-      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+      mockPaymentGateway.recordCodPayment.mockResolvedValue(
         Result.success({ id: 1 } as any),
       );
 
@@ -403,7 +401,7 @@ describe('DeliverOrderUseCase', () => {
       mockOrderRepository.updatePaymentId.mockResolvedValue(
         Result.success(undefined),
       );
-      mockRecordCodPaymentUseCase.execute.mockResolvedValue(
+      mockPaymentGateway.recordCodPayment.mockResolvedValue(
         Result.success({ id: 'PAY_COD_002' } as any),
       );
 

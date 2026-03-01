@@ -4,14 +4,14 @@ import { AddCartItemDto } from '../../../../primary-adapters/dto/add-cart-item.d
 import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
-import { ProductRepository } from '../../../../../products/core/domain/repositories/product-repository';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { InventoryGateway } from '../../ports/inventory.gateway';
-import { INVENTORY_GATEWAY } from '../../../../carts.token';
+import { ProductGateway } from '../../ports/product.gateway';
+import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
@@ -21,7 +21,8 @@ export class AddCartItemUseCase extends UseCase<
 > {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly productRepository: ProductRepository,
+    @Inject(PRODUCT_GATEWAY)
+    private readonly productGateway: ProductGateway,
     @Inject(INVENTORY_GATEWAY)
     private readonly inventoryGateway: InventoryGateway,
   ) {
@@ -43,9 +44,7 @@ export class AddCartItemUseCase extends UseCase<
         return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
       }
 
-      const productResult = await this.productRepository.findById(
-        dto.productId,
-      );
+      const productResult = await this.productGateway.findById(dto.productId);
 
       if (isFailure(productResult)) return productResult;
 

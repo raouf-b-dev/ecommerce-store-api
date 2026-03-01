@@ -12,7 +12,12 @@ import { UserRepository } from './core/domain/repositories/user.repository';
 import { AuthController } from './auth.controller';
 import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
 import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
-import { POSTGRES_USER_REPOSITORY, REDIS_USER_REPOSITORY } from './auth.tokens';
+import {
+  POSTGRES_USER_REPOSITORY,
+  REDIS_USER_REPOSITORY,
+  CUSTOMER_GATEWAY,
+} from './auth.tokens';
+import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { EnvConfigService } from '../../config/env-config.service';
@@ -52,6 +57,12 @@ import { EnvConfigService } from '../../config/env-config.service';
     {
       provide: UserRepository,
       useExisting: REDIS_USER_REPOSITORY,
+    },
+
+    // Gateways
+    {
+      provide: CUSTOMER_GATEWAY,
+      useClass: ModuleCustomerGateway,
     },
 
     // Use Cases

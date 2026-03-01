@@ -1,6 +1,6 @@
 {
   "name": "ecommerce-store-api",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Enterprise-level NestJS e-commerce API built with Domain-Driven Design, SAGA pattern with compensation, Redis Stack, and BullMQ for background processing",
   "author": "Abderaouf .B <https://github.com/raouf-b-dev>",
   "private": false,

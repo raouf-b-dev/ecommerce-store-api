@@ -3,13 +3,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { CreateCustomerUseCase } from '../../../../../customers/core/application/usecases/create-customer/create-customer.usecase';
-import { ICustomer } from '../../../../../customers/core/domain/interfaces/customer.interface';
-import { CreateCustomerDto } from '../../../../../customers/primary-adapters/dto/create-customer.dto';
-import {
-  CustomerDtoTestFactory,
-  CustomerTestFactory,
-} from '../../../../../customers/testing';
+import { CustomerGateway, CustomerRecord } from '../../ports/customer.gateway';
 import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
@@ -19,29 +13,27 @@ import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock
 describe('RegisterUserUseCase', () => {
   let usecase: RegisterUserUseCase;
   let userRepository: MockUserRepository;
-  let createCustomerUseCase: jest.Mocked<CreateCustomerUseCase>;
+  let mockCustomerGateway: jest.Mocked<CustomerGateway>;
   let bcryptService: MockBcryptService;
   let mockDomainUser: User;
-  let customerDto: CreateCustomerDto;
-  let mockCustomer: ICustomer;
+  let mockCustomerRecord: CustomerRecord;
 
   beforeEach(() => {
     userRepository = new MockUserRepository();
-    createCustomerUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<CreateCustomerUseCase>;
+    mockCustomerGateway = {
+      createCustomer: jest.fn(),
+    };
 
     bcryptService = new MockBcryptService();
     usecase = new RegisterUserUseCase(
       userRepository,
       bcryptService,
-      createCustomerUseCase,
+      mockCustomerGateway,
     );
     mockDomainUser = User.fromPrimitives(
       UserTestFactory.createMockCustomerUser(),
     );
-    mockCustomer = CustomerTestFactory.createMockCustomer();
-    customerDto = CustomerDtoTestFactory.createCreateCustomerDto();
+    mockCustomerRecord = { id: 1 };
   });
 
   afterEach(() => {
@@ -50,8 +42,8 @@ describe('RegisterUserUseCase', () => {
 
   it('should register a user successfully', async () => {
     userRepository.findByEmail.mockResolvedValue(Result.success(null)); // User does not exist
-    const customerResult = Result.success(mockCustomer);
-    createCustomerUseCase.execute.mockResolvedValue(customerResult);
+    const customerResult = Result.success(mockCustomerRecord);
+    mockCustomerGateway.createCustomer.mockResolvedValue(customerResult);
     userRepository.save.mockResolvedValue(Result.success(mockDomainUser));
 
     const result = await usecase.execute({
@@ -67,8 +59,8 @@ describe('RegisterUserUseCase', () => {
 
   it('should return failure if user already exists', async () => {
     userRepository.findByEmail.mockResolvedValue(Result.success(null)); // Race condition simulation
-    createCustomerUseCase.execute.mockResolvedValue(
-      Result.success(mockCustomer),
+    mockCustomerGateway.createCustomer.mockResolvedValue(
+      Result.success(mockCustomerRecord),
     );
     userRepository.save.mockResolvedValue(
       ErrorFactory.RepositoryError('User with this email already exists'),
@@ -91,8 +83,8 @@ describe('RegisterUserUseCase', () => {
 
   it('should return failure if unexpected error occurs', async () => {
     userRepository.findByEmail.mockResolvedValue(Result.success(null));
-    createCustomerUseCase.execute.mockResolvedValue(
-      Result.success(mockCustomer),
+    mockCustomerGateway.createCustomer.mockResolvedValue(
+      Result.success(mockCustomerRecord),
     );
     userRepository.save.mockRejectedValue(new Error('Unexpected error'));
 

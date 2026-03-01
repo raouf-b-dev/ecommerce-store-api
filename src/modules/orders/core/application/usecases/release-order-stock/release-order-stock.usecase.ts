@@ -6,8 +6,9 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { GetOrderReservationsUseCase } from '../../../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
+import { InventoryReservationGateway } from '../../ports/inventory-reservation.gateway';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
+import { INVENTORY_RESERVATION_GATEWAY } from '../../../../order.token';
 
 @Injectable()
 export class ReleaseOrderStockUseCase
@@ -16,7 +17,8 @@ export class ReleaseOrderStockUseCase
   private readonly logger = new Logger(ReleaseOrderStockUseCase.name);
 
   constructor(
-    private readonly getOrderReservationsUseCase: GetOrderReservationsUseCase,
+    @Inject(INVENTORY_RESERVATION_GATEWAY)
+    private readonly inventoryReservationGateway: InventoryReservationGateway,
     private readonly orderScheduler: OrderScheduler,
   ) {}
 
@@ -24,7 +26,7 @@ export class ReleaseOrderStockUseCase
     try {
       this.logger.log(`Finding reservations for order ${orderId}...`);
       const reservationsResult =
-        await this.getOrderReservationsUseCase.execute(orderId);
+        await this.inventoryReservationGateway.getOrderReservations(orderId);
 
       if (reservationsResult.isFailure) {
         return ErrorFactory.UseCaseError(

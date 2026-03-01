@@ -1,5 +1,5 @@
 // src/modules/orders/application/usecases/deliver-order/deliver-order.usecase.ts
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -8,7 +8,8 @@ import { Order } from '../../../domain/entities/order';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { DeliverOrderDto } from '../../../../primary-adapters/dto/deliver-order.dto';
-import { RecordCodPaymentUseCase } from '../../../../../payments/core/application/usecases/record-cod-payment/record-cod-payment.usecase';
+import { PaymentGateway } from '../../ports/payment.gateway';
+import { PAYMENT_GATEWAY } from '../../../../order.token';
 
 @Injectable()
 export class DeliverOrderUseCase
@@ -21,7 +22,8 @@ export class DeliverOrderUseCase
 {
   constructor(
     private readonly orderRepository: OrderRepository,
-    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
+    @Inject(PAYMENT_GATEWAY)
+    private readonly paymentGateway: PaymentGateway,
   ) {}
 
   async execute(input: {
@@ -37,7 +39,7 @@ export class DeliverOrderUseCase
       const order: Order = requestedOrder.value;
 
       if (order.isCOD() && input.deliverOrderDto.codPayment) {
-        const codPaymentResult = await this.recordCodPaymentUseCase.execute({
+        const codPaymentResult = await this.paymentGateway.recordCodPayment({
           orderId: input.id,
           amountCollected: order.totalPrice,
           currency: 'USD',

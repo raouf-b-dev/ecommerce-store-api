@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -10,7 +10,8 @@ import { UserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user';
 import { BcryptService } from '../../../../secondary-adapters/services/bcrypt.service';
 import { RegisterDto } from '../../../../primary-adapters/dto/register.dto';
-import { CreateCustomerUseCase } from '../../../../../customers/core/application/usecases/create-customer/create-customer.usecase';
+import { CustomerGateway } from '../../ports/customer.gateway';
+import { CUSTOMER_GATEWAY } from '../../../../auth.tokens';
 import { UserRoleType } from '../../../domain/value-objects/user-role';
 import { IUser } from '../../../domain/interfaces/user.interface';
 
@@ -23,7 +24,8 @@ export class RegisterUserUseCase extends UseCase<
   constructor(
     private readonly userRepository: UserRepository,
     private readonly bcryptService: BcryptService,
-    private readonly createCustomerUseCase: CreateCustomerUseCase,
+    @Inject(CUSTOMER_GATEWAY)
+    private readonly customerGateway: CustomerGateway,
   ) {
     super();
   }
@@ -39,7 +41,7 @@ export class RegisterUserUseCase extends UseCase<
       }
 
       // 2. Create Customer
-      const customerResult = await this.createCustomerUseCase.execute({
+      const customerResult = await this.customerGateway.createCustomer({
         firstName: dto.firstName,
         lastName: dto.lastName,
         email: dto.email,
