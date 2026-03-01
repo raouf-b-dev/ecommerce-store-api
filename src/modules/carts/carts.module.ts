@@ -8,10 +8,12 @@ import {
   POSTGRES_CART_REPOSITORY,
   REDIS_CART_REPOSITORY,
   INVENTORY_GATEWAY,
+  PRODUCT_GATEWAY,
 } from './carts.token';
 import { PostgresCartRepository } from './secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository';
 import { RedisCartRepository } from './secondary-adapters/repositories/redis-cart-repository/redis.cart-repository';
 import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
+import { ModuleProductGateway } from './secondary-adapters/adapters/module-product.gateway';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { CartRepository } from './core/domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
@@ -60,6 +62,10 @@ import { ProductsModule } from '../products/products.module';
     {
       provide: INVENTORY_GATEWAY,
       useClass: ModuleInventoryGateway,
+    },
+    {
+      provide: PRODUCT_GATEWAY,
+      useClass: ModuleProductGateway,
     },
 
     // Default Repository Binding

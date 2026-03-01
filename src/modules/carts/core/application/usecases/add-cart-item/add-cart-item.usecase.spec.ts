@@ -7,42 +7,33 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { AddCartItemDto } from '../../../../primary-adapters/dto/add-cart-item.dto';
-import { ProductRepository } from '../../../../../products/core/domain/repositories/product-repository';
-import { IProduct } from '../../../../../products/core/domain/interfaces/product.interface';
+import { ProductGateway, ProductData } from '../../ports/product.gateway';
 import { InventoryGateway } from '../../ports/inventory.gateway';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockProductRepository: jest.Mocked<ProductRepository>;
+  let mockProductGateway: jest.Mocked<ProductGateway>;
   let mockInventoryGateway: jest.Mocked<InventoryGateway>;
 
-  const mockProduct: IProduct = {
+  const mockProduct: ProductData = {
     id: 1,
     name: 'Test Product',
-    description: 'Test Description',
     price: 29.99,
-    sku: 'TEST-SKU-001',
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockProductRepository = {
+    mockProductGateway = {
       findById: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      findAll: jest.fn(),
-      deleteById: jest.fn(),
-    } as any;
+    };
     mockInventoryGateway = {
       checkStock: jest.fn(),
     };
 
     usecase = new AddCartItemUseCase(
       mockCartRepository,
-      mockProductRepository,
+      mockProductGateway,
       mockInventoryGateway,
     );
   });
@@ -68,7 +59,7 @@ describe('AddCartItemUseCase', () => {
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockProductRepository.findById.mockResolvedValue(
+      mockProductGateway.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
       mockInventoryGateway.checkStock.mockResolvedValue(
@@ -85,9 +76,7 @@ describe('AddCartItemUseCase', () => {
 
       // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockProductRepository.findById).toHaveBeenCalledWith(
-        dto.productId,
-      );
+      expect(mockProductGateway.findById).toHaveBeenCalledWith(dto.productId);
       expect(mockCartRepository.update).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
@@ -108,7 +97,7 @@ describe('AddCartItemUseCase', () => {
 
       // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockProductRepository.findById).not.toHaveBeenCalled();
+      expect(mockProductGateway.findById).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Cart not found',
@@ -129,15 +118,13 @@ describe('AddCartItemUseCase', () => {
       const error = new RepositoryError('Product not found');
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockProductRepository.findById.mockResolvedValue(Result.failure(error));
+      mockProductGateway.findById.mockResolvedValue(Result.failure(error));
 
       // Act
       const result = await usecase.execute({ cartId, dto });
 
       // Assert
-      expect(mockProductRepository.findById).toHaveBeenCalledWith(
-        dto.productId,
-      );
+      expect(mockProductGateway.findById).toHaveBeenCalledWith(dto.productId);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Product not found',
@@ -157,7 +144,7 @@ describe('AddCartItemUseCase', () => {
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockProductRepository.findById.mockResolvedValue(
+      mockProductGateway.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
       mockInventoryGateway.checkStock.mockResolvedValue(

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { InventoryGateway } from '../../core/application/ports/inventory.gateway';
+import {
+  InventoryGateway,
+  StockCheckResult,
+} from '../../core/application/ports/inventory.gateway';
 import { CheckStockUseCase } from '../../../inventory/core/application/check-stock/check-stock.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { CheckStockResponse } from '../../../inventory/primary-adapters/dto/check-stock-response.dto';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
@@ -13,7 +15,7 @@ export class ModuleInventoryGateway implements InventoryGateway {
   async checkStock(
     productId: number,
     quantity: number,
-  ): Promise<Result<CheckStockResponse, InfrastructureError>> {
+  ): Promise<Result<StockCheckResult, InfrastructureError>> {
     const result = await this.checkStockUseCase.execute({
       productId,
       quantity,
@@ -26,6 +28,10 @@ export class ModuleInventoryGateway implements InventoryGateway {
       );
     }
 
-    return Result.success(result.value);
+    return Result.success({
+      isAvailable: result.value.isAvailable,
+      availableQuantity: result.value.availableQuantity,
+      requestedQuantity: result.value.requestedQuantity,
+    });
   }
 }
