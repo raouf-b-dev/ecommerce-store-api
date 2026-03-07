@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { PostgresUserRepository } from './secondary-adapters/repositories/postgres-user-repository/postgres-user.repository';
-import { RedisUserRepository } from './secondary-adapters/repositories/redis-user-repository/redis-user.repository';
+import { CachedUserRepository } from './secondary-adapters/repositories/cached-user-repository/cached-user.repository';
 import { BcryptService } from './secondary-adapters/services/bcrypt.service';
 import { JwtStrategy } from './secondary-adapters/strategies/jwt.strategy';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
@@ -14,7 +14,7 @@ import { LoginUserUseCase } from './core/application/usecases/login-user/login-u
 import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
 import {
   POSTGRES_USER_REPOSITORY,
-  REDIS_USER_REPOSITORY,
+  CACHED_USER_REPOSITORY,
   CUSTOMER_GATEWAY,
 } from './auth.tokens';
 import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
@@ -45,18 +45,18 @@ import { EnvConfigService } from '../../config/env-config.service';
       useClass: PostgresUserRepository,
     },
     {
-      provide: REDIS_USER_REPOSITORY,
+      provide: CACHED_USER_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresUserRepository,
       ) => {
-        return new RedisUserRepository(cacheService, postgresRepo);
+        return new CachedUserRepository(cacheService, postgresRepo);
       },
       inject: [CacheService, POSTGRES_USER_REPOSITORY],
     },
     {
       provide: UserRepository,
-      useExisting: REDIS_USER_REPOSITORY,
+      useExisting: CACHED_USER_REPOSITORY,
     },
 
     // Gateways

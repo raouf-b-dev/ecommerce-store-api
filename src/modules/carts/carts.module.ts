@@ -6,12 +6,12 @@ import { CartItemEntity } from './secondary-adapters/orm/cart-item.schema';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_CART_REPOSITORY,
-  REDIS_CART_REPOSITORY,
+  CACHED_CART_REPOSITORY,
   INVENTORY_GATEWAY,
   PRODUCT_GATEWAY,
 } from './carts.token';
 import { PostgresCartRepository } from './secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository';
-import { RedisCartRepository } from './secondary-adapters/repositories/redis-cart-repository/redis.cart-repository';
+import { CachedCartRepository } from './secondary-adapters/repositories/cached-cart-repository/cached.cart-repository';
 import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
 import { ModuleProductGateway } from './secondary-adapters/adapters/module-product.gateway';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
@@ -44,15 +44,15 @@ import { ProductsModule } from '../products/products.module';
 
     // Redis Repo (decorator around Postgres)
     {
-      provide: REDIS_CART_REPOSITORY,
+      provide: CACHED_CART_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresCartRepository,
       ) => {
-        return new RedisCartRepository(
+        return new CachedCartRepository(
           cacheService,
           postgresRepo,
-          new Logger(RedisCartRepository.name),
+          new Logger(CachedCartRepository.name),
         );
       },
       inject: [CacheService, POSTGRES_CART_REPOSITORY],
@@ -71,7 +71,7 @@ import { ProductsModule } from '../products/products.module';
     // Default Repository Binding
     {
       provide: CartRepository,
-      useExisting: REDIS_CART_REPOSITORY,
+      useExisting: CACHED_CART_REPOSITORY,
     },
 
     // Use Cases

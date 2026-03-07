@@ -6,10 +6,10 @@ import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_CUSTOMER_REPOSITORY,
-  REDIS_CUSTOMER_REPOSITORY,
+  CACHED_CUSTOMER_REPOSITORY,
 } from './customer.tokens';
 import { PostgresCustomerRepository } from './secondary-adapters/repositories/postgres-customer-repository/postgres.customer-repository';
-import { RedisCustomerRepository } from './secondary-adapters/repositories/redis-customer-repository/redis.customer-repository';
+import { CachedCustomerRepository } from './secondary-adapters/repositories/cached-customer-repository/cached.customer-repository';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { CustomerRepository } from './core/domain/repositories/customer.repository';
 
@@ -38,15 +38,15 @@ import { SetDefaultAddressUseCase } from './core/application/usecases/set-defaul
       useClass: PostgresCustomerRepository,
     },
     {
-      provide: REDIS_CUSTOMER_REPOSITORY,
+      provide: CACHED_CUSTOMER_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresCustomerRepository,
       ) => {
-        return new RedisCustomerRepository(
+        return new CachedCustomerRepository(
           cacheService,
           postgresRepo,
-          new Logger(RedisCustomerRepository.name),
+          new Logger(CachedCustomerRepository.name),
         );
       },
       inject: [CacheService, POSTGRES_CUSTOMER_REPOSITORY],
@@ -55,7 +55,7 @@ import { SetDefaultAddressUseCase } from './core/application/usecases/set-defaul
     // Default Repository Binding
     {
       provide: CustomerRepository,
-      useExisting: REDIS_CUSTOMER_REPOSITORY,
+      useExisting: CACHED_CUSTOMER_REPOSITORY,
     },
 
     // Use Cases

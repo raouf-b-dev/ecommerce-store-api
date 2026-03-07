@@ -1,4 +1,4 @@
-// src/modules/carts/infrastructure/repositories/redis-cart-repository/redis.cart-repository.ts
+// src/modules/carts/infrastructure/repositories/cached-cart-repository/cached.cart-repository.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -15,7 +15,7 @@ import {
 import { CreateCartDto } from '../../../primary-adapters/dto/create-cart.dto';
 
 @Injectable()
-export class RedisCartRepository implements CartRepository {
+export class CachedCartRepository implements CartRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: CartRepository,
