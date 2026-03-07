@@ -20,29 +20,22 @@ export class SaveNotificationHistoryService {
   async execute(
     request: SaveNotificationHistoryRequest,
   ): Promise<Result<void, UseCaseError>> {
-    try {
-      const { notification } = request;
+    const { notification } = request;
 
-      this.logger.log(`Saving notification ${notification.id} to history`);
+    this.logger.log(`Saving notification ${notification.id} to history`);
 
-      const saveResult = await this.notificationRepository.save(notification);
-      if (saveResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          'Failed to save notification history',
-          saveResult.error,
-        );
-      }
-
-      this.logger.log(
-        `Successfully saved notification ${notification.id} to history`,
-      );
-
-      return Result.success(undefined);
-    } catch (error) {
+    const saveResult = await this.notificationRepository.save(notification);
+    if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError(
         'Failed to save notification history',
-        error,
+        saveResult.error,
       );
     }
+
+    this.logger.log(
+      `Successfully saved notification ${notification.id} to history`,
+    );
+
+    return Result.success(undefined);
   }
 }

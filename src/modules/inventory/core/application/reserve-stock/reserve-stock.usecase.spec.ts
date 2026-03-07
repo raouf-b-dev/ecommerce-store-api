@@ -66,19 +66,5 @@ describe('ReserveStockUseCase', () => {
       }
       expect(reservationRepository.save).toHaveBeenCalledWith(dto);
     });
-
-    it('should handle unexpected errors', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
-      const error = new Error('Unexpected error');
-      reservationRepository.save.mockRejectedValue(error);
-
-      const result = await useCase.execute(dto);
-
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Unexpected UseCase Error');
-        expect((result.error as any).cause).toBe(error);
-      }
-    });
   });
 });

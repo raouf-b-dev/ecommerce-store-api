@@ -24,16 +24,12 @@ export class CreateProductUseCase extends UseCase<
   async execute(
     dto: CreateProductDto,
   ): Promise<Result<IProduct, UseCaseError>> {
-    try {
-      const productResult = await this.productRepository.save(dto);
+    const productResult = await this.productRepository.save(dto);
 
-      if (isFailure(productResult)) {
-        return ErrorFactory.UseCaseError(productResult.error.message);
-      }
-
-      return Result.success<IProduct>(productResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (isFailure(productResult)) {
+      return ErrorFactory.UseCaseError(productResult.error.message);
     }
+
+    return Result.success<IProduct>(productResult.value);
   }
 }

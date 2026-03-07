@@ -274,26 +274,6 @@ describe('DeliverOrderUseCase', () => {
       );
     });
 
-    it('should return Failure if repository throws unexpected error', async () => {
-      const shippedOrder = OrderTestFactory.createShippedOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
-      const unexpectedError = new Error('Network connection failed');
-
-      mockOrderRepository.findById.mockRejectedValue(unexpectedError);
-
-      const result = await useCase.execute({
-        id: shippedOrder.id!,
-        deliverOrderDto,
-      });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected Usecase Error',
-        UseCaseError,
-        unexpectedError,
-      );
-    });
-
     it('should deliver order with Stripe payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.SHIPPED,

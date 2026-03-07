@@ -114,24 +114,5 @@ describe('MergeCartsUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should handle unexpected errors', async () => {
-      // Arrange
-      const guestCartId = 123;
-      const userCartId = 456;
-      const error = new Error('Database connection failed');
-
-      mockCartRepository.findById.mockRejectedValue(error);
-
-      // Act
-      const result = await usecase.execute({ guestCartId, userCartId });
-
-      // Assert
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-      );
-    });
   });
 });

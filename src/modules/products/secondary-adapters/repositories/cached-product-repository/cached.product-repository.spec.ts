@@ -1,8 +1,8 @@
-// src/modules/products/infrastructure/repositories/RedisProductRepository/redis.product-repository.spec.ts
+// src/modules/products/infrastructure/repositories/CachedProductRepository/cached.product-repository.spec.ts
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { RedisProductRepository } from './redis.product-repository';
+import { CachedProductRepository } from './cached.product-repository';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
 import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
 import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
@@ -10,8 +10,8 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 
-describe('RedisProductRepository', () => {
-  let repo: RedisProductRepository;
+describe('CachedProductRepository', () => {
+  let repo: CachedProductRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: jest.Mocked<ProductRepository>;
 
@@ -43,7 +43,7 @@ describe('RedisProductRepository', () => {
       deleteById: jest.fn(),
     };
 
-    repo = new RedisProductRepository(cacheService, postgresRepo);
+    repo = new CachedProductRepository(cacheService, postgresRepo);
   });
 
   afterEach(() => {

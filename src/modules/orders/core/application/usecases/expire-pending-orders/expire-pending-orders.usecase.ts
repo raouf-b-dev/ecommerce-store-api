@@ -34,54 +34,47 @@ export class ExpirePendingOrdersUseCase
   async execute(
     dto: ExpirePendingOrdersDto,
   ): Promise<Result<ExpirePendingOrdersResult, UseCaseError>> {
-    try {
-      const expirationTime = new Date(
-        Date.now() - dto.expirationMinutes * 60 * 1000,
-      );
+    const expirationTime = new Date(
+      Date.now() - dto.expirationMinutes * 60 * 1000,
+    );
 
-      const pendingOrdersResult = await this.orderRepository.findByStatusBefore(
-        OrderStatus.PENDING_PAYMENT,
-        expirationTime,
-      );
+    const pendingOrdersResult = await this.orderRepository.findByStatusBefore(
+      OrderStatus.PENDING_PAYMENT,
+      expirationTime,
+    );
 
-      if (isFailure(pendingOrdersResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to fetch pending orders',
-          pendingOrdersResult.error,
-        );
-      }
-
-      const pendingOrders = pendingOrdersResult.value;
-      let cancelledCount = 0;
-      let failedCount = 0;
-
-      this.logger.log(
-        `Found ${pendingOrders.length} orders pending for more than ${dto.expirationMinutes} minutes`,
-      );
-
-      for (const order of pendingOrders) {
-        if (!order.id) continue;
-
-        const cancelResult = await this.cancelOrderUseCase.execute(order.id);
-
-        if (isFailure(cancelResult)) {
-          this.logger.error(
-            `Failed to cancel expired order ${order.id}: ${cancelResult.error.message}`,
-          );
-          failedCount++;
-          continue;
-        }
-
-        this.logger.log(`Expired order ${order.id} cancelled successfully`);
-        cancelledCount++;
-      }
-
-      return Result.success({ cancelledCount, failedCount });
-    } catch (error) {
+    if (isFailure(pendingOrdersResult)) {
       return ErrorFactory.UseCaseError(
-        'Unexpected error while expiring pending orders',
-        error,
+        'Failed to fetch pending orders',
+        pendingOrdersResult.error,
       );
     }
+
+    const pendingOrders = pendingOrdersResult.value;
+    let cancelledCount = 0;
+    let failedCount = 0;
+
+    this.logger.log(
+      `Found ${pendingOrders.length} orders pending for more than ${dto.expirationMinutes} minutes`,
+    );
+
+    for (const order of pendingOrders) {
+      if (!order.id) continue;
+
+      const cancelResult = await this.cancelOrderUseCase.execute(order.id);
+
+      if (isFailure(cancelResult)) {
+        this.logger.error(
+          `Failed to cancel expired order ${order.id}: ${cancelResult.error.message}`,
+        );
+        failedCount++;
+        continue;
+      }
+
+      this.logger.log(`Expired order ${order.id} cancelled successfully`);
+      cancelledCount++;
+    }
+
+    return Result.success({ cancelledCount, failedCount });
   }
 }

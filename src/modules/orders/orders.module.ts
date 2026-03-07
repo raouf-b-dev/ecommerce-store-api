@@ -7,14 +7,14 @@ import { GetOrderUseCase } from './core/application/usecases/get-order/get-order
 import { OrderRepository } from './core/domain/repositories/order-repository';
 import {
   POSTGRES_ORDER_REPOSITORY,
-  REDIS_ORDER_REPOSITORY,
+  CACHED_ORDER_REPOSITORY,
   CUSTOMER_GATEWAY,
   CART_GATEWAY,
   INVENTORY_RESERVATION_GATEWAY,
   PAYMENT_GATEWAY,
 } from './order.token';
 
-import { RedisOrderRepository } from './secondary-adapters/repositories/redis-order-repository/redis.order-repository';
+import { CachedOrderRepository } from './secondary-adapters/repositories/cached-order-repository/cached.order-repository';
 import { PostgresOrderRepository } from './secondary-adapters/repositories/postgres-order-repository/postgres.order-repository';
 import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
@@ -96,13 +96,13 @@ import { OrdersProcessor } from './orders.processor';
 
     // Redis Repo (decorator around Postgres)
     {
-      provide: REDIS_ORDER_REPOSITORY,
+      provide: CACHED_ORDER_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresOrderRepository,
         logger: Logger,
       ) => {
-        return new RedisOrderRepository(cacheService, postgresRepo, logger);
+        return new CachedOrderRepository(cacheService, postgresRepo, logger);
       },
       inject: [CacheService, POSTGRES_ORDER_REPOSITORY],
     },
@@ -128,7 +128,7 @@ import { OrdersProcessor } from './orders.processor';
     // Default Repository Binding
     {
       provide: OrderRepository,
-      useExisting: REDIS_ORDER_REPOSITORY,
+      useExisting: CACHED_ORDER_REPOSITORY,
     },
 
     // Schedulers

@@ -115,24 +115,4 @@ describe('ProcessRefundUseCase', () => {
     ResultAssertionHelper.assertResultFailure(result);
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
-
-  it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const paymentId = 123;
-    const dto: ProcessRefundDto = {
-      amount: 50,
-    };
-    const repoError = new Error('Database connection failed');
-
-    paymentRepository.findById.mockRejectedValue(repoError);
-
-    const result = await useCase.execute({ id: paymentId, dto });
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error processing refund',
-      UseCaseError,
-      repoError,
-    );
-    expect(paymentRepository.findById).toHaveBeenCalledWith(paymentId);
-  });
 });

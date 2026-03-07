@@ -65,26 +65,4 @@ describe('GetInventoryUseCase', () => {
       productId,
     );
   });
-
-  it('should return a UseCaseError on unexpected exceptions', async () => {
-    // Arrange
-    const productId = 500;
-    const mockError = new Error('Database connection failed');
-
-    mockInventoryRepository.findByProductId.mockRejectedValue(mockError);
-
-    // Act
-    const result = await usecase.execute(productId);
-
-    // Assert
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected UseCase Error',
-      UseCaseError,
-      mockError,
-    );
-    expect(mockInventoryRepository.findByProductId).toHaveBeenCalledWith(
-      productId,
-    );
-  });
 });

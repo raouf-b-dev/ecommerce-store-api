@@ -1,4 +1,4 @@
-// src/modules/inventory/secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository.ts
+// src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.ts
 import { Injectable } from '@nestjs/common';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -14,7 +14,7 @@ import { Inventory } from '../../../core/domain/entities/inventory';
 import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
 
 @Injectable()
-export class RedisInventoryRepository implements InventoryRepository {
+export class CachedInventoryRepository implements InventoryRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: InventoryRepository,

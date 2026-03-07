@@ -16,18 +16,14 @@ export class GetCartUseCase extends UseCase<number, ICart, UseCaseError> {
   }
 
   async execute(id: number): Promise<Result<ICart, UseCaseError>> {
-    try {
-      const cartResult = await this.cartRepository.findById(id);
+    const cartResult = await this.cartRepository.findById(id);
 
-      if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) return cartResult;
 
-      if (!cartResult.value) {
-        return ErrorFactory.UseCaseError(`Cart with id ${id} not found`);
-      }
-
-      return Result.success(cartResult.value.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (!cartResult.value) {
+      return ErrorFactory.UseCaseError(`Cart with id ${id} not found`);
     }
+
+    return Result.success(cartResult.value.toPrimitives());
   }
 }

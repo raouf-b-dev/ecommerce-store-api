@@ -175,22 +175,4 @@ describe('CheckStockUseCase', () => {
       requestedQuantity,
     );
   });
-
-  it('should return a use case error on unexpected repository exceptions', async () => {
-    // Arrange
-    const productId = 500;
-    const unexpectedError = new Error('Database connection failed');
-    mockRepo.findByProductId.mockRejectedValue(unexpectedError);
-
-    // Act
-    const result = await usecase.execute({ productId, quantity: 1 });
-
-    // Assert
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected UseCase Error',
-      UseCaseError,
-      unexpectedError,
-    );
-  });
 });

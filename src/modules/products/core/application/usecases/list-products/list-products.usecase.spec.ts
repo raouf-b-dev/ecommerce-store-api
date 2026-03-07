@@ -44,21 +44,6 @@ describe('ListProductsUseCase', () => {
       );
     });
 
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const repoError = new Error('Database connection failed');
-
-      mockRepository.findAll.mockRejectedValue(repoError);
-
-      const result = await useCase.execute();
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
-
     it('should return mixed product types', async () => {
       const products = [
         ProductTestFactory.createInStockProduct(),

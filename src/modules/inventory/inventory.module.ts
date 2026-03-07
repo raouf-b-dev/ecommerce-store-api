@@ -3,10 +3,10 @@ import { InventoryController } from './inventory.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   POSTGRES_INVENTORY_REPOSITORY,
-  REDIS_INVENTORY_REPOSITORY,
+  CACHED_INVENTORY_REPOSITORY,
 } from './inventory.token';
 import { PostgresInventoryRepository } from './secondary-adapters/repositories/postgres-inventory-repository/postgres-inventory-repository';
-import { RedisInventoryRepository } from './secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository';
+import { CachedInventoryRepository } from './secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { InventoryRepository } from './core/domain/repositories/inventory.repository';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -45,12 +45,12 @@ import { ReservationRepository } from './core/domain/repositories/reservation.re
 
     // Redis Repo (decorator around Postgres)
     {
-      provide: REDIS_INVENTORY_REPOSITORY,
+      provide: CACHED_INVENTORY_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresInventoryRepository,
       ) => {
-        return new RedisInventoryRepository(cacheService, postgresRepo);
+        return new CachedInventoryRepository(cacheService, postgresRepo);
       },
       inject: [CacheService, POSTGRES_INVENTORY_REPOSITORY],
     },
@@ -58,7 +58,7 @@ import { ReservationRepository } from './core/domain/repositories/reservation.re
     // Default Repository Binding
     {
       provide: InventoryRepository,
-      useExisting: REDIS_INVENTORY_REPOSITORY,
+      useExisting: CACHED_INVENTORY_REPOSITORY,
     },
 
     // Reservation Repository

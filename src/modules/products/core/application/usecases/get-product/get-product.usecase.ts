@@ -17,16 +17,12 @@ export class GetProductUseCase extends UseCase<number, IProduct, UseCaseError> {
   }
 
   async execute(id: number): Promise<Result<IProduct, UseCaseError>> {
-    try {
-      const productResult = await this.productRepository.findById(id);
+    const productResult = await this.productRepository.findById(id);
 
-      if (isFailure(productResult)) {
-        return ErrorFactory.UseCaseError(`Product with id ${id} not found`);
-      }
-
-      return Result.success(productResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (isFailure(productResult)) {
+      return ErrorFactory.UseCaseError(`Product with id ${id} not found`);
     }
+
+    return Result.success(productResult.value);
   }
 }

@@ -17,16 +17,12 @@ export class GetOrderUseCase extends UseCase<number, IOrder, UseCaseError> {
   }
 
   async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const orderResult = await this.orderRepository.findById(id);
+    const orderResult = await this.orderRepository.findById(id);
 
-      if (isFailure(orderResult)) {
-        return ErrorFactory.UseCaseError(`Order with id ${id} not found`);
-      }
-
-      return Result.success(orderResult.value.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (isFailure(orderResult)) {
+      return ErrorFactory.UseCaseError(`Order with id ${id} not found`);
     }
+
+    return Result.success(orderResult.value.toPrimitives());
   }
 }

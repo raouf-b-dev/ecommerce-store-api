@@ -176,22 +176,6 @@ describe('ShipOrderUseCase', () => {
       );
     });
 
-    it('should return Failure if repository throws unexpected error', async () => {
-      const processingOrder = OrderTestFactory.createProcessingOrder();
-      const unexpectedError = new Error('Network connection failed');
-
-      mockOrderRepository.findById.mockRejectedValue(unexpectedError);
-
-      const result = await useCase.execute(processingOrder.id!);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected Usecase Error',
-        UseCaseError,
-        unexpectedError,
-      );
-    });
-
     it('should ship order with COD payment method', async () => {
       const codOrder = OrderTestFactory.createCashOnDeliveryOrder({
         status: OrderStatus.PROCESSING,

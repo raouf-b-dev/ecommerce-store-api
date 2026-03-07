@@ -104,21 +104,4 @@ describe('ProcessOrderUseCase', () => {
       OrderStatus.PROCESSING,
     );
   });
-
-  it('should return failure for an unexpected error', async () => {
-    // Arrange:
-    const error = new Error('Something exploded');
-    mockOrderRepo.findById.mockRejectedValue(error);
-
-    // Act:
-    const result = await useCase.execute(1);
-
-    // Assert:
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected Usecase Error',
-      UseCaseError,
-      error,
-    );
-  });
 });

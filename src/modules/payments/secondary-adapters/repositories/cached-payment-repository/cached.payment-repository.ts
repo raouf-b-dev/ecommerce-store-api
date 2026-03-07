@@ -13,7 +13,7 @@ import {
 } from '../../persistence/mappers/payment.mapper';
 
 @Injectable()
-export class RedisPaymentRepository implements PaymentRepository {
+export class CachedPaymentRepository implements PaymentRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: PaymentRepository,

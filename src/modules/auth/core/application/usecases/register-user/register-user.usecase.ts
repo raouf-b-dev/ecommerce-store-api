@@ -33,49 +33,42 @@ export class RegisterUserUseCase extends UseCase<
   async execute(
     dto: RegisterDto,
   ): Promise<Result<{ user: IUser; customerId: number }, UseCaseError>> {
-    try {
-      // 1. Check if user exists
-      const existingUser = await this.userRepository.findByEmail(dto.email);
-      if (existingUser.isSuccess && existingUser.value) {
-        return ErrorFactory.UseCaseError('User with this email already exists');
-      }
-
-      // 2. Create Customer
-      const customerResult = await this.customerGateway.createCustomer({
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        email: dto.email,
-        phone: dto.phone,
-      });
-
-      if (isFailure(customerResult)) return customerResult;
-
-      const customer = customerResult.value;
-
-      // 3. Hash Password
-      const passwordHash = await this.bcryptService.hash(dto.password);
-
-      // 4. Create User
-      const user = User.create(
-        null,
-        dto.email,
-        passwordHash,
-        UserRoleType.CUSTOMER,
-        customer.id!,
-      );
-
-      const saveResult = await this.userRepository.save(user);
-      if (isFailure(saveResult)) return saveResult;
-
-      return Result.success({
-        user: saveResult.value.toPrimitives(),
-        customerId: customer.id!,
-      });
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Unexpected error during registration',
-        error,
-      );
+    // 1. Check if user exists
+    const existingUser = await this.userRepository.findByEmail(dto.email);
+    if (existingUser.isSuccess && existingUser.value) {
+      return ErrorFactory.UseCaseError('User with this email already exists');
     }
+
+    // 2. Create Customer
+    const customerResult = await this.customerGateway.createCustomer({
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      email: dto.email,
+      phone: dto.phone,
+    });
+
+    if (isFailure(customerResult)) return customerResult;
+
+    const customer = customerResult.value;
+
+    // 3. Hash Password
+    const passwordHash = await this.bcryptService.hash(dto.password);
+
+    // 4. Create User
+    const user = User.create(
+      null,
+      dto.email,
+      passwordHash,
+      UserRoleType.CUSTOMER,
+      customer.id!,
+    );
+
+    const saveResult = await this.userRepository.save(user);
+    if (isFailure(saveResult)) return saveResult;
+
+    return Result.success({
+      user: saveResult.value.toPrimitives(),
+      customerId: customer.id!,
+    });
   }
 }

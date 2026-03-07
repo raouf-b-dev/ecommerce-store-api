@@ -21,19 +21,12 @@ export class GetPaymentUseCase extends UseCase<
   }
 
   async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
-    try {
-      const result = await this.paymentRepository.findById(id);
+    const result = await this.paymentRepository.findById(id);
 
-      if (isFailure(result)) return result;
+    if (isFailure(result)) return result;
 
-      return Result.success(
-        PaymentDtoMapper.toResponse(result.value.toPrimitives()),
-      );
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Unexpected error getting payment',
-        error,
-      );
-    }
+    return Result.success(
+      PaymentDtoMapper.toResponse(result.value.toPrimitives()),
+    );
   }
 }

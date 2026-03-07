@@ -16,14 +16,10 @@ export class DeleteCustomerUseCase extends UseCase<number, void, UseCaseError> {
   }
 
   async execute(id: number): Promise<Result<void, UseCaseError>> {
-    try {
-      const deleteResult = await this.customerRepository.delete(id);
+    const deleteResult = await this.customerRepository.delete(id);
 
-      if (isFailure(deleteResult)) return deleteResult;
+    if (isFailure(deleteResult)) return deleteResult;
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success(undefined);
   }
 }

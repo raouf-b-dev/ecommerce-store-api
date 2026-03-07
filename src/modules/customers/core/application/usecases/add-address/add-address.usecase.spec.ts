@@ -147,22 +147,5 @@ describe('AddAddressUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
-      const repoError = new Error('Database connection failed');
-
-      mockCustomerRepository.findById.mockRejectedValue(repoError);
-
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
   });
 });

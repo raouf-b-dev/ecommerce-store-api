@@ -21,47 +21,43 @@ export class BulkCheckStockUseCase
   async execute(
     dto: { productId: number; quantity?: number }[],
   ): Promise<Result<CheckStockResponse[], UseCaseError>> {
-    try {
-      const productIds = Array.from(new Set(dto.map((item) => item.productId)));
+    const productIds = Array.from(new Set(dto.map((item) => item.productId)));
 
-      const inventoryResult =
-        await this.inventoryRepository.findByProductIds(productIds);
-      if (inventoryResult.isFailure) return inventoryResult;
+    const inventoryResult =
+      await this.inventoryRepository.findByProductIds(productIds);
+    if (inventoryResult.isFailure) return inventoryResult;
 
-      const inventories: Inventory[] = inventoryResult.value;
+    const inventories: Inventory[] = inventoryResult.value;
 
-      const inventoryMap = new Map<number, Inventory>(
-        inventories.map((inv) => [inv.productId, inv]),
-      );
+    const inventoryMap = new Map<number, Inventory>(
+      inventories.map((inv) => [inv.productId, inv]),
+    );
 
-      const responses: CheckStockResponse[] = [];
+    const responses: CheckStockResponse[] = [];
 
-      for (const item of dto) {
-        const requestedQuantity = item.quantity ?? 1;
-        const inventory = inventoryMap.get(item.productId);
+    for (const item of dto) {
+      const requestedQuantity = item.quantity ?? 1;
+      const inventory = inventoryMap.get(item.productId);
 
-        if (!inventory) {
-          responses.push({
-            isAvailable: false,
-            availableQuantity: 0,
-            requestedQuantity,
-          });
-          continue;
-        }
-
-        const checkStockResult = inventory.isInStock(item.quantity);
-        if (checkStockResult.isFailure) return checkStockResult;
-
+      if (!inventory) {
         responses.push({
-          isAvailable: checkStockResult.value,
-          availableQuantity: inventory.availableQuantity,
+          isAvailable: false,
+          availableQuantity: 0,
           requestedQuantity,
         });
+        continue;
       }
 
-      return Result.success(responses);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
+      const checkStockResult = inventory.isInStock(item.quantity);
+      if (checkStockResult.isFailure) return checkStockResult;
+
+      responses.push({
+        isAvailable: checkStockResult.value,
+        availableQuantity: inventory.availableQuantity,
+        requestedQuantity,
+      });
     }
+
+    return Result.success(responses);
   }
 }

@@ -1,4 +1,4 @@
-// src/modules/inventory/secondary-adapters/repositories/redis-inventory-repository/redis-inventory-repository.spec.ts
+// src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.spec.ts
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
@@ -11,12 +11,12 @@ import { ResultAssertionHelper } from '../../../../../testing/helpers/result-ass
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
 import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
-import { RedisInventoryRepository } from './redis-inventory-repository';
+import { CachedInventoryRepository } from './cached-inventory-repository';
 import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 
-describe('RedisInventoryRepository', () => {
-  let repository: RedisInventoryRepository;
+describe('CachedInventoryRepository', () => {
+  let repository: CachedInventoryRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: MockInventoryRepository;
 
@@ -48,7 +48,7 @@ describe('RedisInventoryRepository', () => {
     } as unknown as jest.Mocked<CacheService>;
 
     postgresRepo = new MockInventoryRepository();
-    repository = new RedisInventoryRepository(cacheService, postgresRepo);
+    repository = new CachedInventoryRepository(cacheService, postgresRepo);
     jest.clearAllMocks();
   });
 

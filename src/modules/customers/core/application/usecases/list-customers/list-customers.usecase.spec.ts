@@ -58,21 +58,5 @@ describe('ListCustomersUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const query = CustomerDtoTestFactory.createListCustomersQueryDto();
-      const repoError = new Error('Database connection failed');
-
-      mockCustomerRepository.findAll.mockRejectedValue(repoError);
-
-      const result = await useCase.execute(query);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
   });
 });

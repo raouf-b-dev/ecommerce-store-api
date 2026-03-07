@@ -23,50 +23,46 @@ export class ReleaseOrderStockUseCase
   ) {}
 
   async execute(orderId: number): Promise<Result<void, UseCaseError>> {
-    try {
-      this.logger.log(`Finding reservations for order ${orderId}...`);
-      const reservationsResult =
-        await this.inventoryReservationGateway.getOrderReservations(orderId);
+    this.logger.log(`Finding reservations for order ${orderId}...`);
+    const reservationsResult =
+      await this.inventoryReservationGateway.getOrderReservations(orderId);
 
-      if (reservationsResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          `Failed to find reservations for order ${orderId}`,
-          reservationsResult.error,
-        );
-      }
-
-      const reservations = reservationsResult.value;
-      this.logger.log(
-        `Found ${reservations.length} reservations for order ${orderId}`,
+    if (reservationsResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        `Failed to find reservations for order ${orderId}`,
+        reservationsResult.error,
       );
-
-      if (reservations.length === 0) {
-        return Result.success(undefined);
-      }
-
-      for (const reservation of reservations) {
-        if (!reservation.id) continue;
-
-        this.logger.log(
-          `Scheduling release-stock job for reservation ${reservation.id}...`,
-        );
-        const scheduleResult = await this.orderScheduler.scheduleStockRelease(
-          reservation.id,
-        );
-
-        if (isFailure(scheduleResult)) {
-          this.logger.error(
-            `Failed to schedule release for reservation ${reservation.id}: ${scheduleResult.error.message}`,
-          );
-        }
-      }
-
-      this.logger.log(
-        `Scheduled ${reservations.length} release-stock jobs for order ${orderId}`,
-      );
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
     }
+
+    const reservations = reservationsResult.value;
+    this.logger.log(
+      `Found ${reservations.length} reservations for order ${orderId}`,
+    );
+
+    if (reservations.length === 0) {
+      return Result.success(undefined);
+    }
+
+    for (const reservation of reservations) {
+      if (!reservation.id) continue;
+
+      this.logger.log(
+        `Scheduling release-stock job for reservation ${reservation.id}...`,
+      );
+      const scheduleResult = await this.orderScheduler.scheduleStockRelease(
+        reservation.id,
+      );
+
+      if (isFailure(scheduleResult)) {
+        this.logger.error(
+          `Failed to schedule release for reservation ${reservation.id}: ${scheduleResult.error.message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Scheduled ${reservations.length} release-stock jobs for order ${orderId}`,
+    );
+    return Result.success(undefined);
   }
 }

@@ -102,7 +102,7 @@ src/modules/[module]/
 | **Shared Kernel**         | A subset of the domain model shared between multiple contexts. Must be pure domain — no infrastructure | `src/shared-kernel/domain/` — contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore` |
 | **Context Map**           | Documents the relationships between Bounded Contexts                                                   | Orders imports from Customers (ACL via CustomerGateway), Carts (ACL via CartGateway)                                 |
 | **Upstream/Downstream**   | One context provides, another consumes                                                                 | Orders (downstream) consumes Customers, Carts, Inventory, Payments (upstream)                                        |
-| **Anti-Corruption Layer** | Translates between two contexts' models                                                                | Mappers in `secondary-adapters/persistence/mappers/`                                                                 |
+| **Anti-Corruption Layer** | Translates between two contexts' models                                                                | Gateway adapters in `secondary-adapters/adapters/` (e.g., `CustomerGatewayAdapter`, `CartGatewayAdapter`)            |
 
 ### 2.2 Tactical Design Patterns
 

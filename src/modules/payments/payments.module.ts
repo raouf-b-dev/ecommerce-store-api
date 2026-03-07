@@ -6,11 +6,11 @@ import { RefundEntity } from './secondary-adapters/orm/refund.schema';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import {
   POSTGRES_PAYMENT_REPOSITORY,
-  REDIS_PAYMENT_REPOSITORY,
+  CACHED_PAYMENT_REPOSITORY,
 } from './payment.token';
 import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
-import { RedisPaymentRepository } from './secondary-adapters/repositories/redis-payment-repository/redis.payment-repository';
+import { CachedPaymentRepository } from './secondary-adapters/repositories/cached-payment-repository/cached.payment-repository';
 import { PaymentRepository } from './core/domain/repositories/payment.repository';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
@@ -69,15 +69,15 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
 
     // Redis Repo (decorator around Postgres)
     {
-      provide: REDIS_PAYMENT_REPOSITORY,
+      provide: CACHED_PAYMENT_REPOSITORY,
       useFactory: (
         cacheService: CacheService,
         postgresRepo: PostgresPaymentRepository,
       ) => {
-        return new RedisPaymentRepository(
+        return new CachedPaymentRepository(
           cacheService,
           postgresRepo,
-          new Logger(RedisPaymentRepository.name),
+          new Logger(CachedPaymentRepository.name),
         );
       },
       inject: [CacheService, POSTGRES_PAYMENT_REPOSITORY],
@@ -86,7 +86,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     // Default Repository Binding
     {
       provide: PaymentRepository,
-      useExisting: REDIS_PAYMENT_REPOSITORY,
+      useExisting: CACHED_PAYMENT_REPOSITORY,
     },
 
     // Use Cases

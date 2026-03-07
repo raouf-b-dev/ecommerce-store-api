@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RedisUserRepository } from './redis-user.repository';
+import { CachedUserRepository } from './cached-user.repository';
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
@@ -11,8 +11,8 @@ import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
 
-describe('RedisUserRepository', () => {
-  let repository: RedisUserRepository;
+describe('CachedUserRepository', () => {
+  let repository: CachedUserRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: MockUserRepository;
 
@@ -22,7 +22,7 @@ describe('RedisUserRepository', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        RedisUserRepository,
+        CachedUserRepository,
         {
           provide: CacheService,
           useValue: {
@@ -39,7 +39,7 @@ describe('RedisUserRepository', () => {
       ],
     }).compile();
 
-    repository = module.get<RedisUserRepository>(RedisUserRepository);
+    repository = module.get<CachedUserRepository>(CachedUserRepository);
     cacheService = module.get(CacheService);
     postgresRepo = module.get(UserRepository);
   });

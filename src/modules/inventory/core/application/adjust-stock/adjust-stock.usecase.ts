@@ -27,24 +27,20 @@ export class AdjustStockUseCase
     productId: number;
     dto: AdjustStockDto;
   }): Promise<Result<IInventory, UseCaseError>> {
-    try {
-      const inventoryResult = await this.inventoryRepository.findByProductId(
-        input.productId,
-      );
-      if (inventoryResult.isFailure) return inventoryResult;
+    const inventoryResult = await this.inventoryRepository.findByProductId(
+      input.productId,
+    );
+    if (inventoryResult.isFailure) return inventoryResult;
 
-      const inventory: Inventory = inventoryResult.value;
+    const inventory: Inventory = inventoryResult.value;
 
-      const adjustmentResult = this.applyAdjustment(inventory, input.dto);
-      if (adjustmentResult.isFailure) return adjustmentResult;
+    const adjustmentResult = this.applyAdjustment(inventory, input.dto);
+    if (adjustmentResult.isFailure) return adjustmentResult;
 
-      const updateResult = await this.inventoryRepository.update(inventory);
-      if (updateResult.isFailure) return updateResult;
+    const updateResult = await this.inventoryRepository.update(inventory);
+    if (updateResult.isFailure) return updateResult;
 
-      return Result.success(inventory.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success(inventory.toPrimitives());
   }
 
   private applyAdjustment(

@@ -80,23 +80,5 @@ describe('CreateCartUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should handle unexpected errors', async () => {
-      // Arrange
-      const dto: CreateCartDto = { customerId: 123 };
-      const error = new Error('Database connection failed');
-
-      mockCartRepository.create.mockRejectedValue(error);
-
-      // Act
-      const result = await usecase.execute(dto);
-
-      // Assert
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-      );
-    });
   });
 });

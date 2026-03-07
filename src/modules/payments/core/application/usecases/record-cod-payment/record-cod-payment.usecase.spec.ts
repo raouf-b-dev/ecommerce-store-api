@@ -76,25 +76,4 @@ describe('RecordCodPaymentUseCase', () => {
     ResultAssertionHelper.assertResultFailure(result, 'Save failed');
     expect(paymentRepository.save).toHaveBeenCalled();
   });
-
-  it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const dto: RecordCodPaymentDto = {
-      orderId: 123,
-      amountCollected: 100,
-      currency: 'USD',
-    };
-    const repoError = new Error('Database connection failed');
-
-    paymentRepository.save.mockRejectedValue(repoError);
-
-    const result = await useCase.execute(dto);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error recording COD payment',
-      UseCaseError,
-      repoError,
-    );
-    expect(paymentRepository.save).toHaveBeenCalled();
-  });
 });

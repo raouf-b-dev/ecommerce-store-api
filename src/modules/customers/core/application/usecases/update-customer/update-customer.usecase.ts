@@ -29,30 +29,26 @@ export class UpdateCustomerUseCase extends UseCase<
   async execute(
     input: UpdateCustomerInput,
   ): Promise<Result<ICustomer, UseCaseError>> {
-    try {
-      const { id, dto } = input;
+    const { id, dto } = input;
 
-      const customerResult = await this.customerRepository.findById(id);
-      if (isFailure(customerResult)) return customerResult;
+    const customerResult = await this.customerRepository.findById(id);
+    if (isFailure(customerResult)) return customerResult;
 
-      const customer = customerResult.value;
+    const customer = customerResult.value;
 
-      if (dto.firstName || dto.lastName || dto.phone !== undefined) {
-        const updateResult = customer.updatePersonalInfo(
-          dto.firstName || customer.firstName,
-          dto.lastName || customer.lastName,
-          dto.phone !== undefined ? dto.phone : customer.phone,
-        );
+    if (dto.firstName || dto.lastName || dto.phone !== undefined) {
+      const updateResult = customer.updatePersonalInfo(
+        dto.firstName || customer.firstName,
+        dto.lastName || customer.lastName,
+        dto.phone !== undefined ? dto.phone : customer.phone,
+      );
 
-        if (isFailure(updateResult)) return updateResult;
-      }
-
-      const saveResult = await this.customerRepository.update(customer);
-      if (isFailure(saveResult)) return saveResult;
-
-      return Result.success<ICustomer>(saveResult.value.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+      if (isFailure(updateResult)) return updateResult;
     }
+
+    const saveResult = await this.customerRepository.update(customer);
+    if (isFailure(saveResult)) return saveResult;
+
+    return Result.success<ICustomer>(saveResult.value.toPrimitives());
   }
 }
