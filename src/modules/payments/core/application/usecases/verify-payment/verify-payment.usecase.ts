@@ -21,22 +21,15 @@ export class VerifyPaymentUseCase extends UseCase<
   }
 
   async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
-    try {
-      const result = await this.paymentRepository.findById(id);
+    const result = await this.paymentRepository.findById(id);
 
-      if (isFailure(result)) return result;
+    if (isFailure(result)) return result;
 
-      // Logic to verify payment status with external provider could be added here
-      // For now, we just return the payment
+    // Logic to verify payment status with external provider could be added here
+    // For now, we just return the payment
 
-      return Result.success(
-        PaymentDtoMapper.toResponse(result.value.toPrimitives()),
-      );
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Unexpected error verifying payment',
-        error,
-      );
-    }
+    return Result.success(
+      PaymentDtoMapper.toResponse(result.value.toPrimitives()),
+    );
   }
 }

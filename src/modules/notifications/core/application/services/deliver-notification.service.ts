@@ -9,30 +9,23 @@ export class DeliverNotificationService {
   constructor(private readonly notificationGateway: NotificationGateway) {}
 
   async execute(notification: Notification): Promise<void> {
-    try {
-      if (!notification.userId) {
-        this.logger.warn(
-          `Notification ${notification.id} has no userId, skipping WebSocket delivery`,
-        );
-        return;
-      }
-
-      await this.notificationGateway.send(notification.userId, {
-        id: notification.id,
-        title: notification.title,
-        message: notification.message,
-        type: notification.type,
-        payload: notification.payload,
-        createdAt: notification.createdAt,
-      });
-      this.logger.log(
-        `Notification ${notification.id} delivered to user ${notification.userId}`,
+    if (!notification.userId) {
+      this.logger.warn(
+        `Notification ${notification.id} has no userId, skipping WebSocket delivery`,
       );
-    } catch (error) {
-      this.logger.error(
-        `Failed to deliver notification ${notification.id}: ${error.message}`,
-      );
-      throw error;
+      return;
     }
+
+    await this.notificationGateway.send(notification.userId, {
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      payload: notification.payload,
+      createdAt: notification.createdAt,
+    });
+    this.logger.log(
+      `Notification ${notification.id} delivered to user ${notification.userId}`,
+    );
   }
 }

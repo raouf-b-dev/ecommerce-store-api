@@ -246,23 +246,4 @@ describe('BulkCheckStockUseCase', () => {
       domainError.error,
     );
   });
-
-  it('should return a use case error on unexpected exceptions', async () => {
-    // Arrange
-    const input = [{ productId: 888, quantity: 1 }];
-    const unexpectedError = new Error('A terrible server error occurred');
-    mockRepo.findByProductIds.mockRejectedValue(unexpectedError);
-
-    // Act
-    const result = await usecase.execute(input);
-
-    // Assert
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected UseCase Error',
-      UseCaseError,
-      unexpectedError,
-    );
-    expect(mockRepo.findByProductIds).toHaveBeenCalledWith([888]);
-  });
 });

@@ -41,45 +41,38 @@ export class CreateOrderFromCartUseCase extends UseCase<
   async execute(
     dto: CreateOrderFromCartDto,
   ): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      // 1. Get Cart
-      const cartResult = await this.cartGateway.getCart(dto.cartId);
-      if (isFailure(cartResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to fetch cart',
-          cartResult.error,
-        );
-      }
-      const cart = cartResult.value;
-
-      if (cart.items.length === 0) {
-        return ErrorFactory.UseCaseError('Cannot create order from empty cart');
-      }
-
-      const order = this.orderFactory.createFromCart({
-        cart,
-        userId: dto.userId,
-        shippingAddress: dto.shippingAddress,
-        paymentMethod: dto.paymentMethod,
-        customerNotes: dto.customerNotes,
-        orderId: dto.orderId,
-      });
-
-      // 3. Save Order
-      const saveResult = await this.orderRepository.save(order);
-      if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to save order',
-          saveResult.error,
-        );
-      }
-
-      return Result.success(saveResult.value);
-    } catch (error) {
+    // 1. Get Cart
+    const cartResult = await this.cartGateway.getCart(dto.cartId);
+    if (isFailure(cartResult)) {
       return ErrorFactory.UseCaseError(
-        'Unexpected error creating order',
-        error,
+        'Failed to fetch cart',
+        cartResult.error,
       );
     }
+    const cart = cartResult.value;
+
+    if (cart.items.length === 0) {
+      return ErrorFactory.UseCaseError('Cannot create order from empty cart');
+    }
+
+    const order = this.orderFactory.createFromCart({
+      cart,
+      userId: dto.userId,
+      shippingAddress: dto.shippingAddress,
+      paymentMethod: dto.paymentMethod,
+      customerNotes: dto.customerNotes,
+      orderId: dto.orderId,
+    });
+
+    // 3. Save Order
+    const saveResult = await this.orderRepository.save(order);
+    if (isFailure(saveResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to save order',
+        saveResult.error,
+      );
+    }
+
+    return Result.success(saveResult.value);
   }
 }

@@ -118,19 +118,5 @@ describe('ConfirmReservationUseCase', () => {
       );
       expect(reservationRepository.confirm).toHaveBeenCalledWith(reservation);
     });
-
-    it('should handle unexpected errors', async () => {
-      const reservationId = 500;
-      const error = new Error('Unexpected error');
-      reservationRepository.findById.mockRejectedValue(error);
-
-      const result = await useCase.execute(reservationId);
-
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Unexpected UseCase Error');
-        expect((result.error as any).cause).toBe(error);
-      }
-    });
   });
 });

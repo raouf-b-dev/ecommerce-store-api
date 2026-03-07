@@ -30,20 +30,16 @@ export class GetUserNotificationsUseCase {
   async execute(
     request: GetUserNotificationsRequest,
   ): Promise<Result<GetUserNotificationsResponse, UseCaseError>> {
-    try {
-      const { userId, page, limit, status } = request;
+    const { userId, page, limit, status } = request;
 
-      const result = await this.notificationRepository.findByUserId(userId, {
-        page,
-        limit,
-        status,
-      });
+    const result = await this.notificationRepository.findByUserId(userId, {
+      page,
+      limit,
+      status,
+    });
 
-      if (result.isFailure) return result;
+    if (result.isFailure) return result;
 
-      return Result.success(result.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Failed to fetch notifications', error);
-    }
+    return Result.success(result.value);
   }
 }

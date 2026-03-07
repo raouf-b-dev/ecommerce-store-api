@@ -16,23 +16,19 @@ export class ConfirmReservationUseCase
   ) {}
 
   async execute(reservationId: number): Promise<Result<void, UseCaseError>> {
-    try {
-      const reservationResult =
-        await this.reservationRepository.findById(reservationId);
-      if (reservationResult.isFailure) return reservationResult;
+    const reservationResult =
+      await this.reservationRepository.findById(reservationId);
+    if (reservationResult.isFailure) return reservationResult;
 
-      const reservation = reservationResult.value;
-      const confirmResult = reservation.confirm();
+    const reservation = reservationResult.value;
+    const confirmResult = reservation.confirm();
 
-      if (confirmResult.isFailure) return confirmResult;
+    if (confirmResult.isFailure) return confirmResult;
 
-      const saveResult = await this.reservationRepository.confirm(reservation);
+    const saveResult = await this.reservationRepository.confirm(reservation);
 
-      if (saveResult.isFailure) return saveResult;
+    if (saveResult.isFailure) return saveResult;
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success(undefined);
   }
 }

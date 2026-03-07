@@ -122,22 +122,5 @@ describe('UpdateCustomerUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const customerId = 123;
-      const updateDto = CustomerDtoTestFactory.createUpdateCustomerDto();
-      const repoError = new Error('Database connection failed');
-
-      mockCustomerRepository.findById.mockRejectedValue(repoError);
-
-      const result = await useCase.execute({ id: customerId, dto: updateDto });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
   });
 });

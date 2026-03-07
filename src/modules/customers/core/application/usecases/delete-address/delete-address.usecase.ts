@@ -27,26 +27,22 @@ export class DeleteAddressUseCase extends UseCase<
   async execute(
     input: DeleteAddressInput,
   ): Promise<Result<void, UseCaseError>> {
-    try {
-      const { customerId, addressId } = input;
+    const { customerId, addressId } = input;
 
-      // Retrieve the customer
-      const customerResult = await this.customerRepository.findById(customerId);
-      if (isFailure(customerResult)) return customerResult;
+    // Retrieve the customer
+    const customerResult = await this.customerRepository.findById(customerId);
+    if (isFailure(customerResult)) return customerResult;
 
-      const customer = customerResult.value;
+    const customer = customerResult.value;
 
-      // Remove the address
-      const removeResult = customer.removeAddress(addressId);
-      if (isFailure(removeResult)) return removeResult;
+    // Remove the address
+    const removeResult = customer.removeAddress(addressId);
+    if (isFailure(removeResult)) return removeResult;
 
-      // Save the updated customer
-      const saveResult = await this.customerRepository.update(customer);
-      if (isFailure(saveResult)) return saveResult;
+    // Save the updated customer
+    const saveResult = await this.customerRepository.update(customer);
+    if (isFailure(saveResult)) return saveResult;
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success(undefined);
   }
 }

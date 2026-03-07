@@ -63,38 +63,6 @@ describe('AdjustStockUseCase', () => {
         'Database connection failed',
       );
     });
-
-    it('should handle invalid adjustment type and unexpected errors', async () => {
-      mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
-      const invalidDto = {
-        quantity: 10,
-        type: 'INVALID' as any,
-        reason: 'Test',
-      };
-
-      let result = await useCase.execute({
-        productId: 1,
-        dto: invalidDto,
-      });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Invalid stock adjustment type',
-      );
-
-      mockRepository.reset();
-      mockRepository.findByProductId.mockRejectedValue(new Error('Unexpected'));
-
-      result = await useCase.execute({
-        productId: 1,
-        dto: InventoryDtoTestFactory.createAddStockDto(10),
-      });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected UseCase Error',
-      );
-    });
   });
 
   describe('ADD Type', () => {

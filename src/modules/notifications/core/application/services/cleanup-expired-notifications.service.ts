@@ -13,20 +13,13 @@ export class CleanupExpiredNotificationsService {
   ) {}
 
   async execute(): Promise<Result<void, UseCaseError>> {
-    try {
-      this.logger.log('Cleaning up expired notifications');
+    this.logger.log('Cleaning up expired notifications');
 
-      const result = await this.notificationRepository.deleteExpired();
-      if (result.isFailure) return result;
+    const result = await this.notificationRepository.deleteExpired();
+    if (result.isFailure) return result;
 
-      this.logger.log('Successfully cleaned up expired notifications');
+    this.logger.log('Successfully cleaned up expired notifications');
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Failed to cleanup expired notifications',
-        error,
-      );
-    }
+    return Result.success(undefined);
   }
 }

@@ -30,46 +30,42 @@ export class UpdateAddressUseCase extends UseCase<
   async execute(
     input: UpdateAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    try {
-      const { customerId, addressId, dto } = input;
+    const { customerId, addressId, dto } = input;
 
-      const customerResult = await this.customerRepository.findById(customerId);
-      if (isFailure(customerResult)) return customerResult;
+    const customerResult = await this.customerRepository.findById(customerId);
+    if (isFailure(customerResult)) return customerResult;
 
-      const customer = customerResult.value;
+    const customer = customerResult.value;
 
-      const existingAddress = customer.findAddress(addressId);
-      if (!existingAddress)
-        return ErrorFactory.UseCaseError(
-          `Address with id ${addressId} not found`,
-        );
-
-      const updateResult = customer.updateAddress(
-        addressId,
-        dto.street ?? existingAddress.street,
-        dto.city ?? existingAddress.city,
-        dto.state ?? existingAddress.state,
-        dto.postalCode ?? existingAddress.postalCode,
-        dto.country ?? existingAddress.country,
-        dto.street2 !== undefined ? dto.street2 : existingAddress.street2,
-        dto.type ?? existingAddress.type,
-        dto.deliveryInstructions !== undefined
-          ? dto.deliveryInstructions
-          : existingAddress.deliveryInstructions,
+    const existingAddress = customer.findAddress(addressId);
+    if (!existingAddress)
+      return ErrorFactory.UseCaseError(
+        `Address with id ${addressId} not found`,
       );
 
-      if (isFailure(updateResult)) return updateResult;
+    const updateResult = customer.updateAddress(
+      addressId,
+      dto.street ?? existingAddress.street,
+      dto.city ?? existingAddress.city,
+      dto.state ?? existingAddress.state,
+      dto.postalCode ?? existingAddress.postalCode,
+      dto.country ?? existingAddress.country,
+      dto.street2 !== undefined ? dto.street2 : existingAddress.street2,
+      dto.type ?? existingAddress.type,
+      dto.deliveryInstructions !== undefined
+        ? dto.deliveryInstructions
+        : existingAddress.deliveryInstructions,
+    );
 
-      const saveResult = await this.customerRepository.update(customer);
-      if (isFailure(saveResult)) return saveResult;
+    if (isFailure(updateResult)) return updateResult;
 
-      const updatedAddress = saveResult.value.findAddress(addressId);
-      if (!updatedAddress)
-        return ErrorFactory.UseCaseError('Failed to retrieve updated address');
+    const saveResult = await this.customerRepository.update(customer);
+    if (isFailure(saveResult)) return saveResult;
 
-      return Result.success<IAddress>(updatedAddress.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    const updatedAddress = saveResult.value.findAddress(addressId);
+    if (!updatedAddress)
+      return ErrorFactory.UseCaseError('Failed to retrieve updated address');
+
+    return Result.success<IAddress>(updatedAddress.toPrimitives());
   }
 }

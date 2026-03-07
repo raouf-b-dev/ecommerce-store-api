@@ -30,44 +30,40 @@ export class AddAddressUseCase extends UseCase<
   async execute(
     input: AddAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    try {
-      const { customerId, dto } = input;
+    const { customerId, dto } = input;
 
-      // Retrieve the customer
-      const customerResult = await this.customerRepository.findById(customerId);
-      if (isFailure(customerResult)) return customerResult;
+    // Retrieve the customer
+    const customerResult = await this.customerRepository.findById(customerId);
+    if (isFailure(customerResult)) return customerResult;
 
-      const customer = customerResult.value;
+    const customer = customerResult.value;
 
-      // Create new address - repository will generate ID during save
-      const address = Address.create(
-        customerId,
-        dto.street,
-        dto.city,
-        dto.state,
-        dto.postalCode,
-        dto.country,
-        dto.type,
-        dto.street2,
-        dto.deliveryInstructions,
-        dto.isDefault,
-      );
+    // Create new address - repository will generate ID during save
+    const address = Address.create(
+      customerId,
+      dto.street,
+      dto.city,
+      dto.state,
+      dto.postalCode,
+      dto.country,
+      dto.type,
+      dto.street2,
+      dto.deliveryInstructions,
+      dto.isDefault,
+    );
 
-      // Add address to customer
-      const addResult = customer.addAddress(address);
-      if (isFailure(addResult)) return addResult;
+    // Add address to customer
+    const addResult = customer.addAddress(address);
+    if (isFailure(addResult)) return addResult;
 
-      // Save the updated customer - repository will generate address ID
-      const saveResult = await this.customerRepository.update(customer);
-      if (isFailure(saveResult)) return saveResult;
+    // Save the updated customer - repository will generate address ID
+    const saveResult = await this.customerRepository.update(customer);
+    if (isFailure(saveResult)) return saveResult;
 
-      // Find and return the newly added address (it will have ID now)
-      const addresses = saveResult.value.addresses;
-      const newAddress = addresses[addresses.length - 1]; // Last added address
+    // Find and return the newly added address (it will have ID now)
+    const addresses = saveResult.value.addresses;
+    const newAddress = addresses[addresses.length - 1]; // Last added address
 
-      return Result.success<IAddress>(newAddress);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success<IAddress>(newAddress);
   }
 }

@@ -16,25 +16,21 @@ export class ClearCartUseCase extends UseCase<number, ICart, UseCaseError> {
   }
 
   async execute(cartId: number): Promise<Result<ICart, UseCaseError>> {
-    try {
-      const cartResult = await this.cartRepository.findById(cartId);
+    const cartResult = await this.cartRepository.findById(cartId);
 
-      if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) return cartResult;
 
-      const cart = cartResult.value;
-      if (!cart) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
-      }
-
-      cart.clearItems();
-
-      const saveResult = await this.cartRepository.update(cart);
-
-      if (isFailure(saveResult)) return saveResult;
-
-      return Result.success(cart.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    const cart = cartResult.value;
+    if (!cart) {
+      return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    cart.clearItems();
+
+    const saveResult = await this.cartRepository.update(cart);
+
+    if (isFailure(saveResult)) return saveResult;
+
+    return Result.success(cart.toPrimitives());
   }
 }

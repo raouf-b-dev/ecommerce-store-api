@@ -41,69 +41,62 @@ export class CreatePaymentIntentUseCase extends UseCase<
   async execute(
     dto: CreatePaymentIntentDto,
   ): Promise<Result<CreatePaymentIntentResult, UseCaseError>> {
-    try {
-      // 1. Get Gateway
-      const gateway = this.paymentGatewayFactory.getGateway(dto.paymentMethod);
+    // 1. Get Gateway
+    const gateway = this.paymentGatewayFactory.getGateway(dto.paymentMethod);
 
-      // 2. Create Payment Intent via Gateway
-      const intentResult = await gateway.createPaymentIntent(
-        dto.amount,
-        dto.currency,
-        dto.metadata,
-      );
+    // 2. Create Payment Intent via Gateway
+    const intentResult = await gateway.createPaymentIntent(
+      dto.amount,
+      dto.currency,
+      dto.metadata,
+    );
 
-      if (isFailure(intentResult)) {
-        return ErrorFactory.UseCaseError(
-          `Failed to create payment intent: ${intentResult.error.message}`,
-          intentResult.error,
-        );
-      }
-
-      const { paymentIntentId, clientSecret } = intentResult.value;
-
-      // 3. Create Payment Entity
-      const payment = Payment.create(
-        null,
-        dto.orderId,
-        dto.amount,
-        dto.currency,
-        dto.paymentMethod,
-        dto.customerId,
-        dto.metadata ? JSON.stringify(dto.metadata) : undefined,
-      );
-
-      // 4. Set Payment Intent Details
-      const setIntentResult = payment.setPaymentIntent(
-        paymentIntentId,
-        clientSecret,
-      );
-
-      if (isFailure(setIntentResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to set payment intent details',
-          setIntentResult.error,
-        );
-      }
-
-      // 5. Save Payment
-      const saveResult = await this.paymentRepository.save(payment);
-
-      if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to save payment',
-          saveResult.error,
-        );
-      }
-
-      return Result.success({
-        paymentId: saveResult.value.id!,
-        clientSecret,
-      });
-    } catch (error) {
+    if (isFailure(intentResult)) {
       return ErrorFactory.UseCaseError(
-        'Unexpected error creating payment intent',
-        error,
+        `Failed to create payment intent: ${intentResult.error.message}`,
+        intentResult.error,
       );
     }
+
+    const { paymentIntentId, clientSecret } = intentResult.value;
+
+    // 3. Create Payment Entity
+    const payment = Payment.create(
+      null,
+      dto.orderId,
+      dto.amount,
+      dto.currency,
+      dto.paymentMethod,
+      dto.customerId,
+      dto.metadata ? JSON.stringify(dto.metadata) : undefined,
+    );
+
+    // 4. Set Payment Intent Details
+    const setIntentResult = payment.setPaymentIntent(
+      paymentIntentId,
+      clientSecret,
+    );
+
+    if (isFailure(setIntentResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to set payment intent details',
+        setIntentResult.error,
+      );
+    }
+
+    // 5. Save Payment
+    const saveResult = await this.paymentRepository.save(payment);
+
+    if (isFailure(saveResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to save payment',
+        saveResult.error,
+      );
+    }
+
+    return Result.success({
+      paymentId: saveResult.value.id!,
+      clientSecret,
+    });
   }
 }

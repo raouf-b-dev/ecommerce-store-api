@@ -22,41 +22,34 @@ export class UpdateNotificationStatusService {
   async execute(
     request: UpdateNotificationStatusRequest,
   ): Promise<Result<void, UseCaseError>> {
-    try {
-      const { notificationId, status, reason } = request;
+    const { notificationId, status, reason } = request;
 
-      const findResult =
-        await this.notificationRepository.findById(notificationId);
-      if (findResult.isFailure) return findResult;
+    const findResult =
+      await this.notificationRepository.findById(notificationId);
+    if (findResult.isFailure) return findResult;
 
-      const notification = findResult.value;
-      if (!notification) {
-        return ErrorFactory.UseCaseError(
-          `Notification ${notificationId} not found`,
-        );
-      }
-
-      switch (status) {
-        case NotificationStatus.DELIVERED:
-          notification.markAsDelivered();
-          break;
-        case NotificationStatus.READ:
-          notification.markAsRead();
-          break;
-        case NotificationStatus.FAILED:
-          notification.markAsFailed(reason || 'Unknown error');
-          break;
-      }
-
-      const saveResult = await this.notificationRepository.save(notification);
-      if (saveResult.isFailure) return saveResult;
-
-      return Result.success(undefined);
-    } catch (error) {
+    const notification = findResult.value;
+    if (!notification) {
       return ErrorFactory.UseCaseError(
-        'Failed to update notification status',
-        error,
+        `Notification ${notificationId} not found`,
       );
     }
+
+    switch (status) {
+      case NotificationStatus.DELIVERED:
+        notification.markAsDelivered();
+        break;
+      case NotificationStatus.READ:
+        notification.markAsRead();
+        break;
+      case NotificationStatus.FAILED:
+        notification.markAsFailed(reason || 'Unknown error');
+        break;
+    }
+
+    const saveResult = await this.notificationRepository.save(notification);
+    if (saveResult.isFailure) return saveResult;
+
+    return Result.success(undefined);
   }
 }

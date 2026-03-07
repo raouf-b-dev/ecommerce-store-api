@@ -68,23 +68,5 @@ describe('ClearCartUseCase', () => {
         RepositoryError,
       );
     });
-
-    it('should handle unexpected errors', async () => {
-      // Arrange
-      const cartId = 123;
-      const error = new Error('Database connection failed');
-
-      mockCartRepository.findById.mockRejectedValue(error);
-
-      // Act
-      const result = await usecase.execute(cartId);
-
-      // Assert
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-      );
-    });
   });
 });

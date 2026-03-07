@@ -25,17 +25,13 @@ export class UpdateProductUseCase extends UseCase<
     id: number;
     dto: UpdateProductDto;
   }): Promise<Result<IProduct, UseCaseError>> {
-    try {
-      const { id, dto } = input;
-      const productResult = await this.productRepository.update(id, dto);
+    const { id, dto } = input;
+    const productResult = await this.productRepository.update(id, dto);
 
-      if (isFailure(productResult)) {
-        return ErrorFactory.UseCaseError(productResult.error.message);
-      }
-
-      return Result.success<IProduct>(productResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (isFailure(productResult)) {
+      return ErrorFactory.UseCaseError(productResult.error.message);
     }
+
+    return Result.success<IProduct>(productResult.value);
   }
 }

@@ -25,35 +25,31 @@ export class LoginUserUseCase extends UseCase<
   async execute(
     dto: LoginDto,
   ): Promise<Result<{ accessToken: string }, UseCaseError>> {
-    try {
-      // 1. Find User
-      const userResult = await this.userRepository.findByEmail(dto.email);
-      if (userResult.isFailure || !userResult.value) {
-        return ErrorFactory.UseCaseError('Invalid credentials');
-      }
-      const user = userResult.value;
-
-      // 2. Verify Password
-      const isMatch = await this.bcryptService.compare(
-        dto.password,
-        user.passwordHash,
-      );
-      if (!isMatch) {
-        return ErrorFactory.UseCaseError('Invalid credentials');
-      }
-
-      // 3. Generate Token
-      const payload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        customerId: user.customerId,
-      };
-      const accessToken = this.jwtService.sign(payload);
-
-      return Result.success({ accessToken });
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected error during login', error);
+    // 1. Find User
+    const userResult = await this.userRepository.findByEmail(dto.email);
+    if (userResult.isFailure || !userResult.value) {
+      return ErrorFactory.UseCaseError('Invalid credentials');
     }
+    const user = userResult.value;
+
+    // 2. Verify Password
+    const isMatch = await this.bcryptService.compare(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!isMatch) {
+      return ErrorFactory.UseCaseError('Invalid credentials');
+    }
+
+    // 3. Generate Token
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      customerId: user.customerId,
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    return Result.success({ accessToken });
   }
 }

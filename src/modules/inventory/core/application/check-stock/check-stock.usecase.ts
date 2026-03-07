@@ -21,26 +21,22 @@ export class CheckStockUseCase
     productId: number;
     quantity?: number;
   }): Promise<Result<CheckStockResponse, UseCaseError>> {
-    try {
-      const requestedQuantity = dto.quantity ?? 1;
+    const requestedQuantity = dto.quantity ?? 1;
 
-      const inventoryResult = await this.inventoryRepository.findByProductId(
-        dto.productId,
-      );
-      if (inventoryResult.isFailure) return inventoryResult;
+    const inventoryResult = await this.inventoryRepository.findByProductId(
+      dto.productId,
+    );
+    if (inventoryResult.isFailure) return inventoryResult;
 
-      const inventory = inventoryResult.value;
+    const inventory = inventoryResult.value;
 
-      const checkStockResult = inventory.isInStock(requestedQuantity);
-      if (checkStockResult.isFailure) return checkStockResult;
+    const checkStockResult = inventory.isInStock(requestedQuantity);
+    if (checkStockResult.isFailure) return checkStockResult;
 
-      return Result.success({
-        isAvailable: checkStockResult.value,
-        availableQuantity: inventory.availableQuantity,
-        requestedQuantity,
-      });
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success({
+      isAvailable: checkStockResult.value,
+      availableQuantity: inventory.availableQuantity,
+      requestedQuantity,
+    });
   }
 }

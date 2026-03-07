@@ -169,27 +169,5 @@ describe('AddCartItemUseCase', () => {
         UseCaseError,
       );
     });
-
-    it('should handle unexpected errors', async () => {
-      // Arrange
-      const cartId = 123;
-      const dto: AddCartItemDto = {
-        productId: 1,
-        quantity: 1,
-      };
-      const error = new Error('Database connection failed');
-
-      mockCartRepository.findById.mockRejectedValue(error);
-
-      // Act
-      const result = await usecase.execute({ cartId, dto });
-
-      // Assert
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-      );
-    });
   });
 });

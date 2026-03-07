@@ -34,60 +34,56 @@ export class AddCartItemUseCase extends UseCase<
     dto: AddCartItemDto;
   }): Promise<Result<ICart, UseCaseError>> {
     const { cartId, dto } = input;
-    try {
-      const cartResult = await this.cartRepository.findById(cartId);
+    const cartResult = await this.cartRepository.findById(cartId);
 
-      if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) return cartResult;
 
-      const cart = cartResult.value;
-      if (!cart) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
-      }
-
-      const productResult = await this.productGateway.findById(dto.productId);
-
-      if (isFailure(productResult)) return productResult;
-
-      const product = productResult.value;
-      if (!product) {
-        return ErrorFactory.UseCaseError(
-          `Product with id ${dto.productId} not found`,
-        );
-      }
-
-      // Check stock availability
-      const stockCheckResult = await this.inventoryGateway.checkStock(
-        dto.productId,
-        dto.quantity,
-      );
-
-      if (isFailure(stockCheckResult)) {
-        return ErrorFactory.UseCaseError(stockCheckResult.error.message);
-      }
-
-      if (!stockCheckResult.value.isAvailable) {
-        return ErrorFactory.UseCaseError(
-          `Insufficient stock for product ${product.name}. Available: ${stockCheckResult.value.availableQuantity}`,
-        );
-      }
-
-      const addResult = cart.addItem(
-        product.id!,
-        product.name,
-        product.price,
-        dto.quantity,
-        undefined,
-      );
-
-      if (isFailure(addResult)) return addResult;
-
-      const saveResult = await this.cartRepository.update(cart);
-
-      if (isFailure(saveResult)) return saveResult;
-
-      return Result.success(cart.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    const cart = cartResult.value;
+    if (!cart) {
+      return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    const productResult = await this.productGateway.findById(dto.productId);
+
+    if (isFailure(productResult)) return productResult;
+
+    const product = productResult.value;
+    if (!product) {
+      return ErrorFactory.UseCaseError(
+        `Product with id ${dto.productId} not found`,
+      );
+    }
+
+    // Check stock availability
+    const stockCheckResult = await this.inventoryGateway.checkStock(
+      dto.productId,
+      dto.quantity,
+    );
+
+    if (isFailure(stockCheckResult)) {
+      return ErrorFactory.UseCaseError(stockCheckResult.error.message);
+    }
+
+    if (!stockCheckResult.value.isAvailable) {
+      return ErrorFactory.UseCaseError(
+        `Insufficient stock for product ${product.name}. Available: ${stockCheckResult.value.availableQuantity}`,
+      );
+    }
+
+    const addResult = cart.addItem(
+      product.id!,
+      product.name,
+      product.price,
+      dto.quantity,
+      undefined,
+    );
+
+    if (isFailure(addResult)) return addResult;
+
+    const saveResult = await this.cartRepository.update(cart);
+
+    if (isFailure(saveResult)) return saveResult;
+
+    return Result.success(cart.toPrimitives());
   }
 }

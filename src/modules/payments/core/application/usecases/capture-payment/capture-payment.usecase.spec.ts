@@ -90,21 +90,4 @@ describe('CapturePaymentUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(result, 'Update failed');
   });
-
-  it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const paymentId = 123;
-    const repoError = new Error('Database connection failed');
-
-    paymentRepository.findById.mockRejectedValue(repoError);
-
-    const result = await useCase.execute(paymentId);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error capturing payment',
-      UseCaseError,
-      repoError,
-    );
-    expect(paymentRepository.findById).toHaveBeenCalledWith(paymentId);
-  });
 });

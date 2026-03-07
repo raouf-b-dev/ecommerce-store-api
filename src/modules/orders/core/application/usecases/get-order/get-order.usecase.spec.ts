@@ -53,24 +53,6 @@ describe('GetOrderUseCase', () => {
       expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-      const orderId = 1;
-      const repoError = new Error('Database connection failed');
-
-      mockOrderRepository.findById.mockRejectedValue(repoError);
-
-      const result = await useCase.execute(orderId);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
-      expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
-    });
-
     it('should handle empty order ID gracefully', async () => {
       const emptyId = 0;
       mockOrderRepository.mockOrderNotFound(emptyId);
@@ -132,23 +114,6 @@ describe('GetOrderUseCase', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle repository returning different error types', async () => {
-      const orderId = 1;
-      const customError = new Error('Custom repository error');
-      customError.name = 'CustomRepositoryError';
-
-      mockOrderRepository.findById.mockRejectedValue(customError);
-
-      const result = await useCase.execute(orderId);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        customError,
-      );
-    });
-
     it('should handle very long order IDs', async () => {
       const longId = 10000000;
       mockOrderRepository.mockOrderNotFound(longId);

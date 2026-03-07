@@ -49,61 +49,53 @@ export class HandleStripeWebhookUseCase extends UseCase<
   async execute(
     dto: StripeWebhookDto,
   ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
-    try {
-      // 1. Validate signature
-      if (!dto.signature) {
-        return ErrorFactory.UseCaseError('Missing stripe-signature header');
-      }
+    // 1. Validate signature
+    if (!dto.signature) {
+      return ErrorFactory.UseCaseError('Missing stripe-signature header');
+    }
 
-      const isValid = this.stripeSignatureService.verify(
-        dto.payload,
-        dto.signature,
-      );
-      if (!isValid) {
-        return ErrorFactory.UseCaseError('Invalid Stripe webhook signature');
-      }
+    const isValid = this.stripeSignatureService.verify(
+      dto.payload,
+      dto.signature,
+    );
+    if (!isValid) {
+      return ErrorFactory.UseCaseError('Invalid Stripe webhook signature');
+    }
 
-      // 2. Extract and map event type
-      const stripeEventType = dto.payload.type;
-      const internalEventType = this.mapEventType(stripeEventType);
+    // 2. Extract and map event type
+    const stripeEventType = dto.payload.type;
+    const internalEventType = this.mapEventType(stripeEventType);
 
-      if (!internalEventType) {
-        this.logger.debug(`Ignoring Stripe event type: ${stripeEventType}`);
-        return Result.success(null); // Ignored event, not an error
-      }
+    if (!internalEventType) {
+      this.logger.debug(`Ignoring Stripe event type: ${stripeEventType}`);
+      return Result.success(null); // Ignored event, not an error
+    }
 
-      // 3. Extract payment intent data
-      const paymentIntent = dto.payload.data?.object;
-      if (!paymentIntent?.id) {
-        return ErrorFactory.UseCaseError(
-          'Invalid Stripe webhook payload: missing payment intent',
-        );
-      }
-
-      // 4. Delegate to HandlePaymentWebhookUseCase
-      const result = await this.handlePaymentWebhookUseCase.execute({
-        paymentIntentId: paymentIntent.id,
-        eventType: internalEventType,
-        transactionId: paymentIntent.id,
-        metadata: paymentIntent.metadata,
-        failureReason: paymentIntent.last_payment_error?.message,
-      });
-
-      if (isFailure(result)) {
-        this.logger.error(
-          `Stripe webhook processing failed: ${result.error.message}`,
-        );
-        return result;
-      }
-
-      return Result.success(result.value);
-    } catch (error) {
-      this.logger.error('Unexpected error processing Stripe webhook:', error);
+    // 3. Extract payment intent data
+    const paymentIntent = dto.payload.data?.object;
+    if (!paymentIntent?.id) {
       return ErrorFactory.UseCaseError(
-        'Unexpected error processing Stripe webhook',
-        error,
+        'Invalid Stripe webhook payload: missing payment intent',
       );
     }
+
+    // 4. Delegate to HandlePaymentWebhookUseCase
+    const result = await this.handlePaymentWebhookUseCase.execute({
+      paymentIntentId: paymentIntent.id,
+      eventType: internalEventType,
+      transactionId: paymentIntent.id,
+      metadata: paymentIntent.metadata,
+      failureReason: paymentIntent.last_payment_error?.message,
+    });
+
+    if (isFailure(result)) {
+      this.logger.error(
+        `Stripe webhook processing failed: ${result.error.message}`,
+      );
+      return result;
+    }
+
+    return Result.success(result.value);
   }
 
   private mapEventType(stripeEventType: string): PaymentEventType | null {

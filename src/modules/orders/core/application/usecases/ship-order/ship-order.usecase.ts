@@ -11,24 +11,20 @@ import { Order } from '../../../domain/entities/order';
 export class ShipOrderUseCase implements UseCase<number, IOrder, UseCaseError> {
   constructor(private orderRepository: OrderRepository) {}
   async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const requestedOrder = await this.orderRepository.findById(id);
-      if (requestedOrder.isFailure) return requestedOrder;
+    const requestedOrder = await this.orderRepository.findById(id);
+    if (requestedOrder.isFailure) return requestedOrder;
 
-      const order: Order = requestedOrder.value;
+    const order: Order = requestedOrder.value;
 
-      const shipResult = order.ship();
-      if (shipResult.isFailure) return shipResult;
+    const shipResult = order.ship();
+    if (shipResult.isFailure) return shipResult;
 
-      const updateResult = await this.orderRepository.updateStatus(
-        id,
-        order.status,
-      );
-      if (updateResult.isFailure) return updateResult;
+    const updateResult = await this.orderRepository.updateStatus(
+      id,
+      order.status,
+    );
+    if (updateResult.isFailure) return updateResult;
 
-      return Result.success(order.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Usecase Error', error);
-    }
+    return Result.success(order.toPrimitives());
   }
 }

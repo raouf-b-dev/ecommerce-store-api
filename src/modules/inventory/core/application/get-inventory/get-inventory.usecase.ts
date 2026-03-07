@@ -13,16 +13,12 @@ export class GetInventoryUseCase
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(productId: number): Promise<Result<IInventory, UseCaseError>> {
-    try {
-      const inventoryResult =
-        await this.inventoryRepository.findByProductId(productId);
-      if (inventoryResult.isFailure) return inventoryResult;
+    const inventoryResult =
+      await this.inventoryRepository.findByProductId(productId);
+    if (inventoryResult.isFailure) return inventoryResult;
 
-      const inventoryPrimitives = inventoryResult.value.toPrimitives();
+    const inventoryPrimitives = inventoryResult.value.toPrimitives();
 
-      return Result.success(inventoryPrimitives);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success(inventoryPrimitives);
   }
 }
