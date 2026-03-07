@@ -1,4 +1,4 @@
-// src\modules\products\infrastructure\repositories\RedisProductRepository\redis.product-repository.ts
+// src\modules\products\infrastructure\repositories\CachedProductRepository\cached.product-repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -9,7 +9,7 @@ import { ProductRepository } from '../../../core/domain/repositories/product-rep
 import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from '../../../primary-adapters/dto/update-product.dto';
 
-export class RedisProductRepository implements ProductRepository {
+export class CachedProductRepository implements ProductRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: ProductRepository,

@@ -6,7 +6,6 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { AggregatedOrderInput } from '../../../core/domain/factories/order.factory';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import {
   OrderForCache,
@@ -17,7 +16,7 @@ import { Order } from '../../../core/domain/entities/order';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 
 @Injectable()
-export class RedisOrderRepository implements OrderRepository {
+export class CachedOrderRepository implements OrderRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: OrderRepository,

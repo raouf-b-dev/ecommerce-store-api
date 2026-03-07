@@ -10,14 +10,14 @@ import { ResultAssertionHelper } from '../../../../../testing/helpers/result-ass
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { PaymentBuilder } from '../../../testing/builders/payment.test.builder';
 import { MockPaymentRepository } from '../../../testing/mocks/payment-repository.mock';
-import { RedisPaymentRepository } from './redis.payment-repository';
+import { CachedPaymentRepository } from './cached.payment-repository';
 import { PaymentTestFactory } from '../../../testing/factories/payment.test.factory';
 import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import { Refund } from '../../../core/domain/entities/refund';
 import { Logger } from '@nestjs/common';
 
-describe('RedisPaymentRepository', () => {
-  let repository: RedisPaymentRepository;
+describe('CachedPaymentRepository', () => {
+  let repository: CachedPaymentRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: MockPaymentRepository;
   let logger: jest.Mocked<Logger>;
@@ -56,7 +56,11 @@ describe('RedisPaymentRepository', () => {
       verbose: jest.fn(),
     } as unknown as jest.Mocked<Logger>;
 
-    repository = new RedisPaymentRepository(cacheService, postgresRepo, logger);
+    repository = new CachedPaymentRepository(
+      cacheService,
+      postgresRepo,
+      logger,
+    );
     jest.clearAllMocks();
   });
 

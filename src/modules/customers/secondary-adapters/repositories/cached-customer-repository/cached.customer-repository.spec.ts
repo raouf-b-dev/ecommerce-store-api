@@ -9,10 +9,10 @@ import { CustomerRepository } from '../../../core/domain/repositories/customer.r
 import { CustomerTestFactory } from '../../../testing/factories/customer.factory';
 import { MockCustomerRepository } from '../../../testing/mocks/customer-repository.mock';
 import { CustomerCacheMapper } from '../../persistence/mappers/customer.mapper';
-import { RedisCustomerRepository } from './redis.customer-repository';
+import { CachedCustomerRepository } from './cached.customer-repository';
 
-describe('RedisCustomerRepository', () => {
-  let repository: RedisCustomerRepository;
+describe('CachedCustomerRepository', () => {
+  let repository: CachedCustomerRepository;
   let cacheService: CacheService;
   let postgresRepo: MockCustomerRepository;
 
@@ -29,7 +29,7 @@ describe('RedisCustomerRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        RedisCustomerRepository,
+        CachedCustomerRepository,
         {
           provide: CacheService,
           useValue: mockCacheService,
@@ -51,7 +51,7 @@ describe('RedisCustomerRepository', () => {
       ],
     }).compile();
 
-    repository = module.get<RedisCustomerRepository>(RedisCustomerRepository);
+    repository = module.get<CachedCustomerRepository>(CachedCustomerRepository);
     cacheService = module.get<CacheService>(CacheService);
   });
 

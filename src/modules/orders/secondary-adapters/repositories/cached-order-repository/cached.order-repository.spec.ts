@@ -7,7 +7,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
-import { RedisOrderRepository } from './redis.order-repository';
+import { CachedOrderRepository } from './cached.order-repository';
 import { Logger } from '@nestjs/common';
 import {
   OrderForCache,
@@ -21,8 +21,8 @@ import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
 import { PaymentMethodType } from '../../../../payments/core/domain';
 
-describe('RedisOrderRepository', () => {
-  let repository: RedisOrderRepository;
+describe('CachedOrderRepository', () => {
+  let repository: CachedOrderRepository;
   let cacheService: jest.Mocked<CacheService>;
   let postgresRepo: jest.Mocked<OrderRepository>;
   let logger: jest.Mocked<Logger>;
@@ -76,14 +76,14 @@ describe('RedisOrderRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        RedisOrderRepository,
+        CachedOrderRepository,
         { provide: CacheService, useValue: mockCacheService },
         { provide: OrderRepository, useValue: mockPostgresRepo },
         { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
 
-    repository = module.get(RedisOrderRepository);
+    repository = module.get(CachedOrderRepository);
     cacheService = module.get(CacheService);
     postgresRepo = module.get(OrderRepository);
     logger = module.get(Logger);

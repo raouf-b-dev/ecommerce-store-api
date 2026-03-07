@@ -12,7 +12,7 @@ import {
 } from '../../persistence/mappers/user.mapper';
 
 @Injectable()
-export class RedisUserRepository implements UserRepository {
+export class CachedUserRepository implements UserRepository {
   constructor(
     private readonly cacheService: CacheService,
     private readonly postgresRepo: UserRepository,

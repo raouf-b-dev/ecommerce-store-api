@@ -17,21 +17,10 @@ import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { PaymentMethodType } from '../../../payments/core/domain';
 
 @Entity({ name: 'orders' })
-@Index('idx_orders_created_at_desc', ['createdAt'])
-@Index('idx_orders_updated_at_desc', ['updatedAt'])
-@Index('idx_orders_total_price_desc', ['totalPrice'])
 @Index('idx_orders_status', ['status'])
 @Index('idx_orders_customer_id', ['customerId'])
 @Index('idx_orders_payment_id', ['paymentId'])
-@Index('idx_orders_customer_created', ['customerId', 'createdAt'])
 @Index('idx_orders_customer_status', ['customerId', 'status'])
-@Index('idx_orders_status_created', ['status', 'createdAt'])
-@Index('idx_orders_customer_status_created', [
-  'customerId',
-  'status',
-  'createdAt',
-])
-@Index('idx_orders_status_total_price', ['status', 'totalPrice'])
 export class OrderEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
