@@ -21,14 +21,10 @@ export class GetCustomerUseCase extends UseCase<
   }
 
   async execute(id: number): Promise<Result<ICustomer, UseCaseError>> {
-    try {
-      const customerResult = await this.customerRepository.findById(id);
+    const customerResult = await this.customerRepository.findById(id);
 
-      if (isFailure(customerResult)) return customerResult;
+    if (isFailure(customerResult)) return customerResult;
 
-      return Result.success(customerResult.value.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success(customerResult.value.toPrimitives());
   }
 }

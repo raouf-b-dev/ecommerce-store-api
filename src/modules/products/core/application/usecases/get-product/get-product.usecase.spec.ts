@@ -46,21 +46,5 @@ describe('GetProductUseCase', () => {
         UseCaseError,
       );
     });
-
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const productId = 1;
-      const repoError = new Error('Database connection failed');
-
-      mockRepository.findById.mockRejectedValue(repoError);
-
-      const result = await useCase.execute(productId);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
   });
 });

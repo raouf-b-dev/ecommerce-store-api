@@ -29,63 +29,58 @@ export class ConfirmOrderUseCase
   ) {}
 
   async execute(dto: ConfirmOrderDto): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const { orderId, reservationId, cartId } = dto;
-      const requestedOrder = await this.orderRepository.findById(orderId);
-      if (requestedOrder.isFailure) return requestedOrder;
+    const { orderId, reservationId, cartId } = dto;
+    const requestedOrder = await this.orderRepository.findById(orderId);
+    if (requestedOrder.isFailure) return requestedOrder;
 
-      const order: Order = requestedOrder.value;
+    const order: Order = requestedOrder.value;
 
-      let confirmResult;
-      if (order.isCOD()) {
-        confirmResult = order.confirm();
-      } else {
-        if (!order.hasPayment()) {
-          return ErrorFactory.DomainError(
-            'Cannot confirm order - payment must be completed first',
-          );
-        }
-        confirmResult = order.confirmPayment(order.paymentId!);
-      }
-
-      if (confirmResult.isFailure) return confirmResult;
-
-      const updateResult = await this.orderRepository.updateStatus(
-        orderId,
-        order.status,
-      );
-      if (updateResult.isFailure) return updateResult;
-
-      // For COD orders, trigger post-confirmation flow
-      if (order.isCOD() && reservationId && cartId) {
-        const scheduleResult =
-          await this.orderScheduler.schedulePostConfirmation(
-            orderId,
-            reservationId,
-            cartId,
-          );
-
-        if (isFailure(scheduleResult)) {
-          this.logger.error(
-            `Failed to schedule post-confirmation flow for order ${orderId}. ` +
-              `Manual intervention may be required.`,
-            scheduleResult.error,
-          );
-        } else {
-          this.logger.log(
-            `Post-confirmation flow scheduled for order ${orderId}`,
-          );
-        }
-      } else if (order.isCOD()) {
-        this.logger.warn(
-          `Missing reservationId or cartId for COD order ${orderId}. ` +
-            `Post-confirmation flow not scheduled.`,
+    let confirmResult;
+    if (order.isCOD()) {
+      confirmResult = order.confirm();
+    } else {
+      if (!order.hasPayment()) {
+        return ErrorFactory.DomainError(
+          'Cannot confirm order - payment must be completed first',
         );
       }
-
-      return Result.success(order.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Usecase Error', error);
+      confirmResult = order.confirmPayment(order.paymentId!);
     }
+
+    if (confirmResult.isFailure) return confirmResult;
+
+    const updateResult = await this.orderRepository.updateStatus(
+      orderId,
+      order.status,
+    );
+    if (updateResult.isFailure) return updateResult;
+
+    // For COD orders, trigger post-confirmation flow
+    if (order.isCOD() && reservationId && cartId) {
+      const scheduleResult = await this.orderScheduler.schedulePostConfirmation(
+        orderId,
+        reservationId,
+        cartId,
+      );
+
+      if (isFailure(scheduleResult)) {
+        this.logger.error(
+          `Failed to schedule post-confirmation flow for order ${orderId}. ` +
+            `Manual intervention may be required.`,
+          scheduleResult.error,
+        );
+      } else {
+        this.logger.log(
+          `Post-confirmation flow scheduled for order ${orderId}`,
+        );
+      }
+    } else if (order.isCOD()) {
+      this.logger.warn(
+        `Missing reservationId or cartId for COD order ${orderId}. ` +
+          `Post-confirmation flow not scheduled.`,
+      );
+    }
+
+    return Result.success(order.toPrimitives());
   }
 }

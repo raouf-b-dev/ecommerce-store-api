@@ -21,24 +21,17 @@ export class CapturePaymentUseCase extends UseCase<
   }
 
   async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
-    try {
-      const paymentResult = await this.paymentRepository.findById(id);
-      if (isFailure(paymentResult)) return paymentResult;
+    const paymentResult = await this.paymentRepository.findById(id);
+    if (isFailure(paymentResult)) return paymentResult;
 
-      const payment = paymentResult.value;
-      payment.capture();
+    const payment = paymentResult.value;
+    payment.capture();
 
-      const saveResult = await this.paymentRepository.update(payment);
-      if (isFailure(saveResult)) return saveResult;
+    const saveResult = await this.paymentRepository.update(payment);
+    if (isFailure(saveResult)) return saveResult;
 
-      return Result.success(
-        PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
-      );
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Unexpected error capturing payment',
-        error,
-      );
-    }
+    return Result.success(
+      PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
+    );
   }
 }

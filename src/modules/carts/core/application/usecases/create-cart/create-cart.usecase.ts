@@ -21,14 +21,10 @@ export class CreateCartUseCase extends UseCase<
   }
 
   async execute(dto: CreateCartDto): Promise<Result<ICart, UseCaseError>> {
-    try {
-      const createResult = await this.cartRepository.create(dto);
+    const createResult = await this.cartRepository.create(dto);
 
-      if (isFailure(createResult)) return createResult;
+    if (isFailure(createResult)) return createResult;
 
-      return Result.success(createResult.value.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success(createResult.value.toPrimitives());
   }
 }

@@ -24,27 +24,23 @@ export class RemoveCartItemUseCase extends UseCase<
     itemId: number;
   }): Promise<Result<ICart, UseCaseError>> {
     const { cartId, itemId } = input;
-    try {
-      const cartResult = await this.cartRepository.findById(cartId);
+    const cartResult = await this.cartRepository.findById(cartId);
 
-      if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) return cartResult;
 
-      const cart = cartResult.value;
-      if (!cart) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
-      }
-
-      const removeResult = cart.removeItemById(itemId);
-
-      if (isFailure(removeResult)) return removeResult;
-
-      const saveResult = await this.cartRepository.update(cart);
-
-      if (isFailure(saveResult)) return saveResult;
-
-      return Result.success(cart.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    const cart = cartResult.value;
+    if (!cart) {
+      return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    const removeResult = cart.removeItemById(itemId);
+
+    if (isFailure(removeResult)) return removeResult;
+
+    const saveResult = await this.cartRepository.update(cart);
+
+    if (isFailure(saveResult)) return saveResult;
+
+    return Result.success(cart.toPrimitives());
   }
 }

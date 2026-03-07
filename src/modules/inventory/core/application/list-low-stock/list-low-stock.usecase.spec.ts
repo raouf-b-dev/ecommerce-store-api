@@ -86,23 +86,4 @@ describe('ListLowStockUseCase', () => {
     ResultAssertionHelper.assertResultFailureWithError(result, repoError.error);
     expect(mockRepo.findLowStock).toHaveBeenCalledWith(query);
   });
-
-  it('should return a use case error on unexpected exceptions', async () => {
-    // Arrange
-    const query = InventoryDtoTestFactory.createLowStockQueryDto();
-    const unexpectedError = new Error('Something exploded');
-    mockRepo.findLowStock.mockRejectedValue(unexpectedError);
-
-    // Act
-    const result = await usecase.execute(query);
-
-    // Assert
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected UseCase Error',
-      UseCaseError,
-      unexpectedError,
-    );
-    expect(mockRepo.findLowStock).toHaveBeenCalledWith(query);
-  });
 });

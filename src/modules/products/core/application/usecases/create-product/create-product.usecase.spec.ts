@@ -48,22 +48,6 @@ describe('CreateProductUseCase', () => {
       );
     });
 
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
-      const repoError = new Error('Database connection failed');
-
-      mockRepository.save.mockRejectedValue(repoError);
-
-      const result = await useCase.execute(createDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-        repoError,
-      );
-    });
-
     it('should create expensive product', async () => {
       const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();

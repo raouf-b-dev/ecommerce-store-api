@@ -16,17 +16,13 @@ export class ListLowStockUseCase
   async execute(
     query: LowStockQueryDto,
   ): Promise<Result<IInventory[], UseCaseError>> {
-    try {
-      const lowStockResult = await this.inventoryRepository.findLowStock(query);
-      if (lowStockResult.isFailure) return lowStockResult;
+    const lowStockResult = await this.inventoryRepository.findLowStock(query);
+    if (lowStockResult.isFailure) return lowStockResult;
 
-      const inventories: IInventory[] = lowStockResult.value.map((i) =>
-        i.toPrimitives(),
-      );
+    const inventories: IInventory[] = lowStockResult.value.map((i) =>
+      i.toPrimitives(),
+    );
 
-      return Result.success(inventories);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success(inventories);
   }
 }

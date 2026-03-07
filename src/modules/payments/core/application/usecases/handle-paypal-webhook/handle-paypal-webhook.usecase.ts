@@ -51,65 +51,57 @@ export class HandlePayPalWebhookUseCase extends UseCase<
   async execute(
     dto: PayPalWebhookDto,
   ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
-    try {
-      // 1. Validate signature
-      const isValid = this.payPalSignatureService.verify(
-        dto.headers,
-        dto.payload,
-      );
-      if (!isValid) {
-        return ErrorFactory.UseCaseError('Invalid PayPal webhook signature');
-      }
+    // 1. Validate signature
+    const isValid = this.payPalSignatureService.verify(
+      dto.headers,
+      dto.payload,
+    );
+    if (!isValid) {
+      return ErrorFactory.UseCaseError('Invalid PayPal webhook signature');
+    }
 
-      // 2. Extract and map event type
-      const paypalEventType = dto.payload.event_type;
-      const internalEventType = this.mapEventType(paypalEventType);
+    // 2. Extract and map event type
+    const paypalEventType = dto.payload.event_type;
+    const internalEventType = this.mapEventType(paypalEventType);
 
-      if (!internalEventType) {
-        this.logger.debug(`Ignoring PayPal event type: ${paypalEventType}`);
-        return Result.success(null); // Ignored event, not an error
-      }
+    if (!internalEventType) {
+      this.logger.debug(`Ignoring PayPal event type: ${paypalEventType}`);
+      return Result.success(null); // Ignored event, not an error
+    }
 
-      // 3. Extract payment data from PayPal resource
-      const resource = dto.payload.resource;
-      if (!resource) {
-        return ErrorFactory.UseCaseError(
-          'Invalid PayPal webhook payload: missing resource',
-        );
-      }
-
-      // PayPal uses different ID structures - try to find the payment intent ID
-      const paymentIntentId = this.extractPaymentIntentId(resource);
-      if (!paymentIntentId) {
-        return ErrorFactory.UseCaseError(
-          'Invalid PayPal webhook payload: could not determine payment intent ID',
-        );
-      }
-
-      // 4. Delegate to HandlePaymentWebhookUseCase
-      const result = await this.handlePaymentWebhookUseCase.execute({
-        paymentIntentId,
-        eventType: internalEventType,
-        transactionId: resource.id,
-        metadata: {},
-        failureReason: resource.status_details?.reason,
-      });
-
-      if (isFailure(result)) {
-        this.logger.error(
-          `PayPal webhook processing failed: ${result.error.message}`,
-        );
-        return result;
-      }
-
-      return Result.success(result.value);
-    } catch (error) {
-      this.logger.error('Unexpected error processing PayPal webhook:', error);
+    // 3. Extract payment data from PayPal resource
+    const resource = dto.payload.resource;
+    if (!resource) {
       return ErrorFactory.UseCaseError(
-        'Unexpected error processing PayPal webhook',
-        error,
+        'Invalid PayPal webhook payload: missing resource',
       );
     }
+
+    // PayPal uses different ID structures - try to find the payment intent ID
+    const paymentIntentId = this.extractPaymentIntentId(resource);
+    if (!paymentIntentId) {
+      return ErrorFactory.UseCaseError(
+        'Invalid PayPal webhook payload: could not determine payment intent ID',
+      );
+    }
+
+    // 4. Delegate to HandlePaymentWebhookUseCase
+    const result = await this.handlePaymentWebhookUseCase.execute({
+      paymentIntentId,
+      eventType: internalEventType,
+      transactionId: resource.id,
+      metadata: {},
+      failureReason: resource.status_details?.reason,
+    });
+
+    if (isFailure(result)) {
+      this.logger.error(
+        `PayPal webhook processing failed: ${result.error.message}`,
+      );
+      return result;
+    }
+
+    return Result.success(result.value);
   }
 
   private mapEventType(paypalEventType: string): PaymentEventType | null {

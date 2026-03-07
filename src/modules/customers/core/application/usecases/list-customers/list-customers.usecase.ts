@@ -17,24 +17,17 @@ export class ListCustomersUseCase
   async execute(
     dto: ListCustomersQueryDto,
   ): Promise<Result<ICustomer[], UseCaseError>> {
-    try {
-      const page = dto.page || 1;
-      const limit = dto.limit || 20;
+    const page = dto.page || 1;
+    const limit = dto.limit || 20;
 
-      const customersResult = await this.customerRepository.findAll(
-        page,
-        limit,
-      );
+    const customersResult = await this.customerRepository.findAll(page, limit);
 
-      if (customersResult.isFailure) return customersResult;
+    if (customersResult.isFailure) return customersResult;
 
-      const result: ICustomer[] = customersResult.value.map((customer) =>
-        customer.toPrimitives(),
-      );
+    const result: ICustomer[] = customersResult.value.map((customer) =>
+      customer.toPrimitives(),
+    );
 
-      return Result.success(result);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
-    }
+    return Result.success(result);
   }
 }

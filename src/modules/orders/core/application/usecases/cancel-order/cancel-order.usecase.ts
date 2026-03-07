@@ -21,30 +21,27 @@ export class CancelOrderUseCase
   ) {}
 
   async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const requestedOrder = await this.orderRepository.findById(id);
-      if (requestedOrder.isFailure) return requestedOrder;
+    const requestedOrder = await this.orderRepository.findById(id);
+    if (requestedOrder.isFailure) return requestedOrder;
 
-      const order: Order = requestedOrder.value;
+    const order: Order = requestedOrder.value;
 
-      const cancelResult = order.cancel();
-      if (cancelResult.isFailure) return cancelResult;
+    const cancelResult = order.cancel();
+    if (cancelResult.isFailure) return cancelResult;
 
-      const updateResult = await this.orderRepository.cancelOrder(order);
-      if (updateResult.isFailure) return updateResult;
+    const updateResult = await this.orderRepository.cancelOrder(order);
+    if (updateResult.isFailure) return updateResult;
 
-      const scheduleResult =
-        await this.orderScheduler.scheduleOrderStockRelease(order.id!);
+    const scheduleResult = await this.orderScheduler.scheduleOrderStockRelease(
+      order.id!,
+    );
 
-      if (isFailure(scheduleResult)) {
-        console.error(
-          `Failed to schedule stock release for order ${order.id}: ${scheduleResult.error.message}`,
-        );
-      }
-
-      return Result.success(order.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Usecase Error', error);
+    if (isFailure(scheduleResult)) {
+      console.error(
+        `Failed to schedule stock release for order ${order.id}: ${scheduleResult.error.message}`,
+      );
     }
+
+    return Result.success(order.toPrimitives());
   }
 }

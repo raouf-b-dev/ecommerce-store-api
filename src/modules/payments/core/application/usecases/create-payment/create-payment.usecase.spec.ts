@@ -100,27 +100,4 @@ describe('CreatePaymentUseCase', () => {
     ResultAssertionHelper.assertResultFailure(result, 'Save failed');
     expect(paymentRepository.save).toHaveBeenCalled();
   });
-
-  it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const dto: CreatePaymentDto = {
-      orderId: 123,
-      amount: 100,
-      currency: 'USD',
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 123,
-    };
-    const repoError = new Error('Database connection failed');
-
-    paymentRepository.save.mockRejectedValue(repoError);
-
-    const result = await useCase.execute(dto);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error creating payment',
-      UseCaseError,
-      repoError,
-    );
-    expect(paymentRepository.save).toHaveBeenCalled();
-  });
 });

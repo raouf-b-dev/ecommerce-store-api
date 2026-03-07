@@ -24,38 +24,31 @@ export class ListPaymentsUseCase extends UseCase<
   async execute(
     dto: ListPaymentsQueryDto,
   ): Promise<Result<PaymentResponseDto[], UseCaseError>> {
-    try {
-      if (dto.orderId) {
-        const result = await this.paymentRepository.findByOrderId(dto.orderId);
-        if (isFailure(result)) return result;
-        return Result.success(
-          PaymentDtoMapper.toResponseList(
-            result.value.map((p) => p.toPrimitives()),
-          ),
-        );
-      }
-
-      if (dto.customerId) {
-        const result = await this.paymentRepository.findByCustomerId(
-          dto.customerId,
-          dto.page,
-          dto.limit,
-        );
-        if (isFailure(result)) return result;
-        return Result.success(
-          PaymentDtoMapper.toResponseList(
-            result.value.map((p) => p.toPrimitives()),
-          ),
-        );
-      }
-
-      // TODO: Implement general findAll if needed, or return empty array
-      return Result.success([]);
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Unexpected error listing payments',
-        error,
+    if (dto.orderId) {
+      const result = await this.paymentRepository.findByOrderId(dto.orderId);
+      if (isFailure(result)) return result;
+      return Result.success(
+        PaymentDtoMapper.toResponseList(
+          result.value.map((p) => p.toPrimitives()),
+        ),
       );
     }
+
+    if (dto.customerId) {
+      const result = await this.paymentRepository.findByCustomerId(
+        dto.customerId,
+        dto.page,
+        dto.limit,
+      );
+      if (isFailure(result)) return result;
+      return Result.success(
+        PaymentDtoMapper.toResponseList(
+          result.value.map((p) => p.toPrimitives()),
+        ),
+      );
+    }
+
+    // TODO: Implement general findAll if needed, or return empty array
+    return Result.success([]);
   }
 }

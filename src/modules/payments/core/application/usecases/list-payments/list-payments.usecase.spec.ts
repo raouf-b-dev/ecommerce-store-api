@@ -77,20 +77,4 @@ describe('ListPaymentsUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual([]);
   });
-
-  it('should return Failure with UseCaseError when repository throws unexpected error', async () => {
-    const repoError = new Error('Database connection failed');
-
-    paymentRepository.findByOrderId.mockRejectedValue(repoError);
-
-    const result = await useCase.execute({ orderId: 123 });
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error listing payments',
-      UseCaseError,
-      repoError,
-    );
-    expect(paymentRepository.findByOrderId).toHaveBeenCalledWith(123);
-  });
 });

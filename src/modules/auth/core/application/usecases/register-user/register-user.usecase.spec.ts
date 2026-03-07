@@ -80,26 +80,4 @@ describe('RegisterUserUseCase', () => {
       RepositoryError,
     );
   });
-
-  it('should return failure if unexpected error occurs', async () => {
-    userRepository.findByEmail.mockResolvedValue(Result.success(null));
-    mockCustomerGateway.createCustomer.mockResolvedValue(
-      Result.success(mockCustomerRecord),
-    );
-    userRepository.save.mockRejectedValue(new Error('Unexpected error'));
-
-    const result = await usecase.execute({
-      email: 'test@example.com',
-      password: 'password',
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '1234567890',
-    });
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error',
-      UseCaseError,
-    );
-  });
 });

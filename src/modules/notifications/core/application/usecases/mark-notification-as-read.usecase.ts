@@ -16,16 +16,9 @@ export class MarkNotificationAsReadUseCase {
     id: string,
     userId: string,
   ): Promise<Result<void, UseCaseError>> {
-    try {
-      const result = await this.notificationRepository.markAsRead(id, userId);
-      if (result.isFailure) return result;
+    const result = await this.notificationRepository.markAsRead(id, userId);
+    if (result.isFailure) return result;
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError(
-        'Failed to mark notification as read',
-        error,
-      );
-    }
+    return Result.success(undefined);
   }
 }

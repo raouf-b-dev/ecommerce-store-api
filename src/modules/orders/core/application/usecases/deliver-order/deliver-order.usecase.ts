@@ -30,46 +30,42 @@ export class DeliverOrderUseCase
     id: number;
     deliverOrderDto: DeliverOrderDto;
   }): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const requestedOrder = await this.orderRepository.findById(input.id);
-      if (requestedOrder.isFailure) {
-        return requestedOrder;
-      }
-
-      const order: Order = requestedOrder.value;
-
-      if (order.isCOD() && input.deliverOrderDto.codPayment) {
-        const codPaymentResult = await this.paymentGateway.recordCodPayment({
-          orderId: input.id,
-          amountCollected: order.totalPrice,
-          currency: 'USD',
-          notes: input.deliverOrderDto.codPayment.notes,
-          collectedBy: input.deliverOrderDto.codPayment.collectedBy,
-        });
-        if (codPaymentResult.isFailure) {
-          return codPaymentResult;
-        }
-
-        const payment = codPaymentResult.value;
-        if (payment.id) {
-          await this.orderRepository.updatePaymentId(input.id, payment.id);
-        }
-      }
-
-      const deliverResult = order.deliver();
-      if (deliverResult.isFailure) return deliverResult;
-
-      const updateResult = await this.orderRepository.updateStatus(
-        input.id,
-        order.status,
-      );
-      if (updateResult.isFailure) {
-        return updateResult;
-      }
-
-      return Result.success(order.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Usecase Error', error);
+    const requestedOrder = await this.orderRepository.findById(input.id);
+    if (requestedOrder.isFailure) {
+      return requestedOrder;
     }
+
+    const order: Order = requestedOrder.value;
+
+    if (order.isCOD() && input.deliverOrderDto.codPayment) {
+      const codPaymentResult = await this.paymentGateway.recordCodPayment({
+        orderId: input.id,
+        amountCollected: order.totalPrice,
+        currency: 'USD',
+        notes: input.deliverOrderDto.codPayment.notes,
+        collectedBy: input.deliverOrderDto.codPayment.collectedBy,
+      });
+      if (codPaymentResult.isFailure) {
+        return codPaymentResult;
+      }
+
+      const payment = codPaymentResult.value;
+      if (payment.id) {
+        await this.orderRepository.updatePaymentId(input.id, payment.id);
+      }
+    }
+
+    const deliverResult = order.deliver();
+    if (deliverResult.isFailure) return deliverResult;
+
+    const updateResult = await this.orderRepository.updateStatus(
+      input.id,
+      order.status,
+    );
+    if (updateResult.isFailure) {
+      return updateResult;
+    }
+
+    return Result.success(order.toPrimitives());
   }
 }

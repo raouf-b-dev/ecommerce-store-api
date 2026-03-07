@@ -16,23 +16,19 @@ export class ReleaseStockUseCase
   ) {}
 
   async execute(reservationId: number): Promise<Result<void, UseCaseError>> {
-    try {
-      const reservationResult =
-        await this.reservationRepository.findById(reservationId);
-      if (reservationResult.isFailure) return reservationResult;
+    const reservationResult =
+      await this.reservationRepository.findById(reservationId);
+    if (reservationResult.isFailure) return reservationResult;
 
-      const reservation = reservationResult.value;
-      const releaseResult = reservation.release();
+    const reservation = reservationResult.value;
+    const releaseResult = reservation.release();
 
-      if (releaseResult.isFailure) return releaseResult;
+    if (releaseResult.isFailure) return releaseResult;
 
-      const saveResult = await this.reservationRepository.release(reservation);
+    const saveResult = await this.reservationRepository.release(reservation);
 
-      if (saveResult.isFailure) return saveResult;
+    if (saveResult.isFailure) return saveResult;
 
-      return Result.success(undefined);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
-    }
+    return Result.success(undefined);
   }
 }

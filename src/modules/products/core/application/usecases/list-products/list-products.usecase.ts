@@ -21,16 +21,12 @@ export class ListProductsUseCase extends UseCase<
   }
 
   async execute(): Promise<Result<IProduct[], UseCaseError>> {
-    try {
-      const productResult = await this.productRepository.findAll();
+    const productResult = await this.productRepository.findAll();
 
-      if (isFailure(productResult)) {
-        return ErrorFactory.UseCaseError(productResult.error.message);
-      }
-
-      return Result.success(productResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected use case error', error);
+    if (isFailure(productResult)) {
+      return ErrorFactory.UseCaseError(productResult.error.message);
     }
+
+    return Result.success(productResult.value);
   }
 }

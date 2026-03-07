@@ -69,18 +69,4 @@ describe('LoginUserUseCase', () => {
       UseCaseError,
     );
   });
-
-  it('should return failure if unexpected error occurs', async () => {
-    const error = new Error('Unexpected error');
-    userRepository.findByEmail.mockRejectedValue(error);
-    const result = await usecase.execute({
-      email: 'test@example.com',
-      password: 'password',
-    });
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected error',
-      UseCaseError,
-    );
-  });
 });

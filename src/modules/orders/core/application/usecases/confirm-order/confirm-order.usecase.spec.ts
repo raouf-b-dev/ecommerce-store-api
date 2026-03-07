@@ -182,22 +182,6 @@ describe('ConfirmOrderUseCase', () => {
       );
     });
 
-    it('should return Failure if repository throws unexpected error', async () => {
-      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
-      const unexpectedError = new Error('Network connection failed');
-
-      mockOrderRepository.findById.mockRejectedValue(unexpectedError);
-
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected Usecase Error',
-        UseCaseError,
-        unexpectedError,
-      );
-    });
-
     it('should confirm order with Stripe payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PENDING_PAYMENT,

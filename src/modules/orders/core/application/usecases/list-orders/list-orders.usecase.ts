@@ -15,15 +15,11 @@ export class ListOrdersUsecase
   async execute(
     dto: ListOrdersQueryDto,
   ): Promise<Result<IOrder[], UseCaseError>> {
-    try {
-      const ordersResult = await this.orderRepository.listOrders(dto);
-      if (ordersResult.isFailure) {
-        return ordersResult;
-      }
-
-      return Result.success(ordersResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Error Occured', error);
+    const ordersResult = await this.orderRepository.listOrders(dto);
+    if (ordersResult.isFailure) {
+      return ordersResult;
     }
+
+    return Result.success(ordersResult.value);
   }
 }

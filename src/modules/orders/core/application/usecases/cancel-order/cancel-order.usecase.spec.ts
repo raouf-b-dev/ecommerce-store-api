@@ -110,22 +110,6 @@ describe('CancelOrderUseCase', () => {
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
-  it('should return a failure result on an unexpected error', async () => {
-    const orderId = 1;
-    const errorCause = new Error('Database connection lost');
-
-    mockRepository.findById.mockRejectedValue(errorCause);
-
-    const result = await useCase.execute(orderId);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Unexpected Usecase Erro',
-      UseCaseError,
-      errorCause,
-    );
-  });
-
   describe('complex scenarios', () => {
     it('should cancel multi-item order successfully', async () => {
       const orderPrimitives = new OrderBuilder()

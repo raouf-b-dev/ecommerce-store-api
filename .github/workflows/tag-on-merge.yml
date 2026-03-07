@@ -1,0 +1,35 @@
+name: Tag on Merge
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
+
+      - name: Get version from package.json
+        id: package_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Create and Push Tag
+        run: |
+          TAG_NAME="v${{ env.VERSION }}"
+          # Only tag if the tag doesn't exist yet
+          if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Creating new tag: $TAG_NAME"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG_NAME" -m "Automated tag for version ${{ env.VERSION }}"
+            git push origin "$TAG_NAME"
+          else
+            echo "Tag $TAG_NAME already exists. Skipping."
+          fi

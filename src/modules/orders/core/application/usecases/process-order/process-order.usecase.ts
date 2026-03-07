@@ -13,24 +13,20 @@ export class ProcessOrderUseCase
 {
   constructor(private orderRepository: OrderRepository) {}
   async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
-    try {
-      const orderResult = await this.orderRepository.findById(id);
-      if (orderResult.isFailure) return orderResult;
+    const orderResult = await this.orderRepository.findById(id);
+    if (orderResult.isFailure) return orderResult;
 
-      const order: Order = orderResult.value;
+    const order: Order = orderResult.value;
 
-      const processResult = order.process();
-      if (processResult.isFailure) return processResult;
+    const processResult = order.process();
+    if (processResult.isFailure) return processResult;
 
-      const updateResult = await this.orderRepository.updateStatus(
-        id,
-        order.status,
-      );
-      if (updateResult.isFailure) return updateResult;
+    const updateResult = await this.orderRepository.updateStatus(
+      id,
+      order.status,
+    );
+    if (updateResult.isFailure) return updateResult;
 
-      return Result.success(order.toPrimitives());
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected Usecase Error', error);
-    }
+    return Result.success(order.toPrimitives());
   }
 }

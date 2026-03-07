@@ -38,59 +38,51 @@ export class HandlePaymentWebhookService {
   async execute(
     dto: PaymentWebhookDto,
   ): Promise<Result<PaymentWebhookResult, ServiceError>> {
-    try {
-      this.logger.log(
-        `Processing webhook: ${dto.eventType} for intent ${dto.paymentIntentId}`,
+    this.logger.log(
+      `Processing webhook: ${dto.eventType} for intent ${dto.paymentIntentId}`,
+    );
+
+    // 1. Find payment by gateway payment intent ID
+    const paymentResult =
+      await this.paymentRepository.findByGatewayPaymentIntentId(
+        dto.paymentIntentId,
       );
 
-      // 1. Find payment by gateway payment intent ID
-      const paymentResult =
-        await this.paymentRepository.findByGatewayPaymentIntentId(
-          dto.paymentIntentId,
-        );
-
-      if (isFailure(paymentResult)) {
-        return ErrorFactory.ServiceError(
-          `Payment not found for intent: ${dto.paymentIntentId}`,
-          paymentResult.error,
-        );
-      }
-
-      const payment = paymentResult.value;
-
-      // 2. Handle based on event type
-      switch (dto.eventType) {
-        case PaymentEventType.SUCCEEDED:
-          return this.handlePaymentSuccess(
-            payment,
-            dto.transactionId,
-            dto.metadata?.reservationId
-              ? Number(dto.metadata.reservationId)
-              : undefined,
-            dto.metadata?.cartId ? Number(dto.metadata.cartId) : undefined,
-          );
-        case PaymentEventType.FAILED:
-          return this.handlePaymentFailure(
-            payment,
-            dto.failureReason,
-            dto.metadata?.reservationId
-              ? Number(dto.metadata.reservationId)
-              : undefined,
-          );
-        default: {
-          // Exhaustive check to ensure all event types are handled
-          const _exhaustiveCheck: never = dto.eventType;
-          return ErrorFactory.ServiceError(
-            `Unhandled event type: ${_exhaustiveCheck as string}`,
-          );
-        }
-      }
-    } catch (error) {
-      this.logger.error('Error processing payment webhook:', error);
+    if (isFailure(paymentResult)) {
       return ErrorFactory.ServiceError(
-        'Unexpected error processing payment webhook',
-        error,
+        `Payment not found for intent: ${dto.paymentIntentId}`,
+        paymentResult.error,
       );
+    }
+
+    const payment = paymentResult.value;
+
+    // 2. Handle based on event type
+    switch (dto.eventType) {
+      case PaymentEventType.SUCCEEDED:
+        return this.handlePaymentSuccess(
+          payment,
+          dto.transactionId,
+          dto.metadata?.reservationId
+            ? Number(dto.metadata.reservationId)
+            : undefined,
+          dto.metadata?.cartId ? Number(dto.metadata.cartId) : undefined,
+        );
+      case PaymentEventType.FAILED:
+        return this.handlePaymentFailure(
+          payment,
+          dto.failureReason,
+          dto.metadata?.reservationId
+            ? Number(dto.metadata.reservationId)
+            : undefined,
+        );
+      default: {
+        // Exhaustive check to ensure all event types are handled
+        const _exhaustiveCheck: never = dto.eventType;
+        return ErrorFactory.ServiceError(
+          `Unhandled event type: ${_exhaustiveCheck as string}`,
+        );
+      }
     }
   }
 

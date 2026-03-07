@@ -21,19 +21,15 @@ export class ReserveStockUseCase
   async execute(
     dto: ReserveStockDto,
   ): Promise<Result<Reservation, UseCaseError>> {
-    try {
-      const saveResult = await this.reservationRepository.save(dto);
+    const saveResult = await this.reservationRepository.save(dto);
 
-      if (saveResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          saveResult.error.message,
-          saveResult.error,
-        );
-      }
-
-      return Result.success(saveResult.value);
-    } catch (error) {
-      return ErrorFactory.UseCaseError('Unexpected UseCase Error', error);
+    if (saveResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        saveResult.error.message,
+        saveResult.error,
+      );
     }
+
+    return Result.success(saveResult.value);
   }
 }

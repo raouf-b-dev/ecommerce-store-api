@@ -86,23 +86,6 @@ describe('CreateCustomerUseCase', () => {
       expect(mockCustomerRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure(UseCaseError) if repository throws unexpected error', async () => {
-      const createCustomerDto =
-        CustomerDtoTestFactory.createCreateCustomerDto();
-      const repoError = new Error('Unexpected error');
-
-      mockCustomerRepository.save.mockRejectedValue(repoError);
-
-      const result = await useCase.execute(createCustomerDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Unexpected use case error',
-        UseCaseError,
-      );
-      expect(mockCustomerRepository.save).toHaveBeenCalledTimes(1);
-    });
-
     it('should create customer with work address', async () => {
       const createCustomerDto =
         CustomerDtoTestFactory.createCreateCustomerWithAddressDto({

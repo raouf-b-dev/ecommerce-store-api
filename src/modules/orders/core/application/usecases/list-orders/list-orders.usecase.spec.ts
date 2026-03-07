@@ -88,23 +88,6 @@ describe('ListOrdersUsecase', () => {
     }
   });
 
-  it('returns UseCaseError when repository throws an unexpected error', async () => {
-    const dto: ListOrdersQueryDto = {};
-    const thrown = new Error('boom');
-
-    mockRepository.listOrders.mockRejectedValue(thrown);
-
-    const result = await usecase.execute(dto);
-
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
-    expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
-      expect(result.error).toBeInstanceOf(UseCaseError);
-      expect(result.error.message).toContain('Unexpected Error Occured');
-      expect(result.error.cause).toBe(thrown);
-    }
-  });
-
   describe('filtering and querying', () => {
     it('should pass query parameters to repository', async () => {
       const dto: ListOrdersQueryDto = {
