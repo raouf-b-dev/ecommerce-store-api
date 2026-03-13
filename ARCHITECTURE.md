@@ -39,44 +39,59 @@ Each Module acts as a **Bounded Context**. We use **Context Mapping** to define 
 
 ```mermaid
 graph TD
-    subgraph "Core Domain"
-        Orders[Orders Context]
+    SK[Shared Kernel] --> Orders[Orders — Core Domain]
+    SK --> Carts[Carts]
+    SK --> Inventory[Inventory]
+    SK --> Products[Products]
+    SK --> Customers[Customers]
+    SK --> Payments[Payments]
+    SK --> Auth[Auth]
+    SK --> Notifications[Notifications]
+
+    subgraph ACL_Orders["ACL Gateways (in Orders)"]
+        CustGW["CustomerGateway"]
+        CartGW["CartGateway"]
+        InvGW["InventoryReservationGateway"]
+        PayGW["PaymentGateway"]
     end
 
-    subgraph "Supporting Subdomains"
-        Inventory[Inventory Context]
-        Products[Products Context]
-        Carts[Carts Context]
-        Customers[Customers Context]
+    Customers -.->|"CustomerRepository"| CustGW
+    Carts -.->|"CartRepository"| CartGW
+    Inventory -.->|"ReservationRepository"| InvGW
+    Payments -.->|"PaymentRepository"| PayGW
+
+    CustGW -->|"getCustomer()"| Orders
+    CartGW -->|"getCart() / clearCart()"| Orders
+    InvGW -->|"reserve() / release()"| Orders
+    PayGW -->|"processPayment()"| Orders
+
+    subgraph ACL_Carts["ACL Gateways (in Carts)"]
+        ProdGW["ProductGateway"]
+        InvGW2["InventoryGateway"]
     end
 
-    subgraph "Generic Subdomains"
-        Payments[Payments Context]
-        Auth[Auth Context]
-        Notifications[Notifications Context]
-    end
+    Products -.->|"ProductRepository"| ProdGW
+    Inventory -.->|"InventoryRepository"| InvGW2
 
-    %% Relationships
-    Orders -->|ACL / CustomerGateway| Customers
-    Orders -->|ACL / CartGateway| Carts
-    Orders -->|Event / IntegrationEvent| Notifications
+    ProdGW -->|"getProduct()"| Carts
+    InvGW2 -->|"checkStock()"| Carts
 
-    Carts -->|ACL / InventoryGateway| Inventory
-    Carts -->|Shared Data / ProductRepo| Products
+    Auth -->|"ACL / CustomerGateway"| Customers
+    Orders -->|"Event"| Notifications
 
-    Auth -->|Identity| Customers
-    Payments -->|Verify| Auth
+    style Orders fill:#ff6b6b,stroke:#333,color:#fff
+    style SK fill:#4ecdc4,stroke:#333,color:#fff
+    style ACL_Orders fill:#2d2d2d,stroke:#ffd700,color:#ffd700,stroke-width:2px
+    style ACL_Carts fill:#2d2d2d,stroke:#ffd700,color:#ffd700,stroke-width:2px
 
-    classDef core fill:#ff9999,stroke:#333,stroke-width:2px;
     classDef support fill:#99ff99,stroke:#333,stroke-width:1px;
     classDef generic fill:#9999ff,stroke:#333,stroke-width:1px;
 
-    class Orders core;
     class Inventory,Products,Carts,Customers support;
     class Payments,Auth,Notifications generic;
 ```
 
-> **Anti-Corruption Layer (ACL)**: The `Orders` context does **not** directly depend on the implementation of `Customers` or `Carts`. Instead, it defines its own **Ports** (Gateways), and we implement **Adapters** that translate external models into the Order domain's language. This protects the Core Domain from changes in upstream modules.
+> **Anti-Corruption Layer (ACL)**: Downstream contexts define their own **Ports** (Gateway interfaces) with only the data they need. **Adapters** in the secondary layer translate upstream models into the downstream domain's language. This protects every module from schema changes in its dependencies — if `Customers` changes its entity, only the `CustomerGatewayAdapter` needs updating, not the `Orders` use cases.
 
 ## 🌍 System Context (C4 Level 1)
 

@@ -22,7 +22,7 @@
 - [� Roadmap](#-roadmap)
 - [�📊 Project Statistics](#-project-statistics)
 - [👋 Contributing](CONTRIBUTING.md)
-- [🏗️ System Architecture](docs/ARCHITECTURE.md)
+- [🏗️ System Architecture](ARCHITECTURE.md)
 - [📄 License](#-license)
 - [🤝 Acknowledgments](#-acknowledgments)
 - [📞 Support](#-support)
@@ -38,7 +38,7 @@ I built this project not just as another e-commerce demo, but as a deep dive int
 - **Distributed Systems**: Handling eventual consistency with SAGA pattern & RabbitMQ/BullMQ.
 - **Fail-Safe Mechanisms**: Designing compensation flows when things go wrong (e.g., payment succeeds but inventory fails).
 - **Strict DDD**: Enforcing boundaries between Domain, Application, and Infrastructure layers.
-- **Testing Culture**: Writing 50+ test suites because in the real world, tests are not optional.
+- **Testing Culture**: Writing 86 test suites with 612 tests because in the real world, tests are not optional.
 
 I built this to prove (to myself and future employers) that I can handle complex, scalable backend systems. I hope it serves as a valuable reference for others on the same journey!
 
@@ -545,24 +545,26 @@ npm run d:reset:test
 
 ## 🚧 Roadmap
 
-This project is continuously evolving. Here are the planned features and improvements:
+This project is continuously evolving. See the full [**ROADMAP.md**](ROADMAP.md) for detailed task breakdowns.
 
-### 🔹 Core Features
+### ✅ Recently Completed (v0.2.0)
 
-- [ ] **Real Payment Integration**: Support for Stripe, PayPal, and other gateways.
-- [ ] **Advanced Analytics**: Reporting dashboard for sales, inventory, and customer behavior.
-- [x] **Real-time Notifications**: WebSockets/SSE for order status updates and stock alerts.
+- [x] ACL Gateways across all cross-module boundaries (7 gateways)
+- [x] Swagger/OpenAPI documentation on all 8 controllers
+- [x] Result Pattern — no exceptions in domain/application layers
+- [x] SAGA orchestration with compensation (checkout flow)
+- [x] Idempotency protection on critical endpoints
+- [x] Try/catch boilerplate cleanup (61 files)
+- [x] Database index optimization (orders: 12 → 4)
+- [x] Decorator-based caching (`CachedRepository` pattern)
 
-### 🔹 Engineering & DevOps
+### 🔜 Up Next
 
-- [ ] **E2E Testing Suite**: Comprehensive end-to-end tests using Supertest and Testcontainers.
-- [ ] **Performance Benchmarking**: Detailed load testing and optimization reports.
-- [ ] **API Versioning**: Implementing a robust versioning strategy for long-term support.
-
-### 🔹 Ecosystem
-
-- [ ] **Admin Dashboard**: A modern frontend for store management (Angular/React).
-- [ ] **Customer Storefront**: A high-performance web application built with Angular.
+- [ ] **Real Stripe & PayPal Integration** — Move from stubs to real SDK integration
+- [ ] **Production Dockerfile** — Multi-stage build for deployment
+- [ ] **Health Checks** — `@nestjs/terminus` with DB/Redis/Queue indicators
+- [ ] **Graceful Degradation** — Redis failover to Postgres (inspired by [ppd-api](https://github.com/raouf-b-dev) patterns)
+- [ ] **Structured Logging** — Winston with rotation, correlation IDs
 
 ---
 
