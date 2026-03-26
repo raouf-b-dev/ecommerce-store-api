@@ -1,8 +1,8 @@
-# 🛒 E-commerce MVP API
+# 🛒 E-commerce Store API
 
 <p align="center"> <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
 
-> An enterprise-level NestJS MVP API for an e-commerce store built with **Domain-Driven Design**, **Clean Architecture**, and modern best practices.
+> An enterprise-grade NestJS API for an e-commerce store built with **Domain-Driven Design**, **Hexagonal Architecture**, and modern best practices.
 
 ## 📋 Table of Contents
 
@@ -29,18 +29,35 @@
 
 ---
 
-## 🌟 Why This Project? (A Learning Journey)
+## What Is This?
 
-> "The main goal when I started building this API was to learn new stuff that I did not know before... I reinforced my knowledge on DDD, I learned how to effectively create a scalable system, separate concerns, separate business logic from technical logic..."
+A modular monolith e-commerce API built with NestJS and TypeScript, following Domain-Driven Design (Tactical and Strategic) and Hexagonal Architecture. Designed as a reference implementation for enterprise backend patterns, this project focuses on the hard parts that most tutorials skip: distributed transactions, partial failure handling, and strict module isolation.
 
-I built this project not just as another e-commerce demo, but as a deep dive into **Enterprise Node.js Architecture**. My goal was to bridge the gap between "tutorial code" and "production systems" by implementing the hard parts that most courses skip:
+**Core patterns implemented:**
 
-- **Distributed Systems**: Handling eventual consistency with SAGA pattern & RabbitMQ/BullMQ.
-- **Fail-Safe Mechanisms**: Designing compensation flows when things go wrong (e.g., payment succeeds but inventory fails).
-- **Strict DDD**: Enforcing boundaries between Domain, Application, and Infrastructure layers.
-- **Testing Culture**: Writing 86 test suites with 612 tests because in the real world, tests are not optional.
+- **SAGA orchestration with compensation.** The checkout flow reserves stock, processes payment, and confirms the order. If any step fails, the system automatically compensates: releases stock, issues refunds, cancels the order.
+- **Redis-backed idempotency.** A custom `@Idempotent()` decorator with distributed locking ensures critical operations execute exactly once, even under network retries.
+- **ACL Gateway isolation.** 8 bounded contexts communicate through 7 Gateway ports. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules.
+- **Structured test infrastructure.** Each module has its own test factories and typed mock repositories. Factories generate domain objects for specific scenarios (e.g. `OrderTestFactory.createCashOnDeliveryOrder()`), and mocks implement the real repository interface with helper methods for common setups. 86 test suites covering domain logic, use cases, compensation flows, SAGA job handlers, and cache decorator behavior.
 
-I built this to prove (to myself and future employers) that I can handle complex, scalable backend systems. I hope it serves as a valuable reference for others on the same journey!
+Built with: NestJS, TypeScript, PostgreSQL, Redis Stack (RedisJSON + RedisSearch), BullMQ, Docker.
+
+## What You'll Learn From This Codebase
+
+If you're studying enterprise backend architecture, this repo covers:
+
+| Pattern | Where to Find It |
+|---|---|
+| Strategic DDD (Subdomains, Bounded Contexts, Context Mapping) | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Tactical DDD (Entities, Value Objects, Aggregates, Domain Services) | `src/modules/*/core/domain/` |
+| Hexagonal Architecture (Ports & Adapters) | [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md) |
+| SAGA Orchestration with Compensation | `src/modules/orders/primary-adapters/jobs/` |
+| Idempotency (Redis-backed) | `src/infrastructure/idempotency/` |
+| ACL Gateway Pattern | `src/modules/orders/secondary-adapters/gateways/` |
+| Decorator-based Caching | `src/modules/*/secondary-adapters/repositories/` |
+| Result Pattern (no exceptions) | `src/shared-kernel/domain/` |
+| BullMQ Nested Flows | `src/modules/notifications/` |
+| Test Factories and Typed Mocks | `src/modules/*/testing/` |
 
 ---
 
@@ -94,8 +111,6 @@ graph TD
         Payments <-->|Verify| Stripe["💳 Payment Gateway"]
     end
 ```
-
-> **Key Strength**: Fully supports **[Hybrid Payment Orchestration](#-hybrid-payment-orchestration-cod--online)** (Online + Cash-on-Delivery), handling complex state transitions for both synchronous and asynchronous flows.
 
 See the full [**System Architecture & Diagrams**](ARCHITECTURE.md) for detailed Sequence and Class diagrams.
 
@@ -159,15 +174,6 @@ This project goes beyond a simple CRUD API by implementing complex distributed s
   - Checks shared stock availability logic while respecting different lifecycle requirements.
 
 ---
-
-## 🎯 Recruiter's Guide
-
-If you are a recruiter or hiring manager, here is why this project demonstrates senior-level engineering skills:
-
-1.  **Architectural Depth**: Most "e-commerce" tutorials stop at simple controllers. This project implements full **DDD**, showing an understanding of how to manage complexity in large-scale systems.
-2.  **Reliability Engineering**: The use of **Idempotency** and **Compensation Logic** shows a "production-first" mindset where data consistency and system reliability are prioritized.
-3.  **Modern Infrastructure**: Proficiency with **Redis Stack**, **BullMQ**, and **Docker** demonstrates the ability to design and manage modern, scalable infrastructure.
-4.  **Testing Excellence**: High test coverage (Unit, Integration, and E2E) proves a commitment to code quality and long-term maintainability.
 
 ---
 
@@ -601,6 +607,4 @@ For questions, issues, or contributions:
 
 ---
 
-**Built with ❤️ by [Abderaouf .B](https://github.com/raouf-b-dev)**
-
-_Crafting enterprise-level APIs with clean architecture and modern best practices_
+**Built by [Abderaouf .B](https://github.com/raouf-b-dev)**
