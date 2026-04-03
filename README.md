@@ -8,7 +8,6 @@
 
 - [🌟 Key Features](#-key-features)
 - [🚀 Advanced Engineering Features](#-advanced-engineering-features)
-- [🎯 Recruiter's Guide](#-recruiters-guide)
 - [🚀 Quick Start](#-quick-start)
 - [🧪 Testing](#-testing)
 - [🗄️ Database Management](#database-management)
@@ -19,10 +18,10 @@
 - [🚦 API Endpoints](#-api-endpoints)
 - [🔐 Security & Best Practices](#-security--best-practices)
 - [🛠️ Troubleshooting](#troubleshooting)
-- [� Roadmap](#-roadmap)
-- [�📊 Project Statistics](#-project-statistics)
+- [📖 Documentation Index](#-documentation-index)
+- [🚧 Roadmap](#-roadmap)
+- [📊 Project Statistics](#-project-statistics)
 - [👋 Contributing](CONTRIBUTING.md)
-- [🏗️ System Architecture](ARCHITECTURE.md)
 - [📄 License](#-license)
 - [🤝 Acknowledgments](#-acknowledgments)
 - [📞 Support](#-support)
@@ -46,18 +45,18 @@ Built with: NestJS, TypeScript, PostgreSQL, Redis Stack (RedisJSON + RedisSearch
 
 If you're studying enterprise backend architecture, this repo covers:
 
-| Pattern | Where to Find It |
-|---|---|
-| Strategic DDD (Subdomains, Bounded Contexts, Context Mapping) | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| Tactical DDD (Entities, Value Objects, Aggregates, Domain Services) | `src/modules/*/core/domain/` |
-| Hexagonal Architecture (Ports & Adapters) | [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md) |
-| SAGA Orchestration with Compensation | `src/modules/orders/primary-adapters/jobs/` |
-| Idempotency (Redis-backed) | `src/infrastructure/idempotency/` |
-| ACL Gateway Pattern | `src/modules/orders/secondary-adapters/gateways/` |
-| Decorator-based Caching | `src/modules/*/secondary-adapters/repositories/` |
-| Result Pattern (no exceptions) | `src/shared-kernel/domain/` |
-| BullMQ Nested Flows | `src/modules/notifications/` |
-| Test Factories and Typed Mocks | `src/modules/*/testing/` |
+| Pattern                                                             | Where to Find It                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------- |
+| Strategic DDD (Subdomains, Bounded Contexts, Context Mapping)       | [ARCHITECTURE.md](docs/ARCHITECTURE.md)           |
+| Tactical DDD (Entities, Value Objects, Aggregates, Domain Services) | `src/modules/*/core/domain/`                      |
+| Hexagonal Architecture (Ports & Adapters)                           | [DDD-HEXAGONAL.md](docs/DDD-HEXAGONAL.md)         |
+| SAGA Orchestration with Compensation                                | `src/modules/orders/primary-adapters/jobs/`       |
+| Idempotency (Redis-backed)                                          | `src/infrastructure/idempotency/`                 |
+| ACL Gateway Pattern                                                 | `src/modules/orders/secondary-adapters/gateways/` |
+| Decorator-based Caching                                             | `src/modules/*/secondary-adapters/repositories/`  |
+| Result Pattern (no exceptions)                                      | `src/shared-kernel/domain/`                       |
+| BullMQ Nested Flows                                                 | `src/modules/notifications/`                      |
+| Test Factories and Typed Mocks                                      | `src/modules/*/testing/`                          |
 
 ---
 
@@ -112,7 +111,7 @@ graph TD
     end
 ```
 
-See the full [**System Architecture & Diagrams**](ARCHITECTURE.md) for detailed Sequence and Class diagrams.
+See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for detailed Sequence and Class diagrams.
 
 ### 🛠️ **Technology Stack**
 
@@ -393,7 +392,7 @@ src/
 - **Open/Closed**: Open for extension, closed for modification
 - **Interface Segregation**: Many client-specific interfaces
 
-> For strict academic DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md).
+> For strict academic DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](docs/DDD-HEXAGONAL.md).
 
 ---
 
@@ -549,9 +548,21 @@ npm run d:reset:test
 
 ---
 
+## 📖 Documentation Index
+
+| Document                                                    | Description                                                           |
+| :---------------------------------------------------------- | :-------------------------------------------------------------------- |
+| [**ARCHITECTURE.md**](docs/ARCHITECTURE.md)                 | System context (C4), domain flows, state machines, sequence diagrams  |
+| [**DDD-HEXAGONAL.md**](docs/DDD-HEXAGONAL.md)               | Canonical DDD & Hexagonal Architecture rules, decision flowcharts     |
+| [**INTEGRATION-PATTERNS.md**](docs/INTEGRATION-PATTERNS.md) | Cross-context communication: ACL Gateway, SAGA, Domain Events, Outbox |
+| [**ROADMAP.md**](docs/ROADMAP.md)                           | Production readiness checklist with prioritized tasks                 |
+| [**AGENT.md**](AGENT.md)                                    | Practical coding guidelines, conventions, and implementation patterns |
+
+---
+
 ## 🚧 Roadmap
 
-This project is continuously evolving. See the full [**ROADMAP.md**](ROADMAP.md) for detailed task breakdowns.
+This project is continuously evolving. See the full [**ROADMAP.md**](docs/ROADMAP.md) for detailed task breakdowns.
 
 ### ✅ Recently Completed (v0.2.0)
 
@@ -569,7 +580,7 @@ This project is continuously evolving. See the full [**ROADMAP.md**](ROADMAP.md)
 - [ ] **Real Stripe & PayPal Integration** — Move from stubs to real SDK integration
 - [ ] **Production Dockerfile** — Multi-stage build for deployment
 - [ ] **Health Checks** — `@nestjs/terminus` with DB/Redis/Queue indicators
-- [ ] **Graceful Degradation** — Redis failover to Postgres (inspired by [ppd-api](https://github.com/raouf-b-dev) patterns)
+- [ ] **Graceful Degradation** — Redis failover to Postgres (health-aware proxy pattern)
 - [ ] **Structured Logging** — Winston with rotation, correlation IDs
 
 ---
