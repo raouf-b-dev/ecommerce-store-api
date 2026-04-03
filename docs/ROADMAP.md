@@ -1,7 +1,6 @@
 # 🗺️ Roadmap
 
 > Prioritized by **production-readiness** and **career impact**.
-> Tasks informed by both ecommerce-store-api analysis and [ppd-api patterns](../ppd-api/).
 
 ---
 
@@ -92,7 +91,7 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 
 - `GET /health` endpoint (public, no auth)
 - Indicators: PostgreSQL (TypeORM ping), Redis (PING), BullMQ queue health
-- Follow pattern from ppd-api: `src/modules/health/`
+- Dedicated health module: `src/modules/health/`
 
 ---
 
@@ -102,7 +101,7 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 
 #### [ ] Graceful Degradation (Redis Failover)
 
-- Health-aware proxy at DI level (like ppd-api's `createHealthAwareProxy()`)
+- Health-aware proxy at DI level (`createHealthAwareProxy()` pattern)
 - If Redis dies → route directly to Postgres repositories
 - Recovery service to flush stale caches on reconnection
 - Zero changes to repository implementations
@@ -155,7 +154,7 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 - Replace NestJS default logger with Winston
 - Daily rotation, compression, 90-day retention
 - Log files: combined, error, http, exceptions
-- Follow pattern from ppd-api: `src/infrastructure/logging/`
+- Logging infrastructure: `src/infrastructure/logging/`
 
 #### [ ] Correlation IDs
 
