@@ -20,6 +20,10 @@ import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-cust
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
 import { ModuleInventoryReservationGateway } from './secondary-adapters/adapters/module-inventory-reservation.gateway';
 import { ModulePaymentGateway } from './secondary-adapters/adapters/module-payment.gateway';
+import { CustomerGateway } from './core/application/ports/customer.gateway';
+import { CartGateway } from './core/application/ports/cart.gateway';
+import { InventoryReservationGateway } from './core/application/ports/inventory-reservation.gateway';
+import { PaymentGateway } from './core/application/ports/payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
 import { CacheService } from '../../infrastructure/redis/cache/cache.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -66,6 +70,12 @@ import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
 import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
 import { OrdersProcessor } from './orders.processor';
+import { ReserveStockForCheckoutUseCase } from './core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
+import { ReleaseCheckoutStockUseCase } from './core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
+import { ConfirmCheckoutReservationUseCase } from './core/application/usecases/confirm-checkout-reservation/confirm-checkout-reservation.usecase';
+import { CreateCheckoutPaymentUseCase } from './core/application/usecases/create-checkout-payment/create-checkout-payment.usecase';
+import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
+import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 
 @Module({
   imports: [
@@ -113,16 +123,32 @@ import { OrdersProcessor } from './orders.processor';
       useClass: ModuleCustomerGateway,
     },
     {
+      provide: CustomerGateway,
+      useExisting: CUSTOMER_GATEWAY,
+    },
+    {
       provide: CART_GATEWAY,
       useClass: ModuleCartGateway,
+    },
+    {
+      provide: CartGateway,
+      useExisting: CART_GATEWAY,
     },
     {
       provide: INVENTORY_RESERVATION_GATEWAY,
       useClass: ModuleInventoryReservationGateway,
     },
     {
+      provide: InventoryReservationGateway,
+      useExisting: INVENTORY_RESERVATION_GATEWAY,
+    },
+    {
       provide: PAYMENT_GATEWAY,
       useClass: ModulePaymentGateway,
+    },
+    {
+      provide: PaymentGateway,
+      useExisting: PAYMENT_GATEWAY,
     },
 
     // Default Repository Binding
@@ -157,6 +183,12 @@ import { OrdersProcessor } from './orders.processor';
     ExpirePendingOrdersUseCase,
     ReleaseOrderStockUseCase,
     ValidateCheckoutUseCase,
+    ReserveStockForCheckoutUseCase,
+    ReleaseCheckoutStockUseCase,
+    ConfirmCheckoutReservationUseCase,
+    CreateCheckoutPaymentUseCase,
+    RefundCheckoutPaymentUseCase,
+    ClearCheckoutCartUseCase,
 
     // Job Handlers
     PaymentCompletedStep,
