@@ -566,7 +566,11 @@ This project is continuously evolving. See the full [**ROADMAP.md**](docs/ROADMA
 
 ### ✅ Recently Completed (v0.2.0)
 
-- [x] ACL Gateways across all cross-module boundaries (7 gateways)
+- [x] ACL Gateways across all cross-module boundaries (7 gateway ports)
+- [x] Gateway ports converted to `abstract class` — no `@Inject()` tokens needed in core Use Cases
+- [x] 6 new SAGA-step Application Services (Reserve, Release, Confirm, Pay, Refund, ClearCart)
+- [x] **Fixed double stock release bug** — `cancelOrder()` no longer releases stock atomically; SAGA orchestrator owns compensation
+- [x] `ShippingAddressResolver` moved to application layer (was violating DDD by importing from primary adapters & ports)
 - [x] Swagger/OpenAPI documentation on all 8 controllers
 - [x] Result Pattern — no exceptions in domain/application layers
 - [x] SAGA orchestration with compensation (checkout flow)

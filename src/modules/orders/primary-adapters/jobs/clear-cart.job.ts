@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
-import { ClearCartUseCase } from '../../../carts/core/application/usecases/clear-cart/clear-cart.usecase';
+import { ClearCheckoutCartUseCase } from '../../core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
@@ -18,7 +18,7 @@ export class ClearCartStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ClearCartStep.name);
 
-  constructor(private readonly clearCartUseCase: ClearCartUseCase) {
+  constructor(private readonly clearCartUseCase: ClearCheckoutCartUseCase) {
     super();
   }
 

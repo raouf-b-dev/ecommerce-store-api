@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutFailureListener } from './checkout-failure.listener';
 import { getQueueToken } from '@nestjs/bullmq';
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
-import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
-import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';
-import { OrderRepository } from '../../core/domain/repositories/order-repository';
-import { GetOrderReservationsUseCase } from '../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
+import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
+import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
+import { ClearCheckoutCartUseCase } from '../../core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
+import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
 
 describe('CheckoutFailureListener', () => {
   it('should be defined', async () => {
@@ -15,11 +15,11 @@ describe('CheckoutFailureListener', () => {
         CheckoutFailureListener,
         { provide: getQueueToken('checkout'), useValue: {} },
         { provide: QueueEventsService, useValue: { onFailed: jest.fn() } },
-        { provide: ReleaseStockUseCase, useValue: {} },
         { provide: CancelOrderUseCase, useValue: {} },
-        { provide: ProcessRefundUseCase, useValue: {} },
-        { provide: OrderRepository, useValue: {} },
-        { provide: GetOrderReservationsUseCase, useValue: {} },
+        { provide: ReleaseCheckoutStockUseCase, useValue: {} },
+        { provide: RefundCheckoutPaymentUseCase, useValue: {} },
+        { provide: ClearCheckoutCartUseCase, useValue: {} },
+        { provide: InventoryReservationGateway, useValue: {} },
       ],
     }).compile();
 

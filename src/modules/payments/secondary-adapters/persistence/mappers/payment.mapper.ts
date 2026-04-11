@@ -1,10 +1,7 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
-import { PaymentMethodType } from '../../../core/domain/value-objects/payment-method';
-import { PaymentStatusType } from '../../../core/domain/value-objects/payment-status';
 import { PaymentEntity } from '../../orm/payment.schema';
-import { RefundEntity } from '../../orm/refund.schema';
 import { RefundMapper } from './refund.mapper';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;

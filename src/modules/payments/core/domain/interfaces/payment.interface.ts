@@ -1,5 +1,5 @@
 // src/modules/payments/core/domain/interfaces/payment.interface.ts
-import { PaymentMethodType } from '../value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../value-objects/payment-status';
 import { IRefund } from './refund.interface';
 

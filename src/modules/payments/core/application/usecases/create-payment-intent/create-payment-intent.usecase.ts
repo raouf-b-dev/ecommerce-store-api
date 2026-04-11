@@ -9,7 +9,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
-import { PaymentMethodType } from '../../../domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 
 export interface CreatePaymentIntentDto {
   amount: number;

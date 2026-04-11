@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../../infrastructure/jobs/base-job.handler';
-import { ReserveStockUseCase } from '../../../../inventory/core/application/reserve-stock/reserve-stock.usecase';
+import { ReserveStockForCheckoutUseCase } from '../../../core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -19,7 +19,9 @@ export class ReserveStockStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ReserveStockStep.name);
 
-  constructor(private readonly reserveStockUseCase: ReserveStockUseCase) {
+  constructor(
+    private readonly reserveStockUseCase: ReserveStockForCheckoutUseCase,
+  ) {
     super();
   }
 
@@ -28,7 +30,6 @@ export class ReserveStockStep extends BaseJobHandler<
   ): Promise<Result<ReserveStockResult, AppError>> {
     const { cartId } = job.data;
 
-    // Get data from child job (ValidateCartStep)
     const childrenValues = await job.getChildrenValues();
     const childData = Object.values(childrenValues)[0] as ValidateCartResult;
 

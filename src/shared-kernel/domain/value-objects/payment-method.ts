@@ -1,5 +1,8 @@
-// src/modules/payments/core/domain/value-objects/payment-method.ts
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+// shared-kernel/domain/value-objects/payment-method.ts
+// Both the enum and the value object class live in shared-kernel because
+// both Orders and Payments contexts depend on them.
+
+import { DomainError } from '../exceptions/domain.error';
 
 export enum PaymentMethodType {
   CREDIT_CARD = 'CREDIT_CARD',

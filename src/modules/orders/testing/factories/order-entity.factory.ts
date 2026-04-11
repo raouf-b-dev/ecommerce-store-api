@@ -3,7 +3,7 @@ import { OrderEntity } from '../../secondary-adapters/orm/order.schema';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { OrderItemEntity } from '../../secondary-adapters/orm/order-item.schema';
 import { ShippingAddressEntity } from '../../secondary-adapters/orm/shipping-address.schema';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 /**
  * Factory for creating ORM entity mocks for testing
@@ -74,7 +74,6 @@ export class OrderEntityTestFactory {
       quantity: 1,
       lineTotal: 100,
       order: null as any,
-      product: null as any,
     };
 
     return { ...defaultEntity, ...overrides };

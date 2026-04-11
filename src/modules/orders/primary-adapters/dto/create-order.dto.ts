@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 import { CreateOrderItemDto } from './create-order-item.dto';
 import { ShippingAddressDto } from './shipping-address.dto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class CreateOrderDto {
   @ApiProperty({

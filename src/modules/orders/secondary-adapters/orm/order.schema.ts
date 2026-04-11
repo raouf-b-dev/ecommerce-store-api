@@ -14,7 +14,7 @@ import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 @Entity({ name: 'orders' })
 @Index('idx_orders_status', ['status'])

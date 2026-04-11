@@ -10,7 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethodDetailsDto } from './payment-method-details.dto';
-import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export enum PaymentMethod {
   CREDIT_CARD = 'CREDIT_CARD',

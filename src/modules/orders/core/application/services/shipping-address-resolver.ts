@@ -1,13 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { ShippingAddressDto } from '../../../primary-adapters/dto/shipping-address.dto';
-import { ShippingAddressProps } from '../value-objects/shipping-address';
-import { ICustomer } from '../../../../customers/core/domain/interfaces/customer.interface';
+import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';
+import { CheckoutCustomerInfo } from '../ports/customer.gateway';
 
+/**
+ * Application Service — Resolves shipping address from either an explicit DTO
+ * or the customer's default address.
+ *
+ * Lives in the application layer because it coordinates between:
+ *  - An incoming DTO (primary adapter input)
+ *  - A gateway DTO (CheckoutCustomerInfo from CustomerGateway port)
+ *  - A domain value object (ShippingAddressProps)
+ *
+ * The domain layer only ever sees ShippingAddressProps — it has no knowledge
+ * of how it was constructed.
+ */
 @Injectable()
 export class ShippingAddressResolver {
   resolveFromDto(
     dto: ShippingAddressDto,
-    customer: ICustomer,
+    customer: CheckoutCustomerInfo,
   ): ShippingAddressProps {
     return {
       id: 0,
@@ -24,7 +36,9 @@ export class ShippingAddressResolver {
     };
   }
 
-  resolveFromDefault(customer: ICustomer): ShippingAddressProps | null {
+  resolveFromDefault(
+    customer: CheckoutCustomerInfo,
+  ): ShippingAddressProps | null {
     const defaultAddress = customer.addresses.find((addr) => addr.isDefault);
     if (!defaultAddress) return null;
 
@@ -45,7 +59,7 @@ export class ShippingAddressResolver {
 
   resolve(
     dto: ShippingAddressDto | undefined,
-    customer: ICustomer,
+    customer: CheckoutCustomerInfo,
   ): ShippingAddressProps | null {
     if (dto) {
       return this.resolveFromDto(dto, customer);

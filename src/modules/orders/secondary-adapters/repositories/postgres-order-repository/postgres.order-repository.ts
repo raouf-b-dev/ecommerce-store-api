@@ -1,14 +1,12 @@
 // src/order/infrastructure/postgres-order.repository.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
 import { OrderEntity } from '../../orm/order.schema';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { ProductEntity } from '../../../../products/secondary-adapters/orm/product.schema';
-import { InventoryEntity } from '../../../../inventory/secondary-adapters/orm/inventory.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { OrderItemProps } from '../../../core/domain/entities/order-items';
@@ -71,32 +69,8 @@ export class PostgresOrderRepository implements OrderRepository {
 
   async save(order: Order): Promise<Result<Order, RepositoryError>> {
     try {
-      const savedOrder = await this.dataSource.transaction(async (manager) => {
-        const orderItems = order.getItems();
-        const productIds = Array.from(
-          new Set(orderItems.map((i) => i.productId)),
-        ).sort();
-
-        const products = await manager.find(ProductEntity, {
-          where: { id: In(productIds) },
-        });
-
-        const productMap = new Map<number, ProductEntity>();
-        for (const p of products) productMap.set(p.id, p);
-
-        for (const pid of productIds) {
-          if (!productMap.has(pid)) {
-            throw new RepositoryError(
-              `PRODUCT_NOT_FOUND: Product ${pid} not found`,
-            );
-          }
-        }
-
-        const orderEntity = OrderMapper.toEntity(order);
-
-        return await manager.save(orderEntity);
-      });
-
+      const orderEntity = OrderMapper.toEntity(order);
+      const savedOrder = await this.ormRepo.save(orderEntity);
       const domainOrder = OrderMapper.toDomain(savedOrder);
 
       return Result.success<Order>(domainOrder);
@@ -172,42 +146,6 @@ export class PostgresOrderRepository implements OrderRepository {
 
           const existingDomainOrder = OrderMapper.toDomain(existingOrderEntity);
 
-          const oldMap = new Map<number, number>();
-          for (const item of existingDomainOrder.getItems()) {
-            const itemPrimitives = item.toPrimitives();
-            const prev = oldMap.get(itemPrimitives.productId) ?? 0;
-            oldMap.set(
-              itemPrimitives.productId,
-              prev + itemPrimitives.quantity,
-            );
-          }
-
-          const newMap = new Map<number, number>();
-          for (const item of updateOrderItemDto) {
-            newMap.set(item.productId, item.quantity);
-          }
-
-          const allProductIds = Array.from(
-            new Set([...oldMap.keys(), ...newMap.keys()]),
-          ).sort();
-
-          const products = allProductIds.length
-            ? await manager.find(ProductEntity, {
-                where: { id: In(allProductIds) },
-              })
-            : [];
-
-          const productMap = new Map<number, ProductEntity>();
-          for (const p of products) productMap.set(p.id, p);
-
-          for (const pid of newMap.keys()) {
-            if (!productMap.has(pid)) {
-              throw new RepositoryError(
-                `PRODUCT_NOT_FOUND: Product ${pid} not found`,
-              );
-            }
-          }
-
           for (const item of updateOrderItemDto) {
             if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
               throw new RepositoryError(
@@ -216,59 +154,13 @@ export class PostgresOrderRepository implements OrderRepository {
             }
           }
 
-          // Stock adjustment within transaction
-          for (const productId of allProductIds) {
-            const oldQty = oldMap.get(productId) ?? 0;
-            const newQty = newMap.get(productId) ?? 0;
-            const delta = newQty - oldQty;
-
-            if (delta > 0) {
-              const updateResult = await manager
-                .createQueryBuilder()
-                .update(InventoryEntity)
-                .set({
-                  availableQuantity: () => `available_quantity - ${delta}`,
-                })
-                .where('product_id = :id AND available_quantity >= :quantity', {
-                  id: productId,
-                  quantity: delta,
-                })
-                .execute();
-
-              if (updateResult.affected === 0) {
-                const exists = await manager.exists(InventoryEntity, {
-                  where: { productId },
-                });
-                if (!exists) {
-                  throw new RepositoryError(
-                    `INVENTORY_NOT_FOUND: Inventory for product ${productId} not found`,
-                  );
-                }
-                throw new RepositoryError(
-                  `INSUFFICIENT_STOCK: Not enough stock to increase quantity for product ${productId}`,
-                );
-              }
-            } else if (delta < 0) {
-              const returnQty = -delta;
-              await manager
-                .createQueryBuilder()
-                .update(InventoryEntity)
-                .set({
-                  availableQuantity: () => `available_quantity + ${returnQty}`,
-                })
-                .where('product_id = :id', { id: productId })
-                .execute();
-            }
-          }
-
           const newDomainItems: OrderItemProps[] = updateOrderItemDto.map(
             (itemDto: CreateOrderItemDto) => {
-              const product = productMap.get(itemDto.productId)!;
               const props: OrderItemProps = {
                 id: null,
-                productId: product.id,
-                productName: product.name,
-                unitPrice: product.price,
+                productId: itemDto.productId,
+                productName: itemDto.productName,
+                unitPrice: itemDto.unitPrice,
                 quantity: itemDto.quantity,
               };
               return props;
@@ -337,23 +229,10 @@ export class PostgresOrderRepository implements OrderRepository {
     orderPrimitives: Order,
   ): Promise<Result<void, RepositoryError>> {
     try {
-      await this.dataSource.transaction(async (manager) => {
-        // Release stock back to inventory
-        for (const item of orderPrimitives.toPrimitives().items) {
-          await manager
-            .createQueryBuilder()
-            .update(InventoryEntity)
-            .set({
-              availableQuantity: () => `available_quantity + ${item.quantity}`,
-            })
-            .where('product_id = :id', { id: item.productId })
-            .execute();
-        }
-
-        const updatedEntity = OrderMapper.toEntity(orderPrimitives);
-
-        await manager.save(updatedEntity);
-      });
+      // Stock release is handled by the SAGA (ReleaseOrderStockUseCase)
+      // Repository only persists the cancelled order state
+      const updatedEntity = OrderMapper.toEntity(orderPrimitives);
+      await this.ormRepo.save(updatedEntity);
 
       return Result.success<void>(undefined);
     } catch (error) {

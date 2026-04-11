@@ -1,6 +1,6 @@
 // src/modules/payments/core/domain/gateways/payment-gateway.interface.ts
 import { PaymentResult, PaymentIntentResult } from './payment-result';
-import { PaymentMethodType } from '../value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 

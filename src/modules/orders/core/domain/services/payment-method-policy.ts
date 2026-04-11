@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentMethodType } from '../../../../payments/core/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderStatus } from '../value-objects/order-status';
 
 @Injectable()

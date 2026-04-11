@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressDto } from './shipping-address.dto';
 
 export class CheckoutDto {
