@@ -1,4 +1,3 @@
-// src/modules/orders/domain/factories/order.factory.ts
 import { Injectable } from '@nestjs/common';
 import { CreateOrderDto } from '../../../primary-adapters/dto/create-order.dto';
 import { UpdateOrderDto } from '../../../primary-adapters/dto/update-order.dto';
@@ -6,8 +5,8 @@ import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-i
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { Order } from '../entities/order';
-import { ICart } from '../../../../carts/core/domain/interfaces/cart.interface';
-import { PaymentMethodType } from '../../../../payments/core/domain';
+import { CheckoutCartInfo } from '../../application/ports/cart.gateway';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 import { OrderItemProps } from '../entities/order-items';
 
@@ -22,7 +21,7 @@ export interface AggregatedUpdateInput extends Omit<UpdateOrderDto, 'items'> {
 @Injectable()
 export class OrderFactory {
   createFromCart(props: {
-    cart: ICart;
+    cart: CheckoutCartInfo;
     userId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;

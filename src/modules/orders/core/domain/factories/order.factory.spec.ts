@@ -8,7 +8,7 @@ import {
 import { OrderStatus } from '../value-objects/order-status';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
-import { PaymentMethodType } from '../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
 describe('OrderFactory', () => {
   let factory: OrderFactory;
@@ -106,9 +106,9 @@ describe('OrderFactory', () => {
     it('aggregates duplicate items by productId when updating from DTO', () => {
       const updateDto: UpdateOrderDto = {
         items: [
-          { productId: 1, quantity: 2 },
-          { productId: 1, quantity: 4 },
-          { productId: 2, quantity: 3 },
+          { productId: 1, quantity: 2, productName: 'Test', unitPrice: 100 },
+          { productId: 1, quantity: 4, productName: 'Test', unitPrice: 100 },
+          { productId: 2, quantity: 3, productName: 'Test 2', unitPrice: 100 },
         ],
       };
 
@@ -129,7 +129,9 @@ describe('OrderFactory', () => {
 
     it('updateFromDto returns a DomainError when order status is not awaiting payment', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 2, quantity: 1 }],
+        items: [
+          { productId: 2, quantity: 1, productName: 'Test', unitPrice: 100 },
+        ],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.DELIVERED);
@@ -142,7 +144,9 @@ describe('OrderFactory', () => {
 
     it('allows update when status is PENDING_PAYMENT', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 2, quantity: 1 }],
+        items: [
+          { productId: 2, quantity: 1, productName: 'Test', unitPrice: 100 },
+        ],
       };
 
       const result = factory.updateFromDto(
@@ -156,7 +160,9 @@ describe('OrderFactory', () => {
 
     it('returns DomainError for SHIPPED status', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 2, quantity: 1 }],
+        items: [
+          { productId: 2, quantity: 1, productName: 'Test', unitPrice: 100 },
+        ],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.SHIPPED);
@@ -166,7 +172,9 @@ describe('OrderFactory', () => {
 
     it('returns DomainError for CANCELLED status', () => {
       const updateDto: UpdateOrderDto = {
-        items: [{ productId: 2, quantity: 1 }],
+        items: [
+          { productId: 2, quantity: 1, productName: 'Test', unitPrice: 100 },
+        ],
       };
 
       const result = factory.updateFromDto(updateDto, OrderStatus.CANCELLED);
@@ -192,8 +200,8 @@ describe('OrderFactory', () => {
     it('handles large quantities in aggregation', () => {
       const dto = CreateOrderDtoTestFactory.createMockDto();
       dto.items = [
-        { productId: 1, quantity: 1000 },
-        { productId: 1, quantity: 500 },
+        { productId: 1, quantity: 1000, productName: 'Test', unitPrice: 100 },
+        { productId: 1, quantity: 500, productName: 'Test', unitPrice: 100 },
       ];
 
       const aggregated = factory.createFromDto(dto);
