@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { OrderEntity } from './order.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
-import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
 
 @Entity({ name: 'order_items' })
 export class OrderItemEntity {
@@ -45,11 +44,4 @@ export class OrderItemEntity {
   })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
-
-  @ManyToOne(() => ProductEntity, {
-    eager: true,
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
 }

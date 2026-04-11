@@ -32,7 +32,6 @@ export class TestDataHelper {
           items: [
             OrderEntityTestFactory.createOrderItemEntity({
               productId,
-              product: productEntity,
             }),
           ],
         })
@@ -44,7 +43,6 @@ export class TestDataHelper {
           items: [
             OrderEntityTestFactory.createOrderItemEntity({
               productId,
-              product: productEntity,
             }),
           ],
         });

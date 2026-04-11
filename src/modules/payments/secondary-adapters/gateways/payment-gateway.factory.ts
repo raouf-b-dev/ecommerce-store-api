@@ -1,7 +1,7 @@
 // src/modules/payments/infrastructure/gateways/payment-gateway.factory.ts
 import { Injectable } from '@nestjs/common';
 import { IPaymentGateway } from '../../core/domain/gateways/payment-gateway.interface';
-import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { CodGateway } from './cod.gateway';
 import { StripeGateway } from './stripe.gateway';
 import { PayPalGateway } from './paypal.gateway';

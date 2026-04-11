@@ -3,11 +3,10 @@ import { RecordCodPaymentUseCase } from './record-cod-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
 import { RecordCodPaymentDto } from '../../../../primary-adapters/dto/record-cod-payment.dto';
-import { PaymentMethodType } from '../../../domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('RecordCodPaymentUseCase', () => {
   let useCase: RecordCodPaymentUseCase;

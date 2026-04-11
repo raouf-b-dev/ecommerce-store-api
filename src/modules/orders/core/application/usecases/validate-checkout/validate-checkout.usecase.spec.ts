@@ -3,7 +3,7 @@ import {
   ValidateCheckoutUseCase,
   ValidateCheckoutInput,
 } from './validate-checkout.usecase';
-import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
+import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
@@ -12,7 +12,6 @@ import { CartTestFactory } from '../../../../../carts/testing/factories/cart.fac
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { CustomerGateway } from '../../ports/customer.gateway';
 import { CartGateway } from '../../ports/cart.gateway';
-import { CART_GATEWAY, CUSTOMER_GATEWAY } from '../../../../order.token';
 
 describe('ValidateCheckoutUseCase', () => {
   let useCase: ValidateCheckoutUseCase;
@@ -52,15 +51,15 @@ describe('ValidateCheckoutUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateCheckoutUseCase,
-        { provide: CUSTOMER_GATEWAY, useValue: mockCustomerGateway },
-        { provide: CART_GATEWAY, useValue: mockCartGateway },
+        { provide: CustomerGateway, useValue: mockCustomerGateway },
+        { provide: CartGateway, useValue: mockCartGateway },
         { provide: ShippingAddressResolver, useValue: mockAddressResolver },
       ],
     }).compile();
 
     useCase = module.get<ValidateCheckoutUseCase>(ValidateCheckoutUseCase);
-    customerGateway = module.get(CUSTOMER_GATEWAY);
-    cartGateway = module.get(CART_GATEWAY);
+    customerGateway = module.get(CustomerGateway);
+    cartGateway = module.get(CartGateway);
     addressResolver = module.get(ShippingAddressResolver);
   });
 

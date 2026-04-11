@@ -19,7 +19,7 @@ import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-ord
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
-import { PaymentMethodType } from '../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
 describe('CachedOrderRepository', () => {
   let repository: CachedOrderRepository;
@@ -35,7 +35,7 @@ describe('CachedOrderRepository', () => {
   const orderId = 1;
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
   const mockUpdateOrderDto: CreateOrderItemDto[] = [
-    { productId: 1, quantity: 3 },
+    { productId: 1, quantity: 3, productName: 'Test', unitPrice: 100 },
   ];
   const cancelledOrder = Order.fromPrimitives(
     OrderTestFactory.createCancelledOrder({

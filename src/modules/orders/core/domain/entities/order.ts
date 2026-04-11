@@ -12,7 +12,7 @@ import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { PaymentMethodType } from '../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
 export interface OrderProps {
   id: number | null;

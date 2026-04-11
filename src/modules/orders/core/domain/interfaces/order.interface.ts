@@ -5,7 +5,7 @@ import {
   IShippingAddress,
   IShippingAddressEditable,
 } from './shipping-address.interface';
-import { PaymentMethodType } from '../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
 export interface IOrder {
   id: number | null;

@@ -1,7 +1,7 @@
 // src/modules/order/testing/factories/order.test.factory.ts
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderTestFactory {
   static createMockOrder(overrides?: Partial<IOrder>): IOrder {

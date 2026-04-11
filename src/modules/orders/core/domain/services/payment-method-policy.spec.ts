@@ -1,5 +1,5 @@
 import { PaymentMethodPolicy } from './payment-method-policy';
-import { PaymentMethodType } from '../../../../payments/core/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderStatus } from '../value-objects/order-status';
 
 describe('PaymentMethodPolicy', () => {

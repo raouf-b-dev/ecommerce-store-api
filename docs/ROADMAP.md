@@ -6,13 +6,23 @@
 
 ## ✅ Completed
 
+### [x] ACL Gateway & SAGA Cleanup
+
+Eliminated all cross-module imports violating Domain-Driven Design boundaries in the Orders module.
+
+- Moved `PaymentMethod` to `shared-kernel` to resolve downstream dependencies
+- Gateway ports define their own downstream DTOs (e.g. `CheckoutCustomerInfo`)
+- Decoupled `OrderEntity` and `ProductEntity` foreign key relationships in the ORM Layer
+- Rewired BullMQ SAGA job handlers to inject Application Services (Use Cases) instead of Secondary Adapters
+- Removed direct repository-level cross-context database transactions (`postgres.order-repository.ts` now exclusively manages `orders` and `order_items` tables)
+
 ### [x] Strict DDD & Hexagonal Architecture
 
 Full Hexagonal structure across all 8 modules. Domain layer is framework-free, application layer orchestrates via use cases, adapters are cleanly separated into primary (driving) and secondary (driven).
 
 ### [x] Anti-Corruption Layer (ACL) Gateways
 
-All cross-module communication uses explicit Gateway ports + adapters. Zero direct cross-context executable imports.
+Cross-module communication uses Gateway ports + adapters. 7 gateways implemented across Orders, Carts, and Auth modules.
 
 | Gateway                       | Downstream → Upstream | What It Wraps                          |
 | ----------------------------- | --------------------- | -------------------------------------- |
@@ -60,38 +70,45 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 
 ## 📋 Backlog — Prioritized
 
-### 🏆 Phase 1 — Production Credibility
+### 🏆 Phase 1 — Production Infrastructure
 
-> Features that turn this from "learning project" into "I can ship production systems."
+> Table-stakes for deployment. The app is not production-ready without these.
 
 ---
-
-#### [ ] Real Stripe Integration
-
-- Stripe SDK (`stripe` npm package) for payment intents and charges
-- Webhook signature verification (`stripe-signature` header)
-- Idempotent payment creation (use existing `IdempotencyStore`)
-- Handle edge cases: double-charge prevention, partial captures, refund flows
-- Test mode with Stripe test keys
-
-#### [ ] Real PayPal Integration
-
-- PayPal REST SDK for order creation and capture
-- Webhook signature verification
-- Map PayPal statuses to domain `PaymentStatus` value object
-
-#### [ ] Dockerfile (Production-Ready)
-
-- Multi-stage build (build → production)
-- Separate `docker-compose.dev.yml` and `docker-compose.prod.yml`
-- Health check in Docker config
-- Environment variable documentation
 
 #### [ ] Health Checks (`@nestjs/terminus`)
 
 - `GET /health` endpoint (public, no auth)
 - Indicators: PostgreSQL (TypeORM ping), Redis (PING), BullMQ queue health
 - Dedicated health module: `src/modules/health/`
+
+#### [ ] Structured Logging (Winston/Pino)
+
+- Replace NestJS default logger with Winston or Pino
+- JSON format in production, pretty-print in development
+- Daily rotation, compression, 90-day retention
+- Log files: combined, error, http, exceptions
+- Location: `src/infrastructure/logging/`
+
+#### [ ] Correlation IDs
+
+- `CorrelationIdMiddleware` with `AsyncLocalStorage`
+- Auto-inject into every log line
+- Return `X-Request-Id` in response headers
+- Propagate to BullMQ job logs (job ID, queue, attempt)
+
+#### [ ] Dockerfile (Production-Ready)
+
+- Multi-stage build (`node:20-alpine` build → production)
+- Separate `docker-compose.dev.yml` and `docker-compose.prod.yml`
+- Health check in Docker config
+- Environment variable documentation
+
+#### [ ] Global Exception Filter & Graceful Shutdown
+
+- Catch-all exception filter: logs full error (with correlation ID), returns sanitized response
+- `app.enableShutdownHooks()`, drain BullMQ workers, close DB pool on SIGTERM
+- No stack trace leakage in production responses
 
 ---
 
@@ -119,6 +136,14 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 - In-process adapter for tests, BullMQ adapter for production
 - Events: `OrderPlaced`, `PaymentCompleted`, `StockReserved`
 
+#### [ ] EAV Product Attributes
+
+- Dynamic product attributes via Entity-Attribute-Value pattern
+- `product_attribute_definitions` + `product_attribute_values` tables
+- Seedable per product category (electronics, clothing, food)
+- Admin API for definition CRUD, per-product value management
+- See: [`EAV-PATTERN.md`](EAV-PATTERN.md)
+
 ---
 
 ### 🥈 Phase 3 — API Hardening
@@ -145,23 +170,23 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 
 ---
 
-### 🥉 Phase 4 — Observability
+### 🥉 Phase 4 — Observability Stack
 
 ---
 
-#### [ ] Structured Logging (Winston)
+#### [ ] Prometheus Metrics
 
-- Replace NestJS default logger with Winston
-- Daily rotation, compression, 90-day retention
-- Log files: combined, error, http, exceptions
-- Logging infrastructure: `src/infrastructure/logging/`
+- `prom-client` npm package for custom metrics
+- Expose `GET /metrics` endpoint (internal, no auth)
+- Key metrics: `http_request_duration_seconds`, `http_requests_total`, `bullmq_job_duration_seconds`, `db_active_connections`
+- NestJS interceptor for automatic HTTP metric collection
 
-#### [ ] Correlation IDs
+#### [ ] Grafana + Loki Integration
 
-- `CorrelationIdMiddleware` with `AsyncLocalStorage`
-- Auto-inject into every Winston log line
-- Return `X-Request-Id` in response headers
-- Structured BullMQ job logs (job ID, queue, attempt)
+- `docker-compose` additions: Prometheus, Loki, Promtail, Grafana
+- Grafana dashboards: request rate, error rate, latency percentiles, queue depth
+- Loki data source for log aggregation (consumes Winston/Pino JSON output)
+- Alert rules for error rate spikes and queue backlogs
 
 #### [ ] OpenAPI Contract Testing
 
@@ -171,7 +196,27 @@ Trimmed orders table from 12 to 4 indexes. Removed speculative indexes with no m
 
 ---
 
-### 📦 Phase 5 — Ecosystem
+### 💳 Phase 5 — Payment Integrations
+
+---
+
+#### [ ] Real Stripe Integration
+
+- Stripe SDK (`stripe` npm package) for payment intents and charges
+- Webhook signature verification (`stripe-signature` header)
+- Idempotent payment creation (use existing `IdempotencyStore`)
+- Handle edge cases: double-charge prevention, partial captures, refund flows
+- Test mode with Stripe test keys
+
+#### [ ] Real PayPal Integration
+
+- PayPal REST SDK for order creation and capture
+- Webhook signature verification
+- Map PayPal statuses to domain `PaymentStatus` value object
+
+---
+
+### 📦 Phase 6 — Ecosystem
 
 ---
 

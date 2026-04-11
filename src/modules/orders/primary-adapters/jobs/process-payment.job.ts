@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
-import { CreatePaymentIntentUseCase } from '../../../payments/core/application/usecases/create-payment-intent/create-payment-intent.usecase';
+import { CreateCheckoutPaymentUseCase } from '../../core/application/usecases/create-checkout-payment/create-checkout-payment.usecase';
 import { GetOrderUseCase } from '../../core/application/usecases/get-order/get-order.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
@@ -25,7 +25,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
   protected readonly logger = new Logger(ProcessPaymentStep.name);
 
   constructor(
-    private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
+    private readonly createPaymentUseCase: CreateCheckoutPaymentUseCase,
     private readonly getOrderUseCase: GetOrderUseCase,
   ) {
     super();
@@ -59,7 +59,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
 
     this.logger.log(`Creating payment intent for order ${orderId}...`);
 
-    const paymentResult = await this.createPaymentIntentUseCase.execute({
+    const paymentResult = await this.createPaymentUseCase.execute({
       orderId,
       amount: orderTotal,
       currency: orderCurrency,

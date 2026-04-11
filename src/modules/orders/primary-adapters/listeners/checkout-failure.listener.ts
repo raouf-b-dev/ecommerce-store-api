@@ -1,11 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
+import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
+import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
+import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
-import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
-import { GetOrderReservationsUseCase } from '../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -14,10 +14,10 @@ export class CheckoutFailureListener implements OnModuleInit {
   constructor(
     @InjectQueue('checkout') private readonly checkoutQueue: Queue,
     private readonly queueEventsService: QueueEventsService,
-    private readonly releaseStockUseCase: ReleaseStockUseCase,
+    private readonly releaseStockUseCase: ReleaseCheckoutStockUseCase,
     private readonly cancelOrderUseCase: CancelOrderUseCase,
-    private readonly processRefundUseCase: ProcessRefundUseCase,
-    private readonly getOrderReservationsUseCase: GetOrderReservationsUseCase,
+    private readonly refundPaymentUseCase: RefundCheckoutPaymentUseCase,
+    private readonly inventoryGateway: InventoryReservationGateway,
   ) {}
 
   async onModuleInit() {
@@ -40,7 +40,7 @@ export class CheckoutFailureListener implements OnModuleInit {
 
           if (!reservationId && orderId) {
             const reservationResult =
-              await this.getOrderReservationsUseCase.execute(orderId);
+              await this.inventoryGateway.getOrderReservations(orderId);
             if (
               reservationResult.isSuccess &&
               reservationResult.value.length > 0
@@ -56,12 +56,10 @@ export class CheckoutFailureListener implements OnModuleInit {
 
           if (paymentId) {
             this.logger.log(`Refunding payment ${paymentId}...`);
-            const refundResult = await this.processRefundUseCase.execute({
-              id: paymentId,
-              dto: {
-                amount: orderTotal || 0,
-                reason: `Checkout compensation: ${failedReason}`,
-              },
+            const refundResult = await this.refundPaymentUseCase.execute({
+              paymentId,
+              amount: orderTotal || 0,
+              reason: `Checkout compensation: ${failedReason}`,
             });
             if (refundResult.isFailure) {
               this.logger.error(

@@ -1,6 +1,6 @@
 // src/modules/order/testing/factories/create-order-dto.factory.ts
 
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { CreateOrderDto } from '../../primary-adapters/dto/create-order.dto';
 import { DeliverOrderDto } from '../../primary-adapters/dto/deliver-order.dto';
 
@@ -12,6 +12,8 @@ export class CreateOrderDtoTestFactory {
         {
           productId: 3,
           quantity: 1,
+          productName: 'Product 3',
+          unitPrice: 100,
         },
       ],
       shippingAddress: {
@@ -68,6 +70,8 @@ export class CreateOrderDtoTestFactory {
       items: productIds.map((productId, index) => ({
         productId,
         quantity: index + 1,
+        productName: `Product ${productId}`,
+        unitPrice: 100,
       })),
     });
   }

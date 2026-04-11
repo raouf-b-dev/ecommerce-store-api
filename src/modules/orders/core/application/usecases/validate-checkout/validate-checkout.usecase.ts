@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -6,14 +6,13 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
+import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
 import { ShippingAddressDto } from '../../../../primary-adapters/dto/shipping-address.dto';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
-import { ICustomer } from '../../../../../customers/core/domain/interfaces/customer.interface';
-import { ICart } from '../../../../../carts/core/domain/interfaces/cart.interface';
+import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
+import { CheckoutCartInfo } from '../../ports/cart.gateway';
 import { CustomerGateway } from '../../ports/customer.gateway';
 import { CartGateway } from '../../ports/cart.gateway';
-import { CART_GATEWAY, CUSTOMER_GATEWAY } from '../../../../order.token';
 
 export interface ValidateCheckoutInput {
   cartId: number;
@@ -22,8 +21,8 @@ export interface ValidateCheckoutInput {
 }
 
 export interface ValidatedCheckoutContext {
-  customer: ICustomer;
-  cart: ICart;
+  customer: CheckoutCustomerInfo;
+  cart: CheckoutCartInfo;
   shippingAddress: ShippingAddressProps;
 }
 
@@ -34,8 +33,8 @@ export class ValidateCheckoutUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    @Inject(CUSTOMER_GATEWAY) private readonly customerGateway: CustomerGateway,
-    @Inject(CART_GATEWAY) private readonly cartGateway: CartGateway,
+    private readonly customerGateway: CustomerGateway,
+    private readonly cartGateway: CartGateway,
     private readonly addressResolver: ShippingAddressResolver,
   ) {
     super();

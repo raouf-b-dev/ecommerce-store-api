@@ -1,7 +1,7 @@
 // src/modules/orders/presentation/dto/payment-info.dto.ts
 import { IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentMethodType } from '../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class PaymentMethodDto {
   @ApiProperty({

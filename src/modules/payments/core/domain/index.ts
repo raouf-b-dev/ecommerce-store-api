@@ -2,7 +2,6 @@
 // Export types for use by other modules (e.g., Orders)
 
 // Value object types
-export { PaymentMethodType } from './value-objects/payment-method';
 export { PaymentStatusType } from './value-objects/payment-status';
 export { RefundStatusType } from './value-objects/refund-status';
 

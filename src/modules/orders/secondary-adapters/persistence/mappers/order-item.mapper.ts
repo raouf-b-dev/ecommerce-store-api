@@ -5,10 +5,7 @@ import {
 } from '../../../core/domain/entities/order-items';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 
-export type OrderItemCreate = CreateFromEntity<
-  OrderItemEntity,
-  'order' | 'product'
->;
+export type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order'>;
 
 export class OrderItemMapper {
   static toDomain(entity: OrderItemEntity): OrderItem {
