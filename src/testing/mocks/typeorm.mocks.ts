@@ -4,6 +4,7 @@ import {
   DeleteResult,
   UpdateResult,
   ObjectLiteral,
+  Repository,
 } from 'typeorm';
 
 export function createMockQueryBuilder<T extends ObjectLiteral>(): jest.Mocked<
@@ -90,4 +91,22 @@ export function createMockDataSource(mockManager?: any) {
     getRepository: jest.fn().mockReturnValue(manager),
     manager,
   };
+}
+
+export function createMockRepository<T extends ObjectLiteral>(): jest.Mocked<
+  Repository<T>
+> {
+  return {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    findOneBy: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+    delete: jest.fn(),
+    update: jest.fn(),
+    exists: jest.fn(),
+    count: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
+    query: jest.fn(),
+  } as unknown as jest.Mocked<Repository<T>>;
 }
