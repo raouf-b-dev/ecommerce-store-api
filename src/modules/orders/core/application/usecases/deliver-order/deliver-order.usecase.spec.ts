@@ -7,7 +7,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DeliverOrderDto } from '../../../../primary-adapters/dto/deliver-order.dto';
-import { PaymentMethodType } from '../../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { PaymentGateway } from '../../ports/payment.gateway';

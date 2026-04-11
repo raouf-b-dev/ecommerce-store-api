@@ -3,7 +3,7 @@ import { CheckoutUseCase } from './checkout.usecase';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { CheckoutDto } from '../../../../primary-adapters/dto/checkout.dto';
-import { PaymentMethodType } from '../../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';

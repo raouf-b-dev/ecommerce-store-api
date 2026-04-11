@@ -7,7 +7,7 @@ import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import {
   PaymentMethod,
   PaymentMethodType,
-} from '../value-objects/payment-method';
+} from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import {
   PaymentStatus,
   PaymentStatusType,

@@ -7,7 +7,7 @@ import { CART_GATEWAY } from '../../../../order.token';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../../../carts/core/domain/entities/cart';
 import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
-import { PaymentMethodType } from '../../../../../payments/core/domain';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';

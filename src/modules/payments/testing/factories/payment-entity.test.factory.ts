@@ -1,5 +1,5 @@
 import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';
-import { PaymentMethodType } from '../../core/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class PaymentEntityTestFactory {
