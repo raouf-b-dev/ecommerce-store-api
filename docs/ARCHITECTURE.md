@@ -55,23 +55,23 @@ graph TD
         PayGW["PaymentGateway"]
     end
 
-    Customers -.->|"CustomerRepository"| CustGW
-    Carts -.->|"CartRepository"| CartGW
-    Inventory -.->|"ReservationRepository"| InvGW
-    Payments -.->|"PaymentRepository"| PayGW
+    Customers -.-|"FindCustomerUseCase"| CustGW
+    Carts -.-|"GetCartUseCase / ClearCartUseCase"| CartGW
+    Inventory -.-|"ReserveStockUseCase / ReleaseStockUseCase"| InvGW
+    Payments -.-|"ProcessPaymentUseCase"| PayGW
 
     CustGW -->|"getCustomer()"| Orders
     CartGW -->|"getCart() / clearCart()"| Orders
-    InvGW -->|"reserve() / release()"| Orders
-    PayGW -->|"processPayment()"| Orders
+    InvGW -->|"reserve() / release() / confirm()"| Orders
+    PayGW -->|"processPayment() / refund()"| Orders
 
     subgraph ACL_Carts["ACL Gateways (in Carts)"]
         ProdGW["ProductGateway"]
         InvGW2["InventoryGateway"]
     end
 
-    Products -.->|"ProductRepository"| ProdGW
-    Inventory -.->|"InventoryRepository"| InvGW2
+    Products -.-|"GetProductUseCase"| ProdGW
+    Inventory -.-|"CheckStockUseCase"| InvGW2
 
     ProdGW -->|"getProduct()"| Carts
     InvGW2 -->|"checkStock()"| Carts
