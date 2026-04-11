@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
-import { ConfirmReservationUseCase } from '../../../inventory/core/application/confirm-reservation/confirm-reservation.usecase';
+import { ConfirmCheckoutReservationUseCase } from '../../core/application/usecases/confirm-checkout-reservation/confirm-checkout-reservation.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -20,7 +20,7 @@ export class ConfirmReservationStep extends BaseJobHandler<
   protected readonly logger = new Logger(ConfirmReservationStep.name);
 
   constructor(
-    private readonly confirmReservationUseCase: ConfirmReservationUseCase,
+    private readonly confirmReservationUseCase: ConfirmCheckoutReservationUseCase,
   ) {
     super();
   }

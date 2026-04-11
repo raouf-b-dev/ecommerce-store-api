@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
-import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';
+import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
@@ -13,7 +13,9 @@ export class RefundPaymentStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(RefundPaymentStep.name);
 
-  constructor(private readonly processRefundUseCase: ProcessRefundUseCase) {
+  constructor(
+    private readonly refundPaymentUseCase: RefundCheckoutPaymentUseCase,
+  ) {
     super();
   }
 
@@ -31,12 +33,10 @@ export class RefundPaymentStep extends BaseJobHandler<
 
     this.logger.log(`Refunding payment ${paymentId}...`);
 
-    const result = await this.processRefundUseCase.execute({
-      id: paymentId,
-      dto: {
-        amount: orderTotal || 0,
-        reason: 'Checkout compensation',
-      },
+    const result = await this.refundPaymentUseCase.execute({
+      paymentId,
+      amount: orderTotal || 0,
+      reason: 'Checkout compensation',
     });
 
     if (isFailure(result)) {

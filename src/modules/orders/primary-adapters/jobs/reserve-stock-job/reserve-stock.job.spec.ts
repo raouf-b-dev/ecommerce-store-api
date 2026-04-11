@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReserveStockStep } from './reserve-stock.job';
-import { ReserveStockUseCase } from '../../../../inventory/core/application/reserve-stock/reserve-stock.usecase';
+import { ReserveStockForCheckoutUseCase } from '../../../core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 
 describe('ReserveStockStep', () => {
   let jobHandler: ReserveStockStep;
@@ -31,7 +31,7 @@ describe('ReserveStockStep', () => {
       providers: [
         ReserveStockStep,
         {
-          provide: ReserveStockUseCase,
+          provide: ReserveStockForCheckoutUseCase,
           useValue: {
             execute: jest.fn(),
           },
@@ -40,7 +40,7 @@ describe('ReserveStockStep', () => {
     }).compile();
 
     jobHandler = module.get<ReserveStockStep>(ReserveStockStep);
-    reserveStockUseCase = module.get(ReserveStockUseCase);
+    reserveStockUseCase = module.get(ReserveStockForCheckoutUseCase);
   });
 
   it('should reserve stock', async () => {

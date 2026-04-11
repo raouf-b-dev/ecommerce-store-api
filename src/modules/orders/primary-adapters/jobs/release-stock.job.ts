@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
-import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
+import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
@@ -13,7 +13,9 @@ export class ReleaseStockStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ReleaseStockStep.name);
 
-  constructor(private readonly releaseStockUseCase: ReleaseStockUseCase) {
+  constructor(
+    private readonly releaseStockUseCase: ReleaseCheckoutStockUseCase,
+  ) {
     super();
   }
 
