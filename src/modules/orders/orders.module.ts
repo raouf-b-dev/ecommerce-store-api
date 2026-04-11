@@ -55,7 +55,7 @@ import { PaymentFailedStep } from './primary-adapters/jobs/payment-failed.job';
 import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-orders.job';
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 import { ReleaseOrderStockUseCase } from './core/application/usecases/release-order-stock/release-order-stock.usecase';
-import { ShippingAddressResolver } from './core/domain/services/shipping-address-resolver';
+import { ShippingAddressResolver } from './core/application/services/shipping-address-resolver';
 import { PaymentMethodPolicy } from './core/domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from './core/application/usecases/validate-checkout/validate-checkout.usecase';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';

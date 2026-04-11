@@ -6,7 +6,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
+import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
 import { ShippingAddressDto } from '../../../../primary-adapters/dto/shipping-address.dto';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { CheckoutCustomerInfo } from '../../ports/customer.gateway';

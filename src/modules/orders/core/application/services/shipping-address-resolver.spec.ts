@@ -1,19 +1,50 @@
 import { ShippingAddressResolver } from './shipping-address-resolver';
 import { ShippingAddressDto } from '../../../primary-adapters/dto/shipping-address.dto';
-import { ICustomer } from '../../../../customers/core/domain/interfaces/customer.interface';
 import { CustomerTestFactory } from '../../../../customers/testing/factories/customer.factory';
+import { CheckoutCustomerInfo } from '../ports/customer.gateway';
+
+/**
+ * Helpers to build a CheckoutCustomerInfo from the customer test factory.
+ */
+function buildCheckoutCustomerInfo(
+  overrides: Partial<
+    ReturnType<typeof CustomerTestFactory.createCustomerWithAddress>
+  > = {},
+): CheckoutCustomerInfo {
+  const raw = CustomerTestFactory.createCustomerWithAddress({
+    id: 1,
+    firstName: 'John',
+    lastName: 'Doe',
+    phone: '123-456-7890',
+    ...overrides,
+  });
+  return {
+    id: raw.id ?? null,
+    firstName: raw.firstName,
+    lastName: raw.lastName,
+    email: raw.email,
+    phone: raw.phone ?? null,
+    addresses: (raw.addresses ?? []).map((a) => ({
+      id: a.id ?? null,
+      street: a.street,
+      street2: a.street2 ?? null,
+      city: a.city,
+      state: a.state,
+      postalCode: a.postalCode,
+      country: a.country,
+      isDefault: a.isDefault ?? false,
+      deliveryInstructions: a.deliveryInstructions ?? null,
+    })),
+  };
+}
 
 describe('ShippingAddressResolver', () => {
   let resolver: ShippingAddressResolver;
-  let mockCustomer: ICustomer;
+  let mockCustomer: CheckoutCustomerInfo;
 
   beforeEach(() => {
     resolver = new ShippingAddressResolver();
-    mockCustomer = CustomerTestFactory.createCustomerWithAddress({
-      id: 1,
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '123-456-7890',
+    mockCustomer = buildCheckoutCustomerInfo({
       addresses: [
         CustomerTestFactory.createMockAddress({
           id: 10,
@@ -88,10 +119,8 @@ describe('ShippingAddressResolver', () => {
 
       const result = resolver.resolveFromDto(dto, mockCustomer);
 
-      // firstName and lastName come from DTO (required fields)
       expect(result.firstName).toBe('Jane');
       expect(result.lastName).toBe('Smith');
-      // phone falls back to customer
       expect(result.phone).toBe('123-456-7890');
     });
 
@@ -133,14 +162,10 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should return null when customer has no default address', () => {
-      const customerWithoutDefault = CustomerTestFactory.createMockCustomer({
-        addresses: [
-          CustomerTestFactory.createMockAddress({
-            id: 11,
-            isDefault: false,
-          }),
-        ],
-      });
+      const customerWithoutDefault: CheckoutCustomerInfo = {
+        ...mockCustomer,
+        addresses: [{ ...mockCustomer.addresses[0], isDefault: false }],
+      };
 
       const result = resolver.resolveFromDefault(customerWithoutDefault);
 
@@ -148,9 +173,10 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should return null when customer has no addresses', () => {
-      const customerWithNoAddresses = CustomerTestFactory.createMockCustomer({
+      const customerWithNoAddresses: CheckoutCustomerInfo = {
+        ...mockCustomer,
         addresses: [],
-      });
+      };
 
       const result = resolver.resolveFromDefault(customerWithNoAddresses);
 
@@ -182,9 +208,10 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should return null when no DTO and no default address', () => {
-      const customerWithoutDefault = CustomerTestFactory.createMockCustomer({
+      const customerWithoutDefault: CheckoutCustomerInfo = {
+        ...mockCustomer,
         addresses: [],
-      });
+      };
 
       const result = resolver.resolve(undefined, customerWithoutDefault);
 

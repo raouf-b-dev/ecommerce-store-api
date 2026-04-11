@@ -3,7 +3,7 @@ import {
   ValidateCheckoutUseCase,
   ValidateCheckoutInput,
 } from './validate-checkout.usecase';
-import { ShippingAddressResolver } from '../../../domain/services/shipping-address-resolver';
+import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
