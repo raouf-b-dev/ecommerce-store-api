@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+.git
+.env*
+.secrets*
+*.md
+docs/
+test/
+.husky/
+.vscode/

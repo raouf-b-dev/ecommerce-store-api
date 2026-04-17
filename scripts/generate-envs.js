@@ -46,15 +46,19 @@ function buildLinesForEnv(lines, envName) {
     if (!isKV(line)) return line;
     const key = keyOf(line);
 
+    // Keep defaults from .env.example for local dev/test — works out of the box
+    if (envName === 'development' || envName === 'test') {
+      if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
+      if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
+      return line; // preserve .env.example values
+    }
+
+    // For production/staging — blank credentials, force manual configuration
     switch (key) {
       case 'NODE_ENV':
         return `NODE_ENV=${envName}`;
       case 'REDIS_KEYPREFIX':
         return `REDIS_KEYPREFIX=ecom:${envName}:`;
-      case 'PORT':
-        return envName === 'development' || envName === 'test'
-          ? 'PORT=3000'
-          : 'PORT=';
       default:
         return `${key}=`;
     }
