@@ -12,6 +12,7 @@ export default tseslint.config(
       'coverage/**',
       'node_modules/**',
       '.husky/**',
+      'scripts/**',
     ],
   },
   eslint.configs.recommended,
