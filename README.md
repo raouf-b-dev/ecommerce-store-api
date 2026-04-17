@@ -37,7 +37,7 @@ A modular monolith e-commerce API built with NestJS and TypeScript, following Do
 - **SAGA orchestration with compensation.** The checkout flow reserves stock, processes payment, and confirms the order. If any step fails, the system automatically compensates: releases stock, issues refunds, cancels the order.
 - **Redis-backed idempotency.** A custom `@Idempotent()` decorator with distributed locking ensures critical operations execute exactly once, even under network retries.
 - **ACL Gateway isolation.** 8 bounded contexts communicate through 7 Gateway ports. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules.
-- **Structured test infrastructure.** Each module has its own test factories and typed mock repositories. Factories generate domain objects for specific scenarios (e.g. `OrderTestFactory.createCashOnDeliveryOrder()`), and mocks implement the real repository interface with helper methods for common setups. 86 test suites covering domain logic, use cases, compensation flows, SAGA job handlers, and cache decorator behavior.
+- **Structured test infrastructure.** Each module has its own test factories and typed mock repositories. Factories generate domain objects for specific scenarios (e.g. `OrderTestFactory.createCashOnDeliveryOrder()`), and mocks implement the real repository interface with helper methods for common setups. Comprehensive test suites covering domain logic, use cases, compensation flows, SAGA job handlers, and cache decorator behavior.
 
 Built with: NestJS, TypeScript, PostgreSQL, Redis Stack (RedisJSON + RedisSearch), BullMQ, Docker.
 
@@ -550,42 +550,22 @@ npm run d:reset:test
 
 ## 📖 Documentation Index
 
-| Document                                                    | Description                                                           |
-| :---------------------------------------------------------- | :-------------------------------------------------------------------- |
-| [**ARCHITECTURE.md**](docs/ARCHITECTURE.md)                 | System context (C4), domain flows, state machines, sequence diagrams  |
-| [**DDD-HEXAGONAL.md**](docs/DDD-HEXAGONAL.md)               | Canonical DDD & Hexagonal Architecture rules, decision flowcharts     |
-| [**INTEGRATION-PATTERNS.md**](docs/INTEGRATION-PATTERNS.md) | Cross-context communication: ACL Gateway, SAGA, Domain Events, Outbox |
-| [**ROADMAP.md**](docs/ROADMAP.md)                           | Production readiness checklist with prioritized tasks                 |
-| [**AGENT.md**](AGENT.md)                                    | Practical coding guidelines, conventions, and implementation patterns |
+| Document                                                    | Description                                                             |
+| :---------------------------------------------------------- | :---------------------------------------------------------------------- |
+| [**ARCHITECTURE.md**](docs/ARCHITECTURE.md)                 | System context (C4), domain flows, state machines, sequence diagrams    |
+| [**DDD-HEXAGONAL.md**](docs/DDD-HEXAGONAL.md)               | Canonical DDD & Hexagonal Architecture rules, decision flowcharts       |
+| [**INTEGRATION-PATTERNS.md**](docs/INTEGRATION-PATTERNS.md) | Cross-context communication: ACL Gateway, SAGA, Domain Events, Outbox   |
+| [**ROADMAP.md**](docs/ROADMAP.md)                           | Production readiness checklist with prioritized tasks                   |
+| [**SECRETS-MANAGEMENT.md**](docs/SECRETS-MANAGEMENT.md)     | Configuration taxonomy, injection patterns, and key rotation procedures |
+| [**AGENT.md**](AGENT.md)                                    | Practical coding guidelines, conventions, and implementation patterns   |
 
 ---
 
 ## 🚧 Roadmap
 
-This project is continuously evolving. See the full [**ROADMAP.md**](docs/ROADMAP.md) for detailed task breakdowns.
+This project is continuously evolving. We maintain a detailed, living roadmap tracking past accomplishments, deployment blockers, security hardening, and upcoming features.
 
-### ✅ Recently Completed (v0.2.0)
-
-- [x] ACL Gateways across all cross-module boundaries (7 gateway ports)
-- [x] Gateway ports converted to `abstract class` — no `@Inject()` tokens needed in core Use Cases
-- [x] 6 new SAGA-step Application Services (Reserve, Release, Confirm, Pay, Refund, ClearCart)
-- [x] **Fixed double stock release bug** — `cancelOrder()` no longer releases stock atomically; SAGA orchestrator owns compensation
-- [x] `ShippingAddressResolver` moved to application layer (was violating DDD by importing from primary adapters & ports)
-- [x] Swagger/OpenAPI documentation on all 8 controllers
-- [x] Result Pattern — no exceptions in domain/application layers
-- [x] SAGA orchestration with compensation (checkout flow)
-- [x] Idempotency protection on critical endpoints
-- [x] Try/catch boilerplate cleanup (61 files)
-- [x] Database index optimization (orders: 12 → 4)
-- [x] Decorator-based caching (`CachedRepository` pattern)
-
-### 🔜 Up Next
-
-- [ ] **Real Stripe & PayPal Integration** — Move from stubs to real SDK integration
-- [ ] **Production Dockerfile** — Multi-stage build for deployment
-- [ ] **Health Checks** — `@nestjs/terminus` with DB/Redis/Queue indicators
-- [ ] **Graceful Degradation** — Redis failover to Postgres (health-aware proxy pattern)
-- [ ] **Structured Logging** — Winston with rotation, correlation IDs
+👉 **View the full project roadmap:** [🛣️ ROADMAP.md](docs/ROADMAP.md)
 
 ---
 
