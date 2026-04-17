@@ -1,0 +1,18 @@
+# Production override — use with base docker-compose.yaml:
+# docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.production up -d --build
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-api
+    ports:
+      - '${PORT:-3000}:3000'
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
