@@ -27,53 +27,7 @@
 | **3** | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                   | `src/modules/*/secondary-adapters/repositories/cached-*/` |
 | **4** | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                          |
 | **5** | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
-
----
-
-## 🚨 Phase 6 — Deployment Blockers
-
-> **Goal**: Fix the issues that **literally prevent** deploying to a fresh production environment. Do these first.
-
----
-
-### [x] Dockerfile (🔴 Blocker)
-
-**What**: The project has **no Dockerfile**. There is no way to containerize the application for deployment.
-**Risk**: Cannot deploy to Docker, Kubernetes, AWS ECS, Cloud Run, or any container-based platform.
-
-**Scope**:
-
-1. Create multi-stage `Dockerfile` (`node:24-alpine` build → production)
-2. Separate `docker-compose.dev.yml` and `docker-compose.prod.yml` (currently one `docker-compose.yaml` serves both)
-3. Add health check in Docker config
-4. Environment variable documentation for production containers
-
----
-
-### [x] Global Exception Filter
-
-**What**: No `ExceptionFilter` exists anywhere in the codebase. Unhandled exceptions leak raw NestJS error objects (including stack traces) to clients.
-**Risk**: Stack trace leakage in production responses, inconsistent error response format, no centralized error logging.
-
-**Scope**:
-
-1. Create `src/filters/global-exception.filter.ts` — catch-all exception filter
-2. Log full error (with correlation ID once implemented) via logger
-3. Return sanitized, consistent JSON error response (no stack traces in production)
-4. Register globally in `main.ts` via `app.useGlobalFilters()`
-
----
-
-### [ ] Graceful Shutdown
-
-**What**: No `enableShutdownHooks()`, no `OnApplicationShutdown` lifecycle hooks anywhere in the codebase. On SIGTERM, the process terminates immediately.
-**Risk**: Dropped in-flight requests, stalled BullMQ jobs, mid-transaction DB corruption, ungraceful WebSocket disconnections.
-
-**Scope**:
-
-1. Add `app.enableShutdownHooks()` to `main.ts`
-2. Implement `OnApplicationShutdown` in critical services (Redis client, BullMQ workers, WebSocket gateway)
-3. Add connection draining for HTTP server
+| **6** | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
 
 ---
 

@@ -1,6 +1,6 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, OnApplicationShutdown } from '@nestjs/common';
 import { DeliverNotificationProcess } from './primary-adapters/jobs/deliver-notification.process';
 import { SaveNotificationHistoryProcess } from './primary-adapters/jobs/save-notification-history.process';
 import { UpdateNotificationStatusProcess } from './primary-adapters/jobs/update-notification-status.process';
@@ -8,7 +8,10 @@ import { CleanupExpiredNotificationsProcess } from './primary-adapters/jobs/clea
 import { JobNames } from 'src/infrastructure/jobs/job-names';
 
 @Processor('notifications', { concurrency: 10 })
-export class NotificationsProcessor extends WorkerHost {
+export class NotificationsProcessor
+  extends WorkerHost
+  implements OnApplicationShutdown
+{
   private readonly logger = new Logger(NotificationsProcessor.name);
 
   constructor(
@@ -18,6 +21,11 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly cleanupExpiredNotificationsProcess: CleanupExpiredNotificationsProcess,
   ) {
     super();
+  }
+
+  async onApplicationShutdown(signal?: string) {
+    this.logger.log(`Received ${signal}. Closing notifications worker...`);
+    await this.worker.close();
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
