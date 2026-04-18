@@ -48,7 +48,45 @@ async function bootstrap() {
     ? parseInt(process.env.DEBUG_PORT, 10)
     : configService.node.port;
 
-  await app.listen(port);
+  // Graceful Shutdown Configuration
+  app.enableShutdownHooks();
+
+  // Safe timeout to forcefully kill the process if graceful shutdown hangs
+  const GRACEFUL_SHUTDOWN_TIMEOUT = 15000;
+  let isShuttingDown = false;
+
+  const handleShutdown = (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    Logger.log(
+      `Received ${signal}. Starting graceful shutdown...`,
+      'Bootstrap',
+    );
+
+    // Fallback: force process exit after timeout if NestJS doesn't finish
+    setTimeout(() => {
+      Logger.error(
+        `Graceful shutdown took longer than ${GRACEFUL_SHUTDOWN_TIMEOUT}ms. Forcing process exit.`,
+        'Bootstrap',
+      );
+      process.exit(1);
+    }, GRACEFUL_SHUTDOWN_TIMEOUT).unref();
+  };
+
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+  const server = await app.listen(port);
+
+  // Close the Redis pub/sub clients explicitly when NestJS HTTP server closes
+  server.on('close', async () => {
+    try {
+      await redisIoAdapter.close();
+      Logger.log('RedisIoAdapter closed', 'Bootstrap');
+    } catch (err) {
+      Logger.error('Error closing RedisIoAdapter', err, 'Bootstrap');
+    }
+  });
 
   Logger.log(
     `🚀 Server is running on port ${port} in ${nodeEnv} mode`,
