@@ -28,61 +28,123 @@
 | **4** | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                          |
 | **5** | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
 | **6** | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
+| **7** | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`         |
 
 ---
 
-## 🔒 Phase 7 — Security Hardening
+## 🔐 Phase 7.5 — Auth Overhaul (RSA + Refresh Tokens + RBAC)
 
-> **Goal**: Quick security wins — most are < 30 minutes each. Hardens the API surface before exposing it to real users.
-
----
-
-### [ ] Security Headers (Helmet)
-
-**What**: No HTTP security headers are set. `helmet` is not installed or configured. Responses lack `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `Content-Security-Policy`.
-**Risk**: Clickjacking, MIME sniffing attacks, missing HSTS.
-
-**Scope**: `npm install helmet`, add `app.use(helmet())` to `main.ts`.
+> **Goal**: Production-grade authentication and authorization. Replace HMAC JWT with RSA (RS256) using `jose`, add refresh token rotation with session management, and introduce a full RBAC system with roles, permissions, and guards.
+>
+> **Architecture decisions**: Per-user permission overrides and Identity/Access module split are deferred to future phases.
+>
+> **Execution**: 4 incremental waves — each independently testable and mergeable.
 
 ---
 
-### [ ] CORS Restriction
+### Wave 1 — RSA JWT Core
 
-**What**: `main.ts` has **no CORS configuration at all** — `enableCors()` is never called. By default, NestJS rejects cross-origin requests, but this is not explicitly configured.
-**Risk**: No documented CORS policy. When a frontend is deployed, CORS will need to be configured — and without explicit configuration, it's easy to accidentally allow all origins.
+**What**: Replace HMAC-based JWT signing (`@nestjs/jwt` + `@nestjs/passport`) with RSA RS256 using `jose`. Move JWT infrastructure to a global module. All existing auth continues to work — just the signing mechanism changes.
 
-**Scope**: Add `app.enableCors()` with explicit `origin` whitelist, `credentials: true`, and allowed methods. Add `CORS_ALLOWED_ORIGINS` env var.
+- [ ] Install `jose`, remove `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`
+- [ ] Create `src/infrastructure/jwt/` global module
+  - `JwksService` — RSA PEM parsing, public key derivation, JWKS export
+  - `JwtSignerService` — RS256 signing for access + refresh tokens
+  - `JwtVerifierService` — RS256 verification with 30s clock tolerance
+  - `JwtModule` — `@Global()` module exporting all services
+- [ ] Create `src/guards/auth.guard.ts` — custom `CanActivate` guard (replaces Passport-based `JWTAuthGuard`)
+- [ ] Update env config pipeline
+  - `validate-env.ts` — replace `JWT_SECRET`/`JWT_EXPIRES_IN` with `JWT_PRIVATE_KEY`/`JWT_ACCESS_TOKEN_TTL`/`JWT_REFRESH_TOKEN_TTL`
+  - `configuration.ts` — new `jwt: { privateKey, accessTokenTtl, refreshTokenTtl }` shape
+  - `env-config.service.ts` — updated getter
+  - `.env.example` / `.secrets.example`
+- [ ] Update `LoginUserUseCase` to use `JwtSignerService` instead of `JwtService`
+- [ ] Add `GET /auth/.well-known/jwks.json` endpoint
+- [ ] Delete old `JWTAuthGuard`, `JwtStrategy`; update `auth.module.ts` (remove `PassportModule`, `JwtModule.registerAsync()`)
+- [ ] Migrate all controllers from `JWTAuthGuard` → new `AuthGuard`
+- [ ] Update/write tests: JWT signer/verifier/JWKS specs, AuthGuard spec, login usecase spec, auth controller spec
+
+**Location**: `src/infrastructure/jwt/`, `src/guards/`, `src/config/`
 
 ---
 
-### [ ] Input Sanitization (XSS)
+### Wave 2 — Refresh Token Rotation
 
-**What**: No input sanitization exists. `class-validator` enforces shape (types, max length) but does not strip HTML/JavaScript from string fields. Raw user input is stored directly to PostgreSQL.
-**Risk**: Stored XSS — malicious HTML/JS in product names, customer names, order notes rendered by any frontend consuming the API.
+**What**: Add refresh tokens alongside access tokens. Sessions stored in PostgreSQL with SHA-256 hashed tokens. Supports token rotation (old refresh token invalidated on use), single-session logout, and all-session logout.
 
-**Scope**: Add a global sanitization layer (custom interceptor or `class-sanitizer`) that strips HTML from all string inputs before persistence.
+- [ ] Create `SessionToken` domain entity — `create()`, `revoke()`, `isValid`, `isExpired`, `isTokenMatch(rawToken)`
+- [ ] Create `SessionTokenRepository` abstract port — `store()`, `findBySessionId()`, `revokeAllForUser()`, `deleteExpired()`
+- [ ] Create `session_tokens` TypeORM schema + `PostgresSessionTokenRepository`
+- [ ] Update `LoginUserUseCase` — create session, return `{ access_token, refresh_token }`
+- [ ] Create `RefreshTokenUseCase` — verify refresh JWT, validate session, rotate tokens
+- [ ] Create `LogoutUseCase` — revoke current session
+- [ ] Create `LogoutAllUseCase` — revoke all sessions for user
+- [ ] Add `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all` endpoints
+- [ ] Update `auth.module.ts` — register session token entity/repo/use cases
+- [ ] Write tests: SessionToken entity spec, refresh/logout use case specs, auth controller spec updates
+
+**Location**: `src/modules/auth/core/domain/entities/`, `src/modules/auth/secondary-adapters/`
 
 ---
 
-### [ ] Pagination Safety
+### Wave 3 — RBAC (Roles + Permissions + Guards)
 
-**What**: The search/list endpoints may lack `@Max()` constraints on pagination `limit` fields. A caller could potentially set `limit=999999` and dump entire tables in one request.
-**Risk**: Performance DoS, data exfiltration.
+**What**: Full role-based access control. Three seeded system roles (`SUPER_ADMIN`, `ADMIN`, `CUSTOMER`) with a permission matrix. `PermissionsGuard` resolves permissions per request. `@RequirePermissions()` decorator protects endpoints. Admins can create custom roles.
 
-**Scope**: Audit all list/search DTOs across all 8 modules. Add `@Max(100)` to every `limit` field, set defaults to `20`.
+**System Roles** (seeded on first boot, immutable):
 
----
+| Role          | Description                                                                                                                                             |
+| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SUPER_ADMIN` | All management permissions granted. Cannot be deleted or modified. System owner                                                                         |
+| `ADMIN`       | All management permissions except `canManageRoles`. Upgradeable by `SUPER_ADMIN`                                                                        |
+| `CUSTOMER`    | All management permissions `false`. Can still access own resources (cart, orders, profile) via auth-scoped endpoints. Default role for registered users |
 
-### [ ] Logout Endpoint
+**Permission Flags** (e-commerce domain):
 
-**What**: No `POST /auth/logout` endpoint exists. Users cannot invalidate their JWT sessions. Once a token is issued, it remains valid until expiry.
-**Risk**: Compromised tokens cannot be revoked; users must wait for natural token expiry.
+`canManageProducts`, `canViewAllProducts`, `canManageOrders`, `canViewAllOrders`, `canManageCustomers`, `canViewAllCustomers`, `canManageInventory`, `canViewAllInventory`, `canManagePayments`, `canViewAllPayments`, `canManageUsers`, `canViewAllUsers`, `canManageRoles`, `canManageCarts`
 
 **Scope**:
 
-1. Create `LogoutUseCase` — invalidates the current session/token
-2. Add `POST /auth/logout` endpoint (authenticated)
-3. Optional: `POST /auth/logout-all` — revoke all sessions for the user
+- [ ] Create `Role` domain entity — system role protection, `updateName()`, `updatePermissions()`, `validateNotSystemForDeletion()`
+- [ ] Create `PermissionSet` value object — typed boolean flags for all e-commerce permissions
+- [ ] Create system roles reference data (`SYSTEM_ROLES` array)
+- [ ] Create `RoleRepository` abstract port + TypeORM schema + `PostgresRoleRepository`
+- [ ] Create `RoleSystemDataInitializer` — `OnApplicationBootstrap` seeder (idempotent)
+- [ ] Create `GetPermissionsUseCase` — loads role permissions by role code
+- [ ] Create `PermissionsGuard` in `src/guards/` — reads `@RequirePermissions()` metadata, resolves permissions, attaches to `request.userPermissions`
+- [ ] Create `@RequirePermissions()` decorator + `@UserPermissions()` param decorator
+- [ ] Update `UserRole` value object — from hardcoded enum (`ADMIN`/`CUSTOMER`) to dynamic role code (string)
+- [ ] Update `auth.module.ts` — register role entity/repo/initializer
+- [ ] Write tests: Role entity spec, PermissionsGuard spec, GetPermissionsUseCase spec, seeder spec
+
+**Location**: `src/modules/auth/core/domain/`, `src/guards/`, `src/modules/auth/decorators/`
+
+---
+
+### Wave 4 — Role Management API + Controller Permission Wiring
+
+**What**: Admin CRUD endpoints for roles. Wire `@RequirePermissions(...)` to every protected endpoint across all controllers.
+
+- [ ] Create role management use cases: `CreateRoleUseCase`, `UpdateRoleUseCase`, `DeleteRoleUseCase`, `FindAllRolesUseCase`
+- [ ] Create `roles.controller.ts` — `GET/POST/PATCH/DELETE /roles` (requires `canManageRoles`)
+- [ ] Wire all domain controllers with `@UseGuards(AuthGuard, PermissionsGuard)` + `@RequirePermissions(...)`:
+  - Products: `canManageProducts` / `canViewAllProducts`
+  - Orders: `canManageOrders` / `canViewAllOrders`
+  - Customers: `canManageCustomers` / `canViewAllCustomers`
+  - Inventory: `canManageInventory` / `canViewAllInventory`
+  - Payments: `canManagePayments` / `canViewAllPayments`
+  - Carts: `canManageCarts`
+  - Roles: `canManageRoles`
+- [ ] Write tests: Role CRUD use case specs, roles controller spec
+
+**Location**: `src/modules/auth/`, all domain controllers
+
+---
+
+### Future — Deferred Items
+
+- [ ] **Per-User Permission Overrides** — Admin can grant/revoke individual permissions per user (stored in `user_permission_overrides` table, merged at resolution time)
+- [ ] **Identity / Access Module Split** — Separate user identity management and token/session management into independent bounded contexts for microservice extraction
 
 ---
 
