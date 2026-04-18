@@ -24,6 +24,9 @@ export interface IAppConfig {
     secret: string;
     expiresIn: StringValue;
   };
+  cors: {
+    allowedOrigins: string[];
+  };
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -53,6 +56,9 @@ export default (): IAppConfig => {
     jwt: {
       secret: env.JWT_SECRET,
       expiresIn: env.JWT_EXPIRES_IN as StringValue,
+    },
+    cors: {
+      allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
     },
   };
 };

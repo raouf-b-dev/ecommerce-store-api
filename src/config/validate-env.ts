@@ -21,5 +21,9 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     JWT_SECRET: str(),
     JWT_EXPIRES_IN: str(),
+
+    CORS_ALLOWED_ORIGINS: str({
+      default: 'http://localhost:3000,http://localhost:5173',
+    }),
   });
 }

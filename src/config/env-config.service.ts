@@ -29,4 +29,8 @@ export class EnvConfigService {
   get jwt() {
     return this.get('jwt');
   }
+
+  get cors() {
+    return this.get('cors');
+  }
 }
