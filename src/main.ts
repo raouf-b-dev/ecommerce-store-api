@@ -4,13 +4,18 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResultInterceptor } from './interceptors/result.interceptor';
+import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalInterceptors(new ResultInterceptor());
+  // Security: HTTP headers (Helmet)
+  app.use(helmet());
+
+  app.useGlobalInterceptors(new SanitizeInterceptor(), new ResultInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
@@ -26,6 +31,13 @@ async function bootstrap() {
 
   const configService = app.get(EnvConfigService);
   const nodeEnv = configService.node.env;
+
+  // Security: CORS with explicit origin whitelist
+  app.enableCors({
+    origin: configService.cors.allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
 
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
