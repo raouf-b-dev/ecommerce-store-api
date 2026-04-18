@@ -1,10 +1,11 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown, Logger } from '@nestjs/common';
 import { FlowProducer, FlowJob, FlowOpts } from 'bullmq';
 import { EnvConfigService } from 'src/config/env-config.service';
 
 @Injectable()
-export class FlowProducerService implements OnModuleDestroy {
+export class FlowProducerService implements OnApplicationShutdown {
   private readonly flowProducer: FlowProducer;
+  private readonly logger = new Logger(FlowProducerService.name);
 
   constructor(private readonly envConfigService: EnvConfigService) {
     this.flowProducer = new FlowProducer({
@@ -26,7 +27,8 @@ export class FlowProducerService implements OnModuleDestroy {
     return this.flowProducer.addBulk(flows);
   }
 
-  async onModuleDestroy() {
+  async onApplicationShutdown() {
+    this.logger.log('Closing FlowProducer...');
     await this.flowProducer.close();
   }
 }

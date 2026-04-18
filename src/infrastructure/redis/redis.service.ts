@@ -1,14 +1,14 @@
 import {
   Injectable,
   Logger,
-  OnModuleDestroy,
+  OnApplicationShutdown,
   OnModuleInit,
 } from '@nestjs/common';
 import { createClient } from 'redis';
 import { EnvConfigService } from '../../config/env-config.service';
 
 @Injectable()
-export class RedisService implements OnModuleInit, OnModuleDestroy {
+export class RedisService implements OnModuleInit, OnApplicationShutdown {
   public client: any;
 
   constructor(
@@ -29,8 +29,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.client.connect();
   }
 
-  async onModuleDestroy() {
+  async onApplicationShutdown() {
     if (this.client && typeof this.client.quit === 'function') {
+      this.logger.log('Shutting down Redis client...');
       await this.client.quit();
     }
   }

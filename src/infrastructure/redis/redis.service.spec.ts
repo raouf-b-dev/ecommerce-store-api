@@ -88,16 +88,16 @@ describe('RedisService', () => {
     });
   });
 
-  describe('onModuleDestroy', () => {
+  describe('onApplicationShutdown', () => {
     it('should quit client if available', async () => {
       service.client = mockClient;
-      await service.onModuleDestroy();
+      await service.onApplicationShutdown();
       expect(mockClient.quit).toHaveBeenCalled();
     });
 
     it('should do nothing if no client', async () => {
       service.client = null;
-      await service.onModuleDestroy();
+      await service.onApplicationShutdown();
       expect(mockClient.quit).not.toHaveBeenCalled();
     });
   });

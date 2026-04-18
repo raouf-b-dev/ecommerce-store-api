@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { JobNames } from '../../infrastructure/jobs/job-names';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
@@ -17,7 +17,10 @@ import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stoc
 
 @Processor('checkout')
 @Injectable()
-export class OrdersProcessor extends WorkerHost {
+export class OrdersProcessor
+  extends WorkerHost
+  implements OnApplicationShutdown
+{
   private readonly logger = new Logger(OrdersProcessor.name);
 
   constructor(
@@ -35,6 +38,11 @@ export class OrdersProcessor extends WorkerHost {
     private readonly releaseOrderStockJob: ReleaseOrderStockJob,
   ) {
     super();
+  }
+
+  async onApplicationShutdown(signal?: string) {
+    this.logger.log(`Received ${signal}. Closing orders checkout worker...`);
+    await this.worker.close();
   }
 
   async process(job: Job): Promise<any> {
