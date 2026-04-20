@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -17,7 +17,7 @@ export class LoginUserUseCase extends UseCase<
   constructor(
     private readonly userRepository: UserRepository,
     private readonly bcryptService: BcryptService,
-    private readonly jwtService: JwtService,
+    private readonly jwtSignerService: JwtSignerService,
   ) {
     super();
   }
@@ -48,7 +48,7 @@ export class LoginUserUseCase extends UseCase<
       role: user.role,
       customerId: user.customerId,
     };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = await this.jwtSignerService.signAccessToken(payload);
 
     return Result.success({ accessToken });
   }
