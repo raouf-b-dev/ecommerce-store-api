@@ -14,7 +14,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { ProductResponseDto } from './primary-adapters/dto/product-response.dto';
@@ -38,7 +38,7 @@ export class ProductsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({
     summary: 'Create a new product',
     description:
@@ -87,7 +87,7 @@ export class ProductsController {
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({
     summary: 'Update product by ID',
     description: 'Updates an existing product. Requires admin privileges.',
@@ -115,7 +115,7 @@ export class ProductsController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({
     summary: 'Delete product by ID',
     description:

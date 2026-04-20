@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from './payments.controller';
 import { Result } from '../../shared-kernel/domain/result';
+import { AuthGuard } from '../../guards/auth.guard';
 
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
@@ -84,7 +85,10 @@ describe('PaymentsController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<PaymentsController>(PaymentsController);
 

@@ -14,7 +14,7 @@ import {
   ApiTags,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
@@ -35,7 +35,7 @@ import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('orders')
 @ApiBearerAuth()
-@UseGuards(JWTAuthGuard)
+@UseGuards(AuthGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(

@@ -21,8 +21,9 @@ export interface IAppConfig {
     database?: string;
   };
   jwt: {
-    secret: string;
-    expiresIn: StringValue;
+    privateKey: string;
+    accessTokenTtl: string;
+    refreshTokenTtl: string;
   };
   cors: {
     allowedOrigins: string[];
@@ -54,8 +55,9 @@ export default (): IAppConfig => {
       database: env.DB_DATABASE,
     },
     jwt: {
-      secret: env.JWT_SECRET,
-      expiresIn: env.JWT_EXPIRES_IN as StringValue,
+      privateKey: env.JWT_PRIVATE_KEY,
+      accessTokenTtl: env.JWT_ACCESS_TOKEN_TTL,
+      refreshTokenTtl: env.JWT_REFRESH_TOKEN_TTL,
     },
     cors: {
       allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),

@@ -5,6 +5,7 @@ import { OrderTestFactory } from './testing/factories/order.factory';
 import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
+import { AuthGuard } from '../../guards/auth.guard';
 
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
@@ -114,7 +115,10 @@ describe('OrdersController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<OrdersController>(OrdersController);
     checkoutUseCase = module.get<CheckoutUseCase>(CheckoutUseCase);

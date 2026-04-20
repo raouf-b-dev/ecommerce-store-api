@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
 import { InventoryResponseDto } from './primary-adapters/dto/inventory-response.dto';
@@ -49,7 +49,7 @@ export class InventoryController {
 
   @Post('products/:productId/adjust')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Adjust stock quantity (add or subtract)' })
   @ApiResponse({ status: 200, type: InventoryResponseDto })
   async adjustStock(
@@ -64,7 +64,7 @@ export class InventoryController {
 
   @Post('reserve')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Reserve stock for an order (temporary hold)' })
   @ApiResponse({ status: 200, description: 'Stock reserved successfully' })
   async reserveStock(@Body() dto: ReserveStockDto) {
@@ -73,7 +73,7 @@ export class InventoryController {
 
   @Post('release/:reservationId')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Release reserved stock (if order cancelled)' })
   @ApiResponse({ status: 200, description: 'Stock released successfully' })
   async releaseStock(@Param('reservationId') reservationId: string) {
@@ -104,7 +104,7 @@ export class InventoryController {
 
   @Get('low-stock')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'List products with low stock' })
   @ApiResponse({ status: 200, type: [InventoryResponseDto] })
   async listLowStock(@Query() query: LowStockQueryDto) {

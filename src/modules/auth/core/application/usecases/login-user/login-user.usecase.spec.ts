@@ -1,25 +1,30 @@
-import { JwtService } from '@nestjs/jwt';
+import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
+import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
+import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
   let userRepository: MockUserRepository;
   let bcryptService: MockBcryptService;
-  let jwtService: JwtService;
+  let jwtSignerService: MockJwtSignerService;
 
   let mockDomainUser: User;
   beforeEach(() => {
     userRepository = new MockUserRepository();
     bcryptService = new MockBcryptService();
-    jwtService = new JwtService({ secret: 'test-secret' });
-    usecase = new LoginUserUseCase(userRepository, bcryptService, jwtService);
+    jwtSignerService = new MockJwtSignerService();
+    usecase = new LoginUserUseCase(
+      userRepository,
+      bcryptService,
+      jwtSignerService as unknown as JwtSignerService,
+    );
     mockDomainUser = User.fromPrimitives(
       UserTestFactory.createMockCustomerUser(),
     );
@@ -38,7 +43,7 @@ describe('LoginUserUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.accessToken).toBeDefined();
+    expect(result.value.accessToken).toBe('test-token');
   });
 
   it('should return failure if user is not found', async () => {

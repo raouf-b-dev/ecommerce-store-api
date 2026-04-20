@@ -46,23 +46,23 @@
 
 **What**: Replace HMAC-based JWT signing (`@nestjs/jwt` + `@nestjs/passport`) with RSA RS256 using `jose`. Move JWT infrastructure to a global module. All existing auth continues to work — just the signing mechanism changes.
 
-- [ ] Install `jose`, remove `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`
-- [ ] Create `src/infrastructure/jwt/` global module
+- [x] Install `jose`, remove `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`
+- [x] Create `src/infrastructure/jwt/` global module
   - `JwksService` — RSA PEM parsing, public key derivation, JWKS export
   - `JwtSignerService` — RS256 signing for access + refresh tokens
   - `JwtVerifierService` — RS256 verification with 30s clock tolerance
   - `JwtModule` — `@Global()` module exporting all services
-- [ ] Create `src/guards/auth.guard.ts` — custom `CanActivate` guard (replaces Passport-based `JWTAuthGuard`)
-- [ ] Update env config pipeline
+- [x] Create `src/guards/auth.guard.ts` — custom `CanActivate` guard (replaces Passport-based `JWTAuthGuard`)
+- [x] Update env config pipeline
   - `validate-env.ts` — replace `JWT_SECRET`/`JWT_EXPIRES_IN` with `JWT_PRIVATE_KEY`/`JWT_ACCESS_TOKEN_TTL`/`JWT_REFRESH_TOKEN_TTL`
   - `configuration.ts` — new `jwt: { privateKey, accessTokenTtl, refreshTokenTtl }` shape
   - `env-config.service.ts` — updated getter
   - `.env.example` / `.secrets.example`
-- [ ] Update `LoginUserUseCase` to use `JwtSignerService` instead of `JwtService`
-- [ ] Add `GET /auth/.well-known/jwks.json` endpoint
-- [ ] Delete old `JWTAuthGuard`, `JwtStrategy`; update `auth.module.ts` (remove `PassportModule`, `JwtModule.registerAsync()`)
-- [ ] Migrate all controllers from `JWTAuthGuard` → new `AuthGuard`
-- [ ] Update/write tests: JWT signer/verifier/JWKS specs, AuthGuard spec, login usecase spec, auth controller spec
+- [x] Update `LoginUserUseCase` to use `JwtSignerService` instead of `JwtService`
+- [x] Add `GET /auth/.well-known/jwks.json` endpoint
+- [x] Delete old `JWTAuthGuard`, `JwtStrategy`; update `auth.module.ts` (remove `PassportModule`, `JwtModule.registerAsync()`)
+- [x] Migrate all controllers from `JWTAuthGuard` → new `AuthGuard`
+- [x] Update/write tests: JWT signer/verifier/JWKS specs, AuthGuard spec, login usecase spec, auth controller spec
 
 **Location**: `src/infrastructure/jwt/`, `src/guards/`, `src/config/`
 
