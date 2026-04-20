@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtVerifierService } from '../../jwt/jwt-verifier.service';
 import { Socket } from 'socket.io';
 
 @Injectable()
 export class WsAuthService {
   private readonly logger = new Logger(WsAuthService.name);
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly jwtVerifierService: JwtVerifierService) {}
 
   async authenticate(client: Socket): Promise<any> {
     const token = this.extractToken(client);
@@ -17,7 +17,7 @@ export class WsAuthService {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtVerifierService.verifyAccessToken(token);
       return payload;
     } catch (err) {
       this.logger.warn(`Invalid token from ${client.id}: ${err.message}`);
