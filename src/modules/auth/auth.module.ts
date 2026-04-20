@@ -1,11 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { PostgresUserRepository } from './secondary-adapters/repositories/postgres-user-repository/postgres-user.repository';
 import { CachedUserRepository } from './secondary-adapters/repositories/cached-user-repository/cached-user.repository';
 import { BcryptService } from './secondary-adapters/services/bcrypt.service';
-import { JwtStrategy } from './secondary-adapters/strategies/jwt.strategy';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { CustomersModule } from '../customers/customers.module';
 import { UserRepository } from './core/domain/repositories/user.repository';
@@ -25,21 +22,12 @@ import { EnvConfigService } from '../../config/env-config.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
-    PassportModule,
-    JwtModule.registerAsync({
-      useFactory: (envConfigService: EnvConfigService) => ({
-        secret: envConfigService.jwt.secret,
-        signOptions: { expiresIn: envConfigService.jwt.expiresIn },
-      }),
-      inject: [EnvConfigService],
-    }),
     CustomersModule,
     RedisModule,
   ],
   controllers: [AuthController],
   providers: [
     BcryptService,
-    JwtStrategy,
     {
       provide: POSTGRES_USER_REPOSITORY,
       useClass: PostgresUserRepository,
@@ -69,6 +57,6 @@ import { EnvConfigService } from '../../config/env-config.service';
     RegisterUserUseCase,
     LoginUserUseCase,
   ],
-  exports: [JwtStrategy, PassportModule, JwtModule],
+  exports: [],
 })
 export class AuthModule {}
