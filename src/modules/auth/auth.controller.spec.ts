@@ -7,17 +7,25 @@ import { UserTestFactory } from './testing/factories/user.factory';
 import { RegisterDtoTestFactory } from './testing/factories/register-dto.factory';
 import { LoginDtoTestFactory } from './testing/factories/login-dto.factory';
 import { Result } from '../../shared-kernel/domain/result';
+import { JwksService } from '../../infrastructure/jwt/jwks.service';
+import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
+import { RegisterDto } from './primary-adapters/dto/register.dto';
+import { LoginDto } from './primary-adapters/dto/login.dto';
+import { User } from './core/domain/entities/user';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let registerUseCase: RegisterUserUseCase;
   let loginUseCase: LoginUserUseCase;
-  let mockUser;
-  let registerDto;
-  let loginDto;
+  let jwksService: MockJwksService;
+  let mockUser: Partial<User> & { toPrimitives: jest.Mock };
+  let registerDto: RegisterDto;
+  let loginDto: LoginDto;
 
   beforeEach(async () => {
-    mockUser = UserTestFactory.createMockUser();
+    mockUser = UserTestFactory.createMockUser() as unknown as Partial<User> & {
+      toPrimitives: jest.Mock;
+    };
     mockUser.toPrimitives = jest.fn().mockReturnValue(mockUser);
     registerDto = RegisterDtoTestFactory.createRegisterDto();
     loginDto = LoginDtoTestFactory.createLoginDto();
@@ -44,12 +52,19 @@ describe('AuthController', () => {
               .mockResolvedValue(Result.success({ accessToken: '123' })),
           },
         },
+        {
+          provide: JwksService,
+          useValue: new MockJwksService(),
+        },
       ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
     registerUseCase = module.get<RegisterUserUseCase>(RegisterUserUseCase);
     loginUseCase = module.get<LoginUserUseCase>(LoginUserUseCase);
+    jwksService = module.get<JwksService>(
+      JwksService,
+    ) as unknown as MockJwksService;
   });
 
   afterEach(() => {
@@ -75,5 +90,11 @@ describe('AuthController', () => {
     const res = await controller.login(loginDto);
     expect(loginUseCase.execute).toHaveBeenCalledWith(loginDto);
     expect(res).toEqual(Result.success({ accessToken: '123' }));
+  });
+
+  it('should call getJwks and return keys', () => {
+    const res = controller.getJwks();
+    expect(jwksService.getJwks).toHaveBeenCalled();
+    expect(res).toEqual({ keys: [] });
   });
 });
