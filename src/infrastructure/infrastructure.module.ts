@@ -4,6 +4,7 @@ import { RedisModule } from './redis/redis.module';
 import { QueueModule } from './queue/queue.module';
 import { JobsModule } from './jobs/jobs.module';
 import { IdempotencyModule } from './idempotency/idempotency.module';
+import { JwtModule } from './jwt/jwt.module';
 
 @Global()
 @Module({
@@ -13,6 +14,7 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
     QueueModule,
     JobsModule,
     IdempotencyModule,
+    JwtModule,
   ],
   providers: [],
   exports: [
@@ -21,6 +23,7 @@ import { IdempotencyModule } from './idempotency/idempotency.module';
     QueueModule,
     JobsModule,
     IdempotencyModule,
+    JwtModule,
   ],
 })
 export class InfrastructureModule {}
