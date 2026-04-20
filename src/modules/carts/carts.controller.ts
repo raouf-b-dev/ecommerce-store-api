@@ -14,7 +14,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CreateCartDto } from './primary-adapters/dto/create-cart.dto';
 import { AddCartItemDto } from './primary-adapters/dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './primary-adapters/dto/update-cart-item.dto';
@@ -101,7 +101,7 @@ export class CartsController {
 
   @Post(':guestCartId/merge/:userCartId')
   @ApiBearerAuth()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Merge guest cart into user cart after login' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async mergeCarts(

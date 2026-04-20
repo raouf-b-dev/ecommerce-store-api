@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CustomersController } from './customers.controller';
 import { Result } from '../../shared-kernel/domain/result';
+import { AuthGuard } from '../../guards/auth.guard';
 
 import { CreateCustomerUseCase } from './core/application/usecases/create-customer/create-customer.usecase';
 import { GetCustomerUseCase } from './core/application/usecases/get-customer/get-customer.usecase';
@@ -84,7 +85,10 @@ describe('CustomersController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<CustomersController>(CustomersController);
 

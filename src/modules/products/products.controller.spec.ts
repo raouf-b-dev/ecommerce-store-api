@@ -9,6 +9,7 @@ import { ListProductsUseCase } from './core/application/usecases/list-products/l
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { Result } from '../../shared-kernel/domain/result';
+import { AuthGuard } from '../../guards/auth.guard';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -87,7 +88,10 @@ describe('ProductsController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ProductsController>(ProductsController);
 

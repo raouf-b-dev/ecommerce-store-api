@@ -8,7 +8,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JWTAuthGuard } from 'src/modules/auth/guards/auth.guard';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
 import { NotificationStatus } from './core/domain/enums/notification-status.enum';
@@ -16,7 +16,7 @@ import { isFailure } from 'src/shared-kernel/domain/result';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
-@UseGuards(JWTAuthGuard)
+@UseGuards(AuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(
