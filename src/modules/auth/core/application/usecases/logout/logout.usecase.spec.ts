@@ -28,7 +28,9 @@ describe('LogoutUseCase', () => {
       sessionId: sessionId,
     });
 
-    const session = SessionToken.create(1, rawToken, new Date(), sessionId);
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+    const session = SessionToken.create(1, rawToken, expiresAt, sessionId);
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.save.mockResolvedValue(Result.success(session));
 
