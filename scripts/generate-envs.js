@@ -11,6 +11,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const { generateKeyPairSync } = require('crypto');
 
 const args = process.argv.slice(2).reduce((acc, a) => {
   const [k, v] = a.startsWith('--') ? a.slice(2).split('=') : [a, true];
@@ -28,6 +29,17 @@ const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
 const FORCE = Boolean(args.force);
 
 // Helpers
+function generateRSAPrivateKey() {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem',
+    },
+  });
+  return `"${privateKey.replace(/\r?\n/g, '\\n')}"`;
+}
+
 async function readTemplate(file) {
   const raw = await fsp.readFile(file, 'utf8').catch(() => '');
   return raw.split(/\r?\n/);
@@ -50,6 +62,12 @@ function buildLinesForEnv(lines, envName) {
     if (envName === 'development' || envName === 'test') {
       if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
       if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
+      if (key === 'IS_DB_SYNCHRONIZE') return 'IS_DB_SYNCHRONIZE=true';
+      if (key === 'LOG_LEVEL')
+        return envName === 'development' ? 'LOG_LEVEL=debug' : 'LOG_LEVEL=info';
+      if (key === 'JWT_PRIVATE_KEY')
+        return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
+
       return line; // preserve .env.example values
     }
 
@@ -59,6 +77,10 @@ function buildLinesForEnv(lines, envName) {
         return `NODE_ENV=${envName}`;
       case 'REDIS_KEYPREFIX':
         return `REDIS_KEYPREFIX=ecom:${envName}:`;
+      case 'IS_DB_SYNCHRONIZE':
+        return `IS_DB_SYNCHRONIZE=false`;
+      case 'LOG_LEVEL':
+        return `LOG_LEVEL=info`;
       default:
         return `${key}=`;
     }
