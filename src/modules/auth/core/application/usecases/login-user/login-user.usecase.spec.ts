@@ -1,6 +1,7 @@
 import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
+import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -12,16 +13,21 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
   let userRepository: MockUserRepository;
+  let sessionTokenRepository: MockSessionTokenRepository;
   let bcryptService: MockBcryptService;
   let jwtSignerService: MockJwtSignerService;
 
   let mockDomainUser: User;
+
   beforeEach(() => {
     userRepository = new MockUserRepository();
+    sessionTokenRepository = new MockSessionTokenRepository();
     bcryptService = new MockBcryptService();
     jwtSignerService = new MockJwtSignerService();
+
     usecase = new LoginUserUseCase(
       userRepository,
+      sessionTokenRepository,
       bcryptService,
       jwtSignerService as unknown as JwtSignerService,
     );
@@ -29,21 +35,26 @@ describe('LoginUserUseCase', () => {
       UserTestFactory.createMockCustomerUser(),
     );
   });
+
   afterEach(() => {
     userRepository.reset();
+    sessionTokenRepository.reset();
   });
 
   it('should login a user successfully', async () => {
     userRepository.findByEmail.mockResolvedValue(
       Result.success(mockDomainUser),
     );
+    sessionTokenRepository.save.mockResolvedValue(Result.success({} as any));
+
     const result = await usecase.execute({
       email: 'test@example.com',
       password: 'password',
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.accessToken).toBe('test-token');
+    expect(result.value.accessToken).toContain('header');
+    expect(result.value.refreshToken).toContain('header');
   });
 
   it('should return failure if user is not found', async () => {
