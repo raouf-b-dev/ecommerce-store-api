@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtSignerService } from './jwt-signer.service';
+import { JwksService } from './jwks.service';
 import { EnvConfigService } from '../../config/env-config.service';
+import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
 
 describe('JwtSignerService', () => {
   let service: JwtSignerService;
@@ -18,6 +20,10 @@ describe('JwtSignerService', () => {
               refreshTokenTtl: '7d',
             },
           },
+        },
+        {
+          provide: JwksService,
+          useClass: MockJwksService,
         },
       ],
     }).compile();

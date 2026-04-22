@@ -72,16 +72,18 @@
 
 **What**: Add refresh tokens alongside access tokens. Sessions stored in PostgreSQL with SHA-256 hashed tokens. Supports token rotation (old refresh token invalidated on use), single-session logout, and all-session logout.
 
-- [ ] Create `SessionToken` domain entity — `create()`, `revoke()`, `isValid`, `isExpired`, `isTokenMatch(rawToken)`
-- [ ] Create `SessionTokenRepository` abstract port — `store()`, `findBySessionId()`, `revokeAllForUser()`, `deleteExpired()`
-- [ ] Create `session_tokens` TypeORM schema + `PostgresSessionTokenRepository`
-- [ ] Update `LoginUserUseCase` — create session, return `{ access_token, refresh_token }`
-- [ ] Create `RefreshTokenUseCase` — verify refresh JWT, validate session, rotate tokens
-- [ ] Create `LogoutUseCase` — revoke current session
-- [ ] Create `LogoutAllUseCase` — revoke all sessions for user
-- [ ] Add `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all` endpoints
-- [ ] Update `auth.module.ts` — register session token entity/repo/use cases
-- [ ] Write tests: SessionToken entity spec, refresh/logout use case specs, auth controller spec updates
+- [x] Create `SessionToken` domain entity — `create()`, `revoke()`, `isValid`, `isExpired`, `isTokenMatch(rawToken)`
+- [x] Create `SessionTokenRepository` abstract port — `save()`, `findById()`, `revokeAllForUser()`, `deleteExpired()`
+- [x] Create `session_tokens` TypeORM schema + `PostgresSessionTokenRepository`
+- [x] Update `LoginUserUseCase` — create session, return `{ access_token, refresh_token }`
+- [x] Create `RefreshTokenUseCase` — verify refresh JWT, validate session, rotate tokens
+- [x] Create `LogoutUseCase` — revoke current session
+- [x] Create `LogoutAllUseCase` — revoke all sessions for user
+- [x] Add `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all` endpoints
+- [x] Update `auth.module.ts` — register session token entity/repo/use cases
+- [x] Write tests: SessionToken entity spec, refresh/logout use case specs, auth controller spec updates
+- [x] **HttpOnly Cookie Transport** — Move refresh token from response body to `Set-Cookie` (HttpOnly, Secure, SameSite=Strict, Path=/auth). Controller reads from `req.cookies` instead of body. See `docs/JWT-RSA-JWKS.md` §4.4
+- [x] **JWKS `kid` Thumbprint** — Replace hardcoded `kid: '1'` in `JwksService` with RFC 7638 SHA-256 thumbprint derived from public key material. See `docs/JWT-RSA-JWKS.md` §3.4
 
 **Location**: `src/modules/auth/core/domain/entities/`, `src/modules/auth/secondary-adapters/`
 

@@ -8,12 +8,16 @@ import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security: HTTP headers (Helmet)
   app.use(helmet());
+
+  // Cookie parsing for refresh token transport
+  app.use(cookieParser());
 
   app.useGlobalInterceptors(new SanitizeInterceptor(), new ResultInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
