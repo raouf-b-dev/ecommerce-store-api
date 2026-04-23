@@ -54,36 +54,36 @@ function keyOf(line) {
 }
 
 function buildLinesForEnv(lines, envName) {
+  const isProdLike = envName === 'production' || envName === 'staging';
+  const pkgVersion = require(
+    path.resolve(process.cwd(), 'package.json'),
+  ).version;
+
   return lines.map((line) => {
     if (!isKV(line)) return line;
     const key = keyOf(line);
 
-    // Keep defaults from .env.example for local dev/test — works out of the box
-    if (envName === 'development' || envName === 'test') {
-      if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
-      if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
-      if (key === 'IS_DB_SYNCHRONIZE') return 'IS_DB_SYNCHRONIZE=true';
-      if (key === 'LOG_LEVEL')
-        return envName === 'development' ? 'LOG_LEVEL=debug' : 'LOG_LEVEL=info';
-      if (key === 'JWT_PRIVATE_KEY')
-        return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
+    // Global Overrides
+    if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
+    if (key === 'APP_VERSION') return `APP_VERSION=${pkgVersion}`;
+    if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
 
-      return line; // preserve .env.example values
+    // Security/Safety Overrides
+    if (key === 'IS_DB_SYNCHRONIZE') {
+      return isProdLike ? 'IS_DB_SYNCHRONIZE=false' : 'IS_DB_SYNCHRONIZE=true';
     }
 
-    // For production/staging — blank credentials, force manual configuration
-    switch (key) {
-      case 'NODE_ENV':
-        return `NODE_ENV=${envName}`;
-      case 'REDIS_KEYPREFIX':
-        return `REDIS_KEYPREFIX=ecom:${envName}:`;
-      case 'IS_DB_SYNCHRONIZE':
-        return `IS_DB_SYNCHRONIZE=false`;
-      case 'LOG_LEVEL':
-        return `LOG_LEVEL=info`;
-      default:
-        return `${key}=`;
+    if (key === 'LOG_LEVEL') {
+      if (envName === 'development') return 'LOG_LEVEL=debug';
+      return 'LOG_LEVEL=info';
     }
+
+    if (key === 'JWT_PRIVATE_KEY') {
+      return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
+    }
+
+    // Default: keep the dummy variables/defaults from .env.example
+    return line;
   });
 }
 
