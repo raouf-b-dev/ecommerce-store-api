@@ -310,32 +310,60 @@ Replace `:dev` with `:prod`, `:staging`, or `:test` for different environments.
 
 ---
 
-## 🐳 Docker & Infrastructure
+## 🐳 Docker Management
 
-### Docker Compose Commands
+### Infrastructure Only (PostgreSQL + Redis)
+
+These scripts start **only** the database and cache containers — use them during local development when running the API directly via `npm run start:dev`:
 
 ```bash
-# Development environment
-npm run d:up:dev      # Start services
-npm run d:down:dev    # Stop services
-npm run d:reset:dev   # Reset with fresh data
+# Development
+npm run d:up:dev        # Start Postgres + Redis
+npm run d:down:dev      # Stop services
+npm run d:reset:dev     # Reset services (⚠️ wipes all data)
 
-# Production environment
-npm run d:up:prod
-npm run d:down:prod
-npm run d:reset:prod
-
-# Other environments: staging, test
-npm run d:up:staging
-npm run d:up:test
-
+# Production / Staging / Test — same pattern
+npm run d:up:prod       # Uses .env.production
+npm run d:up:staging    # Uses .env.staging
+npm run d:up:test       # Uses .env.test
 ```
 
-### Services Included
+### Production Docker Image
 
-- **PostgreSQL 16.3** - Primary database
-- **Redis Stack 7.2** - Caching and search (includes RedisJSON & RedisSearch)
-- **Custom networking** for service communication
+The E-Commerce API ships as a production-ready Docker image built from a multi-stage `Dockerfile`:
+
+```bash
+# Build the image
+npm run d:build:image   # → docker build -t ecommerce-api:latest .
+```
+
+**Image features:**
+
+- **4-stage build** — `deps` → `build` → `prod-deps` → `production` (only production artifacts in the final layer)
+- **Node.js 24 Alpine** (~495MB final image)
+- **tini** as PID 1 — proper signal forwarding for graceful shutdown
+- **Non-root user** (`appuser`) — no root access inside the container
+- **Automatic migrations** — `docker-entrypoint.sh` runs pending TypeORM migrations before starting the API
+- **Built-in healthcheck** — using structured wget endpoints
+- **Structured logging** — ready for production log aggregators
+
+### Full Production Stack (API + Postgres + Redis)
+
+Run the complete stack — the API container plus its infrastructure — using Docker Compose overlays:
+
+```bash
+# Build and start everything
+npm run d:up:full:prod
+
+# Follow logs (all services)
+npm run d:logs:full:prod
+
+# Stop everything
+npm run d:down:full:prod
+
+# Full reset — wipes volumes and rebuilds from scratch
+npm run d:reset:full:prod
+```
 
 ---
 
