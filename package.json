@@ -106,6 +106,7 @@
     "@nestjs/platform-socket.io": "^11.1.11",
     "@nestjs/schedule": "^6.1.0",
     "@nestjs/swagger": "^11.2.0",
+    "@nestjs/terminus": "^11.1.1",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.11",
     "@socket.io/redis-adapter": "^8.3.0",

@@ -174,7 +174,7 @@
 
 ---
 
-### [ ] Health Checks (`@nestjs/terminus`)
+### [x] Health Checks (`@nestjs/terminus`)
 
 **What**: No health check endpoint exists. Container orchestrators (Docker, Kubernetes, ECS) have no way to determine application readiness or liveness.
 **Risk**: Unhealthy instances continue receiving traffic. No automated recovery. Load balancers cannot detect failures.
@@ -183,8 +183,9 @@
 
 1. Install `@nestjs/terminus`
 2. Create `src/modules/health/` module
-3. `GET /health` endpoint (public, no auth) with indicators: PostgreSQL (TypeORM ping), Redis (PING), BullMQ queue health
-4. Add health check to Dockerfile (`HEALTHCHECK` directive)
+3. `GET /health` endpoint (public, no auth) with indicators: PostgreSQL (TypeORM ping), Redis (PING with 3s timeout)
+4. Updated Dockerfile `HEALTHCHECK` directive to hit `/health`
+5. Added `healthcheck` to `api` service in `docker-compose.prod.yml` with `start_period: 45s` for migration time
 
 ---
 
