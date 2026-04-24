@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResultInterceptor } from './interceptors/result.interceptor';
 import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
+import { RedisIoAdapterHost } from './infrastructure/websocket/redis-io-adapter.host';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
@@ -13,10 +14,22 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security: HTTP headers (Helmet)
-  app.use(helmet());
+  const exitHandler = (error: any, type: string) => {
+    Logger.error(
+      `${type}: ${error instanceof Error ? error.stack : error}`,
+      'Process',
+    );
+    app.close().finally(() => process.exit(1));
+  };
 
-  // Cookie parsing for refresh token transport
+  process.on('unhandledRejection', (reason: unknown) =>
+    exitHandler(reason, 'Unhandled Promise Rejection'),
+  );
+  process.on('uncaughtException', (error: Error) =>
+    exitHandler(error, 'Uncaught Exception'),
+  );
+
+  app.use(helmet());
   app.use(cookieParser());
 
   app.useGlobalInterceptors(new SanitizeInterceptor(), new ResultInterceptor());
@@ -29,14 +42,20 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
 
+  // Register adapter with the DI-managed host so NestJS handles its shutdown
+  const adapterHost = app.get(RedisIoAdapterHost);
+  adapterHost.setAdapter(redisIoAdapter);
+
+  app.enableShutdownHooks();
+
   const configService = app.get(EnvConfigService);
   const nodeEnv = configService.node.env;
 
-  // Security: CORS with explicit origin whitelist
   app.enableCors({
     origin: configService.cors.allowedOrigins,
     credentials: true,
@@ -64,49 +83,24 @@ async function bootstrap() {
     ? parseInt(process.env.DEBUG_PORT, 10)
     : configService.node.port;
 
-  // Graceful Shutdown Configuration
-  app.enableShutdownHooks();
+  try {
+    await app.listen(port);
 
-  // Safe timeout to forcefully kill the process if graceful shutdown hangs
-  const GRACEFUL_SHUTDOWN_TIMEOUT = 15000;
-  let isShuttingDown = false;
-
-  const handleShutdown = (signal: string) => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
     Logger.log(
-      `Received ${signal}. Starting graceful shutdown...`,
+      `🚀 Server is running on port ${port} in ${nodeEnv} mode`,
       'Bootstrap',
     );
-
-    // Fallback: force process exit after timeout if NestJS doesn't finish
-    setTimeout(() => {
+  } catch (error: any) {
+    if (error.code === 'EADDRINUSE') {
       Logger.error(
-        `Graceful shutdown took longer than ${GRACEFUL_SHUTDOWN_TIMEOUT}ms. Forcing process exit.`,
+        `Port ${port} is already in use. Another process (or container) is ` +
+          `already listening on this port. Stop the other process or change ` +
+          `the PORT environment variable, then try again.`,
         'Bootstrap',
       );
       process.exit(1);
-    }, GRACEFUL_SHUTDOWN_TIMEOUT).unref();
-  };
-
-  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-  process.on('SIGINT', () => handleShutdown('SIGINT'));
-
-  const server = await app.listen(port);
-
-  // Close the Redis pub/sub clients explicitly when NestJS HTTP server closes
-  server.on('close', async () => {
-    try {
-      await redisIoAdapter.close();
-      Logger.log('RedisIoAdapter closed', 'Bootstrap');
-    } catch (err) {
-      Logger.error('Error closing RedisIoAdapter', err, 'Bootstrap');
     }
-  });
-
-  Logger.log(
-    `🚀 Server is running on port ${port} in ${nodeEnv} mode`,
-    'Bootstrap',
-  );
+    throw error;
+  }
 }
 void bootstrap();
