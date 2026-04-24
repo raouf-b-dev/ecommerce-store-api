@@ -59,9 +59,9 @@ USER appuser
 
 EXPOSE $PORT
 
-# Basic liveness check — update to GET /health after @nestjs/terminus (Phase 8)
+# Liveness check — verifies the app is running and DB + Redis are reachable
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT}/ || exit 1
+  CMD wget -qO- http://localhost:${PORT}/health || exit 1
 
 ENTRYPOINT ["tini", "--", "/app/docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
