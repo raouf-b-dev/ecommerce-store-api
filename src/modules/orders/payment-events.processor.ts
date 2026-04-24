@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { JobNames } from '../../infrastructure/jobs/job-names';
 import { PaymentCompletedStep } from './primary-adapters/jobs/payment-completed.job';
@@ -7,7 +7,10 @@ import { PaymentFailedStep } from './primary-adapters/jobs/payment-failed.job';
 
 @Processor('payment-events')
 @Injectable()
-export class PaymentEventsProcessor extends WorkerHost {
+export class PaymentEventsProcessor
+  extends WorkerHost
+  implements OnApplicationShutdown
+{
   private readonly logger = new Logger(PaymentEventsProcessor.name);
 
   constructor(
@@ -15,6 +18,11 @@ export class PaymentEventsProcessor extends WorkerHost {
     private readonly paymentFailedStep: PaymentFailedStep,
   ) {
     super();
+  }
+
+  async onApplicationShutdown(signal?: string) {
+    this.logger.log(`Received ${signal}. Closing payment events worker...`);
+    await this.worker.close();
   }
 
   async process(job: Job): Promise<any> {

@@ -1,6 +1,6 @@
 import {
   Injectable,
-  OnModuleDestroy,
+  OnApplicationShutdown,
   OnModuleInit,
   Logger,
 } from '@nestjs/common';
@@ -14,7 +14,7 @@ export type QueueEventHandler = (args: {
 }) => void | Promise<void>;
 
 @Injectable()
-export class QueueEventsService implements OnModuleInit, OnModuleDestroy {
+export class QueueEventsService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(QueueEventsService.name);
   private readonly queueEventsMap = new Map<string, QueueEvents>();
   private readonly eventHandlers = new Map<
@@ -28,7 +28,8 @@ export class QueueEventsService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('QueueEventsService initialized');
   }
 
-  async onModuleDestroy() {
+  async onApplicationShutdown() {
+    this.logger.log('Closing all QueueEvents instances...');
     for (const queueEvents of this.queueEventsMap.values()) {
       await queueEvents.close();
     }

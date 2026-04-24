@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
@@ -73,7 +73,7 @@ export class PaymentsController {
   }
 
   @Post()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
@@ -82,7 +82,7 @@ export class PaymentsController {
   }
 
   @Get(':id')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -91,7 +91,7 @@ export class PaymentsController {
   }
 
   @Get()
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
@@ -100,7 +100,7 @@ export class PaymentsController {
   }
 
   @Post(':id/capture')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -109,7 +109,7 @@ export class PaymentsController {
   }
 
   @Post(':id/refund')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -121,7 +121,7 @@ export class PaymentsController {
   }
 
   @Post(':id/verify')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -130,7 +130,7 @@ export class PaymentsController {
   }
 
   @Post('cod/record')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
@@ -139,7 +139,7 @@ export class PaymentsController {
   }
 
   @Get('orders/:orderId')
-  @UseGuards(JWTAuthGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })

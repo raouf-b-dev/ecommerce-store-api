@@ -29,4 +29,22 @@ export class EnvConfigService {
   get jwt() {
     return this.get('jwt');
   }
+
+  // ─── Logging ────────────────────────────────────
+  get logLevel(): string {
+    return this.get('logging').level;
+  }
+
+  get logDir(): string {
+    return this.get('logging').dir;
+  }
+
+  get logTransport(): string {
+    return this.get('logging').transport;
+  }
+
+  // ─── Security ───────────────────────────────────
+  get cors() {
+    return this.get('cors');
+  }
 }

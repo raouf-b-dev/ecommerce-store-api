@@ -7,6 +7,7 @@ import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error'
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ProcessPaymentResult } from './process-payment.job';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface ConfirmReservationResult extends ProcessPaymentResult {
   reservationConfirmed: boolean;
@@ -21,8 +22,13 @@ export class ConfirmReservationStep extends BaseJobHandler<
 
   constructor(
     private readonly confirmReservationUseCase: ConfirmCheckoutReservationUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

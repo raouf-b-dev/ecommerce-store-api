@@ -5,6 +5,7 @@ import { Result } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ClearCartResult } from './clear-cart.job';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface FinalizeCheckoutResult {
   success: boolean;
@@ -19,6 +20,14 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
   FinalizeCheckoutResult
 > {
   protected readonly logger = new Logger(FinalizeCheckoutStep.name);
+
+  constructor(private readonly correlation: CorrelationService) {
+    super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
+  }
 
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,

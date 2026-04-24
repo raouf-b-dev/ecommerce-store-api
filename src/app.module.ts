@@ -14,6 +14,8 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WebsocketModule } from './infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { HealthModule } from './modules/health/health.module';
+import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -33,6 +35,8 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     AuthModule,
     WebsocketModule,
     NotificationsModule,
+    HealthModule,
+    ShutdownModule,
 
     ConfigModule.forRoot({
       isGlobal: true,

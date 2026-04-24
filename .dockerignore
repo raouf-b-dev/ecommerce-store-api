@@ -1,0 +1,19 @@
+node_modules
+dist
+coverage
+.git
+.env*
+.secrets*
+*.md
+docs/
+test/
+logs/
+.husky/
+.vscode/
+
+# Build tooling not needed inside the image
+data-source.ts
+docker-compose*.yml
+docker-compose*.yaml
+eslint.config.mjs
+.prettierrc

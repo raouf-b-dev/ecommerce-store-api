@@ -73,8 +73,7 @@ jobs:
           CI_DB_DATABASE: ${{ secrets.CI_DB_DATABASE }}
           CI_REDIS_PASSWORD: ${{ secrets.CI_REDIS_PASSWORD }}
           CI_REDIS_KEYPREFIX: ${{ secrets.CI_REDIS_KEYPREFIX }}
-          CI_JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
-          CI_JWT_EXPIRES_IN: ${{ secrets.CI_JWT_EXPIRES_IN }}
+          CI_JWT_PRIVATE_KEY: ${{ secrets.CI_JWT_PRIVATE_KEY }}
         run: |
           set -euo pipefail
 
@@ -84,8 +83,6 @@ jobs:
           DB_NAME="${CI_DB_DATABASE:-test_db}"
           REDIS_PASS="${CI_REDIS_PASSWORD:-}"
           REDIS_KEYPREFIX="${CI_REDIS_KEYPREFIX:-ecom:test:}"
-          JWT_SECRET="${CI_JWT_SECRET:-myjwtsecret}"
-          JWT_EXPIRES="${CI_JWT_EXPIRES_IN:-1h}"
 
           # In GitHub Actions, services are accessible via localhost
           PG_HOST="localhost"
@@ -119,7 +116,7 @@ jobs:
           done
 
           # Write .env.test using the detected hosts
-          cat > .env.test << EOF
+          cat > .env.test << ENVEOF
           NODE_ENV=test
           PORT=3000
 
@@ -135,9 +132,10 @@ jobs:
           REDIS_KEYPREFIX=${REDIS_KEYPREFIX}
           REDIS_DB=0
 
-          JWT_SECRET=${JWT_SECRET}
-          JWT_EXPIRES_IN=${JWT_EXPIRES}
-          EOF
+          JWT_PRIVATE_KEY="${CI_JWT_PRIVATE_KEY}"
+          JWT_ACCESS_TOKEN_TTL=15m
+          JWT_REFRESH_TOKEN_TTL=7d
+          ENVEOF
 
           echo ".env.test created with DB_HOST=${PG_HOST} and REDIS_HOST=${REDIS_HOST_DETECTED}"
           echo "Contents of .env.test (passwords masked):"

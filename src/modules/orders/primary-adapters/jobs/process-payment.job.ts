@@ -8,6 +8,7 @@ import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error'
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface ProcessPaymentResult extends ReserveStockResult {
   paymentId: number;
@@ -27,8 +28,13 @@ export class ProcessPaymentStep extends BaseJobHandler<
   constructor(
     private readonly createPaymentUseCase: CreateCheckoutPaymentUseCase,
     private readonly getOrderUseCase: GetOrderUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

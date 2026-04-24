@@ -15,7 +15,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JWTAuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CreateCustomerDto } from './primary-adapters/dto/create-customer.dto';
 import { UpdateCustomerDto } from './primary-adapters/dto/update-customer.dto';
 import { AddAddressDto } from './primary-adapters/dto/add-address.dto';
@@ -37,7 +37,7 @@ import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('customers')
 @ApiBearerAuth()
-@UseGuards(JWTAuthGuard)
+@UseGuards(AuthGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(

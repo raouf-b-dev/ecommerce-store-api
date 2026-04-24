@@ -5,6 +5,7 @@ import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/rel
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class ReleaseStockStep extends BaseJobHandler<
@@ -15,8 +16,13 @@ export class ReleaseStockStep extends BaseJobHandler<
 
   constructor(
     private readonly releaseStockUseCase: ReleaseCheckoutStockUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

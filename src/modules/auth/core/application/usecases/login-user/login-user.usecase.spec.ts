@@ -1,44 +1,60 @@
-import { JwtService } from '@nestjs/jwt';
+import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
+import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
+import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
+import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
 
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
   let userRepository: MockUserRepository;
+  let sessionTokenRepository: MockSessionTokenRepository;
   let bcryptService: MockBcryptService;
-  let jwtService: JwtService;
+  let jwtSignerService: MockJwtSignerService;
 
   let mockDomainUser: User;
+
   beforeEach(() => {
     userRepository = new MockUserRepository();
+    sessionTokenRepository = new MockSessionTokenRepository();
     bcryptService = new MockBcryptService();
-    jwtService = new JwtService({ secret: 'test-secret' });
-    usecase = new LoginUserUseCase(userRepository, bcryptService, jwtService);
+    jwtSignerService = new MockJwtSignerService();
+
+    usecase = new LoginUserUseCase(
+      userRepository,
+      sessionTokenRepository,
+      bcryptService,
+      jwtSignerService as unknown as JwtSignerService,
+    );
     mockDomainUser = User.fromPrimitives(
       UserTestFactory.createMockCustomerUser(),
     );
   });
+
   afterEach(() => {
     userRepository.reset();
+    sessionTokenRepository.reset();
   });
 
   it('should login a user successfully', async () => {
     userRepository.findByEmail.mockResolvedValue(
       Result.success(mockDomainUser),
     );
+    sessionTokenRepository.save.mockResolvedValue(Result.success({} as any));
+
     const result = await usecase.execute({
       email: 'test@example.com',
       password: 'password',
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.accessToken).toBeDefined();
+    expect(result.value.accessToken).toContain('header');
+    expect(result.value.refreshToken).toContain('header');
   });
 
   it('should return failure if user is not found', async () => {

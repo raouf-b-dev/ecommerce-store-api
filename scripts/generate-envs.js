@@ -11,6 +11,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const { generateKeyPairSync } = require('crypto');
 
 const args = process.argv.slice(2).reduce((acc, a) => {
   const [k, v] = a.startsWith('--') ? a.slice(2).split('=') : [a, true];
@@ -28,6 +29,17 @@ const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
 const FORCE = Boolean(args.force);
 
 // Helpers
+function generateRSAPrivateKey() {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: {
+      type: 'pkcs8',
+      format: 'pem',
+    },
+  });
+  return `"${privateKey.replace(/\r?\n/g, '\\n')}"`;
+}
+
 async function readTemplate(file) {
   const raw = await fsp.readFile(file, 'utf8').catch(() => '');
   return raw.split(/\r?\n/);
@@ -42,22 +54,36 @@ function keyOf(line) {
 }
 
 function buildLinesForEnv(lines, envName) {
+  const isProdLike = envName === 'production' || envName === 'staging';
+  const pkgVersion = require(
+    path.resolve(process.cwd(), 'package.json'),
+  ).version;
+
   return lines.map((line) => {
     if (!isKV(line)) return line;
     const key = keyOf(line);
 
-    switch (key) {
-      case 'NODE_ENV':
-        return `NODE_ENV=${envName}`;
-      case 'REDIS_KEYPREFIX':
-        return `REDIS_KEYPREFIX=ecom:${envName}:`;
-      case 'PORT':
-        return envName === 'development' || envName === 'test'
-          ? 'PORT=3000'
-          : 'PORT=';
-      default:
-        return `${key}=`;
+    // Global Overrides
+    if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
+    if (key === 'APP_VERSION') return `APP_VERSION=${pkgVersion}`;
+    if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
+
+    // Security/Safety Overrides
+    if (key === 'IS_DB_SYNCHRONIZE') {
+      return isProdLike ? 'IS_DB_SYNCHRONIZE=false' : 'IS_DB_SYNCHRONIZE=true';
     }
+
+    if (key === 'LOG_LEVEL') {
+      if (envName === 'development') return 'LOG_LEVEL=debug';
+      return 'LOG_LEVEL=info';
+    }
+
+    if (key === 'JWT_PRIVATE_KEY') {
+      return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
+    }
+
+    // Default: keep the dummy variables/defaults from .env.example
+    return line;
   });
 }
 

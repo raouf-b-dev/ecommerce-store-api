@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReserveStockStep } from './reserve-stock.job';
 import { ReserveStockForCheckoutUseCase } from '../../../core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
+import { CorrelationService } from '../../../../../infrastructure/logging/correlation/correlation.service';
 
 describe('ReserveStockStep', () => {
   let jobHandler: ReserveStockStep;
@@ -34,6 +35,13 @@ describe('ReserveStockStep', () => {
           provide: ReserveStockForCheckoutUseCase,
           useValue: {
             execute: jest.fn(),
+          },
+        },
+        {
+          provide: CorrelationService,
+          useValue: {
+            getId: jest.fn(),
+            run: jest.fn((id, fn) => fn()),
           },
         },
       ],

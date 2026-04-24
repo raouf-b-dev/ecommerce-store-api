@@ -10,6 +10,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Notification } from '../../core/domain/entities/notification';
 import { NotificationScheduler } from '../../core/domain/schedulers/notification.scheduler';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class BullMqNotificationScheduler
@@ -22,6 +23,7 @@ export class BullMqNotificationScheduler
     private readonly jobConfig: JobConfigService,
     @InjectQueue('notifications')
     private readonly notificationQueue: Queue,
+    private readonly correlation: CorrelationService,
   ) {}
 
   async onModuleInit() {
@@ -55,12 +57,15 @@ export class BullMqNotificationScheduler
       const flowId = this.jobConfig.generateJobId(JobNames.SEND_NOTIFICATION);
       const notificationData = notification.toPrimitives();
 
+      const correlationId = this.correlation.getId();
+
       const flowDefinition: FlowJob = {
         name: JobNames.UPDATE_NOTIFICATION_STATUS,
         queueName: 'notifications',
         data: {
           notificationId: notification.id,
           status: NotificationStatus.DELIVERED,
+          ...(correlationId ? { correlationId } : {}),
         },
         opts: {
           jobId: `${flowId}-update-status`,
@@ -70,7 +75,10 @@ export class BullMqNotificationScheduler
           {
             name: JobNames.SEND_NOTIFICATION,
             queueName: 'notifications',
-            data: notificationData,
+            data: {
+              ...notificationData,
+              ...(correlationId ? { correlationId } : {}),
+            },
             opts: {
               jobId: `${flowId}-send`,
               ...this.jobConfig.getJobOptions(JobNames.SEND_NOTIFICATION),
@@ -79,7 +87,10 @@ export class BullMqNotificationScheduler
               {
                 name: JobNames.SAVE_NOTIFICATION_HISTORY,
                 queueName: 'notifications',
-                data: notificationData,
+                data: {
+                  ...notificationData,
+                  ...(correlationId ? { correlationId } : {}),
+                },
                 opts: {
                   jobId: `${flowId}-save`,
                   ...this.jobConfig.getJobOptions(

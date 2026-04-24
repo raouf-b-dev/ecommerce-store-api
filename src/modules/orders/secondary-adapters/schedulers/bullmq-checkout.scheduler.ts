@@ -11,6 +11,7 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { PaymentMethodPolicy } from '../../core/domain/services/payment-method-policy';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler {
@@ -18,6 +19,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
     private readonly jobConfig: JobConfigService,
     private readonly flowProducerService: FlowProducerService,
     private readonly paymentPolicy: PaymentMethodPolicy,
+    private readonly correlation: CorrelationService,
   ) {}
 
   async scheduleCheckout(
@@ -26,8 +28,13 @@ export class BullMqOrderScheduler implements OrderScheduler {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
       const isOnline = this.paymentPolicy.isOnlinePayment(props.paymentMethod);
+      const correlationId = this.correlation.getId();
 
       let flowDefinition: FlowJob;
+      const propsWithCorrelation = {
+        ...props,
+        ...(correlationId ? { correlationId } : {}),
+      };
 
       if (isOnline) {
         // Online Flow: Validate -> Reserve -> Process Payment
@@ -35,7 +42,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
         flowDefinition = {
           name: JobNames.PROCESS_PAYMENT,
           queueName: 'checkout',
-          data: { ...props, flowId },
+          data: { ...propsWithCorrelation, flowId },
           opts: {
             jobId: `${flowId}-process-payment`,
             ...this.jobConfig.getJobOptions(JobNames.PROCESS_PAYMENT),
@@ -44,7 +51,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
             {
               name: JobNames.RESERVE_STOCK,
               queueName: 'checkout',
-              data: props,
+              data: propsWithCorrelation,
               opts: {
                 jobId: `${flowId}-reserve-stock`,
                 ...this.jobConfig.getJobOptions(JobNames.RESERVE_STOCK),
@@ -53,7 +60,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
                 {
                   name: JobNames.VALIDATE_CART,
                   queueName: 'checkout',
-                  data: props,
+                  data: propsWithCorrelation,
                   opts: {
                     jobId: `${flowId}-validate-cart`,
                     ...this.jobConfig.getJobOptions(JobNames.VALIDATE_CART),
@@ -71,7 +78,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
         flowDefinition = {
           name: JobNames.RESERVE_STOCK,
           queueName: 'checkout',
-          data: { ...props, flowId },
+          data: { ...propsWithCorrelation, flowId },
           opts: {
             jobId: `${flowId}-reserve-stock`,
             ...this.jobConfig.getJobOptions(JobNames.RESERVE_STOCK),
@@ -80,7 +87,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
             {
               name: JobNames.VALIDATE_CART,
               queueName: 'checkout',
-              data: props,
+              data: propsWithCorrelation,
               opts: {
                 jobId: `${flowId}-validate-cart`,
                 ...this.jobConfig.getJobOptions(JobNames.VALIDATE_CART),
@@ -114,7 +121,13 @@ export class BullMqOrderScheduler implements OrderScheduler {
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
-      const props = { orderId, reservationId, cartId };
+      const correlationId = this.correlation.getId();
+      const props = {
+        orderId,
+        reservationId,
+        cartId,
+        ...(correlationId ? { correlationId } : {}),
+      };
 
       const flowDefinition: FlowJob = {
         name: JobNames.FINALIZE_CHECKOUT,
@@ -181,7 +194,13 @@ export class BullMqOrderScheduler implements OrderScheduler {
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
-      const props = { orderId, reservationId, cartId };
+      const correlationId = this.correlation.getId();
+      const props = {
+        orderId,
+        reservationId,
+        cartId,
+        ...(correlationId ? { correlationId } : {}),
+      };
 
       const flowDefinition: FlowJob = {
         name: JobNames.FINALIZE_CHECKOUT,
@@ -230,11 +249,15 @@ export class BullMqOrderScheduler implements OrderScheduler {
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const jobId = this.jobConfig.generateJobId(JobNames.RELEASE_STOCK);
+      const correlationId = this.correlation.getId();
 
       await this.flowProducerService.add({
         name: JobNames.RELEASE_STOCK,
         queueName: 'checkout',
-        data: { reservationId },
+        data: {
+          reservationId,
+          ...(correlationId ? { correlationId } : {}),
+        },
         opts: {
           jobId,
           ...this.jobConfig.getJobOptions(JobNames.RELEASE_STOCK),
@@ -255,11 +278,15 @@ export class BullMqOrderScheduler implements OrderScheduler {
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const jobId = this.jobConfig.generateJobId(JobNames.RELEASE_ORDER_STOCK);
+      const correlationId = this.correlation.getId();
 
       await this.flowProducerService.add({
         name: JobNames.RELEASE_ORDER_STOCK,
         queueName: 'checkout',
-        data: { orderId },
+        data: {
+          orderId,
+          ...(correlationId ? { correlationId } : {}),
+        },
         opts: {
           jobId,
           ...this.jobConfig.getJobOptions(JobNames.RELEASE_ORDER_STOCK),

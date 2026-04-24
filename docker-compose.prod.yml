@@ -1,0 +1,53 @@
+# Production override — use with base docker-compose.yaml:
+# docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.production up -d --build
+services:
+  api:
+    image: ecommerce-api:${APP_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-api
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+    env_file:
+      - .env.production
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 5s
+      start_period: 45s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: '50m'
+        max-file: '5'
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - ecommerce-internal
+
+  postgres:
+    networks:
+      - ecommerce-internal
+
+  redis:
+    networks:
+      - ecommerce-internal
+
+networks:
+  ecommerce-internal:
+    driver: bridge

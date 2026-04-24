@@ -5,6 +5,7 @@ import { ClearCheckoutCartUseCase } from '../../core/application/usecases/clear-
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { ConfirmReservationResult } from './confirm-reservation.job';
 
 export interface ClearCartResult extends ConfirmReservationResult {
@@ -18,8 +19,15 @@ export class ClearCartStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ClearCartStep.name);
 
-  constructor(private readonly clearCartUseCase: ClearCheckoutCartUseCase) {
+  constructor(
+    private readonly clearCartUseCase: ClearCheckoutCartUseCase,
+    private readonly correlation: CorrelationService,
+  ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

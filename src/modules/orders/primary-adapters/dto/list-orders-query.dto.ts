@@ -1,4 +1,11 @@
-import { IsOptional, IsEnum, IsIn, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsIn,
+  IsDateString,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
@@ -16,6 +23,8 @@ export class ListOrdersQueryDto {
 
   @IsOptional()
   @Type(() => Number)
+  @Min(1)
+  @Max(100)
   @ApiPropertyOptional({
     description: 'Number of items per page',
     minimum: 1,
