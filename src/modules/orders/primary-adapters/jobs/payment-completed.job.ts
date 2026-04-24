@@ -8,6 +8,7 @@ import {
 } from '../../core/application/usecases/handle-payment-completed/handle-payment-completed.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class PaymentCompletedStep extends BaseJobHandler<
@@ -18,8 +19,13 @@ export class PaymentCompletedStep extends BaseJobHandler<
 
   constructor(
     private readonly handlePaymentCompletedUseCase: HandlePaymentCompletedUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

@@ -5,6 +5,7 @@ import { BaseJobHandler } from 'src/infrastructure/jobs/base-job.handler';
 import { UpdateNotificationStatusService } from '../../core/application/services/update-notification-status.service';
 import { Job } from 'bullmq';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
+import { CorrelationService } from 'src/infrastructure/logging/correlation/correlation.service';
 
 interface UpdateStatusProps {
   notificationId: string;
@@ -21,8 +22,13 @@ export class UpdateNotificationStatusProcess extends BaseJobHandler<
 
   constructor(
     private readonly updateNotificationStatusService: UpdateNotificationStatusService,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

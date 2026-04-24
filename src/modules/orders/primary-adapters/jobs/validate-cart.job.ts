@@ -6,6 +6,7 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ShippingAddressDto } from '../dto/shipping-address.dto';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface ValidateCartResult {
   cartId: number;
@@ -21,8 +22,13 @@ export class ValidateCartStep extends BaseJobHandler<
 
   constructor(
     private readonly validateCheckoutUseCase: ValidateCheckoutUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

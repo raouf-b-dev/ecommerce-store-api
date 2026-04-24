@@ -4,6 +4,7 @@ import { Result } from 'src/shared-kernel/domain/result';
 import { BaseJobHandler } from 'src/infrastructure/jobs/base-job.handler';
 import { CleanupExpiredNotificationsService } from '../../core/application/services/cleanup-expired-notifications.service';
 import { Job } from 'bullmq';
+import { CorrelationService } from 'src/infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class CleanupExpiredNotificationsProcess extends BaseJobHandler<
@@ -16,8 +17,13 @@ export class CleanupExpiredNotificationsProcess extends BaseJobHandler<
 
   constructor(
     private readonly cleanupService: CleanupExpiredNotificationsService,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(job: Job<void>): Promise<Result<void, AppError>> {

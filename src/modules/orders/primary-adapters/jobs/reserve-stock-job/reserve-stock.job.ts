@@ -7,6 +7,7 @@ import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.err
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../../core/domain/schedulers/order.scheduler';
 import { ValidateCartResult } from '../validate-cart.job';
+import { CorrelationService } from '../../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface ReserveStockResult extends ValidateCartResult {
   reservationId: number;
@@ -21,8 +22,13 @@ export class ReserveStockStep extends BaseJobHandler<
 
   constructor(
     private readonly reserveStockUseCase: ReserveStockForCheckoutUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(
