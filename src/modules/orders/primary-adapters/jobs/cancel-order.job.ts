@@ -5,6 +5,7 @@ import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class CancelOrderStep extends BaseJobHandler<
@@ -13,8 +14,15 @@ export class CancelOrderStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(CancelOrderStep.name);
 
-  constructor(private readonly cancelOrderUseCase: CancelOrderUseCase) {
+  constructor(
+    private readonly cancelOrderUseCase: CancelOrderUseCase,
+    private readonly correlation: CorrelationService,
+  ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

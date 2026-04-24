@@ -25,6 +25,7 @@ export interface IAppConfig {
     accessTokenTtl: string;
     refreshTokenTtl: string;
   };
+  logging: { level: string; dir: string; transport: string };
   cors: {
     allowedOrigins: string[];
   };
@@ -58,6 +59,11 @@ export default (): IAppConfig => {
       privateKey: env.JWT_PRIVATE_KEY,
       accessTokenTtl: env.JWT_ACCESS_TOKEN_TTL,
       refreshTokenTtl: env.JWT_REFRESH_TOKEN_TTL,
+    },
+    logging: {
+      level: env.LOG_LEVEL,
+      dir: env.LOG_DIR,
+      transport: env.LOG_TRANSPORT,
     },
     cors: {
       allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),

@@ -29,6 +29,7 @@
 | **5** | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
 | **6** | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
 | **7** | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`         |
+| **8** | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/` |
 
 ---
 
@@ -147,93 +148,6 @@
 
 - [ ] **Per-User Permission Overrides** — Admin can grant/revoke individual permissions per user (stored in `user_permission_overrides` table, merged at resolution time)
 - [ ] **Identity / Access Module Split** — Separate user identity management and token/session management into independent bounded contexts for microservice extraction
-
----
-
-## 📊 Phase 8 — Observability
-
-> **Goal**: Make production debuggable. Without these, you're flying blind when issues occur.
-
----
-
-### [ ] Structured Logging (Winston/Pino)
-
-**What**: The project uses the **default NestJS logger** (`Logger` from `@nestjs/common`). No structured logging library (Winston, Pino) is installed. Log output is unstructured text — not parseable by log aggregation tools.
-**Risk**: Zero log visibility in containerized deployments. No JSON-structured logs for CloudWatch, Loki, Datadog, or ELK. No log levels, no rotation, no file output.
-
-**Scope**:
-
-1. Install Winston (or Pino) and configure as NestJS custom logger
-2. JSON format in production, pretty-print in development
-3. Daily rotation, compression, 90-day retention (for file transports)
-4. Log files: combined, error, http, exceptions
-5. Add `LOG_TRANSPORT` env var: `file`, `console`, or `both`
-6. Ensure all log entries include: `timestamp`, `level`, `message`, `context`, `stack` (if error)
-
-**Location**: `src/infrastructure/logging/`
-
----
-
-### [x] Health Checks (`@nestjs/terminus`)
-
-**What**: No health check endpoint exists. Container orchestrators (Docker, Kubernetes, ECS) have no way to determine application readiness or liveness.
-**Risk**: Unhealthy instances continue receiving traffic. No automated recovery. Load balancers cannot detect failures.
-
-**Scope**:
-
-1. Install `@nestjs/terminus`
-2. Create `src/modules/health/` module
-3. `GET /health` endpoint (public, no auth) with indicators: PostgreSQL (TypeORM ping), Redis (PING with 3s timeout)
-4. Updated Dockerfile `HEALTHCHECK` directive to hit `/health`
-5. Added `healthcheck` to `api` service in `docker-compose.prod.yml` with `start_period: 45s` for migration time
-
----
-
-### [ ] Correlation ID Middleware
-
-**What**: No request correlation exists. When debugging production issues, there is no way to trace a single request across log lines — all logs from concurrent requests are interleaved with no grouping key.
-**Risk**: Production incidents are nearly impossible to debug when multiple requests produce logs simultaneously.
-
-**Scope**:
-
-1. Create `CorrelationIdMiddleware` — generates UUID per request, stores in `AsyncLocalStorage`
-2. Read incoming `X-Request-Id` header (if present) or generate a new one
-3. Inject `correlationId` into all log metadata automatically (extend logger service)
-4. Return `X-Request-Id` in response headers for client-side correlation
-5. Propagate to WebSocket events and BullMQ job metadata
-
-**Location**: `src/infrastructure/logging/middleware/correlation-id.middleware.ts`
-
----
-
-### [ ] Structured Console Logging (Container-Ready)
-
-**What**: In production deployments (Docker, Kubernetes, AWS ECS, Cloud Run), the standard practice is to write structured JSON to `stdout` and let the platform's log driver (CloudWatch, Loki, Datadog, ELK) collect it. The project currently has no mechanism for this.
-**Risk**: Zero log visibility in containerized deployments. Log aggregation tools cannot ingest unstructured console output.
-
-**Scope**:
-
-1. Add a JSON console transport in production mode (structured `winston.format.json()` to stdout)
-2. Keep file transports as a configurable option (useful for VM deployments)
-3. Ensure all log entries include: `timestamp`, `level`, `message`, `context`, `correlationId`, `stack` (if error)
-
-**Note**: Depends on Structured Logging and Correlation ID tasks above.
-
----
-
-### [x] Secrets Management Documentation
-
-**What**: The project has the tooling (`.env.example`, `.secrets.example`, `generate-envs.js`, `envalid` validation) but no documentation explaining the secrets lifecycle, configuration taxonomy, or deployment injection patterns.
-**Risk**: Contributors and future deployments have no reference for how to handle secrets safely.
-
-**Scope**: Create `docs/SECRETS-MANAGEMENT.md` covering:
-
-1. Configuration taxonomy (T1 secrets / T2 sensitive / T3 non-sensitive)
-2. Project file layout and git boundaries
-3. Environment variables reference table
-4. Boot-time configuration pipeline (`envalid` → `configuration.ts` → `EnvConfigService`)
-5. Secret injection patterns by deployment model (manual, CI/CD, Docker, K8s, external vault)
-6. The `generate-envs` toolchain documentation
 
 ---
 

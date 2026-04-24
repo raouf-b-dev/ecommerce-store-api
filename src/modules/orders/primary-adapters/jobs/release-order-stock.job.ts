@@ -4,6 +4,7 @@ import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler
 import { ReleaseOrderStockUseCase } from '../../core/application/usecases/release-order-stock/release-order-stock.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class ReleaseOrderStockJob extends BaseJobHandler<
@@ -14,8 +15,13 @@ export class ReleaseOrderStockJob extends BaseJobHandler<
 
   constructor(
     private readonly releaseOrderStockUseCase: ReleaseOrderStockUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

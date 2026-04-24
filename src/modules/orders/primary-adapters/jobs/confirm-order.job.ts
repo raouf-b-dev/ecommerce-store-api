@@ -4,6 +4,7 @@ import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler
 import { ConfirmOrderUseCase } from '../../core/application/usecases/confirm-order/confirm-order.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { CreateOrderResult } from './create-order.job';
@@ -19,8 +20,15 @@ export class ConfirmOrderStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(ConfirmOrderStep.name);
 
-  constructor(private readonly confirmOrderUseCase: ConfirmOrderUseCase) {
+  constructor(
+    private readonly confirmOrderUseCase: ConfirmOrderUseCase,
+    private readonly correlation: CorrelationService,
+  ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(

@@ -6,6 +6,7 @@ import { DeliverNotificationService } from '../../core/application/services/deli
 import { INotification } from '../../core/domain/interfaces/notification.interface';
 import { Notification } from '../../core/domain/entities/notification';
 import { Job } from 'bullmq';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class DeliverNotificationProcess extends BaseJobHandler<
@@ -16,8 +17,13 @@ export class DeliverNotificationProcess extends BaseJobHandler<
 
   constructor(
     private readonly deliverNotificationService: DeliverNotificationService,
+    private readonly correlation: CorrelationService,
   ) {
     super();
+  }
+
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
   }
 
   protected async onExecute(
