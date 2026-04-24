@@ -10,6 +10,7 @@ import { Result } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
 export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
@@ -17,13 +18,18 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
 
   constructor(
     @InjectQueue('payment-events') private readonly paymentEventsQueue: Queue,
+    private readonly correlation: CorrelationService,
   ) {}
 
   async emitPaymentCompleted(
     props: PaymentCompletedProps,
   ): Promise<Result<void, InfrastructureError>> {
     try {
-      await this.paymentEventsQueue.add(JobNames.PAYMENT_COMPLETED, props);
+      const correlationId = this.correlation.getId();
+      await this.paymentEventsQueue.add(JobNames.PAYMENT_COMPLETED, {
+        ...props,
+        ...(correlationId ? { correlationId } : {}),
+      });
       this.logger.log(
         `Emitted payment completed event for order ${props.orderId}`,
       );
@@ -44,7 +50,11 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
     props: PaymentFailedProps,
   ): Promise<Result<void, InfrastructureError>> {
     try {
-      await this.paymentEventsQueue.add(JobNames.PAYMENT_FAILED, props);
+      const correlationId = this.correlation.getId();
+      await this.paymentEventsQueue.add(JobNames.PAYMENT_FAILED, {
+        ...props,
+        ...(correlationId ? { correlationId } : {}),
+      });
       this.logger.log(
         `Emitted payment failed event for order ${props.orderId}`,
       );
