@@ -2,7 +2,7 @@ import { User, UserProps } from '../../../core/domain/entities/user';
 import { UserEntity } from '../../orm/user.schema';
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 
-type UserCreate = CreateFromEntity<UserEntity>;
+type UserCreate = CreateFromEntity<UserEntity, 'roleEntity'>;
 
 export class UserMapper {
   static toDomain(entity: UserEntity): User {
@@ -10,7 +10,8 @@ export class UserMapper {
       id: entity.id,
       email: entity.email,
       passwordHash: entity.passwordHash,
-      role: entity.role,
+      roleId: entity.roleId,
+      roleCode: entity.roleEntity ? entity.roleEntity.code : null,
       customerId: entity.customerId,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -25,7 +26,7 @@ export class UserMapper {
       id: primitives.id ?? 0,
       email: primitives.email,
       passwordHash: primitives.passwordHash,
-      role: primitives.role,
+      roleId: primitives.roleId || null,
       customerId: primitives.customerId,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
@@ -38,7 +39,8 @@ export interface UserForCache {
   id: number;
   email: string;
   passwordHash: string;
-  role: string;
+  roleId: number | null;
+  roleCode: string | null;
   customerId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -51,7 +53,8 @@ export class UserCacheMapper {
       id: primitives.id!,
       email: primitives.email,
       passwordHash: primitives.passwordHash,
-      role: primitives.role,
+      roleId: primitives.roleId || null,
+      roleCode: primitives.roleCode,
       customerId: primitives.customerId,
       createdAt: primitives.createdAt.toISOString(),
       updatedAt: primitives.updatedAt.toISOString(),
@@ -63,7 +66,8 @@ export class UserCacheMapper {
       id: cache.id,
       email: cache.email,
       passwordHash: cache.passwordHash,
-      role: cache.role as any,
+      roleId: cache.roleId,
+      roleCode: cache.roleCode,
       customerId: cache.customerId,
       createdAt: new Date(cache.createdAt),
       updatedAt: new Date(cache.updatedAt),
