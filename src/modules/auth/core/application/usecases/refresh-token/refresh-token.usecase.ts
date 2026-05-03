@@ -77,7 +77,7 @@ export class RefreshTokenUseCase extends UseCase<
       const newAccessToken = await this.jwtSignerService.signAccessToken({
         sub: user.id,
         email: user.email,
-        role: user.role,
+        role: user.roleCode,
         customerId: user.customerId,
       });
 

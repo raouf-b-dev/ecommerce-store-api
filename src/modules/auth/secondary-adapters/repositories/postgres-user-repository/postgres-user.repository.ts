@@ -34,7 +34,10 @@ export class PostgresUserRepository implements UserRepository {
     email: string,
   ): Promise<Result<User | null, RepositoryError>> {
     try {
-      const entity = await this.repository.findOne({ where: { email } });
+      const entity = await this.repository.findOne({
+        where: { email },
+        relations: ['roleEntity'],
+      });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {
@@ -47,7 +50,10 @@ export class PostgresUserRepository implements UserRepository {
 
   async findById(id: number): Promise<Result<User | null, RepositoryError>> {
     try {
-      const entity = await this.repository.findOne({ where: { id } });
+      const entity = await this.repository.findOne({
+        where: { id },
+        relations: ['roleEntity'],
+      });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {

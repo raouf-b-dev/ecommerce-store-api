@@ -1,7 +1,6 @@
 // src/modules/auth/testing/builders/user.builder.ts
 
 import { IUser } from '../../core/domain/interfaces/user.interface';
-import { UserRoleType } from '../../core/domain/value-objects/user-role';
 import { UserTestFactory } from '../factories/user.factory';
 
 export class UserBuilder {
@@ -31,8 +30,9 @@ export class UserBuilder {
     return this;
   }
 
-  withRole(role: UserRoleType): this {
-    this.user.role = role;
+  withRole(roleId: number, roleCode: string): this {
+    this.user.roleId = roleId;
+    this.user.roleCode = roleCode;
     return this;
   }
 

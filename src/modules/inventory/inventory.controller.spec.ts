@@ -4,6 +4,7 @@ import { IInventory } from './core/domain/interfaces/inventory.interface';
 import { InventoryTestFactory } from './testing/factories/inventory.test.factory';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 
 import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
 import { BulkCheckStockUseCase } from './core/application/bulk-check-stock/bulk-check-stock.usecase';
@@ -81,6 +82,8 @@ describe('InventoryController', () => {
       ],
     })
       .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
