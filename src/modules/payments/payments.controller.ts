@@ -17,6 +17,8 @@ import {
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
@@ -73,7 +75,7 @@ export class PaymentsController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
@@ -82,7 +84,7 @@ export class PaymentsController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -91,7 +93,8 @@ export class PaymentsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
@@ -100,7 +103,8 @@ export class PaymentsController {
   }
 
   @Post(':id/capture')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -109,7 +113,8 @@ export class PaymentsController {
   }
 
   @Post(':id/refund')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -121,7 +126,7 @@ export class PaymentsController {
   }
 
   @Post(':id/verify')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
@@ -130,7 +135,8 @@ export class PaymentsController {
   }
 
   @Post('cod/record')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
@@ -139,7 +145,8 @@ export class PaymentsController {
   }
 
   @Get('orders/:orderId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })

@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { ProductResponseDto } from './primary-adapters/dto/product-response.dto';
@@ -23,7 +25,6 @@ import { GetProductUseCase } from './core/application/usecases/get-product/get-p
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
-import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('products')
 @Controller('products')
@@ -38,7 +39,8 @@ export class ProductsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Create a new product',
     description:
@@ -60,6 +62,9 @@ export class ProductsController {
   }
 
   @Get()
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_products')
   @ApiOperation({
     summary: 'List all products',
     description: 'Retrieves a list of all products in the catalog.',
@@ -74,6 +79,9 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_products')
   @ApiOperation({ summary: 'Get product by ID' })
   @ApiResponse({
     status: 200,
@@ -87,7 +95,8 @@ export class ProductsController {
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Update product by ID',
     description: 'Updates an existing product. Requires admin privileges.',
@@ -115,7 +124,8 @@ export class ProductsController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Delete product by ID',
     description:

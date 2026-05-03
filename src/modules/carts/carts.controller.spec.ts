@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CartsController } from './carts.controller';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 
 import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/add-cart-item.usecase';
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
@@ -71,6 +72,8 @@ describe('CartsController', () => {
       ],
     })
       .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

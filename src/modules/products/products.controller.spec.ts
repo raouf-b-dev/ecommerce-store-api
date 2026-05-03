@@ -10,6 +10,7 @@ import { UpdateProductUseCase } from './core/application/usecases/update-product
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -90,6 +91,8 @@ describe('ProductsController', () => {
       ],
     })
       .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

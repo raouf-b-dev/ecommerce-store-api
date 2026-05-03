@@ -14,6 +14,8 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
 import { InventoryResponseDto } from './primary-adapters/dto/inventory-response.dto';
@@ -49,7 +51,8 @@ export class InventoryController {
 
   @Post('products/:productId/adjust')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Adjust stock quantity (add or subtract)' })
   @ApiResponse({ status: 200, type: InventoryResponseDto })
   async adjustStock(
@@ -64,7 +67,8 @@ export class InventoryController {
 
   @Post('reserve')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Reserve stock for an order (temporary hold)' })
   @ApiResponse({ status: 200, description: 'Stock reserved successfully' })
   async reserveStock(@Body() dto: ReserveStockDto) {
@@ -73,7 +77,8 @@ export class InventoryController {
 
   @Post('release/:reservationId')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Release reserved stock (if order cancelled)' })
   @ApiResponse({ status: 200, description: 'Stock released successfully' })
   async releaseStock(@Param('reservationId') reservationId: string) {
@@ -104,7 +109,8 @@ export class InventoryController {
 
   @Get('low-stock')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_inventory')
   @ApiOperation({ summary: 'List products with low stock' })
   @ApiResponse({ status: 200, type: [InventoryResponseDto] })
   async listLowStock(@Query() query: LowStockQueryDto) {

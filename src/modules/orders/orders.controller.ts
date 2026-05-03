@@ -15,7 +15,9 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
+import { CurrentUser } from '../auth/primary-adapters/decorators/current-user.decorator';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
 import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
@@ -35,7 +37,7 @@ import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('orders')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(
@@ -85,6 +87,7 @@ export class OrdersController {
   }
 
   @Get()
+  @RequirePermissions('view_all_orders')
   @ApiOperation({
     summary: 'Get orders list with pagination and filtering',
     description: 'Retrieve a paginated list of orders with various filters.',
@@ -113,6 +116,7 @@ export class OrdersController {
   }
 
   @Patch(':id/confirm')
+  @RequirePermissions('manage_orders')
   @ApiOperation({
     summary: 'Confirm a pending order',
     description:
@@ -137,6 +141,7 @@ export class OrdersController {
   }
 
   @Patch(':id/process')
+  @RequirePermissions('manage_orders')
   @ApiOperation({
     summary: 'Process a pending order',
     description: 'Moves a confirmed order to the processing state.',
@@ -152,6 +157,7 @@ export class OrdersController {
   }
 
   @Patch(':id/ship')
+  @RequirePermissions('manage_orders')
   @ApiOperation({ summary: 'Mark order as shipped' })
   @ApiResponse({
     status: 200,
@@ -164,6 +170,7 @@ export class OrdersController {
   }
 
   @Patch(':id/deliver')
+  @RequirePermissions('manage_orders')
   @ApiOperation({
     summary: 'Mark order as delivered',
     description:
@@ -186,6 +193,7 @@ export class OrdersController {
   }
 
   @Patch(':id/cancel')
+  @RequirePermissions('manage_orders')
   @ApiOperation({
     summary: 'Cancel an order',
     description: 'Cancels an order and triggers compensation logic if needed.',
