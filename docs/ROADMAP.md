@@ -96,31 +96,38 @@
 
 **System Roles** (seeded on first boot, immutable):
 
-| Role          | Description                                                                                                                                             |
-| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SUPER_ADMIN` | All management permissions granted. Cannot be deleted or modified. System owner                                                                         |
-| `ADMIN`       | All management permissions except `canManageRoles`. Upgradeable by `SUPER_ADMIN`                                                                        |
-| `CUSTOMER`    | All management permissions `false`. Can still access own resources (cart, orders, profile) via auth-scoped endpoints. Default role for registered users |
+| Role          | Description                                                                                                                                    |
+| :------------ | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPER_ADMIN` | All management permissions granted. Cannot be deleted or modified. System owner                                                                |
+| `ADMIN`       | All management permissions except `manage_roles`. Upgradeable by `SUPER_ADMIN`                                                                 |
+| `CUSTOMER`    | No management permissions. Can still access own resources (cart, orders, profile) via auth-scoped endpoints. Default role for registered users |
 
-**Permission Flags** (e-commerce domain):
+**Permission Flags** (14 e-commerce permissions — stored in `permissions` table, resolved via `role_permissions` junction):
 
-`canManageProducts`, `canViewAllProducts`, `canManageOrders`, `canViewAllOrders`, `canManageCustomers`, `canViewAllCustomers`, `canManageInventory`, `canViewAllInventory`, `canManagePayments`, `canViewAllPayments`, `canManageUsers`, `canViewAllUsers`, `canManageRoles`, `canManageCarts`
+`manage_products`, `view_all_products`, `manage_orders`, `view_all_orders`, `manage_customers`, `view_all_customers`, `manage_inventory`, `view_all_inventory`, `manage_payments`, `view_all_payments`, `manage_users`, `view_all_users`, `manage_roles`, `manage_carts`
 
-**Scope**:
+- [x] Create `Permission` domain entity — `core/domain/entities/permission.ts` with `IPermission` interface and `toPrimitives()`
+- [x] Create `Role` domain entity — system role protection, `updateName()`, `updatePermissions()`, `validateNotSystemForDeletion()`
+- [x] Create `RolePermissionsVO` value object — `Set<string>` backed, runtime-only, `.has()`, `.codes`, `fromCodes()`
+- [x] Create permission/role reference data — `permission-definitions.ts` (14 permissions), `system-roles.ts` (3 roles + `SystemRoleCode` enum)
+- [x] Create `PermissionRepository` abstract port — `findByCode()`, `findAll()`, `saveMany()` typed against `Permission` domain entity
+- [x] Create `RoleRepository` abstract port — `findById()`, `findByCode()`, `findAll()`, `save()`, `update()`, `delete()`, `findPermissionCodesByRoleCode()`
+- [x] Create `PermissionEntity` + `RoleEntity` + `RolePermissionEntity` TypeORM schemas (3NF junction table, `ON DELETE CASCADE`)
+- [x] Create `PermissionMapper` in `secondary-adapters/persistence/mappers/` — `PermissionEntity` ↔ `Permission`
+- [x] Create `PostgresPermissionRepository` + `PostgresRoleRepository` implementing domain ports
+- [x] Create `PermissionSystemDataInitializer` — idempotent `OnApplicationBootstrap` permission seeder using `Permission` domain entity (no infra leak)
+- [x] Create `RoleSystemDataInitializer` — idempotent role seeder with permission associations
+- [x] Create `ResolveRolePermissionsService` — `execute(roleCode) → RolePermissionsVO`
+- [x] Create `PermissionsGuard` — reads `@RequirePermissions()` metadata, resolves permissions via service
+- [x] Create `@RequirePermissions()` decorator + `@UserPermissions()` param decorator
+- [x] Update `UserEntity` — replaced `role` enum column with `roleId FK → roles.id` + `roleEntity: @ManyToOne`
+- [x] Update `User` domain entity — replaced enum with `roleId: number`, `roleCode: string`
+- [x] Update JWT payload — `role: user.roleCode` (dynamic from DB) in login + refresh token use cases
+- [x] Update `RegisterUserUseCase` — resolves default `CUSTOMER` role from DB via `RoleRepository.findByCode()`
+- [x] Update `auth.module.ts` — register all new entities, repos, services, initializers
+- [x] Write tests: `Permission` entity spec, `RolePermissionsVO` spec, `PermissionsGuard` spec, `ResolveRolePermissionsService` spec, seeder specs
 
-- [ ] Create `Role` domain entity — system role protection, `updateName()`, `updatePermissions()`, `validateNotSystemForDeletion()`
-- [ ] Create `PermissionSet` value object — typed boolean flags for all e-commerce permissions
-- [ ] Create system roles reference data (`SYSTEM_ROLES` array)
-- [ ] Create `RoleRepository` abstract port + TypeORM schema + `PostgresRoleRepository`
-- [ ] Create `RoleSystemDataInitializer` — `OnApplicationBootstrap` seeder (idempotent)
-- [ ] Create `GetPermissionsUseCase` — loads role permissions by role code
-- [ ] Create `PermissionsGuard` in `src/guards/` — reads `@RequirePermissions()` metadata, resolves permissions, attaches to `request.userPermissions`
-- [ ] Create `@RequirePermissions()` decorator + `@UserPermissions()` param decorator
-- [ ] Update `UserRole` value object — from hardcoded enum (`ADMIN`/`CUSTOMER`) to dynamic role code (string)
-- [ ] Update `auth.module.ts` — register role entity/repo/initializer
-- [ ] Write tests: Role entity spec, PermissionsGuard spec, GetPermissionsUseCase spec, seeder spec
-
-**Location**: `src/modules/auth/core/domain/`, `src/guards/`, `src/modules/auth/decorators/`
+**Location**: `src/modules/auth/core/domain/`, `src/modules/auth/secondary-adapters/`, `src/modules/auth/primary-adapters/guards/`
 
 ---
 
@@ -128,17 +135,21 @@
 
 **What**: Admin CRUD endpoints for roles. Wire `@RequirePermissions(...)` to every protected endpoint across all controllers.
 
-- [ ] Create role management use cases: `CreateRoleUseCase`, `UpdateRoleUseCase`, `DeleteRoleUseCase`, `FindAllRolesUseCase`
-- [ ] Create `roles.controller.ts` — `GET/POST/PATCH/DELETE /roles` (requires `canManageRoles`)
-- [ ] Wire all domain controllers with `@UseGuards(AuthGuard, PermissionsGuard)` + `@RequirePermissions(...)`:
-  - Products: `canManageProducts` / `canViewAllProducts`
-  - Orders: `canManageOrders` / `canViewAllOrders`
-  - Customers: `canManageCustomers` / `canViewAllCustomers`
-  - Inventory: `canManageInventory` / `canViewAllInventory`
-  - Payments: `canManagePayments` / `canViewAllPayments`
-  - Carts: `canManageCarts`
-  - Roles: `canManageRoles`
-- [ ] Write tests: Role CRUD use case specs, roles controller spec
+- [x] Create role management use cases: `CreateRoleUseCase`, `UpdateRoleUseCase`, `DeleteRoleUseCase`, `FindAllRolesUseCase`, `FindRoleByIdUseCase` — all return `IRole` primitives, thin controllers delegating to `ResultInterceptor`
+- [x] Create `FindAllPermissionsUseCase` — returns `IPermission[]` primitives
+- [x] Create `roles.controller.ts` — `GET/POST/PATCH/DELETE /roles` (requires `manage_roles`) — thin, no manual error handling
+- [x] Create `permissions.controller.ts` — `GET /permissions` (requires `manage_roles`) — thin
+- [x] Wire all domain controllers with `@UseGuards(AuthGuard, PermissionsGuard)` + `@RequirePermissions(...)`:
+  - Products: `manage_products` on write ops / `view_all_products` on read ops ✅
+  - Orders: `manage_orders` / `view_all_orders` ✅
+  - Customers: `manage_customers` / `view_all_customers` ✅
+  - Inventory: `manage_inventory` / `view_all_inventory` ✅
+  - Payments: `manage_payments` / `view_all_payments` ✅
+  - Carts merge: `manage_carts` ✅
+  - Roles: `manage_roles` ✅
+- [x] Wire Products read endpoints with `view_all_products`
+- [x] Add `@RequirePermissions('manage_carts')` to Carts merge endpoint
+- [x] Write tests: Role CRUD use case specs, roles controller spec, permissions controller spec
 
 **Location**: `src/modules/auth/`, all domain controllers
 
@@ -148,6 +159,161 @@
 
 - [ ] **Per-User Permission Overrides** — Admin can grant/revoke individual permissions per user (stored in `user_permission_overrides` table, merged at resolution time)
 - [ ] **Identity / Access Module Split** — Separate user identity management and token/session management into independent bounded contexts for microservice extraction
+
+---
+
+## 🔒 Phase 7.6 — Auth Security & Quality Hardening
+
+> **Goal**: Harden the auth module's security posture, fix Hexagonal Architecture violations, and bring observability up to production standards. All changes are scoped to the `auth` module.
+
+---
+
+### 7.6.1 — Abstract `BcryptService` Behind `PasswordHasher` Port
+
+**What**: `LoginUserUseCase` and `RegisterUserUseCase` directly import the concrete `BcryptService` from `secondary-adapters/services/` — a Hexagonal Architecture violation. The application core must depend only on abstractions.
+
+- [ ] Create `PasswordHasher` abstract class in `shared-kernel/domain/interfaces/` with `hash(password): Promise<string>` and `compare(password, hash): Promise<boolean>`
+- [ ] Update `BcryptService` to implement `PasswordHasher`
+- [ ] Register `BcryptService` as the `PasswordHasher` provider in `auth.module.ts`
+- [ ] Update `LoginUserUseCase` and `RegisterUserUseCase` to inject `PasswordHasher` instead of `BcryptService`
+- [ ] Update related test specs to use the abstract type
+
+**Location**: `src/shared-kernel/domain/interfaces/`, `src/modules/auth/`
+
+---
+
+### 7.6.2 — Refresh Token Reuse Detection
+
+**What**: The current `RefreshTokenUseCase` treats a token-hash mismatch as a generic "invalid session" error. If a refresh token is compromised and replayed after rotation, the API should detect this as a **reuse attack** and revoke ALL sessions for the affected user to protect them.
+
+- [ ] Separate the `!session.isValid` check from the `!session.isTokenMatch()` check in `RefreshTokenUseCase`
+- [ ] When hash mismatch is detected on a valid (non-revoked) session, call `sessionTokenRepository.revokeAllForUser(userId)`
+- [ ] Log a `warn`-level message: `Refresh token reuse detected for user ${userId}. All sessions revoked.`
+- [ ] Return a distinct error message: `Refresh token reuse detected. All sessions revoked.`
+- [ ] Add unit test covering the reuse detection + mass revocation path
+
+**Location**: `src/modules/auth/core/application/usecases/refresh-token/`
+
+---
+
+### 7.6.3 — User Activation Check on Login
+
+**What**: The `LoginUserUseCase` does not check whether a user account is active. Deactivated or banned users can continue logging in indefinitely.
+
+- [ ] Add `isActive: boolean` field to the `User` domain entity (`UserProps`, constructor, getter, `toPrimitives()`)
+- [ ] Add `isActive` column to `UserEntity` ORM schema (default `true`)
+- [ ] Update `UserMapper` to map `isActive` between domain and persistence
+- [ ] Add `isActive` check in `LoginUserUseCase` after password verification — return `403 Forbidden` with `Account is deactivated`
+- [ ] Update `IUser` interface to include `isActive`
+- [ ] Update existing test specs and factories
+
+**Location**: `src/modules/auth/core/domain/entities/user.ts`, `src/modules/auth/core/application/usecases/login-user/`
+
+---
+
+### 7.6.4 — Structured Logging in Auth Use Cases
+
+**What**: Auth use cases have zero logging. Login successes, failed attempts, session revocations, and token refreshes are invisible in production — a gap for security auditing and incident response.
+
+- [ ] Add `private readonly logger = new Logger(ClassName.name)` to:
+  - `LoginUserUseCase` — log successful login (`User ${email} logged in`)
+  - `RefreshTokenUseCase` — log token refresh (`Session refreshed for user ${userId}`)
+  - `LogoutUseCase` — log session revocation (`Session revoked for user ${userId}`)
+  - `LogoutAllUseCase` — log mass revocation (`All sessions revoked for user ${userId}`)
+- [ ] Add `Logger` to `PermissionsGuard` for authorization denial logging
+
+**Location**: `src/modules/auth/core/application/usecases/`, `src/modules/auth/primary-adapters/guards/`
+
+---
+
+### 7.6.5 — Guard & Decorator Polish
+
+**What**: Minor quality issues in the permissions guard and auth decorators that could cause subtle bugs or type-safety gaps.
+
+- [ ] **`PermissionsGuard`**: Replace `throw new ForbiddenException(...)` with `return false` (NestJS automatically converts to 403). Add `Logger` for debugging denied requests.
+- [ ] **`UserPermissions` decorator**: Add restrictive fallback — return `RolePermissionsVO.fromCodes([])` when `request.userPermissions` is undefined (prevents `undefined` errors if guard wasn't applied).
+- [ ] **`CurrentUserPayload` interface**: Change `userId` type from `string` to `number` (matches JWT payload). Add `customerId: number | null` field.
+- [ ] **`AuthGuard`**: Update `request['user']` assignment to include `customerId` from JWT payload.
+
+**Location**: `src/modules/auth/primary-adapters/guards/`, `src/modules/auth/decorators/`, `src/guards/auth.guard.ts`
+
+---
+
+### 7.6.6 — Extract Cookie Logic from Auth Controller (Optional)
+
+**What**: `AuthController.login()`, `refresh()`, `logout()`, and `logoutAll()` contain cookie-management logic (`setRefreshCookie`, `clearRefreshCookie`) which violates the thin controller pattern defined in `AGENT.md`. The cookie concern is legitimate for browser clients but should be extracted.
+
+- [ ] Create `RefreshTokenCookieInterceptor` in `primary-adapters/` — reads the `Result` response, extracts `refreshToken`, sets/clears the HttpOnly cookie
+- [ ] Apply interceptor to auth endpoints via `@UseInterceptors()`
+- [ ] Simplify controller methods to one-line `return this.useCase.execute(...)`
+- [ ] Alternatively, document as an accepted deviation in `AGENT.md` if the interceptor approach is deemed over-engineered
+
+**Location**: `src/modules/auth/primary-adapters/`, `src/modules/auth/auth.controller.ts`
+
+---
+
+## 🏗️ Phase 8.5 — Architecture Hardening (Post-RBAC)
+
+> **Goal**: Eliminate remaining DDD/Hexagonal violations identified in post-RBAC audit. Ensure all modules meet the zero-violation architectural baseline.
+
+---
+
+### 8.5.1 — Payments: Extract Abstract Ports for External Services
+
+**What**: Three use cases in the Payments module directly inject concrete infrastructure classes — a critical Hexagonal Architecture violation. The application core must depend only on abstractions.
+
+**Violations**:
+
+- `HandleStripeWebhookUseCase` injects `StripeSignatureService` (concrete, in `secondary-adapters/services/`)
+- `HandlePayPalWebhookUseCase` injects `PayPalSignatureService` (concrete, in `secondary-adapters/services/`)
+- `CreatePaymentUseCase`, `CreatePaymentIntentUseCase`, `ProcessRefundUseCase` inject `PaymentGatewayFactory` (concrete, in `secondary-adapters/gateways/`)
+
+**Scope**:
+
+- [ ] Create `payments/core/application/ports/` directory
+- [ ] Define `StripeSignatureVerifier` abstract port — `verify(payload, signature): boolean`
+- [ ] Define `PayPalSignatureVerifier` abstract port — `verify(headers, body): boolean`
+- [ ] Register `StripeSignatureService` and `PayPalSignatureService` as implementations of the abstract ports
+- [ ] Update use cases to inject the abstract port tokens (not concrete classes)
+
+**Location**: `src/modules/payments/core/application/ports/`, `src/modules/payments/payments.module.ts`
+
+---
+
+### 8.5.2 — Notifications: Fix Fat Controller + Typed Payload
+
+**What**: `NotificationsController` manually unwraps `Result` and calls `.toPrimitives()` on domain entities — both violations of the thin controller rule. Additionally, `Notification.payload` is typed `any` — a domain layer purity violation.
+
+**Scope**:
+
+- [ ] Define `NotificationPayload` typed interface (or `Record<string, unknown>`) to replace `any` in `notification.ts`, `notification.interface.ts`, `notification.gateway.interface.ts`
+- [ ] Update `GetUserNotificationsUseCase` to return `{ total, page, data: INotification[] }` with primitives baked in
+- [ ] Refactor `NotificationsController.getUserNotifications()` to a one-liner: `return this.useCase.execute(...)`
+- [ ] Replace `@Request() req` with `@CurrentUser()` decorator (already exists in auth module)
+
+**Location**: `src/modules/notifications/`
+
+---
+
+### 8.5.3 — Orders: Type `OrderItem.fromPrimitives()`
+
+**What**: `OrderItem.fromPrimitives(data: any)` uses `any` in the domain entity. Should accept a typed `IOrderItem` interface.
+
+- [ ] Define `IOrderItem` interface in `order-items.ts`
+- [ ] Update `fromPrimitives(data: IOrderItem)` signature
+
+**Location**: `src/modules/orders/core/domain/entities/order-items.ts`
+
+---
+
+### 8.5.4 — Auth: Fix `PermissionMapper.toEntity()` type cast
+
+**What**: `PermissionMapper.toEntity()` casts payload to `any` instead of `PermissionCreate`.
+
+- [ ] Define `PermissionCreate = CreateFromEntity<PermissionEntity>`
+- [ ] Handle `id: 0` for new entities explicitly within the typed payload
+
+**Location**: `src/modules/auth/secondary-adapters/persistence/mappers/permission.mapper.ts`
 
 ---
 
