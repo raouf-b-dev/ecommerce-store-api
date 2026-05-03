@@ -50,7 +50,7 @@ export class LoginUserUseCase extends UseCase<
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.roleCode,
       customerId: user.customerId,
     };
     const accessToken = await this.jwtSignerService.signAccessToken(payload);
