@@ -44,7 +44,7 @@ describe('PermissionsGuard', () => {
     expect(await guard.canActivate(context)).toBe(true);
   });
 
-  it('should throw ForbiddenException if user is missing', async () => {
+  it('should return false if user is missing', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
     const context = {
@@ -55,12 +55,10 @@ describe('PermissionsGuard', () => {
       }),
     } as any;
 
-    await expect(guard.canActivate(context)).rejects.toThrow(
-      'User role not found in request',
-    );
+    expect(await guard.canActivate(context)).toBe(false);
   });
 
-  it('should throw ForbiddenException if permission is denied', async () => {
+  it('should return false if permission is denied', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
     mockResolvePermissionsService.execute.mockResolvedValue(
@@ -75,9 +73,7 @@ describe('PermissionsGuard', () => {
       }),
     } as any;
 
-    await expect(guard.canActivate(context)).rejects.toThrow(
-      'Insufficient permissions',
-    );
+    expect(await guard.canActivate(context)).toBe(false);
   });
 
   it('should return true if permission is granted and attach permissions to request', async () => {
@@ -103,7 +99,7 @@ describe('PermissionsGuard', () => {
     expect(request.userPermissions.has('manage_roles')).toBe(true);
   });
 
-  it('should throw ForbiddenException if resolving permissions fails', async () => {
+  it('should return false if resolving permissions fails', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
     mockResolvePermissionsService.execute.mockResolvedValue(
@@ -118,8 +114,6 @@ describe('PermissionsGuard', () => {
       }),
     } as any;
 
-    await expect(guard.canActivate(context)).rejects.toThrow(
-      'Failed to resolve permissions',
-    );
+    expect(await guard.canActivate(context)).toBe(false);
   });
 });

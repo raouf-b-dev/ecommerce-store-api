@@ -4,6 +4,9 @@ import { RolePermissionsVO } from '../../core/domain/value-objects/role-permissi
 export const UserPermissions = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): RolePermissionsVO => {
     const request = ctx.switchToHttp().getRequest();
-    return request.userPermissions;
+    if (request.userPermissions) {
+      return request.userPermissions;
+    }
+    return RolePermissionsVO.fromCodes([]);
   },
 );

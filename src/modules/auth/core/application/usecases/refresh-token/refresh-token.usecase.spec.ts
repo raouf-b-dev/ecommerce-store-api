@@ -99,4 +99,38 @@ describe('RefreshTokenUseCase', () => {
       UseCaseError,
     );
   });
+
+  it('should revoke all sessions when token reuse is detected', async () => {
+    const rawToken = `header.payload.signature`;
+    const differentToken = `header.different.signature`;
+    const sessionId = 'mock-session-id';
+
+    jwtVerifierService.verifyRefreshToken.mockResolvedValue({
+      sub: 1,
+      sessionId,
+    });
+
+    // Session is valid but was created with a DIFFERENT token (rotation happened)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+    const session = SessionToken.create(
+      1,
+      differentToken,
+      expiresAt,
+      sessionId,
+    );
+    sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
+    sessionTokenRepository.revokeAllForUser.mockResolvedValue(
+      Result.success(undefined),
+    );
+
+    const result = await usecase.execute({ refreshToken: rawToken });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Refresh token reuse detected. All sessions revoked.',
+      UseCaseError,
+    );
+    expect(sessionTokenRepository.revokeAllForUser).toHaveBeenCalledWith(1);
+  });
 });

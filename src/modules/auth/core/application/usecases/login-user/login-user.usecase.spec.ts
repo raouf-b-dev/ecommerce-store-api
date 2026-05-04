@@ -2,7 +2,7 @@ import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signe
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
-import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
+import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { User } from '../../../domain/entities/user';
@@ -14,7 +14,7 @@ describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
   let userRepository: MockUserRepository;
   let sessionTokenRepository: MockSessionTokenRepository;
-  let bcryptService: MockBcryptService;
+  let passwordHasher: MockPasswordHasher;
   let jwtSignerService: MockJwtSignerService;
 
   let mockDomainUser: User;
@@ -22,13 +22,13 @@ describe('LoginUserUseCase', () => {
   beforeEach(() => {
     userRepository = new MockUserRepository();
     sessionTokenRepository = new MockSessionTokenRepository();
-    bcryptService = new MockBcryptService();
+    passwordHasher = new MockPasswordHasher();
     jwtSignerService = new MockJwtSignerService();
 
     usecase = new LoginUserUseCase(
       userRepository,
       sessionTokenRepository,
-      bcryptService,
+      passwordHasher,
       jwtSignerService as unknown as JwtSignerService,
     );
     mockDomainUser = User.fromPrimitives(
@@ -74,11 +74,31 @@ describe('LoginUserUseCase', () => {
     userRepository.findByEmail.mockResolvedValue(
       Result.success(mockDomainUser),
     );
-    bcryptService.compare.mockResolvedValue(false);
+    passwordHasher.compare.mockResolvedValue(false);
     const result = await usecase.execute({
       email: 'test@example.com',
       password: 'password',
     });
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Invalid credentials',
+      UseCaseError,
+    );
+  });
+
+  it('should return failure if user is deactivated', async () => {
+    const deactivatedUser = User.fromPrimitives(
+      UserTestFactory.createMockCustomerUser({ isActive: false }),
+    );
+    userRepository.findByEmail.mockResolvedValue(
+      Result.success(deactivatedUser),
+    );
+
+    const result = await usecase.execute({
+      email: 'test@example.com',
+      password: 'password',
+    });
+
     ResultAssertionHelper.assertResultFailure(
       result,
       'Invalid credentials',

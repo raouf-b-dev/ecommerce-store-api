@@ -1,4 +1,4 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { JwtVerifierService } from '../../../../../../infrastructure/jwt/jwt-verifier.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
@@ -15,6 +15,8 @@ export class RefreshTokenUseCase extends UseCase<
   { accessToken: string; refreshToken: string },
   UseCaseError
 > {
+  private readonly logger = new Logger(RefreshTokenUseCase.name);
+
   constructor(
     private readonly jwtVerifierService: JwtVerifierService,
     private readonly jwtSignerService: JwtSignerService,
@@ -34,8 +36,8 @@ export class RefreshTokenUseCase extends UseCase<
       const payload = await this.jwtVerifierService.verifyRefreshToken(
         input.refreshToken,
       );
-      const sessionId = payload.sessionId as string;
-      const userId = payload.sub as number;
+      const sessionId = payload.sessionId;
+      const userId = payload.sub;
 
       // 2. Find session in DB
       const sessionResult =
@@ -49,10 +51,25 @@ export class RefreshTokenUseCase extends UseCase<
       }
       const session = sessionResult.value;
 
-      // 3. Check if session is valid and token matches
-      if (!session.isValid || !session.isTokenMatch(input.refreshToken)) {
+      // 3. Check if session is valid (not revoked / not expired)
+      if (!session.isValid) {
         return ErrorFactory.UseCaseError(
           'Invalid or expired session',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      // 3b. Reuse detection — token hash mismatch on a valid session means
+      //     a previously rotated token is being replayed (stolen token attack)
+      if (!session.isTokenMatch(input.refreshToken)) {
+        this.logger.warn(
+          `Refresh token reuse detected for user ${userId}. Revoking all sessions.`,
+        );
+        await this.sessionTokenRepository.revokeAllForUser(userId);
+
+        return ErrorFactory.UseCaseError(
+          'Refresh token reuse detected. All sessions revoked.',
           null,
           HttpStatus.UNAUTHORIZED,
         );

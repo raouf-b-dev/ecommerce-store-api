@@ -12,6 +12,7 @@ export class UserMapper {
       passwordHash: entity.passwordHash,
       roleId: entity.roleId,
       roleCode: entity.roleEntity ? entity.roleEntity.code : null,
+      isActive: entity.isActive,
       customerId: entity.customerId,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -27,6 +28,7 @@ export class UserMapper {
       email: primitives.email,
       passwordHash: primitives.passwordHash,
       roleId: primitives.roleId || null,
+      isActive: primitives.isActive,
       customerId: primitives.customerId,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
@@ -41,6 +43,7 @@ export interface UserForCache {
   passwordHash: string;
   roleId: number | null;
   roleCode: string | null;
+  isActive: boolean;
   customerId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +58,7 @@ export class UserCacheMapper {
       passwordHash: primitives.passwordHash,
       roleId: primitives.roleId || null,
       roleCode: primitives.roleCode,
+      isActive: primitives.isActive,
       customerId: primitives.customerId,
       createdAt: primitives.createdAt.toISOString(),
       updatedAt: primitives.updatedAt.toISOString(),
@@ -68,6 +72,7 @@ export class UserCacheMapper {
       passwordHash: cache.passwordHash,
       roleId: cache.roleId,
       roleCode: cache.roleCode,
+      isActive: cache.isActive,
       customerId: cache.customerId,
       createdAt: new Date(cache.createdAt),
       updatedAt: new Date(cache.updatedAt),

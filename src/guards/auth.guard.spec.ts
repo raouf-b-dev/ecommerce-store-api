@@ -44,9 +44,10 @@ describe('AuthGuard', () => {
   it('should attach user payload on valid token', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
     jwtVerifierService.verifyAccessToken.mockResolvedValue({
-      sub: '1',
+      sub: 1,
       email: 'test@example.com',
       role: 'ADMIN',
+      customerId: null,
     });
 
     const request = { headers: { authorization: 'Bearer test-token' } };
@@ -58,9 +59,10 @@ describe('AuthGuard', () => {
 
     expect(await guard.canActivate(mockContext)).toBe(true);
     expect((request as any).user).toEqual({
-      userId: '1',
+      userId: 1,
       email: 'test@example.com',
       role: 'ADMIN',
+      customerId: null,
     });
   });
 

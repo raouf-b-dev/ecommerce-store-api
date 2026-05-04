@@ -1,6 +1,6 @@
-import { BcryptService } from '../../secondary-adapters/services/bcrypt.service';
+import { PasswordHasher } from '../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 
-export class MockBcryptService extends BcryptService {
+export class MockPasswordHasher extends PasswordHasher {
   hash = jest.fn<Promise<string>, [string]>();
   compare = jest.fn<Promise<boolean>, [string, string]>();
 
