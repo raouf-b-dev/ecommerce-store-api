@@ -6,21 +6,21 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+import { BeforeApplicationShutdown, Injectable, Logger } from '@nestjs/common';
 import { WsAuthService } from './services/ws-auth.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 @Injectable()
 export class WebsocketConnectionGateway
-  implements OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
+  implements OnGatewayConnection, OnGatewayDisconnect, BeforeApplicationShutdown
 {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(WebsocketConnectionGateway.name);
 
   constructor(private readonly wsAuthService: WsAuthService) {}
 
-  onApplicationShutdown(signal?: string) {
-    this.logger.log(`Received ${signal}. Shutting down WebSocket gateway...`);
+  beforeApplicationShutdown(signal?: string) {
+    this.logger.log(`WebSocket gateway shutting down (signal: ${signal})`);
 
     if (this.server) {
       const socketCount = this.server.sockets.sockets.size;
@@ -30,7 +30,7 @@ export class WebsocketConnectionGateway
 
       this.server.disconnectSockets(true);
 
-      this.logger.log('WebSocket clients disconnected.');
+      this.logger.log('All WebSocket clients disconnected');
     }
   }
 
