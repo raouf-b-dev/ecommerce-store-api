@@ -10,24 +10,14 @@ import { RedisIoAdapterHost } from './infrastructure/websocket/redis-io-adapter.
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
+import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  const exitHandler = (error: any, type: string) => {
-    Logger.error(
-      `${type}: ${error instanceof Error ? error.stack : error}`,
-      'Process',
-    );
-    app.close().finally(() => process.exit(1));
-  };
-
-  process.on('unhandledRejection', (reason: unknown) =>
-    exitHandler(reason, 'Unhandled Promise Rejection'),
-  );
-  process.on('uncaughtException', (error: Error) =>
-    exitHandler(error, 'Uncaught Exception'),
-  );
+  // Replace default NestJS logger with Winston
+  const winstonLogger = app.get(WinstonLoggerService);
+  app.useLogger(winstonLogger);
 
   app.use(helmet());
   app.use(cookieParser());

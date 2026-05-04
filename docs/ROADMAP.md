@@ -33,6 +33,16 @@
 
 ---
 
+## 🔍 Phase 8.1 — Logging Activation
+
+> **Goal**: Plug the existing `WinstonLoggerService` into the NestJS application lifecycle to ensure all system and bootstrap logs use structured formatting.
+
+- [x] Add `{ bufferLogs: true }` to `NestFactory.create()`
+- [x] Connect Winston via `app.useLogger()`
+- [x] Remove manual `process.on` error handlers (Winston handles this)
+
+---
+
 ## 🔐 Phase 7.5 — Auth Overhaul (RSA + Refresh Tokens + RBAC)
 
 > **Goal**: Production-grade authentication and authorization. Replace HMAC JWT with RSA (RS256) using `jose`, add refresh token rotation with session management, and introduce a full RBAC system with roles, permissions, and guards.
