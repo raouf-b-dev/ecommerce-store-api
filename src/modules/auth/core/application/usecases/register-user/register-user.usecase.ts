@@ -8,7 +8,7 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user';
-import { BcryptService } from '../../../../secondary-adapters/services/bcrypt.service';
+import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { RegisterDto } from '../../../../primary-adapters/dto/register.dto';
 import { CustomerGateway } from '../../ports/customer.gateway';
 import { CUSTOMER_GATEWAY } from '../../../../auth.tokens';
@@ -25,7 +25,7 @@ export class RegisterUserUseCase extends UseCase<
   constructor(
     private readonly userRepository: UserRepository,
     private readonly roleRepository: RoleRepository,
-    private readonly bcryptService: BcryptService,
+    private readonly passwordHasher: PasswordHasher,
     @Inject(CUSTOMER_GATEWAY)
     private readonly customerGateway: CustomerGateway,
   ) {
@@ -54,7 +54,7 @@ export class RegisterUserUseCase extends UseCase<
     const customer = customerResult.value;
 
     // 3. Hash Password
-    const passwordHash = await this.bcryptService.hash(dto.password);
+    const passwordHash = await this.passwordHasher.hash(dto.password);
 
     // 4. Get Default Role
     const roleResult = await this.roleRepository.findByCode(

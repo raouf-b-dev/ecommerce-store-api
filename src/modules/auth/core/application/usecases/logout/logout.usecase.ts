@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtVerifierService } from '../../../../../../infrastructure/jwt/jwt-verifier.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -11,6 +11,8 @@ export class LogoutUseCase extends UseCase<
   void,
   UseCaseError
 > {
+  private readonly logger = new Logger(LogoutUseCase.name);
+
   constructor(
     private readonly jwtVerifierService: JwtVerifierService,
     private readonly sessionTokenRepository: SessionTokenRepository,
@@ -25,7 +27,8 @@ export class LogoutUseCase extends UseCase<
       const payload = await this.jwtVerifierService.verifyRefreshToken(
         input.refreshToken,
       );
-      const sessionId = payload.sessionId as string;
+      const sessionId = payload.sessionId;
+      const userId = payload.sub;
 
       const sessionResult =
         await this.sessionTokenRepository.findById(sessionId);
@@ -37,6 +40,8 @@ export class LogoutUseCase extends UseCase<
       if (session.isValid && session.isTokenMatch(input.refreshToken)) {
         session.revoke();
         await this.sessionTokenRepository.save(session);
+
+        this.logger.log(`Session ${sessionId} revoked for user ${userId}`);
       }
 
       return Result.success(undefined);

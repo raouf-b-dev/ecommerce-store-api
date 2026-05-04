@@ -7,7 +7,7 @@ import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
 import { RegisterUserUseCase } from './register-user.usecase';
-import { MockBcryptService } from '../../../../testing/mocks/bcrypt-service.mock';
+import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { RoleTestFactory } from '../../../../testing/factories/role.factory';
 
@@ -16,7 +16,7 @@ describe('RegisterUserUseCase', () => {
   let userRepository: MockUserRepository;
   let roleRepository: MockRoleRepository;
   let mockCustomerGateway: jest.Mocked<CustomerGateway>;
-  let bcryptService: MockBcryptService;
+  let passwordHasher: MockPasswordHasher;
   let mockDomainUser: User;
   let mockCustomerRecord: CustomerRecord;
 
@@ -27,11 +27,11 @@ describe('RegisterUserUseCase', () => {
       createCustomer: jest.fn(),
     };
 
-    bcryptService = new MockBcryptService();
+    passwordHasher = new MockPasswordHasher();
     usecase = new RegisterUserUseCase(
       userRepository,
       roleRepository,
-      bcryptService,
+      passwordHasher,
       mockCustomerGateway,
     );
     mockDomainUser = User.fromPrimitives(
