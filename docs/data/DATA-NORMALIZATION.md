@@ -2,7 +2,7 @@
 
 This document is the **canonical data modelling reference** for decisions involving normalisation and denormalisation. It defines the strict academic foundations of relational normal forms, the conditions under which denormalisation is justified, and the recommended decision framework for this project. All contributors must read and follow this document when designing or modifying database schemas.
 
-> **Companion docs**: [`ARCHITECTURE.md`](ARCHITECTURE.md) (system context & domain flows), [`CQRS.md`](CQRS.md) (read/write model separation), [`EAV-PATTERN.md`](EAV-PATTERN.md) (flexible attribute modelling)
+> **Companion docs**: [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) (system context & domain flows), [`CQRS.md`](../architecture/CQRS.md) (read/write model separation), [`EAV-PATTERN.md`](EAV-PATTERN.md) (flexible attribute modelling)
 
 ---
 
@@ -616,7 +616,7 @@ These are **domain invariants**, not performance optimisations. They should be m
    - **How**: The mechanism that keeps the copy synchronised (domain event, trigger, application code).
    - **Who owns the synchronisation**: The specific use case, event handler, or trigger responsible.
 
-5. **Prefer architectural solutions over schema mutations.** The CQRS read model evolution path (see [`CQRS.md`](CQRS.md) §6) provides a structured way to optimise reads without polluting the write schema. Denormalisation should be a last resort after CQRS optimisations have been considered.
+5. **Prefer architectural solutions over schema mutations.** The CQRS read model evolution path (see [`CQRS.md`](../architecture/CQRS.md) §6) provides a structured way to optimise reads without polluting the write schema. Denormalisation should be a last resort after CQRS optimisations have been considered.
 
 6. **Distinguish snapshots from caches.** If a duplicated value should **not** be updated when the source changes, it is a snapshot — model it as a first-class domain property. If it **should** be updated, it is a cache — ensure the synchronisation mechanism is bulletproof or use a materialised view instead.
 
@@ -655,7 +655,7 @@ Denormalise. But:
 
 ### 5.3 CQRS Alignment
 
-This approach aligns directly with the CQRS evolution path documented in [`CQRS.md`](CQRS.md):
+This approach aligns directly with the CQRS evolution path documented in [`CQRS.md`](../architecture/CQRS.md):
 
 | CQRS Phase                                | Data Modelling Strategy                                                                                                                                     |
 | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |

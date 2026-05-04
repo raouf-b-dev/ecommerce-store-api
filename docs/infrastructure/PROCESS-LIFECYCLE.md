@@ -2,7 +2,7 @@
 
 > A reference guide covering how operating systems manage processes and how this E-Commerce API handles termination signals in production.
 >
-> **Companion docs**: [`ROADMAP.md`](ROADMAP.md), [`ARCHITECTURE.md`](ARCHITECTURE.md)
+> **Companion docs**: [`ROADMAP.md`](../ROADMAP.md), [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md)
 
 ---
 

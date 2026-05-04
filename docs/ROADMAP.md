@@ -2,7 +2,7 @@
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
 >
-> **Companion docs**: [`AGENT.md`](../AGENT.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`EAV-PATTERN.md`](EAV-PATTERN.md)
+> **Companion docs**: [`AGENT.md`](../AGENT.md), [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md), [`EAV-PATTERN.md`](data/EAV-PATTERN.md)
 
 ---
 

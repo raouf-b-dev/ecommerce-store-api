@@ -2,7 +2,7 @@
 
 This document is the **canonical CQRS reference** for E-commerce API. It defines the strict academic foundations of the pattern and maps them to this project's implementation. All contributors must read and follow this document.
 
-> **Companion docs**: [`DDD-HEXAGONAL.md`](DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](ARCHITECTURE.md) (system context & domain flows), [`INTEGRATION-PATTERNS.md`](INTEGRATION-PATTERNS.md) (cross-context communication)
+> **Companion docs**: [`DDD-HEXAGONAL.md`](DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](ARCHITECTURE.md) (system context & domain flows), [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) (cross-context communication)
 
 ---
 
@@ -145,7 +145,7 @@ CQRS interacts with other architectural patterns in this project:
 
 Cross-context validation happens exclusively on the **command side**. When `CreateActivityUseCase` needs to validate that a partner or user exists, it calls the appropriate ACL Gateway port. Query use cases do **not** perform cross-context lookups — they return whatever data is in their own context's persistence.
 
-This asymmetry is intentional: command use cases enforce invariants; query use cases merely project stored state. See [`INTEGRATION-PATTERNS.md`](INTEGRATION-PATTERNS.md) §2 for full ACL Gateway documentation.
+This asymmetry is intentional: command use cases enforce invariants; query use cases merely project stored state. See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) §2 for full ACL Gateway documentation.
 
 ### 5.2 Domain Events (Command Stack Only)
 
@@ -154,7 +154,7 @@ Domain events (e.g., `partner.deactivated`, `user.deactivated`) are emitted **ex
 > _"Domain Events are raised by the write side and consumed to update the read side."_
 > — Vernon, _Implementing Domain-Driven Design_ (2013), Ch. 8
 
-See [`INTEGRATION-PATTERNS.md`](INTEGRATION-PATTERNS.md) §3 for full Domain Events documentation.
+See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) §3 for full Domain Events documentation.
 
 ---
 
