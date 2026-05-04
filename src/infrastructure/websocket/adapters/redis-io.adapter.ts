@@ -8,8 +8,8 @@ import { EnvConfigService } from 'src/config/env-config.service';
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor: ReturnType<typeof createAdapter>;
   private readonly logger = new Logger(RedisIoAdapter.name);
-  private pubClient: any;
-  private subClient: any;
+  private pubClient: ReturnType<typeof createClient>;
+  private subClient: ReturnType<typeof createClient>;
 
   constructor(private app: INestApplicationContext) {
     super(app);
@@ -39,13 +39,19 @@ export class RedisIoAdapter extends IoAdapter {
     return server;
   }
 
+  /**
+   * Called by NestJS SocketModule during application shutdown.
+   * Idempotent — safe to call multiple times (quit on a closed client is caught).
+   */
   async close(): Promise<void> {
-    if (this.pubClient) {
-      await this.pubClient.quit();
-    }
-    if (this.subClient) {
-      await this.subClient.quit();
-    }
+    await Promise.all([
+      this.pubClient?.quit().catch((err: unknown) => {
+        this.logger.debug(`pubClient already closed: ${String(err)}`);
+      }),
+      this.subClient?.quit().catch((err: unknown) => {
+        this.logger.debug(`subClient already closed: ${String(err)}`);
+      }),
+    ]);
     this.logger.log('RedisIoAdapter connections closed');
   }
 }

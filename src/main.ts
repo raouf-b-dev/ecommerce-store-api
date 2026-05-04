@@ -6,7 +6,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResultInterceptor } from './interceptors/result.interceptor';
 import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
-import { RedisIoAdapterHost } from './infrastructure/websocket/redis-io-adapter.host';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
@@ -36,10 +35,6 @@ async function bootstrap() {
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
-
-  // Register adapter with the DI-managed host so NestJS handles its shutdown
-  const adapterHost = app.get(RedisIoAdapterHost);
-  adapterHost.setAdapter(redisIoAdapter);
 
   app.enableShutdownHooks();
 
