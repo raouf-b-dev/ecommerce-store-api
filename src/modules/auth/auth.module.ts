@@ -4,6 +4,7 @@ import { PostgresUserRepository } from './secondary-adapters/repositories/postgr
 import { CachedUserRepository } from './secondary-adapters/repositories/cached-user-repository/cached-user.repository';
 import { PostgresSessionTokenRepository } from './secondary-adapters/repositories/postgres-session-token-repository/postgres-session-token.repository';
 import { BcryptService } from './secondary-adapters/services/bcrypt.service';
+import { PasswordHasher } from '../../../src/shared-kernel/domain/interfaces/password-hasher.interface';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { SessionTokenEntity } from './secondary-adapters/orm/session-token.schema';
 import { CustomersModule } from '../customers/customers.module';
@@ -31,8 +32,12 @@ import { UpdateRoleUseCase } from './core/application/usecases/role/update-role.
 import { DeleteRoleUseCase } from './core/application/usecases/role/delete-role.usecase';
 import { FindAllRolesUseCase } from './core/application/usecases/role/find-all-roles.usecase';
 import { FindRoleByIdUseCase } from './core/application/usecases/role/find-role-by-id.usecase';
+import { ActivateUserUseCase } from './core/application/usecases/activate-user/activate-user.usecase';
+import { DeactivateUserUseCase } from './core/application/usecases/deactivate-user/deactivate-user.usecase';
+import { RefreshTokenCookieInterceptor } from './primary-adapters/interceptors/refresh-token-cookie.interceptor';
 import { RolesController } from './roles.controller';
 import { PermissionsController } from './permissions.controller';
+import { UsersController } from './users.controller';
 import {
   POSTGRES_USER_REPOSITORY,
   CACHED_USER_REPOSITORY,
@@ -56,9 +61,17 @@ import { EnvConfigService } from '../../config/env-config.service';
     CustomersModule,
     RedisModule,
   ],
-  controllers: [AuthController, RolesController, PermissionsController],
+  controllers: [
+    AuthController,
+    RolesController,
+    PermissionsController,
+    UsersController,
+  ],
   providers: [
-    BcryptService,
+    {
+      provide: PasswordHasher,
+      useClass: BcryptService,
+    },
     {
       provide: POSTGRES_USER_REPOSITORY,
       useClass: PostgresUserRepository,
@@ -111,6 +124,9 @@ import { EnvConfigService } from '../../config/env-config.service';
     DeleteRoleUseCase,
     FindAllRolesUseCase,
     FindRoleByIdUseCase,
+    ActivateUserUseCase,
+    DeactivateUserUseCase,
+    RefreshTokenCookieInterceptor,
   ],
   exports: [ResolveRolePermissionsService],
 })
