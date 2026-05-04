@@ -16,6 +16,8 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { CreateCustomerDto } from './primary-adapters/dto/create-customer.dto';
 import { UpdateCustomerDto } from './primary-adapters/dto/update-customer.dto';
 import { AddAddressDto } from './primary-adapters/dto/add-address.dto';
@@ -37,7 +39,7 @@ import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('customers')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(
@@ -53,6 +55,7 @@ export class CustomersController {
   ) {}
 
   @Post()
+  @RequirePermissions('manage_customers')
   @ApiOperation({ summary: 'Create a new customer' })
   @ApiResponse({ status: 201, type: CustomerResponseDto })
   async createCustomer(@Body() dto: CreateCustomerDto) {
@@ -60,6 +63,7 @@ export class CustomersController {
   }
 
   @Get()
+  @RequirePermissions('view_all_customers')
   @ApiOperation({ summary: 'List all customers with pagination' })
   @ApiResponse({ status: 200, type: [CustomerResponseDto] })
   async listCustomers(@Query() query: ListCustomersQueryDto) {
@@ -74,6 +78,7 @@ export class CustomersController {
   }
 
   @Patch(':id')
+  @RequirePermissions('manage_customers')
   @ApiOperation({ summary: 'Update customer information' })
   @ApiResponse({ status: 200, type: CustomerResponseDto })
   async updateCustomer(
@@ -87,6 +92,7 @@ export class CustomersController {
   }
 
   @Delete(':id')
+  @RequirePermissions('manage_customers')
   @ApiOperation({ summary: 'Delete customer' })
   @ApiResponse({ status: 204, description: 'Customer deleted' })
   async deleteCustomer(@Param('id') id: string) {

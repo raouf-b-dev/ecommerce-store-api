@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { UserRoleType } from '../../core/domain/value-objects/user-role';
+import { RoleEntity } from './role.schema';
 
 @Entity('users')
 export class UserEntity {
@@ -18,8 +20,15 @@ export class UserEntity {
   @Column()
   passwordHash: string;
 
-  @Column()
-  role: UserRoleType;
+  @Column({ name: 'role_id', nullable: true }) // nullable temporarily to avoid migration failures on existing dev db
+  roleId: number | null;
+
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
+  isActive: boolean;
+
+  @ManyToOne(() => RoleEntity, { eager: false })
+  @JoinColumn({ name: 'role_id' })
+  roleEntity: RoleEntity | null;
 
   @Column({ type: 'text', nullable: true })
   customerId: number | null;

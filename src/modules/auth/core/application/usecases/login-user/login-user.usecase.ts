@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -7,7 +7,7 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { UserRepository } from '../../../domain/repositories/user.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
-import { BcryptService } from '../../../../secondary-adapters/services/bcrypt.service';
+import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { LoginDto } from '../../../../primary-adapters/dto/login.dto';
 
 @Injectable()
@@ -16,10 +16,12 @@ export class LoginUserUseCase extends UseCase<
   { accessToken: string; refreshToken: string },
   UseCaseError
 > {
+  private readonly logger = new Logger(LoginUserUseCase.name);
+
   constructor(
     private readonly userRepository: UserRepository,
     private readonly sessionTokenRepository: SessionTokenRepository,
-    private readonly bcryptService: BcryptService,
+    private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerService,
   ) {
     super();
@@ -38,7 +40,7 @@ export class LoginUserUseCase extends UseCase<
     const user = userResult.value;
 
     // 2. Verify Password
-    const isMatch = await this.bcryptService.compare(
+    const isMatch = await this.passwordHasher.compare(
       dto.password,
       user.passwordHash,
     );
@@ -46,11 +48,16 @@ export class LoginUserUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Invalid credentials');
     }
 
+    // 2.5 Check if user is active
+    if (!user.isActive) {
+      return ErrorFactory.UseCaseError('Invalid credentials');
+    }
+
     // 3. Generate Access Token
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.roleCode,
       customerId: user.customerId,
     };
     const accessToken = await this.jwtSignerService.signAccessToken(payload);
@@ -76,6 +83,8 @@ export class LoginUserUseCase extends UseCase<
     if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to create session');
     }
+
+    this.logger.log(`User ${user.email} logged in successfully`);
 
     return Result.success({ accessToken, refreshToken });
   }

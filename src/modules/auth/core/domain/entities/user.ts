@@ -2,13 +2,15 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IUser } from '../interfaces/user.interface';
-import { UserRole, UserRoleType } from '../value-objects/user-role';
+import { SystemRoleCode } from './../reference-data/system-roles';
 
 export interface UserProps {
   id: number | null;
   email: string;
   passwordHash: string;
-  role: UserRoleType;
+  roleId: number | null;
+  roleCode: string | null;
+  isActive: boolean;
   customerId: number | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -18,7 +20,9 @@ export class User implements IUser {
   private readonly _id: number | null;
   private _email: string;
   private _passwordHash: string;
-  private _role: UserRole;
+  private _roleId: number | null;
+  private _roleCode: string | null;
+  private _isActive: boolean;
   private _customerId: number | null;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -30,7 +34,9 @@ export class User implements IUser {
     this._id = props.id ?? null;
     this._email = props.email.trim().toLowerCase();
     this._passwordHash = props.passwordHash;
-    this._role = new UserRole(props.role);
+    this._roleId = props.roleId || null;
+    this._roleCode = props.roleCode || SystemRoleCode.CUSTOMER;
+    this._isActive = props.isActive;
     this._customerId = props.customerId || null;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
@@ -69,8 +75,16 @@ export class User implements IUser {
     return this._passwordHash;
   }
 
-  get role(): UserRoleType {
-    return this._role.value;
+  get roleId(): number | null {
+    return this._roleId;
+  }
+
+  get roleCode(): string | null {
+    return this._roleCode;
+  }
+
+  get isActive(): boolean {
+    return this._isActive;
   }
 
   get customerId(): number | null {
@@ -104,13 +118,33 @@ export class User implements IUser {
     return Result.success(undefined);
   }
 
+  deactivate(): Result<void, DomainError> {
+    if (!this._isActive) {
+      return ErrorFactory.DomainError('User is already deactivated');
+    }
+    this._isActive = false;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
+  activate(): Result<void, DomainError> {
+    if (this._isActive) {
+      return ErrorFactory.DomainError('User is already active');
+    }
+    this._isActive = true;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
   // Serialization
   get toProps(): UserProps {
     return {
       id: this._id,
       email: this._email,
       passwordHash: this._passwordHash,
-      role: this._role.value,
+      roleId: this._roleId,
+      roleCode: this._roleCode,
+      isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -122,7 +156,9 @@ export class User implements IUser {
       id: this._id,
       email: this._email,
       passwordHash: this._passwordHash,
-      role: this._role.value,
+      roleId: this._roleId,
+      roleCode: this._roleCode,
+      isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -134,7 +170,9 @@ export class User implements IUser {
       id: data.id,
       email: data.email,
       passwordHash: data.passwordHash,
-      role: data.role,
+      roleId: data.roleId as number,
+      roleCode: data.roleCode,
+      isActive: data.isActive,
       customerId: data.customerId,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
@@ -146,14 +184,17 @@ export class User implements IUser {
     id: number | null,
     email: string,
     passwordHash: string,
-    role: UserRoleType = UserRoleType.CUSTOMER,
+    roleId: number,
+    roleCode: string = SystemRoleCode.CUSTOMER,
     customerId?: number,
   ): User {
     return new User({
       id,
       email,
       passwordHash,
-      role,
+      roleId,
+      roleCode,
+      isActive: true,
       customerId: customerId || null,
       createdAt: new Date(),
       updatedAt: new Date(),

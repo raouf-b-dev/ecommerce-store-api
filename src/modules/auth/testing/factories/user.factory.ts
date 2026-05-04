@@ -1,5 +1,5 @@
 import { IUser } from '../../core/domain/interfaces/user.interface';
-import { UserRoleType } from '../../core/domain/value-objects/user-role';
+import { SystemRoleCode } from '../../core/domain/reference-data/system-roles';
 
 export class UserTestFactory {
   static createMockUser(overrides?: Partial<IUser>): IUser {
@@ -7,7 +7,9 @@ export class UserTestFactory {
       id: 1,
       email: 'test@example.com',
       passwordHash: 'passwordHash',
-      role: UserRoleType.CUSTOMER,
+      roleId: 2,
+      roleCode: SystemRoleCode.CUSTOMER,
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
       customerId: null,
@@ -20,7 +22,9 @@ export class UserTestFactory {
       id: 1,
       email: 'test@example.com',
       passwordHash: 'passwordHash',
-      role: UserRoleType.ADMIN,
+      roleId: 1,
+      roleCode: SystemRoleCode.ADMIN,
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
       customerId: null,
@@ -34,7 +38,9 @@ export class UserTestFactory {
       id: 1,
       email: 'test@example.com',
       passwordHash: 'passwordHash',
-      role: UserRoleType.CUSTOMER,
+      roleId: 2,
+      roleCode: SystemRoleCode.CUSTOMER,
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
       customerId: null,

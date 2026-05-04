@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
+import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { CreateCartDto } from './primary-adapters/dto/create-cart.dto';
 import { AddCartItemDto } from './primary-adapters/dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './primary-adapters/dto/update-cart-item.dto';
@@ -101,7 +103,8 @@ export class CartsController {
 
   @Post(':guestCartId/merge/:userCartId')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('manage_carts')
   @ApiOperation({ summary: 'Merge guest cart into user cart after login' })
   @ApiResponse({ status: 200, type: CartResponseDto })
   async mergeCarts(

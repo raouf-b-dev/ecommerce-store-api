@@ -19,135 +19,83 @@
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
-| Phase | Name                         | Status  | Key Deliverables                                                                                                                                                                                             | Location                                                  |
-| :---- | :--------------------------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| **0** | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Auth, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI | `src/modules/`, `src/infrastructure/`                     |
-| **1** | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Auth · BullMQ-based checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities | `src/modules/orders/`, `src/modules/carts/`               |
-| **2** | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection                                                                                      | `src/shared-kernel/`, `src/infrastructure/idempotency/`   |
-| **3** | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                   | `src/modules/*/secondary-adapters/repositories/cached-*/` |
-| **4** | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                          |
-| **5** | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
-| **6** | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
-| **7** | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`         |
-| **8** | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/` |
+| Phase   | Name                         | Status  | Key Deliverables                                                                                                                                                                                             | Location                                                  |
+| :------ | :--------------------------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| **0**   | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Auth, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI | `src/modules/`, `src/infrastructure/`                     |
+| **1**   | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Auth · BullMQ-based checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities | `src/modules/orders/`, `src/modules/carts/`               |
+| **2**   | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection                                                                                      | `src/shared-kernel/`, `src/infrastructure/idempotency/`   |
+| **3**   | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                   | `src/modules/*/secondary-adapters/repositories/cached-*/` |
+| **4**   | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                          |
+| **5**   | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
+| **6**   | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
+| **7**   | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`         |
+| **7.5** | Auth Overhaul (RBAC)         | ✅ Done | RSA RS256 JWT, Refresh Token Rotation, Session Tracking, Full RBAC (Roles/Permissions/Guards)                                                                                                                | `src/infrastructure/jwt/`, `src/modules/auth/`            |
+| **7.6** | Auth Hardening & Quality     | ✅ Done | Abstract `PasswordHasher`, Session reuse detection, Architectural polish, Strict typed JWT payloads, Thin controllers                                                                                        | `src/modules/auth/`                                       |
+| **8**   | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/` |
+| **8.1** | Logging Activation           | ✅ Done | Winston logger injected into NestJS application lifecycle, replacing manual error handlers                                                                                                                   | `src/main.ts`                                             |
+
+## 🏗️ Phase 8.5 — Architecture Hardening (Post-RBAC)
+
+> **Goal**: Eliminate remaining DDD/Hexagonal violations identified in post-RBAC audit. Ensure all modules meet the zero-violation architectural baseline.
 
 ---
 
-## 🔐 Phase 7.5 — Auth Overhaul (RSA + Refresh Tokens + RBAC)
+### 8.5.1 — Payments: Extract Abstract Ports for External Services
 
-> **Goal**: Production-grade authentication and authorization. Replace HMAC JWT with RSA (RS256) using `jose`, add refresh token rotation with session management, and introduce a full RBAC system with roles, permissions, and guards.
->
-> **Architecture decisions**: Per-user permission overrides and Identity/Access module split are deferred to future phases.
->
-> **Execution**: 4 incremental waves — each independently testable and mergeable.
+**What**: Three use cases in the Payments module directly inject concrete infrastructure classes — a critical Hexagonal Architecture violation. The application core must depend only on abstractions.
 
----
+**Violations**:
 
-### Wave 1 — RSA JWT Core
-
-**What**: Replace HMAC-based JWT signing (`@nestjs/jwt` + `@nestjs/passport`) with RSA RS256 using `jose`. Move JWT infrastructure to a global module. All existing auth continues to work — just the signing mechanism changes.
-
-- [x] Install `jose`, remove `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`
-- [x] Create `src/infrastructure/jwt/` global module
-  - `JwksService` — RSA PEM parsing, public key derivation, JWKS export
-  - `JwtSignerService` — RS256 signing for access + refresh tokens
-  - `JwtVerifierService` — RS256 verification with 30s clock tolerance
-  - `JwtModule` — `@Global()` module exporting all services
-- [x] Create `src/guards/auth.guard.ts` — custom `CanActivate` guard (replaces Passport-based `JWTAuthGuard`)
-- [x] Update env config pipeline
-  - `validate-env.ts` — replace `JWT_SECRET`/`JWT_EXPIRES_IN` with `JWT_PRIVATE_KEY`/`JWT_ACCESS_TOKEN_TTL`/`JWT_REFRESH_TOKEN_TTL`
-  - `configuration.ts` — new `jwt: { privateKey, accessTokenTtl, refreshTokenTtl }` shape
-  - `env-config.service.ts` — updated getter
-  - `.env.example` / `.secrets.example`
-- [x] Update `LoginUserUseCase` to use `JwtSignerService` instead of `JwtService`
-- [x] Add `GET /auth/.well-known/jwks.json` endpoint
-- [x] Delete old `JWTAuthGuard`, `JwtStrategy`; update `auth.module.ts` (remove `PassportModule`, `JwtModule.registerAsync()`)
-- [x] Migrate all controllers from `JWTAuthGuard` → new `AuthGuard`
-- [x] Update/write tests: JWT signer/verifier/JWKS specs, AuthGuard spec, login usecase spec, auth controller spec
-
-**Location**: `src/infrastructure/jwt/`, `src/guards/`, `src/config/`
-
----
-
-### Wave 2 — Refresh Token Rotation
-
-**What**: Add refresh tokens alongside access tokens. Sessions stored in PostgreSQL with SHA-256 hashed tokens. Supports token rotation (old refresh token invalidated on use), single-session logout, and all-session logout.
-
-- [x] Create `SessionToken` domain entity — `create()`, `revoke()`, `isValid`, `isExpired`, `isTokenMatch(rawToken)`
-- [x] Create `SessionTokenRepository` abstract port — `save()`, `findById()`, `revokeAllForUser()`, `deleteExpired()`
-- [x] Create `session_tokens` TypeORM schema + `PostgresSessionTokenRepository`
-- [x] Update `LoginUserUseCase` — create session, return `{ access_token, refresh_token }`
-- [x] Create `RefreshTokenUseCase` — verify refresh JWT, validate session, rotate tokens
-- [x] Create `LogoutUseCase` — revoke current session
-- [x] Create `LogoutAllUseCase` — revoke all sessions for user
-- [x] Add `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/logout-all` endpoints
-- [x] Update `auth.module.ts` — register session token entity/repo/use cases
-- [x] Write tests: SessionToken entity spec, refresh/logout use case specs, auth controller spec updates
-- [x] **HttpOnly Cookie Transport** — Move refresh token from response body to `Set-Cookie` (HttpOnly, Secure, SameSite=Strict, Path=/auth). Controller reads from `req.cookies` instead of body. See `docs/JWT-RSA-JWKS.md` §4.4
-- [x] **JWKS `kid` Thumbprint** — Replace hardcoded `kid: '1'` in `JwksService` with RFC 7638 SHA-256 thumbprint derived from public key material. See `docs/JWT-RSA-JWKS.md` §3.4
-
-**Location**: `src/modules/auth/core/domain/entities/`, `src/modules/auth/secondary-adapters/`
-
----
-
-### Wave 3 — RBAC (Roles + Permissions + Guards)
-
-**What**: Full role-based access control. Three seeded system roles (`SUPER_ADMIN`, `ADMIN`, `CUSTOMER`) with a permission matrix. `PermissionsGuard` resolves permissions per request. `@RequirePermissions()` decorator protects endpoints. Admins can create custom roles.
-
-**System Roles** (seeded on first boot, immutable):
-
-| Role          | Description                                                                                                                                             |
-| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SUPER_ADMIN` | All management permissions granted. Cannot be deleted or modified. System owner                                                                         |
-| `ADMIN`       | All management permissions except `canManageRoles`. Upgradeable by `SUPER_ADMIN`                                                                        |
-| `CUSTOMER`    | All management permissions `false`. Can still access own resources (cart, orders, profile) via auth-scoped endpoints. Default role for registered users |
-
-**Permission Flags** (e-commerce domain):
-
-`canManageProducts`, `canViewAllProducts`, `canManageOrders`, `canViewAllOrders`, `canManageCustomers`, `canViewAllCustomers`, `canManageInventory`, `canViewAllInventory`, `canManagePayments`, `canViewAllPayments`, `canManageUsers`, `canViewAllUsers`, `canManageRoles`, `canManageCarts`
+- `HandleStripeWebhookUseCase` injects `StripeSignatureService` (concrete, in `secondary-adapters/services/`)
+- `HandlePayPalWebhookUseCase` injects `PayPalSignatureService` (concrete, in `secondary-adapters/services/`)
+- `CreatePaymentUseCase`, `CreatePaymentIntentUseCase`, `ProcessRefundUseCase` inject `PaymentGatewayFactory` (concrete, in `secondary-adapters/gateways/`)
 
 **Scope**:
 
-- [ ] Create `Role` domain entity — system role protection, `updateName()`, `updatePermissions()`, `validateNotSystemForDeletion()`
-- [ ] Create `PermissionSet` value object — typed boolean flags for all e-commerce permissions
-- [ ] Create system roles reference data (`SYSTEM_ROLES` array)
-- [ ] Create `RoleRepository` abstract port + TypeORM schema + `PostgresRoleRepository`
-- [ ] Create `RoleSystemDataInitializer` — `OnApplicationBootstrap` seeder (idempotent)
-- [ ] Create `GetPermissionsUseCase` — loads role permissions by role code
-- [ ] Create `PermissionsGuard` in `src/guards/` — reads `@RequirePermissions()` metadata, resolves permissions, attaches to `request.userPermissions`
-- [ ] Create `@RequirePermissions()` decorator + `@UserPermissions()` param decorator
-- [ ] Update `UserRole` value object — from hardcoded enum (`ADMIN`/`CUSTOMER`) to dynamic role code (string)
-- [ ] Update `auth.module.ts` — register role entity/repo/initializer
-- [ ] Write tests: Role entity spec, PermissionsGuard spec, GetPermissionsUseCase spec, seeder spec
+- [ ] Create `payments/core/application/ports/` directory
+- [ ] Define `StripeSignatureVerifier` abstract port — `verify(payload, signature): boolean`
+- [ ] Define `PayPalSignatureVerifier` abstract port — `verify(headers, body): boolean`
+- [ ] Register `StripeSignatureService` and `PayPalSignatureService` as implementations of the abstract ports
+- [ ] Update use cases to inject the abstract port tokens (not concrete classes)
 
-**Location**: `src/modules/auth/core/domain/`, `src/guards/`, `src/modules/auth/decorators/`
+**Location**: `src/modules/payments/core/application/ports/`, `src/modules/payments/payments.module.ts`
 
 ---
 
-### Wave 4 — Role Management API + Controller Permission Wiring
+### 8.5.2 — Notifications: Fix Fat Controller + Typed Payload
 
-**What**: Admin CRUD endpoints for roles. Wire `@RequirePermissions(...)` to every protected endpoint across all controllers.
+**What**: `NotificationsController` manually unwraps `Result` and calls `.toPrimitives()` on domain entities — both violations of the thin controller rule. Additionally, `Notification.payload` is typed `any` — a domain layer purity violation.
 
-- [ ] Create role management use cases: `CreateRoleUseCase`, `UpdateRoleUseCase`, `DeleteRoleUseCase`, `FindAllRolesUseCase`
-- [ ] Create `roles.controller.ts` — `GET/POST/PATCH/DELETE /roles` (requires `canManageRoles`)
-- [ ] Wire all domain controllers with `@UseGuards(AuthGuard, PermissionsGuard)` + `@RequirePermissions(...)`:
-  - Products: `canManageProducts` / `canViewAllProducts`
-  - Orders: `canManageOrders` / `canViewAllOrders`
-  - Customers: `canManageCustomers` / `canViewAllCustomers`
-  - Inventory: `canManageInventory` / `canViewAllInventory`
-  - Payments: `canManagePayments` / `canViewAllPayments`
-  - Carts: `canManageCarts`
-  - Roles: `canManageRoles`
-- [ ] Write tests: Role CRUD use case specs, roles controller spec
+**Scope**:
 
-**Location**: `src/modules/auth/`, all domain controllers
+- [ ] Define `NotificationPayload` typed interface (or `Record<string, unknown>`) to replace `any` in `notification.ts`, `notification.interface.ts`, `notification.gateway.interface.ts`
+- [ ] Update `GetUserNotificationsUseCase` to return `{ total, page, data: INotification[] }` with primitives baked in
+- [ ] Refactor `NotificationsController.getUserNotifications()` to a one-liner: `return this.useCase.execute(...)`
+- [ ] Replace `@Request() req` with `@CurrentUser()` decorator (already exists in auth module)
+
+**Location**: `src/modules/notifications/`
 
 ---
 
-### Future — Deferred Items
+### 8.5.3 — Orders: Type `OrderItem.fromPrimitives()`
 
-- [ ] **Per-User Permission Overrides** — Admin can grant/revoke individual permissions per user (stored in `user_permission_overrides` table, merged at resolution time)
-- [ ] **Identity / Access Module Split** — Separate user identity management and token/session management into independent bounded contexts for microservice extraction
+**What**: `OrderItem.fromPrimitives(data: any)` uses `any` in the domain entity. Should accept a typed `IOrderItem` interface.
+
+- [ ] Define `IOrderItem` interface in `order-items.ts`
+- [ ] Update `fromPrimitives(data: IOrderItem)` signature
+
+**Location**: `src/modules/orders/core/domain/entities/order-items.ts`
+
+---
+
+### 8.5.4 — Auth: Fix `PermissionMapper.toEntity()` type cast
+
+**What**: `PermissionMapper.toEntity()` casts payload to `any` instead of `PermissionCreate`.
+
+- [ ] Define `PermissionCreate = CreateFromEntity<PermissionEntity>`
+- [ ] Handle `id: 0` for new entities explicitly within the typed payload
+
+**Location**: `src/modules/auth/secondary-adapters/persistence/mappers/permission.mapper.ts`
 
 ---
 
@@ -354,12 +302,14 @@
 
 ## ❌ Skipped (Premature)
 
-| Task           | Reason                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------ |
-| DB Sharding    | PostgreSQL handles millions of rows. Far too early.                                              |
-| CQRS           | Added complexity with no current need. Reconsider if read/write patterns diverge.                |
-| Event Sourcing | Overkill for this domain. State-based persistence is fine.                                       |
-| Data Archival  | Only relevant when orders table exceeds ~500K rows.                                              |
-| GraphQL        | REST + Swagger is sufficient for current clients. Reconsider if frontend needs flexible queries. |
-| Microservices  | Modular monolith first. Extract when scaling demands it.                                         |
-| Multi-Tenancy  | Only relevant for SaaS deployment model. Premature until first paying tenant.                    |
+| Task                  | Reason                                                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| DB Sharding           | PostgreSQL handles millions of rows. Far too early.                                                         |
+| CQRS                  | Added complexity with no current need. Reconsider if read/write patterns diverge.                           |
+| Event Sourcing        | Overkill for this domain. State-based persistence is fine.                                                  |
+| Data Archival         | Only relevant when orders table exceeds ~500K rows.                                                         |
+| GraphQL               | REST + Swagger is sufficient for current clients. Reconsider if frontend needs flexible queries.            |
+| Microservices         | Modular monolith first. Extract when scaling demands it.                                                    |
+| Multi-Tenancy         | Only relevant for SaaS deployment model. Premature until first paying tenant.                               |
+| Per-User Permissions  | RBAC covers standard use cases. Individual overrides add complexity and can be deferred until required.     |
+| Identity/Access Split | Separate modules for identity and token/session management is an optimization for microservices extraction. |

@@ -6,28 +6,17 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResultInterceptor } from './interceptors/result.interceptor';
 import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
-import { RedisIoAdapterHost } from './infrastructure/websocket/redis-io-adapter.host';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
 import * as cookieParser from 'cookie-parser';
+import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  const exitHandler = (error: any, type: string) => {
-    Logger.error(
-      `${type}: ${error instanceof Error ? error.stack : error}`,
-      'Process',
-    );
-    app.close().finally(() => process.exit(1));
-  };
-
-  process.on('unhandledRejection', (reason: unknown) =>
-    exitHandler(reason, 'Unhandled Promise Rejection'),
-  );
-  process.on('uncaughtException', (error: Error) =>
-    exitHandler(error, 'Uncaught Exception'),
-  );
+  // Replace default NestJS logger with Winston
+  const winstonLogger = app.get(WinstonLoggerService);
+  app.useLogger(winstonLogger);
 
   app.use(helmet());
   app.use(cookieParser());
@@ -46,10 +35,6 @@ async function bootstrap() {
   const redisIoAdapter = new RedisIoAdapter(app);
   await redisIoAdapter.connectToRedis();
   app.useWebSocketAdapter(redisIoAdapter);
-
-  // Register adapter with the DI-managed host so NestJS handles its shutdown
-  const adapterHost = app.get(RedisIoAdapterHost);
-  adapterHost.setAdapter(redisIoAdapter);
 
   app.enableShutdownHooks();
 

@@ -1,12 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { jwtVerify } from 'jose';
 import { JwksService } from './jwks.service';
+import {
+  AccessTokenPayload,
+  RefreshTokenPayload,
+} from './jwt-payload.interfaces';
 
 @Injectable()
 export class JwtVerifierService {
   constructor(private readonly jwksService: JwksService) {}
 
-  async verifyAccessToken(token: string): Promise<any> {
+  async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
     try {
       const publicKey = this.jwksService.getPublicKey();
 
@@ -20,7 +24,7 @@ export class JwtVerifierService {
         throw new UnauthorizedException('Invalid token type');
       }
 
-      return payload;
+      return payload as unknown as AccessTokenPayload;
     } catch (error: any) {
       if (error?.code === 'ERR_JWT_EXPIRED') {
         throw new UnauthorizedException('Token has expired');
@@ -29,7 +33,7 @@ export class JwtVerifierService {
     }
   }
 
-  async verifyRefreshToken(token: string): Promise<any> {
+  async verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
     try {
       const publicKey = this.jwksService.getPublicKey();
 
@@ -43,7 +47,7 @@ export class JwtVerifierService {
         throw new UnauthorizedException('Invalid token type');
       }
 
-      return payload;
+      return payload as unknown as RefreshTokenPayload;
     } catch (error: any) {
       if (error?.code === 'ERR_JWT_EXPIRED') {
         throw new UnauthorizedException('Token has expired');
