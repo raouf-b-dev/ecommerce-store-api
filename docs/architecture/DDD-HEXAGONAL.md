@@ -240,7 +240,7 @@ import { Customer } from 'src/modules/customers/core/domain/entities/customer';
 import { RedisCustomerRepo } from 'src/modules/customers/secondary-adapters/repositories/redis.customer-repo';
 ```
 
-**Rule**: Only the ACL adapter (in `secondary-adapters/gateways/`) may import upstream application-layer exports (Use Cases or Application Services). The application core sees only its own gateway port. For the full catalogue of integration patterns (ACL Gateway, Domain Events, Saga, Transactional Outbox), see [`INTEGRATION-PATTERNS.md`](INTEGRATION-PATTERNS.md).
+**Rule**: Only the ACL adapter (in `secondary-adapters/gateways/`) may import upstream application-layer exports (Use Cases or Application Services). The application core sees only its own gateway port. For the full catalogue of integration patterns (ACL Gateway, Domain Events, Saga, Transactional Outbox), see [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md).
 
 #### Cross-Context Use Case Ownership
 

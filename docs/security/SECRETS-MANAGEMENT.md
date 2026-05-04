@@ -2,7 +2,7 @@
 
 > An engineering reference for environment configuration and secrets management in the E-Commerce Store API. Covers foundational principles, the secret lifecycle, deployment injection patterns, and the project's implementation.
 >
-> **Companion docs**: [`AGENT.md`](../AGENT.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`ROADMAP.md`](ROADMAP.md)
+> **Companion docs**: [`AGENT.md`](../AGENT.md) · [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) · [`ROADMAP.md`](../ROADMAP.md)
 
 ---
 

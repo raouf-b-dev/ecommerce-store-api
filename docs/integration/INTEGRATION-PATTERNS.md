@@ -2,7 +2,7 @@
 
 This document defines the **canonical integration patterns** for communicating between Bounded Contexts in the E-commerce Store API. Each pattern is grounded in DDD and Hexagonal Architecture, with explicit guidance on when to use it, how it maps to this codebase, and how it adapts when migrating to microservices.
 
-> **Companion docs**: [`DDD-HEXAGONAL.md`](DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](ARCHITECTURE.md) (system context & flows)
+> **Companion docs**: [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) (system context & flows)
 
 ---
 
