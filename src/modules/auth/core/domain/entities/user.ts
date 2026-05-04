@@ -10,6 +10,7 @@ export interface UserProps {
   passwordHash: string;
   roleId: number | null;
   roleCode: string | null;
+  isActive: boolean;
   customerId: number | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -21,6 +22,7 @@ export class User implements IUser {
   private _passwordHash: string;
   private _roleId: number | null;
   private _roleCode: string | null;
+  private _isActive: boolean;
   private _customerId: number | null;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -34,6 +36,7 @@ export class User implements IUser {
     this._passwordHash = props.passwordHash;
     this._roleId = props.roleId || null;
     this._roleCode = props.roleCode || SystemRoleCode.CUSTOMER;
+    this._isActive = props.isActive;
     this._customerId = props.customerId || null;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
@@ -80,6 +83,10 @@ export class User implements IUser {
     return this._roleCode;
   }
 
+  get isActive(): boolean {
+    return this._isActive;
+  }
+
   get customerId(): number | null {
     return this._customerId;
   }
@@ -111,6 +118,24 @@ export class User implements IUser {
     return Result.success(undefined);
   }
 
+  deactivate(): Result<void, DomainError> {
+    if (!this._isActive) {
+      return ErrorFactory.DomainError('User is already deactivated');
+    }
+    this._isActive = false;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
+  activate(): Result<void, DomainError> {
+    if (this._isActive) {
+      return ErrorFactory.DomainError('User is already active');
+    }
+    this._isActive = true;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
   // Serialization
   get toProps(): UserProps {
     return {
@@ -119,6 +144,7 @@ export class User implements IUser {
       passwordHash: this._passwordHash,
       roleId: this._roleId,
       roleCode: this._roleCode,
+      isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -132,6 +158,7 @@ export class User implements IUser {
       passwordHash: this._passwordHash,
       roleId: this._roleId,
       roleCode: this._roleCode,
+      isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -145,6 +172,7 @@ export class User implements IUser {
       passwordHash: data.passwordHash,
       roleId: data.roleId as number,
       roleCode: data.roleCode,
+      isActive: data.isActive,
       customerId: data.customerId,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
@@ -166,6 +194,7 @@ export class User implements IUser {
       passwordHash,
       roleId,
       roleCode,
+      isActive: true,
       customerId: customerId || null,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -23,6 +23,9 @@ export class UserEntity {
   @Column({ name: 'role_id', nullable: true }) // nullable temporarily to avoid migration failures on existing dev db
   roleId: number | null;
 
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
+  isActive: boolean;
+
   @ManyToOne(() => RoleEntity, { eager: false })
   @JoinColumn({ name: 'role_id' })
   roleEntity: RoleEntity | null;
