@@ -2,7 +2,7 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { REQUIRED_PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
@@ -10,6 +10,8 @@ import { ResolveRolePermissionsService } from '../../core/application/services/r
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionsGuard.name);
+
   constructor(
     private reflector: Reflector,
     private resolveRolePermissionsService: ResolveRolePermissionsService,
@@ -29,7 +31,10 @@ export class PermissionsGuard implements CanActivate {
     const user = request.user;
 
     if (!user || !user.role) {
-      throw new ForbiddenException('User role not found in request');
+      this.logger.warn(
+        'PermissionsGuard: No authenticated user found on request',
+      );
+      return false;
     }
 
     const permissionsResult = await this.resolveRolePermissionsService.execute(
@@ -37,7 +42,10 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (permissionsResult.isFailure) {
-      throw new ForbiddenException('Failed to resolve permissions');
+      this.logger.warn(
+        `PermissionsGuard: Failed to resolve permissions: ${permissionsResult.error?.message}`,
+      );
+      return false;
     }
 
     const permissions = permissionsResult.value;
@@ -49,7 +57,7 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException('Insufficient permissions');
+      return false;
     }
 
     return true;

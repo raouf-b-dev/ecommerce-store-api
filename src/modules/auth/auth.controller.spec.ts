@@ -17,7 +17,7 @@ import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
 import { User } from './core/domain/entities/user';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -41,11 +41,6 @@ describe('AuthController', () => {
     mockUser.toPrimitives = jest.fn().mockReturnValue(mockUser);
     registerDto = RegisterDtoTestFactory.createRegisterDto();
     loginDto = LoginDtoTestFactory.createLoginDto();
-
-    mockRes = {
-      cookie: jest.fn(),
-      clearCookie: jest.fn(),
-    };
 
     mockReq = {
       cookies: {},
@@ -140,20 +135,10 @@ describe('AuthController', () => {
     );
   });
 
-  it('should set refresh token cookie on login', async () => {
-    const res = await controller.login(loginDto, mockRes);
+  it('should return login tokens successfully', async () => {
+    const res = await controller.login(loginDto);
 
     expect(loginUseCase.execute).toHaveBeenCalledWith(loginDto);
-    expect(mockRes.cookie).toHaveBeenCalledWith(
-      'refresh_token',
-      'refresh-456',
-      expect.objectContaining({
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        path: '/auth',
-      }),
-    );
     expect(res).toEqual(
       Result.success({
         accessToken: 'access-123',
@@ -164,62 +149,40 @@ describe('AuthController', () => {
 
   it('should read refresh token from body on refresh', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    const res = await controller.refresh(
-      dto,
-      mockReq as Request,
-      mockRes as Response,
-    );
+    const res = await controller.refresh(dto, mockReq as Request);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
     });
-    expect(mockRes.cookie).toHaveBeenCalledWith(
-      'refresh_token',
-      'new-refresh-456',
-      expect.objectContaining({ httpOnly: true }),
-    );
     expect((res as any).value.accessToken).toBe('new-access-123');
   });
 
   it('should read refresh token from cookie when body is empty', async () => {
     mockReq.cookies = { refresh_token: 'cookie-refresh-789' };
     const dto: RefreshTokenDto = {};
-    await controller.refresh(dto, mockReq as Request, mockRes as Response);
+    await controller.refresh(dto, mockReq as Request);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'cookie-refresh-789',
     });
   });
 
-  it('should clear cookie on logout', async () => {
+  it('should execute logout', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logout(dto, mockReq as Request, mockRes as Response);
+    await controller.logout(dto, mockReq as Request);
 
     expect(logoutUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
     });
-    expect(mockRes.clearCookie).toHaveBeenCalledWith(
-      'refresh_token',
-      expect.objectContaining({
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        path: '/auth',
-      }),
-    );
   });
 
-  it('should clear cookie on logout-all', async () => {
+  it('should execute logout-all', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logoutAll(dto, mockReq as Request, mockRes as Response);
+    await controller.logoutAll(dto, mockReq as Request);
 
     expect(logoutAllUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
     });
-    expect(mockRes.clearCookie).toHaveBeenCalledWith(
-      'refresh_token',
-      expect.objectContaining({ httpOnly: true }),
-    );
   });
 
   it('should call getJwks and return keys', () => {
