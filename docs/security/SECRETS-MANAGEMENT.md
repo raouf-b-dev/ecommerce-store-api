@@ -2,7 +2,7 @@
 
 > An engineering reference for environment configuration and secrets management in the E-Commerce Store API. Covers foundational principles, the secret lifecycle, deployment injection patterns, and the project's implementation.
 >
-> **Companion docs**: [`AGENT.md`](../AGENT.md) · [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) · [`ROADMAP.md`](../ROADMAP.md)
+> **Companion docs**: [`AGENT.md`](../../AGENT.md) · [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) · [`ROADMAP.md`](../ROADMAP.md)
 
 ---
 
@@ -328,7 +328,7 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 
 ## 7. The `generate-envs` Toolchain
 
-[`scripts/generate-envs.js`](../scripts/generate-envs.js) reads the tracked template (`.env.example`) and generates real environment files with intelligent per-environment defaults.
+[`scripts/generate-envs.js`](../../scripts/generate-envs.js) reads the tracked template (`.env.example`) and generates real environment files with intelligent per-environment defaults.
 
 ### Why a Generator?
 

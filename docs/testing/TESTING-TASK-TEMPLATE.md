@@ -1,6 +1,12 @@
 # Testing Task Template (Checklist)
 
-Use this template for every testing task. It is mandatory with `AGENT.md` §9.
+Use this template for every testing task.
+
+This template aligns with:
+
+- [AGENT.md](../../AGENT.md)
+- [docs/ai/CONVENTIONS.md](../ai/CONVENTIONS.md)
+- [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](../ai/GOVERNANCE-AND-QUALITY-GATES.md)
 
 ---
 
@@ -31,6 +37,8 @@ Use this template for every testing task. It is mandatory with `AGENT.md` §9.
 - Builder contract (if domain-heavy): `buildPrimitives()` + `buildEntity()` (or explicit equivalent)
 - Shared helpers used/added:
   - `src/testing/helpers/result-assertion.helper.ts`
+  - `src/testing/helpers/clock-test.helper.ts` (time-sensitive logic)
+  - `src/testing/helpers/http-error-assertion.helper.ts` (HTTP contract tests)
   - `src/testing/helpers/database-test.helper.ts` (integration only)
   - `src/testing/helpers/e2e-test-app.helper.ts` / `auth-test.helper.ts` (e2e only)
 - Integration harness (if applicable): PostgreSQL Testcontainers + migration/bootstrap approach
@@ -51,9 +59,10 @@ Use this template for every testing task. It is mandatory with `AGENT.md` §9.
 - [ ] Side effects are asserted (calls, events, cache, status changes).
 - [ ] Negative interaction assertions exist where needed (`not.toHaveBeenCalled`).
 - [ ] No silent branches left unasserted.
-- [ ] Time-sensitive logic uses controlled clock (if applicable).
+- [ ] Time-sensitive logic uses controlled clock (`clock-test.helper`) when applicable.
 - [ ] Tests are deterministic (no random/timezone/order fragility).
 - [ ] `Result<T, E>` assertions use shared helper style.
+- [ ] HTTP error contracts are asserted for E2E failure paths where relevant.
 - [ ] Builder strategy is explicit for domain scenarios (`buildPrimitives()` and `buildEntity()` or justified equivalent).
 - [ ] Imports avoid deep relative chains and prefer stable `src/...` or module testing barrel.
 ```
@@ -107,7 +116,9 @@ A testing task is done only if:
 ### Commands Run
 
 ```bash
-npm run test -- <target>
+npm test -- <target>
+# or
+npm run test:e2e -- <target>
 ```
 
 ### Result Summary
@@ -126,23 +137,27 @@ npm run test -- <target>
 
 ## 7. Dry-Run Examples (Planning Exercise)
 
-### A. Domain Example: `Activity.start() / close() / cancel()`
+### A. Domain Example: `Order` Lifecycle Transitions
 
-- Valid `start()` updates `statusId`, `startDate`, `startTime`, `updatedAt`.
-- Valid `close()` sets `closedAt`, `endTime`, optional `notes`, and `statusId`.
-- `close()` when already closed throws `DomainError`.
-- Valid `cancel()` sets cancelled status and closure timestamp.
-- `cancel()` when already closed throws `DomainError`.
-- `toPrimitives()` -> `fromPrimitives()` retains lifecycle fields.
-- All timestamp assertions use controlled clock.
+- Valid transition updates order status and `updatedAt`.
+- Invalid transition (e.g., finalizing cancelled order) returns `DomainError`.
+- Payment-method-specific rules are preserved (COD vs online).
+- `toPrimitives()` -> `fromPrimitives()` round-trip retains core fields.
+- Timestamp assertions use controlled clock.
 
-### B. Use Case Example: `CreateActivityUseCase`
+### B. Use Case Example: `CheckoutUseCase`
 
-- Happy path: valid user + partner/contact (active), repository save success.
-- Failure: assigned user not found.
-- Failure: assigned user inactive.
-- Failure: partner inactive or not found.
-- Failure: contact inactive or not found.
-- Failure: contact/partner mismatch.
+- Happy path: valid customer + valid cart + stock reservation + payment flow.
+- Failure: customer not found/inactive.
+- Failure: cart empty/invalid.
+- Failure: stock unavailable or reservation failure.
+- Failure: payment gateway rejection/timeout.
 - Failure propagation: gateway/repository returns `Result.failure`.
-- Call contract: save called once only on valid branch, no save on invalid branches.
+- Call contract: forbidden branches must not perform save/schedule/confirm side effects.
+
+### C. E2E Example: Auth Lifecycle
+
+- Login returns access token and refresh token flow works.
+- Refresh rotates session token and returns new access token.
+- Logout/logout-all invalidates session paths.
+- Failure contracts return expected status and error payload shape.
