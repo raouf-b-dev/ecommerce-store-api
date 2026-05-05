@@ -94,7 +94,9 @@
     "env:init:prod": "node scripts/generate-envs.js --envs=production",
     "env:init:staging": "node scripts/generate-envs.js --envs=staging",
     "env:init:test": "node scripts/generate-envs.js --envs=test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "skills:sync": "node scripts/sync-agent-skills.js",
+    "skills:check": "node scripts/sync-agent-skills.js --check"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",
