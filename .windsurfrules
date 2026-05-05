@@ -1,0 +1,12 @@
+# Windsurf Rules Bridge
+
+Use [AGENT.md](AGENT.md) as the canonical policy for this repository.
+
+## Required Defaults
+
+1. Preserve DDD and Hexagonal boundaries.
+2. Keep controllers thin and use-case driven.
+3. Use ACL gateways for cross-context operations.
+4. Follow the standard workflow: Intake -> Plan -> Execute -> Verify -> Handoff.
+5. Apply relevant skills from `.agents/skills/*/SKILL.md`.
+6. Prioritize `.agents/skills/module-conventions-generator/SKILL.md` for generation/scaffolding.

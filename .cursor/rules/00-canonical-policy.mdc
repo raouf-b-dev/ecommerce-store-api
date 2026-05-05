@@ -1,0 +1,14 @@
+---
+description: Canonical policy bridge for Cursor and compatible IDE agents.
+alwaysApply: true
+---
+
+# Canonical Policy Bridge
+
+Use [AGENT.md](../../AGENT.md) as canonical policy.
+
+1. Respect DDD and Hexagonal boundaries.
+2. Use ACL gateways for cross-context operations.
+3. Keep controllers thin and use-case driven.
+4. Follow `Intake -> Plan -> Execute -> Verify -> Handoff` workflow.
+5. Use skills from `.agents/skills` when applicable.
