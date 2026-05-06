@@ -31,6 +31,7 @@ Canonical technical reference documents, organised by category.
 
 - [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md) — Secrets lifecycle, rotation, and environment variable management.
 - [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md) — Technical reference for JSON Web Tokens, RSA cryptography, and JWKS.
+- [ADMIN-BOOTSTRAP.md](security/ADMIN-BOOTSTRAP.md) — Secure super-admin bootstrap strategy with forced credential rotation.
 
 ## Integration
 
@@ -39,6 +40,15 @@ Canonical technical reference documents, organised by category.
 ## Testing
 
 - [TESTING-TASK-TEMPLATE.md](testing/TESTING-TASK-TEMPLATE.md) — Test plan templates and conventions.
+
+## AI / Agentic Engineering
+
+- [ai/README.md](ai/README.md) — Canonical AI engineering index with CAC v1, SPS v1, and EWC v1.
+- [ai/FOUNDATIONS.md](ai/FOUNDATIONS.md) — Shared principles, risk model, and anti-patterns.
+- [ai/CONVENTIONS.md](ai/CONVENTIONS.md) — Single source of truth for generation conventions used by skills.
+- [ai/GOVERNANCE-AND-QUALITY-GATES.md](ai/GOVERNANCE-AND-QUALITY-GATES.md) — Definition of done, governance gates, escalation.
+- [ai/WORKFLOW-PLAYBOOK.md](ai/WORKFLOW-PLAYBOOK.md) — End-to-end execution workflow for agents.
+- [ai/SKILLS-SYSTEM.md](ai/SKILLS-SYSTEM.md) — Skill taxonomy, lifecycle, and SKILL.md standards.
 
 ---
 

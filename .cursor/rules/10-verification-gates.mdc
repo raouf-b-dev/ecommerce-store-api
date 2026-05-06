@@ -1,0 +1,13 @@
+---
+description: Testing and verification guardrails for Cursor and compatible IDE agents.
+alwaysApply: true
+---
+
+# Verification Guardrails
+
+Before task completion:
+
+1. Run tests relevant to modified behavior.
+2. Report command evidence and outcomes.
+3. Call out residual risk and assumptions.
+4. Do not silently skip failed checks.

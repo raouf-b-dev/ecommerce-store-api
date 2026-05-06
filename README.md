@@ -105,7 +105,7 @@ graph TD
     end
 ```
 
-See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for C4, sequence, and class diagrams.
+See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE.md) for C4, sequence, and class diagrams.
 
 ---
 
@@ -117,14 +117,14 @@ See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for C4, 
 
 ### 🏗️ Architecture
 
-| Feature                | Description                                               | Location                                                |
-| :--------------------- | :-------------------------------------------------------- | :------------------------------------------------------ |
-| Strategic DDD          | Subdomains, Bounded Contexts, Context Mapping             | [ARCHITECTURE.md](docs/ARCHITECTURE.md)                 |
-| Tactical DDD           | Entities, Value Objects, Aggregates, Domain Services      | `src/modules/*/core/domain/`                            |
-| Hexagonal Architecture | Ports & Adapters — infrastructure-agnostic domain core    | [DDD-HEXAGONAL.md](docs/DDD-HEXAGONAL.md)               |
-| ACL Gateway Pattern    | 7 gateway ports decoupling 8 bounded contexts             | [INTEGRATION-PATTERNS.md](docs/INTEGRATION-PATTERNS.md) |
-| Modular Monolith       | 9 isolated modules, microservice-extraction ready         | `src/modules/`                                          |
-| Result Pattern         | Functional `Result<T, E>` replacing exception-driven flow | `src/shared-kernel/domain/`                             |
+| Feature                | Description                                               | Location                                                            |
+| :--------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------ |
+| Strategic DDD          | Subdomains, Bounded Contexts, Context Mapping             | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
+| Tactical DDD           | Entities, Value Objects, Aggregates, Domain Services      | `src/modules/*/core/domain/`                                        |
+| Hexagonal Architecture | Ports & Adapters — infrastructure-agnostic domain core    | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
+| ACL Gateway Pattern    | 7 gateway ports decoupling 8 bounded contexts             | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
+| Modular Monolith       | 9 isolated modules, microservice-extraction ready         | `src/modules/`                                                      |
+| Result Pattern         | Functional `Result<T, E>` replacing exception-driven flow | `src/shared-kernel/domain/`                                         |
 
 ### 🔄 Distributed Systems
 
@@ -145,23 +145,23 @@ See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for C4, 
 
 ### 🔐 Security
 
-| Feature                | Description                                                  | Location                                |
-| :--------------------- | :----------------------------------------------------------- | :-------------------------------------- |
-| RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/JWT-RSA-JWKS.md) |
-| Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/auth/`                     |
-| Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                           |
-| CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                           |
-| XSS Sanitization       | Global `sanitize-html` interceptor on all request bodies     | `src/interceptors/`                     |
-| Pagination Safety      | `@Max(100)` on all query DTOs to prevent resource exhaustion | `src/modules/*/primary-adapters/dtos/`  |
+| Feature                | Description                                                  | Location                                         |
+| :--------------------- | :----------------------------------------------------------- | :----------------------------------------------- |
+| RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
+| Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/auth/`                              |
+| Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                                    |
+| CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                                    |
+| XSS Sanitization       | Global `sanitize-html` interceptor on all request bodies     | `src/interceptors/`                              |
+| Pagination Safety      | `@Max(100)` on all query DTOs to prevent resource exhaustion | `src/modules/*/primary-adapters/dtos/`           |
 
 ### 📦 Infrastructure
 
-| Feature            | Description                                                 | Location                                            |
-| :----------------- | :---------------------------------------------------------- | :-------------------------------------------------- |
-| Multi-Stage Docker | 4-stage build, Node.js 24 Alpine, tini PID 1, non-root user | `Dockerfile`                                        |
-| Graceful Shutdown  | Signal handling, connection draining, worker cleanup        | [PROCESS-LIFECYCLE.md](docs/PROCESS-LIFECYCLE.md)   |
-| Health Checks      | `GET /health` via @nestjs/terminus (Postgres + Redis)       | `src/modules/health/`                               |
-| Multi-Env Config   | 4 profiles with type-safe validation + secrets separation   | [SECRETS-MANAGEMENT.md](docs/SECRETS-MANAGEMENT.md) |
+| Feature            | Description                                                 | Location                                                         |
+| :----------------- | :---------------------------------------------------------- | :--------------------------------------------------------------- |
+| Multi-Stage Docker | 4-stage build, Node.js 24 Alpine, tini PID 1, non-root user | `Dockerfile`                                                     |
+| Graceful Shutdown  | Signal handling, connection draining, worker cleanup        | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
+| Health Checks      | `GET /health` via @nestjs/terminus (Postgres + Redis)       | `src/modules/health/`                                            |
+| Multi-Env Config   | 4 profiles with type-safe validation + secrets separation   | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
 
 ### 🔭 Observability
 
@@ -185,18 +185,19 @@ See the full [**System Architecture & Diagrams**](docs/ARCHITECTURE.md) for C4, 
 
 ## 📖 Documentation Index
 
-| Document                                                    | Description                                           |
-| :---------------------------------------------------------- | :---------------------------------------------------- |
-| [**FEATURES.md**](docs/FEATURES.md)                         | Detailed feature documentation with code locations    |
-| [**ARCHITECTURE.md**](docs/ARCHITECTURE.md)                 | C4 system context, domain flows, sequence diagrams    |
-| [**DDD-HEXAGONAL.md**](docs/DDD-HEXAGONAL.md)               | Canonical DDD & Hexagonal Architecture rules          |
-| [**INTEGRATION-PATTERNS.md**](docs/INTEGRATION-PATTERNS.md) | ACL Gateway, SAGA, Domain Events, Outbox              |
-| [**JWT-RSA-JWKS.md**](docs/JWT-RSA-JWKS.md)                 | RSA JWT implementation and JWKS endpoint details      |
-| [**SECRETS-MANAGEMENT.md**](docs/SECRETS-MANAGEMENT.md)     | Configuration taxonomy and key rotation               |
-| [**PROCESS-LIFECYCLE.md**](docs/PROCESS-LIFECYCLE.md)       | PIDs, signals, and graceful shutdown deep-dive        |
-| [**ROADMAP.md**](docs/ROADMAP.md)                           | Production readiness checklist with prioritized tasks |
-| [**TROUBLESHOOTING.md**](docs/TROUBLESHOOTING.md)           | Common issues and solutions                           |
-| [**AGENT.md**](AGENT.md)                                    | Coding guidelines and conventions                     |
+| Document                                                                | Description                                           |
+| :---------------------------------------------------------------------- | :---------------------------------------------------- |
+| [**FEATURES.md**](docs/FEATURES.md)                                     | Detailed feature documentation with code locations    |
+| [**docs/README.md**](docs/README.md)                                    | Unified technical documentation index                 |
+| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                | C4 system context, domain flows, sequence diagrams    |
+| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)              | Canonical DDD & Hexagonal Architecture rules          |
+| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md) | ACL Gateway, SAGA, Domain Events, Outbox              |
+| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                    | RSA JWT implementation and JWKS endpoint details      |
+| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)        | Configuration taxonomy and key rotation               |
+| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)    | PIDs, signals, and graceful shutdown deep-dive        |
+| [**ROADMAP.md**](docs/ROADMAP.md)                                       | Production readiness checklist with prioritized tasks |
+| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)        | Common issues and solutions                           |
+| [**AGENT.md**](AGENT.md)                                                | Coding guidelines and conventions                     |
 
 ---
 
@@ -241,7 +242,7 @@ src/
 └── main.ts                  # Application bootstrap
 ```
 
-> For strict DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](docs/DDD-HEXAGONAL.md).
+> For strict DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md).
 
 ---
 

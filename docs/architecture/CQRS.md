@@ -59,9 +59,9 @@ The Command side is responsible for enforcing invariants, validating business ru
 
 **Example workflow:**
 
-`ActivitiesController (POST)` → `CreateActivityUseCase` → Validates cross-context references via ACL Gateways → Instantiates `Activity` via `fromPrimitives()` → `ActivityRepository.save()`.
+`OrdersController (POST)` → `CreateOrderUseCase` → Validates cross-context references via ACL Gateways → Instantiates `Order` via `fromPrimitives()` → `OrderRepository.save()`.
 
-`ActivitiesController (PATCH /start)` → `StartActivityUseCase` → Loads `Activity` from repository → Invokes `Activity.start()` (domain behaviour method) → `ActivityRepository.update()`.
+`OrdersController (PATCH /confirm)` → `ConfirmOrderUseCase` → Loads `Order` from repository → Invokes an order domain transition method (domain behaviour) → `OrderRepository.update()`.
 
 ### 2.2 The Query Stack (Reads)
 
@@ -69,12 +69,12 @@ The Query side exists to fulfill UI projection requirements as simply and perfor
 
 **Academic model (Young, 2010; Vernon, 2013):**
 
-| Layer             | Responsibility                                                                                                                                        | Ideal Implementation                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Controller**    | Accepts HTTP GET requests.                                                                                                                            | Dedicated query controller or shared controller with query-only endpoints                |
-| **Query Handler** | Directly interacts with the database or read-optimised views. Bypasses the Domain layer **entirely** — no entity instantiation, no behavioural logic. | Thin use case that delegates to a read-specific repository or raw query                  |
-| **Read Model**    | Flat DTO or interface shaped strictly for what the client needs. No behavioural logic, no encapsulated private fields.                                | Purpose-built DTOs per screen/projection (e.g., `ActivityListItemDTO`, `UserSummaryDTO`) |
-| **Execution**     | Can utilise raw SQL, `QueryBuilder` projections, database VIEWs, or Redis cache lookups to return data without instantiating rich Domain Entities.    | Read-optimised repository methods returning plain objects                                |
+| Layer             | Responsibility                                                                                                                                        | Ideal Implementation                                                                  |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Controller**    | Accepts HTTP GET requests.                                                                                                                            | Dedicated query controller or shared controller with query-only endpoints             |
+| **Query Handler** | Directly interacts with the database or read-optimised views. Bypasses the Domain layer **entirely** — no entity instantiation, no behavioural logic. | Thin use case that delegates to a read-specific repository or raw query               |
+| **Read Model**    | Flat DTO or interface shaped strictly for what the client needs. No behavioural logic, no encapsulated private fields.                                | Purpose-built DTOs per screen/projection (e.g., `OrderListItemDTO`, `UserSummaryDTO`) |
+| **Execution**     | Can utilise raw SQL, `QueryBuilder` projections, database VIEWs, or Redis cache lookups to return data without instantiating rich Domain Entities.    | Read-optimised repository methods returning plain objects                             |
 
 > **Why bypass the Domain layer?** (Young, 2010)
 >
@@ -82,13 +82,13 @@ The Query side exists to fulfill UI projection requirements as simply and perfor
 
 **Current implementation status:**
 
-Query use cases currently go through the same `ActivityRepository` and hydrate full domain entities, then call `.toPrimitives()` to produce a serializable response:
+Query use cases currently go through the same `OrderRepository` and hydrate full domain entities, then call `.toPrimitives()` to produce a serializable response:
 
 ```
-Controller (GET) → FindAllActivitiesUseCase → ActivityRepository.findAll()
-  → Returns PaginatedResult<Activity>  (full domain entities)
-  → Use case maps: activity.toPrimitives()
-  → Returns ActivityProps[]  (entity's own primitive interface)
+Controller (GET) → FindAllOrdersUseCase → OrderRepository.findAll()
+  → Returns PaginatedResult<Order>  (full domain entities)
+  → Use case maps: order.toPrimitives()
+  → Returns OrderProps[]  (entity's own primitive interface)
 ```
 
 This is a **pragmatic Phase 1 approach** that prioritises delivery speed. The architecture is designed to evolve toward dedicated read models without changing application-layer contracts (see §6).
@@ -97,7 +97,7 @@ This is a **pragmatic Phase 1 approach** that prioritises delivery speed. The ar
 
 **Academic recommendation:** Strict CQRS advocates (Young, 2010) recommend **separate controllers** for reads and writes, reinforcing the segregation at the adapter level. This makes the split explicit and enables separate scaling, middleware, and caching strategies per side.
 
-**Current state:** This project uses a **single controller per resource** (e.g., `ActivitiesController`) that handles both GET (queries) and POST/PATCH/DELETE (commands). This is acceptable for Single-Database CQRS in a monolith — the logical segregation happens at the use case level, not the controller level.
+**Current state:** This project uses a **single controller per resource** (e.g., `OrdersController`) that handles both GET (queries) and POST/PATCH/DELETE (commands). This is acceptable for Single-Database CQRS in a monolith — the logical segregation happens at the use case level, not the controller level.
 
 ### 2.4 The `Result<T, E>` Pattern Across Both Stacks
 
@@ -143,13 +143,13 @@ CQRS interacts with other architectural patterns in this project:
 
 ### 5.1 ACL Gateways (Command Stack Only)
 
-Cross-context validation happens exclusively on the **command side**. When `CreateActivityUseCase` needs to validate that a partner or user exists, it calls the appropriate ACL Gateway port. Query use cases do **not** perform cross-context lookups — they return whatever data is in their own context's persistence.
+Cross-context validation happens exclusively on the **command side**. When `CreateOrderUseCase` needs to validate that a customer, cart, and inventory references are valid, it calls the appropriate ACL Gateway port. Query use cases do **not** perform cross-context lookups — they return whatever data is in their own context's persistence.
 
 This asymmetry is intentional: command use cases enforce invariants; query use cases merely project stored state. See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) §2 for full ACL Gateway documentation.
 
 ### 5.2 Domain Events (Command Stack Only)
 
-Domain events (e.g., `partner.deactivated`, `user.deactivated`) are emitted **exclusively from command use cases** after successful persistence. They represent facts about state changes — a purely command-side concern. Subscribing contexts react via their own command use cases.
+Domain events (e.g., `customer.deactivated`, `user.deactivated`) are emitted **exclusively from command use cases** after successful persistence. They represent facts about state changes — a purely command-side concern. Subscribing contexts react via their own command use cases.
 
 > _"Domain Events are raised by the write side and consumed to update the read side."_
 > — Vernon, _Implementing Domain-Driven Design_ (2013), Ch. 8
@@ -182,10 +182,10 @@ Add query-specific methods on the existing repository that return flat projectio
 ### Phase 3: Dedicated Read Repositories
 
 ```
-Query UseCase → ActivityReadRepository (port) → QueryBuilder/Raw SQL → DTO[] → Response
+Query UseCase → OrderReadRepository (port) → QueryBuilder/Raw SQL → DTO[] → Response
 ```
 
-Introduce a separate read-only repository port in the application layer. The adapter can use optimised SQL, database views, or Redis cache. The write-side `ActivityRepository` remains untouched.
+Introduce a separate read-only repository port in the application layer. The adapter can use optimised SQL, database views, or Redis cache. The write-side `OrderRepository` remains untouched.
 
 ### Phase 4: Separate Read Database (Microservices)
 

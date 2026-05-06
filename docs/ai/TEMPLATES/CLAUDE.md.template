@@ -1,0 +1,23 @@
+# `CLAUDE.md` Adapter Template
+
+## Scope
+
+Define scope for Claude-driven tasks in this repository.
+
+## Constraints
+
+- `AGENT.md` is canonical.
+- Follow architecture/security/testing canonical docs.
+- Do not introduce policy drift.
+
+## Workflow
+
+Follow `EWC v1` task states.
+
+## Quality Gates
+
+Require command-backed verification and explicit residual risks.
+
+## Escalation
+
+Pause and ask for clarification when requirements are high-risk and ambiguous.
