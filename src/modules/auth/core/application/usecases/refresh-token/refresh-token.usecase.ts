@@ -6,6 +6,7 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from '../../../domain/repositories/user.repository';
+import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 
@@ -22,6 +23,7 @@ export class RefreshTokenUseCase extends UseCase<
     private readonly jwtSignerService: JwtSignerService,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly userRepository: UserRepository,
+    private readonly roleRepository: RoleRepository,
   ) {
     super();
   }
@@ -90,11 +92,28 @@ export class RefreshTokenUseCase extends UseCase<
       }
       const user = userResult.value;
 
-      // 6. Generate new tokens
+      // 6. Resolve role code for JWT payload (PermissionsGuard requires the string code)
+      if (!user.roleId) {
+        return ErrorFactory.UseCaseError(
+          'User has no assigned role',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const roleResult = await this.roleRepository.findById(user.roleId);
+      if (roleResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'Failed to resolve user role',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      // 7. Generate new tokens
       const newAccessToken = await this.jwtSignerService.signAccessToken({
         sub: user.id,
         email: user.email,
-        role: user.roleCode,
+        role: roleResult.value.code,
         customerId: user.customerId,
       });
 

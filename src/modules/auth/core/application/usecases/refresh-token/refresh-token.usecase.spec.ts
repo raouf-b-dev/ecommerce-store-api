@@ -3,8 +3,10 @@ import { MockJwtVerifierService } from '../../../../../../testing/mocks/jwt-veri
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
+import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { User } from '../../../domain/entities/user';
+import { Role } from '../../../domain/entities/role';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -16,18 +18,21 @@ describe('RefreshTokenUseCase', () => {
   let jwtSignerService: MockJwtSignerService;
   let sessionTokenRepository: MockSessionTokenRepository;
   let userRepository: MockUserRepository;
+  let roleRepository: MockRoleRepository;
 
   beforeEach(() => {
     jwtVerifierService = new MockJwtVerifierService();
     jwtSignerService = new MockJwtSignerService();
     sessionTokenRepository = new MockSessionTokenRepository();
     userRepository = new MockUserRepository();
+    roleRepository = new MockRoleRepository();
 
     usecase = new RefreshTokenUseCase(
       jwtVerifierService as any,
       jwtSignerService as any,
       sessionTokenRepository,
       userRepository,
+      roleRepository,
     );
   });
 
@@ -58,6 +63,19 @@ describe('RefreshTokenUseCase', () => {
 
     const mockUser = User.fromPrimitives(UserTestFactory.createMockUser());
     userRepository.findById.mockResolvedValue(Result.success(mockUser));
+
+    // Resolve role code from roleId
+    roleRepository.findById.mockResolvedValue(
+      Result.success(
+        new Role({
+          id: 2,
+          code: 'CUSTOMER',
+          name: 'Customer',
+          isSystem: true,
+          permissions: [],
+        }),
+      ),
+    );
 
     const newAccessToken = 'new-access-token';
     const newRefreshToken = 'new-refresh-token';
