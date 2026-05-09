@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Result } from 'src/shared-kernel/domain/result';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
-import { Notification } from '../../domain/entities/notification';
+import { INotification } from '../../domain/interfaces/notification.interface';
 import { NotificationRepository } from '../../domain/repositories/notification.repository';
 import { NotificationStatus } from '../../domain/enums/notification-status.enum';
 
@@ -14,7 +13,7 @@ export interface GetUserNotificationsRequest {
 }
 
 export interface GetUserNotificationsResponse {
-  data: Notification[];
+  data: INotification[];
   total: number;
   unread: number;
 }
@@ -40,6 +39,9 @@ export class GetUserNotificationsUseCase {
 
     if (result.isFailure) return result;
 
-    return Result.success(result.value);
+    return Result.success({
+      ...result.value,
+      data: result.value.data.map((n) => n.toPrimitives()),
+    });
   }
 }

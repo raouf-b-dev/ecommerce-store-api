@@ -1,6 +1,7 @@
 import { INotification } from '../interfaces/notification.interface';
 import { NotificationStatus } from '../enums/notification-status.enum';
 import { randomUUID } from 'crypto';
+import { NotificationPayload } from '../types/notification-payload.type';
 
 export interface NotificationProps {
   id: string;
@@ -9,7 +10,7 @@ export interface NotificationProps {
   type: string;
   title: string;
   message: string;
-  payload?: any;
+  payload?: NotificationPayload;
   status: NotificationStatus;
   failedReason?: string | null;
   deliveredAt?: Date | null;
@@ -24,7 +25,7 @@ export class Notification implements INotification {
   private readonly _type: string;
   private readonly _title: string;
   private readonly _message: string;
-  private readonly _payload?: any;
+  private readonly _payload?: NotificationPayload;
   private _status: NotificationStatus;
   private _failedReason: string | null;
   private _deliveredAt: Date | null;
@@ -70,7 +71,7 @@ export class Notification implements INotification {
     return this._message;
   }
 
-  get payload(): any {
+  get payload(): NotificationPayload | undefined {
     return this._payload;
   }
 

@@ -8,7 +8,7 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 
 export interface CreatePaymentIntentDto {
@@ -33,7 +33,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayFactory: PaymentGatewayFactory,
+    private readonly paymentGatewayResolver: PaymentGatewayResolver,
   ) {
     super();
   }
@@ -42,7 +42,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
     dto: CreatePaymentIntentDto,
   ): Promise<Result<CreatePaymentIntentResult, UseCaseError>> {
     // 1. Get Gateway
-    const gateway = this.paymentGatewayFactory.getGateway(dto.paymentMethod);
+    const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
 
     // 2. Create Payment Intent via Gateway
     const intentResult = await gateway.createPaymentIntent(

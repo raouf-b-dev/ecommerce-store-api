@@ -6,7 +6,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { PayPalSignatureService } from '../../../../secondary-adapters/services/paypal-signature.service';
+import { PayPalSignatureVerifier } from '../../ports/paypal-signature-verifier';
 import {
   HandlePaymentWebhookService,
   PaymentWebhookResult,
@@ -29,7 +29,7 @@ export interface PayPalWebhookPayload {
 }
 
 export interface PayPalWebhookDto {
-  headers: any;
+  headers: Record<string, string>;
   payload: PayPalWebhookPayload;
 }
 
@@ -42,7 +42,7 @@ export class HandlePayPalWebhookUseCase extends UseCase<
   private readonly logger = new Logger(HandlePayPalWebhookUseCase.name);
 
   constructor(
-    private readonly payPalSignatureService: PayPalSignatureService,
+    private readonly payPalSignatureVerifier: PayPalSignatureVerifier,
     private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookService,
   ) {
     super();
@@ -52,7 +52,7 @@ export class HandlePayPalWebhookUseCase extends UseCase<
     dto: PayPalWebhookDto,
   ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
     // 1. Validate signature
-    const isValid = this.payPalSignatureService.verify(
+    const isValid = this.payPalSignatureVerifier.verify(
       dto.headers,
       dto.payload,
     );

@@ -10,8 +10,8 @@ export class UserMapper {
       id: entity.id,
       email: entity.email,
       passwordHash: entity.passwordHash,
+      mustChangePassword: entity.mustChangePassword,
       roleId: entity.roleId,
-      roleCode: entity.roleEntity ? entity.roleEntity.code : null,
       isActive: entity.isActive,
       customerId: entity.customerId,
       createdAt: entity.createdAt,
@@ -27,6 +27,7 @@ export class UserMapper {
       id: primitives.id ?? 0,
       email: primitives.email,
       passwordHash: primitives.passwordHash,
+      mustChangePassword: primitives.mustChangePassword,
       roleId: primitives.roleId || null,
       isActive: primitives.isActive,
       customerId: primitives.customerId,
@@ -41,8 +42,8 @@ export interface UserForCache {
   id: number;
   email: string;
   passwordHash: string;
+  mustChangePassword: boolean;
   roleId: number | null;
-  roleCode: string | null;
   isActive: boolean;
   customerId: number | null;
   createdAt: string;
@@ -56,8 +57,8 @@ export class UserCacheMapper {
       id: primitives.id!,
       email: primitives.email,
       passwordHash: primitives.passwordHash,
+      mustChangePassword: primitives.mustChangePassword,
       roleId: primitives.roleId || null,
-      roleCode: primitives.roleCode,
       isActive: primitives.isActive,
       customerId: primitives.customerId,
       createdAt: primitives.createdAt.toISOString(),
@@ -70,8 +71,8 @@ export class UserCacheMapper {
       id: cache.id,
       email: cache.email,
       passwordHash: cache.passwordHash,
+      mustChangePassword: cache.mustChangePassword,
       roleId: cache.roleId,
-      roleCode: cache.roleCode,
       isActive: cache.isActive,
       customerId: cache.customerId,
       createdAt: new Date(cache.createdAt),

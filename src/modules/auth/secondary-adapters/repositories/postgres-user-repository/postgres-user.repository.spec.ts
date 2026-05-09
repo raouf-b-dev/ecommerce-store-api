@@ -46,7 +46,7 @@ describe('PostgresUserRepository', () => {
         id: 1,
       });
 
-      const newUser = User.create(null, 'test@example.com', 'hash', 1, 'ADMIN');
+      const newUser = User.create(null, 'test@example.com', 'hash', false, 1);
       const result = await repository.save(newUser);
 
       ResultAssertionHelper.assertResultSuccess(result);

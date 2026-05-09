@@ -20,6 +20,9 @@ export class UserEntity {
   @Column()
   passwordHash: string;
 
+  @Column({ name: 'must_change_password', type: 'boolean', default: false })
+  mustChangePassword: boolean;
+
   @Column({ name: 'role_id', nullable: true }) // nullable temporarily to avoid migration failures on existing dev db
   roleId: number | null;
 

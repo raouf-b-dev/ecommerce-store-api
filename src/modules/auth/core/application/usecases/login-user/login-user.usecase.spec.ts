@@ -1,6 +1,7 @@
 import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
+import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
 import { LoginUserUseCase } from './login-user.usecase';
@@ -9,10 +10,12 @@ import { User } from '../../../domain/entities/user';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { Role } from '../../../domain/entities/role';
 
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
   let userRepository: MockUserRepository;
+  let roleRepository: MockRoleRepository;
   let sessionTokenRepository: MockSessionTokenRepository;
   let passwordHasher: MockPasswordHasher;
   let jwtSignerService: MockJwtSignerService;
@@ -21,18 +24,33 @@ describe('LoginUserUseCase', () => {
 
   beforeEach(() => {
     userRepository = new MockUserRepository();
+    roleRepository = new MockRoleRepository();
     sessionTokenRepository = new MockSessionTokenRepository();
     passwordHasher = new MockPasswordHasher();
     jwtSignerService = new MockJwtSignerService();
 
     usecase = new LoginUserUseCase(
       userRepository,
+      roleRepository,
       sessionTokenRepository,
       passwordHasher,
       jwtSignerService as unknown as JwtSignerService,
     );
     mockDomainUser = User.fromPrimitives(
       UserTestFactory.createMockCustomerUser(),
+    );
+
+    // Default: resolve role from roleId returns a valid role
+    roleRepository.findById.mockResolvedValue(
+      Result.success(
+        new Role({
+          id: 2,
+          code: 'CUSTOMER',
+          name: 'Customer',
+          isSystem: true,
+          permissions: [],
+        }),
+      ),
     );
   });
 

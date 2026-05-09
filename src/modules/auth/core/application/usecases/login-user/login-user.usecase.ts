@@ -5,6 +5,7 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from '../../../domain/repositories/user.repository';
+import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
@@ -20,6 +21,7 @@ export class LoginUserUseCase extends UseCase<
 
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly roleRepository: RoleRepository,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerService,
@@ -53,14 +55,22 @@ export class LoginUserUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Invalid credentials');
     }
 
-    // 3. Generate Access Token
-    const payload = {
+    // 3. Resolve role code for JWT payload (PermissionsGuard requires the string code)
+    if (!user.roleId) {
+      return ErrorFactory.UseCaseError('User has no assigned role');
+    }
+    const roleResult = await this.roleRepository.findById(user.roleId);
+    if (roleResult.isFailure) {
+      return ErrorFactory.UseCaseError('Failed to resolve user role');
+    }
+
+    // 4. Generate Access Token
+    const accessToken = await this.jwtSignerService.signAccessToken({
       sub: user.id,
       email: user.email,
-      role: user.roleCode,
+      role: roleResult.value.code,
       customerId: user.customerId,
-    };
-    const accessToken = await this.jwtSignerService.signAccessToken(payload);
+    });
 
     // 4. Generate Refresh Token (JwtSignerService handles sessionId generation and expiry extraction)
     const {
