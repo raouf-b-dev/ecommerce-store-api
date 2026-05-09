@@ -4,7 +4,7 @@ This document defines the conceptual foundation for observability in software sy
 
 Observability is the extent to which the internal state of a system can be inferred from externally available evidence. In control theory, observability is a formal property of dynamic systems; in software operations, the term is used more pragmatically to describe whether engineers can ask new questions about production behavior without first shipping new instrumentation.
 
-> Companion docs: [Metrics](metrics/METRICS.md), [Logs](logs/LOGS.md), [Traces](traces/TRACES.md)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -16,9 +16,9 @@ Monitoring asks whether known failure modes are occurring. It is effective when 
 
 Observability asks whether the system emits enough evidence to investigate unknown or novel failure modes. It is effective when incidents do not match a pre-existing dashboard or alert. A highly observable system supports exploratory diagnosis: engineers can form hypotheses, query evidence, and narrow the search space without redeploying code.
 
-| Concept | Primary Question | Typical Mechanism | Failure Mode |
-| :-- | :-- | :-- | :-- |
-| Monitoring | Is a known condition happening? | Dashboards, alerts, health checks | Silent failure when the condition was not anticipated |
+| Concept       | Primary Question                     | Typical Mechanism                       | Failure Mode                                                |
+| :------------ | :----------------------------------- | :-------------------------------------- | :---------------------------------------------------------- |
+| Monitoring    | Is a known condition happening?      | Dashboards, alerts, health checks       | Silent failure when the condition was not anticipated       |
 | Observability | Why is the system behaving this way? | Metrics, logs, traces, events, profiles | Ambiguous evidence, missing context, high-cardinality noise |
 
 A mature operational practice uses both. Monitoring provides detection; observability provides explanation.
@@ -29,11 +29,11 @@ A mature operational practice uses both. Monitoring provides detection; observab
 
 The three-pillar model is a useful teaching model, not a law of nature. Metrics, logs, and traces are complementary data structures optimized for different questions.
 
-| Pillar | Definition | Best At | Weakness |
-| :-- | :-- | :-- | :-- |
-| Metrics | Numeric time series sampled or aggregated over time | Detecting trends, alerting, capacity analysis, service-level objectives | Low explanatory detail; labels must be controlled carefully |
-| Logs | Timestamped event records with contextual fields | Explaining discrete events, preserving local detail, supporting audit and forensic analysis | Expensive at high volume; weak at aggregate trend detection unless processed |
-| Traces | Causally linked spans that describe one execution path | Understanding latency, fan-out, dependency behavior, and cross-boundary causality | Often sampled; requires propagation discipline |
+| Pillar  | Definition                                             | Best At                                                                                     | Weakness                                                                     |
+| :------ | :----------------------------------------------------- | :------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------- |
+| Metrics | Numeric time series sampled or aggregated over time    | Detecting trends, alerting, capacity analysis, service-level objectives                     | Low explanatory detail; labels must be controlled carefully                  |
+| Logs    | Timestamped event records with contextual fields       | Explaining discrete events, preserving local detail, supporting audit and forensic analysis | Expensive at high volume; weak at aggregate trend detection unless processed |
+| Traces  | Causally linked spans that describe one execution path | Understanding latency, fan-out, dependency behavior, and cross-boundary causality           | Often sampled; requires propagation discipline                               |
 
 The pillars should not compete. Metrics indicate that an abnormal condition exists. Traces show where time and causality moved. Logs explain what specific decisions or errors occurred at important points in the execution.
 
@@ -78,14 +78,14 @@ Telemetry has operational cost. It consumes CPU, memory, network bandwidth, stor
 
 Cardinality is the number of distinct values a field can take. High-cardinality fields are often valuable in logs and traces, where they support investigation of a specific execution. The same fields can be dangerous in metrics, where each label combination creates a new time series.
 
-| Field Type | Metrics | Logs | Traces |
-| :-- | :-- | :-- | :-- |
-| HTTP method | Safe label | Useful field | Useful span attribute |
-| Route template | Safe label if normalized | Useful field | Useful span attribute |
-| Status class | Safe label | Useful field | Useful span attribute |
-| User identifier | Usually unsafe label | Sensitive; log only when justified and protected | Sensitive; usually avoid or hash |
-| Request identifier | Unsafe label | Useful correlation field | Trace identifier already covers this |
-| Raw URL/query | Unsafe label | Risky; may contain secrets | Risky; prefer sanitized attributes |
+| Field Type         | Metrics                  | Logs                                             | Traces                               |
+| :----------------- | :----------------------- | :----------------------------------------------- | :----------------------------------- |
+| HTTP method        | Safe label               | Useful field                                     | Useful span attribute                |
+| Route template     | Safe label if normalized | Useful field                                     | Useful span attribute                |
+| Status class       | Safe label               | Useful field                                     | Useful span attribute                |
+| User identifier    | Usually unsafe label     | Sensitive; log only when justified and protected | Sensitive; usually avoid or hash     |
+| Request identifier | Unsafe label             | Useful correlation field                         | Trace identifier already covers this |
+| Raw URL/query      | Unsafe label             | Risky; may contain secrets                       | Risky; prefer sanitized attributes   |
 
 An academic way to state the principle: telemetry should maximize information gain per unit cost.
 
@@ -124,7 +124,20 @@ A telemetry review should check:
 
 ---
 
-## 8. References
+## 9. Anti-Patterns
+
+| Anti-Pattern                           | Problem                                                                                                                                                                          | Correct Approach                                                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Logging everything**                 | Excessive telemetry creates noise, increases storage costs, and makes incidents harder to diagnose because relevant signals are buried.                                          | Instrument at meaningful boundaries. Prefer quality of signal over quantity.                                           |
+| **Metrics with unbounded labels**      | Using user IDs, request IDs, or raw URLs as metric labels creates infinite time series, crashing the metrics backend.                                                            | Keep metric labels bounded and normalized. Use logs and traces for high-cardinality data.                              |
+| **Ignoring correlation**               | Logs, metrics, and traces from the same operation cannot be joined. Incident investigation requires manual guesswork across tools.                                               | Propagate `correlationId` / `traceId` consistently across all telemetry types.                                         |
+| **Alerting on every error log**        | Error logs include expected failures (invalid input, auth denial). Alerting on all of them creates alert fatigue and masks real incidents.                                       | Alert on SLO-derived metrics (error rate, latency percentile). Use logs for investigation, not detection.              |
+| **Treating observability as optional** | Instrumentation is deferred until "after launch." Post-launch, incidents arrive without diagnostic evidence and the team is forced into reactive instrumentation under pressure. | Instrument at the same time as the feature. Observability is a first-class requirement, not a follow-up.               |
+| **Separate, disconnected tools**       | Metrics, logs, and traces stored in different systems with no cross-linking. Pivoting between signals requires manual context transfer.                                          | Use consistent identifiers across all pillars. Choose tooling that supports cross-signal navigation (e.g., exemplars). |
+
+---
+
+## 10. References
 
 1. Kalman, R. E. (1960). "On the General Theory of Control Systems." Proceedings of the First International Congress on Automatic Control.
 2. Sridharan, C. (2018). Distributed Systems Observability. O'Reilly Media.

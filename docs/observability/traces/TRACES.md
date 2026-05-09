@@ -4,7 +4,7 @@ This document defines tracing and correlation as observability practices. It is 
 
 A trace is a representation of one logical execution path through a system. A span is a timed operation within that path. Correlation identifiers group related telemetry records; traces add causal structure, parent-child relationships, and latency information.
 
-> Companion docs: [Observability Foundation](../OBSERVABILITY-FOUNDATION.md), [Metrics](../metrics/METRICS.md), [Logs](../logs/LOGS.md)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -12,12 +12,12 @@ A trace is a representation of one logical execution path through a system. A sp
 
 Correlation and tracing are often discussed together, but they solve different problems.
 
-| Concept | Description | Primary Use |
-| :-- | :-- | :-- |
-| Correlation ID | A shared identifier attached to related telemetry records | Find logs, events, or messages belonging to the same logical operation |
-| Trace ID | The identifier for a distributed trace | Group all spans in one execution path |
-| Span ID | The identifier for a single operation inside a trace | Describe local timing, attributes, and parent-child relationships |
-| Parent Span ID | The link from a child operation to the operation that caused it | Reconstruct causal structure |
+| Concept        | Description                                                     | Primary Use                                                            |
+| :------------- | :-------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| Correlation ID | A shared identifier attached to related telemetry records       | Find logs, events, or messages belonging to the same logical operation |
+| Trace ID       | The identifier for a distributed trace                          | Group all spans in one execution path                                  |
+| Span ID        | The identifier for a single operation inside a trace            | Describe local timing, attributes, and parent-child relationships      |
+| Parent Span ID | The link from a child operation to the operation that caused it | Reconstruct causal structure                                           |
 
 Correlation IDs are simple and useful even without a tracing backend. Distributed traces are richer: they describe where execution went, how long each operation took, and which operation caused the next one.
 
@@ -94,12 +94,12 @@ Tracing every operation can be too expensive at high throughput. Sampling contro
 
 Common strategies:
 
-| Strategy | Description | Trade-off |
-| :-- | :-- | :-- |
-| Head sampling | Decide at the beginning of the trace | Cheap, but may drop traces that later fail |
-| Tail sampling | Decide after seeing the whole trace | Better evidence for failures, but requires buffering and collector support |
-| Probabilistic sampling | Retain a fixed percentage | Simple, but rare events may be missed |
-| Rule-based sampling | Retain traces matching criteria | Useful for failures, slow requests, or important routes |
+| Strategy               | Description                          | Trade-off                                                                  |
+| :--------------------- | :----------------------------------- | :------------------------------------------------------------------------- |
+| Head sampling          | Decide at the beginning of the trace | Cheap, but may drop traces that later fail                                 |
+| Tail sampling          | Decide after seeing the whole trace  | Better evidence for failures, but requires buffering and collector support |
+| Probabilistic sampling | Retain a fixed percentage            | Simple, but rare events may be missed                                      |
+| Rule-based sampling    | Retain traces matching criteria      | Useful for failures, slow requests, or important routes                    |
 
 Sampling should preserve exceptional evidence. Slow operations, failed operations, and traces with unusual dependency behavior are usually more valuable than ordinary successful traces.
 

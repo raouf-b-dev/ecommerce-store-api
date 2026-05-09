@@ -1,8 +1,8 @@
 # Command Query Responsibility Segregation (CQRS)
 
-This document is the **canonical CQRS reference** for E-commerce API. It defines the strict academic foundations of the pattern and maps them to this project's implementation. All contributors must read and follow this document.
+A comprehensive reference covering the academic foundations of CQRS, its relationship to CQS, implementation topologies, evolution paths, and integration with DDD patterns. This document separates universal theory from implementation guidance.
 
-> **Companion docs**: [`DDD-HEXAGONAL.md`](DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](ARCHITECTURE.md) (system context & domain flows), [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) (cross-context communication)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -42,7 +42,7 @@ Martin Fowler further reinforces that CQRS should be applied selectively:
 
 ## 2. CQRS Topology: Single-Database
 
-In this project, we implement a **Single-Database CQRS** topology. We maintain the logical separation of models and handlers while sharing the same underlying physical persistence (PostgreSQL).
+The most common and pragmatic CQRS topology shares a **single physical database** for both command and query models. The segregation is logical — separate handlers, models, and sometimes repositories — while the underlying persistence (e.g., PostgreSQL) is shared.
 
 ### 2.1 The Command Stack (Writes)
 
@@ -50,18 +50,18 @@ The Command side is responsible for enforcing invariants, validating business ru
 
 **Academic model:**
 
-| Layer                | Responsibility                                                                                                                     | This Project                                                                      |
+| Layer                | Responsibility                                                                                                                     | Typical Implementation                                                            |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | **Controller**       | Accepts HTTP POST/PATCH/DELETE requests. Thin adapter — no logic.                                                                  | `[module].controller.ts` — mutation endpoints                                     |
 | **Command Use Case** | Orchestrates the transaction. Validates input, coordinates domain objects and ports.                                               | `core/application/use-cases/`                                                     |
 | **Domain Entity**    | Fully encapsulated class with private fields, getters, and behavioural methods. Never exposes direct setters. Enforces invariants. | `core/domain/entities/`                                                           |
 | **Repository**       | Standard DDD repository that deals exclusively with Domain Entities.                                                               | `core/domain/repositories/` (port) → `secondary-adapters/repositories/` (adapter) |
 
-**Example workflow:**
+**Example workflow (e-commerce):**
 
-`OrdersController (POST)` → `CreateOrderUseCase` → Validates cross-context references via ACL Gateways → Instantiates `Order` via `fromPrimitives()` → `OrderRepository.save()`.
+`Controller (POST /orders)` → `CreateOrderUseCase` → Validates cross-context references via ACL Gateways → Instantiates `Order` via factory method → `OrderRepository.save()`.
 
-`OrdersController (PATCH /confirm)` → `ConfirmOrderUseCase` → Loads `Order` from repository → Invokes an order domain transition method (domain behaviour) → `OrderRepository.update()`.
+`Controller (PATCH /orders/:id/confirm)` → `ConfirmOrderUseCase` → Loads `Order` from repository → Invokes a domain transition method → `OrderRepository.update()`.
 
 ### 2.2 The Query Stack (Reads)
 
@@ -80,9 +80,9 @@ The Query side exists to fulfill UI projection requirements as simply and perfor
 >
 > Domain Entities are designed for **write invariant enforcement**, not read performance. Hydrating a full Aggregate with all its encapsulated fields, value objects, and validation logic just to serialize it back to JSON is architecturally wasteful. In a strict CQRS model, the query path should return flat projections directly from persistence, avoiding the "N+1 hydration tax" of constructing rich domain objects for display.
 
-**Current implementation status:**
+**Phase 1 implementation (pragmatic starting point):**
 
-Query use cases currently go through the same `OrderRepository` and hydrate full domain entities, then call `.toPrimitives()` to produce a serializable response:
+In early-stage projects, query use cases often go through the same repository and hydrate full domain entities, then call a serialisation method to produce a response:
 
 ```
 Controller (GET) → FindAllOrdersUseCase → OrderRepository.findAll()
@@ -91,19 +91,19 @@ Controller (GET) → FindAllOrdersUseCase → OrderRepository.findAll()
   → Returns OrderProps[]  (entity's own primitive interface)
 ```
 
-This is a **pragmatic Phase 1 approach** that prioritises delivery speed. The architecture is designed to evolve toward dedicated read models without changing application-layer contracts (see §6).
+This prioritises delivery speed over read-path optimisation. The architecture is designed to evolve toward dedicated read models without changing application-layer contracts (see §6).
 
 ### 2.3 Controller Organisation
 
 **Academic recommendation:** Strict CQRS advocates (Young, 2010) recommend **separate controllers** for reads and writes, reinforcing the segregation at the adapter level. This makes the split explicit and enables separate scaling, middleware, and caching strategies per side.
 
-**Current state:** This project uses a **single controller per resource** (e.g., `OrdersController`) that handles both GET (queries) and POST/PATCH/DELETE (commands). This is acceptable for Single-Database CQRS in a monolith — the logical segregation happens at the use case level, not the controller level.
+**Pragmatic alternative:** Many monolithic systems use a **single controller per resource** (e.g., `OrdersController`) that handles both GET (queries) and POST/PATCH/DELETE (commands). This is acceptable for Single-Database CQRS — the logical segregation happens at the use case level, not the controller level.
 
 ### 2.4 The `Result<T, E>` Pattern Across Both Stacks
 
-Both command and query use cases in this project return `Result<T, E>` — a shared-kernel monadic type that encapsulates success or failure without throwing exceptions. This is **not a CQRS requirement**, but a project convention that provides type-safe error handling across both stacks.
+A common convention in DDD systems is for both command and query use cases to return `Result<T, E>` — a monadic type that encapsulates success or failure without throwing exceptions. This is **not a CQRS requirement**, but a complementary pattern that provides type-safe error handling across both stacks.
 
-All use cases implement the same generic interface:
+Example interface:
 
 ```typescript
 interface UseCase<Input, Output, Error> {
@@ -111,26 +111,26 @@ interface UseCase<Input, Output, Error> {
 }
 ```
 
-This means command and query use cases share a **structural contract** — the differentiation is in their semantics (mutation vs. projection), not their interface shape. This is an intentional simplification for a unified monolithic codebase.
+Command and query use cases share a **structural contract** — the differentiation is in their semantics (mutation vs. projection), not their interface shape.
 
 ---
 
-## 3. Why This Approach?
+## 3. Benefits of Single-Database CQRS
 
-By utilising Single-DB CQRS, this platform achieves:
+The Single-Database topology offers:
 
 1. **Architectural Purity**: Business logic is never polluted by presentation requirements. UI caching requirements never dictate domain invariants.
-2. **Strong Consistency**: Since both stacks share one PostgreSQL database, reads always see the latest committed writes. There is **no eventual consistency**, no read-replica lag, and no stale projection risk. This is a significant advantage over dual-database CQRS topologies.
-3. **Simplicity**: We avoid the massive operational complexity overhead of Event Sourcing and distributed eventual consistency, which is generally unwarranted for standard E-commerce workflows.
+2. **Strong Consistency**: Since both stacks share one database, reads always see the latest committed writes. There is **no eventual consistency**, no read-replica lag, and no stale projection risk — a significant advantage over dual-database CQRS topologies.
+3. **Simplicity**: Avoids the operational complexity of Event Sourcing and distributed eventual consistency, which is generally unwarranted for standard CRUD-heavy workflows.
 4. **Performance Path**: The architecture is structured so that read paths can be independently optimised (dedicated read repositories, database views, Redis caching) without changing the application-layer contracts.
 
 ---
 
 ## 4. Data Scoping on the Query Path
 
-A concern unique to the query stack is **row-level data scoping** — restricting which records a user can see based on their role and permissions. In the E-commerce API, this manifests as:
+A concern unique to the query stack is **row-level data scoping** — restricting which records a user can see based on their role and permissions. Common examples:
 
-- Non-privileged users see only their own records (e.g., `GetUsersListUseCase` checks `canViewAllUsers`)
+- Non-privileged users see only their own records (e.g., a customer sees only their own orders)
 - Privileged users (admin, manager) see all records
 
 > **Academic note:** In advanced CQRS implementations, data scoping is typically enforced at the **read model projection level** — each user's read model contains only the data they are authorised to see. In Single-DB CQRS, scoping is handled at the query use case level as a guard before repository access.
@@ -139,22 +139,20 @@ A concern unique to the query stack is **row-level data scoping** — restrictin
 
 ## 5. CQRS and Cross-Context Patterns
 
-CQRS interacts with other architectural patterns in this project:
+CQRS interacts with other architectural patterns in DDD-based systems:
 
 ### 5.1 ACL Gateways (Command Stack Only)
 
-Cross-context validation happens exclusively on the **command side**. When `CreateOrderUseCase` needs to validate that a customer, cart, and inventory references are valid, it calls the appropriate ACL Gateway port. Query use cases do **not** perform cross-context lookups — they return whatever data is in their own context's persistence.
+Cross-context validation happens exclusively on the **command side**. When a command use case needs to validate that referenced entities in other contexts are valid, it calls the appropriate ACL Gateway port. Query use cases do **not** perform cross-context lookups — they return whatever data is in their own context's persistence.
 
-This asymmetry is intentional: command use cases enforce invariants; query use cases merely project stored state. See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) §2 for full ACL Gateway documentation.
+This asymmetry is intentional: command use cases enforce invariants; query use cases merely project stored state.
 
 ### 5.2 Domain Events (Command Stack Only)
 
-Domain events (e.g., `customer.deactivated`, `user.deactivated`) are emitted **exclusively from command use cases** after successful persistence. They represent facts about state changes — a purely command-side concern. Subscribing contexts react via their own command use cases.
+Domain events (e.g., `order.confirmed`, `user.deactivated`) are emitted **exclusively from command use cases** after successful persistence. They represent facts about state changes — a purely command-side concern. Subscribing contexts react via their own command use cases.
 
 > _"Domain Events are raised by the write side and consumed to update the read side."_
 > — Vernon, _Implementing Domain-Driven Design_ (2013), Ch. 8
-
-See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) §3 for full Domain Events documentation.
 
 ---
 
@@ -200,7 +198,20 @@ Full CQRS with separate read and write stores, connected via domain events and p
 
 ---
 
-## 7. References & Academic Reading
+## 7. Anti-Patterns
+
+| Anti-Pattern                             | Problem                                                                                                                                                                         | Correct Approach                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Premature dual-database**              | Adopting separate read/write databases before measuring a read bottleneck. Introduces eventual consistency, operational complexity, and projection bugs with no proven benefit. | Start with Single-DB CQRS. Evolve to separate stores only when Phase 2/3 optimisations are insufficient for measured load. |
+| **Domain entities on the query path**    | Hydrating full Aggregates with invariant logic for read-only responses. Wastes CPU and memory; creates N+1 risks.                                                               | Return flat DTOs from repository projections or raw SQL. Domain entities belong on the command path.                       |
+| **Business logic in query handlers**     | Adding validation, state changes, or side effects to a query use case. Violates CQS at the architectural level.                                                                 | Queries must be side-effect-free. If a "query" needs to mutate state, it is a command.                                     |
+| **Shared DTOs for commands and queries** | Using the same DTO for `CreateOrderRequest` and `GetOrderResponse`. Couples the read and write contracts, preventing independent evolution.                                     | Define separate input DTOs (commands) and output DTOs (projections).                                                       |
+| **Event Sourcing by default**            | Assuming CQRS requires Event Sourcing. Adds massive complexity for event versioning, snapshotting, and replay \u2014 rarely justified outside audit-heavy domains.              | CQRS is independent of Event Sourcing. Most systems benefit from CQRS without it (Young, 2010).                            |
+| **God query repository**                 | A single repository class with dozens of query methods covering every possible projection.                                                                                      | Group query methods by use case or screen. Consider separate read repositories per projection concern.                     |
+
+---
+
+## 8. References & Academic Reading
 
 1. Meyer, B. (1988). _Object-Oriented Software Construction_. Prentice Hall. (Introduces the foundational Command-Query Separation principle).
 2. Young, G. (2010). _CQRS Documents_. (The seminal working documents defining CQRS boundaries independently of Event Sourcing).

@@ -313,6 +313,19 @@ For multi-tenant or multi-service deployments, always set and verify the `aud` c
 
 ---
 
+## 7. Anti-Patterns
+
+| Anti-Pattern                                         | Problem                                                                                                 | Correct Approach                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Storing JWTs in `localStorage`**                   | Accessible to any JavaScript on the page, making XSS token theft trivial (OWASP A07:2021).              | Store access tokens in memory; use HttpOnly cookies for refresh tokens.                                                      |
+| **Using `alg: none`**                                | The `none` algorithm disables signature verification entirely. Attackers forge arbitrary claims.        | Always validate the `alg` header against an allowlist; reject unsigned tokens.                                               |
+| **Symmetric secrets in multi-service architectures** | Every service that verifies tokens also possesses the signing secret and can forge tokens for any user. | Use asymmetric keys (RS256/ES256). Only the auth service holds the private key; others verify with the public key via JWKS.  |
+| **Never rotating keys**                              | A single compromised key remains valid forever, enabling persistent impersonation.                      | Implement JWKS key rotation with a `kid` transition period. Old key verifies existing tokens; new key signs new ones.        |
+| **Ignoring `exp` validation**                        | Tokens remain valid indefinitely after issuance. A leaked token grants permanent access.                | Always set and enforce `exp`. Use short-lived access tokens (5–15 min) and refresh token rotation.                           |
+| **Embedding sensitive data in claims**               | JWT payloads are Base64url-encoded, not encrypted. Anyone with the token can read all claims.           | Store only identifiers and roles in claims. Keep sensitive data server-side. Use JWE if payload confidentiality is required. |
+
+---
+
 ## References
 
 | RFC / Standard     | Title                                                 |

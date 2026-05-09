@@ -156,6 +156,24 @@ All DTOs use `class-validator` decorators for type-safe input validation. Pagina
 
 **Location**: `src/modules/*/primary-adapters/dtos/`
 
+### RBAC with Normalized Permissions
+
+Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
+
+**Location**: `src/modules/auth/`, `src/infrastructure/guards/`
+
+### Forced Credential Rotation (mustChangePassword)
+
+Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
+
+**Location**: `src/modules/auth/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+
+### Rate Limiting & Throttling
+
+Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/auth/login`.
+
+**Location**: `src/infrastructure/throttler/`
+
 ---
 
 <a id="infrastructure"></a>

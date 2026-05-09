@@ -1,8 +1,8 @@
 # DDD & Hexagonal Architecture — Strict Academic Reference
 
-This document is the **canonical architectural reference** for the E-commerce Store API. It defines the strict academic rules of Domain-Driven Design (DDD) and Hexagonal Architecture (Ports & Adapters) as applied to this codebase. All contributors must read and follow this document.
+A comprehensive reference covering the strict academic rules of Domain-Driven Design (DDD) and Hexagonal Architecture (Ports & Adapters). This document defines layer boundaries, dependency rules, naming conventions, and the relationship between tactical DDD patterns and hexagonal ports/adapters.
 
-> **Companion docs**: `ARCHITECTURE.md` (system context & domain flows), `CONTRIBUTING.md` (contribution guidelines)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -52,7 +52,7 @@ The Hexagonal Architecture organizes software as a **core application** surround
 
 ### 1.3 Ports & Adapters Definitions
 
-| Concept               | Academic Definition                                                                 | This Project's Convention                                                 |
+| Concept               | Academic Definition                                                                 | Typical Convention                                                        |
 | --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | **Port**              | An interface defined by the application core that the outside world must conform to | Abstract classes in `domain/repositories/` and `application/ports/`       |
 | **Primary Adapter**   | Code that **drives** the application (sends input)                                  | `primary-adapters/` folder — Controllers, DTOs, Job handlers, Guards      |
@@ -96,7 +96,7 @@ src/modules/[module]/
 
 ### 2.1 Strategic Design Patterns
 
-| Pattern                   | Definition                                                                                             | This Project                                                                                                         |
+| Pattern                   | Definition                                                                                             | Example Application                                                                                                  |
 | ------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context**       | A boundary within which a domain model is defined and applicable                                       | Each folder in `src/modules/` is a Bounded Context                                                                   |
 | **Shared Kernel**         | A subset of the domain model shared between multiple contexts. Must be pure domain — no infrastructure | `src/shared-kernel/domain/` — contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore` |
@@ -106,7 +106,7 @@ src/modules/[module]/
 
 ### 2.2 Tactical Design Patterns
 
-| Pattern                            | Definition                                          | Location in Codebase                                                                |
+| Pattern                            | Definition                                          | Typical Location                                                                    |
 | ---------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | **Entity**                         | Has identity, mutable state, lifecycle              | `core/domain/models/`                                                               |
 | **Value Object**                   | Defined by attributes, immutable, no identity       | `core/domain/value-objects/`                                                        |
@@ -141,7 +141,7 @@ src/modules/[module]/
 - ❌ Controllers, middleware, guards
 - ❌ NestJS module files
 
-### 2.4 Context Mapping Rules for This Project
+### 2.4 Context Mapping Rules
 
 #### ACL Gateway Pattern (Strict Boundary Enforcement)
 
@@ -258,7 +258,7 @@ The `CheckoutUseCase` touches Orders, Carts, Inventory, Payments, and Customers.
 
 This is a common source of confusion. Here is the precise distinction:
 
-| Term                      | Scope              | What It Contains                                                 | In This Project                                      |
+| Term                      | Scope              | What It Contains                                                 | Typical Implementation                               |
 | ------------------------- | ------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
 | **Primary Adapters**      | Driving side       | Controllers, Guards, Interceptors, Filters, CLI, Cron triggers   | `modules/[x]/primary-adapters/`, `src/interceptors/` |
 | **Secondary Adapters**    | Driven side        | Repository impls, API clients, Cache impls, Queue producers      | `modules/[x]/secondary-adapters/`                    |
@@ -306,6 +306,20 @@ Does it have its own controller + use case?
 | Driven adapters  | `secondary-adapters/`                | `src/infrastructure/`               |
 | Business core    | `core/domain/` + `core/application/` | `shared-kernel/domain/`             |
 | NestJS module    | `[module].module.ts`                 | `infrastructure.module.ts`          |
+
+---
+
+## 6. Anti-Patterns
+
+| Anti-Pattern                               | Problem                                                                                                                                    | Correct Approach                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| **Fat controller**                         | Business logic in controllers (validation, conditionals, entity creation). The controller becomes an untestable monolith.                  | Controllers are thin adapters: parse input, call use case, map response. Zero domain logic.                     |
+| **Use case imports infrastructure**        | A use case directly imports a TypeORM repository, Redis client, or HTTP client. Couples the core to frameworks.                            | Use cases depend on **ports** (abstract interfaces). Adapters implement the ports.                              |
+| **Domain entity depends on ORM**           | Entity class extends `TypeORM.BaseEntity` or uses ORM decorators. The domain is permanently coupled to the persistence framework.          | Domain entities are plain classes. ORM schemas are separate mapper/schema classes in the adapter layer.         |
+| **Bidirectional module dependency**        | Module A calls Module B, and Module B calls back to Module A. Creates circular dependencies and violates the direction of the context map. | Use domain events for the reverse direction. The Core Domain orchestrates; supporting contexts never call back. |
+| **Shared database tables across contexts** | Two bounded contexts directly query each other's tables. Creates hidden coupling that breaks when either schema evolves.                   | Each context owns its tables exclusively. Cross-context data flows through ACL Gateways or domain events.       |
+| **Anemic domain model**                    | Entities are data bags with only getters/setters. All logic lives in services.                                                             | Entities encapsulate behaviour (Evans, 2003). Services orchestrate entities, not replace them.                  |
+| **Leaking domain types to the API**        | Returning domain entities directly from controllers. Couples the public API contract to internal domain structure.                         | Map domain entities to presentation DTOs at the controller/adapter boundary.                                    |
 
 ---
 

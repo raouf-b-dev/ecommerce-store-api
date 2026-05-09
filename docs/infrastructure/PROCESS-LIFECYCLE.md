@@ -1,8 +1,8 @@
 # Process Lifecycle Guide — PIDs, Signals & Graceful Shutdown
 
-> A reference guide covering how operating systems manage processes and how this E-Commerce API handles termination signals in production.
->
-> **Companion docs**: [`ROADMAP.md`](../ROADMAP.md), [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md)
+A reference guide covering how operating systems manage processes, how termination signals work, and how server applications should handle graceful shutdown in containerised environments.
+
+> _Sections 1–6 are universal and project-agnostic. Section 7 documents a specific NestJS implementation as an applied example._
 
 ---
 
@@ -188,6 +188,17 @@ When `enableShutdownHooks()` is active and a termination signal arrives, NestJS 
 | `RedisIoAdapter`             | `server.on('close')`      | Calls `pubClient.quit()` and `subClient.quit()` — closes the Socket.IO Redis adapter connections.        |
 
 ---
+
+## Anti-Patterns
+
+| Anti-Pattern                                        | Problem                                                                                                                                                                                       | Correct Approach                                                                                                                     |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Ignoring SIGTERM**                                | The orchestrator (Docker, K8s) sends SIGTERM first, then SIGKILL after the grace period. Ignoring SIGTERM means the process is always force-killed, causing data loss and broken connections. | Register a SIGTERM handler that initiates graceful shutdown (drain connections, flush buffers, close pools).                         |
+| **Calling `process.exit()` inside signal handlers** | `process.exit()` triggers synchronous `exit` event handlers and skips pending I/O. Async cleanup (DB disconnect, queue drain) is abandoned.                                                   | Set a shutdown flag, trigger async cleanup, then call `process.exit()` only after all cleanup completes.                             |
+| **Registering shutdown logic in the wrong order**   | If the database connection closes before the job processor finishes, in-flight jobs fail with connection errors during shutdown.                                                              | Close resources in reverse dependency order: stop accepting → drain work → close consumers → close producers → close infrastructure. |
+| **No shutdown timeout**                             | If a cleanup step hangs (e.g., waiting for a stuck connection), the process never exits and is eventually SIGKILL'd by the orchestrator with no logs.                                         | Set a local shutdown timeout (e.g., 10s) that calls `process.exit(1)` if cleanup exceeds the budget.                                 |
+| **Logging after logger shutdown**                   | Closing the logger transport before other shutdown steps means those steps' errors are silently lost.                                                                                         | The logger should be the last resource closed during shutdown.                                                                       |
+| **Using PID 1 without signal forwarding**           | `node` as PID 1 in a Docker container does not forward signals to child processes by default. SIGTERM is swallowed.                                                                           | Use `tini` or `dumb-init` as the entrypoint, or ensure Node.js handles signals explicitly as PID 1.                                  |
 
 ## References
 

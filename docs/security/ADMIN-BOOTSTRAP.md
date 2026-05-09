@@ -62,3 +62,27 @@ This dual-seeder + forced rotation pattern is standard across enterprise SaaS:
 - **Keycloak:** Uses `KEYCLOAK_ADMIN` env vars for bootstrap.
 - **Grafana:** Uses `GF_SECURITY_ADMIN_PASSWORD` and forces a change on first login.
 - **GitLab:** Uses `GITLAB_ROOT_PASSWORD` for initial setup.
+
+## 5. Implementation — `mustChangePassword` Property
+
+The `User` domain entity implements a `mustChangePassword` boolean flag:
+
+- **Bootstrap Flow:** The seeder creates the super-admin with `mustChangePassword: true`.
+- **Change Flow:** The `User.changePassword()` method automatically sets `mustChangePassword = false` as a domain invariant.
+
+## 6. Login Response Contract
+
+When a user authenticates successfully via `/auth/login`, the response body explicitly includes the `mustChangePassword` flag:
+
+- `mustChangePassword: true` → The frontend must immediately route the user to a mandatory password-change form. No other API actions are permitted.
+- `mustChangePassword: false` → The frontend proceeds to the dashboard.
+
+## 7. Implementation Checklist
+
+When testing or building the bootstrap flow:
+
+1. Initialize the system data (roles, permissions).
+2. Run `npm run seed:admin` locally.
+3. Authenticate to receive `mustChangePassword: true`.
+4. Submit a password change request.
+5. Verify `mustChangePassword` is cleared and access is granted.

@@ -9,6 +9,8 @@ Canonical technical reference documents, organised by category.
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — System context, bounded contexts, and domain flows.
 - [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md) — Domain-Driven Design and Hexagonal Architecture principles.
 - [CQRS.md](architecture/CQRS.md) — Command/Query Responsibility Segregation evolution path.
+- [API-VERSIONING.md](architecture/API-VERSIONING.md) — URI versioning strategy, Anti-Corruption Layer DTO mapping, and deprecation protocol.
+- [RATE-LIMITING.md](architecture/RATE-LIMITING.md) — Rate limiting algorithms, tiered enforcement, storage backends, and HTTP conventions.
 
 ## Infrastructure
 

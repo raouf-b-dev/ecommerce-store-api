@@ -1,8 +1,8 @@
 # Observability — Metrics
 
-This document is the **canonical observability reference** for understanding application metrics, monitoring, and instrumentation. It defines the standard metric types, their mathematical properties, and the recommended practices for building observable systems. All contributors should read this document before adding or modifying instrumentation code.
+A comprehensive reference covering application metrics, monitoring methodologies, Prometheus metric types, naming conventions, and instrumentation best practices. This document defines the standard metric types, their mathematical properties, and the recommended practices for building observable systems.
 
-> **Companion docs**: [`OBSERVABILITY-FOUNDATION.md`](../OBSERVABILITY-FOUNDATION.md), [`ARCHITECTURE.md`](../../architecture/ARCHITECTURE.md), [`SECRETS-MANAGEMENT.md`](../../security/SECRETS-MANAGEMENT.md)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -169,12 +169,12 @@ Well-named metrics are self-documenting. Poorly named metrics create confusion a
 
 Labels add dimensions to metrics, but each unique label combination creates a separate time series. **High-cardinality labels** (e.g., user IDs, request IDs, email addresses) are the most common cause of metrics storage explosion and must be avoided.
 
-| Label Cardinality | Example                                 | Impact                               |
-| :---------------- | :-------------------------------------- | :----------------------------------- |
-| Low (safe)        | `method=["GET","POST","PUT","DELETE"]`  | 4 time series per metric             |
+| Label Cardinality | Example                                  | Impact                               |
+| :---------------- | :--------------------------------------- | :----------------------------------- |
+| Low (safe)        | `method=["GET","POST","PUT","DELETE"]`   | 4 time series per metric             |
 | Medium (careful)  | `route=["/resources","/operations",...]` | ~20–50 time series per metric        |
-| High (dangerous)  | `userId=["1","2",...,"100000"]`         | 100,000 time series — storage crisis |
-| Unbounded (fatal) | `requestId=["uuid-1","uuid-2",...]`     | Infinite growth — OOM crash          |
+| High (dangerous)  | `userId=["1","2",...,"100000"]`          | 100,000 time series — storage crisis |
+| Unbounded (fatal) | `requestId=["uuid-1","uuid-2",...]`      | Infinite growth — OOM crash          |
 
 > _"Every label you add multiplies the number of time series. If you have 10 routes × 4 methods × 5 status codes, that is 200 time series for a single metric. Add a user_id label and you have 200 × N_users — a ticking time bomb."_
 > — Robust Perception, "Label Cardinality", 2019

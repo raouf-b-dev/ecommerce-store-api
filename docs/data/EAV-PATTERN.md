@@ -1,6 +1,8 @@
-# 🧩 Entity-Attribute-Value (EAV) Pattern
+# Entity-Attribute-Value (EAV) Pattern
 
-This document describes the **Entity-Attribute-Value** pattern as a design reference for dynamic product attributes in the E-commerce Store API. It serves as both a design reference and an architectural decision record.
+A comprehensive reference covering the Entity-Attribute-Value data modelling pattern, its trade-offs, industry implementations, database design, DDD integration, and performance best practices. This document uses e-commerce product attributes as the primary worked example.
+
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ## 📋 Table of Contents
 
@@ -161,7 +163,7 @@ SELECT meta_key, meta_value FROM wp_postmeta WHERE post_id = 42;
 
 ---
 
-## 🏗️ Our Implementation
+## Implementation Example
 
 ### Design Principles
 

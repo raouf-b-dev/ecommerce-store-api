@@ -4,7 +4,7 @@ This document defines logging as an observability signal. It is intentionally do
 
 Logs are timestamped records of discrete events. Their primary value is explanatory: they preserve local context about decisions, failures, state transitions, and interactions that cannot be represented efficiently as numeric time series.
 
-> Companion docs: [Observability Foundation](../OBSERVABILITY-FOUNDATION.md), [Metrics](../metrics/METRICS.md), [Traces](../traces/TRACES.md)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -32,17 +32,17 @@ A log entry should describe an event, not merely a sentence. The distinction mat
 
 A well-formed log event normally contains:
 
-| Field | Purpose |
-| :-- | :-- |
-| `timestamp` | Establishes ordering and supports time-window queries |
-| `level` | Communicates severity and operational urgency |
-| `message` | Gives a concise human-readable summary |
-| `context` | Identifies the component or boundary that emitted the event |
-| `correlationId` | Groups related records from the same logical operation |
-| `traceId` / `spanId` | Connects logs to distributed traces when tracing is enabled |
-| `event` | Provides a stable machine-readable event name |
-| `outcome` | Distinguishes success, failure, retry, skip, reject, or timeout |
-| `error` | Preserves safe exception metadata when a failure occurs |
+| Field                | Purpose                                                         |
+| :------------------- | :-------------------------------------------------------------- |
+| `timestamp`          | Establishes ordering and supports time-window queries           |
+| `level`              | Communicates severity and operational urgency                   |
+| `message`            | Gives a concise human-readable summary                          |
+| `context`            | Identifies the component or boundary that emitted the event     |
+| `correlationId`      | Groups related records from the same logical operation          |
+| `traceId` / `spanId` | Connects logs to distributed traces when tracing is enabled     |
+| `event`              | Provides a stable machine-readable event name                   |
+| `outcome`            | Distinguishes success, failure, retry, skip, reject, or timeout |
+| `error`              | Preserves safe exception metadata when a failure occurs         |
 
 The `message` should be readable, but the structured fields should carry the semantics. Operational tooling should not have to parse prose to understand severity, outcome, route, dependency, or error class.
 
@@ -87,14 +87,14 @@ Avoid raw payload dumps. Payloads are usually noisy, expensive, and risky. Prefe
 
 Log levels should communicate operational meaning. If levels are used inconsistently, alerting and filtering become unreliable.
 
-| Level | Meaning | Typical Use |
-| :-- | :-- | :-- |
-| `error` | A failure occurred and the operation did not complete as intended | Unhandled exception, exhausted retry budget, failed dependency call |
-| `warn` | An abnormal condition occurred but the system continued | Retry scheduled, degraded fallback used, invalid input rejected |
-| `info` | A significant lifecycle or boundary event occurred | Process started, request completed, background task finished |
-| `http` | A transport-level access event occurred | Request/response access logging where a custom level is supported |
-| `debug` | Diagnostic detail for development or temporary investigation | Internal decision details, sanitized intermediate state |
-| `trace` / `silly` | Very high-volume detail | Rarely enabled outside local or short diagnostic windows |
+| Level             | Meaning                                                           | Typical Use                                                         |
+| :---------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------ |
+| `error`           | A failure occurred and the operation did not complete as intended | Unhandled exception, exhausted retry budget, failed dependency call |
+| `warn`            | An abnormal condition occurred but the system continued           | Retry scheduled, degraded fallback used, invalid input rejected     |
+| `info`            | A significant lifecycle or boundary event occurred                | Process started, request completed, background task finished        |
+| `http`            | A transport-level access event occurred                           | Request/response access logging where a custom level is supported   |
+| `debug`           | Diagnostic detail for development or temporary investigation      | Internal decision details, sanitized intermediate state             |
+| `trace` / `silly` | Very high-volume detail                                           | Rarely enabled outside local or short diagnostic windows            |
 
 A common rule is: if no one should ever act on it and it is emitted frequently, it probably should not be an `info` log.
 
