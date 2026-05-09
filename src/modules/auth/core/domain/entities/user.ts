@@ -104,6 +104,7 @@ export class User implements IUser {
       return ErrorFactory.DomainError('New password hash cannot be empty');
     }
     this._passwordHash = newPasswordHash;
+    this._mustChangePassword = false;
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
