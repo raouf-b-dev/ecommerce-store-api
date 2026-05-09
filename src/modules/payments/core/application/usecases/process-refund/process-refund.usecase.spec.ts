@@ -7,8 +7,7 @@ import { ProcessRefundDto } from '../../../../primary-adapters/dto/process-refun
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
@@ -23,7 +22,7 @@ describe('ProcessRefundUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentGatewayFactory,
+          provide: PaymentGatewayResolver,
           useValue: {
             getGateway: jest.fn(),
           },
@@ -36,7 +35,7 @@ describe('ProcessRefundUseCase', () => {
       PaymentRepository,
     ) as unknown as MockPaymentRepository;
 
-    const factory = module.get(PaymentGatewayFactory);
+    const factory = module.get(PaymentGatewayResolver);
     (factory.getGateway as jest.Mock).mockReturnValue({
       refund: jest.fn().mockResolvedValue({
         isFailure: false,
