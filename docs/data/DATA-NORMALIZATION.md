@@ -1,8 +1,8 @@
 # Data Normalisation & Denormalisation — Academic Reference
 
-This document is the **canonical data modelling reference** for decisions involving normalisation and denormalisation. It defines the strict academic foundations of relational normal forms, the conditions under which denormalisation is justified, and the recommended decision framework for this project. All contributors must read and follow this document when designing or modifying database schemas.
+A comprehensive reference covering the strict academic foundations of relational normal forms (1NF through 5NF), the conditions under which denormalisation is justified, and a decision framework for schema design. This document applies to any relational database system.
 
-> **Companion docs**: [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) (system context & domain flows), [`CQRS.md`](../architecture/CQRS.md) (read/write model separation), [`EAV-PATTERN.md`](EAV-PATTERN.md) (flexible attribute modelling)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 

@@ -11,6 +11,7 @@ A task is done only if all are true:
 3. Tests are added or updated to cover change risk.
 4. Documentation is updated when contracts change.
 5. Handoff evidence is complete.
+6. Applied documentation is updated when features ship or change (`FEATURES.md`, `ROADMAP.md`).
 
 ## 2. Mandatory Quality Gates
 
@@ -18,6 +19,7 @@ A task is done only if all are true:
 
 - Task brief exists and is explicit.
 - In-scope and out-of-scope items are listed.
+- Applied docs impacted by the change are identified (`FEATURES.md`, `ROADMAP.md`, etc.).
 
 ### Gate B: Architecture and Security
 

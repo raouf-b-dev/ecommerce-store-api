@@ -1,8 +1,8 @@
 # Integration Patterns — Cross-Context Communication Reference
 
-This document defines the **canonical integration patterns** for communicating between Bounded Contexts in the E-commerce Store API. Each pattern is grounded in DDD and Hexagonal Architecture, with explicit guidance on when to use it, how it maps to this codebase, and how it adapts when migrating to microservices.
+A comprehensive reference covering the canonical integration patterns for communicating between Bounded Contexts in DDD-based systems. Each pattern is grounded in Domain-Driven Design and Hexagonal Architecture, with guidance on when to use it and how it adapts when migrating from a modular monolith to microservices.
 
-> **Companion docs**: [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (strict DDD & Hex rules), [`ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) (system context & flows)
+> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
 
 ---
 
@@ -73,9 +73,9 @@ The Job Scheduler is an **infrastructure concern**, not a DDD tactical pattern. 
 └─────────────────────────────────────────────────────┘
 ```
 
-### This Project — Implemented ✅
+### Example Implementation (E-Commerce)
 
-BullMQ queues for Orders (checkout SAGA steps) and Notifications (save → send → update flow).
+BullMQ queues for checkout SAGA steps and notification delivery (save → send → update flow).
 
 ```typescript
 // Port: notifications/core/application/ports/notification.scheduler.ts
@@ -149,7 +149,7 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 3. **Only ACL adapters import upstream code** — The application core sees only its own gateway port.
 4. **Adapter injects upstream Use Cases** (not Repositories) — Preserves upstream invariants.
 
-### This Project — Implemented ✅ (7 Gateways)
+### Example Implementation (E-Commerce — 7 Gateways)
 
 | Gateway                       | Downstream → Upstream | What It Wraps                          |
 | ----------------------------- | --------------------- | -------------------------------------- |
@@ -185,9 +185,9 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 - ❌ Not for single-step cross-context reactions (use Domain Events)
 - ❌ Not for queries (use ACL Gateway)
 
-### This Project — Implemented ✅ (Checkout Flow)
+### Example Implementation (E-Commerce Checkout Flow)
 
-The checkout SAGA orchestrates across Orders, Inventory, Payments, and Carts:
+A checkout SAGA orchestrates across Orders, Inventory, Payments, and Carts:
 
 ```
 Online Flow:  Validate Cart → Reserve Stock → Process Payment → Confirm Order → Clear Cart
