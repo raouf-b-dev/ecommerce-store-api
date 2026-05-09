@@ -1,8 +1,6 @@
 # 🗺️ E-Commerce Store API — Feature Roadmap
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
->
-> **Companion docs**: [`AGENT.md`](../AGENT.md), [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md), [`EAV-PATTERN.md`](data/EAV-PATTERN.md)
 
 ---
 
@@ -89,14 +87,14 @@
 
 ---
 
-### [ ] API Versioning
+### [x] API Versioning
 
 **What**: Enable URI versioning (`/v1/...`) before first client deployment.
 **Scope**: Enable NestJS versioning in `main.ts`, add `@Version('1')` to all controllers.
 
 ---
 
-### [ ] Rate Limiting & Throttling
+### [x] Rate Limiting & Throttling
 
 **What**: Protect the API with `@nestjs/throttler`. Global defaults + stricter limits on auth endpoints.
 
