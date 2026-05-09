@@ -88,6 +88,7 @@
     "migration:revert:test": "cross-env NODE_ENV=test npm run typeorm -- -d ./data-source.ts migration:revert",
     "migration:show:test": "cross-env NODE_ENV=test npm run typeorm -- -d ./data-source.ts migration:show",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "seed:admin": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed-admin.ts",
     "env:init": "node scripts/generate-envs.js",
     "env:init:force": "node scripts/generate-envs.js --force",
     "env:init:dev": "node scripts/generate-envs.js --envs=development",
