@@ -33,71 +33,7 @@
 | **7.6** | Auth Hardening & Quality     | ✅ Done | Abstract `PasswordHasher`, Session reuse detection, Architectural polish, Strict typed JWT payloads, Thin controllers                                                                                        | `src/modules/auth/`                                       |
 | **8**   | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/` |
 | **8.1** | Logging Activation           | ✅ Done | Winston logger injected into NestJS application lifecycle, replacing manual error handlers                                                                                                                   | `src/main.ts`                                             |
-
-## 🏗️ Phase 8.5 — Architecture Hardening (Post-RBAC)
-
-> **Goal**: Eliminate remaining DDD/Hexagonal violations identified in post-RBAC audit. Ensure all modules meet the zero-violation architectural baseline.
-
----
-
-### 8.5.1 — Payments: Extract Abstract Ports for External Services
-
-**What**: Three use cases in the Payments module directly inject concrete infrastructure classes — a critical Hexagonal Architecture violation. The application core must depend only on abstractions.
-
-**Violations**:
-
-- `HandleStripeWebhookUseCase` injects `StripeSignatureService` (concrete, in `secondary-adapters/services/`)
-- `HandlePayPalWebhookUseCase` injects `PayPalSignatureService` (concrete, in `secondary-adapters/services/`)
-- `CreatePaymentUseCase`, `CreatePaymentIntentUseCase`, `ProcessRefundUseCase` inject `PaymentGatewayFactory` (concrete, in `secondary-adapters/gateways/`)
-
-**Scope**:
-
-- [ ] Create `payments/core/application/ports/` directory
-- [ ] Define `StripeSignatureVerifier` abstract port — `verify(payload, signature): boolean`
-- [ ] Define `PayPalSignatureVerifier` abstract port — `verify(headers, body): boolean`
-- [ ] Register `StripeSignatureService` and `PayPalSignatureService` as implementations of the abstract ports
-- [ ] Update use cases to inject the abstract port tokens (not concrete classes)
-
-**Location**: `src/modules/payments/core/application/ports/`, `src/modules/payments/payments.module.ts`
-
----
-
-### 8.5.2 — Notifications: Fix Fat Controller + Typed Payload
-
-**What**: `NotificationsController` manually unwraps `Result` and calls `.toPrimitives()` on domain entities — both violations of the thin controller rule. Additionally, `Notification.payload` is typed `any` — a domain layer purity violation.
-
-**Scope**:
-
-- [ ] Define `NotificationPayload` typed interface (or `Record<string, unknown>`) to replace `any` in `notification.ts`, `notification.interface.ts`, `notification.gateway.interface.ts`
-- [ ] Update `GetUserNotificationsUseCase` to return `{ total, page, data: INotification[] }` with primitives baked in
-- [ ] Refactor `NotificationsController.getUserNotifications()` to a one-liner: `return this.useCase.execute(...)`
-- [ ] Replace `@Request() req` with `@CurrentUser()` decorator (already exists in auth module)
-
-**Location**: `src/modules/notifications/`
-
----
-
-### 8.5.3 — Orders: Type `OrderItem.fromPrimitives()`
-
-**What**: `OrderItem.fromPrimitives(data: any)` uses `any` in the domain entity. Should accept a typed `IOrderItem` interface.
-
-- [ ] Define `IOrderItem` interface in `order-items.ts`
-- [ ] Update `fromPrimitives(data: IOrderItem)` signature
-
-**Location**: `src/modules/orders/core/domain/entities/order-items.ts`
-
----
-
-### 8.5.4 — Auth: Fix `PermissionMapper.toEntity()` type cast
-
-**What**: `PermissionMapper.toEntity()` casts payload to `any` instead of `PermissionCreate`.
-
-- [ ] Define `PermissionCreate = CreateFromEntity<PermissionEntity>`
-- [ ] Handle `id: 0` for new entities explicitly within the typed payload
-
-**Location**: `src/modules/auth/secondary-adapters/persistence/mappers/permission.mapper.ts`
-
----
+| **8.5** | Architecture Hardening       | ✅ Done | Abstract ports for payments services, thin notifications controller, strict NotificationPayload and OrderItemPrimitives typing                                                                               | `src/modules/payments/`, `src/modules/notifications/`     |
 
 ## 🧪 Phase 9 — Test Suite Expansion
 
