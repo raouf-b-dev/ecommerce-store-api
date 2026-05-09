@@ -47,4 +47,8 @@ export class EnvConfigService {
   get cors() {
     return this.get('cors');
   }
+
+  get throttle() {
+    return this.get('throttle');
+  }
 }
