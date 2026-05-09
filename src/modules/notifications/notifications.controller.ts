@@ -5,14 +5,13 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/primary-adapters/decorators/current-user.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
-import { NotificationStatus } from './core/domain/enums/notification-status.enum';
-import { isFailure } from 'src/shared-kernel/domain/result';
+import { GetUserNotificationsDto } from './primary-adapters/dto/get-user-notifications.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -27,30 +26,23 @@ export class NotificationsController {
   @Get()
   @ApiOperation({ summary: 'Get user notifications' })
   async getUserNotifications(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-    @Query('status') status?: NotificationStatus,
+    @CurrentUser('userId') userId: string,
+    @Query() query: GetUserNotificationsDto,
   ) {
-    const result = await this.getUserNotificationsUseCase.execute({
-      userId: req.user.userId,
-      page: Number(page),
-      limit: Number(limit),
-      status,
+    return this.getUserNotificationsUseCase.execute({
+      userId,
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      status: query.status,
     });
-    if (isFailure(result)) throw result.error;
-    return {
-      ...result.value,
-      data: result.value.data.map((n) => n.toPrimitives()),
-    };
   }
 
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
-  async markAsRead(@Request() req, @Param('id') id: string) {
-    return await this.markNotificationAsReadUseCase.execute(
-      id,
-      req.user.userId,
-    );
+  async markAsRead(
+    @CurrentUser('userId') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.markNotificationAsReadUseCase.execute(id, userId);
   }
 }
