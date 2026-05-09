@@ -17,3 +17,7 @@ Pause and request clarification for high-risk ambiguity (security, data integrit
 Primary generation skill:
 
 - `.agents/skills/module-conventions-generator/SKILL.md`
+
+## Context Acceleration
+
+Before starting any task, read `.agents/PROJECT-CONTEXT.md` for a compact project snapshot. This saves significant context-gathering time.

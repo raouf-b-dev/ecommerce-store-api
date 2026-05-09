@@ -17,9 +17,13 @@ When instructions conflict, resolve in this order:
 - Architecture rules: [docs/architecture/DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)
 - Integration patterns: [docs/integration/INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md)
 - Security: [docs/security/SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md), [docs/security/JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md)
-- Quality gates: [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](docs/ai/GOVERNANCE-AND-QUALITY-GATES.md)
-- Workflow: [docs/ai/WORKFLOW-PLAYBOOK.md](docs/ai/WORKFLOW-PLAYBOOK.md)
-- Skills system: [docs/ai/SKILLS-SYSTEM.md](docs/ai/SKILLS-SYSTEM.md)
+- Quality gates: `[docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](docs/ai/GOVERNANCE-AND-QUALITY-GATES.md)`
+- Workflow: `[docs/ai/WORKFLOW-PLAYBOOK.md](docs/ai/WORKFLOW-PLAYBOOK.md)`
+- Skills system: `[docs/ai/SKILLS-SYSTEM.md](docs/ai/SKILLS-SYSTEM.md)`
+
+## Context Acceleration
+
+Before starting any task, read `.agents/PROJECT-CONTEXT.md` for a compact project snapshot. This saves significant context-gathering time.
 
 ## 3. Non-Negotiables
 

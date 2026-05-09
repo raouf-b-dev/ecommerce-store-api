@@ -26,3 +26,7 @@ Prefer skill-guided execution when scope matches.
 Primary generation skill:
 
 - `.claude/skills/module-conventions-generator/SKILL.md`
+
+## Context Acceleration
+
+Before starting any task, read `.agents/PROJECT-CONTEXT.md` for a compact project snapshot. This saves significant context-gathering time.
