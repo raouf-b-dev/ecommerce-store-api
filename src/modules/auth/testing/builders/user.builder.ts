@@ -30,9 +30,8 @@ export class UserBuilder {
     return this;
   }
 
-  withRole(roleId: number, roleCode: string): this {
+  withRole(roleId: number): this {
     this.user.roleId = roleId;
-    this.user.roleCode = roleCode;
     return this;
   }
 

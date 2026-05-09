@@ -2,8 +2,8 @@ export interface IUser {
   id: number | null;
   email: string;
   passwordHash: string;
+  mustChangePassword: boolean;
   roleId: number | null;
-  roleCode: string | null;
   isActive: boolean;
   customerId: number | null;
   createdAt: Date;
