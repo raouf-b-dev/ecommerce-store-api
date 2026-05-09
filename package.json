@@ -99,6 +99,7 @@
     "skills:check": "node scripts/sync-agent-skills.js --check"
   },
   "dependencies": {
+    "@nest-lab/throttler-storage-redis": "^1.2.0",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -109,6 +110,7 @@
     "@nestjs/schedule": "^6.1.0",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.1.1",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.11",
     "@socket.io/redis-adapter": "^8.3.0",
@@ -120,6 +122,7 @@
     "cookie-parser": "^1.4.7",
     "envalid": "^8.1.0",
     "helmet": "^8.1.0",
+    "ioredis": "^5.10.1",
     "jose": "^6.2.2",
     "pg": "^8.16.3",
     "redis": "^5.8.0",

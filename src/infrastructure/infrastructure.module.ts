@@ -9,6 +9,7 @@ import { WinstonLoggerService } from './logging/winston-logger.service';
 import { CorrelationModule } from './logging/correlation/correlation.module';
 import { CorrelationIdMiddleware } from './logging/middleware/correlation-id.middleware';
 import { HttpLoggingMiddleware } from './logging/middleware/http-logging.middleware';
+import { AppThrottlerModule } from './throttler/throttler.module';
 
 @Global()
 @Module({
@@ -20,6 +21,7 @@ import { HttpLoggingMiddleware } from './logging/middleware/http-logging.middlew
     IdempotencyModule,
     JwtModule,
     CorrelationModule,
+    AppThrottlerModule,
   ],
   providers: [WinstonLoggerService],
   exports: [
@@ -34,6 +36,7 @@ import { HttpLoggingMiddleware } from './logging/middleware/http-logging.middlew
     // Logging & Correlation
     WinstonLoggerService,
     CorrelationModule,
+    AppThrottlerModule,
   ],
 })
 export class InfrastructureModule implements NestModule {

@@ -36,5 +36,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
       choices: ['file', 'console', 'both'],
       default: 'both',
     }),
+
+    THROTTLE_GLOBAL_LIMIT: num({ default: 100 }),
+    THROTTLE_STRICT_LIMIT: num({ default: 10 }),
   });
 }

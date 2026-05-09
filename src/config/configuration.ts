@@ -29,6 +29,10 @@ export interface IAppConfig {
   cors: {
     allowedOrigins: string[];
   };
+  throttle: {
+    globalLimit: number;
+    strictLimit: number;
+  };
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -67,6 +71,10 @@ export default (): IAppConfig => {
     },
     cors: {
       allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
+    },
+    throttle: {
+      globalLimit: env.THROTTLE_GLOBAL_LIMIT,
+      strictLimit: env.THROTTLE_STRICT_LIMIT,
     },
   };
 };
