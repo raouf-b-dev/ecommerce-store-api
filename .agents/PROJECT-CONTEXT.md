@@ -38,13 +38,16 @@ The application is a Modular Monolith split into 9 strictly isolated **Bounded C
 - **Throttler**: `@nestjs/throttler` setup backed by Redis.
 - **Shutdown**: Graceful shutdown hook handlers.
 - **Logging**: Winston logger configured for JSON output.
+- **Metrics**: Prometheus metrics via `prom-client` — HTTP auto-instrumentation (middleware), business counters (domain event listeners), infrastructure gauges (DB pool, Redis, BullMQ).
+- **Events**: `DomainEventPublisher` interface (shared-kernel) backed by `EventEmitter2DomainEventPublisher` adapter — enables decoupled domain event emission from use cases without infrastructure coupling.
 
 ## Key Implementation Patterns
 
 - **Gateways (ACL)**: `Orders` needs customer info? It calls `CustomerGatewayPort` (in its `core/application/ports`), which is implemented by `CustomerGatewayAdapter` (in `secondary-adapters/gateways`), which calls the `Customers` module use case via HTTP or direct injection. No direct entity/repo imports across modules.
 - **Result Pattern**: We never `throw` errors in the domain or application layers. Use `Result<T, E>` and `ErrorFactory`. A global `ResultInterceptor` maps it to HTTP responses.
 - **Mappers**: When transforming ORM entities to Domain entities (or vice versa), use `CreateFromEntity<TEntity>` and `toPrimitives()`.
-- **Jobs**: Kebab-case naming. Implement `BaseJobHandler`. Schedulers (Cron) trigger jobs, they don't process them directly.
+- **Jobs**: Kebab-case naming. Implement `BaseJobHandler`. Schedulers (Cron) trigger jobs, they don't process them directly. Job handlers are primary adapters — they must never publish domain events or contain business logic.
+- **Domain Events**: Use cases emit domain events via `DomainEventPublisher` (injected port). Primary adapters (controllers, jobs, listeners) must never emit events directly.
 
 ## Quick File Locator
 
@@ -67,4 +70,8 @@ The application is a Modular Monolith split into 9 strictly isolated **Bounded C
 - ✅ Checkout SAGA
 - ✅ Idempotency (Redis)
 - ✅ API Versioning (URI-based, NestJS `VersioningType.URI`)
+- ✅ Prometheus Metrics (`GET /metrics`, API-key protected)
+- ✅ Domain Event Bus (`DomainEventPublisher` + EventEmitter2)
+- ❌ OpenTelemetry Distributed Tracing (Pending)
+- ❌ Grafana Monitoring Stack (Pending)
 - ❌ Event-Driven Notifications (Pending)
