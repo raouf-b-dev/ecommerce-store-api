@@ -12,6 +12,7 @@ import { Refund } from '../../../domain/entities/refund';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
 import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
@@ -22,6 +23,7 @@ export class ProcessRefundUseCase extends UseCase<
   constructor(
     private readonly paymentRepository: PaymentRepository,
     private readonly paymentGatewayResolver: PaymentGatewayResolver,
+    private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
   }
@@ -84,6 +86,11 @@ export class ProcessRefundUseCase extends UseCase<
 
     const saveResult = await this.paymentRepository.update(payment);
     if (isFailure(saveResult)) return saveResult;
+
+    this.domainEventPublisher.publish('payment.refunded', {
+      paymentId: payment.id!,
+      refundId: refund.id,
+    });
 
     return Result.success(
       PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),

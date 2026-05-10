@@ -11,6 +11,7 @@ import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Role } from '../../../domain/entities/role';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
@@ -19,6 +20,7 @@ describe('LoginUserUseCase', () => {
   let sessionTokenRepository: MockSessionTokenRepository;
   let passwordHasher: MockPasswordHasher;
   let jwtSignerService: MockJwtSignerService;
+  let domainEventPublisher: DomainEventPublisher;
 
   let mockDomainUser: User;
 
@@ -28,6 +30,7 @@ describe('LoginUserUseCase', () => {
     sessionTokenRepository = new MockSessionTokenRepository();
     passwordHasher = new MockPasswordHasher();
     jwtSignerService = new MockJwtSignerService();
+    domainEventPublisher = { publish: jest.fn() };
 
     usecase = new LoginUserUseCase(
       userRepository,
@@ -35,6 +38,7 @@ describe('LoginUserUseCase', () => {
       sessionTokenRepository,
       passwordHasher,
       jwtSignerService as unknown as JwtSignerService,
+      domainEventPublisher,
     );
     mockDomainUser = User.fromPrimitives(
       UserTestFactory.createMockCustomerUser(),

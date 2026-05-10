@@ -5,10 +5,10 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
 import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class CapturePaymentUseCase extends UseCase<
@@ -16,7 +16,10 @@ export class CapturePaymentUseCase extends UseCase<
   PaymentResponseDto,
   UseCaseError
 > {
-  constructor(private readonly paymentRepository: PaymentRepository) {
+  constructor(
+    private readonly paymentRepository: PaymentRepository,
+    private readonly domainEventPublisher: DomainEventPublisher,
+  ) {
     super();
   }
 
@@ -29,6 +32,10 @@ export class CapturePaymentUseCase extends UseCase<
 
     const saveResult = await this.paymentRepository.update(payment);
     if (isFailure(saveResult)) return saveResult;
+
+    this.domainEventPublisher.publish('payment.captured', {
+      paymentId: payment.id!,
+    });
 
     return Result.success(
       PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),

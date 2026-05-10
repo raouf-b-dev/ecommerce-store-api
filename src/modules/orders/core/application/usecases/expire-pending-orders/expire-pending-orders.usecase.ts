@@ -61,7 +61,9 @@ export class ExpirePendingOrdersUseCase
     for (const order of pendingOrders) {
       if (!order.id) continue;
 
-      const cancelResult = await this.cancelOrderUseCase.execute(order.id);
+      const cancelResult = await this.cancelOrderUseCase.execute({
+        orderId: order.id,
+      });
 
       if (isFailure(cancelResult)) {
         this.logger.error(

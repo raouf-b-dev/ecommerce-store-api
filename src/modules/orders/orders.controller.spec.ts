@@ -7,7 +7,6 @@ import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
 import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
-
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { ShipOrderUseCase } from './core/application/usecases/ship-order/ship-order.usecase';
@@ -166,9 +165,9 @@ describe('OrdersController', () => {
 
   it('should call CancelOrderUseCase.execute when cancelOrder is called and return its result', async () => {
     const res = await controller.cancelOrder(cancelledOrder.id);
-    expect(cancelOrderUseCase.execute).toHaveBeenCalledWith(
-      Number(cancelledOrder.id),
-    );
+    expect(cancelOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: Number(cancelledOrder.id),
+    });
     expect(res).toEqual(Result.success(cancelledOrder));
   });
 

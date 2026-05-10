@@ -37,7 +37,10 @@ export class CancelOrderStep extends BaseJobHandler<
 
     this.logger.log(`Cancelling order ${orderId}...`);
 
-    const result = await this.cancelOrderUseCase.execute(orderId);
+    const result = await this.cancelOrderUseCase.execute({
+      orderId,
+      isSagaCompensation: true,
+    });
 
     if (isFailure(result)) {
       return Result.failure(result.error);
