@@ -39,5 +39,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     THROTTLE_GLOBAL_LIMIT: num({ default: 100 }),
     THROTTLE_STRICT_LIMIT: num({ default: 10 }),
+
+    METRICS_API_KEY: str({ default: '' }),
   });
 }

@@ -33,6 +33,7 @@ export interface IAppConfig {
     globalLimit: number;
     strictLimit: number;
   };
+  metricsApiKey: string;
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -76,5 +77,6 @@ export default (): IAppConfig => {
       globalLimit: env.THROTTLE_GLOBAL_LIMIT,
       strictLimit: env.THROTTLE_STRICT_LIMIT,
     },
+    metricsApiKey: env.METRICS_API_KEY,
   };
 };

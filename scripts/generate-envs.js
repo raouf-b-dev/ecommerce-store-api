@@ -82,6 +82,11 @@ function buildLinesForEnv(lines, envName) {
       return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
     }
 
+    if (key === 'METRICS_API_KEY') {
+      const crypto = require('crypto');
+      return `METRICS_API_KEY=${crypto.randomBytes(32).toString('hex')}`;
+    }
+
     // Default: keep the dummy variables/defaults from .env.example
     return line;
   });
