@@ -1,4 +1,4 @@
-import { Logger, Module, forwardRef } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrdersController } from './orders.controller';
@@ -76,6 +76,7 @@ import { ConfirmCheckoutReservationUseCase } from './core/application/usecases/c
 import { CreateCheckoutPaymentUseCase } from './core/application/usecases/create-checkout-payment/create-checkout-payment.usecase';
 import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
+import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-checkout/finalize-checkout.usecase';
 
 @Module({
   imports: [
@@ -189,6 +190,7 @@ import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-chec
     CreateCheckoutPaymentUseCase,
     RefundCheckoutPaymentUseCase,
     ClearCheckoutCartUseCase,
+    FinalizeCheckoutUseCase,
 
     // Job Handlers
     PaymentCompletedStep,

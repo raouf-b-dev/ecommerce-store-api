@@ -5,23 +5,30 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { Order } from '../../../domain/entities/order';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+
+export interface CancelOrderDto {
+  orderId: number;
+  isSagaCompensation?: boolean;
+}
 
 @Injectable()
 export class CancelOrderUseCase
-  implements UseCase<number, IOrder, UseCaseError>
+  implements UseCase<CancelOrderDto, IOrder, UseCaseError>
 {
   constructor(
     private orderRepository: OrderRepository,
     private readonly orderScheduler: OrderScheduler,
+    private readonly domainEventPublisher: DomainEventPublisher,
   ) {}
 
-  async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
-    const requestedOrder = await this.orderRepository.findById(id);
+  async execute(dto: CancelOrderDto): Promise<Result<IOrder, UseCaseError>> {
+    const { orderId, isSagaCompensation } = dto;
+    const requestedOrder = await this.orderRepository.findById(orderId);
     if (requestedOrder.isFailure) return requestedOrder;
 
     const order: Order = requestedOrder.value;
@@ -40,6 +47,16 @@ export class CancelOrderUseCase
       console.error(
         `Failed to schedule stock release for order ${order.id}: ${scheduleResult.error.message}`,
       );
+    }
+
+    if (isSagaCompensation) {
+      this.domainEventPublisher.publish('checkout.saga.compensation', {
+        step: 'cancel-order',
+        orderId,
+      });
+      this.domainEventPublisher.publish('checkout.saga.failed', {
+        orderId,
+      });
     }
 
     return Result.success(order.toPrimitives());

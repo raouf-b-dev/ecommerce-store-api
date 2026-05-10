@@ -4,16 +4,17 @@ import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderBuilder } from '../../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
   let mockRepository: MockOrderRepository;
   let mockOrderScheduler: jest.Mocked<OrderScheduler>;
+  let domainEventPublisher: DomainEventPublisher;
 
   beforeEach(() => {
     mockRepository = new MockOrderRepository();
@@ -26,7 +27,12 @@ describe('CancelOrderUseCase', () => {
       scheduleStockRelease: jest.fn(),
       schedulePostConfirmation: jest.fn(),
     } as unknown as jest.Mocked<OrderScheduler>;
-    useCase = new CancelOrderUseCase(mockRepository, mockOrderScheduler);
+    domainEventPublisher = { publish: jest.fn() };
+    useCase = new CancelOrderUseCase(
+      mockRepository,
+      mockOrderScheduler,
+      domainEventPublisher,
+    );
   });
 
   afterEach(() => {
@@ -42,7 +48,7 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFind(cancellableOrder as any);
     mockRepository.mockSuccessfulCancel();
 
-    const result = await useCase.execute(orderId);
+    const result = await useCase.execute({ orderId });
 
     expect(mockRepository.findById).toHaveBeenCalledWith(orderId);
     expect(mockRepository.cancelOrder).toHaveBeenCalled();
@@ -53,13 +59,36 @@ describe('CancelOrderUseCase', () => {
     if (result.isSuccess) {
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
     }
+    expect(domainEventPublisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('should publish saga compensation events if requested', async () => {
+    const orderId = 1;
+    const cancellableOrder = OrderTestFactory.createCancellableOrder({
+      id: orderId,
+    });
+
+    mockRepository.mockSuccessfulFind(cancellableOrder as any);
+    mockRepository.mockSuccessfulCancel();
+
+    const result = await useCase.execute({ orderId, isSagaCompensation: true });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'checkout.saga.compensation',
+      { step: 'cancel-order', orderId },
+    );
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'checkout.saga.failed',
+      { orderId },
+    );
   });
 
   it('should return a failure result if the order is not found', async () => {
     const orderId = 1;
     mockRepository.mockOrderNotFound(orderId);
 
-    const result = await useCase.execute(orderId);
+    const result = await useCase.execute({ orderId });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -79,7 +108,7 @@ describe('CancelOrderUseCase', () => {
 
     mockRepository.mockSuccessfulFind(nonCancellableOrder as any);
 
-    const result = await useCase.execute(orderId);
+    const result = await useCase.execute({ orderId });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -100,7 +129,7 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFind(cancellableOrder as any);
     mockRepository.mockCancelFailure('DB write failed');
 
-    const result = await useCase.execute(orderId);
+    const result = await useCase.execute({ orderId });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -121,7 +150,7 @@ describe('CancelOrderUseCase', () => {
       mockRepository.mockSuccessfulFind(orderPrimitives);
       mockRepository.mockSuccessfulCancel();
 
-      const result = await useCase.execute(orderPrimitives.id!);
+      const result = await useCase.execute({ orderId: orderPrimitives.id! });
 
       // Test the outcome
       ResultAssertionHelper.assertResultSuccess(result);
@@ -141,7 +170,7 @@ describe('CancelOrderUseCase', () => {
 
       mockRepository.mockSuccessfulFind(order);
 
-      const result = await useCase.execute(order.id!);
+      const result = await useCase.execute({ orderId: order.id! });
 
       ResultAssertionHelper.assertResultFailure(result);
 

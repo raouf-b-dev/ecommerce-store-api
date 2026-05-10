@@ -29,6 +29,7 @@ Path: `src/modules/[module]/primary-adapters`
 - Controllers, DTOs, listeners, job handlers.
 - Controllers inject and call use cases directly.
 - Thin controller rule: return use-case result directly.
+- **No domain event publishing.** Primary adapters (controllers, job handlers, listeners) must never inject `DomainEventPublisher` or emit domain events. Domain events are the responsibility of the Application Layer (use cases). Primary adapters only extract input, delegate to a use case, and return the result.
 
 ### Secondary Adapters
 
@@ -94,6 +95,16 @@ Reference utility:
 5. Add handler in `primary-adapters/jobs`.
 6. Update processor routing.
 7. Register providers.
+
+### Boundary Rule
+
+Job handlers are **primary adapters** — they follow the same rules as controllers:
+
+1. Extract data from the job payload.
+2. Delegate to a use case.
+3. Return the result.
+
+Job handlers must **not** contain business logic, publish domain events, or inject `DomainEventPublisher`. If a SAGA step needs to emit an event (e.g., `checkout.saga.compensation`), that event must be emitted from the use case the job delegates to.
 
 ## 7. Testing Conventions
 

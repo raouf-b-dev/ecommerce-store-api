@@ -7,11 +7,12 @@ import { PaymentStatusType } from '../../../domain/value-objects/payment-status'
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 describe('CapturePaymentUseCase', () => {
   let useCase: CapturePaymentUseCase;
   let paymentRepository: MockPaymentRepository;
+  let domainEventPublisher: DomainEventPublisher;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,6 +22,10 @@ describe('CapturePaymentUseCase', () => {
           provide: PaymentRepository,
           useClass: MockPaymentRepository,
         },
+        {
+          provide: DomainEventPublisher,
+          useValue: { publish: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -28,6 +33,7 @@ describe('CapturePaymentUseCase', () => {
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
     ) as unknown as MockPaymentRepository;
+    domainEventPublisher = module.get(DomainEventPublisher);
   });
 
   afterEach(() => {
@@ -56,6 +62,13 @@ describe('CapturePaymentUseCase', () => {
     expect(paymentRepository.update).toHaveBeenCalled();
     const updatedPayment = result.value;
     expect(updatedPayment.status).toBe(PaymentStatusType.CAPTURED);
+
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'payment.captured',
+      {
+        paymentId: 123,
+      },
+    );
   });
 
   it('should fail if payment is not found', async () => {

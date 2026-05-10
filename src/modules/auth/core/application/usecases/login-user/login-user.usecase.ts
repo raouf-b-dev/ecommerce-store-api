@@ -10,6 +10,7 @@ import { SessionTokenRepository } from '../../../domain/repositories/session-tok
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { LoginDto } from '../../../../primary-adapters/dto/login.dto';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class LoginUserUseCase extends UseCase<
@@ -25,6 +26,7 @@ export class LoginUserUseCase extends UseCase<
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerService,
+    private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
   }
@@ -37,6 +39,9 @@ export class LoginUserUseCase extends UseCase<
     // 1. Find User
     const userResult = await this.userRepository.findByEmail(dto.email);
     if (userResult.isFailure || !userResult.value) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'invalid_user',
+      });
       return ErrorFactory.UseCaseError('Invalid credentials');
     }
     const user = userResult.value;
@@ -47,20 +52,32 @@ export class LoginUserUseCase extends UseCase<
       user.passwordHash,
     );
     if (!isMatch) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'invalid_password',
+      });
       return ErrorFactory.UseCaseError('Invalid credentials');
     }
 
     // 2.5 Check if user is active
     if (!user.isActive) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'inactive_user',
+      });
       return ErrorFactory.UseCaseError('Invalid credentials');
     }
 
     // 3. Resolve role code for JWT payload (PermissionsGuard requires the string code)
     if (!user.roleId) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'no_role',
+      });
       return ErrorFactory.UseCaseError('User has no assigned role');
     }
     const roleResult = await this.roleRepository.findById(user.roleId);
     if (roleResult.isFailure) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'role_resolution_failed',
+      });
       return ErrorFactory.UseCaseError('Failed to resolve user role');
     }
 
@@ -95,6 +112,9 @@ export class LoginUserUseCase extends UseCase<
     }
 
     this.logger.log(`User ${user.email} logged in successfully`);
+    this.domainEventPublisher.publish('auth.login.success', {
+      userId: user.id,
+    });
 
     return Result.success({ accessToken, refreshToken });
   }

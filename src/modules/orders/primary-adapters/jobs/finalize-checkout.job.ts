@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ClearCartResult } from './clear-cart.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { FinalizeCheckoutUseCase } from '../../core/application/usecases/finalize-checkout/finalize-checkout.usecase';
+import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 
 export interface FinalizeCheckoutResult {
   success: boolean;
@@ -21,7 +23,10 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
 > {
   protected readonly logger = new Logger(FinalizeCheckoutStep.name);
 
-  constructor(private readonly correlation: CorrelationService) {
+  constructor(
+    private readonly correlation: CorrelationService,
+    private readonly finalizeCheckoutUseCase: FinalizeCheckoutUseCase,
+  ) {
     super();
   }
 
@@ -39,15 +44,29 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
 
     const { orderId, paymentId, reservationId } = childData || {};
 
-    this.logger.log(
-      `Checkout flow ${flowId} completed. Order: ${orderId}, Payment: ${paymentId}`,
-    );
+    if (!orderId || !paymentId || !reservationId) {
+      this.logger.error(
+        `Missing required IDs for finalize checkout. Order: ${orderId}, Payment: ${paymentId}, Reservation: ${reservationId}`,
+      );
+      return ErrorFactory.ServiceError(
+        'Missing required IDs for finalize checkout.',
+      );
+    }
+
+    const finalizeResult = await this.finalizeCheckoutUseCase.execute({
+      flowId,
+      orderId,
+    });
+
+    if (finalizeResult.isFailure) {
+      return finalizeResult;
+    }
 
     return Result.success({
       success: true,
-      orderId: orderId || 0,
-      paymentId: paymentId || 0,
-      reservationId: reservationId || 0,
+      orderId,
+      paymentId,
+      reservationId,
     });
   }
 }

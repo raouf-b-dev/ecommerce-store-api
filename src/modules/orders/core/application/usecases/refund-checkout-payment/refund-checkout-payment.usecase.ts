@@ -10,12 +10,16 @@ import {
   PaymentGateway,
   ProcessRefundInput,
 } from '../../ports/payment.gateway';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class RefundCheckoutPaymentUseCase
   implements UseCase<ProcessRefundInput, void, UseCaseError>
 {
-  constructor(private readonly paymentGateway: PaymentGateway) {}
+  constructor(
+    private readonly paymentGateway: PaymentGateway,
+    private readonly domainEventPublisher: DomainEventPublisher,
+  ) {}
 
   async execute(
     input: ProcessRefundInput,
@@ -28,6 +32,11 @@ export class RefundCheckoutPaymentUseCase
         result.error,
       );
     }
+
+    this.domainEventPublisher.publish('checkout.saga.compensation', {
+      step: 'refund-payment',
+      paymentId: input.paymentId,
+    });
 
     return Result.success(undefined);
   }

@@ -5,7 +5,6 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CheckoutDto } from '../../../../primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from '../../../../primary-adapters/dto/checkout-response.dto';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
@@ -13,6 +12,7 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class CheckoutUseCase extends UseCase<
@@ -28,6 +28,7 @@ export class CheckoutUseCase extends UseCase<
     private readonly orderFactory: OrderFactory,
     private readonly paymentPolicy: PaymentMethodPolicy,
     private readonly validateCheckoutUseCase: ValidateCheckoutUseCase,
+    private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
   }
@@ -49,6 +50,11 @@ export class CheckoutUseCase extends UseCase<
       return Result.failure(validationResult.error);
     }
 
+    this.domainEventPublisher.publish('cart.checkout.initiated', {
+      cartId: dto.cartId,
+      userId,
+    });
+
     const { cart, shippingAddress } = validationResult.value;
 
     // 2. Create Order Synchronously (to generate ID)
@@ -67,6 +73,8 @@ export class CheckoutUseCase extends UseCase<
     }
     const savedOrder = saveResult.value;
     const orderId = savedOrder.id!;
+
+    this.domainEventPublisher.publish('order.created', { orderId, userId });
 
     // 3. Schedule Checkout Flow
     const scheduleResult = await this.orderScheduler.scheduleCheckout({

@@ -106,7 +106,7 @@
 
 ---
 
-### [ ] Prometheus Metrics Endpoint
+### [x] Prometheus Metrics Endpoint
 
 **What**: Expose application metrics via `GET /metrics` in Prometheus exposition format. Currently the system has **zero metrics** — no counters, histograms, or gauges.
 

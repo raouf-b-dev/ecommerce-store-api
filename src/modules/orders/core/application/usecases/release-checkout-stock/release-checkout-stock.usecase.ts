@@ -7,12 +7,16 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { InventoryReservationGateway } from '../../ports/inventory-reservation.gateway';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class ReleaseCheckoutStockUseCase
   implements UseCase<number, void, UseCaseError>
 {
-  constructor(private readonly inventoryGateway: InventoryReservationGateway) {}
+  constructor(
+    private readonly inventoryGateway: InventoryReservationGateway,
+    private readonly domainEventPublisher: DomainEventPublisher,
+  ) {}
 
   async execute(reservationId: number): Promise<Result<void, UseCaseError>> {
     const result = await this.inventoryGateway.releaseStock(reservationId);
@@ -23,6 +27,11 @@ export class ReleaseCheckoutStockUseCase
         result.error,
       );
     }
+
+    this.domainEventPublisher.publish('checkout.saga.compensation', {
+      step: 'release-stock',
+      reservationId,
+    });
 
     return Result.success(undefined);
   }
