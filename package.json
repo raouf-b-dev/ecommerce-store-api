@@ -90,7 +90,7 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "seed:admin": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed-admin.ts",
     "env:init": "node scripts/generate-envs.js",
-    "env:init:force": "node scripts/generate-envs.js --force",
+    "env:init:force": "node scripts/generate-envs.js --overwrite",
     "env:init:dev": "node scripts/generate-envs.js --envs=development",
     "env:init:prod": "node scripts/generate-envs.js --envs=production",
     "env:init:staging": "node scripts/generate-envs.js --envs=staging",

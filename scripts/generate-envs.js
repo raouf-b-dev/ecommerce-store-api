@@ -5,8 +5,8 @@
 // Usage:
 //   node scripts/generate-envs.js
 //   node scripts/generate-envs.js --envs=development,staging
-//   node scripts/generate-envs.js --from=.env.example --fromSecrets=.secrets.example --force
-//   npm run env:init -- --force
+//   node scripts/generate-envs.js --from=.env.example --fromSecrets=.secrets.example --overwrite
+//   npm run env:init -- --overwrite
 
 const fs = require('fs');
 const fsp = fs.promises;
@@ -26,7 +26,7 @@ const ENV_LIST = (args.envs || 'development,production,staging,test')
 
 const ENV_TEMPLATE = args.from || '.env.example';
 const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
-const FORCE = Boolean(args.force);
+const FORCE = Boolean(args.overwrite || args.force);
 
 // Helpers
 function generateRSAPrivateKey() {
@@ -87,6 +87,11 @@ function buildLinesForEnv(lines, envName) {
       return `METRICS_API_KEY=${crypto.randomBytes(32).toString('hex')}`;
     }
 
+    if (key === 'GRAFANA_ADMIN_PASSWORD') {
+      const crypto = require('crypto');
+      return `GRAFANA_ADMIN_PASSWORD=${crypto.randomBytes(16).toString('hex')}`;
+    }
+
     // Default: keep the dummy variables/defaults from .env.example
     return line;
   });
@@ -115,7 +120,7 @@ async function writeFile(targetPath, contentLines) {
       const exists = fs.existsSync(outPath);
       if (exists && !FORCE) {
         console.log(
-          `⏭️  Skipping ${outName} (exists). Use --force to overwrite.`,
+          `⏭️  Skipping ${outName} (exists). Use --overwrite to overwrite.`,
         );
         continue;
       }

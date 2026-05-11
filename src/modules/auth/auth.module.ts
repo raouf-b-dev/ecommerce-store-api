@@ -4,7 +4,7 @@ import { PostgresUserRepository } from './secondary-adapters/repositories/postgr
 import { CachedUserRepository } from './secondary-adapters/repositories/cached-user-repository/cached-user.repository';
 import { PostgresSessionTokenRepository } from './secondary-adapters/repositories/postgres-session-token-repository/postgres-session-token.repository';
 import { BcryptService } from './secondary-adapters/services/bcrypt.service';
-import { PasswordHasher } from '../../../src/shared-kernel/domain/interfaces/password-hasher.interface';
+import { PasswordHasher } from '../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { SessionTokenEntity } from './secondary-adapters/orm/session-token.schema';
 import { CustomersModule } from '../customers/customers.module';
