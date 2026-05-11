@@ -8,6 +8,7 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 import { CorrelationService } from './correlation/correlation.service';
 import { EnvConfigService } from '../../config/env-config.service';
+import { trace, context } from '@opentelemetry/api';
 
 @Injectable()
 export class WinstonLoggerService
@@ -51,10 +52,15 @@ export class WinstonLoggerService
               : `[${JSON.stringify(context)}]`;
         }
 
-        // Show correlation ID in dev console for easy visual tracing
+        // Show correlation ID and trace ID in dev console for easy visual tracing
         const cid =
           typeof correlationId === 'string'
             ? ` (cid:${correlationId.slice(0, 8)})`
+            : '';
+
+        const tid =
+          typeof info.traceId === 'string'
+            ? ` (tid:${info.traceId.slice(0, 8)})`
             : '';
 
         let stackTrace = '';
@@ -65,7 +71,7 @@ export class WinstonLoggerService
               : `\n${JSON.stringify(stack)}`;
         }
 
-        return `${ts} ${lvl} ${ctx}${cid} ${msg}${stackTrace}`;
+        return `${ts} ${lvl} ${ctx}${cid}${tid} ${msg}${stackTrace}`;
       }),
     );
 
@@ -159,7 +165,17 @@ export class WinstonLoggerService
     meta?: Record<string, unknown>,
   ): Record<string, unknown> {
     const correlationId = this.correlation.getId();
-    return { ...meta, ...(correlationId ? { correlationId } : {}) };
+
+    // Extract OTel trace context from the active span
+    const activeSpan = trace.getSpan(context.active());
+    const spanContext = activeSpan?.spanContext();
+
+    return {
+      ...meta,
+      ...(correlationId ? { correlationId } : {}),
+      ...(spanContext?.traceId ? { traceId: spanContext.traceId } : {}),
+      ...(spanContext?.spanId ? { spanId: spanContext.spanId } : {}),
+    };
   }
 
   // --- NestJS LoggerService interface ---
