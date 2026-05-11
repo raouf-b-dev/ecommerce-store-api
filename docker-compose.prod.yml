@@ -48,6 +48,53 @@ services:
     networks:
       - ecommerce-internal
 
+  prometheus:
+    volumes:
+      - ./docker/monitoring/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - ecommerce-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  loki:
+    networks:
+      - ecommerce-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  promtail:
+    networks:
+      - ecommerce-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  tempo:
+    networks:
+      - ecommerce-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    networks:
+      - ecommerce-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
 networks:
   ecommerce-internal:
     driver: bridge

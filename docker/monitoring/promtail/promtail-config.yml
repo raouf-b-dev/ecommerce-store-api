@@ -1,0 +1,47 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /positions/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Keep only containers with a compose service label
+      - source_labels:
+          ['__meta_docker_container_label_com_docker_compose_service']
+        regex: '.+'
+        action: keep
+      - source_labels:
+          ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: container_name
+    pipeline_stages:
+      # Parse JSON log lines from Winston
+      - json:
+          expressions:
+            level: level
+            context: context
+            correlationId: correlationId
+            traceId: traceId
+            message: message
+      # Promote extracted fields to Loki labels for fast filtering
+      # Level is in structured metadata, no need for Loki label
+      - labels:
+          level: ''
+      # Use the timestamp from the JSON log if present
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05.000'
+          fallback_formats:
+            - '2006-01-02T15:04:05.000Z'
+          action_on_failure: fudge

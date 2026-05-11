@@ -9,26 +9,6 @@ import Redis from 'ioredis';
 const THROTTLER_REDIS_CLIENT = 'THROTTLER_REDIS_CLIENT';
 
 @Module({
-  imports: [
-    ThrottlerModule.forRootAsync({
-      inject: [THROTTLER_REDIS_CLIENT, EnvConfigService],
-      useFactory: (redisClient: Redis, config: EnvConfigService) => ({
-        throttlers: [
-          {
-            name: 'default',
-            ttl: seconds(60),
-            limit: config.throttle.globalLimit,
-          },
-          {
-            name: 'strict',
-            ttl: seconds(60),
-            limit: config.throttle.strictLimit,
-          },
-        ],
-        storage: new ThrottlerStorageRedisService(redisClient),
-      }),
-    }),
-  ],
   providers: [
     {
       provide: THROTTLER_REDIS_CLIENT,
@@ -50,6 +30,35 @@ const THROTTLER_REDIS_CLIENT = 'THROTTLER_REDIS_CLIENT';
         return client;
       },
     },
+  ],
+  exports: [THROTTLER_REDIS_CLIENT],
+})
+class ThrottlerRedisModule {}
+
+@Module({
+  imports: [
+    ThrottlerRedisModule,
+    ThrottlerModule.forRootAsync({
+      imports: [ThrottlerRedisModule],
+      inject: [THROTTLER_REDIS_CLIENT, EnvConfigService],
+      useFactory: (redisClient: Redis, config: EnvConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: seconds(60),
+            limit: config.throttle.globalLimit,
+          },
+          {
+            name: 'strict',
+            ttl: seconds(60),
+            limit: config.throttle.strictLimit,
+          },
+        ],
+        storage: new ThrottlerStorageRedisService(redisClient),
+      }),
+    }),
+  ],
+  providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
