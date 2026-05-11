@@ -55,4 +55,8 @@ export class EnvConfigService {
   get metricsApiKey(): string {
     return this.get('metricsApiKey');
   }
+
+  get otel() {
+    return this.get('otel');
+  }
 }

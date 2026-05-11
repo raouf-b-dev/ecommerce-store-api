@@ -143,7 +143,7 @@
 
 ---
 
-### [ ] OpenTelemetry Distributed Tracing
+### [x] OpenTelemetry Distributed Tracing
 
 **What**: Add end-to-end request tracing with span propagation across HTTP, BullMQ jobs, and domain events.
 

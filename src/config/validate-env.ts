@@ -41,5 +41,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     THROTTLE_STRICT_LIMIT: num({ default: 10 }),
 
     METRICS_API_KEY: str({ default: '' }),
+    OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
+    OTEL_EXPORTER_OTLP_ENDPOINT: str({ default: 'http://localhost:4317' }),
   });
 }

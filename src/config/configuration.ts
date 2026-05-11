@@ -34,6 +34,10 @@ export interface IAppConfig {
     strictLimit: number;
   };
   metricsApiKey: string;
+  otel: {
+    tracingEnabled: boolean;
+    exporterEndpoint: string;
+  };
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -78,5 +82,9 @@ export default (): IAppConfig => {
       strictLimit: env.THROTTLE_STRICT_LIMIT,
     },
     metricsApiKey: env.METRICS_API_KEY,
+    otel: {
+      tracingEnabled: env.OTEL_TRACING_ENABLED !== 'false',
+      exporterEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    },
   };
 };
