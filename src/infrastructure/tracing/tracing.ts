@@ -14,7 +14,7 @@ if (isTracingEnabled) {
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'ecommerce-store-api',
-      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '0.3.0',
+      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '0.4.0',
       ['deployment.environment']: process.env.NODE_ENV || 'development',
     }),
     traceExporter: new OTLPTraceExporter({
