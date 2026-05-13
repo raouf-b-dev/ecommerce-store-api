@@ -1,0 +1,177 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "title": "SAGAs Completed (Total)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(checkout_saga_completed_total{app=\"ecommerce-store-api\"})",
+          "legendFormat": "completed",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [{ "color": "red", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "title": "SAGAs Failed (Total)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(checkout_saga_failed_total{app=\"ecommerce-store-api\"})",
+          "legendFormat": "failed",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 90 }
+            ]
+          },
+          "unit": "percent",
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "title": "SAGA Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "(sum(checkout_saga_completed_total{app=\"ecommerce-store-api\"}) / clamp_min(sum(checkout_saga_completed_total{app=\"ecommerce-store-api\"}) + sum(checkout_saga_failed_total{app=\"ecommerce-store-api\"}), 1) * 100) or vector(100)",
+          "legendFormat": "success %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "showPoints": "never"
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "id": 4,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "title": "SAGA Throughput (5m)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(checkout_saga_completed_total{app=\"ecommerce-store-api\"}[5m])",
+          "legendFormat": "completed",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(checkout_saga_failed_total{app=\"ecommerce-store-api\"}[5m])",
+          "legendFormat": "failed",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 5,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "title": "Compensations by Step (Total)",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "sum by (step)(checkout_saga_compensation_total{app=\"ecommerce-store-api\"})",
+          "legendFormat": "{{step}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 6,
+      "options": {
+        "query": "{ .service.name = \"ecommerce-store-api\" && .name = \"CheckoutSaga\" }"
+      },
+      "title": "Recent Checkout Traces (TraceQL)",
+      "type": "traceql"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["ecommerce", "saga", "checkout"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Checkout SAGA (E-Commerce)",
+  "uid": "ecom-checkout-saga"
+}

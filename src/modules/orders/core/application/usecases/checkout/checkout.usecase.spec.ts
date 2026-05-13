@@ -13,11 +13,13 @@ import { CartTestFactory } from '../../../../../carts/testing/factories/cart.fac
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
 import { Customer } from '../../../../../customers/core/domain/entities/customer';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
   let orderScheduler: jest.Mocked<OrderScheduler>;
   let validateCheckoutUseCase: jest.Mocked<ValidateCheckoutUseCase>;
+  let domainEventPublisher: DomainEventPublisher;
 
   const mockUserId = 123;
   const mockCartId = 123;
@@ -88,12 +90,17 @@ describe('CheckoutUseCase', () => {
           provide: ValidateCheckoutUseCase,
           useValue: mockValidateCheckoutUseCase,
         },
+        {
+          provide: DomainEventPublisher,
+          useValue: { publish: jest.fn() },
+        },
       ],
     }).compile();
 
     useCase = module.get<CheckoutUseCase>(CheckoutUseCase);
     orderScheduler = module.get(OrderScheduler);
     validateCheckoutUseCase = module.get(ValidateCheckoutUseCase);
+    domainEventPublisher = module.get(DomainEventPublisher);
   });
 
   it('should schedule checkout with validated context', async () => {
@@ -119,6 +126,18 @@ describe('CheckoutUseCase', () => {
         shippingAddress: mockResolvedAddress,
       }),
     );
+
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'cart.checkout.initiated',
+      {
+        cartId: mockCartId,
+        userId: mockUserId,
+      },
+    );
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith('order.created', {
+      orderId: '1001',
+      userId: mockUserId,
+    });
   });
 
   it('should pass shipping address dto to validation use case', async () => {

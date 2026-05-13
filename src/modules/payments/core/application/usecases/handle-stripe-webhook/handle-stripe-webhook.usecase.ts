@@ -6,7 +6,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StripeSignatureService } from '../../../../secondary-adapters/services/stripe-signature.service';
+import { StripeSignatureVerifier } from '../../ports/stripe-signature-verifier';
 import {
   HandlePaymentWebhookService,
   PaymentWebhookResult,
@@ -40,7 +40,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
   private readonly logger = new Logger(HandleStripeWebhookUseCase.name);
 
   constructor(
-    private readonly stripeSignatureService: StripeSignatureService,
+    private readonly stripeSignatureVerifier: StripeSignatureVerifier,
     private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookService,
   ) {
     super();
@@ -54,7 +54,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Missing stripe-signature header');
     }
 
-    const isValid = this.stripeSignatureService.verify(
+    const isValid = this.stripeSignatureVerifier.verify(
       dto.payload,
       dto.signature,
     );

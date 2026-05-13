@@ -2,14 +2,13 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { IUser } from '../interfaces/user.interface';
-import { SystemRoleCode } from './../reference-data/system-roles';
 
 export interface UserProps {
   id: number | null;
   email: string;
   passwordHash: string;
+  mustChangePassword: boolean;
   roleId: number | null;
-  roleCode: string | null;
   isActive: boolean;
   customerId: number | null;
   createdAt: Date | null;
@@ -20,8 +19,8 @@ export class User implements IUser {
   private readonly _id: number | null;
   private _email: string;
   private _passwordHash: string;
+  private _mustChangePassword: boolean;
   private _roleId: number | null;
-  private _roleCode: string | null;
   private _isActive: boolean;
   private _customerId: number | null;
   private readonly _createdAt: Date;
@@ -34,8 +33,8 @@ export class User implements IUser {
     this._id = props.id ?? null;
     this._email = props.email.trim().toLowerCase();
     this._passwordHash = props.passwordHash;
+    this._mustChangePassword = props.mustChangePassword ?? false;
     this._roleId = props.roleId || null;
-    this._roleCode = props.roleCode || SystemRoleCode.CUSTOMER;
     this._isActive = props.isActive;
     this._customerId = props.customerId || null;
     this._createdAt = props.createdAt || new Date();
@@ -75,12 +74,12 @@ export class User implements IUser {
     return this._passwordHash;
   }
 
-  get roleId(): number | null {
-    return this._roleId;
+  get mustChangePassword(): boolean {
+    return this._mustChangePassword;
   }
 
-  get roleCode(): string | null {
-    return this._roleCode;
+  get roleId(): number | null {
+    return this._roleId;
   }
 
   get isActive(): boolean {
@@ -105,6 +104,7 @@ export class User implements IUser {
       return ErrorFactory.DomainError('New password hash cannot be empty');
     }
     this._passwordHash = newPasswordHash;
+    this._mustChangePassword = false;
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
@@ -142,8 +142,8 @@ export class User implements IUser {
       id: this._id,
       email: this._email,
       passwordHash: this._passwordHash,
+      mustChangePassword: this._mustChangePassword,
       roleId: this._roleId,
-      roleCode: this._roleCode,
       isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
@@ -156,8 +156,8 @@ export class User implements IUser {
       id: this._id,
       email: this._email,
       passwordHash: this._passwordHash,
+      mustChangePassword: this._mustChangePassword,
       roleId: this._roleId,
-      roleCode: this._roleCode,
       isActive: this._isActive,
       customerId: this._customerId,
       createdAt: this._createdAt,
@@ -170,8 +170,8 @@ export class User implements IUser {
       id: data.id,
       email: data.email,
       passwordHash: data.passwordHash,
-      roleId: data.roleId as number,
-      roleCode: data.roleCode,
+      mustChangePassword: data.mustChangePassword,
+      roleId: data.roleId,
       isActive: data.isActive,
       customerId: data.customerId,
       createdAt: data.createdAt,
@@ -184,16 +184,16 @@ export class User implements IUser {
     id: number | null,
     email: string,
     passwordHash: string,
+    mustChangePassword: boolean,
     roleId: number,
-    roleCode: string = SystemRoleCode.CUSTOMER,
     customerId?: number,
   ): User {
     return new User({
       id,
       email,
       passwordHash,
+      mustChangePassword,
       roleId,
-      roleCode,
       isActive: true,
       customerId: customerId || null,
       createdAt: new Date(),

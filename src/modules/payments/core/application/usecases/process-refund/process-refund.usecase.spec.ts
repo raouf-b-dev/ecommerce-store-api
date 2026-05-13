@@ -7,12 +7,13 @@ import { ProcessRefundDto } from '../../../../primary-adapters/dto/process-refun
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
   let paymentRepository: MockPaymentRepository;
+  let domainEventPublisher: DomainEventPublisher;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,10 +24,14 @@ describe('ProcessRefundUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentGatewayFactory,
+          provide: PaymentGatewayResolver,
           useValue: {
             getGateway: jest.fn(),
           },
+        },
+        {
+          provide: DomainEventPublisher,
+          useValue: { publish: jest.fn() },
         },
       ],
     }).compile();
@@ -35,8 +40,9 @@ describe('ProcessRefundUseCase', () => {
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
     ) as unknown as MockPaymentRepository;
+    domainEventPublisher = module.get(DomainEventPublisher);
 
-    const factory = module.get(PaymentGatewayFactory);
+    const factory = module.get(PaymentGatewayResolver);
     (factory.getGateway as jest.Mock).mockReturnValue({
       refund: jest.fn().mockResolvedValue({
         isFailure: false,
@@ -77,6 +83,14 @@ describe('ProcessRefundUseCase', () => {
     expect(paymentRepository.update).toHaveBeenCalled();
     const updatedPayment = result.value;
     expect(updatedPayment.refundedAmount).toBe(50);
+
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'payment.refunded',
+      {
+        paymentId: 123,
+        refundId: null,
+      },
+    );
   });
 
   it('should fail if payment is not found', async () => {

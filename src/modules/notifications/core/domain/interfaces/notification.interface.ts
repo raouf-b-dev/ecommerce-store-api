@@ -1,4 +1,5 @@
 import { NotificationStatus } from '../enums/notification-status.enum';
+import { NotificationPayload } from '../types/notification-payload.type';
 
 export interface INotification {
   id: string;
@@ -7,7 +8,7 @@ export interface INotification {
   type: string;
   title: string;
   message: string;
-  payload?: any;
+  payload?: NotificationPayload;
   status: NotificationStatus;
   failedReason?: string | null;
   deliveredAt?: Date | null;

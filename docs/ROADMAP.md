@@ -1,8 +1,6 @@
 # 🗺️ E-Commerce Store API — Feature Roadmap
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
->
-> **Companion docs**: [`AGENT.md`](../AGENT.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`EAV-PATTERN.md`](EAV-PATTERN.md)
 
 ---
 
@@ -19,89 +17,26 @@
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
-| Phase   | Name                         | Status  | Key Deliverables                                                                                                                                                                                             | Location                                                  |
-| :------ | :--------------------------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| **0**   | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Auth, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI | `src/modules/`, `src/infrastructure/`                     |
-| **1**   | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Auth · BullMQ-based checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities | `src/modules/orders/`, `src/modules/carts/`               |
-| **2**   | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection                                                                                      | `src/shared-kernel/`, `src/infrastructure/idempotency/`   |
-| **3**   | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                   | `src/modules/*/secondary-adapters/repositories/cached-*/` |
-| **4**   | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                          |
-| **5**   | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                          |
-| **6**   | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`               |
-| **7**   | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`         |
-| **7.5** | Auth Overhaul (RBAC)         | ✅ Done | RSA RS256 JWT, Refresh Token Rotation, Session Tracking, Full RBAC (Roles/Permissions/Guards)                                                                                                                | `src/infrastructure/jwt/`, `src/modules/auth/`            |
-| **7.6** | Auth Hardening & Quality     | ✅ Done | Abstract `PasswordHasher`, Session reuse detection, Architectural polish, Strict typed JWT payloads, Thin controllers                                                                                        | `src/modules/auth/`                                       |
-| **8**   | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/` |
-| **8.1** | Logging Activation           | ✅ Done | Winston logger injected into NestJS application lifecycle, replacing manual error handlers                                                                                                                   | `src/main.ts`                                             |
-
-## 🏗️ Phase 8.5 — Architecture Hardening (Post-RBAC)
-
-> **Goal**: Eliminate remaining DDD/Hexagonal violations identified in post-RBAC audit. Ensure all modules meet the zero-violation architectural baseline.
-
----
-
-### 8.5.1 — Payments: Extract Abstract Ports for External Services
-
-**What**: Three use cases in the Payments module directly inject concrete infrastructure classes — a critical Hexagonal Architecture violation. The application core must depend only on abstractions.
-
-**Violations**:
-
-- `HandleStripeWebhookUseCase` injects `StripeSignatureService` (concrete, in `secondary-adapters/services/`)
-- `HandlePayPalWebhookUseCase` injects `PayPalSignatureService` (concrete, in `secondary-adapters/services/`)
-- `CreatePaymentUseCase`, `CreatePaymentIntentUseCase`, `ProcessRefundUseCase` inject `PaymentGatewayFactory` (concrete, in `secondary-adapters/gateways/`)
-
-**Scope**:
-
-- [ ] Create `payments/core/application/ports/` directory
-- [ ] Define `StripeSignatureVerifier` abstract port — `verify(payload, signature): boolean`
-- [ ] Define `PayPalSignatureVerifier` abstract port — `verify(headers, body): boolean`
-- [ ] Register `StripeSignatureService` and `PayPalSignatureService` as implementations of the abstract ports
-- [ ] Update use cases to inject the abstract port tokens (not concrete classes)
-
-**Location**: `src/modules/payments/core/application/ports/`, `src/modules/payments/payments.module.ts`
-
----
-
-### 8.5.2 — Notifications: Fix Fat Controller + Typed Payload
-
-**What**: `NotificationsController` manually unwraps `Result` and calls `.toPrimitives()` on domain entities — both violations of the thin controller rule. Additionally, `Notification.payload` is typed `any` — a domain layer purity violation.
-
-**Scope**:
-
-- [ ] Define `NotificationPayload` typed interface (or `Record<string, unknown>`) to replace `any` in `notification.ts`, `notification.interface.ts`, `notification.gateway.interface.ts`
-- [ ] Update `GetUserNotificationsUseCase` to return `{ total, page, data: INotification[] }` with primitives baked in
-- [ ] Refactor `NotificationsController.getUserNotifications()` to a one-liner: `return this.useCase.execute(...)`
-- [ ] Replace `@Request() req` with `@CurrentUser()` decorator (already exists in auth module)
-
-**Location**: `src/modules/notifications/`
-
----
-
-### 8.5.3 — Orders: Type `OrderItem.fromPrimitives()`
-
-**What**: `OrderItem.fromPrimitives(data: any)` uses `any` in the domain entity. Should accept a typed `IOrderItem` interface.
-
-- [ ] Define `IOrderItem` interface in `order-items.ts`
-- [ ] Update `fromPrimitives(data: IOrderItem)` signature
-
-**Location**: `src/modules/orders/core/domain/entities/order-items.ts`
-
----
-
-### 8.5.4 — Auth: Fix `PermissionMapper.toEntity()` type cast
-
-**What**: `PermissionMapper.toEntity()` casts payload to `any` instead of `PermissionCreate`.
-
-- [ ] Define `PermissionCreate = CreateFromEntity<PermissionEntity>`
-- [ ] Handle `id: 0` for new entities explicitly within the typed payload
-
-**Location**: `src/modules/auth/secondary-adapters/persistence/mappers/permission.mapper.ts`
-
----
+| Phase   | Name                         | Status  | Key Deliverables                                                                                                                                                                                             | Location                                                                           |
+| :------ | :--------------------------- | :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| **0**   | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Auth, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI | `src/modules/`, `src/infrastructure/`                                              |
+| **1**   | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Auth · BullMQ-based checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities | `src/modules/orders/`, `src/modules/carts/`                                        |
+| **2**   | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection                                                                                      | `src/shared-kernel/`, `src/infrastructure/idempotency/`                            |
+| **3**   | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                   | `src/modules/*/secondary-adapters/repositories/cached-*/`                          |
+| **4**   | Test Suite Foundation        | ✅ Done | Comprehensive spec files: Use case unit tests (all modules), repository integration tests (Postgres + cached), controller tests · Docker Compose for local dev (PostgreSQL 18 + Redis Stack)                 | `src/modules/*/`                                                                   |
+| **5**   | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from all 61 use case/service files · Trimmed orders table from 12 to 4 indexes · Migration CLI scripts configured (`data-source.ts`)                                             | `data-source.ts`, `package.json`                                                   |
+| **6**   | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node.js 24 Alpine) · `GlobalExceptionFilter` for JSON error standardization · Application Graceful Shutdown handling (`SIGTERM` & connections drain)                               | `Dockerfile`, `src/filters/`, `src/main.ts`                                        |
+| **7**   | Security Hardening           | ✅ Done | `helmet` security headers · CORS with env-based origin whitelist · XSS sanitization interceptor (`sanitize-html`) · Pagination `@Max(100)` on all query DTOs                                                 | `src/main.ts`, `src/interceptors/`, `src/config/`                                  |
+| **7.5** | Auth Overhaul (RBAC)         | ✅ Done | RSA RS256 JWT, Refresh Token Rotation, Session Tracking, Full RBAC (Roles/Permissions/Guards)                                                                                                                | `src/infrastructure/jwt/`, `src/modules/auth/`                                     |
+| **7.6** | Auth Hardening & Quality     | ✅ Done | Abstract `PasswordHasher`, Session reuse detection, Architectural polish, Strict typed JWT payloads, Thin controllers                                                                                        | `src/modules/auth/`                                                                |
+| **8**   | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/`                          |
+| **8.1** | Logging Activation           | ✅ Done | Winston logger injected into NestJS application lifecycle, replacing manual error handlers                                                                                                                   | `src/main.ts`                                                                      |
+| **8.5** | Architecture Hardening       | ✅ Done | Abstract ports for payments services, thin notifications controller, strict NotificationPayload and OrderItemPrimitives typing                                                                               | `src/modules/payments/`, `src/modules/notifications/`                              |
+| **10**  | SaaS & Monitoring            | ✅ Done | API Versioning (`v1`) · Rate Limiting (Redis-backed) · Prometheus metrics (`/metrics`) · Grafana Stack (Loki, Tempo, Dashboards) · OTel Distributed Tracing                                                  | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/monitoring/` |
 
 ## 🧪 Phase 9 — Test Suite Expansion
 
-> **Goal**: Expand existing test coverage to production-grade confidence. The project already has 45 spec files — build on this foundation.
+> **Goal**: Expand existing test coverage to production-grade confidence. The project already has 116 spec files — build on this foundation.
 
 ---
 
@@ -144,85 +79,6 @@
 - Inventory reservation/release atomicity
 - Customer address management with default promotion
 - Concurrent stock reservation edge cases
-
----
-
-## 📋 Phase 10 — SaaS Features & Monitoring
-
-> **Goal**: Enterprise-grade features for SaaS deployment and full-stack observability.
-
----
-
-### [ ] API Versioning
-
-**What**: Enable URI versioning (`/v1/...`) before first client deployment.
-**Scope**: Enable NestJS versioning in `main.ts`, add `@Version('1')` to all controllers.
-
----
-
-### [ ] Rate Limiting & Throttling
-
-**What**: Protect the API with `@nestjs/throttler`. Global defaults + stricter limits on auth endpoints.
-
-**Scope**:
-
-1. Install `@nestjs/throttler` with Redis store for multi-instance support
-2. Global defaults (100 req/min) + strict limits on `/auth/login`, `/auth/register`, `/auth/refresh`
-3. Exclude `/health` from throttling
-
----
-
-### [ ] Prometheus Metrics Endpoint
-
-**What**: Expose application metrics via `GET /metrics` in Prometheus exposition format. Currently the system has **zero metrics** — no counters, histograms, or gauges.
-
-**Scope**:
-
-1. Install `prom-client` (the standard Prometheus client for Node.js)
-2. Create `src/infrastructure/metrics/` module with a `MetricsService` that registers:
-   - **HTTP metrics** (auto-instrumented via middleware): `http_requests_total` (counter by method, route, status), `http_request_duration_seconds` (histogram)
-   - **Business metrics**: `orders_created_total`, `checkout_saga_completed_total`, `checkout_saga_failed_total`, `payments_captured_total`, `payments_refunded_total`
-   - **Infrastructure metrics**: `db_pool_active_connections` (gauge), `redis_health_status` (gauge 0/1), `bullmq_queue_depth` (gauge per queue), `websocket_connections_active` (gauge)
-3. Expose `GET /metrics` endpoint (no auth, Prometheus scrape target)
-4. Add default labels: `app=ecommerce-store-api`, `env=production|development`
-
-**Location**: `src/infrastructure/metrics/`
-
----
-
-### [ ] Grafana Monitoring Stack (Docker Compose)
-
-**What**: Add Prometheus + Grafana to the Docker Compose setup for local and production monitoring.
-
-**Scope**:
-
-1. Add `prometheus` service to `docker-compose.yaml` with scrape config targeting `:3000/metrics`
-2. Add `grafana` service with provisioned data source (Prometheus) and pre-built dashboards
-3. Add `loki` service (Grafana Loki) for log aggregation from JSON stdout
-4. Create pre-built Grafana dashboards:
-   - **API Overview**: Request rate, error rate, P50/P95/P99 latency, active connections
-   - **Business Metrics**: Orders created, SAGA success/failure rates, payments captured/refunded
-   - **Infrastructure**: DB pool usage, Redis health, BullMQ queue depths, WebSocket connections
-5. Expose Grafana on port `3001` (default login: admin/admin)
-
-**Location**: `docker-compose.yaml`, `docker/monitoring/` (Prometheus config, Grafana provisioning, dashboard JSON)
-
----
-
-### [ ] OpenTelemetry Distributed Tracing
-
-**What**: Add end-to-end request tracing with span propagation across HTTP, BullMQ jobs, and domain events.
-
-**Scope**:
-
-1. Install `@opentelemetry/sdk-node`, `@opentelemetry/auto-instrumentations-node`
-2. Create `src/infrastructure/tracing/tracing.ts` — OTel SDK bootstrap (before NestJS starts)
-3. Auto-instrument: HTTP, PostgreSQL (pg), Redis (ioredis), BullMQ
-4. Export spans to Grafana Tempo (or Jaeger) via OTLP
-5. Add Tempo service to Docker Compose and Grafana data source
-6. Correlate traces with logs via `traceId` injected into log metadata
-
-**Location**: `src/infrastructure/tracing/`
 
 ---
 
@@ -297,6 +153,129 @@
 1. `npm run migration:generate:dev -- src/migrations/InitialSchema`
 2. Verify migration runs cleanly on empty database
 3. Add `migration:run` to the production start flow in `package.json`
+
+---
+
+## 📈 Phase 14 — Operational Observability Maturity
+
+> **Goal**: Move beyond telemetry collection into measurable service reliability, alerting, and operational diagnostics.
+
+---
+
+### [ ] Service Level Indicators, Objectives, and Agreements
+
+**What**: Define reliability targets for the API and critical business workflows.
+
+**Scope**:
+
+- Define SLIs for request latency, availability, error rate, checkout success rate, queue delay, and dependency health.
+- Define initial SLOs for public API endpoints, checkout SAGA completion, Redis/PostgreSQL availability, and BullMQ processing delay.
+- Document SLA terminology separately from internal SLOs so the project can distinguish engineering targets from external commitments.
+- Add Prometheus queries for each SLI.
+- Add a service-level documentation page under `docs/observability/`.
+
+### [ ] RED and USE Dashboards
+
+**What**: Align Grafana dashboards with standard RED and USE observability methods.
+
+**Scope**:
+
+- API RED: request rate, error rate, and duration percentiles by route/status.
+- Infrastructure USE: utilization, saturation, and errors for PostgreSQL, Redis, BullMQ, Node.js runtime, and WebSocket connections.
+- Checkout workflow dashboard: SAGA throughput, failure rate, compensation count, queue delay, and trace links.
+- Business telemetry dashboard: auth success/failure, orders created, payments captured/refunded, and cart checkout initiation.
+- Document dashboard ownership, metric meanings, and troubleshooting entry points.
+
+### [ ] Alert Rules and Notification Routing
+
+**What**: Add actionable alerts for reliability and business-critical failure modes.
+
+**Scope**:
+
+- Add Prometheus alert rules for 5xx rate spikes, high p95 latency, Redis/PostgreSQL unhealthy status, BullMQ queue depth, and checkout SAGA failure rate.
+- Add alerts for missing telemetry, such as no metrics scraped or no recent checkout events.
+- Configure Alertmanager routing for local/dev environments.
+- Document severity levels, escalation expectations, and false-positive tuning.
+
+### [ ] Observability Runbooks
+
+**What**: Provide repeatable troubleshooting guides for common operational symptoms.
+
+**Scope**:
+
+- API latency spike runbook.
+- Checkout SAGA failure runbook.
+- Redis unavailable or degraded runbook.
+- BullMQ queue backlog runbook.
+- Missing traces/logs/metrics runbook.
+- Payment webhook failure runbook.
+
+---
+
+## 🚢 Phase 15 — Deployment and Production Hardening
+
+> **Goal**: Make the API safer to deploy, operate, migrate, and recover in realistic production-like environments.
+
+---
+
+### [ ] Public Demo Environment
+
+**What**: Deploy a constrained demo environment that exposes API documentation and safe read/write flows.
+
+**Scope**:
+
+- Deploy the API using production Docker scripts and environment validation.
+- Seed non-sensitive demo data.
+- Expose Swagger/OpenAPI documentation.
+- Protect admin, destructive, and credential-sensitive operations.
+- Document demo limitations and reset strategy.
+
+### [ ] Initial Database Migration
+
+**What**: Replace development `synchronize: true` assumptions with a production-ready baseline migration.
+
+**Scope**:
+
+- Generate the initial schema migration from the current TypeORM entities.
+- Verify migration execution on an empty PostgreSQL database.
+- Verify rollback behavior where practical.
+- Update production startup documentation to require migrations before serving traffic.
+- Add migration verification to deployment documentation.
+
+### [ ] Backup, Restore, and Recovery
+
+**What**: Document and test basic recovery procedures for stateful dependencies.
+
+**Scope**:
+
+- PostgreSQL backup and restore procedure.
+- Redis persistence and recovery expectations.
+- Grafana dashboard provisioning recovery.
+- Loki/Tempo/Prometheus volume persistence notes.
+- Disaster recovery checklist for local and VPS-style deployments.
+
+### [ ] Release and Rollback Process
+
+**What**: Define a predictable release process for versioned deployments.
+
+**Scope**:
+
+- Define release checklist: build, test, migrate, deploy, smoke test, monitor.
+- Document rollback strategy for API image, environment config, and database migration failures.
+- Add post-deploy smoke checks for `/health`, `/metrics`, auth, checkout, and queue processing.
+- Add version and changelog conventions.
+
+### [ ] Real E2E and Smoke Test Suite
+
+**What**: Add production-like verification flows for critical API behavior.
+
+**Scope**:
+
+- Auth: register → login → refresh → protected endpoint.
+- Products and inventory: create/list/update stock/check stock.
+- Cart and checkout: create cart → add items → checkout.
+- Orders and payments: online payment flow, COD flow, failure compensation.
+- Observability smoke test: generate traffic and verify metrics, logs, and traces are emitted.
 
 ---
 

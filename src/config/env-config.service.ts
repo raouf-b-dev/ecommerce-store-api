@@ -47,4 +47,16 @@ export class EnvConfigService {
   get cors() {
     return this.get('cors');
   }
+
+  get throttle() {
+    return this.get('throttle');
+  }
+
+  get metricsApiKey(): string {
+    return this.get('metricsApiKey');
+  }
+
+  get otel() {
+    return this.get('otel');
+  }
 }

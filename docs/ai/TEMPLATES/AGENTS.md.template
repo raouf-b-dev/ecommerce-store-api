@@ -1,0 +1,25 @@
+# `AGENTS.md` Adapter Template
+
+> Keep this file as an adapter of `AGENT.md`, not as an independent policy.
+
+## Scope
+
+State repository scope and allowed actions.
+
+## Constraints
+
+- Follow `AGENT.md` and linked canonical docs.
+- Preserve DDD/Hex architecture boundaries.
+- Respect security and testing policy.
+
+## Workflow
+
+Use `Intake -> Plan -> Execute -> Verify -> Handoff`.
+
+## Quality Gates
+
+List mandatory checks before completion.
+
+## Escalation
+
+State high-risk stop conditions requiring human decision.

@@ -1,0 +1,18 @@
+---
+description: Shared skills auto-discovery hints.
+alwaysApply: true
+---
+
+# Skills Discovery
+
+When task intent matches, prefer loading skills from:
+
+1. `.agents/skills/*/SKILL.md`
+2. `.claude/skills/*/SKILL.md`
+3. `.github/skills/*/SKILL.md`
+
+If multiple skills match, choose the smallest set that covers the task.
+
+For generation/scaffolding tasks, prioritize:
+
+- `.agents/skills/module-conventions-generator/SKILL.md`

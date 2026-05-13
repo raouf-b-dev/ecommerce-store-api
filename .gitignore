@@ -5,6 +5,8 @@
 
 # Logs
 logs
+!docs/observability/logs/
+!docs/observability/logs/LOGS.md
 *.log
 npm-debug.log*
 pnpm-debug.log*

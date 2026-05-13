@@ -7,7 +7,7 @@ import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;
@@ -22,7 +22,7 @@ describe('CreatePaymentUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentGatewayFactory,
+          provide: PaymentGatewayResolver,
           useValue: {
             getGateway: jest.fn(),
           },
@@ -35,7 +35,7 @@ describe('CreatePaymentUseCase', () => {
       PaymentRepository,
     ) as unknown as MockPaymentRepository;
 
-    const factory = module.get(PaymentGatewayFactory);
+    const factory = module.get(PaymentGatewayResolver);
     (factory.getGateway as jest.Mock).mockReturnValue({
       authorize: jest.fn().mockResolvedValue({
         isFailure: false,

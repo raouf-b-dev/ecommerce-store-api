@@ -8,6 +8,7 @@ import {
   Req,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { LoginDto } from './primary-adapters/dto/login.dto';
@@ -38,6 +39,10 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Throttle({
+    default: { limit: 10, ttl: 60000 },
+    strict: { limit: 10, ttl: 60000 },
+  })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -46,6 +51,10 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({
+    default: { limit: 10, ttl: 60000 },
+    strict: { limit: 10, ttl: 60000 },
+  })
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -55,6 +64,10 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: { limit: 20, ttl: 60000 },
+    strict: { limit: 20, ttl: 60000 },
+  })
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token successfully refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })

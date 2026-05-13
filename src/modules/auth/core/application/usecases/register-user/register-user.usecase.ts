@@ -69,8 +69,8 @@ export class RegisterUserUseCase extends UseCase<
       null,
       dto.email,
       passwordHash,
+      false, // Self-registered user chose their own password
       roleResult.value.id,
-      roleResult.value.code,
       customer.id!,
     );
 

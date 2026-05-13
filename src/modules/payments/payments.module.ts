@@ -30,6 +30,9 @@ import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
 import { PayPalGateway } from './secondary-adapters/gateways/paypal.gateway';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
 import { PayPalSignatureService } from './secondary-adapters/services/paypal-signature.service';
+import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
+import { PayPalSignatureVerifier } from './core/application/ports/paypal-signature-verifier';
+import { PaymentGatewayResolver } from './core/application/ports/payment-gateway-resolver';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
@@ -50,10 +53,22 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     StripeGateway,
     PayPalGateway,
     PaymentGatewayFactory,
+    {
+      provide: PaymentGatewayResolver,
+      useExisting: PaymentGatewayFactory,
+    },
 
     // Services
     StripeSignatureService,
     PayPalSignatureService,
+    {
+      provide: StripeSignatureVerifier,
+      useExisting: StripeSignatureService,
+    },
+    {
+      provide: PayPalSignatureVerifier,
+      useExisting: PayPalSignatureService,
+    },
 
     // Schedulers
     {
@@ -105,7 +120,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
   exports: [
     PaymentRepository,
     CreatePaymentUseCase,
-    PaymentGatewayFactory,
+    PaymentGatewayResolver,
     RecordCodPaymentUseCase,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,

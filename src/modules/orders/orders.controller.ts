@@ -206,6 +206,6 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })
   async cancelOrder(@Param('id') id: string) {
-    return await this.cancelOrderUseCase.execute(Number(id));
+    return await this.cancelOrderUseCase.execute({ orderId: Number(id) });
   }
 }

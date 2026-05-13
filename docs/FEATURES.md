@@ -24,25 +24,25 @@
 
 The system is decomposed into explicit **Subdomains** (Core, Generic, Supporting) and **Bounded Contexts** that map directly to NestJS modules. Each context owns its domain model, repositories, and use cases — zero shared mutable state.
 
-**Location**: `src/modules/` · **Deep-dive**: [ARCHITECTURE.md](ARCHITECTURE.md)
+**Location**: `src/modules/` · **Deep-dive**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Domain-Driven Design (Tactical)
 
 Every module follows tactical DDD patterns: **Entities**, **Value Objects**, **Aggregates**, **Domain Services**, and **Repository Ports**. Domain objects enforce their own invariants — no anaemic models.
 
-**Location**: `src/modules/*/core/domain/` · **Deep-dive**: [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md)
+**Location**: `src/modules/*/core/domain/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
 ### Hexagonal Architecture (Ports & Adapters)
 
 The core domain has zero dependency on infrastructure. All external concerns (database, cache, queues) are behind **Port** interfaces implemented by **Adapters**. Swapping PostgreSQL for another store means writing a new adapter — the domain doesn't change.
 
-**Location**: `src/modules/*/secondary-adapters/` · **Deep-dive**: [DDD-HEXAGONAL.md](DDD-HEXAGONAL.md)
+**Location**: `src/modules/*/secondary-adapters/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
 ### ACL Gateway Pattern
 
 8 bounded contexts communicate through **7 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
 
-**Location**: `src/modules/orders/secondary-adapters/gateways/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](INTEGRATION-PATTERNS.md)
+**Location**: `src/modules/orders/secondary-adapters/gateways/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
 
 ### Modular Monolith
 
@@ -66,7 +66,7 @@ A functional `Result<T, E>` type replaces exception-driven control flow across a
 
 The checkout flow is a multi-step SAGA: **Validate → Reserve Stock → Process Payment → Confirm Order**. If any step fails, a `CheckoutFailureListener` automatically triggers compensation — releasing stock, issuing refunds, and cancelling the order.
 
-**Location**: `src/modules/orders/primary-adapters/jobs/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](INTEGRATION-PATTERNS.md)
+**Location**: `src/modules/orders/primary-adapters/jobs/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
 
 ### Idempotency (Redis-Backed)
 
@@ -124,7 +124,7 @@ Relational persistence with TypeORM, including automated migration CLI scripts f
 
 Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /auth/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
 
-**Location**: `src/infrastructure/jwt/` · **Deep-dive**: [JWT-RSA-JWKS.md](JWT-RSA-JWKS.md)
+**Location**: `src/infrastructure/jwt/` · **Deep-dive**: [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md)
 
 ### Refresh Token Rotation
 
@@ -156,6 +156,24 @@ All DTOs use `class-validator` decorators for type-safe input validation. Pagina
 
 **Location**: `src/modules/*/primary-adapters/dtos/`
 
+### RBAC with Normalized Permissions
+
+Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
+
+**Location**: `src/modules/auth/`, `src/infrastructure/guards/`
+
+### Forced Credential Rotation (mustChangePassword)
+
+Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
+
+**Location**: `src/modules/auth/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+
+### Rate Limiting & Throttling
+
+Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/auth/login`.
+
+**Location**: `src/infrastructure/throttler/`
+
 ---
 
 <a id="infrastructure"></a>
@@ -170,7 +188,7 @@ A 4-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) produ
 
 ### Graceful Shutdown
 
-Full lifecycle shutdown handling: `SIGTERM`/`SIGINT` signal capture, HTTP connection draining, BullMQ worker cleanup, Redis connection closure, and WebSocket adapter teardown — all orchestrated through NestJS lifecycle hooks with `tini` for proper signal forwarding in Docker. See → [PROCESS-LIFECYCLE.md](PROCESS-LIFECYCLE.md)
+Full lifecycle shutdown handling: `SIGTERM`/`SIGINT` signal capture, HTTP connection draining, BullMQ worker cleanup, Redis connection closure, and WebSocket adapter teardown — all orchestrated through NestJS lifecycle hooks with `tini` for proper signal forwarding in Docker. See → [PROCESS-LIFECYCLE.md](infrastructure/PROCESS-LIFECYCLE.md)
 
 **Location**: `src/infrastructure/shutdown/`, `src/main.ts`
 
@@ -182,7 +200,7 @@ Production health endpoint (`GET /health`) using @nestjs/terminus to monitor Pos
 
 ### Multi-Environment Configuration
 
-4 environment profiles (development, staging, production, test) with type-safe configuration validation using `class-validator`. Secrets managed separately from config — see [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md).
+4 environment profiles (development, staging, production, test) with type-safe configuration validation using `class-validator`. Secrets managed separately from config — see [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md).
 
 **Location**: `src/config/`, `.env.example`, `.secrets.example`
 

@@ -1,7 +1,6 @@
 // src/modules/orders/domain/entities/order-item.entity.ts
 import { Quantity } from '../../../../../shared-kernel/domain/value-objects/quantity';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
-import { v4 as uuidv4 } from 'uuid';
 import { IOrderItem } from '../interfaces/order-item.interface';
 
 export interface OrderItemProps {
@@ -57,12 +56,8 @@ export class OrderItem implements IOrderItem {
     return this._lineTotal.value;
   }
 
-  private generateId(): string {
-    return uuidv4();
-  }
-
   // For persistence/serialization
-  toPrimitives() {
+  toPrimitives(): IOrderItem {
     return {
       id: this._id,
       productId: this._productId,
@@ -73,7 +68,7 @@ export class OrderItem implements IOrderItem {
     };
   }
 
-  static fromPrimitives(data: any): OrderItem {
+  static fromProps(data: OrderItemProps): OrderItem {
     return new OrderItem({
       id: data.id,
       productId: data.productId,

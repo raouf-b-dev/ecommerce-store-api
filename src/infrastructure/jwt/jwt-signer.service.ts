@@ -9,6 +9,12 @@ export interface RefreshTokenResult {
   sessionId: string;
   expiresAt: Date;
 }
+export interface AccessTokenPayload {
+  sub: number | null;
+  email: string;
+  role: string;
+  customerId: number | null;
+}
 
 @Injectable()
 export class JwtSignerService {
@@ -17,11 +23,15 @@ export class JwtSignerService {
     private readonly jwksService: JwksService,
   ) {}
 
-  async signAccessToken(payload: any): Promise<string> {
+  async signAccessToken(payload: AccessTokenPayload): Promise<string> {
     const pem = this.configService.jwt.privateKey;
     const privateKey = await importPKCS8(pem, 'RS256');
 
-    return new SignJWT(payload)
+    // Transform domain types to JWT-compatible types (RFC 7519: sub is string)
+    const { sub, ...rest } = payload;
+    const jwtPayload = { ...rest, sub: String(sub) };
+
+    return new SignJWT(jwtPayload)
       .setProtectedHeader({
         alg: 'RS256',
         kid: this.jwksService.getKid(),

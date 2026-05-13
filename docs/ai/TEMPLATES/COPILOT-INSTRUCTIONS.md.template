@@ -1,0 +1,22 @@
+# `.github/copilot-instructions.md` Template
+
+## Purpose
+
+Provide concise repository instructions for GitHub Copilot.
+
+## Core Rules
+
+- `AGENT.md` is canonical.
+- Follow DDD/Hex architecture boundaries.
+- Keep controllers thin and use-case driven.
+- Avoid cross-context coupling outside approved patterns.
+
+## Quality Requirements
+
+- Add/update tests for behavior changes.
+- Provide clear PR evidence for generated changes.
+- Document assumptions and residual risks.
+
+## Escalation
+
+Stop and request human decision for high-risk security/data-integrity ambiguities.

@@ -9,7 +9,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { CreatePaymentDto } from '../../../../primary-adapters/dto/create-payment.dto';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
 import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
@@ -22,7 +22,7 @@ export class CreatePaymentUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayFactory: PaymentGatewayFactory,
+    private readonly paymentGatewayResolver: PaymentGatewayResolver,
   ) {
     super();
   }
@@ -31,7 +31,7 @@ export class CreatePaymentUseCase extends UseCase<
     dto: CreatePaymentDto,
   ): Promise<Result<PaymentResponseDto, UseCaseError>> {
     // 1. Get Gateway
-    const gateway = this.paymentGatewayFactory.getGateway(dto.paymentMethod);
+    const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
 
     // 2. Authorize Payment
     const authResult = await gateway.authorize(

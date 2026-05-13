@@ -8,7 +8,7 @@ describe('User Domain Entity', () => {
     email: 'test@example.com',
     passwordHash: 'hashed-password',
     roleId: 1,
-    roleCode: 'CUSTOMER',
+    mustChangePassword: false,
     isActive: true,
     customerId: 10,
     createdAt: new Date('2025-01-01'),
@@ -146,14 +146,14 @@ describe('User Domain Entity', () => {
       expect(restored.id).toBe(original.id);
       expect(restored.email).toBe(original.email);
       expect(restored.isActive).toBe(original.isActive);
-      expect(restored.roleCode).toBe(original.roleCode);
+      expect(restored.roleId).toBe(original.roleId);
       expect(restored.customerId).toBe(original.customerId);
     });
   });
 
   describe('static create()', () => {
     it('should create a new user with isActive defaulting to true', () => {
-      const user = User.create(null, 'new@user.com', 'hash', 1, 'CUSTOMER');
+      const user = User.create(null, 'new@user.com', 'hash', false, 1);
       expect(user.isActive).toBe(true);
       expect(user.id).toBeNull();
     });

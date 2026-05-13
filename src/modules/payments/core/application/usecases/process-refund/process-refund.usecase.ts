@@ -9,9 +9,10 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { ProcessRefundDto } from '../../../../primary-adapters/dto/process-refund.dto';
 import { Refund } from '../../../domain/entities/refund';
-import { PaymentGatewayFactory } from '../../../../secondary-adapters/gateways/payment-gateway.factory';
+import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
 import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
@@ -21,7 +22,8 @@ export class ProcessRefundUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayFactory: PaymentGatewayFactory,
+    private readonly paymentGatewayResolver: PaymentGatewayResolver,
+    private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
   }
@@ -36,7 +38,7 @@ export class ProcessRefundUseCase extends UseCase<
     const payment = paymentResult.value;
 
     // 1. Get Gateway
-    const gateway = this.paymentGatewayFactory.getGateway(
+    const gateway = this.paymentGatewayResolver.getGateway(
       payment.paymentMethod,
     );
 
@@ -84,6 +86,11 @@ export class ProcessRefundUseCase extends UseCase<
 
     const saveResult = await this.paymentRepository.update(payment);
     if (isFailure(saveResult)) return saveResult;
+
+    this.domainEventPublisher.publish('payment.refunded', {
+      paymentId: payment.id!,
+      refundId: refund.id,
+    });
 
     return Result.success(
       PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),

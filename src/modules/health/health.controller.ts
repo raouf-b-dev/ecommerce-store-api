@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import {
   HealthCheck,
   HealthCheckService,
@@ -7,8 +7,10 @@ import {
 import { RedisHealthIndicator } from './indicators/redis.health-indicator';
 import { WebSocketHealthIndicator } from './indicators/websocket.health-indicator';
 import { ServiceUnavailableException } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
+@SkipThrottle()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,

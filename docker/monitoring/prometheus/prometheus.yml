@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'ecommerce-store-api'
+    scrape_interval: 10s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/metrics_api_key

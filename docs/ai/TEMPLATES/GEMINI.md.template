@@ -1,0 +1,22 @@
+# `GEMINI.md` Adapter Template
+
+## Scope
+
+Define Gemini task scope and repository boundaries.
+
+## Constraints
+
+- Mirror non-negotiables from `AGENT.md`.
+- Link to canonical docs for architecture and security.
+
+## Workflow
+
+Use `Intake -> Plan -> Execute -> Verify -> Handoff`.
+
+## Quality Gates
+
+Require tests, evidence, and explicit assumptions.
+
+## Escalation
+
+Require human checkpoint for high-risk ambiguity or integrity concerns.
