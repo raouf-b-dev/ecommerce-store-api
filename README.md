@@ -61,6 +61,15 @@ The API will be available at `http://localhost:3000` 🎉
 
 📡 **API Documentation** — full endpoint specs, schemas, and auth requirements via Swagger UI: **`http://localhost:3000/api`**
 
+#### Optional: Start the Full Monitoring Stack
+
+```bash
+# Start API + PostgreSQL + Redis + Prometheus + Loki + Tempo + Grafana
+npm run d:up:full:prod
+```
+
+Grafana dashboards will be available at `http://localhost:3000` (Grafana port) with pre-provisioned datasources and dashboards.
+
 ---
 
 <a id="architecture-at-a-glance"></a>
@@ -98,6 +107,15 @@ graph TD
 
         Orders -->|Async Jobs| BullMQ["🐂 BullMQ Job Queue"]
         Notifications -->|Async Jobs| BullMQ
+    end
+
+    subgraph "Observability Layer"
+        API -->|Structured Logs| Loki["📋 Loki"]
+        API -->|Metrics /metrics| Prometheus["📊 Prometheus"]
+        API -->|Traces OTLP| Tempo["🔍 Tempo"]
+        Loki --> Grafana["📈 Grafana"]
+        Prometheus --> Grafana
+        Tempo --> Grafana
     end
 
     subgraph "External Services"
@@ -149,6 +167,8 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 | :--------------------- | :----------------------------------------------------------- | :----------------------------------------------- |
 | RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
 | Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/auth/`                              |
+| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/auth/core/domain/`                  |
+| API Rate Limiting      | Redis-backed throttling via `@nestjs/throttler`              | `src/infrastructure/throttler/`                  |
 | Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                                    |
 | CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                                    |
 | XSS Sanitization       | Global `sanitize-html` interceptor on all request bodies     | `src/interceptors/`                              |
@@ -156,20 +176,26 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 
 ### 📦 Infrastructure
 
-| Feature            | Description                                                 | Location                                                         |
-| :----------------- | :---------------------------------------------------------- | :--------------------------------------------------------------- |
-| Multi-Stage Docker | 4-stage build, Node.js 24 Alpine, tini PID 1, non-root user | `Dockerfile`                                                     |
-| Graceful Shutdown  | Signal handling, connection draining, worker cleanup        | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
-| Health Checks      | `GET /health` via @nestjs/terminus (Postgres + Redis)       | `src/modules/health/`                                            |
-| Multi-Env Config   | 4 profiles with type-safe validation + secrets separation   | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
+| Feature            | Description                                                   | Location                                                         |
+| :----------------- | :------------------------------------------------------------ | :--------------------------------------------------------------- |
+| Multi-Stage Docker | 4-stage build, Node.js 24 Alpine, tini PID 1, non-root user   | `Dockerfile`                                                     |
+| Graceful Shutdown  | Signal handling, connection draining, worker cleanup          | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
+| Health Checks      | `GET /health` via @nestjs/terminus (Postgres + Redis + WS)    | `src/modules/health/`                                            |
+| API Versioning     | URI-based versioning (`/v1/`) for all API endpoints           | `src/modules/*/`                                                 |
+| Admin Seeder       | Bootstrap admin user and role/permission data on first deploy | [ADMIN-BOOTSTRAP.md](docs/security/ADMIN-BOOTSTRAP.md)           |
+| Multi-Env Config   | 4 profiles with type-safe validation + secrets separation     | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
 
 ### 🔭 Observability
 
-| Feature            | Description                                                 | Location                      |
-| :----------------- | :---------------------------------------------------------- | :---------------------------- |
-| Structured Logging | Winston JSON logging for production log aggregators         | `src/infrastructure/logging/` |
-| Correlation IDs    | `X-Request-Id` propagated through HTTP + all 18 BullMQ jobs | `src/infrastructure/logging/` |
-| CI/CD Pipeline     | GitHub Actions: lint → build → test → publish               | `.github/workflows/`          |
+| Feature              | Description                                                             | Location                                                                  |
+| :------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| Structured Logging   | Winston JSON logging shipped to Loki via Promtail                       | `src/infrastructure/logging/`                                             |
+| Correlation IDs      | `X-Request-Id` propagated through HTTP + all 18 BullMQ jobs             | `src/infrastructure/logging/`                                             |
+| Prometheus Metrics   | RED method metrics + business telemetry via `prom-client`               | `src/infrastructure/metrics/`                                             |
+| Distributed Tracing  | OpenTelemetry auto-instrumentation exporting to Tempo via OTLP gRPC     | `src/infrastructure/tracing/`                                             |
+| Grafana Stack        | Pre-provisioned dashboards with Loki, Prometheus, and Tempo datasources | [MONITORING-STACK-GUIDE.md](docs/observability/MONITORING-STACK-GUIDE.md) |
+| Domain Event Metrics | Business events (login, order, payment) published and tracked           | `src/infrastructure/metrics/listeners/`                                   |
+| CI/CD Pipeline       | GitHub Actions: lint → build → test → publish                           | `.github/workflows/`                                                      |
 
 ### 🧪 Testing
 
@@ -185,19 +211,22 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 
 ## 📖 Documentation Index
 
-| Document                                                                | Description                                           |
-| :---------------------------------------------------------------------- | :---------------------------------------------------- |
-| [**FEATURES.md**](docs/FEATURES.md)                                     | Detailed feature documentation with code locations    |
-| [**docs/README.md**](docs/README.md)                                    | Unified technical documentation index                 |
-| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                | C4 system context, domain flows, sequence diagrams    |
-| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)              | Canonical DDD & Hexagonal Architecture rules          |
-| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md) | ACL Gateway, SAGA, Domain Events, Outbox              |
-| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                    | RSA JWT implementation and JWKS endpoint details      |
-| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)        | Configuration taxonomy and key rotation               |
-| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)    | PIDs, signals, and graceful shutdown deep-dive        |
-| [**ROADMAP.md**](docs/ROADMAP.md)                                       | Production readiness checklist with prioritized tasks |
-| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)        | Common issues and solutions                           |
-| [**AGENT.md**](AGENT.md)                                                | Coding guidelines and conventions                     |
+| Document                                                                      | Description                                               |
+| :---------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| [**FEATURES.md**](docs/FEATURES.md)                                           | Detailed feature documentation with code locations        |
+| [**docs/README.md**](docs/README.md)                                          | Unified technical documentation index                     |
+| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                      | C4 system context, domain flows, sequence diagrams        |
+| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)                    | Canonical DDD & Hexagonal Architecture rules              |
+| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md)       | ACL Gateway, SAGA, Domain Events, Outbox                  |
+| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                          | RSA JWT implementation and JWKS endpoint details          |
+| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)              | Configuration taxonomy and key rotation                   |
+| [**ADMIN-BOOTSTRAP.md**](docs/security/ADMIN-BOOTSTRAP.md)                    | Admin seeding, role/permission initialization             |
+| [**MONITORING-STACK-GUIDE.md**](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo setup and usage          |
+| [**Observability Architecture**](docs/observability/ARCHITECTURE.md)          | Signal pipeline diagram (logs, metrics, traces → Grafana) |
+| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)          | PIDs, signals, and graceful shutdown deep-dive            |
+| [**ROADMAP.md**](docs/ROADMAP.md)                                             | Production readiness checklist with prioritized tasks     |
+| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)              | Common issues and solutions                               |
+| [**AGENT.md**](AGENT.md)                                                      | Coding guidelines and conventions                         |
 
 ---
 

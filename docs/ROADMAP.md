@@ -36,7 +36,7 @@
 
 ## 🧪 Phase 9 — Test Suite Expansion
 
-> **Goal**: Expand existing test coverage to production-grade confidence. The project already has 45 spec files — build on this foundation.
+> **Goal**: Expand existing test coverage to production-grade confidence. The project already has 116 spec files — build on this foundation.
 
 ---
 
@@ -153,6 +153,129 @@
 1. `npm run migration:generate:dev -- src/migrations/InitialSchema`
 2. Verify migration runs cleanly on empty database
 3. Add `migration:run` to the production start flow in `package.json`
+
+---
+
+## 📈 Phase 14 — Operational Observability Maturity
+
+> **Goal**: Move beyond telemetry collection into measurable service reliability, alerting, and operational diagnostics.
+
+---
+
+### [ ] Service Level Indicators, Objectives, and Agreements
+
+**What**: Define reliability targets for the API and critical business workflows.
+
+**Scope**:
+
+- Define SLIs for request latency, availability, error rate, checkout success rate, queue delay, and dependency health.
+- Define initial SLOs for public API endpoints, checkout SAGA completion, Redis/PostgreSQL availability, and BullMQ processing delay.
+- Document SLA terminology separately from internal SLOs so the project can distinguish engineering targets from external commitments.
+- Add Prometheus queries for each SLI.
+- Add a service-level documentation page under `docs/observability/`.
+
+### [ ] RED and USE Dashboards
+
+**What**: Align Grafana dashboards with standard RED and USE observability methods.
+
+**Scope**:
+
+- API RED: request rate, error rate, and duration percentiles by route/status.
+- Infrastructure USE: utilization, saturation, and errors for PostgreSQL, Redis, BullMQ, Node.js runtime, and WebSocket connections.
+- Checkout workflow dashboard: SAGA throughput, failure rate, compensation count, queue delay, and trace links.
+- Business telemetry dashboard: auth success/failure, orders created, payments captured/refunded, and cart checkout initiation.
+- Document dashboard ownership, metric meanings, and troubleshooting entry points.
+
+### [ ] Alert Rules and Notification Routing
+
+**What**: Add actionable alerts for reliability and business-critical failure modes.
+
+**Scope**:
+
+- Add Prometheus alert rules for 5xx rate spikes, high p95 latency, Redis/PostgreSQL unhealthy status, BullMQ queue depth, and checkout SAGA failure rate.
+- Add alerts for missing telemetry, such as no metrics scraped or no recent checkout events.
+- Configure Alertmanager routing for local/dev environments.
+- Document severity levels, escalation expectations, and false-positive tuning.
+
+### [ ] Observability Runbooks
+
+**What**: Provide repeatable troubleshooting guides for common operational symptoms.
+
+**Scope**:
+
+- API latency spike runbook.
+- Checkout SAGA failure runbook.
+- Redis unavailable or degraded runbook.
+- BullMQ queue backlog runbook.
+- Missing traces/logs/metrics runbook.
+- Payment webhook failure runbook.
+
+---
+
+## 🚢 Phase 15 — Deployment and Production Hardening
+
+> **Goal**: Make the API safer to deploy, operate, migrate, and recover in realistic production-like environments.
+
+---
+
+### [ ] Public Demo Environment
+
+**What**: Deploy a constrained demo environment that exposes API documentation and safe read/write flows.
+
+**Scope**:
+
+- Deploy the API using production Docker scripts and environment validation.
+- Seed non-sensitive demo data.
+- Expose Swagger/OpenAPI documentation.
+- Protect admin, destructive, and credential-sensitive operations.
+- Document demo limitations and reset strategy.
+
+### [ ] Initial Database Migration
+
+**What**: Replace development `synchronize: true` assumptions with a production-ready baseline migration.
+
+**Scope**:
+
+- Generate the initial schema migration from the current TypeORM entities.
+- Verify migration execution on an empty PostgreSQL database.
+- Verify rollback behavior where practical.
+- Update production startup documentation to require migrations before serving traffic.
+- Add migration verification to deployment documentation.
+
+### [ ] Backup, Restore, and Recovery
+
+**What**: Document and test basic recovery procedures for stateful dependencies.
+
+**Scope**:
+
+- PostgreSQL backup and restore procedure.
+- Redis persistence and recovery expectations.
+- Grafana dashboard provisioning recovery.
+- Loki/Tempo/Prometheus volume persistence notes.
+- Disaster recovery checklist for local and VPS-style deployments.
+
+### [ ] Release and Rollback Process
+
+**What**: Define a predictable release process for versioned deployments.
+
+**Scope**:
+
+- Define release checklist: build, test, migrate, deploy, smoke test, monitor.
+- Document rollback strategy for API image, environment config, and database migration failures.
+- Add post-deploy smoke checks for `/health`, `/metrics`, auth, checkout, and queue processing.
+- Add version and changelog conventions.
+
+### [ ] Real E2E and Smoke Test Suite
+
+**What**: Add production-like verification flows for critical API behavior.
+
+**Scope**:
+
+- Auth: register → login → refresh → protected endpoint.
+- Products and inventory: create/list/update stock/check stock.
+- Cart and checkout: create cart → add items → checkout.
+- Orders and payments: online payment flow, COD flow, failure compensation.
+- Observability smoke test: generate traffic and verify metrics, logs, and traces are emitted.
 
 ---
 
