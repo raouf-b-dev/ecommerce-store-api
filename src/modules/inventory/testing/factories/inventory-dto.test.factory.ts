@@ -1,11 +1,9 @@
 // src/modules/inventory/testing/factories/inventory-dto.test.factory.ts
-import {
-  AdjustStockDto,
-  StockAdjustmentType,
-} from '../../primary-adapters/dto/adjust-stock.dto';
+import { AdjustStockDto } from '../../primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from '../../primary-adapters/dto/reserve-stock.dto';
 import { ReserveStockItemDto } from '../../primary-adapters/dto/reserve-stock-item.dto';
 import { LowStockQueryDto } from '../../primary-adapters/dto/low-stock-query.dto';
+import { StockAdjustmentType } from '../../core/domain/value-objects/stock-adjustment-type';
 
 export class InventoryDtoTestFactory {
   static createAdjustStockDto(

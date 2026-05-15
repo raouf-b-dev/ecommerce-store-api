@@ -12,7 +12,7 @@ import {
   CartForCache,
 } from '../../persistence/mappers/cart.mapper';
 
-import { CreateCartDto } from '../../../primary-adapters/dto/create-cart.dto';
+import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
 
 @Injectable()
 export class CachedCartRepository implements CartRepository {
@@ -111,9 +111,9 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>> {
+  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
     try {
-      const createResult = await this.postgresRepo.create(dto);
+      const createResult = await this.postgresRepo.create(input);
       if (createResult.isFailure) return createResult;
       const savedCart = createResult.value;
 

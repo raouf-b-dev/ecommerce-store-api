@@ -1,17 +1,19 @@
 // src/order/infrastructure/redis-order.repository.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { OrderRepository } from '../../../core/domain/repositories/order-repository';
+import {
+  ListOrdersQuery,
+  OrderItemInput,
+  OrderRepository,
+} from '../../../core/domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import {
   OrderForCache,
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
 import { Order } from '../../../core/domain/entities/order';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 
@@ -24,7 +26,7 @@ export class CachedOrderRepository implements OrderRepository {
   ) {}
 
   async listOrders(
-    listOrdersQueryDto: ListOrdersQueryDto,
+    listOrdersQueryDto: ListOrdersQuery,
   ): Promise<Result<Order[], RepositoryError>> {
     try {
       const {
@@ -191,7 +193,7 @@ export class CachedOrderRepository implements OrderRepository {
 
   async updateItemsInfo(
     id: number,
-    updateOrderItemDto: CreateOrderItemDto[],
+    updateOrderItemDto: OrderItemInput[],
   ): Promise<Result<Order, RepositoryError>> {
     try {
       const updateResult = await this.postgresRepo.updateItemsInfo(

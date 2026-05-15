@@ -1,14 +1,16 @@
 // src/modules/carts/testing/mocks/cart-repository.mock.ts
-import { CartRepository } from '../../core/domain/repositories/cart.repository';
+import {
+  CartRepository,
+  CreateCartInput,
+} from '../../core/domain/repositories/cart.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Cart } from '../../core/domain/entities/cart';
 import { ICart } from '../../core/domain/interfaces/cart.interface';
-import { CreateCartDto } from '../../primary-adapters/dto/create-cart.dto';
 
 export class MockCartRepository implements CartRepository {
   // Jest mock functions
-  create = jest.fn<Promise<Result<Cart, RepositoryError>>, [CreateCartDto]>();
+  create = jest.fn<Promise<Result<Cart, RepositoryError>>, [CreateCartInput]>();
   findById = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
   update = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart]>();
   mergeCarts = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart, Cart]>();

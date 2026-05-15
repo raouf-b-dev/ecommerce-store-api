@@ -2,19 +2,21 @@
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { IProduct } from '../../core/domain/interfaces/product.interface';
-import { ProductRepository } from '../../core/domain/repositories/product-repository';
-import { CreateProductDto } from '../../primary-adapters/dto/create-product.dto';
-import { UpdateProductDto } from '../../primary-adapters/dto/update-product.dto';
+import {
+  CreateProductInput,
+  ProductRepository,
+  UpdateProductInput,
+} from '../../core/domain/repositories/product-repository';
 
 export class MockProductRepository implements ProductRepository {
   // Jest mock functions matching the actual repository interface
   save = jest.fn<
     Promise<Result<IProduct, RepositoryError>>,
-    [CreateProductDto]
+    [CreateProductInput]
   >();
   update = jest.fn<
     Promise<Result<IProduct, RepositoryError>>,
-    [number, UpdateProductDto]
+    [number, UpdateProductInput]
   >();
   findById = jest.fn<Promise<Result<IProduct, RepositoryError>>, [number]>();
   findAll = jest.fn<Promise<Result<IProduct[], RepositoryError>>, []>();

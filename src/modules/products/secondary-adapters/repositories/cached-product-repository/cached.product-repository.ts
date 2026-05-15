@@ -5,9 +5,11 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
-import { ProductRepository } from '../../../core/domain/repositories/product-repository';
-import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';
-import { UpdateProductDto } from '../../../primary-adapters/dto/update-product.dto';
+import {
+  CreateProductInput,
+  ProductRepository,
+  UpdateProductInput,
+} from '../../../core/domain/repositories/product-repository';
 
 export class CachedProductRepository implements ProductRepository {
   constructor(
@@ -16,11 +18,11 @@ export class CachedProductRepository implements ProductRepository {
   ) {}
 
   async save(
-    createProductDto: CreateProductDto,
+    createProductInput: CreateProductInput,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Save to Postgres first
-      const saveResult = await this.postgresRepo.save(createProductDto);
+      const saveResult = await this.postgresRepo.save(createProductInput);
       if (saveResult.isFailure) return saveResult;
 
       const product = saveResult.value;
@@ -40,7 +42,7 @@ export class CachedProductRepository implements ProductRepository {
 
   async update(
     id: number,
-    updateProductDto: UpdateProductDto,
+    updateProductDto: UpdateProductInput,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Update in Postgres

@@ -4,11 +4,11 @@ import { ProductRepository } from '../../../core/domain/repositories/product-rep
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedProductRepository } from './cached.product-repository';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
-import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
-import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
+import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
@@ -16,8 +16,8 @@ describe('CachedProductRepository', () => {
   let postgresRepo: jest.Mocked<ProductRepository>;
 
   const mockProduct = ProductTestFactory.createMockProduct();
-  const createDto = CreateProductDtoFactory.createMockDto();
-  const updateDto = UpdateProductDtoFactory.createMockDto();
+  const createDto = CreateProductInputFactory.createMockDto();
+  const updateDto = UpdateProductInputFactory.createMockDto();
 
   beforeEach(() => {
     cacheService = {
@@ -72,7 +72,8 @@ describe('CachedProductRepository', () => {
     });
 
     it('should save expensive product', async () => {
-      const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
+      const expensiveDto =
+        CreateProductInputFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();
 
       postgresRepo.save.mockResolvedValue(Result.success(expensiveProduct));
@@ -154,7 +155,7 @@ describe('CachedProductRepository', () => {
 
     it('should update only price', async () => {
       const productId = 1;
-      const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
+      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
         price: 200,

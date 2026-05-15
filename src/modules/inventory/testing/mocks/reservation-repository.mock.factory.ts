@@ -1,13 +1,15 @@
-import { ReservationRepository } from '../../core/domain/repositories/reservation.repository';
+import {
+  ReservationInput,
+  ReservationRepository,
+} from '../../core/domain/repositories/reservation.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Reservation } from '../../core/domain/entities/reservation';
-import { ReserveStockDto } from '../../primary-adapters/dto/reserve-stock.dto';
 
 export class MockReservationRepository implements ReservationRepository {
   save = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
-    [ReserveStockDto]
+    [ReservationInput]
   >();
   findById = jest.fn<Promise<Result<Reservation, RepositoryError>>, [number]>();
   findByOrderId = jest.fn<

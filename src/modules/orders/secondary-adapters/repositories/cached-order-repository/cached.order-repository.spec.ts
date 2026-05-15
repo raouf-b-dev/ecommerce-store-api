@@ -1,26 +1,27 @@
 // src/order/infrastructure/__tests__/redis-order.repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderRepository } from '../../../core/domain/repositories/order-repository';
+import {
+  ListOrdersQuery,
+  OrderItemInput,
+  OrderRepository,
+} from '../../../core/domain/repositories/order-repository';
 import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
-import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { CachedOrderRepository } from './cached.order-repository';
 import { Logger } from '@nestjs/common';
 import {
   OrderForCache,
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
 import { Order } from '../../../core/domain/entities/order';
 import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
-
 describe('CachedOrderRepository', () => {
   let repository: CachedOrderRepository;
   let cacheService: jest.Mocked<CacheService>;
@@ -34,7 +35,7 @@ describe('CachedOrderRepository', () => {
 
   const orderId = 1;
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
-  const mockUpdateOrderDto: CreateOrderItemDto[] = [
+  const mockUpdateOrderDto: OrderItemInput[] = [
     { productId: 1, quantity: 3, productName: 'Test', unitPrice: 100 },
   ];
   const cancelledOrder = Order.fromPrimitives(
@@ -419,7 +420,7 @@ describe('CachedOrderRepository', () => {
       cacheService.get.mockResolvedValue('true');
       cacheService.getAll.mockResolvedValue([mockCachedOrder]);
 
-      const dto: ListOrdersQueryDto = {};
+      const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -435,7 +436,7 @@ describe('CachedOrderRepository', () => {
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockResolvedValue(undefined);
 
-      const dto: ListOrdersQueryDto = {};
+      const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -501,7 +502,7 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should fetch from postgres when filters are applied', async () => {
-      const dto: ListOrdersQueryDto = {
+      const dto: ListOrdersQuery = {
         status: OrderStatus.PENDING_PAYMENT,
         customerId: 1,
       };
@@ -516,7 +517,7 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should handle pagination parameters', async () => {
-      const dto: ListOrdersQueryDto = {
+      const dto: ListOrdersQuery = {
         page: 2,
         limit: 10,
       };

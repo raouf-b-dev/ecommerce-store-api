@@ -11,7 +11,7 @@ import {
   InventoryCacheMapper,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
+import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class CachedInventoryRepository implements InventoryRepository {
@@ -183,7 +183,7 @@ export class CachedInventoryRepository implements InventoryRepository {
   }
 
   async findLowStock(
-    query: LowStockQueryDto,
+    query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       const { threshold = 10, page = 1, limit = 20 } = query;

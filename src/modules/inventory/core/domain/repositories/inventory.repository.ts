@@ -1,8 +1,13 @@
 // src/modules/inventory/domain/repositories/inventory.repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
 import { Inventory } from '../entities/inventory';
+
+export interface LowStockQuery {
+  threshold?: number;
+  page?: number;
+  limit?: number;
+}
 
 export abstract class InventoryRepository {
   abstract findById(id: number): Promise<Result<Inventory, RepositoryError>>;
@@ -16,7 +21,7 @@ export abstract class InventoryRepository {
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract findLowStock(
-    query: LowStockQueryDto,
+    query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract save(

@@ -5,10 +5,10 @@ import { Repository } from 'typeorm';
 import { PostgresProductRepository } from './postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
-import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
-import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
+import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;
@@ -57,7 +57,7 @@ describe('PostgresProductRepository', () => {
 
   describe('save', () => {
     it('should successfully save a product', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
+      const createDto = CreateProductInputFactory.createMockDto();
       const generatedId = 1;
 
       ormRepo.create.mockReturnValue(mockProductEntity);
@@ -75,7 +75,8 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should save expensive product', async () => {
-      const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
+      const expensiveDto =
+        CreateProductInputFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();
       const expensiveEntity = {
         ...mockProductEntity,
@@ -93,7 +94,7 @@ describe('PostgresProductRepository', () => {
     });
 
     it('should return failure when database save fails', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
+      const createDto = CreateProductInputFactory.createMockDto();
       const error = new Error('Database save failed');
 
       ormRepo.create.mockReturnValue(mockProductEntity);
@@ -112,7 +113,7 @@ describe('PostgresProductRepository', () => {
   describe('update', () => {
     it('should successfully update a product', async () => {
       const productId = 1;
-      const updateDto = UpdateProductDtoFactory.createMockDto();
+      const updateDto = UpdateProductInputFactory.createMockDto();
       const updatedEntity = {
         ...mockProductEntity,
         ...updateDto,
@@ -139,7 +140,7 @@ describe('PostgresProductRepository', () => {
 
     it('should update only price', async () => {
       const productId = 1;
-      const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
+      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
       const updatedEntity = {
         ...mockProductEntity,
         price: 200,
@@ -158,7 +159,7 @@ describe('PostgresProductRepository', () => {
 
     it('should return failure when product not found', async () => {
       const productId = 999;
-      const updateDto = UpdateProductDtoFactory.createMockDto();
+      const updateDto = UpdateProductInputFactory.createMockDto();
 
       ormRepo.findOne.mockResolvedValue(null);
 
@@ -175,7 +176,7 @@ describe('PostgresProductRepository', () => {
 
     it('should return failure when database update fails', async () => {
       const productId = 1;
-      const updateDto = UpdateProductDtoFactory.createMockDto();
+      const updateDto = UpdateProductInputFactory.createMockDto();
       const error = new Error('Database update failed');
 
       ormRepo.findOne.mockResolvedValue(mockProductEntity);
