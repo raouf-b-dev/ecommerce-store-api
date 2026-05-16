@@ -28,14 +28,14 @@ export interface PayPalWebhookPayload {
   };
 }
 
-export interface PayPalWebhookDto {
+export interface PayPalWebhookCommand {
   headers: Record<string, string>;
   payload: PayPalWebhookPayload;
 }
 
 @Injectable()
 export class HandlePayPalWebhookUseCase extends UseCase<
-  PayPalWebhookDto,
+  PayPalWebhookCommand,
   PaymentWebhookResult | null,
   UseCaseError
 > {
@@ -49,7 +49,7 @@ export class HandlePayPalWebhookUseCase extends UseCase<
   }
 
   async execute(
-    dto: PayPalWebhookDto,
+    dto: PayPalWebhookCommand,
   ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
     // 1. Validate signature
     const isValid = this.payPalSignatureVerifier.verify(

@@ -3,13 +3,12 @@ import { ListOrdersUsecase } from './list-orders.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { isFailure } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { ListOrdersQueryDto } from '../../../../primary-adapters/dto/list-orders-query.dto';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Order } from '../../../domain/entities/order';
+import { ListOrdersQuery } from '../../../domain/repositories/order-repository';
 
 describe('ListOrdersUsecase', () => {
   let usecase: ListOrdersUsecase;
@@ -25,23 +24,23 @@ describe('ListOrdersUsecase', () => {
   });
 
   it('returns success with list of orders when repository returns success', async () => {
-    const dto: ListOrdersQueryDto = {};
+    const query: ListOrdersQuery = {};
     const sampleOrder = Order.fromPrimitives(
       OrderTestFactory.createMockOrder(),
     );
 
     mockRepository.mockSuccessfulList([sampleOrder]);
 
-    const result = await usecase.execute(dto);
+    const result = await usecase.execute(query);
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual([sampleOrder]);
     expect(result.value).toHaveLength(1);
   });
 
   it('returns success with multiple orders', async () => {
-    const dto: ListOrdersQueryDto = {};
+    const query: ListOrdersQuery = {};
     const orders = [
       OrderTestFactory.createPendingPaymentOrder({ id: 1 }),
       OrderTestFactory.createShippedOrder({ id: 2 }),
@@ -50,7 +49,7 @@ describe('ListOrdersUsecase', () => {
 
     mockRepository.mockSuccessfulList(orders);
 
-    const result = await usecase.execute(dto);
+    const result = await usecase.execute(query);
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(3);
@@ -60,27 +59,27 @@ describe('ListOrdersUsecase', () => {
   });
 
   it('returns success with empty list when no orders exist', async () => {
-    const dto: ListOrdersQueryDto = {};
+    const query: ListOrdersQuery = {};
 
     mockRepository.mockSuccessfulList([]);
 
-    const result = await usecase.execute(dto);
+    const result = await usecase.execute(query);
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual([]);
     expect(result.value).toHaveLength(0);
   });
 
   it('propagates repository failure as usecase failure', async () => {
-    const dto: ListOrdersQueryDto = {};
+    const query: ListOrdersQuery = {};
     const repoErr = new RepositoryError('repo failed');
 
     mockRepository.listOrders.mockResolvedValue(Result.failure(repoErr));
 
-    const result = await usecase.execute(dto);
+    const result = await usecase.execute(query);
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
+    expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error).toBe(repoErr);
@@ -90,7 +89,7 @@ describe('ListOrdersUsecase', () => {
 
   describe('filtering and querying', () => {
     it('should pass query parameters to repository', async () => {
-      const dto: ListOrdersQueryDto = {
+      const query: ListOrdersQuery = {
         status: OrderStatus.PENDING_PAYMENT,
         customerId: 1,
       };
@@ -98,14 +97,14 @@ describe('ListOrdersUsecase', () => {
 
       mockRepository.mockSuccessfulList(orders);
 
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(query);
 
-      expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
+      expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should handle pagination parameters', async () => {
-      const dto: ListOrdersQueryDto = {
+      const query: ListOrdersQuery = {
         page: 1,
         limit: 10,
       };
@@ -115,9 +114,9 @@ describe('ListOrdersUsecase', () => {
 
       mockRepository.mockSuccessfulList(orders);
 
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(query);
 
-      expect(mockRepository.listOrders).toHaveBeenCalledWith(dto);
+      expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toHaveLength(10);
     });
@@ -125,7 +124,7 @@ describe('ListOrdersUsecase', () => {
 
   describe('edge cases', () => {
     it('should handle repository returning orders with different statuses', async () => {
-      const dto: ListOrdersQueryDto = {};
+      const query: ListOrdersQuery = {};
       const orders = [
         OrderTestFactory.createPendingPaymentOrder(),
         OrderTestFactory.createShippedOrder(),
@@ -134,7 +133,7 @@ describe('ListOrdersUsecase', () => {
 
       mockRepository.mockSuccessfulList(orders);
 
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(query);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toHaveLength(3);
@@ -144,7 +143,7 @@ describe('ListOrdersUsecase', () => {
     });
 
     it('should handle multi-item orders in list', async () => {
-      const dto: ListOrdersQueryDto = {};
+      const query: ListOrdersQuery = {};
       const orders = [
         OrderTestFactory.createMultiItemOrder(3),
         OrderTestFactory.createMultiItemOrder(5),
@@ -152,7 +151,7 @@ describe('ListOrdersUsecase', () => {
 
       mockRepository.mockSuccessfulList(orders);
 
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(query);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toHaveLength(2);

@@ -8,12 +8,12 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UpdateProductDto } from '../../../../primary-adapters/dto/update-product.dto';
+import { UpdateProductInput } from '../../../domain/repositories/product-repository';
 import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
-  { id: number; dto: UpdateProductDto },
+  { id: number; dto: UpdateProductInput },
   IProduct,
   UseCaseError
 > {
@@ -23,7 +23,7 @@ export class UpdateProductUseCase extends UseCase<
 
   async execute(input: {
     id: number;
-    dto: UpdateProductDto;
+    dto: UpdateProductInput;
   }): Promise<Result<IProduct, UseCaseError>> {
     const { id, dto } = input;
     const productResult = await this.productRepository.update(id, dto);

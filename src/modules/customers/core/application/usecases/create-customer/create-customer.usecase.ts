@@ -7,16 +7,34 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { CreateCustomerDto } from '../../../../primary-adapters/dto/create-customer.dto';
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
 import { Customer, CustomerProps } from '../../../domain/entities/customer';
 import { Address, AddressProps } from '../../../domain/entities/address';
 import { AddressType } from '../../../domain/value-objects/address-type';
 
+export interface CreateCustomerAddressInput {
+  street: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  type?: AddressType;
+  isDefault?: boolean;
+  deliveryInstructions?: string;
+}
+
+export interface CreateCustomerCommand {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  address?: CreateCustomerAddressInput;
+}
+
 @Injectable()
 export class CreateCustomerUseCase extends UseCase<
-  CreateCustomerDto,
+  CreateCustomerCommand,
   ICustomer,
   UseCaseError
 > {
@@ -25,7 +43,7 @@ export class CreateCustomerUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreateCustomerDto,
+    dto: CreateCustomerCommand,
   ): Promise<Result<ICustomer, UseCaseError>> {
     const props: CustomerProps = {
       id: null,

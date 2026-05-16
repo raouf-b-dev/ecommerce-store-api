@@ -6,14 +6,13 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
 export class CapturePaymentUseCase extends UseCase<
   number,
-  PaymentResponseDto,
+  IPayment,
   UseCaseError
 > {
   constructor(
@@ -23,7 +22,7 @@ export class CapturePaymentUseCase extends UseCase<
     super();
   }
 
-  async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
+  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
     const paymentResult = await this.paymentRepository.findById(id);
     if (isFailure(paymentResult)) return paymentResult;
 
@@ -37,8 +36,6 @@ export class CapturePaymentUseCase extends UseCase<
       paymentId: payment.id!,
     });
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
-    );
+    return Result.success(saveResult.value.toPrimitives());
   }
 }

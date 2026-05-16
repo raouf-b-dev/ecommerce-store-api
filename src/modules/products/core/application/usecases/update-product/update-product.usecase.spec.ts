@@ -2,7 +2,7 @@
 import { UpdateProductUseCase } from './update-product.usecase';
 import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { UpdateProductDtoFactory } from '../../../../testing/factories/update-product-dto.factory';
+import { UpdateProductInputFactory } from '../../../../testing/factories/update-product-input.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
@@ -22,7 +22,7 @@ describe('UpdateProductUseCase', () => {
   describe('execute', () => {
     it('should return Success if product is updated', async () => {
       const productId = 1;
-      const updateDto = UpdateProductDtoFactory.createMockDto();
+      const updateDto = UpdateProductInputFactory.createMockDto();
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
         name: 'Updated Product',
@@ -40,7 +40,7 @@ describe('UpdateProductUseCase', () => {
 
     it('should return Failure(UseCaseError) if product is not updated', async () => {
       const productId = 1;
-      const updateDto = UpdateProductDtoFactory.createMockDto();
+      const updateDto = UpdateProductInputFactory.createMockDto();
 
       mockRepository.mockUpdateFailure('Failed to update product');
 
@@ -55,7 +55,7 @@ describe('UpdateProductUseCase', () => {
 
     it('should update only price', async () => {
       const productId = 1;
-      const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
+      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
         price: 200,

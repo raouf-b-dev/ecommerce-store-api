@@ -5,16 +5,24 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { ListPaymentsQueryDto } from '../../../../primary-adapters/dto/list-payments-query.dto';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
+
+export interface ListPaymentsQuery {
+  orderId?: number;
+  customerId?: number;
+  status?: PaymentStatusType;
+  paymentMethod?: PaymentMethodType;
+  page?: number;
+  limit?: number;
+}
 
 @Injectable()
 export class ListPaymentsUseCase extends UseCase<
-  ListPaymentsQueryDto,
-  PaymentResponseDto[],
+  ListPaymentsQuery,
+  IPayment[],
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
@@ -22,16 +30,12 @@ export class ListPaymentsUseCase extends UseCase<
   }
 
   async execute(
-    dto: ListPaymentsQueryDto,
-  ): Promise<Result<PaymentResponseDto[], UseCaseError>> {
+    dto: ListPaymentsQuery,
+  ): Promise<Result<IPayment[], UseCaseError>> {
     if (dto.orderId) {
       const result = await this.paymentRepository.findByOrderId(dto.orderId);
       if (isFailure(result)) return result;
-      return Result.success(
-        PaymentDtoMapper.toResponseList(
-          result.value.map((p) => p.toPrimitives()),
-        ),
-      );
+      return Result.success(result.value.map((p) => p.toPrimitives()));
     }
 
     if (dto.customerId) {
@@ -41,11 +45,7 @@ export class ListPaymentsUseCase extends UseCase<
         dto.limit,
       );
       if (isFailure(result)) return result;
-      return Result.success(
-        PaymentDtoMapper.toResponseList(
-          result.value.map((p) => p.toPrimitives()),
-        ),
-      );
+      return Result.success(result.value.map((p) => p.toPrimitives()));
     }
 
     // TODO: Implement general findAll if needed, or return empty array

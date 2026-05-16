@@ -4,7 +4,7 @@ import { DataSource, Repository, EntityManager } from 'typeorm';
 import { PostgresReservationRepository } from './postgres.reservation-repository';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { ReservationTestFactory } from '../../../testing/factories/reservation.test.factory';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
 
@@ -58,7 +58,7 @@ describe('PostgresReservationRepository', () => {
 
   describe('save', () => {
     it('should save reservation and update inventory successfully', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
       const reservationId = 1;
 
       const inventoryEntity = {
@@ -93,7 +93,7 @@ describe('PostgresReservationRepository', () => {
     });
 
     it('should fail if inventory not found', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
 
       entityManager.find.mockResolvedValue([]);
 
@@ -106,7 +106,7 @@ describe('PostgresReservationRepository', () => {
     });
 
     it('should fail if insufficient stock', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
 
       const inventoryEntity = {
         productId: dto.items[0].productId,

@@ -1,11 +1,13 @@
-import { ListCustomersUseCase } from './list-customers.usecase';
+import {
+  ListCustomersUseCase,
+  ListCustomersQuery,
+} from './list-customers.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
-import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
+import { CustomerCommandTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('ListCustomersUseCase', () => {
   let useCase: ListCustomersUseCase;
@@ -22,7 +24,8 @@ describe('ListCustomersUseCase', () => {
 
   describe('execute', () => {
     it('should return Success with paginated customers', async () => {
-      const query = CustomerDtoTestFactory.createListCustomersQueryDto();
+      const query: ListCustomersQuery =
+        CustomerCommandTestFactory.createListCustomersQuery();
 
       mockCustomerRepository.findAll.mockResolvedValue(Result.success([]));
 
@@ -33,7 +36,7 @@ describe('ListCustomersUseCase', () => {
     });
 
     it('should return Success with empty list if no customers found', async () => {
-      const query = CustomerDtoTestFactory.createListCustomersQueryDto();
+      const query = CustomerCommandTestFactory.createListCustomersQuery();
 
       mockCustomerRepository.findAll.mockResolvedValue(Result.success([]));
 
@@ -44,7 +47,7 @@ describe('ListCustomersUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if repository fails', async () => {
-      const query = CustomerDtoTestFactory.createListCustomersQueryDto();
+      const query = CustomerCommandTestFactory.createListCustomersQuery();
 
       mockCustomerRepository.findAll.mockResolvedValue(
         ErrorFactory.RepositoryError('Failed to fetch customers'),

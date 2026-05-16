@@ -11,14 +11,14 @@ import { Order } from '../../../domain/entities/order';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
-export interface CancelOrderDto {
+export interface CancelOrderCommand {
   orderId: number;
   isSagaCompensation?: boolean;
 }
 
 @Injectable()
 export class CancelOrderUseCase
-  implements UseCase<CancelOrderDto, IOrder, UseCaseError>
+  implements UseCase<CancelOrderCommand, IOrder, UseCaseError>
 {
   constructor(
     private orderRepository: OrderRepository,
@@ -26,7 +26,9 @@ export class CancelOrderUseCase
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {}
 
-  async execute(dto: CancelOrderDto): Promise<Result<IOrder, UseCaseError>> {
+  async execute(
+    dto: CancelOrderCommand,
+  ): Promise<Result<IOrder, UseCaseError>> {
     const { orderId, isSagaCompensation } = dto;
     const requestedOrder = await this.orderRepository.findById(orderId);
     if (requestedOrder.isFailure) return requestedOrder;

@@ -1,7 +1,10 @@
-import { UpdateAddressUseCase } from './update-address.usecase';
+import {
+  UpdateAddressUseCase,
+  UpdateAddressCommand,
+} from './update-address.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerTestFactory } from '../../../../testing/factories/customer.factory';
-import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
+import { CustomerCommandTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
@@ -26,7 +29,8 @@ describe('UpdateAddressUseCase', () => {
     it('should return Success if address is updated', async () => {
       const customerId = 123;
       const addressId = 123;
-      const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
+      const updateDto: UpdateAddressCommand =
+        CustomerCommandTestFactory.createUpdateAddressCommand();
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -40,7 +44,7 @@ describe('UpdateAddressUseCase', () => {
       const result = await useCase.execute({
         customerId,
         addressId,
-        dto: updateDto,
+        command: updateDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -51,14 +55,14 @@ describe('UpdateAddressUseCase', () => {
     it('should return Failure(RepositoryError) if customer not found', async () => {
       const customerId = 0;
       const addressId = 123;
-      const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
+      const updateDto = CustomerCommandTestFactory.createUpdateAddressCommand();
 
       mockCustomerRepository.mockCustomerNotFound();
 
       const result = await useCase.execute({
         customerId,
         addressId,
-        dto: updateDto,
+        command: updateDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -71,7 +75,7 @@ describe('UpdateAddressUseCase', () => {
     it('should return Failure(UseCaseError) if address not found', async () => {
       const customerId = 123;
       const addressId = 0;
-      const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
+      const updateDto = CustomerCommandTestFactory.createUpdateAddressCommand();
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -80,7 +84,7 @@ describe('UpdateAddressUseCase', () => {
       const result = await useCase.execute({
         customerId,
         addressId,
-        dto: updateDto,
+        command: updateDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -93,7 +97,7 @@ describe('UpdateAddressUseCase', () => {
     it('should return Failure(UseCaseError) if update fails', async () => {
       const customerId = 123;
       const addressId = 123;
-      const updateDto = CustomerDtoTestFactory.createUpdateAddressDto();
+      const updateDto = CustomerCommandTestFactory.createUpdateAddressCommand();
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createCustomerWithAddress({ id: customerId }),
@@ -105,7 +109,7 @@ describe('UpdateAddressUseCase', () => {
       const result = await useCase.execute({
         customerId,
         addressId,
-        dto: updateDto,
+        command: updateDto,
       });
 
       ResultAssertionHelper.assertResultFailure(

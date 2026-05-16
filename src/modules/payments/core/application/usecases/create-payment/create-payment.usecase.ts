@@ -7,17 +7,32 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { CreatePaymentDto } from '../../../../primary-adapters/dto/create-payment.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+
+export interface PaymentMethodDetailsInput {
+  token?: string;
+  cardLast4?: string;
+  cardBrand?: string;
+  walletId?: string;
+}
+
+export interface CreatePaymentCommand {
+  orderId: number;
+  amount: number;
+  paymentMethod: PaymentMethodType;
+  currency: string;
+  paymentMethodDetails?: PaymentMethodDetailsInput;
+  customerId?: number;
+}
 
 @Injectable()
 export class CreatePaymentUseCase extends UseCase<
-  CreatePaymentDto,
-  PaymentResponseDto,
+  CreatePaymentCommand,
+  IPayment,
   UseCaseError
 > {
   constructor(
@@ -28,8 +43,8 @@ export class CreatePaymentUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreatePaymentDto,
-  ): Promise<Result<PaymentResponseDto, UseCaseError>> {
+    dto: CreatePaymentCommand,
+  ): Promise<Result<IPayment, UseCaseError>> {
     // 1. Get Gateway
     const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
 
@@ -101,8 +116,6 @@ export class CreatePaymentUseCase extends UseCase<
 
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
-    );
+    return Result.success(saveResult.value.toPrimitives());
   }
 }

@@ -7,14 +7,25 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { AddAddressDto } from '../../../../primary-adapters/dto/add-address.dto';
+import { AddressType } from '../../../domain/value-objects/address-type';
 import { IAddress } from '../../../domain/interfaces/address.interface';
 import { Address } from '../../../domain/entities/address';
 
+export interface AddAddressCommand {
+  street: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  type?: AddressType;
+  isDefault?: boolean;
+  deliveryInstructions?: string;
+}
+
 export interface AddAddressInput {
   customerId: number;
-  dto: AddAddressDto;
+  command: AddAddressCommand;
 }
 
 @Injectable()
@@ -30,7 +41,7 @@ export class AddAddressUseCase extends UseCase<
   async execute(
     input: AddAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    const { customerId, dto } = input;
+    const { customerId, command: dto } = input;
 
     // Retrieve the customer
     const customerResult = await this.customerRepository.findById(customerId);

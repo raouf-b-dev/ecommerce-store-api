@@ -7,13 +7,18 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UpdateCustomerDto } from '../../../../primary-adapters/dto/update-customer.dto';
+export interface UpdateCustomerCommand {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}
+
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
 
 export interface UpdateCustomerInput {
   id: number;
-  dto: UpdateCustomerDto;
+  command: UpdateCustomerCommand;
 }
 
 @Injectable()
@@ -29,7 +34,7 @@ export class UpdateCustomerUseCase extends UseCase<
   async execute(
     input: UpdateCustomerInput,
   ): Promise<Result<ICustomer, UseCaseError>> {
-    const { id, dto } = input;
+    const { id, command: dto } = input;
 
     const customerResult = await this.customerRepository.findById(id);
     if (isFailure(customerResult)) return customerResult;

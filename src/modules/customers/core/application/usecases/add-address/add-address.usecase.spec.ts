@@ -1,8 +1,7 @@
-import { AddAddressUseCase } from './add-address.usecase';
+import { AddAddressUseCase, AddAddressCommand } from './add-address.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerTestFactory } from '../../../../testing/factories/customer.factory';
-import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { CustomerCommandTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Customer } from '../../../domain/entities/customer';
@@ -26,7 +25,8 @@ describe('AddAddressUseCase', () => {
   describe('execute', () => {
     it('should return Success if address is added', async () => {
       const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand();
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -39,19 +39,20 @@ describe('AddAddressUseCase', () => {
         Result.success(mockCustomer),
       );
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.street).toBe(addAddressDto.street);
+      expect(result.value.street).toBe(command.street);
       expect(mockCustomerRepository.findById).toHaveBeenCalledWith(customerId);
       expect(mockCustomerRepository.update).toHaveBeenCalledTimes(1);
     });
 
     it('should add home address', async () => {
       const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
-        type: AddressType.HOME,
-      });
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand({
+          type: AddressType.HOME,
+        });
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -64,16 +65,17 @@ describe('AddAddressUseCase', () => {
         Result.success(mockCustomer),
       );
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should add work address', async () => {
       const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
-        type: AddressType.WORK,
-      });
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand({
+          type: AddressType.WORK,
+        });
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -86,16 +88,17 @@ describe('AddAddressUseCase', () => {
         Result.success(mockCustomer),
       );
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should add address with delivery instructions', async () => {
       const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto({
-        deliveryInstructions: 'Leave at front door',
-      });
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand({
+          deliveryInstructions: 'Leave at front door',
+        });
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
@@ -108,18 +111,19 @@ describe('AddAddressUseCase', () => {
         Result.success(mockCustomer),
       );
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should return Failure(RepositoryError) if customer not found', async () => {
       const customerId = 0;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand();
 
       mockCustomerRepository.mockCustomerNotFound();
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -130,7 +134,8 @@ describe('AddAddressUseCase', () => {
 
     it('should return Failure(RepositoryError) if update fails', async () => {
       const customerId = 123;
-      const addAddressDto = CustomerDtoTestFactory.createAddAddressDto();
+      const command: AddAddressCommand =
+        CustomerCommandTestFactory.createAddAddressCommand();
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -139,7 +144,7 @@ describe('AddAddressUseCase', () => {
         ErrorFactory.RepositoryError('Failed to update customer'),
       );
 
-      const result = await useCase.execute({ customerId, dto: addAddressDto });
+      const result = await useCase.execute({ customerId, command });
 
       ResultAssertionHelper.assertResultFailure(
         result,

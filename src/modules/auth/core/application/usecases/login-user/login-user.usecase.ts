@@ -9,12 +9,15 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
-import { LoginDto } from '../../../../primary-adapters/dto/login.dto';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+export interface LoginCommand {
+  email: string;
+  password: string;
+}
 
 @Injectable()
 export class LoginUserUseCase extends UseCase<
-  LoginDto,
+  LoginCommand,
   { accessToken: string; refreshToken: string },
   UseCaseError
 > {
@@ -32,12 +35,12 @@ export class LoginUserUseCase extends UseCase<
   }
 
   async execute(
-    dto: LoginDto,
+    command: LoginCommand,
   ): Promise<
     Result<{ accessToken: string; refreshToken: string }, UseCaseError>
   > {
     // 1. Find User
-    const userResult = await this.userRepository.findByEmail(dto.email);
+    const userResult = await this.userRepository.findByEmail(command.email);
     if (userResult.isFailure || !userResult.value) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_user',
@@ -48,7 +51,7 @@ export class LoginUserUseCase extends UseCase<
 
     // 2. Verify Password
     const isMatch = await this.passwordHasher.compare(
-      dto.password,
+      command.password,
       user.passwordHash,
     );
     if (!isMatch) {

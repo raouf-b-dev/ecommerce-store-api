@@ -21,7 +21,7 @@ import { InventoryTestFactory } from '../../../testing/factories/inventory.test.
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 describe('PostgresInventoryRepository', () => {
@@ -33,7 +33,7 @@ describe('PostgresInventoryRepository', () => {
   let defaultLowStockQuery: LowStockQuery;
 
   beforeEach(async () => {
-    defaultLowStockQuery = InventoryDtoTestFactory.createLowStockQueryDto();
+    defaultLowStockQuery = InventoryCommandTestFactory.createLowStockQuery();
     mockQueryBuilder = createMockQueryBuilder<InventoryEntity>();
     mockTransactionManager = createMockTransactionManager({ mockQueryBuilder });
 
@@ -240,7 +240,7 @@ describe('PostgresInventoryRepository', () => {
     it('should find low stock with custom pagination and threshold', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
-      const customQuery = InventoryDtoTestFactory.createLowStockQueryDto({
+      const customQuery = InventoryCommandTestFactory.createLowStockQuery({
         threshold: 15,
         page: 3,
         limit: 50,

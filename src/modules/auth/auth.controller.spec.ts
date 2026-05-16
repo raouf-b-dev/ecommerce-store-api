@@ -7,8 +7,8 @@ import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/r
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
 import { UserTestFactory } from './testing/factories/user.factory';
-import { RegisterDtoTestFactory } from './testing/factories/register-dto.factory';
-import { LoginDtoTestFactory } from './testing/factories/login-dto.factory';
+import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
+import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
 import { Result } from '../../shared-kernel/domain/result';
 import { JwksService } from '../../infrastructure/jwt/jwks.service';
 import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
@@ -39,8 +39,8 @@ describe('AuthController', () => {
       toPrimitives: jest.Mock;
     };
     mockUser.toPrimitives = jest.fn().mockReturnValue(mockUser);
-    registerDto = RegisterDtoTestFactory.createRegisterDto();
-    loginDto = LoginDtoTestFactory.createLoginDto();
+    registerDto = RegisterCommandTestFactory.createRegisterCommand();
+    loginDto = LoginCommandTestFactory.createLoginCommand();
 
     mockReq = {
       cookies: {},

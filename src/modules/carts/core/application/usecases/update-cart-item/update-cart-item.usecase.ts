@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { UpdateCartItemDto } from '../../../../primary-adapters/dto/update-cart-item.dto';
+export interface UpdateCartItemInput {
+  quantity: number;
+}
 import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
@@ -14,7 +16,7 @@ import { INVENTORY_GATEWAY } from '../../../../carts.token';
 
 @Injectable()
 export class UpdateCartItemUseCase extends UseCase<
-  { cartId: number; itemId: number; dto: UpdateCartItemDto },
+  { cartId: number; itemId: number; input: UpdateCartItemInput },
   ICart,
   UseCaseError
 > {
@@ -29,9 +31,9 @@ export class UpdateCartItemUseCase extends UseCase<
   async execute(input: {
     cartId: number;
     itemId: number;
-    dto: UpdateCartItemDto;
+    input: UpdateCartItemInput;
   }): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, itemId, dto } = input;
+    const { cartId, itemId, input: updateInput } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -51,7 +53,7 @@ export class UpdateCartItemUseCase extends UseCase<
     // Check stock availability
     const stockCheckResult = await this.inventoryGateway.checkStock(
       item.productId,
-      dto.quantity,
+      updateInput.quantity,
     );
 
     if (isFailure(stockCheckResult)) {
@@ -64,7 +66,10 @@ export class UpdateCartItemUseCase extends UseCase<
       );
     }
 
-    const updateResult = cart.updateItemQuantity(item.productId, dto.quantity);
+    const updateResult = cart.updateItemQuantity(
+      item.productId,
+      updateInput.quantity,
+    );
 
     if (isFailure(updateResult)) return updateResult;
 

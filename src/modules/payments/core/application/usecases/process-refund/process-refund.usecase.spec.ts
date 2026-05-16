@@ -3,7 +3,7 @@ import { ProcessRefundUseCase } from './process-refund.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
-import { ProcessRefundDto } from '../../../../primary-adapters/dto/process-refund.dto';
+import { ProcessRefundCommand } from './process-refund.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -71,7 +71,7 @@ describe('ProcessRefundUseCase', () => {
     // Use mockImplementation to return the updated payment passed to the method
     paymentRepository.update.mockImplementation(async (p) => Result.success(p));
 
-    const dto: ProcessRefundDto = {
+    const dto: ProcessRefundCommand = {
       amount: 50,
       reason: 'Defective product',
     };
@@ -96,7 +96,7 @@ describe('ProcessRefundUseCase', () => {
   it('should fail if payment is not found', async () => {
     paymentRepository.mockPaymentNotFound(123);
 
-    const dto: ProcessRefundDto = {
+    const dto: ProcessRefundCommand = {
       amount: 50,
     };
 
@@ -120,7 +120,7 @@ describe('ProcessRefundUseCase', () => {
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
 
-    const dto: ProcessRefundDto = {
+    const dto: ProcessRefundCommand = {
       amount: 150,
     };
 

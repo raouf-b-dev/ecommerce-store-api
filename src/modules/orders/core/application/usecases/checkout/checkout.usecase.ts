@@ -5,8 +5,23 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CheckoutDto } from '../../../../primary-adapters/dto/checkout.dto';
-import { CheckoutResponseDto } from '../../../../primary-adapters/dto/checkout-response.dto';
+import { ShippingAddressInput } from '../../services/shipping-address-resolver';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
+import { OrderStatus } from '../../../domain/value-objects/order-status';
+
+export interface CheckoutCommand {
+  cartId: number;
+  paymentMethod: PaymentMethodType;
+  shippingAddress?: ShippingAddressInput;
+  customerNotes?: string;
+}
+
+export interface CheckoutResult {
+  orderId: number;
+  jobId: string;
+  status: OrderStatus;
+  message: string;
+}
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
@@ -16,8 +31,8 @@ import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/int
 
 @Injectable()
 export class CheckoutUseCase extends UseCase<
-  { dto: CheckoutDto; userId: number },
-  CheckoutResponseDto,
+  { command: CheckoutCommand; userId: number },
+  CheckoutResult,
   UseCaseError
 > {
   private readonly logger = new Logger(CheckoutUseCase.name);
@@ -34,16 +49,16 @@ export class CheckoutUseCase extends UseCase<
   }
 
   async execute(input: {
-    dto: CheckoutDto;
+    command: CheckoutCommand;
     userId: number;
-  }): Promise<Result<CheckoutResponseDto, UseCaseError>> {
-    const { dto, userId } = input;
+  }): Promise<Result<CheckoutResult, UseCaseError>> {
+    const { command, userId } = input;
 
     // 1. Validate Checkout Context (Customer, Cart, Address)
     const validationResult = await this.validateCheckoutUseCase.execute({
-      cartId: dto.cartId,
+      cartId: command.cartId,
       userId,
-      shippingAddress: dto.shippingAddress,
+      shippingAddress: command.shippingAddress,
     });
 
     if (isFailure(validationResult)) {
@@ -51,7 +66,7 @@ export class CheckoutUseCase extends UseCase<
     }
 
     this.domainEventPublisher.publish('cart.checkout.initiated', {
-      cartId: dto.cartId,
+      cartId: command.cartId,
       userId,
     });
 
@@ -62,8 +77,8 @@ export class CheckoutUseCase extends UseCase<
       cart,
       userId,
       shippingAddress,
-      paymentMethod: dto.paymentMethod,
-      customerNotes: dto.customerNotes,
+      paymentMethod: command.paymentMethod,
+      customerNotes: command.customerNotes,
       orderId: null, // Let DB generate ID
     });
 
@@ -78,11 +93,11 @@ export class CheckoutUseCase extends UseCase<
 
     // 3. Schedule Checkout Flow
     const scheduleResult = await this.orderScheduler.scheduleCheckout({
-      cartId: dto.cartId,
+      cartId: command.cartId,
       userId,
       shippingAddress,
-      paymentMethod: dto.paymentMethod,
-      customerNotes: dto.customerNotes,
+      paymentMethod: command.paymentMethod,
+      customerNotes: command.customerNotes,
       orderId,
     });
 
@@ -98,11 +113,11 @@ export class CheckoutUseCase extends UseCase<
     const flowId = scheduleResult.value;
 
     // 4. Build Response (using domain policy for message)
-    const response: CheckoutResponseDto = {
+    const response: CheckoutResult = {
       orderId,
       jobId: flowId,
       status: savedOrder.status,
-      message: this.paymentPolicy.getCheckoutMessage(dto.paymentMethod),
+      message: this.paymentPolicy.getCheckoutMessage(command.paymentMethod),
     };
 
     return Result.success(response);

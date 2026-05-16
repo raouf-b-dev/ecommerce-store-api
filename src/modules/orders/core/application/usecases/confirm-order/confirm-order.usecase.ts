@@ -11,7 +11,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { Order } from '../../../domain/entities/order';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 
-export interface ConfirmOrderDto {
+export interface ConfirmOrderCommand {
   orderId: number;
   reservationId?: number;
   cartId?: number;
@@ -19,7 +19,7 @@ export interface ConfirmOrderDto {
 
 @Injectable()
 export class ConfirmOrderUseCase
-  implements UseCase<ConfirmOrderDto, IOrder, UseCaseError>
+  implements UseCase<ConfirmOrderCommand, IOrder, UseCaseError>
 {
   private readonly logger = new Logger(ConfirmOrderUseCase.name);
 
@@ -28,7 +28,9 @@ export class ConfirmOrderUseCase
     private orderScheduler: OrderScheduler,
   ) {}
 
-  async execute(dto: ConfirmOrderDto): Promise<Result<IOrder, UseCaseError>> {
+  async execute(
+    dto: ConfirmOrderCommand,
+  ): Promise<Result<IOrder, UseCaseError>> {
     const { orderId, reservationId, cartId } = dto;
     const requestedOrder = await this.orderRepository.findById(orderId);
     if (requestedOrder.isFailure) return requestedOrder;

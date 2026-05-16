@@ -9,16 +9,23 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { UserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
-import { RegisterDto } from '../../../../primary-adapters/dto/register.dto';
-import { CustomerGateway } from '../../ports/customer.gateway';
 import { CUSTOMER_GATEWAY } from '../../../../auth.tokens';
+import { IUser } from '../../../domain/interfaces/user.interface';
 import { SystemRoleCode } from '../../../domain/reference-data/system-roles';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
-import { IUser } from '../../../domain/interfaces/user.interface';
+import { CustomerGateway } from '../../ports/customer.gateway';
+
+export interface RegisterCommand {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
 
 @Injectable()
 export class RegisterUserUseCase extends UseCase<
-  RegisterDto,
+  RegisterCommand,
   { user: IUser; customerId: number },
   UseCaseError
 > {
@@ -33,20 +40,20 @@ export class RegisterUserUseCase extends UseCase<
   }
 
   async execute(
-    dto: RegisterDto,
+    command: RegisterCommand,
   ): Promise<Result<{ user: IUser; customerId: number }, UseCaseError>> {
     // 1. Check if user exists
-    const existingUser = await this.userRepository.findByEmail(dto.email);
+    const existingUser = await this.userRepository.findByEmail(command.email);
     if (existingUser.isSuccess && existingUser.value) {
       return ErrorFactory.UseCaseError('User with this email already exists');
     }
 
     // 2. Create Customer
     const customerResult = await this.customerGateway.createCustomer({
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      phone: dto.phone,
+      firstName: command.firstName,
+      lastName: command.lastName,
+      email: command.email,
+      phone: command.phone,
     });
 
     if (isFailure(customerResult)) return customerResult;
@@ -54,7 +61,7 @@ export class RegisterUserUseCase extends UseCase<
     const customer = customerResult.value;
 
     // 3. Hash Password
-    const passwordHash = await this.passwordHasher.hash(dto.password);
+    const passwordHash = await this.passwordHasher.hash(command.password);
 
     // 4. Get Default Role
     const roleResult = await this.roleRepository.findByCode(
@@ -67,7 +74,7 @@ export class RegisterUserUseCase extends UseCase<
     // 5. Create User
     const user = User.create(
       null,
-      dto.email,
+      command.email,
       passwordHash,
       false, // Self-registered user chose their own password
       roleResult.value.id,

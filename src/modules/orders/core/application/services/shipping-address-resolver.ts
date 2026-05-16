@@ -1,7 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { ShippingAddressDto } from '../../../primary-adapters/dto/shipping-address.dto';
-import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';
 import { CheckoutCustomerInfo } from '../ports/customer.gateway';
+import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';
+
+export interface ShippingAddressInput {
+  firstName?: string;
+  lastName?: string;
+  street: string;
+  street2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  deliveryInstructions?: string;
+}
 
 /**
  * Application Service — Resolves shipping address from either an explicit DTO
@@ -18,7 +30,7 @@ import { CheckoutCustomerInfo } from '../ports/customer.gateway';
 @Injectable()
 export class ShippingAddressResolver {
   resolveFromDto(
-    dto: ShippingAddressDto,
+    dto: ShippingAddressInput,
     customer: CheckoutCustomerInfo,
   ): ShippingAddressProps {
     return {
@@ -58,7 +70,7 @@ export class ShippingAddressResolver {
   }
 
   resolve(
-    dto: ShippingAddressDto | undefined,
+    dto: ShippingAddressInput | undefined,
     customer: CheckoutCustomerInfo,
   ): ShippingAddressProps | null {
     if (dto) {

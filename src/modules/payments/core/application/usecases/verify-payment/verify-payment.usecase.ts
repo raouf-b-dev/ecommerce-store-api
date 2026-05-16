@@ -5,22 +5,20 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
 
 @Injectable()
 export class VerifyPaymentUseCase extends UseCase<
   number,
-  PaymentResponseDto,
+  IPayment,
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
+  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
     const result = await this.paymentRepository.findById(id);
 
     if (isFailure(result)) return result;
@@ -28,8 +26,6 @@ export class VerifyPaymentUseCase extends UseCase<
     // Logic to verify payment status with external provider could be added here
     // For now, we just return the payment
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(result.value.toPrimitives()),
-    );
+    return Result.success(result.value.toPrimitives());
   }
 }

@@ -7,17 +7,20 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { ProcessRefundDto } from '../../../../primary-adapters/dto/process-refund.dto';
 import { Refund } from '../../../domain/entities/refund';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+
+export interface ProcessRefundCommand {
+  amount: number;
+  reason?: string;
+}
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
-  { id: number; dto: ProcessRefundDto },
-  PaymentResponseDto,
+  { id: number; dto: ProcessRefundCommand },
+  IPayment,
   UseCaseError
 > {
   constructor(
@@ -30,8 +33,8 @@ export class ProcessRefundUseCase extends UseCase<
 
   async execute(input: {
     id: number;
-    dto: ProcessRefundDto;
-  }): Promise<Result<PaymentResponseDto, UseCaseError>> {
+    dto: ProcessRefundCommand;
+  }): Promise<Result<IPayment, UseCaseError>> {
     const paymentResult = await this.paymentRepository.findById(input.id);
     if (isFailure(paymentResult)) return paymentResult;
 
@@ -92,8 +95,6 @@ export class ProcessRefundUseCase extends UseCase<
       refundId: refund.id,
     });
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
-    );
+    return Result.success(saveResult.value.toPrimitives());
   }
 }

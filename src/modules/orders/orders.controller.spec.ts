@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
-import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
+import { OrderCommandTestFactory } from './testing/factories/create-order-dto.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
@@ -40,7 +40,8 @@ describe('OrdersController', () => {
     confirmedOrder = OrderTestFactory.createConfirmedOrder();
     processingOrder = OrderTestFactory.createProcessingOrder();
     deliveredOrder = OrderTestFactory.createDeliveredOrder();
-    createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
+    createDeliveredOrderDto =
+      OrderCommandTestFactory.createDeliverOrderCommand();
     checkoutDto = {
       cartId: 123,
       shippingAddressId: 123,
@@ -145,7 +146,7 @@ describe('OrdersController', () => {
     const userId = '123';
     await controller.checkout(checkoutDto, userId);
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
-      dto: checkoutDto,
+      command: checkoutDto,
       userId: Number(userId),
     });
   });
@@ -196,7 +197,7 @@ describe('OrdersController', () => {
     );
     expect(deliverOrderUseCase.execute).toHaveBeenCalledWith({
       id: Number(deliveredOrder.id),
-      deliverOrderDto: createDeliveredOrderDto,
+      command: createDeliveredOrderDto,
     });
     expect(res).toEqual(Result.success(deliveredOrder));
   });

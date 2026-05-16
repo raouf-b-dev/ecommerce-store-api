@@ -10,7 +10,7 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 
-export interface HandlePaymentFailedDto {
+export interface HandlePaymentFailedCommand {
   orderId: number;
   paymentId: number;
   reason?: string;
@@ -24,7 +24,7 @@ export interface HandlePaymentFailedResult {
 
 @Injectable()
 export class HandlePaymentFailedUseCase extends UseCase<
-  HandlePaymentFailedDto,
+  HandlePaymentFailedCommand,
   HandlePaymentFailedResult,
   UseCaseError
 > {
@@ -38,7 +38,7 @@ export class HandlePaymentFailedUseCase extends UseCase<
   }
 
   async execute(
-    dto: HandlePaymentFailedDto,
+    dto: HandlePaymentFailedCommand,
   ): Promise<Result<HandlePaymentFailedResult, UseCaseError>> {
     const { orderId, reason, reservationId } = dto;
     this.logger.log(`Handling payment failure for order ${orderId}`);

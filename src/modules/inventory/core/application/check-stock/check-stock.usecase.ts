@@ -1,30 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
-import { CheckStockResponse } from '../../../primary-adapters/dto/check-stock-response.dto';
+import { CheckStockResult } from '../../domain/interfaces/check-stock-result.interface';
 
 @Injectable()
 export class CheckStockUseCase
   implements
     UseCase<
       { productId: number; quantity?: number },
-      CheckStockResponse,
+      CheckStockResult,
       UseCaseError
     >
 {
   constructor(private inventoryRepository: InventoryRepository) {}
 
-  async execute(dto: {
+  async execute(input: {
     productId: number;
     quantity?: number;
-  }): Promise<Result<CheckStockResponse, UseCaseError>> {
-    const requestedQuantity = dto.quantity ?? 1;
+  }): Promise<Result<CheckStockResult, UseCaseError>> {
+    const requestedQuantity = input.quantity ?? 1;
 
     const inventoryResult = await this.inventoryRepository.findByProductId(
-      dto.productId,
+      input.productId,
     );
     if (inventoryResult.isFailure) return inventoryResult;
 
