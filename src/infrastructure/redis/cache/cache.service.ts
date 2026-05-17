@@ -5,6 +5,7 @@ import { RedisKeyClient } from '../clients/redis-key.client';
 import { RedisSearchClient } from '../clients/redis-search.client';
 import { RedisService } from '../redis.service';
 import { SearchOptions } from '../types';
+import { CachePort } from './cache.port';
 
 interface SetOptions {
   path?: string;
@@ -13,7 +14,7 @@ interface SetOptions {
 }
 
 @Injectable()
-export class CacheService {
+export class CacheService implements CachePort {
   constructor(
     private readonly jsonClient: RedisJsonClient,
     private readonly keyClient: RedisKeyClient,
