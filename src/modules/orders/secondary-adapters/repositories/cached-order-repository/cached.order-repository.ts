@@ -7,7 +7,7 @@ import {
 } from '../../../core/domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
@@ -20,7 +20,7 @@ import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 @Injectable()
 export class CachedOrderRepository implements OrderRepository {
   constructor(
-    private readonly cacheService: CacheService,
+    private readonly cacheService: CachePort,
     private readonly postgresRepo: OrderRepository,
     private readonly logger: Logger,
   ) {}

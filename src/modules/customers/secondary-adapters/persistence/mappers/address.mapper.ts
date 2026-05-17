@@ -37,7 +37,7 @@ export class AddressMapper {
       state: primitives.state,
       postalCode: primitives.postalCode,
       country: primitives.country,
-      type: primitives.type as any,
+      type: primitives.type,
       isDefault: primitives.isDefault,
       deliveryInstructions: primitives.deliveryInstructions,
       createdAt: primitives.createdAt,

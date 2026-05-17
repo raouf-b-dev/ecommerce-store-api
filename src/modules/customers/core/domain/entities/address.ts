@@ -212,7 +212,7 @@ export class Address implements IAddress {
       state: this._state,
       postalCode: this._postalCode,
       country: this._country,
-      type: this._type as any,
+      type: this._type,
       isDefault: this._isDefault,
       deliveryInstructions: this._deliveryInstructions,
       createdAt: this._createdAt,

@@ -19,8 +19,8 @@ export class CustomerMapper {
       email: entity.email,
       phone: entity.phone,
       addresses: entity.addresses
-        ? entity.addresses.map(
-            (addr) => AddressMapper.toDomain(addr).toPrimitives() as any,
+        ? entity.addresses.map((addr) =>
+            AddressMapper.toDomain(addr).toPrimitives(),
           )
         : [],
       createdAt: entity.createdAt,
@@ -86,6 +86,6 @@ export class CustomerCacheMapper {
       ...cached,
       createdAt: new Date(cached.createdAt),
       updatedAt: new Date(cached.updatedAt),
-    } as any);
+    });
   }
 }

@@ -99,6 +99,7 @@ export class CheckoutUseCase extends UseCase<
       paymentMethod: command.paymentMethod,
       customerNotes: command.customerNotes,
       orderId,
+      flowId: `checkout-${orderId}-${Date.now()}`,
     });
 
     if (isFailure(scheduleResult)) {

@@ -14,6 +14,8 @@ export interface CustomerProps {
   email: string;
   phone: string | null;
   addresses: AddressProps[];
+  totalOrders?: number;
+  totalSpent?: number;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -42,6 +44,8 @@ export class Customer implements ICustomer {
     this._addresses = props.addresses.map((addr) =>
       Address.fromPrimitives(addr),
     );
+    this._totalOrders = props.totalOrders || 0;
+    this._totalSpent = props.totalSpent || 0;
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }

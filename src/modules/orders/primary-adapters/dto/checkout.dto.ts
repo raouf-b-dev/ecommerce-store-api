@@ -4,7 +4,7 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
-  IsUUID,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -13,7 +13,7 @@ import { ShippingAddressDto } from './shipping-address.dto';
 
 export class CheckoutDto {
   @ApiProperty({ description: 'Cart ID to checkout' })
-  @IsUUID()
+  @IsNumber()
   cartId: number;
 
   @ApiPropertyOptional({ description: 'Shipping address for the order' })
