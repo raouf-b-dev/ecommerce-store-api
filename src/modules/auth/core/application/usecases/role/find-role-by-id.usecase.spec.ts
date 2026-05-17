@@ -5,6 +5,7 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { RoleTestFactory } from '../../../../testing/factories/role.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('FindRoleByIdUseCase', () => {
   let useCase: FindRoleByIdUseCase;
@@ -42,7 +43,9 @@ describe('FindRoleByIdUseCase', () => {
 
   it('should return failure if role is not found', async () => {
     // Arrange
-    mockRoleRepo.findById.mockResolvedValue(Result.success(null) as any);
+    mockRoleRepo.findById.mockResolvedValue(
+      ErrorFactory.RepositoryError('Role not found'),
+    );
 
     // Act
     const result = await useCase.execute(1);

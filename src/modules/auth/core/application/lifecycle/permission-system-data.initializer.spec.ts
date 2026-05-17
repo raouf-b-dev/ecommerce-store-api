@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionSystemDataInitializer } from './permission-system-data.initializer';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Permission } from '../../domain/entities/permission';
 import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 import { SYSTEM_PERMISSIONS } from '../../domain/reference-data/permission-definitions';
@@ -56,7 +57,7 @@ describe('PermissionSystemDataInitializer', () => {
 
   it('should not initialize permissions and log error if findAll fails', async () => {
     mockPermissionRepo.findAll.mockResolvedValue(
-      Result.failure(new Error('DB error') as any),
+      ErrorFactory.RepositoryError('DB error'),
     );
 
     await initializer.onApplicationBootstrap();

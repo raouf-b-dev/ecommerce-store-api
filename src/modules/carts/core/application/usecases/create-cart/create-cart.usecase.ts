@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { CreateCartDto } from '../../../../primary-adapters/dto/create-cart.dto';
+import { CreateCartInput } from '../../../domain/repositories/cart.repository';
 import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
@@ -8,11 +8,10 @@ import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
 export class CreateCartUseCase extends UseCase<
-  CreateCartDto,
+  CreateCartInput,
   ICart,
   UseCaseError
 > {
@@ -20,8 +19,8 @@ export class CreateCartUseCase extends UseCase<
     super();
   }
 
-  async execute(dto: CreateCartDto): Promise<Result<ICart, UseCaseError>> {
-    const createResult = await this.cartRepository.create(dto);
+  async execute(input: CreateCartInput): Promise<Result<ICart, UseCaseError>> {
+    const createResult = await this.cartRepository.create(input);
 
     if (isFailure(createResult)) return createResult;
 

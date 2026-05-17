@@ -3,6 +3,7 @@ import { DeleteRoleUseCase } from './delete-role.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { RoleTestFactory } from '../../../../testing/factories/role.factory';
 
@@ -31,7 +32,7 @@ describe('DeleteRoleUseCase', () => {
     const role = RoleTestFactory.buildEntity();
 
     mockRoleRepo.findById.mockResolvedValue(Result.success(role));
-    mockRoleRepo.delete.mockResolvedValue(Result.success(undefined as any));
+    mockRoleRepo.delete.mockResolvedValue(Result.success<void>(undefined));
 
     // Act
     const result = await useCase.execute(1);
@@ -57,7 +58,9 @@ describe('DeleteRoleUseCase', () => {
 
   it('should return failure if role not found', async () => {
     // Arrange
-    mockRoleRepo.findById.mockResolvedValue(Result.success(null) as any);
+    mockRoleRepo.findById.mockResolvedValue(
+      ErrorFactory.RepositoryError('Role not found'),
+    );
 
     // Act
     const result = await useCase.execute(1);
@@ -72,7 +75,7 @@ describe('DeleteRoleUseCase', () => {
     const role = RoleTestFactory.buildEntity();
     mockRoleRepo.findById.mockResolvedValue(Result.success(role));
     mockRoleRepo.delete.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     // Act

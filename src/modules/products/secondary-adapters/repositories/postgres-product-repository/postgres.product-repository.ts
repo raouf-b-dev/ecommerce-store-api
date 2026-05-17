@@ -2,12 +2,14 @@
 import { Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { ProductRepository } from '../../../core/domain/repositories/product-repository';
+import {
+  CreateProductInput,
+  ProductRepository,
+  UpdateProductInput,
+} from '../../../core/domain/repositories/product-repository';
 import { ProductEntity } from '../../orm/product.schema';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { CreateProductDto } from '../../../primary-adapters/dto/create-product.dto';
-import { UpdateProductDto } from '../../../primary-adapters/dto/update-product.dto';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
 
 export class PostgresProductRepository implements ProductRepository {
@@ -16,7 +18,7 @@ export class PostgresProductRepository implements ProductRepository {
     private readonly ormRepo: Repository<ProductEntity>,
   ) {}
   async save(
-    createProductDto: CreateProductDto,
+    createProductDto: CreateProductInput,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
       const entity = this.ormRepo.create({
@@ -33,7 +35,7 @@ export class PostgresProductRepository implements ProductRepository {
 
   async update(
     id: number,
-    updateProductDto: UpdateProductDto,
+    updateProductDto: UpdateProductInput,
   ): Promise<Result<IProduct, RepositoryError>> {
     try {
       // Ensure the product exists first

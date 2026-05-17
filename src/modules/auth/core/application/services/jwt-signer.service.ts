@@ -1,29 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { EnvConfigService } from '../../config/env-config.service';
-import { JwksService } from './jwks.service';
+import { EnvConfigService } from '../../../../../config/env-config.service';
+import { JwksPort } from '../../../../../infrastructure/jwt/ports/jwks.port';
 import { importPKCS8, SignJWT, decodeJwt } from 'jose';
 import * as crypto from 'crypto';
-
-export interface RefreshTokenResult {
-  token: string;
-  sessionId: string;
-  expiresAt: Date;
-}
-export interface AccessTokenPayload {
-  sub: number | null;
-  email: string;
-  role: string;
-  customerId: number | null;
-}
+import {
+  JwtSignerPort,
+  SignAccessTokenPayload,
+  RefreshTokenResult,
+} from '../ports/jwt-signer.port';
 
 @Injectable()
-export class JwtSignerService {
+export class JwtSignerService implements JwtSignerPort {
   constructor(
     private readonly configService: EnvConfigService,
-    private readonly jwksService: JwksService,
+    private readonly jwksService: JwksPort,
   ) {}
 
-  async signAccessToken(payload: AccessTokenPayload): Promise<string> {
+  async signAccessToken(payload: SignAccessTokenPayload): Promise<string> {
     const pem = this.configService.jwt.privateKey;
     const privateKey = await importPKCS8(pem, 'RS256');
 

@@ -21,8 +21,8 @@ import { InventoryTestFactory } from '../../../testing/factories/inventory.test.
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 describe('PostgresInventoryRepository', () => {
   let repository: PostgresInventoryRepository;
@@ -30,37 +30,46 @@ describe('PostgresInventoryRepository', () => {
   let mockDataSource: jest.Mocked<DataSource>;
   let mockTransactionManager: any;
   let mockQueryBuilder: jest.Mocked<SelectQueryBuilder<InventoryEntity>>;
-  let defaultLowStockQueryDto: LowStockQueryDto;
+  let defaultLowStockQuery: LowStockQuery;
 
   beforeEach(async () => {
-    defaultLowStockQueryDto = InventoryDtoTestFactory.createLowStockQueryDto();
+    defaultLowStockQuery = InventoryCommandTestFactory.createLowStockQuery();
     mockQueryBuilder = createMockQueryBuilder<InventoryEntity>();
     mockTransactionManager = createMockTransactionManager({ mockQueryBuilder });
-
-    mockDataSource = createMockDataSource(mockTransactionManager) as any;
-
-    mockOrmRepo = {
-      findOne: jest.fn(),
-      delete: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresInventoryRepository,
         {
           provide: getRepositoryToken(InventoryEntity),
-          useValue: mockOrmRepo,
+          useValue: {
+            findOne: jest.fn(),
+            delete: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+          },
         },
         {
           provide: DataSource,
-          useValue: mockDataSource,
+          useValue: {
+            transaction: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     repository = module.get<PostgresInventoryRepository>(
       PostgresInventoryRepository,
+    );
+    mockOrmRepo = module.get(getRepositoryToken(InventoryEntity));
+    mockDataSource = module.get(DataSource);
+
+    mockDataSource.transaction.mockImplementation(
+      (isolationOrCb: unknown, cb?: unknown) => {
+        const callback = (
+          typeof isolationOrCb === 'function' ? isolationOrCb : cb
+        ) as (mgr: unknown) => Promise<unknown>;
+        return callback(mockTransactionManager);
+      },
     );
   });
 
@@ -216,7 +225,7 @@ describe('PostgresInventoryRepository', () => {
       const mockEntities = [InventoryEntityTestFactory.createLowStockEntity()];
       mockQueryBuilder.getMany.mockResolvedValue(mockEntities);
 
-      const result = await repository.findLowStock(defaultLowStockQueryDto);
+      const result = await repository.findLowStock(defaultLowStockQuery);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrmRepo.createQueryBuilder).toHaveBeenCalledWith('inventory');
@@ -240,13 +249,13 @@ describe('PostgresInventoryRepository', () => {
     it('should find low stock with custom pagination and threshold', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
-      const customQueryDto = InventoryDtoTestFactory.createLowStockQueryDto({
+      const customQuery = InventoryCommandTestFactory.createLowStockQuery({
         threshold: 15,
         page: 3,
         limit: 50,
       });
 
-      const result = await repository.findLowStock(customQueryDto);
+      const result = await repository.findLowStock(customQuery);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
@@ -262,12 +271,12 @@ describe('PostgresInventoryRepository', () => {
     it('should find low stock with default pagination and threshold', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([]);
 
-      const result = await repository.findLowStock(defaultLowStockQueryDto);
+      const result = await repository.findLowStock(defaultLowStockQuery);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'inventory.availableQuantity <= :threshold',
-        { threshold: defaultLowStockQueryDto.threshold },
+        { threshold: defaultLowStockQuery.threshold },
       );
 
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
@@ -278,7 +287,7 @@ describe('PostgresInventoryRepository', () => {
       const dbError = new Error('DB Error');
       mockQueryBuilder.getMany.mockRejectedValue(dbError);
 
-      const result = await repository.findLowStock(defaultLowStockQueryDto);
+      const result = await repository.findLowStock(defaultLowStockQuery);
 
       ResultAssertionHelper.assertResultFailure(
         result,

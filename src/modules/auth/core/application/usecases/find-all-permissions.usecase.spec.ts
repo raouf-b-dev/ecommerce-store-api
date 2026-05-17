@@ -3,6 +3,7 @@ import { FindAllPermissionsUseCase } from './find-all-permissions.usecase';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Permission } from '../../domain/entities/permission';
 import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 
@@ -45,7 +46,7 @@ describe('FindAllPermissionsUseCase', () => {
 
   it('should return an error if repository fails', async () => {
     mockPermissionRepo.findAll.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     const result = await useCase.execute();

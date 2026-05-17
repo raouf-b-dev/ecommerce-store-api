@@ -1,4 +1,4 @@
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { Payment } from '../../../core/domain/entities/payment';
 import {
   PaymentCacheMapper,
@@ -11,16 +11,15 @@ import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/red
 import { PaymentBuilder } from '../../../testing/builders/payment.test.builder';
 import { MockPaymentRepository } from '../../../testing/mocks/payment-repository.mock';
 import { CachedPaymentRepository } from './cached.payment-repository';
-import { PaymentTestFactory } from '../../../testing/factories/payment.test.factory';
 import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import { Refund } from '../../../core/domain/entities/refund';
-import { Logger } from '@nestjs/common';
+import { MockCacheService, MockLogger } from '../../../../../testing';
 
 describe('CachedPaymentRepository', () => {
   let repository: CachedPaymentRepository;
-  let cacheService: jest.Mocked<CacheService>;
+  let cacheService: MockCacheService;
   let postgresRepo: MockPaymentRepository;
-  let logger: jest.Mocked<Logger>;
+  let logger: MockLogger;
 
   const paymentId = 1;
   const orderId = 1;
@@ -38,23 +37,10 @@ describe('CachedPaymentRepository', () => {
   const idKey = (id: number) => `${PAYMENT_REDIS.CACHE_KEY}:${id}`;
 
   beforeEach(() => {
-    // Mock CacheService methods
-    cacheService = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined),
-      setAll: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn().mockResolvedValue(undefined),
-      search: jest.fn().mockResolvedValue([]),
-    } as unknown as jest.Mocked<CacheService>;
+    cacheService = new MockCacheService();
 
     postgresRepo = new MockPaymentRepository();
-    logger = {
-      log: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      debug: jest.fn(),
-      verbose: jest.fn(),
-    } as unknown as jest.Mocked<Logger>;
+    logger = new MockLogger();
 
     repository = new CachedPaymentRepository(
       cacheService,

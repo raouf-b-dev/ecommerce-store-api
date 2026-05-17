@@ -103,7 +103,7 @@ export class PostgresRoleRepository implements RoleRepository {
         );
       }
 
-      return (await this.findById(savedEntity.id)) as any;
+      return await this.findById(savedEntity.id);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to save role', error);
     }

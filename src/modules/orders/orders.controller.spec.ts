@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
-import { CreateOrderDtoTestFactory } from './testing/factories/create-order-dto.factory';
+import { OrderCommandTestFactory } from './testing/factories/create-order-dto.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthGuard } from '../../guards/auth.guard';
@@ -15,36 +15,56 @@ import { CancelOrderUseCase } from './core/application/usecases/cancel-order/can
 import { ConfirmOrderUseCase } from './core/application/usecases/confirm-order/confirm-order.usecase';
 import { DeliverOrderUseCase } from './core/application/usecases/deliver-order/deliver-order.usecase';
 import { ProcessOrderUseCase } from './core/application/usecases/process-order/process-order.usecase';
+import { DeliverOrderCommand } from './core/application/usecases/deliver-order/deliver-order.usecase';
+import { Order } from './core/domain/entities/order';
+import { OrderStatus } from './core/domain/value-objects/order-status';
+import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
+import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
-  let checkoutUseCase: CheckoutUseCase;
-  let getOrderUseCase: GetOrderUseCase;
-  let listOrdersUseCase: ListOrdersUsecase;
-  let cancelOrderUseCase: CancelOrderUseCase;
-  let confirmOrderUseCase: ConfirmOrderUseCase;
-  let processOrderUseCase: ProcessOrderUseCase;
-  let deliverOrderUseCase: DeliverOrderUseCase;
-  let shipOrderUseCase: ShipOrderUseCase;
-  let mockOrder;
-  let cancelledOrder;
-  let confirmedOrder;
-  let processingOrder;
-  let deliveredOrder;
-  let createDeliveredOrderDto;
-  let checkoutDto;
+  let checkoutUseCase: jest.Mocked<CheckoutUseCase>;
+  let getOrderUseCase: jest.Mocked<GetOrderUseCase>;
+  let listOrdersUseCase: jest.Mocked<ListOrdersUsecase>;
+  let cancelOrderUseCase: jest.Mocked<CancelOrderUseCase>;
+  let confirmOrderUseCase: jest.Mocked<ConfirmOrderUseCase>;
+  let processOrderUseCase: jest.Mocked<ProcessOrderUseCase>;
+  let deliverOrderUseCase: jest.Mocked<DeliverOrderUseCase>;
+  let shipOrderUseCase: jest.Mocked<ShipOrderUseCase>;
+  let mockOrder: Order;
+  let cancelledOrder: Order;
+  let confirmedOrder: Order;
+  let processingOrder: Order;
+  let deliveredOrder: Order;
+  let createDeliveredOrderDto: DeliverOrderCommand;
+  let checkoutDto: CheckoutDto;
 
   beforeEach(async () => {
-    mockOrder = OrderTestFactory.createMockOrder();
-    cancelledOrder = OrderTestFactory.createCancelledOrder();
-    confirmedOrder = OrderTestFactory.createConfirmedOrder();
-    processingOrder = OrderTestFactory.createProcessingOrder();
-    deliveredOrder = OrderTestFactory.createDeliveredOrder();
-    createDeliveredOrderDto = CreateOrderDtoTestFactory.createDeliverOrderDto();
+    mockOrder = OrderTestFactory.createOrderEntity();
+    cancelledOrder = OrderTestFactory.createOrderEntity({
+      status: OrderStatus.CANCELLED,
+    });
+    confirmedOrder = OrderTestFactory.createOrderEntity({
+      status: OrderStatus.CONFIRMED,
+    });
+    processingOrder = OrderTestFactory.createOrderEntity({
+      status: OrderStatus.PROCESSING,
+    });
+    deliveredOrder = OrderTestFactory.createOrderEntity({
+      status: OrderStatus.DELIVERED,
+    });
+    createDeliveredOrderDto =
+      OrderCommandTestFactory.createDeliverOrderCommand();
+    const cmd = OrderCommandTestFactory.createCreditCardCheckoutCommand();
     checkoutDto = {
-      cartId: 123,
-      shippingAddressId: 123,
-      paymentMethod: 'credit_card',
+      ...cmd,
+      shippingAddress: cmd.shippingAddress
+        ? {
+            ...cmd.shippingAddress,
+            firstName: cmd.shippingAddress.firstName || 'Test',
+            lastName: cmd.shippingAddress.lastName || 'User',
+          }
+        : undefined,
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -123,14 +143,14 @@ describe('OrdersController', () => {
       .compile();
 
     controller = module.get<OrdersController>(OrdersController);
-    checkoutUseCase = module.get<CheckoutUseCase>(CheckoutUseCase);
-    getOrderUseCase = module.get<GetOrderUseCase>(GetOrderUseCase);
-    listOrdersUseCase = module.get<ListOrdersUsecase>(ListOrdersUsecase);
-    cancelOrderUseCase = module.get<CancelOrderUseCase>(CancelOrderUseCase);
-    confirmOrderUseCase = module.get<ConfirmOrderUseCase>(ConfirmOrderUseCase);
-    processOrderUseCase = module.get<ProcessOrderUseCase>(ProcessOrderUseCase);
-    deliverOrderUseCase = module.get<DeliverOrderUseCase>(DeliverOrderUseCase);
-    shipOrderUseCase = module.get<ShipOrderUseCase>(ShipOrderUseCase);
+    checkoutUseCase = module.get(CheckoutUseCase);
+    getOrderUseCase = module.get(GetOrderUseCase);
+    listOrdersUseCase = module.get(ListOrdersUsecase);
+    cancelOrderUseCase = module.get(CancelOrderUseCase);
+    confirmOrderUseCase = module.get(ConfirmOrderUseCase);
+    processOrderUseCase = module.get(ProcessOrderUseCase);
+    deliverOrderUseCase = module.get(DeliverOrderUseCase);
+    shipOrderUseCase = module.get(ShipOrderUseCase);
   });
 
   afterEach(() => {
@@ -145,26 +165,26 @@ describe('OrdersController', () => {
     const userId = '123';
     await controller.checkout(checkoutDto, userId);
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
-      dto: checkoutDto,
+      command: checkoutDto,
       userId: Number(userId),
     });
   });
 
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
-    const res = await controller.findOne(mockOrder.id);
+    const res = await controller.findOne(String(mockOrder.id));
     expect(getOrderUseCase.execute).toHaveBeenCalledWith(Number(mockOrder.id));
     expect(res).toEqual(Result.success(mockOrder));
   });
 
   it('should call ListOrdersUseCase.execute when findAll is called and return its result', async () => {
-    const query = {} as any;
+    const query = new ListOrdersQueryDto();
     const res = await controller.findAll(query);
     expect(listOrdersUseCase.execute).toHaveBeenCalledWith(query);
     expect(res).toEqual(Result.success([mockOrder]));
   });
 
   it('should call CancelOrderUseCase.execute when cancelOrder is called and return its result', async () => {
-    const res = await controller.cancelOrder(cancelledOrder.id);
+    const res = await controller.cancelOrder(String(cancelledOrder.id));
     expect(cancelOrderUseCase.execute).toHaveBeenCalledWith({
       orderId: Number(cancelledOrder.id),
     });
@@ -172,7 +192,7 @@ describe('OrdersController', () => {
   });
 
   it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
-    const res = await controller.confirmOrder(confirmedOrder.id);
+    const res = await controller.confirmOrder(String(confirmedOrder.id));
     expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
       orderId: Number(confirmedOrder.id),
       reservationId: undefined,
@@ -182,7 +202,7 @@ describe('OrdersController', () => {
   });
 
   it('should call ProcessOrderUseCase.execute when processOrder is called and return its result', async () => {
-    const res = await controller.processOrder(processingOrder.id);
+    const res = await controller.processOrder(String(processingOrder.id));
     expect(processOrderUseCase.execute).toHaveBeenCalledWith(
       Number(processingOrder.id),
     );
@@ -191,12 +211,12 @@ describe('OrdersController', () => {
 
   it('should call DeliverOrderUseCase.execute when deliverOrder is called and return its result', async () => {
     const res = await controller.deliverOrder(
-      deliveredOrder.id,
+      String(deliveredOrder.id),
       createDeliveredOrderDto,
     );
     expect(deliverOrderUseCase.execute).toHaveBeenCalledWith({
       id: Number(deliveredOrder.id),
-      deliverOrderDto: createDeliveredOrderDto,
+      command: createDeliveredOrderDto,
     });
     expect(res).toEqual(Result.success(deliveredOrder));
   });

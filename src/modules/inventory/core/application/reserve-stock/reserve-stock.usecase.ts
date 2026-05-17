@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ReserveStockDto } from '../../../primary-adapters/dto/reserve-stock.dto';
+import { ReservationInput } from '../../domain/repositories/reservation.repository';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { ReservationRepository } from '../../domain/repositories/reservation.repository';
 import { Reservation } from '../../domain/entities/reservation';
@@ -11,7 +11,7 @@ import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class ReserveStockUseCase
-  implements UseCase<ReserveStockDto, Reservation, UseCaseError>
+  implements UseCase<ReservationInput, Reservation, UseCaseError>
 {
   constructor(
     @Inject(POSTGRES_RESERVATION_REPOSITORY)
@@ -19,9 +19,9 @@ export class ReserveStockUseCase
   ) {}
 
   async execute(
-    dto: ReserveStockDto,
+    input: ReservationInput,
   ): Promise<Result<Reservation, UseCaseError>> {
-    const saveResult = await this.reservationRepository.save(dto);
+    const saveResult = await this.reservationRepository.save(input);
 
     if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError(

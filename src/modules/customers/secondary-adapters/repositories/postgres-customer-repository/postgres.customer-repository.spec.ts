@@ -72,7 +72,7 @@ describe('PostgresCustomerRepository', () => {
   describe('save', () => {
     it('should save and return a customer', async () => {
       const customerPrimitives = CustomerTestFactory.createMockCustomer();
-      const customer = Customer.fromPrimitives(customerPrimitives as any);
+      const customer = Customer.fromPrimitives(customerPrimitives);
       const entity = CustomerMapper.toEntity(customer);
       mockTypeOrmRepository.save.mockResolvedValue(entity);
 

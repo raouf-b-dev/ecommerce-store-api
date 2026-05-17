@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Cart } from '../../../core/domain/entities/cart';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
@@ -12,12 +12,12 @@ import {
   CartForCache,
 } from '../../persistence/mappers/cart.mapper';
 
-import { CreateCartDto } from '../../../primary-adapters/dto/create-cart.dto';
+import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
 
 @Injectable()
 export class CachedCartRepository implements CartRepository {
   constructor(
-    private readonly cacheService: CacheService,
+    private readonly cacheService: CachePort,
     private readonly postgresRepo: CartRepository,
     private readonly logger: Logger,
   ) {}
@@ -111,9 +111,9 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>> {
+  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
     try {
-      const createResult = await this.postgresRepo.create(dto);
+      const createResult = await this.postgresRepo.create(input);
       if (createResult.isFailure) return createResult;
       const savedCart = createResult.value;
 

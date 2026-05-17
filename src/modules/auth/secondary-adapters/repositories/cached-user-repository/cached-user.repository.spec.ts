@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachedUserRepository } from './cached-user.repository';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
 import { UserTestFactory } from '../../../testing/factories/user.factory';
@@ -10,10 +10,11 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
 
 describe('CachedUserRepository', () => {
   let repository: CachedUserRepository;
-  let cacheService: jest.Mocked<CacheService>;
+  let cacheService: MockCacheService;
   let postgresRepo: MockUserRepository;
 
   const mockUser = User.fromPrimitives(UserTestFactory.createMockUser());
@@ -24,13 +25,8 @@ describe('CachedUserRepository', () => {
       providers: [
         CachedUserRepository,
         {
-          provide: CacheService,
-          useValue: {
-            get: jest.fn(),
-            set: jest.fn(),
-            delete: jest.fn(),
-            getAll: jest.fn(),
-          },
+          provide: CachePort,
+          useValue: new MockCacheService(),
         },
         {
           provide: UserRepository,
@@ -40,7 +36,7 @@ describe('CachedUserRepository', () => {
     }).compile();
 
     repository = module.get<CachedUserRepository>(CachedUserRepository);
-    cacheService = module.get(CacheService);
+    cacheService = module.get(CachePort);
     postgresRepo = module.get(UserRepository);
   });
 

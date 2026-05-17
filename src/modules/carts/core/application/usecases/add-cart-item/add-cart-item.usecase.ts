@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { AddCartItemDto } from '../../../../primary-adapters/dto/add-cart-item.dto';
+export interface AddCartItemInput {
+  productId: number;
+  quantity: number;
+}
 import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
@@ -15,7 +18,7 @@ import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
-  { cartId: number; dto: AddCartItemDto },
+  { cartId: number; input: AddCartItemInput },
   ICart,
   UseCaseError
 > {
@@ -31,9 +34,9 @@ export class AddCartItemUseCase extends UseCase<
 
   async execute(input: {
     cartId: number;
-    dto: AddCartItemDto;
+    input: AddCartItemInput;
   }): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, dto } = input;
+    const { cartId, input: addInput } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -43,21 +46,23 @@ export class AddCartItemUseCase extends UseCase<
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
 
-    const productResult = await this.productGateway.findById(dto.productId);
+    const productResult = await this.productGateway.findById(
+      addInput.productId,
+    );
 
     if (isFailure(productResult)) return productResult;
 
     const product = productResult.value;
     if (!product) {
       return ErrorFactory.UseCaseError(
-        `Product with id ${dto.productId} not found`,
+        `Product with id ${addInput.productId} not found`,
       );
     }
 
     // Check stock availability
     const stockCheckResult = await this.inventoryGateway.checkStock(
-      dto.productId,
-      dto.quantity,
+      addInput.productId,
+      addInput.quantity,
     );
 
     if (isFailure(stockCheckResult)) {
@@ -74,7 +79,7 @@ export class AddCartItemUseCase extends UseCase<
       product.id!,
       product.name,
       product.price,
-      dto.quantity,
+      addInput.quantity,
       undefined,
     );
 

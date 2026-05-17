@@ -1,9 +1,8 @@
 import { ListLowStockUseCase } from './list-low-stock.usecase';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 
 describe('ListLowStockUseCase', () => {
@@ -25,7 +24,7 @@ describe('ListLowStockUseCase', () => {
 
   it('should return a list of low stock inventories', async () => {
     // Arrange
-    const query = InventoryDtoTestFactory.createLowStockQueryDto({
+    const query = InventoryCommandTestFactory.createLowStockQuery({
       threshold: 10,
     });
     const lowStockPrimitive1 = InventoryTestFactory.createLowStockInventory({
@@ -55,7 +54,7 @@ describe('ListLowStockUseCase', () => {
 
   it('should return an empty list if no items are low stock', async () => {
     // Arrange
-    const query = InventoryDtoTestFactory.createLowStockQueryDto({
+    const query = InventoryCommandTestFactory.createLowStockQuery({
       threshold: 5,
     });
     // Use the mock helper
@@ -73,7 +72,7 @@ describe('ListLowStockUseCase', () => {
 
   it('should return a failure if the repository fails', async () => {
     // Arrange
-    const query = InventoryDtoTestFactory.createLowStockQueryDto();
+    const query = InventoryCommandTestFactory.createLowStockQuery();
     const repoError = ErrorFactory.RepositoryError(
       'Database connection failed',
     );

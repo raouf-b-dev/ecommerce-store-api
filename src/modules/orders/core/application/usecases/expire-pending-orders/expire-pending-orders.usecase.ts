@@ -10,7 +10,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
 
-export interface ExpirePendingOrdersDto {
+export interface ExpirePendingOrdersCommand {
   expirationMinutes: number;
 }
 
@@ -22,7 +22,7 @@ export interface ExpirePendingOrdersResult {
 @Injectable()
 export class ExpirePendingOrdersUseCase
   implements
-    UseCase<ExpirePendingOrdersDto, ExpirePendingOrdersResult, UseCaseError>
+    UseCase<ExpirePendingOrdersCommand, ExpirePendingOrdersResult, UseCaseError>
 {
   private readonly logger = new Logger(ExpirePendingOrdersUseCase.name);
 
@@ -32,7 +32,7 @@ export class ExpirePendingOrdersUseCase
   ) {}
 
   async execute(
-    dto: ExpirePendingOrdersDto,
+    dto: ExpirePendingOrdersCommand,
   ): Promise<Result<ExpirePendingOrdersResult, UseCaseError>> {
     const expirationTime = new Date(
       Date.now() - dto.expirationMinutes * 60 * 1000,

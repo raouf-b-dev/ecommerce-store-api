@@ -1,7 +1,10 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Cart } from '../entities/cart';
-import { CreateCartDto } from '../../../primary-adapters/dto/create-cart.dto';
+export interface CreateCartInput {
+  customerId?: number;
+  sessionId?: number;
+}
 
 export abstract class CartRepository {
   abstract findById(id: number): Promise<Result<Cart, RepositoryError>>;
@@ -11,7 +14,7 @@ export abstract class CartRepository {
   abstract findBySessionId(
     sessionId: number,
   ): Promise<Result<Cart, RepositoryError>>;
-  abstract create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>>;
+  abstract create(dto: CreateCartInput): Promise<Result<Cart, RepositoryError>>;
   abstract update(cart: Cart): Promise<Result<Cart, RepositoryError>>;
   abstract delete(id: number): Promise<Result<void, RepositoryError>>;
   abstract mergeCarts(

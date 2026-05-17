@@ -12,14 +12,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethodDetailsDto } from './payment-method-details.dto';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
-export enum PaymentMethod {
-  CREDIT_CARD = 'CREDIT_CARD',
-  DEBIT_CARD = 'DEBIT_CARD',
-  CASH_ON_DELIVERY = 'CASH_ON_DELIVERY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  DIGITAL_WALLET = 'DIGITAL_WALLET',
-}
-
 export class CreatePaymentDto {
   @ApiProperty({
     example: 123,

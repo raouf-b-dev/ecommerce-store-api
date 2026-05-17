@@ -106,9 +106,7 @@ export class PostgresCustomerRepository implements CustomerRepository {
     try {
       const customerPrimitives = customer.toPrimitives();
 
-      const customerWithIds = Customer.fromPrimitives(
-        customerPrimitives as any,
-      );
+      const customerWithIds = Customer.fromPrimitives(customerPrimitives);
       const entity = CustomerMapper.toEntity(customerWithIds);
       const savedEntity = await this.repository.save(entity);
       return Result.success(CustomerMapper.toDomain(savedEntity));

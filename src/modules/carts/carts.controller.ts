@@ -28,7 +28,6 @@ import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-i
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
 import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
-import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('carts')
 @Controller('carts')
@@ -65,7 +64,7 @@ export class CartsController {
   async addItem(@Param('id') id: string, @Body() dto: AddCartItemDto) {
     return await this.addCartItemUseCase.execute({
       cartId: Number(id),
-      dto,
+      input: dto,
     });
   }
 
@@ -80,7 +79,7 @@ export class CartsController {
     return await this.updateCartItemUseCase.execute({
       cartId: Number(id),
       itemId: Number(itemId),
-      dto,
+      input: dto,
     });
   }
 

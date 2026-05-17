@@ -22,6 +22,8 @@ import { RequirePermissions } from '../auth/primary-adapters/decorators/require-
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
+import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
+import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
 import { RecordCodPaymentDto } from './primary-adapters/dto/record-cod-payment.dto';
 
@@ -80,7 +82,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async createPayment(@Body() dto: CreatePaymentDto) {
-    return await this.createPaymentUseCase.execute(dto);
+    const result = await this.createPaymentUseCase.execute(dto);
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get(':id')
@@ -89,7 +93,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async getPayment(@Param('id') id: string) {
-    return await this.getPaymentUseCase.execute(Number(id));
+    const result = await this.getPaymentUseCase.execute(Number(id));
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get()
@@ -99,7 +105,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async listPayments(@Query() query: ListPaymentsQueryDto) {
-    return await this.listPaymentsUseCase.execute(query);
+    const result = await this.listPaymentsUseCase.execute(query);
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 
   @Post(':id/capture')
@@ -109,7 +117,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async capturePayment(@Param('id') id: string) {
-    return await this.capturePaymentUseCase.execute(Number(id));
+    const result = await this.capturePaymentUseCase.execute(Number(id));
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Post(':id/refund')
@@ -119,10 +129,12 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async processRefund(@Param('id') id: string, @Body() dto: ProcessRefundDto) {
-    return await this.processRefundUseCase.execute({
+    const result = await this.processRefundUseCase.execute({
       id: Number(id),
       dto,
     });
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Post(':id/verify')
@@ -131,7 +143,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   async verifyPayment(@Param('id') id: string) {
-    return await this.verifyPaymentUseCase.execute(Number(id));
+    const result = await this.verifyPaymentUseCase.execute(Number(id));
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Post('cod/record')
@@ -141,7 +155,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
   async recordCodPayment(@Body() dto: RecordCodPaymentDto) {
-    return await this.recordCodPaymentUseCase.execute(dto);
+    const result = await this.recordCodPaymentUseCase.execute(dto);
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get('orders/:orderId')
@@ -151,8 +167,10 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
   async getOrderPayments(@Param('orderId') orderId: string) {
-    return await this.listPaymentsUseCase.execute({
+    const result = await this.listPaymentsUseCase.execute({
       orderId: Number(orderId),
     });
+    if (isFailure(result)) return result;
+    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 }

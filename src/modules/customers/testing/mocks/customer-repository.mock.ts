@@ -19,7 +19,7 @@ export class MockCustomerRepository implements CustomerRepository {
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(customerPrimitives: ICustomer): void {
-    const domainCustomer = Customer.fromPrimitives(customerPrimitives as any);
+    const domainCustomer = Customer.fromPrimitives(customerPrimitives);
     this.findById.mockResolvedValue(Result.success(domainCustomer));
     this.findByEmail.mockResolvedValue(Result.success(domainCustomer));
     if (customerPrimitives.phone) {

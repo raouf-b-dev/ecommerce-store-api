@@ -10,6 +10,12 @@ import {
 import { Response } from 'express';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 
+interface ValidationErrorResponse {
+  message: string | string[];
+  error?: string;
+  statusCode?: number;
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
@@ -29,7 +35,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Branch 1: DTO Validation Errors (class-validator)
     if (exception instanceof BadRequestException) {
       statusCode = exception.getStatus();
-      const validationResponse = exception.getResponse() as any;
+      const validationResponse =
+        exception.getResponse() as ValidationErrorResponse;
       message = 'Validation failed';
       errors = Array.isArray(validationResponse.message)
         ? validationResponse.message
@@ -42,12 +49,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Branch 2: HttpException (including ResultInterceptor wrapped AppErrors)
     else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
-      const exceptionResponse = exception.getResponse() as any;
+      const exceptionResponse = exception.getResponse() as
+        | string
+        | ValidationErrorResponse;
 
       message =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
-          : exceptionResponse.message || exception.message;
+          : exceptionResponse.message instanceof Array
+            ? exceptionResponse.message[0]
+            : exceptionResponse.message || exception.message;
 
       if (typeof exceptionResponse === 'object' && exceptionResponse.error) {
         code = exceptionResponse.error;

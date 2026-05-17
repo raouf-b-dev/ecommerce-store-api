@@ -10,7 +10,7 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 
-export interface HandlePaymentCompletedDto {
+export interface HandlePaymentCompletedCommand {
   orderId: number;
   paymentId: number;
   transactionId?: string;
@@ -25,7 +25,7 @@ export interface HandlePaymentCompletedResult {
 
 @Injectable()
 export class HandlePaymentCompletedUseCase extends UseCase<
-  HandlePaymentCompletedDto,
+  HandlePaymentCompletedCommand,
   HandlePaymentCompletedResult,
   UseCaseError
 > {
@@ -39,7 +39,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
   }
 
   async execute(
-    dto: HandlePaymentCompletedDto,
+    dto: HandlePaymentCompletedCommand,
   ): Promise<Result<HandlePaymentCompletedResult, UseCaseError>> {
     const { orderId, paymentId, reservationId, cartId } = dto;
     this.logger.log(`Handling payment completion for order ${orderId}`);

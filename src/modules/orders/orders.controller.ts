@@ -81,7 +81,7 @@ export class OrdersController {
     @CurrentUser('userId') userId: string,
   ) {
     return await this.checkoutUseCase.execute({
-      dto,
+      command: dto,
       userId: Number(userId),
     });
   }
@@ -188,7 +188,7 @@ export class OrdersController {
   ) {
     return await this.deliverOrderUseCase.execute({
       id: Number(id),
-      deliverOrderDto,
+      command: deliverOrderDto,
     });
   }
 

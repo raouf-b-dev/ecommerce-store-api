@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RecordCodPaymentUseCase } from './record-cod-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { RecordCodPaymentDto } from '../../../../primary-adapters/dto/record-cod-payment.dto';
+import { RecordCodPaymentCommand } from './record-cod-payment.usecase';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
@@ -26,7 +26,7 @@ describe('RecordCodPaymentUseCase', () => {
     useCase = module.get<RecordCodPaymentUseCase>(RecordCodPaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
   });
 
   afterEach(() => {
@@ -34,7 +34,7 @@ describe('RecordCodPaymentUseCase', () => {
   });
 
   it('should record a COD payment successfully', async () => {
-    const dto: RecordCodPaymentDto = {
+    const dto: RecordCodPaymentCommand = {
       orderId: 123,
       amountCollected: 100,
       currency: 'USD',
@@ -62,7 +62,7 @@ describe('RecordCodPaymentUseCase', () => {
   });
 
   it('should fail if save fails', async () => {
-    const dto: RecordCodPaymentDto = {
+    const dto: RecordCodPaymentCommand = {
       orderId: 123,
       amountCollected: 100,
       currency: 'USD',

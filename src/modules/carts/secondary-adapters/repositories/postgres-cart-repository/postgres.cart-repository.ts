@@ -10,7 +10,7 @@ import { CartRepository } from '../../../core/domain/repositories/cart.repositor
 import { CartEntity } from '../../orm/cart.schema';
 import { CartMapper } from '../../persistence/mappers/cart.mapper';
 
-import { CreateCartDto } from '../../../primary-adapters/dto/create-cart.dto';
+import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
 
 @Injectable()
 export class PostgresCartRepository implements CartRepository {
@@ -77,19 +77,19 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async create(dto: CreateCartDto): Promise<Result<Cart, RepositoryError>> {
+  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
     try {
       let cart: Cart;
 
-      if (dto.customerId) {
-        cart = Cart.createUserCart(dto.customerId);
+      if (input.customerId) {
+        cart = Cart.createUserCart(input.customerId);
       } else {
-        if (!dto.sessionId) {
+        if (!input.sessionId) {
           return ErrorFactory.RepositoryError(
             'Session ID required for guest cart',
           );
         }
-        cart = Cart.createGuestCart(dto.sessionId);
+        cart = Cart.createGuestCart(input.sessionId);
       }
 
       const entity = CartMapper.toEntity(cart);

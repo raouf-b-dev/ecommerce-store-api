@@ -1,16 +1,16 @@
-import { LoginDto } from '../../primary-adapters/dto/login.dto';
+import { LoginCommand } from '../../core/application/usecases/login-user/login-user.usecase';
 
-export class LoginDtoTestFactory {
-  static createLoginDto(overrides?: Partial<LoginDto>): LoginDto {
-    const baseUser: LoginDto = {
+export class LoginCommandTestFactory {
+  static createLoginCommand(overrides?: Partial<LoginCommand>): LoginCommand {
+    const baseCommand: LoginCommand = {
       email: 'test@example.com',
       password: 'password',
     };
 
-    return { ...baseUser, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createInvalidLoginDto(): LoginDto {
+  static createInvalidLoginCommand(): LoginCommand {
     return {
       email: '',
       password: '',

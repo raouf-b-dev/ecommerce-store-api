@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { CUSTOMER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Customer } from '../../../core/domain/entities/customer';
 import { CustomerRepository } from '../../../core/domain/repositories/customer.repository';
@@ -10,19 +10,14 @@ import { CustomerTestFactory } from '../../../testing/factories/customer.factory
 import { MockCustomerRepository } from '../../../testing/mocks/customer-repository.mock';
 import { CustomerCacheMapper } from '../../persistence/mappers/customer.mapper';
 import { CachedCustomerRepository } from './cached.customer-repository';
+import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
 
 describe('CachedCustomerRepository', () => {
   let repository: CachedCustomerRepository;
-  let cacheService: CacheService;
+  let cacheService: MockCacheService;
   let postgresRepo: MockCustomerRepository;
 
-  const mockCacheService = {
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-    search: jest.fn(),
-    setAll: jest.fn(),
-  };
+  const mockCacheService = new MockCacheService();
 
   beforeEach(async () => {
     postgresRepo = new MockCustomerRepository();
@@ -31,7 +26,7 @@ describe('CachedCustomerRepository', () => {
       providers: [
         CachedCustomerRepository,
         {
-          provide: CacheService,
+          provide: CachePort,
           useValue: mockCacheService,
         },
         {
@@ -52,7 +47,9 @@ describe('CachedCustomerRepository', () => {
     }).compile();
 
     repository = module.get<CachedCustomerRepository>(CachedCustomerRepository);
-    cacheService = module.get<CacheService>(CacheService);
+    cacheService = module.get<CachePort>(
+      CachePort,
+    ) as unknown as MockCacheService;
   });
 
   afterEach(() => {
@@ -116,7 +113,7 @@ describe('CachedCustomerRepository', () => {
   describe('findAll', () => {
     it('should return cached customers if IS_CACHED_FLAG is set', async () => {
       const customerPrimitives = CustomerTestFactory.createMockCustomer();
-      const customer = Customer.fromPrimitives(customerPrimitives as any);
+      const customer = Customer.fromPrimitives(customerPrimitives);
       const cachedCustomer = CustomerCacheMapper.toCache(customer);
 
       mockCacheService.get.mockResolvedValue('true'); // Flag is set
@@ -142,7 +139,7 @@ describe('CachedCustomerRepository', () => {
 
     it('should fall back to postgres if IS_CACHED_FLAG is not set, then cache results', async () => {
       const customerPrimitives = CustomerTestFactory.createMockCustomer();
-      const customer = Customer.fromPrimitives(customerPrimitives as any);
+      const customer = Customer.fromPrimitives(customerPrimitives);
 
       mockCacheService.get.mockResolvedValue(null); // Flag not set
       postgresRepo.findAll.mockResolvedValue(Result.success([customer]));
@@ -167,7 +164,7 @@ describe('CachedCustomerRepository', () => {
 
     it('should not use cache if page is not 1 or limit is not 10', async () => {
       const customerPrimitives = CustomerTestFactory.createMockCustomer();
-      const customer = Customer.fromPrimitives(customerPrimitives as any);
+      const customer = Customer.fromPrimitives(customerPrimitives);
 
       postgresRepo.findAll.mockResolvedValue(Result.success([customer]));
 

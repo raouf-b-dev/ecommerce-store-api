@@ -6,8 +6,10 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
-import { ShippingAddressDto } from '../../../../primary-adapters/dto/shipping-address.dto';
+import {
+  ShippingAddressResolver,
+  ShippingAddressInput,
+} from '../../services/shipping-address-resolver';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
 import { CheckoutCartInfo } from '../../ports/cart.gateway';
@@ -17,7 +19,7 @@ import { CartGateway } from '../../ports/cart.gateway';
 export interface ValidateCheckoutInput {
   cartId: number;
   userId: number;
-  shippingAddress?: ShippingAddressDto;
+  shippingAddress?: ShippingAddressInput;
 }
 
 export interface ValidatedCheckoutContext {

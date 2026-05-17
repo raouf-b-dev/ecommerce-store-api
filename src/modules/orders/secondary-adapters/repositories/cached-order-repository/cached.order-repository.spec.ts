@@ -1,31 +1,35 @@
 // src/order/infrastructure/__tests__/redis-order.repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderRepository } from '../../../core/domain/repositories/order-repository';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import {
+  ListOrdersQuery,
+  OrderItemInput,
+  OrderRepository,
+} from '../../../core/domain/repositories/order-repository';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
-import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { CachedOrderRepository } from './cached.order-repository';
 import { Logger } from '@nestjs/common';
+import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
 import {
   OrderForCache,
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
 import { Order } from '../../../core/domain/entities/order';
-import { CreateOrderDtoTestFactory } from '../../../testing/factories/create-order-dto.factory';
+import { OrderCommandTestFactory } from '../../../testing/factories/create-order-dto.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
-
+import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
+import { MockLogger } from '../../../../../testing/mocks/logger.mock';
 describe('CachedOrderRepository', () => {
   let repository: CachedOrderRepository;
-  let cacheService: jest.Mocked<CacheService>;
-  let postgresRepo: jest.Mocked<OrderRepository>;
-  let logger: jest.Mocked<Logger>;
+  let cacheService: MockCacheService;
+  let postgresRepo: MockOrderRepository;
+  let logger: MockLogger;
 
   // Use factory for test data
   const mockOrder: Order = Order.fromPrimitives(
@@ -34,7 +38,7 @@ describe('CachedOrderRepository', () => {
 
   const orderId = 1;
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
-  const mockUpdateOrderDto: CreateOrderItemDto[] = [
+  const mockUpdateOrderDto: OrderItemInput[] = [
     { productId: 1, quantity: 3, productName: 'Test', unitPrice: 100 },
   ];
   const cancelledOrder = Order.fromPrimitives(
@@ -46,45 +50,23 @@ describe('CachedOrderRepository', () => {
   const updatedOrder = Order.fromPrimitives(OrderTestFactory.createMockOrder());
 
   beforeEach(async () => {
-    const mockLogger = {
-      log: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn(),
-      verbose: jest.fn(),
-    };
+    const mockLogger = new MockLogger();
 
-    const mockCacheService = {
-      get: jest.fn(),
-      set: jest.fn(),
-      delete: jest.fn(),
-      getAll: jest.fn(),
-      setAll: jest.fn(),
-    };
+    const mockCacheService = new MockCacheService();
 
-    const mockPostgresRepo: jest.Mocked<OrderRepository> = {
-      save: jest.fn(),
-      updateItemsInfo: jest.fn(),
-      updateStatus: jest.fn(),
-      updatePaymentId: jest.fn(),
-      findById: jest.fn(),
-      deleteById: jest.fn(),
-      listOrders: jest.fn(),
-      cancelOrder: jest.fn(),
-      findByStatusBefore: jest.fn(),
-    };
+    const mockPostgresRepo = new MockOrderRepository();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CachedOrderRepository,
-        { provide: CacheService, useValue: mockCacheService },
+        { provide: CachePort, useValue: mockCacheService },
         { provide: OrderRepository, useValue: mockPostgresRepo },
         { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
 
     repository = module.get(CachedOrderRepository);
-    cacheService = module.get(CacheService);
+    cacheService = module.get(CachePort);
     postgresRepo = module.get(OrderRepository);
     logger = module.get(Logger);
   });
@@ -136,7 +118,8 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should save cash on delivery order', async () => {
-      const codDto = CreateOrderDtoTestFactory.createCashOnDeliveryDto();
+      const codDto =
+        OrderCommandTestFactory.createCashOnDeliveryCheckoutCommand();
       const codOrder = Order.fromPrimitives(
         OrderTestFactory.createCashOnDeliveryOrder(),
       );
@@ -419,7 +402,7 @@ describe('CachedOrderRepository', () => {
       cacheService.get.mockResolvedValue('true');
       cacheService.getAll.mockResolvedValue([mockCachedOrder]);
 
-      const dto: ListOrdersQueryDto = {};
+      const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -435,7 +418,7 @@ describe('CachedOrderRepository', () => {
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockResolvedValue(undefined);
 
-      const dto: ListOrdersQueryDto = {};
+      const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -501,7 +484,7 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should fetch from postgres when filters are applied', async () => {
-      const dto: ListOrdersQueryDto = {
+      const dto: ListOrdersQuery = {
         status: OrderStatus.PENDING_PAYMENT,
         customerId: 1,
       };
@@ -516,7 +499,7 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should handle pagination parameters', async () => {
-      const dto: ListOrdersQueryDto = {
+      const dto: ListOrdersQuery = {
         page: 2,
         limit: 10,
       };

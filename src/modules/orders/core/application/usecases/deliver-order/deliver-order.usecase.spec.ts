@@ -1,17 +1,17 @@
 // src/modules/orders/application/usecases/deliver-order/deliver-order.usecase.spec.ts
-import { DeliverOrderUseCase } from './deliver-order.usecase';
+import {
+  DeliverOrderUseCase,
+  DeliverOrderCommand,
+} from './deliver-order.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { DeliverOrderDto } from '../../../../primary-adapters/dto/deliver-order.dto';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { PaymentGateway } from '../../ports/payment.gateway';
-import { PAYMENT_GATEWAY } from '../../../../order.token';
 
 describe('DeliverOrderUseCase', () => {
   let useCase: DeliverOrderUseCase;
@@ -22,7 +22,9 @@ describe('DeliverOrderUseCase', () => {
     mockOrderRepository = new MockOrderRepository();
     mockPaymentGateway = {
       recordCodPayment: jest.fn(),
-    } as unknown as jest.Mocked<PaymentGateway>;
+      createPaymentIntent: jest.fn(),
+      processRefund: jest.fn(),
+    };
     useCase = new DeliverOrderUseCase(mockOrderRepository, mockPaymentGateway);
   });
 
@@ -36,7 +38,7 @@ describe('DeliverOrderUseCase', () => {
         status: OrderStatus.SHIPPED,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {
+      const deliverOrderDto: DeliverOrderCommand = {
         codPayment: {
           transactionId: 'COD-123456',
           notes: 'Cash collected on delivery',
@@ -49,12 +51,12 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockPaymentGateway.recordCodPayment.mockResolvedValue(
-        Result.success({ id: 1 } as any),
+        Result.success({ id: 1 }),
       );
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -77,14 +79,14 @@ describe('DeliverOrderUseCase', () => {
         paymentId: 1,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -98,14 +100,14 @@ describe('DeliverOrderUseCase', () => {
         status: OrderStatus.SHIPPED,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -116,11 +118,14 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is not found', async () => {
       const orderId = 999;
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockOrderNotFound(orderId);
 
-      const result = await useCase.execute({ id: orderId, deliverOrderDto });
+      const result = await useCase.execute({
+        id: orderId,
+        command: deliverOrderDto,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -134,13 +139,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order cannot be delivered (not in SHIPPED status)', async () => {
       const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
       const result = await useCase.execute({
         id: pendingOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -157,13 +162,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is in PENDING status', async () => {
       const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(pendingOrder);
 
       const result = await useCase.execute({
         id: pendingOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -176,13 +181,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is in CONFIRMED status', async () => {
       const confirmedOrder = OrderTestFactory.createConfirmedOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(confirmedOrder);
 
       const result = await useCase.execute({
         id: confirmedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -195,13 +200,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is in PROCESSING status', async () => {
       const processingOrder = OrderTestFactory.createProcessingOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(processingOrder);
 
       const result = await useCase.execute({
         id: processingOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -214,13 +219,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is already delivered', async () => {
       const deliveredOrder = OrderTestFactory.createDeliveredOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(deliveredOrder);
 
       const result = await useCase.execute({
         id: deliveredOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -233,13 +238,13 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if order is cancelled', async () => {
       const cancelledOrder = OrderTestFactory.createCancelledOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(cancelledOrder);
 
       const result = await useCase.execute({
         id: cancelledOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -252,14 +257,14 @@ describe('DeliverOrderUseCase', () => {
 
     it('should return Failure if updateStatus fails', async () => {
       const shippedOrder = OrderTestFactory.createShippedOrder();
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(shippedOrder);
       mockOrderRepository.mockUpdateStatusFailure('Database error');
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultFailure(
@@ -279,14 +284,14 @@ describe('DeliverOrderUseCase', () => {
         status: OrderStatus.SHIPPED,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(stripeOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
         id: stripeOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -298,14 +303,14 @@ describe('DeliverOrderUseCase', () => {
         status: OrderStatus.SHIPPED,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {};
+      const deliverOrderDto: DeliverOrderCommand = {};
 
       mockOrderRepository.mockSuccessfulFind(paypalOrder);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
         id: paypalOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -319,14 +324,14 @@ describe('DeliverOrderUseCase', () => {
         paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       };
 
-      const deliverOrderDto: DeliverOrderDto = {}; // No COD payment details
+      const deliverOrderDto: DeliverOrderCommand = {}; // No COD payment details
 
       mockOrderRepository.mockSuccessfulFind(shippedMultiItem);
       mockOrderRepository.mockSuccessfulUpdateStatus();
 
       const result = await useCase.execute({
         id: shippedMultiItem.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -340,7 +345,7 @@ describe('DeliverOrderUseCase', () => {
       });
 
       const customTransactionId = 'CUSTOM-COD-123';
-      const deliverOrderDto: DeliverOrderDto = {
+      const deliverOrderDto: DeliverOrderCommand = {
         codPayment: {
           transactionId: customTransactionId,
           notes: 'Custom payment collection',
@@ -353,12 +358,12 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockPaymentGateway.recordCodPayment.mockResolvedValue(
-        Result.success({ id: 1 } as any),
+        Result.success({ id: 1 }),
       );
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -370,7 +375,7 @@ describe('DeliverOrderUseCase', () => {
         status: OrderStatus.SHIPPED,
       });
 
-      const deliverOrderDto: DeliverOrderDto = {
+      const deliverOrderDto: DeliverOrderCommand = {
         codPayment: {
           notes: 'Payment collected in cash',
         },
@@ -382,12 +387,12 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockPaymentGateway.recordCodPayment.mockResolvedValue(
-        Result.success({ id: 'PAY_COD_002' } as any),
+        Result.success({ id: 2 }),
       );
 
       const result = await useCase.execute({
         id: shippedOrder.id!,
-        deliverOrderDto,
+        command: deliverOrderDto,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);

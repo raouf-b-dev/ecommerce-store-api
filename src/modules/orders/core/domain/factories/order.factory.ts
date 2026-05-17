@@ -1,24 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { CreateOrderDto } from '../../../primary-adapters/dto/create-order.dto';
-import { UpdateOrderDto } from '../../../primary-adapters/dto/update-order.dto';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
-import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
 import { Order } from '../entities/order';
 import { CheckoutCartInfo } from '../../application/ports/cart.gateway';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 import { OrderItemProps } from '../entities/order-items';
 
-export interface AggregatedOrderInput extends Omit<CreateOrderDto, 'items'> {
-  items: CreateOrderItemDto[];
-}
-
-export interface AggregatedUpdateInput extends Omit<UpdateOrderDto, 'items'> {
-  items?: CreateOrderItemDto[];
-}
-
-@Injectable()
 export class OrderFactory {
   createFromCart(props: {
     cart: CheckoutCartInfo;
@@ -48,55 +33,5 @@ export class OrderFactory {
       shippingAddress: props.shippingAddress,
       customerNotes: props.customerNotes || null,
     });
-  }
-
-  private aggregateItems(items: CreateOrderItemDto[]): CreateOrderItemDto[] {
-    const map = new Map<number, CreateOrderItemDto>();
-
-    for (const item of items || []) {
-      const existing = map.get(item.productId);
-      if (existing) {
-        existing.quantity += item.quantity;
-      } else {
-        map.set(item.productId, { ...item });
-      }
-    }
-
-    return Array.from(map.values());
-  }
-
-  createFromDto(dto: CreateOrderDto): AggregatedOrderInput {
-    const aggregatedItems = this.aggregateItems(dto.items || []);
-
-    if (aggregatedItems.length === 0) {
-      throw new Error('Order must have at least one item.');
-    }
-
-    return {
-      ...dto,
-      items: aggregatedItems,
-    };
-  }
-
-  updateFromDto(
-    dto: UpdateOrderDto,
-    orderStatus: OrderStatus,
-  ): AggregatedUpdateInput | DomainError {
-    const status = new OrderStatusVO(orderStatus);
-
-    if (!status.isAwaitingPayment()) {
-      return new DomainError('Only orders awaiting payment can be updated.');
-    }
-
-    if (!dto.items) {
-      return { ...dto };
-    }
-
-    const aggregatedItems = this.aggregateItems(dto.items);
-
-    return {
-      ...dto,
-      items: aggregatedItems,
-    };
   }
 }

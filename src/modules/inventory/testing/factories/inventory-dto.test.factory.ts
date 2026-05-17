@@ -1,53 +1,49 @@
-// src/modules/inventory/testing/factories/inventory-dto.test.factory.ts
-import {
-  AdjustStockDto,
-  StockAdjustmentType,
-} from '../../primary-adapters/dto/adjust-stock.dto';
-import { ReserveStockDto } from '../../primary-adapters/dto/reserve-stock.dto';
-import { ReserveStockItemDto } from '../../primary-adapters/dto/reserve-stock-item.dto';
-import { LowStockQueryDto } from '../../primary-adapters/dto/low-stock-query.dto';
+import { AdjustStockCommand } from '../../core/application/adjust-stock/adjust-stock.usecase';
+import { ReservationInput } from '../../core/domain/repositories/reservation.repository';
+import { LowStockQuery } from '../../core/domain/repositories/inventory.repository';
+import { StockAdjustmentType } from '../../core/domain/value-objects/stock-adjustment-type';
 
-export class InventoryDtoTestFactory {
-  static createAdjustStockDto(
-    overrides?: Partial<AdjustStockDto>,
-  ): AdjustStockDto {
-    const baseDto: AdjustStockDto = {
+export class InventoryCommandTestFactory {
+  static createAdjustStockCommand(
+    overrides?: Partial<AdjustStockCommand>,
+  ): AdjustStockCommand {
+    const baseCommand: AdjustStockCommand = {
       quantity: 50,
       type: StockAdjustmentType.ADD,
       reason: 'New shipment received',
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createAddStockDto(quantity: number = 50): AdjustStockDto {
-    return this.createAdjustStockDto({
+  static createAddStockCommand(quantity: number = 50): AdjustStockCommand {
+    return this.createAdjustStockCommand({
       quantity,
       type: StockAdjustmentType.ADD,
       reason: 'Restock from supplier',
     });
   }
 
-  static createSubtractStockDto(quantity: number = 10): AdjustStockDto {
-    return this.createAdjustStockDto({
+  static createSubtractStockCommand(quantity: number = 10): AdjustStockCommand {
+    return this.createAdjustStockCommand({
       quantity,
       type: StockAdjustmentType.SUBTRACT,
       reason: 'Damaged items removed',
     });
   }
 
-  static createSetStockDto(quantity: number = 100): AdjustStockDto {
-    return this.createAdjustStockDto({
+  static createSetStockCommand(quantity: number = 100): AdjustStockCommand {
+    return this.createAdjustStockCommand({
       quantity,
       type: StockAdjustmentType.SET,
       reason: 'Inventory count correction',
     });
   }
 
-  static createReserveStockDto(
-    overrides?: Partial<ReserveStockDto>,
-  ): ReserveStockDto {
-    const baseDto: ReserveStockDto = {
+  static createReservationInput(
+    overrides?: Partial<ReservationInput>,
+  ): ReservationInput {
+    const baseInput: ReservationInput = {
       orderId: 1,
       items: [
         {
@@ -57,81 +53,69 @@ export class InventoryDtoTestFactory {
       ],
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseInput, ...overrides };
   }
 
-  static createReserveStockItemDto(
-    overrides?: Partial<ReserveStockItemDto>,
-  ): ReserveStockItemDto {
-    const baseDto: ReserveStockItemDto = {
-      productId: 1,
-      quantity: 1,
-    };
-
-    return { ...baseDto, ...overrides };
-  }
-
-  static createMultiItemReserveDto(itemCount: number = 3): ReserveStockDto {
+  static createMultiItemReservationInput(
+    itemCount: number = 3,
+  ): ReservationInput {
     const items = Array.from({ length: itemCount }, (_, i) => ({
       productId: i + 1,
       quantity: i + 1,
     }));
 
-    return this.createReserveStockDto({
+    return this.createReservationInput({
       items,
     });
   }
 
-  static createReserveForOrder(
+  static createReservationForOrder(
     orderId: number,
     productId: number,
     quantity: number,
-  ): ReserveStockDto {
-    return this.createReserveStockDto({
+  ): ReservationInput {
+    return this.createReservationInput({
       orderId,
       items: [{ productId, quantity }],
     });
   }
 
-  static createLowStockQueryDto(
-    overrides?: Partial<LowStockQueryDto>,
-  ): LowStockQueryDto {
-    const baseDto: LowStockQueryDto = {
+  static createLowStockQuery(
+    overrides?: Partial<LowStockQuery>,
+  ): LowStockQuery {
+    const baseQuery: LowStockQuery = {
       threshold: 10,
       page: 1,
       limit: 20,
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseQuery, ...overrides };
   }
 
-  static createCustomThresholdQueryDto(threshold: number): LowStockQueryDto {
-    return this.createLowStockQueryDto({ threshold });
+  static createCustomThresholdQuery(threshold: number): LowStockQuery {
+    return this.createLowStockQuery({ threshold });
   }
 
-  static createPaginatedQueryDto(
-    page: number,
-    limit: number,
-  ): LowStockQueryDto {
-    return this.createLowStockQueryDto({ page, limit });
+  static createPaginatedQuery(page: number, limit: number): LowStockQuery {
+    return this.createLowStockQuery({ page, limit });
   }
 
-  static createInvalidAdjustStockDto(): AdjustStockDto {
+  static createInvalidAdjustStockCommand(): AdjustStockCommand {
     return {
       quantity: -10,
-      type: 'INVALID_TYPE' as any,
+      type: 'INVALID_TYPE' as unknown as StockAdjustmentType,
       reason: '',
     };
   }
 
-  static createInvalidReserveStockDto(): ReserveStockDto {
+  static createInvalidReservationInput(): ReservationInput {
     return {
       orderId: 0,
       items: [],
     };
   }
 
-  static createInvalidLowStockQueryDto(): LowStockQueryDto {
+  static createInvalidLowStockQuery(): LowStockQuery {
     return {
       threshold: -5,
       page: 0,
@@ -139,8 +123,8 @@ export class InventoryDtoTestFactory {
     };
   }
 
-  static createZeroQuantityAdjustDto(): AdjustStockDto {
-    return this.createAdjustStockDto({
+  static createZeroQuantityAdjustCommand(): AdjustStockCommand {
+    return this.createAdjustStockCommand({
       quantity: 0,
       type: StockAdjustmentType.ADD,
     });

@@ -14,7 +14,7 @@ import { PostgresCartRepository } from './secondary-adapters/repositories/postgr
 import { CachedCartRepository } from './secondary-adapters/repositories/cached-cart-repository/cached.cart-repository';
 import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
 import { ModuleProductGateway } from './secondary-adapters/adapters/module-product.gateway';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 import { CartRepository } from './core/domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
 import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
@@ -46,7 +46,7 @@ import { ProductsModule } from '../products/products.module';
     {
       provide: CACHED_CART_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresCartRepository,
       ) => {
         return new CachedCartRepository(
@@ -55,7 +55,7 @@ import { ProductsModule } from '../products/products.module';
           new Logger(CachedCartRepository.name),
         );
       },
-      inject: [CacheService, POSTGRES_CART_REPOSITORY],
+      inject: [CachePort, POSTGRES_CART_REPOSITORY],
     },
 
     // Gateways

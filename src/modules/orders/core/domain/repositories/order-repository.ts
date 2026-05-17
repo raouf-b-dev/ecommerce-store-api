@@ -1,10 +1,27 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
-import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { Order } from '../entities/order';
-import { AggregatedOrderInput } from '../factories/order.factory';
 import { OrderStatus } from '../value-objects/order-status';
+export interface OrderItemInput {
+  productId: number;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface ListOrdersQuery {
+  page?: number;
+  limit?: number;
+  customerId?: number;
+  customerEmail?: string;
+  status?: OrderStatus;
+  sortBy?: 'createdAt' | 'updatedAt' | 'totalPrice';
+  sortOrder?: 'asc' | 'desc';
+  createdAfter?: string;
+  createdBefore?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 export abstract class OrderRepository {
   abstract save(order: Order): Promise<Result<Order, RepositoryError>>;
@@ -18,11 +35,11 @@ export abstract class OrderRepository {
   ): Promise<Result<void, RepositoryError>>;
   abstract updateItemsInfo(
     id: number,
-    updateOrderItemDto: CreateOrderItemDto[],
+    updateOrderItemDto: OrderItemInput[],
   ): Promise<Result<Order, RepositoryError>>;
   abstract findById(id: number): Promise<Result<Order, RepositoryError>>;
   abstract listOrders(
-    listOrdersQueryDto: ListOrdersQueryDto,
+    query: ListOrdersQuery,
   ): Promise<Result<Order[], RepositoryError>>;
   abstract cancelOrder(
     orderPrimitives: Order,

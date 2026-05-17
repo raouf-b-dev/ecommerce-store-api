@@ -11,6 +11,7 @@ import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 
 describe('CreateOrderFromCartUseCase', () => {
   let useCase: CreateOrderFromCartUseCase;
@@ -72,7 +73,7 @@ describe('CreateOrderFromCartUseCase', () => {
     const userId = 1;
     const cartData = CartTestFactory.createCartWithItems(3, { id: cartId });
     const cart = Cart.fromPrimitives(cartData);
-    const order = { id: 1 } as any; // Mock order
+    const order = OrderTestFactory.createOrderEntity({ id: 1 });
 
     cartGateway.getCart.mockResolvedValue(Result.success(cart));
     orderFactory.createFromCart.mockReturnValue(order);

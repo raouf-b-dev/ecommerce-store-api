@@ -25,7 +25,7 @@ describe('GetPaymentUseCase', () => {
     useCase = module.get<GetPaymentUseCase>(GetPaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
   });
 
   afterEach(() => {

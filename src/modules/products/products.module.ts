@@ -7,7 +7,7 @@ import {
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -32,12 +32,12 @@ import { UpdateProductUseCase } from './core/application/usecases/update-product
     {
       provide: CACHED_PRODUCT_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresProductRepository,
       ) => {
         return new CachedProductRepository(cacheService, postgresRepo);
       },
-      inject: [CacheService, POSTGRES_PRODUCT_REPOSITORY],
+      inject: [CachePort, POSTGRES_PRODUCT_REPOSITORY],
     },
 
     // Default Repository Binding

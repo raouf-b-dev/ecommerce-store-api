@@ -2,7 +2,7 @@
 import { CreateProductUseCase } from './create-product.usecase';
 import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { CreateProductDtoFactory } from '../../../../testing/factories/create-product-dto.factory';
+import { CreateProductInputFactory } from '../../../../testing/factories/create-product-input.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
@@ -21,7 +21,7 @@ describe('CreateProductUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if product is created', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
+      const createDto = CreateProductInputFactory.createMockDto();
       const product = ProductTestFactory.createMockProduct();
 
       mockRepository.mockSuccessfulSave(product);
@@ -35,7 +35,7 @@ describe('CreateProductUseCase', () => {
     });
 
     it('should return Failure(UseCaseError) if product is not created', async () => {
-      const createDto = CreateProductDtoFactory.createMockDto();
+      const createDto = CreateProductInputFactory.createMockDto();
 
       mockRepository.mockSaveFailure('Failed to save product');
 
@@ -49,7 +49,8 @@ describe('CreateProductUseCase', () => {
     });
 
     it('should create expensive product', async () => {
-      const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
+      const expensiveDto =
+        CreateProductInputFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();
 
       mockRepository.mockSuccessfulSave(expensiveProduct);

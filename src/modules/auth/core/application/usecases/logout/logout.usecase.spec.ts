@@ -1,8 +1,10 @@
 import { LogoutUseCase } from './logout.usecase';
-import { MockJwtVerifierService } from '../../../../../../testing/mocks/jwt-verifier.service.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { SessionToken } from '../../../domain/entities/session-token';
-import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  MockJwtVerifierService,
+  ResultAssertionHelper,
+} from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 
 describe('LogoutUseCase', () => {
@@ -14,10 +16,7 @@ describe('LogoutUseCase', () => {
     jwtVerifierService = new MockJwtVerifierService();
     sessionTokenRepository = new MockSessionTokenRepository();
 
-    usecase = new LogoutUseCase(
-      jwtVerifierService as any,
-      sessionTokenRepository,
-    );
+    usecase = new LogoutUseCase(jwtVerifierService, sessionTokenRepository);
   });
 
   it('should revoke a session successfully', async () => {
@@ -25,7 +24,12 @@ describe('LogoutUseCase', () => {
     const sessionId = 'mock-session-id';
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
+      sub: '1',
       sessionId: sessionId,
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
     const expiresAt = new Date();
@@ -44,7 +48,12 @@ describe('LogoutUseCase', () => {
 
   it('should be idempotent if session not found', async () => {
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
+      sub: '1',
       sessionId: 'unknown',
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
     sessionTokenRepository.findById.mockResolvedValue(Result.success(null));
 

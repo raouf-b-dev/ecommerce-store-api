@@ -1,47 +1,47 @@
-import { CreateCustomerDto } from '../../primary-adapters/dto/create-customer.dto';
-import { UpdateCustomerDto } from '../../primary-adapters/dto/update-customer.dto';
-import { AddAddressDto } from '../../primary-adapters/dto/add-address.dto';
-import { UpdateAddressDto } from '../../primary-adapters/dto/update-address.dto';
-import { ListCustomersQueryDto } from '../../primary-adapters/dto/list-customers-query.dto';
+import { CreateCustomerCommand } from '../../core/application/usecases/create-customer/create-customer.usecase';
+import { UpdateCustomerCommand } from '../../core/application/usecases/update-customer/update-customer.usecase';
+import { AddAddressCommand } from '../../core/application/usecases/add-address/add-address.usecase';
+import { UpdateAddressCommand } from '../../core/application/usecases/update-address/update-address.usecase';
+import { ListCustomersQuery } from '../../core/application/usecases/list-customers/list-customers.usecase';
 import { AddressType } from '../../core/domain/value-objects/address-type';
 
-export class CustomerDtoTestFactory {
-  static createCreateCustomerDto(
-    overrides?: Partial<CreateCustomerDto>,
-  ): CreateCustomerDto {
-    const baseDto: CreateCustomerDto = {
+export class CustomerCommandTestFactory {
+  static createCreateCustomerCommand(
+    overrides?: Partial<CreateCustomerCommand>,
+  ): CreateCustomerCommand {
+    const baseCommand: CreateCustomerCommand = {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createCreateCustomerWithAddressDto(
-    overrides?: Partial<CreateCustomerDto>,
-  ): CreateCustomerDto {
-    return this.createCreateCustomerDto({
+  static createCreateCustomerWithAddressCommand(
+    overrides?: Partial<CreateCustomerCommand>,
+  ): CreateCustomerCommand {
+    return this.createCreateCustomerCommand({
       ...overrides,
-      address: this.createAddAddressDto(),
+      address: this.createAddAddressCommand(),
     });
   }
 
-  static createUpdateCustomerDto(
-    overrides?: Partial<UpdateCustomerDto>,
-  ): UpdateCustomerDto {
-    const baseDto: UpdateCustomerDto = {
+  static createUpdateCustomerCommand(
+    overrides?: Partial<UpdateCustomerCommand>,
+  ): UpdateCustomerCommand {
+    const baseCommand: UpdateCustomerCommand = {
       firstName: 'Jane',
       lastName: 'Smith',
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createAddAddressDto(
-    overrides?: Partial<AddAddressDto>,
-  ): AddAddressDto {
-    const baseDto: AddAddressDto = {
+  static createAddAddressCommand(
+    overrides?: Partial<AddAddressCommand>,
+  ): AddAddressCommand {
+    const baseCommand: AddAddressCommand = {
       street: '123 Main St',
       city: 'New York',
       state: 'NY',
@@ -51,34 +51,34 @@ export class CustomerDtoTestFactory {
       isDefault: true,
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createUpdateAddressDto(
-    overrides?: Partial<UpdateAddressDto>,
-  ): UpdateAddressDto {
-    const baseDto: UpdateAddressDto = {
+  static createUpdateAddressCommand(
+    overrides?: Partial<UpdateAddressCommand>,
+  ): UpdateAddressCommand {
+    const baseCommand: UpdateAddressCommand = {
       street: '456 Elm St',
       city: 'Los Angeles',
       state: 'CA',
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createListCustomersQueryDto(
-    overrides?: Partial<ListCustomersQueryDto>,
-  ): ListCustomersQueryDto {
-    const baseDto: ListCustomersQueryDto = {
+  static createListCustomersQuery(
+    overrides?: Partial<ListCustomersQuery>,
+  ): ListCustomersQuery {
+    const baseQuery: ListCustomersQuery = {
       page: 1,
       limit: 10,
     };
 
-    return { ...baseDto, ...overrides };
+    return { ...baseQuery, ...overrides };
   }
 
-  // Invalid DTOs
-  static createInvalidCreateCustomerDto(): CreateCustomerDto {
+  // Invalid Commands (for validation testing if needed, though use cases might not do it)
+  static createInvalidCreateCustomerCommand(): CreateCustomerCommand {
     return {
       firstName: '',
       lastName: '',
@@ -86,7 +86,7 @@ export class CustomerDtoTestFactory {
     };
   }
 
-  static createInvalidAddAddressDto(): AddAddressDto {
+  static createInvalidAddAddressCommand(): AddAddressCommand {
     return {
       street: '',
       city: '',

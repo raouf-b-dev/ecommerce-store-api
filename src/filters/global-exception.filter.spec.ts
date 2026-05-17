@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
+import { createMockArgumentsHost } from '../testing';
 
 class TestAppError extends AppError {
   constructor(message: string) {
@@ -47,12 +48,7 @@ describe('GlobalExceptionFilter', () => {
     };
 
     // Mock ArgumentsHost
-    mockArgumentsHost = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getResponse: () => mockResponse,
-        getRequest: () => mockRequest,
-      }),
-    } as any;
+    mockArgumentsHost = createMockArgumentsHost(mockRequest, mockResponse);
 
     // Spy on logger to prevent console spam during tests
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);

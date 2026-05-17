@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import { EnvConfigService } from '../../config/env-config.service';
+import { JwksPort } from '../ports/jwks.port';
+import { EnvConfigService } from '../../../config/env-config.service';
 import {
   importPKCS8,
   importJWK,
@@ -9,7 +10,7 @@ import {
 } from 'jose';
 
 @Injectable()
-export class JwksService implements OnModuleInit {
+export class JwksService implements OnModuleInit, JwksPort {
   private readonly logger = new Logger(JwksService.name);
   private publicKey!: CryptoKey;
   private jwks!: { keys: JWK[] };

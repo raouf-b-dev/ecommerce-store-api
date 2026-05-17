@@ -19,7 +19,7 @@ import { RegisterUserUseCase } from './core/application/usecases/register-user/r
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
-import { JwksService } from '../../infrastructure/jwt/jwks.service';
+import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
 import {
   RefreshTokenCookieInterceptor,
   REFRESH_COOKIE_NAME,
@@ -35,7 +35,7 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly logoutAllUseCase: LogoutAllUseCase,
-    private readonly jwksService: JwksService,
+    private readonly jwksService: JwksPort,
   ) {}
 
   @Post('register')

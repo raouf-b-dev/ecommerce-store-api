@@ -12,6 +12,7 @@ import { CartTestFactory } from '../../../../../carts/testing/factories/cart.fac
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { CustomerGateway } from '../../ports/customer.gateway';
 import { CartGateway } from '../../ports/cart.gateway';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('ValidateCheckoutUseCase', () => {
   let useCase: ValidateCheckoutUseCase;
@@ -119,7 +120,7 @@ describe('ValidateCheckoutUseCase', () => {
   describe('validation failures', () => {
     it('should return failure when customer not found', async () => {
       customerGateway.validateCustomer.mockResolvedValue(
-        Result.failure({ message: 'Customer not found' } as any),
+        ErrorFactory.RepositoryError('Customer not found'),
       );
 
       const input: ValidateCheckoutInput = {
@@ -138,7 +139,7 @@ describe('ValidateCheckoutUseCase', () => {
         Result.success(mockCustomer),
       );
       cartGateway.validateCart.mockResolvedValue(
-        Result.failure({ message: 'Cart not found' } as any),
+        ErrorFactory.RepositoryError('Cart not found'),
       );
 
       const input: ValidateCheckoutInput = {

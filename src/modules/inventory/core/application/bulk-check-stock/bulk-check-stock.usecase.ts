@@ -1,27 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
-import { CheckStockResponse } from '../../../primary-adapters/dto/check-stock-response.dto';
+import { CheckStockResult } from '../../domain/interfaces/check-stock-result.interface';
 import { Inventory } from '../../domain/entities/inventory';
+
+export interface BulkCheckStockQuery {
+  productId: number;
+  quantity?: number;
+}
 
 @Injectable()
 export class BulkCheckStockUseCase
-  implements
-    UseCase<
-      { productId: number; quantity?: number }[],
-      CheckStockResponse[],
-      UseCaseError
-    >
+  implements UseCase<BulkCheckStockQuery[], CheckStockResult[], UseCaseError>
 {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(
-    dto: { productId: number; quantity?: number }[],
-  ): Promise<Result<CheckStockResponse[], UseCaseError>> {
-    const productIds = Array.from(new Set(dto.map((item) => item.productId)));
+    items: BulkCheckStockQuery[],
+  ): Promise<Result<CheckStockResult[], UseCaseError>> {
+    const productIds = Array.from(new Set(items.map((item) => item.productId)));
 
     const inventoryResult =
       await this.inventoryRepository.findByProductIds(productIds);
@@ -33,9 +32,9 @@ export class BulkCheckStockUseCase
       inventories.map((inv) => [inv.productId, inv]),
     );
 
-    const responses: CheckStockResponse[] = [];
+    const responses: CheckStockResult[] = [];
 
-    for (const item of dto) {
+    for (const item of items) {
       const requestedQuantity = item.quantity ?? 1;
       const inventory = inventoryMap.get(item.productId);
 

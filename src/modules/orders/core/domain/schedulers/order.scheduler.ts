@@ -10,6 +10,7 @@ export interface ScheduleCheckoutProps {
   paymentMethod: PaymentMethodType;
   customerNotes?: string;
   orderId: number;
+  flowId: string;
 }
 
 export abstract class OrderScheduler {

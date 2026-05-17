@@ -5,28 +5,20 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
 
 @Injectable()
-export class GetPaymentUseCase extends UseCase<
-  number,
-  PaymentResponseDto,
-  UseCaseError
-> {
+export class GetPaymentUseCase extends UseCase<number, IPayment, UseCaseError> {
   constructor(private readonly paymentRepository: PaymentRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<PaymentResponseDto, UseCaseError>> {
+  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
     const result = await this.paymentRepository.findById(id);
 
     if (isFailure(result)) return result;
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(result.value.toPrimitives()),
-    );
+    return Result.success(result.value.toPrimitives());
   }
 }

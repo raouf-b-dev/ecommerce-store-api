@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtVerifierService } from '../../jwt/jwt-verifier.service';
 import { Socket } from 'socket.io';
+import { JwtVerifierPort } from '../../jwt/ports/jwt-verifier.port';
 
 @Injectable()
 export class WsAuthService {
   private readonly logger = new Logger(WsAuthService.name);
 
-  constructor(private readonly jwtVerifierService: JwtVerifierService) {}
+  constructor(private readonly jwtVerifierService: JwtVerifierPort) {}
 
   async authenticate(client: Socket): Promise<any> {
     const token = this.extractToken(client);
