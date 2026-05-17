@@ -2,12 +2,7 @@
 import { IsNumber, IsString, IsOptional, IsEnum, IsInt } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export enum StockAdjustmentType {
-  ADD = 'ADD',
-  SUBTRACT = 'SUBTRACT',
-  SET = 'SET',
-}
-
+import { StockAdjustmentType } from '../../core/domain/value-objects/stock-adjustment-type';
 export class AdjustStockDto {
   @ApiProperty({
     example: 50,

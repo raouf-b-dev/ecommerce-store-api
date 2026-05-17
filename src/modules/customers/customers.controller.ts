@@ -87,7 +87,7 @@ export class CustomersController {
   ) {
     return await this.updateCustomerUseCase.execute({
       id: Number(id),
-      dto,
+      command: dto,
     });
   }
 
@@ -105,7 +105,7 @@ export class CustomersController {
   async addAddress(@Param('id') id: string, @Body() dto: AddAddressDto) {
     return await this.addAddressUseCase.execute({
       customerId: Number(id),
-      dto,
+      command: dto,
     });
   }
 
@@ -120,7 +120,7 @@ export class CustomersController {
     return await this.updateAddressUseCase.execute({
       customerId: Number(id),
       addressId: Number(addressId),
-      dto,
+      command: dto,
     });
   }
 

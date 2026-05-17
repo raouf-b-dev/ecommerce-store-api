@@ -41,7 +41,7 @@ describe('ShutdownService', () => {
       );
 
       // Should set timeout
-      expect((service as any).shutdownTimeout).not.toBeNull();
+      expect(service['shutdownTimeout']).not.toBeNull();
 
       // Fast forward to trigger the timeout
       const exitSpy = jest.spyOn(process, 'exit').mockImplementation();
@@ -74,7 +74,7 @@ describe('ShutdownService', () => {
 
       // Setup timeout
       service.beforeApplicationShutdown('SIGTERM');
-      expect((service as any).shutdownTimeout).not.toBeNull();
+      expect(service['shutdownTimeout']).not.toBeNull();
 
       // Call onApplicationShutdown
       const loggerSpy = jest
@@ -82,7 +82,7 @@ describe('ShutdownService', () => {
         .mockImplementation();
       service.onApplicationShutdown();
 
-      expect((service as any).shutdownTimeout).toBeNull();
+      expect(service['shutdownTimeout']).toBeNull();
       expect(loggerSpy).toHaveBeenCalledWith(
         'Graceful shutdown completed successfully.',
       );

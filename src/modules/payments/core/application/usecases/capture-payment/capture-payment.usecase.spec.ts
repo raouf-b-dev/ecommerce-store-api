@@ -8,6 +8,7 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('CapturePaymentUseCase', () => {
   let useCase: CapturePaymentUseCase;
@@ -32,7 +33,7 @@ describe('CapturePaymentUseCase', () => {
     useCase = module.get<CapturePaymentUseCase>(CapturePaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
     domainEventPublisher = module.get(DomainEventPublisher);
   });
 
@@ -93,11 +94,9 @@ describe('CapturePaymentUseCase', () => {
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
 
     // Manually mock update failure as mockSaveFailure mocks 'save'
-    paymentRepository.update.mockResolvedValue({
-      isFailure: true,
-      isSuccess: false,
-      error: new Error('Update failed'),
-    } as any);
+    paymentRepository.update.mockResolvedValue(
+      ErrorFactory.RepositoryError('Update failed'),
+    );
 
     const result = await useCase.execute(123);
 

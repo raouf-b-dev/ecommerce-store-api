@@ -3,18 +3,18 @@ import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.use
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
+import { LowStockQuery } from '../../domain/repositories/inventory.repository';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
 import { IInventory } from '../../domain/interfaces/inventory.interface';
 
 @Injectable()
 export class ListLowStockUseCase
-  implements UseCase<LowStockQueryDto, IInventory[], UseCaseError>
+  implements UseCase<LowStockQuery, IInventory[], UseCaseError>
 {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(
-    query: LowStockQueryDto,
+    query: LowStockQuery,
   ): Promise<Result<IInventory[], UseCaseError>> {
     const lowStockResult = await this.inventoryRepository.findLowStock(query);
     if (lowStockResult.isFailure) return lowStockResult;

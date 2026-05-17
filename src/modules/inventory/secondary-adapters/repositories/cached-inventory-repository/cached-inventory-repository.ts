@@ -1,9 +1,8 @@
-// src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.ts
 import { Injectable } from '@nestjs/common';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
@@ -11,12 +10,12 @@ import {
   InventoryCacheMapper,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
+import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class CachedInventoryRepository implements InventoryRepository {
   constructor(
-    private readonly cacheService: CacheService,
+    private readonly cacheService: CachePort,
     private readonly postgresRepo: InventoryRepository,
   ) {}
 
@@ -183,7 +182,7 @@ export class CachedInventoryRepository implements InventoryRepository {
   }
 
   async findLowStock(
-    query: LowStockQueryDto,
+    query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       const { threshold = 10, page = 1, limit = 20 } = query;

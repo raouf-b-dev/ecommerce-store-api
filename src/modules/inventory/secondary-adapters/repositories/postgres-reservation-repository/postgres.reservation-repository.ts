@@ -10,8 +10,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
 import { InventoryEntity } from '../../orm/inventory.schema';
-
-import { ReserveStockDto } from '../../../primary-adapters/dto/reserve-stock.dto';
+import { ReservationInput } from '../../../core/domain/repositories/reservation.repository';
 
 @Injectable()
 export class PostgresReservationRepository implements ReservationRepository {
@@ -22,7 +21,7 @@ export class PostgresReservationRepository implements ReservationRepository {
   ) {}
 
   async save(
-    dto: ReserveStockDto,
+    dto: ReservationInput,
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
       const reservationResult = Reservation.create({

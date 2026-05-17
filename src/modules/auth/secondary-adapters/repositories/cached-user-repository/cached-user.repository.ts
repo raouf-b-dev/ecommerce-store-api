@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { User } from '../../../core/domain/entities/user';
@@ -14,7 +14,7 @@ import {
 @Injectable()
 export class CachedUserRepository implements UserRepository {
   constructor(
-    private readonly cacheService: CacheService,
+    private readonly cacheService: CachePort,
     private readonly postgresRepo: UserRepository,
   ) {}
 

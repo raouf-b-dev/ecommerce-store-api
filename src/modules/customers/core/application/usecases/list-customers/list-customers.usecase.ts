@@ -4,21 +4,26 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { CustomerRepository } from '../../../domain/repositories/customer.repository';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { ListCustomersQueryDto } from '../../../../primary-adapters/dto/list-customers-query.dto';
+export interface ListCustomersQuery {
+  search?: string;
+  email?: string;
+  phone?: string;
+  page?: number;
+  limit?: number;
+}
 import { ICustomer } from '../../../domain/interfaces/customer.interface';
 
 @Injectable()
 export class ListCustomersUseCase
-  implements UseCase<ListCustomersQueryDto, ICustomer[], UseCaseError>
+  implements UseCase<ListCustomersQuery, ICustomer[], UseCaseError>
 {
   constructor(private customerRepository: CustomerRepository) {}
 
   async execute(
-    dto: ListCustomersQueryDto,
+    query: ListCustomersQuery,
   ): Promise<Result<ICustomer[], UseCaseError>> {
-    const page = dto.page || 1;
-    const limit = dto.limit || 20;
+    const page = query.page || 1;
+    const limit = query.limit || 20;
 
     const customersResult = await this.customerRepository.findAll(page, limit);
 

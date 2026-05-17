@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwksService } from './jwks.service';
-import { EnvConfigService } from '../../config/env-config.service';
+import { EnvConfigService } from '../../../config/env-config.service';
 
 describe('JwksService', () => {
   let service: JwksService;

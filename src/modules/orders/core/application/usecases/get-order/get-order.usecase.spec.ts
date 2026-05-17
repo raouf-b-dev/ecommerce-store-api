@@ -68,7 +68,7 @@ describe('GetOrderUseCase', () => {
     });
 
     it('should handle null/undefined order ID', async () => {
-      const nullId = null as any;
+      const nullId = null as unknown as number; // Intentional negative test for invalid input
       mockOrderRepository.mockOrderNotFound(nullId);
 
       const result = await useCase.execute(nullId);

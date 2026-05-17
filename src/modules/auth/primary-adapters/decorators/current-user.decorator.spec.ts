@@ -1,6 +1,10 @@
-import { ExecutionContext } from '@nestjs/common';
 import { CurrentUser } from './current-user.decorator';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import {
+  createMockExecutionContext,
+  createMockRequest,
+  createMockRequestWithUser,
+} from '../../../../testing';
 
 describe('CurrentUserDecorator', () => {
   function getParamDecoratorFactory(decorator: (...args: any[]) => any) {
@@ -17,12 +21,8 @@ describe('CurrentUserDecorator', () => {
   it('should extract user from request', () => {
     const factory = getParamDecoratorFactory(CurrentUser);
     const user = { userId: '123', email: 'test@example.com', role: 'customer' };
-    const request = { user };
-    const ctx = {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as ExecutionContext;
+    const request = createMockRequestWithUser(user);
+    const ctx = createMockExecutionContext(request);
 
     const result = factory(undefined, ctx);
     expect(result).toEqual(user);
@@ -31,12 +31,8 @@ describe('CurrentUserDecorator', () => {
   it('should extract specific property from user', () => {
     const factory = getParamDecoratorFactory(CurrentUser);
     const user = { userId: '123', email: 'test@example.com', role: 'customer' };
-    const request = { user };
-    const ctx = {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as ExecutionContext;
+    const request = createMockRequestWithUser(user);
+    const ctx = createMockExecutionContext(request);
 
     const result = factory('userId', ctx);
     expect(result).toBe('123');
@@ -44,12 +40,8 @@ describe('CurrentUserDecorator', () => {
 
   it('should return null if no user attached', () => {
     const factory = getParamDecoratorFactory(CurrentUser);
-    const request = {};
-    const ctx = {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as ExecutionContext;
+    const request = createMockRequestWithUser(null);
+    const ctx = createMockExecutionContext(request);
 
     const result = factory(undefined, ctx);
     expect(result).toBeNull();

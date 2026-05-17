@@ -1,5 +1,7 @@
-import { ShippingAddressResolver } from './shipping-address-resolver';
-import { ShippingAddressDto } from '../../../primary-adapters/dto/shipping-address.dto';
+import {
+  ShippingAddressResolver,
+  ShippingAddressInput,
+} from './shipping-address-resolver';
 import { CustomerTestFactory } from '../../../../customers/testing/factories/customer.factory';
 import { CheckoutCustomerInfo } from '../ports/customer.gateway';
 
@@ -76,7 +78,7 @@ describe('ShippingAddressResolver', () => {
 
   describe('resolveFromDto', () => {
     it('should build address from DTO with all fields provided', () => {
-      const dto: ShippingAddressDto = {
+      const input: ShippingAddressInput = {
         firstName: 'Jane',
         lastName: 'Smith',
         street: '789 Custom St',
@@ -89,7 +91,7 @@ describe('ShippingAddressResolver', () => {
         deliveryInstructions: 'Ring bell',
       };
 
-      const result = resolver.resolveFromDto(dto, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockCustomer);
 
       expect(result).toEqual({
         id: 0,
@@ -107,7 +109,7 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should use customer defaults for missing firstName, lastName, phone', () => {
-      const dto: ShippingAddressDto = {
+      const input: ShippingAddressInput = {
         firstName: 'Jane',
         lastName: 'Smith',
         street: '789 Custom St',
@@ -117,7 +119,7 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolveFromDto(dto, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockCustomer);
 
       expect(result.firstName).toBe('Jane');
       expect(result.lastName).toBe('Smith');
@@ -125,7 +127,7 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should set street2 and deliveryInstructions to null when not provided', () => {
-      const dto: ShippingAddressDto = {
+      const input: ShippingAddressInput = {
         firstName: 'Jane',
         lastName: 'Smith',
         street: '789 Custom St',
@@ -135,7 +137,7 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolveFromDto(dto, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockCustomer);
 
       expect(result.street2).toBeNull();
       expect(result.deliveryInstructions).toBeNull();
@@ -186,7 +188,7 @@ describe('ShippingAddressResolver', () => {
 
   describe('resolve', () => {
     it('should use DTO when provided', () => {
-      const dto: ShippingAddressDto = {
+      const input: ShippingAddressInput = {
         firstName: 'Jane',
         lastName: 'Smith',
         street: '789 Custom St',
@@ -196,7 +198,7 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolve(dto, mockCustomer);
+      const result = resolver.resolve(input, mockCustomer);
 
       expect(result?.street).toBe('789 Custom St');
     });

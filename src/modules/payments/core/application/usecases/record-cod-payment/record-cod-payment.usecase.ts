@@ -5,17 +5,22 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { RecordCodPaymentDto } from '../../../../primary-adapters/dto/record-cod-payment.dto';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentDtoMapper } from '../../../../primary-adapters/mappers/payment-dto.mapper';
-import { PaymentResponseDto } from '../../../../primary-adapters/dto/payment-response.dto';
+import { IPayment } from '../../../domain/interfaces/payment.interface';
+
+export interface RecordCodPaymentCommand {
+  orderId: number;
+  amountCollected: number;
+  currency: string;
+  collectedBy?: string;
+  notes?: string;
+}
 
 @Injectable()
 export class RecordCodPaymentUseCase extends UseCase<
-  RecordCodPaymentDto,
-  PaymentResponseDto,
+  RecordCodPaymentCommand,
+  IPayment,
   UseCaseError
 > {
   constructor(private readonly paymentRepository: PaymentRepository) {
@@ -23,8 +28,8 @@ export class RecordCodPaymentUseCase extends UseCase<
   }
 
   async execute(
-    dto: RecordCodPaymentDto,
-  ): Promise<Result<PaymentResponseDto, UseCaseError>> {
+    dto: RecordCodPaymentCommand,
+  ): Promise<Result<IPayment, UseCaseError>> {
     const payment = Payment.createCOD(
       null,
       dto.orderId,
@@ -36,8 +41,6 @@ export class RecordCodPaymentUseCase extends UseCase<
 
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(
-      PaymentDtoMapper.toResponse(saveResult.value.toPrimitives()),
-    );
+    return Result.success(saveResult.value.toPrimitives());
   }
 }

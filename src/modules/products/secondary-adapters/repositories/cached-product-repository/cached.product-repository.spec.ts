@@ -1,47 +1,27 @@
 // src/modules/products/infrastructure/repositories/CachedProductRepository/cached.product-repository.spec.ts
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
-import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedProductRepository } from './cached.product-repository';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
-import { CreateProductDtoFactory } from '../../../testing/factories/create-product-dto.factory';
-import { UpdateProductDtoFactory } from '../../../testing/factories/update-product-dto.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
+import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
+import { MockCacheService } from '../../../../../testing';
+import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
-  let cacheService: jest.Mocked<CacheService>;
-  let postgresRepo: jest.Mocked<ProductRepository>;
+  let cacheService: MockCacheService;
+  let postgresRepo: MockProductRepository;
 
   const mockProduct = ProductTestFactory.createMockProduct();
-  const createDto = CreateProductDtoFactory.createMockDto();
-  const updateDto = UpdateProductDtoFactory.createMockDto();
+  const createDto = CreateProductInputFactory.createMockDto();
+  const updateDto = UpdateProductInputFactory.createMockDto();
 
   beforeEach(() => {
-    cacheService = {
-      ttl: jest.fn(),
-      get: jest.fn(),
-      getAll: jest.fn(),
-      set: jest.fn(),
-      setAll: jest.fn(),
-      merge: jest.fn(),
-      mergeAll: jest.fn(),
-      delete: jest.fn(),
-      deletePattern: jest.fn(),
-      exists: jest.fn(),
-      search: jest.fn(),
-      scanKeys: jest.fn(),
-    } as unknown as jest.Mocked<CacheService>;
-
-    postgresRepo = {
-      save: jest.fn(),
-      update: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      deleteById: jest.fn(),
-    };
+    cacheService = new MockCacheService();
+    postgresRepo = new MockProductRepository();
 
     repo = new CachedProductRepository(cacheService, postgresRepo);
   });
@@ -72,7 +52,8 @@ describe('CachedProductRepository', () => {
     });
 
     it('should save expensive product', async () => {
-      const expensiveDto = CreateProductDtoFactory.createExpensiveProductDto();
+      const expensiveDto =
+        CreateProductInputFactory.createExpensiveProductDto();
       const expensiveProduct = ProductTestFactory.createExpensiveProduct();
 
       postgresRepo.save.mockResolvedValue(Result.success(expensiveProduct));
@@ -154,7 +135,7 @@ describe('CachedProductRepository', () => {
 
     it('should update only price', async () => {
       const productId = 1;
-      const priceOnlyDto = UpdateProductDtoFactory.createPriceOnlyDto(200);
+      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
       const updatedProduct = ProductTestFactory.createMockProduct({
         id: productId,
         price: 200,

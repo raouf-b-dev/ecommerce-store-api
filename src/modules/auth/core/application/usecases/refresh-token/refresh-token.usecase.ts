@@ -1,6 +1,4 @@
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
-import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
-import { JwtVerifierService } from '../../../../../../infrastructure/jwt/jwt-verifier.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -9,6 +7,8 @@ import { UserRepository } from '../../../domain/repositories/user.repository';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
+import { JwtSignerPort } from '../../ports/jwt-signer.port';
+import { JwtVerifierPort } from '../../../../../../infrastructure/jwt/ports/jwt-verifier.port';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -19,8 +19,8 @@ export class RefreshTokenUseCase extends UseCase<
   private readonly logger = new Logger(RefreshTokenUseCase.name);
 
   constructor(
-    private readonly jwtVerifierService: JwtVerifierService,
-    private readonly jwtSignerService: JwtSignerService,
+    private readonly jwtVerifierService: JwtVerifierPort,
+    private readonly jwtSignerService: JwtSignerPort,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly userRepository: UserRepository,
     private readonly roleRepository: RoleRepository,
@@ -39,7 +39,7 @@ export class RefreshTokenUseCase extends UseCase<
         input.refreshToken,
       );
       const sessionId = payload.sessionId;
-      const userId = payload.sub;
+      const userId = Number(payload.sub);
 
       // 2. Find session in DB
       const sessionResult =

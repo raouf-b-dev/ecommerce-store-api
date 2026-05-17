@@ -44,9 +44,10 @@ import {
   CUSTOMER_GATEWAY,
 } from './auth.tokens';
 import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
+import { JwtSignerPort } from './core/application/ports/jwt-signer.port';
+import { JwtSignerService } from './core/application/services/jwt-signer.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
-import { EnvConfigService } from '../../config/env-config.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 
 @Global()
 @Module({
@@ -79,12 +80,12 @@ import { EnvConfigService } from '../../config/env-config.service';
     {
       provide: CACHED_USER_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresUserRepository,
       ) => {
         return new CachedUserRepository(cacheService, postgresRepo);
       },
-      inject: [CacheService, POSTGRES_USER_REPOSITORY],
+      inject: [CachePort, POSTGRES_USER_REPOSITORY],
     },
     {
       provide: UserRepository,
@@ -110,6 +111,12 @@ import { EnvConfigService } from '../../config/env-config.service';
     {
       provide: CUSTOMER_GATEWAY,
       useClass: ModuleCustomerGateway,
+    },
+
+    // Services
+    {
+      provide: JwtSignerPort,
+      useClass: JwtSignerService,
     },
 
     // Use Cases

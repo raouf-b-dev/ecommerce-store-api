@@ -25,9 +25,9 @@ import { CartGateway } from './core/application/ports/cart.gateway';
 import { InventoryReservationGateway } from './core/application/ports/inventory-reservation.gateway';
 import { PaymentGateway } from './core/application/ports/payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
-import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderItemEntity } from './secondary-adapters/orm/order-item.schema';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderFactory } from './core/domain/factories/order.factory';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
 import { CancelOrderUseCase } from './core/application/usecases/cancel-order/cancel-order.usecase';
@@ -109,13 +109,13 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     {
       provide: CACHED_ORDER_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresOrderRepository,
         logger: Logger,
       ) => {
         return new CachedOrderRepository(cacheService, postgresRepo, logger);
       },
-      inject: [CacheService, POSTGRES_ORDER_REPOSITORY],
+      inject: [CachePort, POSTGRES_ORDER_REPOSITORY],
     },
 
     // Gateways

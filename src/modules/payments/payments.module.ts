@@ -9,7 +9,7 @@ import {
   CACHED_PAYMENT_REPOSITORY,
 } from './payment.token';
 import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 import { CachedPaymentRepository } from './secondary-adapters/repositories/cached-payment-repository/cached.payment-repository';
 import { PaymentRepository } from './core/domain/repositories/payment.repository';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
@@ -86,7 +86,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     {
       provide: CACHED_PAYMENT_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresPaymentRepository,
       ) => {
         return new CachedPaymentRepository(
@@ -95,7 +95,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
           new Logger(CachedPaymentRepository.name),
         );
       },
-      inject: [CacheService, POSTGRES_PAYMENT_REPOSITORY],
+      inject: [CachePort, POSTGRES_PAYMENT_REPOSITORY],
     },
 
     // Default Repository Binding

@@ -3,21 +3,21 @@ import { ReserveStockStep } from './reserve-stock.job';
 import { ReserveStockForCheckoutUseCase } from '../../../core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 import { CorrelationService } from '../../../../../infrastructure/logging/correlation/correlation.service';
 
+import { Job } from 'bullmq';
+import { ScheduleCheckoutProps } from '../../../core/domain/schedulers/order.scheduler';
+import { ScheduleCheckoutPropsFactory } from '../../../testing/factories/schedule-checkout-props.factory';
+import { Result } from '../../../../../shared-kernel/domain/result';
+import { MockJob } from '../../../../../testing';
+
 describe('ReserveStockStep', () => {
   let jobHandler: ReserveStockStep;
-  let reserveStockUseCase: any;
+  let reserveStockUseCase: jest.Mocked<ReserveStockForCheckoutUseCase>;
 
-  const mockJob = {
-    id: 'job-123',
-    name: 'reserve-stock',
-    attemptsMade: 0,
-    opts: { attempts: 3 },
-    data: {
-      cartId: 1,
-      orderId: 100,
-    },
-    getChildrenValues: jest.fn(),
-  };
+  const mockJob = new MockJob<ScheduleCheckoutProps>(
+    ScheduleCheckoutPropsFactory.createMockProps(),
+    'reserve-stock',
+    'job-123',
+  );
 
   const mockValidateCartResult = {
     cartId: 1,
@@ -57,13 +57,13 @@ describe('ReserveStockStep', () => {
     });
 
     const reservationId = 555;
-    reserveStockUseCase.execute.mockResolvedValue({
-      isSuccess: true,
-      isFailure: false,
-      value: { id: reservationId, items: [] },
-    });
+    reserveStockUseCase.execute.mockResolvedValue(
+      Result.success({ id: reservationId, items: [] }),
+    );
 
-    const result = await jobHandler.handle(mockJob as any);
+    const result = await jobHandler.handle(
+      mockJob as unknown as Job<ScheduleCheckoutProps>,
+    );
 
     expect(result).toEqual({
       ...mockValidateCartResult,

@@ -6,7 +6,7 @@ import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { AddCartItemDto } from '../../../../primary-adapters/dto/add-cart-item.dto';
+import { AddCartItemInput } from './add-cart-item.usecase';
 import { ProductGateway, ProductData } from '../../ports/product.gateway';
 import { InventoryGateway } from '../../ports/inventory.gateway';
 
@@ -50,7 +50,7 @@ describe('AddCartItemUseCase', () => {
     it('should add item to cart successfully', async () => {
       // Arrange
       const cartId = 123;
-      const dto: AddCartItemDto = {
+      const input: AddCartItemInput = {
         productId: 1,
         quantity: 2,
       };
@@ -72,11 +72,11 @@ describe('AddCartItemUseCase', () => {
       mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
 
       // Act
-      const result = await usecase.execute({ cartId, dto });
+      const result = await usecase.execute({ cartId, input });
 
       // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockProductGateway.findById).toHaveBeenCalledWith(dto.productId);
+      expect(mockProductGateway.findById).toHaveBeenCalledWith(input.productId);
       expect(mockCartRepository.update).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
@@ -84,7 +84,7 @@ describe('AddCartItemUseCase', () => {
     it('should return failure when cart not found', async () => {
       // Arrange
       const cartId = 404;
-      const dto: AddCartItemDto = {
+      const input: AddCartItemInput = {
         productId: 1,
         quantity: 1,
       };
@@ -93,7 +93,7 @@ describe('AddCartItemUseCase', () => {
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
 
       // Act
-      const result = await usecase.execute({ cartId, dto });
+      const result = await usecase.execute({ cartId, input });
 
       // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
@@ -108,7 +108,7 @@ describe('AddCartItemUseCase', () => {
     it('should return failure when product not found', async () => {
       // Arrange
       const cartId = 123;
-      const dto: AddCartItemDto = {
+      const input: AddCartItemInput = {
         productId: 404,
         quantity: 1,
       };
@@ -121,10 +121,10 @@ describe('AddCartItemUseCase', () => {
       mockProductGateway.findById.mockResolvedValue(Result.failure(error));
 
       // Act
-      const result = await usecase.execute({ cartId, dto });
+      const result = await usecase.execute({ cartId, input });
 
       // Assert
-      expect(mockProductGateway.findById).toHaveBeenCalledWith(dto.productId);
+      expect(mockProductGateway.findById).toHaveBeenCalledWith(input.productId);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Product not found',
@@ -135,7 +135,7 @@ describe('AddCartItemUseCase', () => {
     it('should return failure when stock is insufficient', async () => {
       // Arrange
       const cartId = 123;
-      const dto: AddCartItemDto = {
+      const input: AddCartItemInput = {
         productId: 1,
         quantity: 20,
       };
@@ -156,12 +156,12 @@ describe('AddCartItemUseCase', () => {
       );
 
       // Act
-      const result = await usecase.execute({ cartId, dto });
+      const result = await usecase.execute({ cartId, input });
 
       // Assert
       expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(
-        dto.productId,
-        dto.quantity,
+        input.productId,
+        input.quantity,
       );
       ResultAssertionHelper.assertResultFailure(
         result,

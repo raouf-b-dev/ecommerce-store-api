@@ -9,7 +9,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
-import { LowStockQueryDto } from '../../../primary-adapters/dto/low-stock-query.dto';
+import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class PostgresInventoryRepository implements InventoryRepository {
@@ -84,7 +84,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
   }
 
   async findLowStock(
-    query: LowStockQueryDto,
+    query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
       const { threshold = 10, page = 1, limit = 20 } = query;

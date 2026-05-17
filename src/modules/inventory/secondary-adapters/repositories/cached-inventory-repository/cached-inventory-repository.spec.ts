@@ -12,12 +12,13 @@ import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/r
 import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
 import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { CachedInventoryRepository } from './cached-inventory-repository';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
+import { MockCacheService } from '../../../../../testing';
 
 describe('CachedInventoryRepository', () => {
   let repository: CachedInventoryRepository;
-  let cacheService: jest.Mocked<CacheService>;
+  let cacheService: MockCacheService;
   let postgresRepo: MockInventoryRepository;
 
   const inventoryId = 1;
@@ -36,16 +37,11 @@ describe('CachedInventoryRepository', () => {
     `${INVENTORY_REDIS.CACHE_KEY}:product:${pid}`;
 
   const defaultLowStockQueryDto =
-    InventoryDtoTestFactory.createLowStockQueryDto();
+    InventoryCommandTestFactory.createLowStockQuery();
 
   beforeEach(() => {
     // Mock CacheService methods
-    cacheService = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined),
-      setAll: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn().mockResolvedValue(undefined),
-    } as unknown as jest.Mocked<CacheService>;
+    cacheService = new MockCacheService();
 
     postgresRepo = new MockInventoryRepository();
     repository = new CachedInventoryRepository(cacheService, postgresRepo);

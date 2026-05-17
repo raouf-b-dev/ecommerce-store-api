@@ -3,22 +3,20 @@ import { RoleSystemDataInitializer } from './role-system-data.initializer';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Role } from '../../domain/entities/role';
+import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
 
 describe('RoleSystemDataInitializer', () => {
   let initializer: RoleSystemDataInitializer;
   let mockRoleRepo: MockRoleRepository;
-  let mockPermissionRepo: jest.Mocked<PermissionRepository>;
+  let mockPermissionRepo: MockPermissionRepository;
 
   beforeEach(async () => {
     mockRoleRepo = new MockRoleRepository();
 
-    mockPermissionRepo = {
-      findAll: jest.fn(),
-      findByCode: jest.fn(),
-      saveMany: jest.fn(),
-    } as unknown as jest.Mocked<PermissionRepository>;
+    mockPermissionRepo = new MockPermissionRepository();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,7 +39,17 @@ describe('RoleSystemDataInitializer', () => {
 
   it('should create system roles if they do not exist', async () => {
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(null));
-    mockRoleRepo.save.mockResolvedValue(Result.success({} as Role));
+    mockRoleRepo.save.mockResolvedValue(
+      Result.success(
+        new Role({
+          id: 1,
+          code: 'ADMIN',
+          name: 'Admin',
+          isSystem: true,
+          permissions: [],
+        }),
+      ),
+    );
 
     await initializer.onApplicationBootstrap();
 
@@ -71,7 +79,7 @@ describe('RoleSystemDataInitializer', () => {
 
   it('should skip role and continue if findByCode fails', async () => {
     mockRoleRepo.findByCode.mockResolvedValueOnce(
-      Result.failure(new Error('DB error') as any),
+      ErrorFactory.RepositoryError('DB error'),
     );
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(null)); // Others succeed but not found
     mockRoleRepo.save.mockResolvedValue(Result.success({} as Role));
@@ -86,7 +94,7 @@ describe('RoleSystemDataInitializer', () => {
   it('should handle save failure gracefully', async () => {
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(null));
     mockRoleRepo.save.mockResolvedValue(
-      Result.failure(new Error('DB error') as any),
+      ErrorFactory.RepositoryError('DB error'),
     );
 
     await initializer.onApplicationBootstrap();
@@ -107,7 +115,7 @@ describe('RoleSystemDataInitializer', () => {
 
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(existingRole));
     mockRoleRepo.update.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     await initializer.onApplicationBootstrap();

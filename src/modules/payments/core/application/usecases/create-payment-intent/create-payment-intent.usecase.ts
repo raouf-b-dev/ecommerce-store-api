@@ -11,7 +11,7 @@ import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 
-export interface CreatePaymentIntentDto {
+export interface CreatePaymentIntentCommand {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
@@ -27,7 +27,7 @@ export interface CreatePaymentIntentResult {
 
 @Injectable()
 export class CreatePaymentIntentUseCase extends UseCase<
-  CreatePaymentIntentDto,
+  CreatePaymentIntentCommand,
   CreatePaymentIntentResult,
   UseCaseError
 > {
@@ -39,7 +39,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreatePaymentIntentDto,
+    dto: CreatePaymentIntentCommand,
   ): Promise<Result<CreatePaymentIntentResult, UseCaseError>> {
     // 1. Get Gateway
     const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);

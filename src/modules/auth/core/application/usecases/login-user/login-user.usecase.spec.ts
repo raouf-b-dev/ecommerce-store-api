@@ -1,4 +1,3 @@
-import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
@@ -7,6 +6,7 @@ import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mo
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { User } from '../../../domain/entities/user';
+import { SessionToken } from '../../../domain/entities/session-token';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -37,7 +37,7 @@ describe('LoginUserUseCase', () => {
       roleRepository,
       sessionTokenRepository,
       passwordHasher,
-      jwtSignerService as unknown as JwtSignerService,
+      jwtSignerService,
       domainEventPublisher,
     );
     mockDomainUser = User.fromPrimitives(
@@ -67,7 +67,15 @@ describe('LoginUserUseCase', () => {
     userRepository.findByEmail.mockResolvedValue(
       Result.success(mockDomainUser),
     );
-    sessionTokenRepository.save.mockResolvedValue(Result.success({} as any));
+    sessionTokenRepository.save.mockResolvedValue(
+      Result.success(
+        SessionToken.create(
+          mockDomainUser.id!,
+          'dummy-refresh-token',
+          new Date('2025-01-01T12:00:00Z'),
+        ),
+      ),
+    );
 
     const result = await usecase.execute({
       email: 'test@example.com',

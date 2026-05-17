@@ -31,251 +31,133 @@
 | **7.6** | Auth Hardening & Quality     | ✅ Done | Abstract `PasswordHasher`, Session reuse detection, Architectural polish, Strict typed JWT payloads, Thin controllers                                                                                        | `src/modules/auth/`                                                                |
 | **8**   | Observability                | ✅ Done | Winston structured JSON logging · Health checks (`/health`) · Correlation ID Middleware (`X-Request-Id`) · End-to-end `correlationId` propagation into all 18 BullMQ job handlers and schedulers             | `src/infrastructure/logging/`, `src/infrastructure/jobs/`                          |
 | **8.1** | Logging Activation           | ✅ Done | Winston logger injected into NestJS application lifecycle, replacing manual error handlers                                                                                                                   | `src/main.ts`                                                                      |
-| **8.5** | Architecture Hardening       | ✅ Done | Abstract ports for payments services, thin notifications controller, strict NotificationPayload and OrderItemPrimitives typing                                                                               | `src/modules/payments/`, `src/modules/notifications/`                              |
+| **8.5** | Architecture Hardening       | ✅ Done | Full Hexagonal audit: fixed 20+ boundary violations, enforced strict domain isolation, eliminated DTO leakage into domain/application layers.                                                                | `src/modules/*/`                                                                   |
 | **10**  | SaaS & Monitoring            | ✅ Done | API Versioning (`v1`) · Rate Limiting (Redis-backed) · Prometheus metrics (`/metrics`) · Grafana Stack (Loki, Tempo, Dashboards) · OTel Distributed Tracing                                                  | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/monitoring/` |
 
-## 🧪 Phase 9 — Test Suite Expansion
+## 🚀 Phase 9 — Pre-Deployment & Live Demo (Top Priority)
 
-> **Goal**: Expand existing test coverage to production-grade confidence. The project already has 116 spec files — build on this foundation.
-
----
-
-### [ ] E2E Tests
-
-**What**: `test/app.e2e-spec.ts` and `test/jest-e2e.json` exist as scaffolding but contain only the default NestJS boilerplate test. No real end-to-end HTTP tests exist.
-
-**Scope**: Happy path CRUD via `supertest`:
-
-- Auth: register → login → get token → use token → refresh
-- Products: create → list → get → update → delete
-- Inventory: adjust → check → reserve → confirm → release
-- Customers: create → add address → set default → update → delete
-- Carts: create → add items → update → checkout
-- Orders: full checkout SAGA → verify order created → verify compensation on failure
-- Payments: create → capture → verify → refund
+> **Goal**: Make the API safe to deploy and expose it publicly so hiring managers and reviewers can interact with a live Swagger instance.
 
 ---
 
-### [ ] Domain Entity Tests
+### [ ] Generate Initial Database Migration
 
-**What**: The spec files focus on use cases, repositories, and controllers. The domain entities themselves (value objects, aggregates, state transitions) may lack direct unit tests.
+**What**: Migration CLI infrastructure is fully implemented, but no migration files exist. The app still relies on `synchronize: true`.
+**Scope**:
 
-**Scope**: Test domain invariants:
+1. Run `npm run migration:generate:dev -- src/migrations/InitialSchema`
+2. Verify migration runs cleanly on an empty database.
+3. Update `package.json` to ensure `migration:run` runs on production startup before serving traffic.
 
-- `OrderEntity` lifecycle: status transitions, total calculations, item management
-- `PaymentEntity` state machine: pending → captured → refunded
-- Value objects: `Money`, `Address`, `PaymentMethod` construction and equality
-- `InventoryEntity` stock rules: reservation limits, negative stock prevention
+### [ ] Build Database Seed Script
+
+**What**: The live demo needs data to be useful.
+**Scope**:
+
+- Create an `npm run db:seed` script.
+- Seed predefined RBAC Roles and Permissions.
+- Seed a catalog of 10-20 realistic products with varying stock levels.
+- Seed a dummy customer account for reviewers to log in with.
+
+### [ ] Public Demo Deployment
+
+**What**: Deploy a constrained demo environment.
+**Scope**:
+
+- Deploy the API (and a managed Postgres/Redis) to a fast-iteration platform (e.g., Railway, Render, Fly.io).
+- Expose Swagger/OpenAPI documentation publicly.
+- Protect admin/destructive operations via the RBAC guards.
+- Ensure `/health` is public but `/metrics` remains protected.
 
 ---
 
-### [ ] Repository Integration Tests (Real DB)
+## 🧪 Phase 10 — End-to-End (E2E) Test Suite
 
-**What**: Repository spec files exist but may use mocks. Transactional operations need testing against a real PostgreSQL instance.
+> **Goal**: Replace the boilerplate `test/` directory with real, production-style HTTP integration tests using `supertest`.
 
-**Scope**: Test against a real PostgreSQL instance (Docker test container):
+---
 
-- Order creation with order items (transactional)
-- Inventory reservation/release atomicity
-- Customer address management with default promotion
-- Concurrent stock reservation edge cases
+### [ ] Core API Flows (Happy Path)
+
+- **Auth**: register → login → get token → use token → refresh token.
+- **Products & Inventory**: create → list → update stock → check stock.
+- **Customers**: create → add address → set default address.
+
+### [ ] Complex SAGA Verification
+
+- **Orders & Carts**: create cart → add items → checkout.
+- **SAGA Success**: full checkout flow → verify order created and stock confirmed.
+- **SAGA Compensation**: trigger payment/checkout failure → verify refund triggered and stock released automatically.
+
+### [ ] Observability Smoke Test
+
+- Generate test traffic and assert that `X-Request-Id` correlation IDs are returned.
+- (Optional) Verify telemetry metrics and logs are emitted during the test run.
 
 ---
 
 ## 💳 Phase 11 — Payment Integrations
 
-> **Goal**: Replace mock payment adapters with real payment provider integrations.
+> **Goal**: Replace mock payment adapters with real payment provider integrations to demonstrate 3rd-party vendor handling.
 
 ---
 
 ### [ ] Real Stripe Integration
 
-- Stripe SDK (`stripe` npm package) for payment intents and charges
-- Webhook signature verification (`stripe-signature` header)
-- Idempotent payment creation (use existing `IdempotencyStore`)
-- Handle edge cases: double-charge prevention, partial captures, refund flows
-- Test mode with Stripe test keys
+- Stripe SDK (`stripe` npm package) for payment intents and charges.
+- Webhook signature verification (`stripe-signature` header).
+- Idempotent payment creation (use existing `IdempotencyStore`).
+- Handle edge cases: partial captures, refund flows.
 
 ### [ ] Real PayPal Integration
 
-- PayPal REST SDK for order creation and capture
-- Webhook signature verification
-- Map PayPal statuses to domain `PaymentStatus` value object
+- PayPal REST SDK for order creation and capture.
+- Webhook signature verification.
 
 ---
 
-## 📦 Phase 12 — Ecosystem
+## 📦 Phase 12 — Real-World Ecosystem & Hardening
 
-> **Goal**: Full-stack capabilities and real-world integrations.
+> **Goal**: Add advanced architectural resilience patterns.
 
 ---
-
-### [ ] Admin Dashboard (Frontend)
-
-- React/Next.js admin panel
-- Order management, inventory dashboard
-- Demonstrates full-stack capability
-
-### [ ] Real Email Notifications
-
-- SendGrid or Resend adapter for `NotificationGateway`
-- Order confirmation, payment receipts, email templates
 
 ### [ ] Graceful Degradation (Redis Failover)
 
-- Health-aware proxy at DI level (`createHealthAwareProxy()` pattern)
-- If Redis dies → route directly to Postgres repositories
-- Recovery service to flush stale caches on reconnection
-- Zero changes to repository implementations
+- Health-aware proxy at DI level (`createHealthAwareProxy()` pattern).
+- If Redis dies → route directly to Postgres repositories.
+- Zero changes to repository implementations.
 
 ### [ ] Outbox Pattern for Reliable Events
 
-- `outbox` table for at-least-once event delivery
-- Use cases write events in same DB transaction as aggregate changes
-- Scheduled BullMQ job polls and dispatches unprocessed events
-- Prevents lost notifications/events on crashes
+- `outbox` table for at-least-once event delivery.
+- Use cases write events in same DB transaction as aggregate changes.
+- Scheduled BullMQ job polls and dispatches unprocessed events.
+
+### [ ] Real Email Notifications
+
+- SendGrid or Resend adapter for `NotificationGateway`.
+- Order confirmation and payment receipts.
 
 ---
 
-## 🚀 Phase 13 — Pre-Deployment Checklist
+## 📉 Phase 13 — Deferred / Low Priority
 
-> **Goal**: Final steps to execute right before the first production release.
-
----
-
-### [ ] Generate Initial Migration
-
-**What**: Migration CLI infrastructure is **fully implemented** — `data-source.ts`, per-environment npm scripts (`generate`, `run`, `revert`, `show`), and `migrationsTableName` are all configured. No migration files exist yet because the project is still in active development with `synchronize: true`. Before first production deploy, generate the initial migration from the current 15 entity schemas.
-**Risk**: None until production deploy. `synchronize: true` is appropriate for active development.
-
-**Scope** (when ready to deploy):
-
-1. `npm run migration:generate:dev -- src/migrations/InitialSchema`
-2. Verify migration runs cleanly on empty database
-3. Add `migration:run` to the production start flow in `package.json`
+> **Goal**: Tasks that are valuable for a massive production system, but not strictly necessary for demonstrating immediate competence in an interview scenario.
 
 ---
 
-## 📈 Phase 14 — Operational Observability Maturity
+### [ ] Domain Entity Unit Tests
 
-> **Goal**: Move beyond telemetry collection into measurable service reliability, alerting, and operational diagnostics.
+The project already has 696 passing tests covering Use Cases and Repositories. Testing pure entity methods (like `OrderEntity` state transitions) is nice to have, but lower priority than E2E flows.
 
----
+### [ ] Advanced Operational Observability (SLIs/SLOs/Runbooks)
 
-### [ ] Service Level Indicators, Objectives, and Agreements
+Defining formal reliability targets (SLOs), Alertmanager routing, and runbooks is premature until the API has real traffic and active users.
 
-**What**: Define reliability targets for the API and critical business workflows.
+### [ ] Admin Dashboard (Frontend)
 
-**Scope**:
-
-- Define SLIs for request latency, availability, error rate, checkout success rate, queue delay, and dependency health.
-- Define initial SLOs for public API endpoints, checkout SAGA completion, Redis/PostgreSQL availability, and BullMQ processing delay.
-- Document SLA terminology separately from internal SLOs so the project can distinguish engineering targets from external commitments.
-- Add Prometheus queries for each SLI.
-- Add a service-level documentation page under `docs/observability/`.
-
-### [ ] RED and USE Dashboards
-
-**What**: Align Grafana dashboards with standard RED and USE observability methods.
-
-**Scope**:
-
-- API RED: request rate, error rate, and duration percentiles by route/status.
-- Infrastructure USE: utilization, saturation, and errors for PostgreSQL, Redis, BullMQ, Node.js runtime, and WebSocket connections.
-- Checkout workflow dashboard: SAGA throughput, failure rate, compensation count, queue delay, and trace links.
-- Business telemetry dashboard: auth success/failure, orders created, payments captured/refunded, and cart checkout initiation.
-- Document dashboard ownership, metric meanings, and troubleshooting entry points.
-
-### [ ] Alert Rules and Notification Routing
-
-**What**: Add actionable alerts for reliability and business-critical failure modes.
-
-**Scope**:
-
-- Add Prometheus alert rules for 5xx rate spikes, high p95 latency, Redis/PostgreSQL unhealthy status, BullMQ queue depth, and checkout SAGA failure rate.
-- Add alerts for missing telemetry, such as no metrics scraped or no recent checkout events.
-- Configure Alertmanager routing for local/dev environments.
-- Document severity levels, escalation expectations, and false-positive tuning.
-
-### [ ] Observability Runbooks
-
-**What**: Provide repeatable troubleshooting guides for common operational symptoms.
-
-**Scope**:
-
-- API latency spike runbook.
-- Checkout SAGA failure runbook.
-- Redis unavailable or degraded runbook.
-- BullMQ queue backlog runbook.
-- Missing traces/logs/metrics runbook.
-- Payment webhook failure runbook.
-
----
-
-## 🚢 Phase 15 — Deployment and Production Hardening
-
-> **Goal**: Make the API safer to deploy, operate, migrate, and recover in realistic production-like environments.
-
----
-
-### [ ] Public Demo Environment
-
-**What**: Deploy a constrained demo environment that exposes API documentation and safe read/write flows.
-
-**Scope**:
-
-- Deploy the API using production Docker scripts and environment validation.
-- Seed non-sensitive demo data.
-- Expose Swagger/OpenAPI documentation.
-- Protect admin, destructive, and credential-sensitive operations.
-- Document demo limitations and reset strategy.
-
-### [ ] Initial Database Migration
-
-**What**: Replace development `synchronize: true` assumptions with a production-ready baseline migration.
-
-**Scope**:
-
-- Generate the initial schema migration from the current TypeORM entities.
-- Verify migration execution on an empty PostgreSQL database.
-- Verify rollback behavior where practical.
-- Update production startup documentation to require migrations before serving traffic.
-- Add migration verification to deployment documentation.
-
-### [ ] Backup, Restore, and Recovery
-
-**What**: Document and test basic recovery procedures for stateful dependencies.
-
-**Scope**:
-
-- PostgreSQL backup and restore procedure.
-- Redis persistence and recovery expectations.
-- Grafana dashboard provisioning recovery.
-- Loki/Tempo/Prometheus volume persistence notes.
-- Disaster recovery checklist for local and VPS-style deployments.
-
-### [ ] Release and Rollback Process
-
-**What**: Define a predictable release process for versioned deployments.
-
-**Scope**:
-
-- Define release checklist: build, test, migrate, deploy, smoke test, monitor.
-- Document rollback strategy for API image, environment config, and database migration failures.
-- Add post-deploy smoke checks for `/health`, `/metrics`, auth, checkout, and queue processing.
-- Add version and changelog conventions.
-
-### [ ] Real E2E and Smoke Test Suite
-
-**What**: Add production-like verification flows for critical API behavior.
-
-**Scope**:
-
-- Auth: register → login → refresh → protected endpoint.
-- Products and inventory: create/list/update stock/check stock.
-- Cart and checkout: create cart → add items → checkout.
-- Orders and payments: online payment flow, COD flow, failure compensation.
-- Observability smoke test: generate traffic and verify metrics, logs, and traces are emitted.
+A React/Next.js admin panel to demonstrate full-stack capability. (Deferred to focus strictly on backend positioning).
 
 ---
 

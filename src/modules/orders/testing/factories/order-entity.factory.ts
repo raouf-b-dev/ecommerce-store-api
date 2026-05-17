@@ -73,7 +73,7 @@ export class OrderEntityTestFactory {
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
-      order: null as any,
+      order: null as unknown as OrderEntity,
     };
 
     return { ...defaultEntity, ...overrides };

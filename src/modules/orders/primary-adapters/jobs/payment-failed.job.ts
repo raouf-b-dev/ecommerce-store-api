@@ -3,7 +3,7 @@ import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import {
   HandlePaymentFailedUseCase,
-  HandlePaymentFailedDto,
+  HandlePaymentFailedCommand,
   HandlePaymentFailedResult,
 } from '../../core/application/usecases/handle-payment-failed/handle-payment-failed.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
@@ -12,7 +12,7 @@ import { CorrelationService } from '../../../../infrastructure/logging/correlati
 
 @Injectable()
 export class PaymentFailedStep extends BaseJobHandler<
-  HandlePaymentFailedDto,
+  HandlePaymentFailedCommand,
   HandlePaymentFailedResult
 > {
   protected readonly logger = new Logger(PaymentFailedStep.name);
@@ -29,7 +29,7 @@ export class PaymentFailedStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<HandlePaymentFailedDto>,
+    job: Job<HandlePaymentFailedCommand>,
   ): Promise<Result<HandlePaymentFailedResult, AppError>> {
     this.logger.log(`Processing payment failed for order ${job.data.orderId}`);
 

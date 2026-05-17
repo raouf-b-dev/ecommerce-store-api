@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutUseCase } from './checkout.usecase';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { CheckoutDto } from '../../../../primary-adapters/dto/checkout.dto';
+import { CheckoutCommand } from './checkout.usecase';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
@@ -14,6 +14,7 @@ import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
 import { Customer } from '../../../../../customers/core/domain/entities/customer';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
@@ -104,7 +105,7 @@ describe('CheckoutUseCase', () => {
   });
 
   it('should schedule checkout with validated context', async () => {
-    const dto: CheckoutDto = {
+    const command: CheckoutCommand = {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };
@@ -113,7 +114,7 @@ describe('CheckoutUseCase', () => {
       Result.success('job-123'),
     );
 
-    const result = await useCase.execute({ dto, userId: mockUserId });
+    const result = await useCase.execute({ command, userId: mockUserId });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
@@ -154,7 +155,7 @@ describe('CheckoutUseCase', () => {
       deliveryInstructions: 'Leave at back door',
     };
 
-    const dto: CheckoutDto = {
+    const command: CheckoutCommand = {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
       shippingAddress: shippingAddressDto,
@@ -164,7 +165,7 @@ describe('CheckoutUseCase', () => {
       Result.success('job-123'),
     );
 
-    const result = await useCase.execute({ dto, userId: mockUserId });
+    const result = await useCase.execute({ command, userId: mockUserId });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
@@ -176,15 +177,15 @@ describe('CheckoutUseCase', () => {
 
   it('should return error when validation fails', async () => {
     validateCheckoutUseCase.execute.mockResolvedValue(
-      Result.failure({ message: 'Validation failed' } as any),
+      ErrorFactory.UseCaseError('Validation failed'),
     );
 
-    const dto: CheckoutDto = {
+    const command: CheckoutCommand = {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };
 
-    const result = await useCase.execute({ dto, userId: mockUserId });
+    const result = await useCase.execute({ command, userId: mockUserId });
 
     ResultAssertionHelper.assertResultFailure(result);
     expect(orderScheduler.scheduleCheckout).not.toHaveBeenCalled();

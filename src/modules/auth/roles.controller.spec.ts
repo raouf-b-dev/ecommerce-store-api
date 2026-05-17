@@ -19,20 +19,14 @@ describe('RolesController', () => {
   let mockDelete: jest.Mocked<DeleteRoleUseCase>;
 
   beforeEach(async () => {
-    mockFindAll = { execute: jest.fn() } as any;
-    mockFindById = { execute: jest.fn() } as any;
-    mockCreate = { execute: jest.fn() } as any;
-    mockUpdate = { execute: jest.fn() } as any;
-    mockDelete = { execute: jest.fn() } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RolesController],
       providers: [
-        { provide: FindAllRolesUseCase, useValue: mockFindAll },
-        { provide: FindRoleByIdUseCase, useValue: mockFindById },
-        { provide: CreateRoleUseCase, useValue: mockCreate },
-        { provide: UpdateRoleUseCase, useValue: mockUpdate },
-        { provide: DeleteRoleUseCase, useValue: mockDelete },
+        { provide: FindAllRolesUseCase, useValue: { execute: jest.fn() } },
+        { provide: FindRoleByIdUseCase, useValue: { execute: jest.fn() } },
+        { provide: CreateRoleUseCase, useValue: { execute: jest.fn() } },
+        { provide: UpdateRoleUseCase, useValue: { execute: jest.fn() } },
+        { provide: DeleteRoleUseCase, useValue: { execute: jest.fn() } },
       ],
     })
       .overrideGuard(AuthGuard)
@@ -42,6 +36,11 @@ describe('RolesController', () => {
       .compile();
 
     controller = module.get<RolesController>(RolesController);
+    mockFindAll = module.get(FindAllRolesUseCase);
+    mockFindById = module.get(FindRoleByIdUseCase);
+    mockCreate = module.get(CreateRoleUseCase);
+    mockUpdate = module.get(UpdateRoleUseCase);
+    mockDelete = module.get(DeleteRoleUseCase);
   });
 
   it('should delegate findAll to FindAllRolesUseCase', async () => {
@@ -97,7 +96,7 @@ describe('RolesController', () => {
 
   it('should delegate update to UpdateRoleUseCase', async () => {
     const dto = { name: 'Updated', permissions: [] };
-    mockUpdate.execute.mockResolvedValue(Result.success(undefined as any));
+    mockUpdate.execute.mockResolvedValue(Result.success<void>(undefined));
 
     const result = await controller.update(1, dto);
 
@@ -106,7 +105,7 @@ describe('RolesController', () => {
   });
 
   it('should delegate delete to DeleteRoleUseCase', async () => {
-    mockDelete.execute.mockResolvedValue(Result.success(undefined as any));
+    mockDelete.execute.mockResolvedValue(Result.success<void>(undefined));
 
     const result = await controller.delete(1);
 

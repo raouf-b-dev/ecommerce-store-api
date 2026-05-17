@@ -1,11 +1,21 @@
 import { Global, Module } from '@nestjs/common';
-import { JwksService } from './jwks.service';
-import { JwtSignerService } from './jwt-signer.service';
-import { JwtVerifierService } from './jwt-verifier.service';
+import { JwksService } from './services/jwks.service';
+import { JwtVerifierService } from './services/jwt-verifier.service';
+import { JwtVerifierPort } from './ports/jwt-verifier.port';
+import { JwksPort } from './ports/jwks.port';
 
 @Global()
 @Module({
-  providers: [JwksService, JwtSignerService, JwtVerifierService],
-  exports: [JwksService, JwtSignerService, JwtVerifierService],
+  providers: [
+    {
+      provide: JwksPort,
+      useClass: JwksService,
+    },
+    {
+      provide: JwtVerifierPort,
+      useClass: JwtVerifierService,
+    },
+  ],
+  exports: [JwksPort, JwtVerifierPort],
 })
 export class JwtModule {}

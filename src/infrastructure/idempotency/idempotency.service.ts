@@ -1,16 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CacheService } from '../redis/cache/cache.service';
 import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
 import {
   IdempotencyStore,
   IdempotencyResult,
 } from '../../shared-kernel/domain/stores/idempotency.store';
+import { CachePort } from '../redis/cache/cache.port';
 
 @Injectable()
 export class IdempotencyService extends IdempotencyStore {
   private readonly logger = new Logger(IdempotencyService.name);
 
-  constructor(private readonly cacheService: CacheService) {
+  constructor(private readonly cacheService: CachePort) {
     super();
   }
 

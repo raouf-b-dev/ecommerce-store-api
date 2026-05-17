@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtVerifierService } from './jwt-verifier.service';
-import { JwksService } from './jwks.service';
+import { JwksPort } from '../ports/jwks.port';
 
 describe('JwtVerifierService', () => {
   let service: JwtVerifierService;
@@ -10,7 +10,7 @@ describe('JwtVerifierService', () => {
       providers: [
         JwtVerifierService,
         {
-          provide: JwksService,
+          provide: JwksPort,
           useValue: { getPublicKey: jest.fn() },
         },
       ],

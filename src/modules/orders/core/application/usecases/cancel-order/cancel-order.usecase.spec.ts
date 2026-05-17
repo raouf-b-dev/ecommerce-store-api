@@ -26,7 +26,7 @@ describe('CancelOrderUseCase', () => {
       schedulePostPayment: jest.fn(),
       scheduleStockRelease: jest.fn(),
       schedulePostConfirmation: jest.fn(),
-    } as unknown as jest.Mocked<OrderScheduler>;
+    } as jest.Mocked<OrderScheduler>;
     domainEventPublisher = { publish: jest.fn() };
     useCase = new CancelOrderUseCase(
       mockRepository,
@@ -45,7 +45,7 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder as any);
+    mockRepository.mockSuccessfulFind(cancellableOrder);
     mockRepository.mockSuccessfulCancel();
 
     const result = await useCase.execute({ orderId });
@@ -68,7 +68,7 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder as any);
+    mockRepository.mockSuccessfulFind(cancellableOrder);
     mockRepository.mockSuccessfulCancel();
 
     const result = await useCase.execute({ orderId, isSagaCompensation: true });
@@ -106,7 +106,7 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(nonCancellableOrder as any);
+    mockRepository.mockSuccessfulFind(nonCancellableOrder);
 
     const result = await useCase.execute({ orderId });
 
@@ -126,7 +126,7 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder as any);
+    mockRepository.mockSuccessfulFind(cancellableOrder);
     mockRepository.mockCancelFailure('DB write failed');
 
     const result = await useCase.execute({ orderId });

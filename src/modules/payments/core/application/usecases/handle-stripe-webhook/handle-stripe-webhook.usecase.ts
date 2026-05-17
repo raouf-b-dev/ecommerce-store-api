@@ -26,14 +26,14 @@ export interface StripeWebhookPayload {
   };
 }
 
-export interface StripeWebhookDto {
+export interface StripeWebhookCommand {
   signature: string;
   payload: StripeWebhookPayload;
 }
 
 @Injectable()
 export class HandleStripeWebhookUseCase extends UseCase<
-  StripeWebhookDto,
+  StripeWebhookCommand,
   PaymentWebhookResult | null,
   UseCaseError
 > {
@@ -47,7 +47,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
   }
 
   async execute(
-    dto: StripeWebhookDto,
+    dto: StripeWebhookCommand,
   ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
     // 1. Validate signature
     if (!dto.signature) {

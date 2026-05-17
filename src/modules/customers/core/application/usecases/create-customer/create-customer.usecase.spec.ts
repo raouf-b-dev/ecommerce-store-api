@@ -1,7 +1,7 @@
 import { CreateCustomerUseCase } from './create-customer.usecase';
 import { MockCustomerRepository } from '../../../../testing/mocks/customer-repository.mock';
 import { CustomerTestFactory } from '../../../../testing/factories/customer.factory';
-import { CustomerDtoTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
+import { CustomerCommandTestFactory } from '../../../../testing/factories/customer-dto.test.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
@@ -35,7 +35,7 @@ describe('CreateCustomerUseCase', () => {
   describe('execute', () => {
     it('should return Success if customer is created without address', async () => {
       const createCustomerDto =
-        CustomerDtoTestFactory.createCreateCustomerDto();
+        CustomerCommandTestFactory.createCreateCustomerCommand();
 
       const result = await useCase.execute(createCustomerDto);
 
@@ -47,7 +47,7 @@ describe('CreateCustomerUseCase', () => {
 
     it('should return Success if customer is created with initial address', async () => {
       const createCustomerDto =
-        CustomerDtoTestFactory.createCreateCustomerWithAddressDto();
+        CustomerCommandTestFactory.createCreateCustomerWithAddressCommand();
 
       const result = await useCase.execute(createCustomerDto);
 
@@ -58,9 +58,10 @@ describe('CreateCustomerUseCase', () => {
     });
 
     it('should return Success if customer is created with phone', async () => {
-      const createCustomerDto = CustomerDtoTestFactory.createCreateCustomerDto({
-        phone: '+9876543210',
-      });
+      const createCustomerDto =
+        CustomerCommandTestFactory.createCreateCustomerCommand({
+          phone: '+9876543210',
+        });
 
       const result = await useCase.execute(createCustomerDto);
 
@@ -71,7 +72,7 @@ describe('CreateCustomerUseCase', () => {
 
     it('should return Failure(RepositoryError) if customer is not created', async () => {
       const createCustomerDto =
-        CustomerDtoTestFactory.createCreateCustomerDto();
+        CustomerCommandTestFactory.createCreateCustomerCommand();
       const repoError = ErrorFactory.RepositoryError('Failed to save Customer');
 
       mockCustomerRepository.save.mockResolvedValue(repoError);
@@ -88,8 +89,8 @@ describe('CreateCustomerUseCase', () => {
 
     it('should create customer with work address', async () => {
       const createCustomerDto =
-        CustomerDtoTestFactory.createCreateCustomerWithAddressDto({
-          address: CustomerDtoTestFactory.createAddAddressDto({
+        CustomerCommandTestFactory.createCreateCustomerWithAddressCommand({
+          address: CustomerCommandTestFactory.createAddAddressCommand({
             type: AddressType.WORK,
           }),
         });

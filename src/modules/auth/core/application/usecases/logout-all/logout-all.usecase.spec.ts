@@ -1,7 +1,9 @@
 import { LogoutAllUseCase } from './logout-all.usecase';
-import { MockJwtVerifierService } from '../../../../../../testing/mocks/jwt-verifier.service.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
-import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  MockJwtVerifierService,
+  ResultAssertionHelper,
+} from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 
 describe('LogoutAllUseCase', () => {
@@ -13,17 +15,19 @@ describe('LogoutAllUseCase', () => {
     jwtVerifierService = new MockJwtVerifierService();
     sessionTokenRepository = new MockSessionTokenRepository();
 
-    usecase = new LogoutAllUseCase(
-      jwtVerifierService as any,
-      sessionTokenRepository,
-    );
+    usecase = new LogoutAllUseCase(jwtVerifierService, sessionTokenRepository);
   });
 
   it('should revoke all sessions for user successfully', async () => {
     const userId = 123;
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
-      sub: userId,
+      sub: String(userId),
+      sessionId: 'mock-session-id',
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
     sessionTokenRepository.revokeAllForUser.mockResolvedValue(

@@ -1,26 +1,9 @@
 // src/modules/payments/presentation/dto/list-payments-query.dto.ts
-import {
-  IsOptional,
-  IsString,
-  IsEnum,
-  IsNumber,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsOptional, IsEnum, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod } from './create-payment.dto';
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  AUTHORIZED = 'AUTHORIZED',
-  CAPTURED = 'CAPTURED',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-  PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED',
-  CANCELLED = 'CANCELLED',
-}
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class ListPaymentsQueryDto {
   @ApiPropertyOptional({
@@ -40,22 +23,22 @@ export class ListPaymentsQueryDto {
   customerId?: number;
 
   @ApiPropertyOptional({
-    enum: PaymentStatus,
-    example: PaymentStatus.COMPLETED,
+    enum: PaymentStatusType,
+    example: PaymentStatusType.COMPLETED,
     description: 'Filter by payment status',
   })
   @IsOptional()
-  @IsEnum(PaymentStatus)
-  status?: PaymentStatus;
+  @IsEnum(PaymentStatusType)
+  status?: PaymentStatusType;
 
   @ApiPropertyOptional({
-    enum: PaymentMethod,
-    example: PaymentMethod.CREDIT_CARD,
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CREDIT_CARD,
     description: 'Filter by payment method',
   })
   @IsOptional()
-  @IsEnum(PaymentMethod)
-  paymentMethod?: PaymentMethod;
+  @IsEnum(PaymentMethodType)
+  paymentMethod?: PaymentMethodType;
 
   @ApiPropertyOptional({
     example: 1,

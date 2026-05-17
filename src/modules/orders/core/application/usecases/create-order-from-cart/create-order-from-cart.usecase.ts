@@ -15,7 +15,7 @@ import { ShippingAddressProps } from '../../../domain/value-objects/shipping-add
 import { CartGateway } from '../../ports/cart.gateway';
 import { CART_GATEWAY } from '../../../../order.token';
 
-export interface CreateOrderFromCartDto {
+export interface CreateOrderFromCartCommand {
   cartId: number;
   userId: number;
   shippingAddress: ShippingAddressProps;
@@ -26,7 +26,7 @@ export interface CreateOrderFromCartDto {
 
 @Injectable()
 export class CreateOrderFromCartUseCase extends UseCase<
-  CreateOrderFromCartDto,
+  CreateOrderFromCartCommand,
   IOrder,
   UseCaseError
 > {
@@ -39,7 +39,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreateOrderFromCartDto,
+    dto: CreateOrderFromCartCommand,
   ): Promise<Result<IOrder, UseCaseError>> {
     // 1. Get Cart
     const cartResult = await this.cartGateway.getCart(dto.cartId);

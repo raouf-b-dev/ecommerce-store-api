@@ -8,12 +8,14 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { OrderItemEntity } from '../../orm/order-item.schema';
-import { ListOrdersQueryDto } from '../../../primary-adapters/dto/list-orders-query.dto';
 import { OrderItemProps } from '../../../core/domain/entities/order-items';
 import { Order } from '../../../core/domain/entities/order';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
-import { CreateOrderItemDto } from '../../../primary-adapters/dto/create-order-item.dto';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
+import {
+  ListOrdersQuery,
+  OrderItemInput,
+} from '../../../core/domain/repositories/order-repository';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -24,7 +26,7 @@ export class PostgresOrderRepository implements OrderRepository {
   ) {}
 
   async listOrders(
-    listOrdersQueryDto: ListOrdersQueryDto,
+    listOrdersQuery: ListOrdersQuery,
   ): Promise<Result<Order[], RepositoryError>> {
     try {
       const {
@@ -34,7 +36,7 @@ export class PostgresOrderRepository implements OrderRepository {
         status,
         sortBy = 'createdAt',
         sortOrder = 'desc',
-      } = listOrdersQueryDto;
+      } = listOrdersQuery;
 
       const queryBuilder = this.ormRepo
         .createQueryBuilder('order')
@@ -128,7 +130,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
   async updateItemsInfo(
     id: number,
-    updateOrderItemDto: CreateOrderItemDto[],
+    updateOrderItemInput: OrderItemInput[],
   ): Promise<Result<Order, RepositoryError>> {
     try {
       const updatedOrderEntity = await this.dataSource.transaction(
@@ -146,7 +148,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
           const existingDomainOrder = OrderMapper.toDomain(existingOrderEntity);
 
-          for (const item of updateOrderItemDto) {
+          for (const item of updateOrderItemInput) {
             if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
               throw new RepositoryError(
                 `INVALID_QUANTITY: quantity must be a positive integer for product ${item.productId}`,
@@ -154,14 +156,14 @@ export class PostgresOrderRepository implements OrderRepository {
             }
           }
 
-          const newDomainItems: OrderItemProps[] = updateOrderItemDto.map(
-            (itemDto: CreateOrderItemDto) => {
+          const newDomainItems: OrderItemProps[] = updateOrderItemInput.map(
+            (itemInput: OrderItemInput) => {
               const props: OrderItemProps = {
                 id: null,
-                productId: itemDto.productId,
-                productName: itemDto.productName,
-                unitPrice: itemDto.unitPrice,
-                quantity: itemDto.quantity,
+                productId: itemInput.productId,
+                productName: itemInput.productName,
+                unitPrice: itemInput.unitPrice,
+                quantity: itemInput.quantity,
               };
               return props;
             },

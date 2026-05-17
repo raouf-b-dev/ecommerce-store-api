@@ -4,7 +4,7 @@ import { DataSource, Repository, EntityManager } from 'typeorm';
 import { PostgresReservationRepository } from './postgres.reservation-repository';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { ReservationTestFactory } from '../../../testing/factories/reservation.test.factory';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
 
@@ -15,32 +15,30 @@ describe('PostgresReservationRepository', () => {
   let entityManager: jest.Mocked<EntityManager>;
 
   beforeEach(async () => {
-    const mockTypeOrmRepository = {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-    };
-
-    entityManager = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-    } as any;
-
-    const mockDataSource = {
-      transaction: jest.fn().mockImplementation((cb) => cb(entityManager)),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresReservationRepository,
         {
           provide: getRepositoryToken(ReservationEntity),
-          useValue: mockTypeOrmRepository,
+          useValue: {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: EntityManager,
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+            save: jest.fn(),
+          },
         },
         {
           provide: DataSource,
-          useValue: mockDataSource,
+          useValue: {
+            transaction: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -50,6 +48,16 @@ describe('PostgresReservationRepository', () => {
     );
     typeOrmRepository = module.get(getRepositoryToken(ReservationEntity));
     dataSource = module.get(DataSource);
+    entityManager = module.get(EntityManager);
+
+    dataSource.transaction.mockImplementation(
+      (isolationOrCb: unknown, cb?: unknown) => {
+        const callback = (
+          typeof isolationOrCb === 'function' ? isolationOrCb : cb
+        ) as (mgr: unknown) => Promise<unknown>;
+        return callback(entityManager);
+      },
+    );
   });
 
   afterEach(() => {
@@ -58,19 +66,19 @@ describe('PostgresReservationRepository', () => {
 
   describe('save', () => {
     it('should save reservation and update inventory successfully', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
       const reservationId = 1;
 
-      const inventoryEntity = {
+      const inventoryEntity = Object.assign(new InventoryEntity(), {
         productId: dto.items[0].productId,
         availableQuantity: 10,
         reservedQuantity: 0,
-      } as InventoryEntity;
+      });
 
       entityManager.find.mockResolvedValue([inventoryEntity]);
       entityManager.save.mockImplementation((entity) => {
         if (entity instanceof ReservationEntity) {
-          return Promise.resolve({ ...(entity as any), id: 1 });
+          return Promise.resolve(Object.assign({}, entity, { id: 1 }));
         }
         return Promise.resolve(entity);
       });
@@ -93,7 +101,7 @@ describe('PostgresReservationRepository', () => {
     });
 
     it('should fail if inventory not found', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
 
       entityManager.find.mockResolvedValue([]);
 
@@ -106,7 +114,7 @@ describe('PostgresReservationRepository', () => {
     });
 
     it('should fail if insufficient stock', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
 
       const inventoryEntity = {
         productId: dto.items[0].productId,

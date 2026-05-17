@@ -1,7 +1,5 @@
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
-import { PaymentMethod } from '../dto/create-payment.dto';
-import { PaymentStatus } from '../dto/list-payments-query.dto';
 
 export class PaymentDtoMapper {
   static toResponse(payment: IPayment): PaymentResponseDto {

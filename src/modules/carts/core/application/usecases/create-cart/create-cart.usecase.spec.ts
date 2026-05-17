@@ -4,9 +4,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
 import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CreateCartDto } from '../../../../primary-adapters/dto/create-cart.dto';
+import { CreateCartInput } from '../../../domain/repositories/cart.repository';
 
 describe('CreateCartUseCase', () => {
   let usecase: CreateCartUseCase;
@@ -28,17 +27,17 @@ describe('CreateCartUseCase', () => {
   describe('execute', () => {
     it('should create a user cart successfully', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 123 };
+      const input: CreateCartInput = { customerId: 123 };
       const mockCartData = CartTestFactory.createUserCart(123);
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
 
       // Act
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(input);
 
       // Assert
-      expect(mockCartRepository.create).toHaveBeenCalledWith(dto);
+      expect(mockCartRepository.create).toHaveBeenCalledWith(input);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.customerId).toBe(123);
       expect(result.value.sessionId).toBeNull();
@@ -46,17 +45,17 @@ describe('CreateCartUseCase', () => {
 
     it('should create a guest cart successfully', async () => {
       // Arrange
-      const dto: CreateCartDto = { sessionId: 456 };
+      const input: CreateCartInput = { sessionId: 456 };
       const mockCartData = CartTestFactory.createGuestCart(456);
       const mockCart = Cart.fromPrimitives(mockCartData);
 
       mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
 
       // Act
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(input);
 
       // Assert
-      expect(mockCartRepository.create).toHaveBeenCalledWith(dto);
+      expect(mockCartRepository.create).toHaveBeenCalledWith(input);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.sessionId).toBe(456);
       expect(result.value.customerId).toBeNull();
@@ -64,16 +63,16 @@ describe('CreateCartUseCase', () => {
 
     it('should return failure when repository fails', async () => {
       // Arrange
-      const dto: CreateCartDto = { customerId: 123 };
+      const input: CreateCartInput = { customerId: 123 };
       const error = new RepositoryError('Failed to create cart');
 
       mockCartRepository.create.mockResolvedValue(Result.failure(error));
 
       // Act
-      const result = await usecase.execute(dto);
+      const result = await usecase.execute(input);
 
       // Assert
-      expect(mockCartRepository.create).toHaveBeenCalledWith(dto);
+      expect(mockCartRepository.create).toHaveBeenCalledWith(input);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Failed to create cart',

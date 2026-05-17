@@ -3,10 +3,13 @@ import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.use
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import {
-  AdjustStockDto,
-  StockAdjustmentType,
-} from '../../../primary-adapters/dto/adjust-stock.dto';
+import { StockAdjustmentType } from '../../domain/value-objects/stock-adjustment-type';
+
+export interface AdjustStockCommand {
+  quantity: number;
+  type: StockAdjustmentType;
+  reason?: string;
+}
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
 import { Inventory } from '../../domain/entities/inventory';
 import { IInventory } from '../../domain/interfaces/inventory.interface';
@@ -16,7 +19,7 @@ import { DomainError } from '../../../../../shared-kernel/domain/exceptions/doma
 export class AdjustStockUseCase
   implements
     UseCase<
-      { productId: number; dto: AdjustStockDto },
+      { productId: number; command: AdjustStockCommand },
       IInventory,
       UseCaseError
     >
@@ -25,7 +28,7 @@ export class AdjustStockUseCase
 
   async execute(input: {
     productId: number;
-    dto: AdjustStockDto;
+    command: AdjustStockCommand;
   }): Promise<Result<IInventory, UseCaseError>> {
     const inventoryResult = await this.inventoryRepository.findByProductId(
       input.productId,
@@ -34,7 +37,7 @@ export class AdjustStockUseCase
 
     const inventory: Inventory = inventoryResult.value;
 
-    const adjustmentResult = this.applyAdjustment(inventory, input.dto);
+    const adjustmentResult = this.applyAdjustment(inventory, input.command);
     if (adjustmentResult.isFailure) return adjustmentResult;
 
     const updateResult = await this.inventoryRepository.update(inventory);
@@ -45,7 +48,7 @@ export class AdjustStockUseCase
 
   private applyAdjustment(
     inventory: Inventory,
-    dto: AdjustStockDto,
+    dto: AdjustStockCommand,
   ): Result<void, DomainError> {
     switch (dto.type) {
       case StockAdjustmentType.ADD:

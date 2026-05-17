@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentUseCase } from './create-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { CreatePaymentDto } from '../../../../primary-adapters/dto/create-payment.dto';
+import { CreatePaymentCommand } from './create-payment.usecase';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
@@ -33,7 +33,7 @@ describe('CreatePaymentUseCase', () => {
     useCase = module.get<CreatePaymentUseCase>(CreatePaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
 
     const factory = module.get(PaymentGatewayResolver);
     (factory.getGateway as jest.Mock).mockReturnValue({
@@ -54,7 +54,7 @@ describe('CreatePaymentUseCase', () => {
   });
 
   it('should create a payment successfully', async () => {
-    const dto: CreatePaymentDto = {
+    const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: 100,
       currency: 'USD',
@@ -84,7 +84,7 @@ describe('CreatePaymentUseCase', () => {
   });
 
   it('should fail if save fails', async () => {
-    const dto: CreatePaymentDto = {
+    const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: 100,
       currency: 'USD',

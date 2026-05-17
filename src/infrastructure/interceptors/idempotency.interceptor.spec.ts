@@ -1,12 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IdempotencyInterceptor } from './idempotency.interceptor';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
-import {
-  ExecutionContext,
-  CallHandler,
-  ConflictException,
-} from '@nestjs/common';
+import { CallHandler, ConflictException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
+import { createMockExecutionContext, createMockRequest } from '../../testing';
 
 describe('IdempotencyInterceptor', () => {
   let interceptor: IdempotencyInterceptor;
@@ -35,7 +32,7 @@ describe('IdempotencyInterceptor', () => {
   });
 
   it('should proceed if no idempotency key provided', (done) => {
-    const context = createMockExecutionContext({});
+    const context = createMockExecutionContext({ headers: {} });
     const next = createMockCallHandler(of('response'));
 
     interceptor.intercept(context, next).subscribe({
@@ -50,7 +47,9 @@ describe('IdempotencyInterceptor', () => {
   it('should return cached response if key exists', (done) => {
     const key = 'test-key';
     const cachedResponse = { status: 'ok' };
-    const context = createMockExecutionContext({ 'x-idempotency-key': key });
+    const context = createMockExecutionContext({
+      headers: { 'x-idempotency-key': key },
+    });
     const next = createMockCallHandler(of('response'));
 
     idempotencyStore.checkAndLock.mockResolvedValue({
@@ -69,7 +68,9 @@ describe('IdempotencyInterceptor', () => {
 
   it('should throw ConflictException if key exists but no data (in progress)', (done) => {
     const key = 'test-key';
-    const context = createMockExecutionContext({ 'x-idempotency-key': key });
+    const context = createMockExecutionContext({
+      headers: { 'x-idempotency-key': key },
+    });
     const next = createMockCallHandler(of('response'));
 
     idempotencyStore.checkAndLock.mockResolvedValue({
@@ -89,7 +90,9 @@ describe('IdempotencyInterceptor', () => {
   it('should proceed and complete if key is new', (done) => {
     const key = 'test-key';
     const response = { status: 'created' };
-    const context = createMockExecutionContext({ 'x-idempotency-key': key });
+    const context = createMockExecutionContext({
+      headers: { 'x-idempotency-key': key },
+    });
     const next = createMockCallHandler(of(response));
 
     idempotencyStore.checkAndLock.mockResolvedValue({ isNew: true });
@@ -107,7 +110,9 @@ describe('IdempotencyInterceptor', () => {
   it('should release lock if handler fails', (done) => {
     const key = 'test-key';
     const error = new Error('Handler failed');
-    const context = createMockExecutionContext({ 'x-idempotency-key': key });
+    const context = createMockExecutionContext(
+      createMockRequest({ headers: { 'x-idempotency-key': key } }),
+    );
     const next = createMockCallHandler(throwError(() => error));
 
     idempotencyStore.checkAndLock.mockResolvedValue({ isNew: true });
@@ -122,20 +127,6 @@ describe('IdempotencyInterceptor', () => {
     });
   });
 });
-
-function createMockExecutionContext(
-  headers: any,
-  body: any = {},
-): ExecutionContext {
-  return {
-    switchToHttp: () => ({
-      getRequest: () => ({
-        headers,
-        body,
-      }),
-    }),
-  } as any;
-}
 
 function createMockCallHandler(observable: any): CallHandler {
   return {

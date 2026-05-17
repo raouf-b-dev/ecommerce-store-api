@@ -1,10 +1,12 @@
 // src/modules/orders/testing/mocks/order-repository.mock.ts
-import { OrderRepository } from '../../core/domain/repositories/order-repository';
+import {
+  ListOrdersQuery,
+  OrderItemInput,
+  OrderRepository,
+} from '../../core/domain/repositories/order-repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Order } from '../../core/domain/entities/order';
-import { CreateOrderItemDto } from '../../primary-adapters/dto/create-order-item.dto';
-import { ListOrdersQueryDto } from '../../primary-adapters/dto/list-orders-query.dto';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 
@@ -21,12 +23,12 @@ export class MockOrderRepository implements OrderRepository {
   >();
   updateItemsInfo = jest.fn<
     Promise<Result<Order, RepositoryError>>,
-    [number, CreateOrderItemDto[]]
+    [number, OrderItemInput[]]
   >();
   findById = jest.fn<Promise<Result<Order, RepositoryError>>, [number]>();
   listOrders = jest.fn<
     Promise<Result<Order[], RepositoryError>>,
-    [ListOrdersQueryDto]
+    [ListOrdersQuery]
   >();
   cancelOrder = jest.fn<Promise<Result<void, RepositoryError>>, [Order]>();
   deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();

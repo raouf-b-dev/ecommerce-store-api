@@ -1,3 +1,4 @@
+import { IAddress } from '../../core/domain/interfaces/address.interface';
 import { ICustomer } from '../../core/domain/interfaces/customer.interface';
 import { AddressType } from '../../core/domain/value-objects/address-type';
 
@@ -42,9 +43,10 @@ export class CustomerTestFactory {
     });
   }
 
-  static createMockAddress(overrides?: Partial<any>): any {
-    const baseAddress = {
+  static createMockAddress(overrides?: Partial<IAddress>): IAddress {
+    const baseAddress: IAddress = {
       id: 123,
+      customerId: 123,
       street: '123 Main St',
       street2: null,
       city: 'New York',

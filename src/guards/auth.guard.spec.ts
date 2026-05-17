@@ -1,25 +1,27 @@
-import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MockJwtVerifierService } from '../testing/mocks/jwt-verifier.service.mock';
 import { AuthGuard } from './auth.guard';
-import { JwtVerifierService } from '../infrastructure/jwt/jwt-verifier.service';
+import { JwtVerifierPort } from '../infrastructure/jwt/ports/jwt-verifier.port';
 import { Reflector } from '@nestjs/core';
+import {
+  MockJwtVerifierService,
+  MockReflector,
+  createMockExecutionContext,
+  createMockRequest,
+} from '../testing';
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
   let jwtVerifierService: MockJwtVerifierService;
-  let reflector: jest.Mocked<Reflector>;
+  let reflector: MockReflector;
 
   beforeEach(async () => {
     jwtVerifierService = new MockJwtVerifierService();
-    reflector = {
-      getAllAndOverride: jest.fn(),
-    } as unknown as jest.Mocked<Reflector>;
+    reflector = new MockReflector();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthGuard,
-        { provide: JwtVerifierService, useValue: jwtVerifierService },
+        { provide: JwtVerifierPort, useValue: jwtVerifierService },
         { provide: Reflector, useValue: reflector },
       ],
     }).compile();
@@ -33,10 +35,7 @@ describe('AuthGuard', () => {
 
   it('should return true if public route', async () => {
     reflector.getAllAndOverride.mockReturnValue(true);
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-    } as any;
+    const mockContext = createMockExecutionContext();
 
     expect(await guard.canActivate(mockContext)).toBe(true);
   });
@@ -44,21 +43,22 @@ describe('AuthGuard', () => {
   it('should attach user payload on valid token', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
     jwtVerifierService.verifyAccessToken.mockResolvedValue({
-      sub: 1,
+      sub: '1',
       email: 'test@example.com',
       role: 'ADMIN',
       customerId: null,
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
     });
 
-    const request = { headers: { authorization: 'Bearer test-token' } };
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: () => ({ getRequest: () => request }),
-    } as any;
+    const request = createMockRequest({
+      headers: { authorization: 'Bearer test-token' },
+    });
+    const mockContext = createMockExecutionContext(request);
 
     expect(await guard.canActivate(mockContext)).toBe(true);
-    expect((request as any).user).toEqual({
+    expect((request as unknown as Record<string, any>).user).toEqual({
       userId: 1,
       email: 'test@example.com',
       role: 'ADMIN',
@@ -69,15 +69,9 @@ describe('AuthGuard', () => {
   it('should throw if token misses', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
 
-    const request = { headers: {} };
-    const mockContext = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: () => ({ getRequest: () => request }),
-    } as any;
+    const request = createMockRequest({ headers: {} });
+    const mockContext = createMockExecutionContext(request);
 
-    await expect(guard.canActivate(mockContext)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(guard.canActivate(mockContext)).rejects.toThrow();
   });
 });

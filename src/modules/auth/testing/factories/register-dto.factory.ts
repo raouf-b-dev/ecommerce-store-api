@@ -1,18 +1,20 @@
-import { RegisterDto } from '../../primary-adapters/dto/register.dto';
+import { RegisterCommand } from '../../core/application/usecases/register-user/register-user.usecase';
 
-export class RegisterDtoTestFactory {
-  static createRegisterDto(overrides?: Partial<RegisterDto>): RegisterDto {
-    const baseUser: RegisterDto = {
+export class RegisterCommandTestFactory {
+  static createRegisterCommand(
+    overrides?: Partial<RegisterCommand>,
+  ): RegisterCommand {
+    const baseCommand: RegisterCommand = {
       email: 'test@example.com',
       password: 'password',
       firstName: 'John',
       lastName: 'Doe',
     };
 
-    return { ...baseUser, ...overrides };
+    return { ...baseCommand, ...overrides };
   }
 
-  static createInvalidRegisterDto(): RegisterDto {
+  static createInvalidRegisterCommand(): RegisterCommand {
     return {
       email: '',
       password: '',

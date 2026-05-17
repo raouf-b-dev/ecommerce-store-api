@@ -40,7 +40,7 @@ describe('RedisJsonClient', () => {
       redisService.getFullKey.mockReturnValue('prefix:key');
       (redisService.client.json.set as jest.Mock).mockResolvedValue('OK');
 
-      const result = await service.set('key', '$', { foo: 'bar' } as any);
+      const result = await service.set('key', '$', { foo: 'bar' });
 
       expect(redisService.getFullKey).toHaveBeenCalledWith('key');
       expect(redisService.client.json.set).toHaveBeenCalledWith(
@@ -56,9 +56,14 @@ describe('RedisJsonClient', () => {
       redisService.getFullKey.mockReturnValue('prefix:key');
       (redisService.client.json.set as jest.Mock).mockResolvedValue('OK');
 
-      const result = await service.set('key', '$', { foo: 'bar' } as any, {
-        nx: true,
-      });
+      const result = await service.set(
+        'key',
+        '$',
+        { foo: 'bar' },
+        {
+          nx: true,
+        },
+      );
 
       expect(redisService.client.json.set).toHaveBeenCalledWith(
         'prefix:key',
@@ -73,7 +78,7 @@ describe('RedisJsonClient', () => {
       redisService.getFullKey.mockReturnValue('prefix:key');
       (redisService.client.json.set as jest.Mock).mockResolvedValue(null);
 
-      const result = await service.set('key', '$', { foo: 'bar' } as any);
+      const result = await service.set('key', '$', { foo: 'bar' });
 
       expect(result).toBe(false);
     });
@@ -83,7 +88,7 @@ describe('RedisJsonClient', () => {
     it('should call json.merge with full key', async () => {
       redisService.getFullKey.mockReturnValue('prefix:key');
 
-      await service.merge('key', '$', { a: 1 } as any);
+      await service.merge('key', '$', { a: 1 });
 
       expect(redisService.getFullKey).toHaveBeenCalledWith('key');
       expect(redisService.client.json.merge).toHaveBeenCalledWith(

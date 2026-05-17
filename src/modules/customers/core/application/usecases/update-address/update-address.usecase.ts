@@ -8,13 +8,24 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UpdateAddressDto } from '../../../../primary-adapters/dto/update-address.dto';
+import { AddressType } from '../../../domain/value-objects/address-type';
 import { IAddress } from '../../../domain/interfaces/address.interface';
+
+export interface UpdateAddressCommand {
+  street?: string;
+  street2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  type?: AddressType;
+  deliveryInstructions?: string;
+}
 
 export interface UpdateAddressInput {
   customerId: number;
   addressId: number;
-  dto: UpdateAddressDto;
+  command: UpdateAddressCommand;
 }
 
 @Injectable()
@@ -30,7 +41,7 @@ export class UpdateAddressUseCase extends UseCase<
   async execute(
     input: UpdateAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    const { customerId, addressId, dto } = input;
+    const { customerId, addressId, command: dto } = input;
 
     const customerResult = await this.customerRepository.findById(customerId);
     if (isFailure(customerResult)) return customerResult;

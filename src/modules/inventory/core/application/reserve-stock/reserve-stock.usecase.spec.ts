@@ -5,7 +5,7 @@ import {
   MockReservationRepository,
   ReservationRepositoryMockFactory,
 } from '../../../testing/mocks/reservation-repository.mock.factory';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
+import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { ReservationTestFactory } from '../../../testing/factories/reservation.test.factory';
 
 describe('ReserveStockUseCase', () => {
@@ -37,7 +37,7 @@ describe('ReserveStockUseCase', () => {
 
   describe('execute', () => {
     it('should reserve stock successfully', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
       const reservation = ReservationTestFactory.createPendingReservation({
         orderId: dto.orderId,
       });
@@ -54,7 +54,7 @@ describe('ReserveStockUseCase', () => {
     });
 
     it('should return failure if repository save fails', async () => {
-      const dto = InventoryDtoTestFactory.createReserveStockDto();
+      const dto = InventoryCommandTestFactory.createReservationInput();
       const errorMessage = 'Database error';
       reservationRepository.mockSaveFailure(errorMessage);
 

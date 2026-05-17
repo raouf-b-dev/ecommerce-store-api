@@ -6,7 +6,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Inventory } from '../../domain/entities/inventory';
-import { CheckStockResponse } from '../../../primary-adapters/dto/check-stock-response.dto';
+import { CheckStockResult } from '../../domain/interfaces/check-stock-result.interface';
 
 describe('BulkCheckStockUseCase', () => {
   let usecase: BulkCheckStockUseCase;
@@ -59,7 +59,7 @@ describe('BulkCheckStockUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 2]);
 
-    const expected: CheckStockResponse[] = [
+    const expected: CheckStockResult[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },
       { isAvailable: true, availableQuantity: 30, requestedQuantity: 20 },
     ];
@@ -110,7 +110,7 @@ describe('BulkCheckStockUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultSuccess(result);
-    const expected: CheckStockResponse[] = [
+    const expected: CheckStockResult[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },
       { isAvailable: false, availableQuantity: 20, requestedQuantity: 30 },
       { isAvailable: true, availableQuantity: 5, requestedQuantity: 1 },
@@ -141,7 +141,7 @@ describe('BulkCheckStockUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 999]);
 
-    const expected: CheckStockResponse[] = [
+    const expected: CheckStockResult[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },
       { isAvailable: false, availableQuantity: 0, requestedQuantity: 10 },
     ];
@@ -190,7 +190,7 @@ describe('BulkCheckStockUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(mockRepo.findByProductIds).toHaveBeenCalledWith([1, 2]);
 
-    const expected: CheckStockResponse[] = [
+    const expected: CheckStockResult[] = [
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 1 },
       { isAvailable: false, availableQuantity: 5, requestedQuantity: 10 },
       { isAvailable: true, availableQuantity: 10, requestedQuantity: 5 },

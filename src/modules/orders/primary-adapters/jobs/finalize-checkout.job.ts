@@ -37,7 +37,7 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,
   ): Promise<Result<FinalizeCheckoutResult, AppError>> {
-    const { flowId } = job.data as any;
+    const { flowId } = job.data;
 
     const childrenValues = await job.getChildrenValues();
     const childData = Object.values(childrenValues)[0] as ClearCartResult;

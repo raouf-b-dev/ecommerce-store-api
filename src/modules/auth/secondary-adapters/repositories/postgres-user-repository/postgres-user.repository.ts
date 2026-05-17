@@ -21,7 +21,7 @@ export class PostgresUserRepository implements UserRepository {
       const entity = UserMapper.toEntity(user);
       // For new users (id = 0 or null), TypeORM will generate the ID
       if (!entity.id) {
-        entity.id = 0 as any; // Will be replaced by auto-increment
+        entity.id = 0; // Will be replaced by auto-increment
       }
       const savedEntity = await this.repository.save(entity);
       return Result.success(UserMapper.toDomain(savedEntity));
