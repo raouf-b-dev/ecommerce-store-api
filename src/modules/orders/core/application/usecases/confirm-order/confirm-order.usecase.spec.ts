@@ -1,5 +1,6 @@
 // src/modules/orders/application/usecases/confirm-order/confirm-order.usecase.spec.ts
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
+import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
@@ -9,27 +10,17 @@ import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/d
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 
-const createMockOrderScheduler = () => ({
-  scheduleCheckout: jest.fn(),
-  schedulePostPayment: jest.fn(),
-  scheduleStockRelease: jest.fn(),
-  schedulePostConfirmation: jest
-    .fn()
-    .mockResolvedValue(Result.success('post-confirm-flow-id')),
-});
+import { MockOrderScheduler } from '../../../../testing/mocks/order-scheduler.mock';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
-  let mockOrderScheduler: ReturnType<typeof createMockOrderScheduler>;
+  let mockOrderScheduler: MockOrderScheduler;
 
   beforeEach(() => {
     mockOrderRepository = new MockOrderRepository();
-    mockOrderScheduler = createMockOrderScheduler();
-    useCase = new ConfirmOrderUseCase(
-      mockOrderRepository,
-      mockOrderScheduler as any,
-    );
+    mockOrderScheduler = new MockOrderScheduler();
+    useCase = new ConfirmOrderUseCase(mockOrderRepository, mockOrderScheduler);
   });
 
   afterEach(() => {

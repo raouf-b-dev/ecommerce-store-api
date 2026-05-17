@@ -11,51 +11,35 @@ import { CartTestFactory } from '../../../testing/factories/cart.factory';
 import { CartCacheMapper } from '../../persistence/mappers/cart.mapper';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Logger } from '@nestjs/common';
+import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
+import { MockLogger } from '../../../../../testing/mocks/logger.mock';
+import { MockCartRepository } from '../../../testing/mocks/cart-repository.mock';
 
 describe('CachedCartRepository', () => {
   let repository: CachedCartRepository;
-  let cacheService: jest.Mocked<CacheService>;
-  let postgresRepo: jest.Mocked<CartRepository>;
+  let cacheService: MockCacheService;
+  let postgresRepo: MockCartRepository;
 
   const mockCart = Cart.fromPrimitives(CartTestFactory.createMockCart());
   const mockCachedCart = CartCacheMapper.toCache(mockCart);
 
   beforeEach(async () => {
-    const mockCacheService = {
-      get: jest.fn(),
-      set: jest.fn(),
-      delete: jest.fn(),
-      search: jest.fn(),
-    };
-
-    const mockPostgresRepo = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findByCustomerId: jest.fn(),
-      findBySessionId: jest.fn(),
-      delete: jest.fn(),
-      update: jest.fn(),
-      mergeCarts: jest.fn(),
-    };
-
-    const mockLogger = {
-      log: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      debug: jest.fn(),
-    };
+    const mockCacheService = new MockCacheService();
+    const mockPostgresRepo = new MockCartRepository();
+    const mockLogger = new MockLogger();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CachedCartRepository,
-        { provide: CacheService, useValue: mockCacheService },
+        { provide: CachePort, useValue: mockCacheService },
         { provide: CartRepository, useValue: mockPostgresRepo },
         { provide: Logger, useValue: mockLogger },
       ],
     }).compile();
 
     repository = module.get<CachedCartRepository>(CachedCartRepository);
-    cacheService = module.get(CacheService);
+    cacheService = module.get(CachePort);
     postgresRepo = module.get(CartRepository);
   });
 

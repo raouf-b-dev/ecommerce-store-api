@@ -1,6 +1,4 @@
 // src/modules/products/infrastructure/repositories/CachedProductRepository/cached.product-repository.spec.ts
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
-import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedProductRepository } from './cached.product-repository';
 import { ProductTestFactory } from '../../../testing/factories/product.factory';
@@ -9,39 +7,21 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ResultAssertionHelper } from '../../../../../testing';
 import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
 import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
+import { MockCacheService } from '../../../../../testing';
+import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
-  let cacheService: jest.Mocked<CacheService>;
-  let postgresRepo: jest.Mocked<ProductRepository>;
+  let cacheService: MockCacheService;
+  let postgresRepo: MockProductRepository;
 
   const mockProduct = ProductTestFactory.createMockProduct();
   const createDto = CreateProductInputFactory.createMockDto();
   const updateDto = UpdateProductInputFactory.createMockDto();
 
   beforeEach(() => {
-    cacheService = {
-      ttl: jest.fn(),
-      get: jest.fn(),
-      getAll: jest.fn(),
-      set: jest.fn(),
-      setAll: jest.fn(),
-      merge: jest.fn(),
-      mergeAll: jest.fn(),
-      delete: jest.fn(),
-      deletePattern: jest.fn(),
-      exists: jest.fn(),
-      search: jest.fn(),
-      scanKeys: jest.fn(),
-    } as unknown as jest.Mocked<CacheService>;
-
-    postgresRepo = {
-      save: jest.fn(),
-      update: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      deleteById: jest.fn(),
-    };
+    cacheService = new MockCacheService();
+    postgresRepo = new MockProductRepository();
 
     repo = new CachedProductRepository(cacheService, postgresRepo);
   });

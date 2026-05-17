@@ -39,7 +39,7 @@ describe('ProcessRefundUseCase', () => {
     useCase = module.get<ProcessRefundUseCase>(ProcessRefundUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
     domainEventPublisher = module.get(DomainEventPublisher);
 
     const factory = module.get(PaymentGatewayResolver);

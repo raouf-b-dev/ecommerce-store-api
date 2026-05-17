@@ -30,7 +30,7 @@ describe('AddAddressUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -56,7 +56,7 @@ describe('AddAddressUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -79,7 +79,7 @@ describe('AddAddressUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),
@@ -102,7 +102,7 @@ describe('AddAddressUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(
         CustomerTestFactory.createMockCustomer({ id: customerId }),

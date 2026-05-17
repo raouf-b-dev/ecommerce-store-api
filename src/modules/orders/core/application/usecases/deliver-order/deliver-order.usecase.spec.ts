@@ -22,7 +22,9 @@ describe('DeliverOrderUseCase', () => {
     mockOrderRepository = new MockOrderRepository();
     mockPaymentGateway = {
       recordCodPayment: jest.fn(),
-    } as unknown as jest.Mocked<PaymentGateway>;
+      createPaymentIntent: jest.fn(),
+      processRefund: jest.fn(),
+    };
     useCase = new DeliverOrderUseCase(mockOrderRepository, mockPaymentGateway);
   });
 
@@ -356,7 +358,7 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockPaymentGateway.recordCodPayment.mockResolvedValue(
-        Result.success({ id: 1 } as any),
+        Result.success({ id: 1 }),
       );
 
       const result = await useCase.execute({
@@ -385,7 +387,7 @@ describe('DeliverOrderUseCase', () => {
         Result.success(undefined),
       );
       mockPaymentGateway.recordCodPayment.mockResolvedValue(
-        Result.success({ id: 'PAY_COD_002' } as any),
+        Result.success({ id: 2 }),
       );
 
       const result = await useCase.execute({

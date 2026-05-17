@@ -1,6 +1,7 @@
 import { SanitizeInterceptor, sanitizeDeep } from './sanitize.interceptor';
-import { ExecutionContext, CallHandler } from '@nestjs/common';
+import { CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
+import { createMockExecutionContext } from '../testing';
 
 describe('SanitizeInterceptor', () => {
   let interceptor: SanitizeInterceptor;
@@ -8,15 +9,6 @@ describe('SanitizeInterceptor', () => {
   beforeEach(() => {
     interceptor = new SanitizeInterceptor();
   });
-
-  const createMockContext = (body: any): ExecutionContext => {
-    const request = { body };
-    return {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as unknown as ExecutionContext;
-  };
 
   const createMockCallHandler = (): CallHandler => ({
     handle: () => of(undefined),
@@ -31,7 +23,7 @@ describe('SanitizeInterceptor', () => {
       name: '<script>alert("xss")</script>John',
       email: 'john@example.com',
     };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 
@@ -49,7 +41,7 @@ describe('SanitizeInterceptor', () => {
         },
       },
     };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 
@@ -66,7 +58,7 @@ describe('SanitizeInterceptor', () => {
         '<a href="evil">Item 3</a>',
       ],
     };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 
@@ -81,7 +73,7 @@ describe('SanitizeInterceptor', () => {
       active: true,
       metadata: null,
     };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 
@@ -99,7 +91,7 @@ describe('SanitizeInterceptor', () => {
       description: 'A normal product description.',
     };
     const originalBody = { ...body };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 
@@ -108,7 +100,7 @@ describe('SanitizeInterceptor', () => {
   });
 
   it('should handle empty body gracefully', () => {
-    const context = createMockContext(undefined);
+    const context = createMockExecutionContext({});
 
     expect(() => {
       interceptor.intercept(context, createMockCallHandler());
@@ -122,7 +114,7 @@ describe('SanitizeInterceptor', () => {
         { name: 'Item 2', qty: 3 },
       ],
     };
-    const context = createMockContext(body);
+    const context = createMockExecutionContext({ body });
 
     interceptor.intercept(context, createMockCallHandler());
 

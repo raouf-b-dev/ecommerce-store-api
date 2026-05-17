@@ -31,34 +31,34 @@ describe('PostgresPaymentRepository', () => {
   beforeEach(async () => {
     mockQueryBuilder = createMockQueryBuilder<PaymentEntity>();
     mockTransactionManager = createMockTransactionManager({ mockQueryBuilder });
-    mockDataSource = createMockDataSource(mockTransactionManager) as any;
-
-    mockOrmRepo = {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-    } as any;
-
-    mockRefundRepo = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-    } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresPaymentRepository,
         {
           provide: getRepositoryToken(PaymentEntity),
-          useValue: mockOrmRepo,
+          useValue: {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+          },
         },
         {
           provide: getRepositoryToken(RefundEntity),
-          useValue: mockRefundRepo,
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+          },
         },
         {
           provide: DataSource,
-          useValue: mockDataSource,
+          useValue: {
+            manager: mockTransactionManager,
+            getRepository: jest.fn(),
+            transaction: jest
+              .fn()
+              .mockImplementation((cb) => cb(mockTransactionManager)),
+          },
         },
       ],
     }).compile();
@@ -66,6 +66,9 @@ describe('PostgresPaymentRepository', () => {
     repository = module.get<PostgresPaymentRepository>(
       PostgresPaymentRepository,
     );
+    mockOrmRepo = module.get(getRepositoryToken(PaymentEntity));
+    mockRefundRepo = module.get(getRepositoryToken(RefundEntity));
+    mockDataSource = module.get(DataSource);
   });
 
   it('should be defined', () => {

@@ -1,41 +1,30 @@
-import { ExecutionContext, CallHandler } from '@nestjs/common';
+import { CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import {
   RefreshTokenCookieInterceptor,
   REFRESH_COOKIE_NAME,
 } from './refresh-token-cookie.interceptor';
-import { EnvConfigService } from '../../../../config/env-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
+import {
+  createMockExecutionContext,
+  MockEnvConfigService,
+} from '../../../../testing';
 
 describe('RefreshTokenCookieInterceptor', () => {
   let interceptor: RefreshTokenCookieInterceptor;
-  let mockConfigService: jest.Mocked<EnvConfigService>;
+  let mockConfigService: MockEnvConfigService;
 
   beforeEach(() => {
-    mockConfigService = {
-      jwt: {
-        refreshTokenTtl: '7d',
-      },
-    } as any;
-
+    mockConfigService = new MockEnvConfigService();
     interceptor = new RefreshTokenCookieInterceptor(mockConfigService);
   });
 
-  const createMockExecutionContext = (
-    path: string,
-    mockResponse: any,
-  ): ExecutionContext => {
-    return {
-      switchToHttp: () => ({
-        getRequest: () => ({ route: { path } }),
-        getResponse: () => mockResponse,
-      }),
-    } as any;
-  };
-
   it('should set cookie on /auth/login', (done) => {
     const mockResponse = { cookie: jest.fn() };
-    const context = createMockExecutionContext('/auth/login', mockResponse);
+    const context = createMockExecutionContext(
+      { route: { path: '/auth/login' } },
+      mockResponse,
+    );
     const next: CallHandler = {
       handle: () => of(Result.success({ refreshToken: 'token123' })),
     };
@@ -52,7 +41,10 @@ describe('RefreshTokenCookieInterceptor', () => {
 
   it('should clear cookie on /auth/logout', (done) => {
     const mockResponse = { clearCookie: jest.fn() };
-    const context = createMockExecutionContext('/auth/logout', mockResponse);
+    const context = createMockExecutionContext(
+      { route: { path: '/auth/logout' } },
+      mockResponse,
+    );
     const next: CallHandler = {
       handle: () => of(Result.success(undefined)),
     };

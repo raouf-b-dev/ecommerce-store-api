@@ -1,7 +1,7 @@
 // src/modules/carts/infrastructure/repositories/postgres-cart-repository/postgres.cart-repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DeleteResult } from 'typeorm';
 import { CartEntity } from '../../orm/cart.schema';
 import { PostgresCartRepository } from './postgres.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
@@ -22,20 +22,22 @@ describe('PostgresCartRepository', () => {
   );
 
   beforeEach(async () => {
-    mockOrmRepo = {
-      save: jest.fn(),
-      findOne: jest.fn(),
-      delete: jest.fn(),
-    } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresCartRepository,
-        { provide: getRepositoryToken(CartEntity), useValue: mockOrmRepo },
+        {
+          provide: getRepositoryToken(CartEntity),
+          useValue: {
+            save: jest.fn(),
+            findOne: jest.fn(),
+            delete: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     repository = module.get<PostgresCartRepository>(PostgresCartRepository);
+    mockOrmRepo = module.get(getRepositoryToken(CartEntity));
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -144,7 +146,10 @@ describe('PostgresCartRepository', () => {
 
   describe('delete', () => {
     it('should delete cart successfully', async () => {
-      mockOrmRepo.delete.mockResolvedValue({ raw: [], affected: 1 });
+      mockOrmRepo.delete.mockResolvedValue({
+        raw: [],
+        affected: 1,
+      } as DeleteResult);
 
       const result = await repository.delete(mockCartEntity.id);
 
@@ -152,7 +157,10 @@ describe('PostgresCartRepository', () => {
     });
 
     it('should return error if cart not found', async () => {
-      mockOrmRepo.delete.mockResolvedValue({ raw: [], affected: 0 });
+      mockOrmRepo.delete.mockResolvedValue({
+        raw: [],
+        affected: 0,
+      } as DeleteResult);
 
       const result = await repository.delete(0);
 

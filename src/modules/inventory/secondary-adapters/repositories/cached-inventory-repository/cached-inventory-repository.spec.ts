@@ -14,10 +14,11 @@ import { MockInventoryRepository } from '../../../testing/mocks/inventory-reposi
 import { CachedInventoryRepository } from './cached-inventory-repository';
 import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
+import { MockCacheService } from '../../../../../testing';
 
 describe('CachedInventoryRepository', () => {
   let repository: CachedInventoryRepository;
-  let cacheService: jest.Mocked<CacheService>;
+  let cacheService: MockCacheService;
   let postgresRepo: MockInventoryRepository;
 
   const inventoryId = 1;
@@ -40,12 +41,7 @@ describe('CachedInventoryRepository', () => {
 
   beforeEach(() => {
     // Mock CacheService methods
-    cacheService = {
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(undefined),
-      setAll: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn().mockResolvedValue(undefined),
-    } as unknown as jest.Mocked<CacheService>;
+    cacheService = new MockCacheService();
 
     postgresRepo = new MockInventoryRepository();
     repository = new CachedInventoryRepository(cacheService, postgresRepo);

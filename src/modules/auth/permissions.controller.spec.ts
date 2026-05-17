@@ -11,12 +11,13 @@ describe('PermissionsController', () => {
   let mockFindAll: jest.Mocked<FindAllPermissionsUseCase>;
 
   beforeEach(async () => {
-    mockFindAll = { execute: jest.fn() } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PermissionsController],
       providers: [
-        { provide: FindAllPermissionsUseCase, useValue: mockFindAll },
+        {
+          provide: FindAllPermissionsUseCase,
+          useValue: { execute: jest.fn() },
+        },
       ],
     })
       .overrideGuard(AuthGuard)
@@ -26,6 +27,7 @@ describe('PermissionsController', () => {
       .compile();
 
     controller = module.get<PermissionsController>(PermissionsController);
+    mockFindAll = module.get(FindAllPermissionsUseCase);
   });
 
   it('should delegate findAll to FindAllPermissionsUseCase', async () => {

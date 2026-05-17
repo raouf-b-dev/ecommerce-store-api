@@ -1,5 +1,4 @@
 import { RefreshTokenUseCase } from './refresh-token.usecase';
-import { MockJwtVerifierService } from '../../../../../../testing/mocks/jwt-verifier.service.mock';
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
@@ -8,7 +7,10 @@ import { SessionToken } from '../../../domain/entities/session-token';
 import { User } from '../../../domain/entities/user';
 import { Role } from '../../../domain/entities/role';
 import { UserTestFactory } from '../../../../testing/factories/user.factory';
-import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  MockJwtVerifierService,
+  ResultAssertionHelper,
+} from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
@@ -28,8 +30,8 @@ describe('RefreshTokenUseCase', () => {
     roleRepository = new MockRoleRepository();
 
     usecase = new RefreshTokenUseCase(
-      jwtVerifierService as any,
-      jwtSignerService as any,
+      jwtVerifierService,
+      jwtSignerService,
       sessionTokenRepository,
       userRepository,
       roleRepository,
@@ -50,9 +52,12 @@ describe('RefreshTokenUseCase', () => {
 
     // Mock the JWT verifier payload
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
-      sub: 1,
+      sub: '1',
       sessionId: sessionId,
-      typ: 'refresh',
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
     const expiresAt = new Date();
@@ -99,8 +104,12 @@ describe('RefreshTokenUseCase', () => {
     const sessionId = 'mock-session-id';
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
-      sub: 1,
+      sub: '1',
       sessionId,
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
     const expiresAt = new Date();
@@ -124,8 +133,12 @@ describe('RefreshTokenUseCase', () => {
     const sessionId = 'mock-session-id';
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
-      sub: 1,
+      sub: '1',
       sessionId,
+      typ: 'Refresh',
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
     // Session is valid but was created with a DIFFERENT token (rotation happened)

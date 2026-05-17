@@ -3,6 +3,7 @@ import { CreateRoleUseCase } from './create-role.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { RoleTestFactory } from '../../../../testing/factories/role.factory';
 
@@ -49,7 +50,7 @@ describe('CreateRoleUseCase', () => {
     // Arrange
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(null));
     mockRoleRepo.save.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     // Act
@@ -87,7 +88,7 @@ describe('CreateRoleUseCase', () => {
   it('should return failure if findByCode fails', async () => {
     // Arrange
     mockRoleRepo.findByCode.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     // Act

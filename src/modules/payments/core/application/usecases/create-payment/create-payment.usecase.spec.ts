@@ -33,7 +33,7 @@ describe('CreatePaymentUseCase', () => {
     useCase = module.get<CreatePaymentUseCase>(CreatePaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
 
     const factory = module.get(PaymentGatewayResolver);
     (factory.getGateway as jest.Mock).mockReturnValue({

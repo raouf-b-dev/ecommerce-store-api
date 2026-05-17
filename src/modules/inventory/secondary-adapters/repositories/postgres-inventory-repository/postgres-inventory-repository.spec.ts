@@ -37,30 +37,39 @@ describe('PostgresInventoryRepository', () => {
     mockQueryBuilder = createMockQueryBuilder<InventoryEntity>();
     mockTransactionManager = createMockTransactionManager({ mockQueryBuilder });
 
-    mockDataSource = createMockDataSource(mockTransactionManager) as any;
-
-    mockOrmRepo = {
-      findOne: jest.fn(),
-      delete: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-    } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresInventoryRepository,
         {
           provide: getRepositoryToken(InventoryEntity),
-          useValue: mockOrmRepo,
+          useValue: {
+            findOne: jest.fn(),
+            delete: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+          },
         },
         {
           provide: DataSource,
-          useValue: mockDataSource,
+          useValue: {
+            transaction: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     repository = module.get<PostgresInventoryRepository>(
       PostgresInventoryRepository,
+    );
+    mockOrmRepo = module.get(getRepositoryToken(InventoryEntity));
+    mockDataSource = module.get(DataSource);
+
+    mockDataSource.transaction.mockImplementation(
+      (isolationOrCb: unknown, cb?: unknown) => {
+        const callback = (
+          typeof isolationOrCb === 'function' ? isolationOrCb : cb
+        ) as (mgr: unknown) => Promise<unknown>;
+        return callback(mockTransactionManager);
+      },
     );
   });
 

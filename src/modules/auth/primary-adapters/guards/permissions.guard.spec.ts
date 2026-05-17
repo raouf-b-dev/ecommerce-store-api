@@ -4,6 +4,11 @@ import { Reflector } from '@nestjs/core';
 import { ResolveRolePermissionsService } from '../../core/application/services/resolve-role-permissions.service';
 import { RolePermissionsVO } from '../../core/domain/value-objects/role-permissions';
 import { Result } from '../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import {
+  createMockExecutionContext,
+  createMockRequestWithUser,
+} from '../../../../testing';
 
 describe('PermissionsGuard', () => {
   let guard: PermissionsGuard;
@@ -11,35 +16,34 @@ describe('PermissionsGuard', () => {
   let mockResolvePermissionsService: jest.Mocked<ResolveRolePermissionsService>;
 
   beforeEach(async () => {
-    mockReflector = {
-      getAllAndOverride: jest.fn(),
-    } as any;
-
-    mockResolvePermissionsService = {
-      execute: jest.fn(),
-    } as any;
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PermissionsGuard,
-        { provide: Reflector, useValue: mockReflector },
+        {
+          provide: Reflector,
+          useValue: {
+            getAllAndOverride: jest.fn(),
+            get: jest.fn(),
+            getAll: jest.fn(),
+            getAllAndMerge: jest.fn(),
+          },
+        },
         {
           provide: ResolveRolePermissionsService,
-          useValue: mockResolvePermissionsService,
+          useValue: { execute: jest.fn() },
         },
       ],
     }).compile();
 
     guard = module.get<PermissionsGuard>(PermissionsGuard);
+    mockReflector = module.get(Reflector);
+    mockResolvePermissionsService = module.get(ResolveRolePermissionsService);
   });
 
   it('should return true if no permissions required', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-    } as any;
+    const context = createMockExecutionContext();
 
     expect(await guard.canActivate(context)).toBe(true);
   });
@@ -47,13 +51,7 @@ describe('PermissionsGuard', () => {
   it('should return false if user is missing', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({}),
-      }),
-    } as any;
+    const context = createMockExecutionContext({});
 
     expect(await guard.canActivate(context)).toBe(false);
   });
@@ -65,13 +63,9 @@ describe('PermissionsGuard', () => {
       Result.success(RolePermissionsVO.fromCodes(['manage_users'])),
     );
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: { role: 'ADMIN' } }),
-      }),
-    } as any;
+    const context = createMockExecutionContext(
+      createMockRequestWithUser({ role: 'ADMIN' }),
+    );
 
     expect(await guard.canActivate(context)).toBe(false);
   });
@@ -85,34 +79,23 @@ describe('PermissionsGuard', () => {
       ),
     );
 
-    const request = { user: { role: 'ADMIN' } } as any;
-
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue(request),
-      }),
-    } as any;
+    const request = createMockRequestWithUser({ role: 'ADMIN' });
+    const context = createMockExecutionContext(request);
 
     expect(await guard.canActivate(context)).toBe(true);
-    expect(request.userPermissions.has('manage_roles')).toBe(true);
+    expect(request.userPermissions?.has('manage_roles')).toBe(true);
   });
 
   it('should return false if resolving permissions fails', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
     mockResolvePermissionsService.execute.mockResolvedValue(
-      Result.failure(new Error('Service Error') as any),
+      ErrorFactory.ServiceError('Service Error'),
     );
 
-    const context = {
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user: { role: 'ADMIN' } }),
-      }),
-    } as any;
+    const context = createMockExecutionContext(
+      createMockRequestWithUser({ role: 'ADMIN' }),
+    );
 
     expect(await guard.canActivate(context)).toBe(false);
   });

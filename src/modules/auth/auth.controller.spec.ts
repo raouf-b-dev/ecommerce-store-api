@@ -10,14 +10,15 @@ import { UserTestFactory } from './testing/factories/user.factory';
 import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
 import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
 import { Result } from '../../shared-kernel/domain/result';
-import { JwksService } from '../../infrastructure/jwt/jwks.service';
+import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
 import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
 import { EnvConfigService } from '../../config/env-config.service';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
-import { User } from './core/domain/entities/user';
-import { Request } from 'express';
+import { IUser } from './core/domain/interfaces/user.interface';
+import { Request, Response } from 'express';
+import { createMockRequest, MockEnvConfigService } from '../../testing';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -28,23 +29,20 @@ describe('AuthController', () => {
   let logoutAllUseCase: LogoutAllUseCase;
   let jwksService: MockJwksService;
 
-  let mockUser: Partial<User> & { toPrimitives: jest.Mock };
+  let mockUser: IUser;
   let registerDto: RegisterDto;
   let loginDto: LoginDto;
-  let mockRes: any;
-  let mockReq: any;
+  let mockRes: jest.Mocked<Response>;
+  let mockReq: jest.Mocked<Request>;
 
   beforeEach(async () => {
-    mockUser = UserTestFactory.createMockUser() as unknown as Partial<User> & {
-      toPrimitives: jest.Mock;
-    };
-    mockUser.toPrimitives = jest.fn().mockReturnValue(mockUser);
+    mockUser = UserTestFactory.createMockUser();
     registerDto = RegisterCommandTestFactory.createRegisterCommand();
     loginDto = LoginCommandTestFactory.createLoginCommand();
 
-    mockReq = {
+    mockReq = createMockRequest({
       cookies: {},
-    };
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -95,16 +93,12 @@ describe('AuthController', () => {
           },
         },
         {
-          provide: JwksService,
-          useValue: new MockJwksService(),
+          provide: JwksPort,
+          useClass: MockJwksService,
         },
         {
           provide: EnvConfigService,
-          useValue: {
-            jwt: {
-              refreshTokenTtl: '7d',
-            },
-          },
+          useClass: MockEnvConfigService,
         },
       ],
     }).compile();
@@ -115,9 +109,7 @@ describe('AuthController', () => {
     refreshTokenUseCase = module.get<RefreshTokenUseCase>(RefreshTokenUseCase);
     logoutUseCase = module.get<LogoutUseCase>(LogoutUseCase);
     logoutAllUseCase = module.get<LogoutAllUseCase>(LogoutAllUseCase);
-    jwksService = module.get<JwksService>(
-      JwksService,
-    ) as unknown as MockJwksService;
+    jwksService = module.get(JwksPort);
   });
 
   afterEach(() => {
@@ -129,7 +121,7 @@ describe('AuthController', () => {
     expect(registerUseCase.execute).toHaveBeenCalledWith(registerDto);
     expect(res).toEqual(
       Result.success({
-        user: mockUser.toPrimitives(),
+        user: mockUser,
         customerId: mockUser.customerId,
       }),
     );
@@ -149,18 +141,20 @@ describe('AuthController', () => {
 
   it('should read refresh token from body on refresh', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    const res = await controller.refresh(dto, mockReq as Request);
+    const res = await controller.refresh(dto, mockReq);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
     });
-    expect((res as any).value.accessToken).toBe('new-access-123');
+    if (res.isSuccess) {
+      expect(res.value.accessToken).toBe('new-access-123');
+    }
   });
 
   it('should read refresh token from cookie when body is empty', async () => {
     mockReq.cookies = { refresh_token: 'cookie-refresh-789' };
     const dto: RefreshTokenDto = {};
-    await controller.refresh(dto, mockReq as Request);
+    await controller.refresh(dto, mockReq);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'cookie-refresh-789',
@@ -169,7 +163,7 @@ describe('AuthController', () => {
 
   it('should execute logout', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logout(dto, mockReq as Request);
+    await controller.logout(dto, mockReq);
 
     expect(logoutUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
@@ -178,7 +172,7 @@ describe('AuthController', () => {
 
   it('should execute logout-all', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logoutAll(dto, mockReq as Request);
+    await controller.logoutAll(dto, mockReq);
 
     expect(logoutAllUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',

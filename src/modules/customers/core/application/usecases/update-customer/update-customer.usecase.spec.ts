@@ -33,7 +33,7 @@ describe('UpdateCustomerUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createMockCustomer({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(mockCustomerData);
       mockCustomerRepository.update.mockResolvedValue(
@@ -59,7 +59,7 @@ describe('UpdateCustomerUseCase', () => {
       const mockCustomerData = CustomerTestFactory.createMockCustomer({
         id: customerId,
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(mockCustomerData);
       mockCustomerRepository.update.mockResolvedValue(
@@ -84,7 +84,7 @@ describe('UpdateCustomerUseCase', () => {
         id: customerId,
         phone: '+9876543210',
       });
-      const mockCustomer = Customer.fromPrimitives(mockCustomerData as any);
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
 
       mockCustomerRepository.mockSuccessfulFind(mockCustomerData);
       mockCustomerRepository.update.mockResolvedValue(

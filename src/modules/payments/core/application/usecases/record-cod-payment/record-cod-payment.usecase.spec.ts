@@ -26,7 +26,7 @@ describe('RecordCodPaymentUseCase', () => {
     useCase = module.get<RecordCodPaymentUseCase>(RecordCodPaymentUseCase);
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
-    ) as unknown as MockPaymentRepository;
+    ) as MockPaymentRepository;
   });
 
   afterEach(() => {

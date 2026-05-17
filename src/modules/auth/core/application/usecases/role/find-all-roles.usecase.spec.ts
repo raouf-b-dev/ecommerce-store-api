@@ -3,6 +3,7 @@ import { FindAllRolesUseCase } from './find-all-roles.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { RoleTestFactory } from '../../../../testing/factories/role.factory';
 
@@ -43,7 +44,7 @@ describe('FindAllRolesUseCase', () => {
   it('should return failure if repository fails', async () => {
     // Arrange
     mockRoleRepo.findAll.mockResolvedValue(
-      Result.failure(new Error('DB Error') as any),
+      ErrorFactory.RepositoryError('DB Error'),
     );
 
     // Act

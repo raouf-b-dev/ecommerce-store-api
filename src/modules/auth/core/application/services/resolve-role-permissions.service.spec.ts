@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ResolveRolePermissionsService } from './resolve-role-permissions.service';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
 
 describe('ResolveRolePermissionsService', () => {
@@ -30,7 +31,9 @@ describe('ResolveRolePermissionsService', () => {
     mockRoleRepository.findPermissionCodesByRoleCode.mockResolvedValue(
       Result.success([]),
     );
-    const result = await service.execute(undefined as any);
+    const result = await service.execute(
+      undefined as unknown as string, // Intentional negative test for missing input
+    );
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
       expect(result.value.codes).toEqual([]);
@@ -39,7 +42,7 @@ describe('ResolveRolePermissionsService', () => {
 
   it('should return empty RolePermissionsVO if roleRepository fails', async () => {
     mockRoleRepository.findPermissionCodesByRoleCode.mockResolvedValue(
-      Result.failure(new Error('DB error') as any),
+      ErrorFactory.RepositoryError('DB error'),
     );
 
     const result = await service.execute('ADMIN');

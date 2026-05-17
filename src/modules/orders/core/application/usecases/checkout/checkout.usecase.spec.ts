@@ -14,6 +14,7 @@ import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
 import { Customer } from '../../../../../customers/core/domain/entities/customer';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
@@ -176,7 +177,7 @@ describe('CheckoutUseCase', () => {
 
   it('should return error when validation fails', async () => {
     validateCheckoutUseCase.execute.mockResolvedValue(
-      Result.failure({ message: 'Validation failed' } as any),
+      ErrorFactory.UseCaseError('Validation failed'),
     );
 
     const command: CheckoutCommand = {

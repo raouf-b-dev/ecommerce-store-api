@@ -1,31 +1,26 @@
 import { CorrelationIdMiddleware } from './correlation-id.middleware';
 import { CorrelationService } from '../correlation/correlation.service';
 import { Request, Response } from 'express';
+import {
+  MockCorrelationService,
+  createMockRequest,
+  createMockResponse,
+} from '../../../testing';
 
 describe('CorrelationIdMiddleware', () => {
   let middleware: CorrelationIdMiddleware;
-  let correlationService: jest.Mocked<CorrelationService>;
-  let req: Partial<Request>;
-  let res: Partial<Response>;
+  let correlationService: MockCorrelationService;
+  let req: jest.Mocked<Request>;
+  let res: jest.Mocked<Response>;
   let next: jest.Mock;
 
   beforeEach(() => {
-    correlationService = {
-      generate: jest.fn().mockReturnValue('generated-uuid'),
-      run: jest.fn().mockImplementation((id, fn) => fn()),
-      getId: jest.fn(),
-    } as unknown as jest.Mocked<CorrelationService>;
+    correlationService = new MockCorrelationService();
 
     middleware = new CorrelationIdMiddleware(correlationService);
 
-    req = {
-      headers: {},
-    };
-
-    res = {
-      setHeader: jest.fn(),
-    };
-
+    req = createMockRequest();
+    res = createMockResponse();
     next = jest.fn();
   });
 
@@ -34,9 +29,9 @@ describe('CorrelationIdMiddleware', () => {
   });
 
   it('should use existing X-Request-Id header if present', () => {
-    req.headers!['x-request-id'] = 'existing-id';
+    req.headers['x-request-id'] = 'existing-id';
 
-    middleware.use(req as Request, res as Response, next);
+    middleware.use(req, res, next);
 
     expect(correlationService.generate).not.toHaveBeenCalled();
     expect(req['correlationId']).toBe('existing-id');
@@ -49,9 +44,9 @@ describe('CorrelationIdMiddleware', () => {
   });
 
   it('should use first element if X-Request-Id header is an array', () => {
-    req.headers!['x-request-id'] = ['array-id-1', 'array-id-2'];
+    req.headers['x-request-id'] = ['array-id-1', 'array-id-2'];
 
-    middleware.use(req as Request, res as Response, next);
+    middleware.use(req, res, next);
 
     expect(correlationService.generate).not.toHaveBeenCalled();
     expect(req['correlationId']).toBe('array-id-1');
@@ -64,7 +59,7 @@ describe('CorrelationIdMiddleware', () => {
   });
 
   it('should generate new id if X-Request-Id header is missing', () => {
-    middleware.use(req as Request, res as Response, next);
+    middleware.use(req, res, next);
 
     expect(correlationService.generate).toHaveBeenCalled();
     expect(req['correlationId']).toBe('generated-uuid');

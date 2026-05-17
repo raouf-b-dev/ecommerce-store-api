@@ -1,3 +1,4 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { ExpirePendingOrdersUseCase } from './expire-pending-orders.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
@@ -8,21 +9,30 @@ import { Order } from '../../../domain/entities/order';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { OrderRepository } from '../../../domain/repositories/order-repository';
 
 describe('ExpirePendingOrdersUseCase', () => {
   let useCase: ExpirePendingOrdersUseCase;
   let mockOrderRepository: MockOrderRepository;
   let mockCancelOrderUseCase: jest.Mocked<CancelOrderUseCase>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockOrderRepository = new MockOrderRepository();
-    mockCancelOrderUseCase = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<CancelOrderUseCase>;
-    useCase = new ExpirePendingOrdersUseCase(
-      mockOrderRepository,
-      mockCancelOrderUseCase,
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ExpirePendingOrdersUseCase,
+        { provide: OrderRepository, useValue: mockOrderRepository },
+        {
+          provide: CancelOrderUseCase,
+          useValue: { execute: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    useCase = module.get<ExpirePendingOrdersUseCase>(
+      ExpirePendingOrdersUseCase,
     );
+    mockCancelOrderUseCase = module.get(CancelOrderUseCase);
   });
 
   afterEach(() => {
@@ -38,15 +48,12 @@ describe('ExpirePendingOrdersUseCase', () => {
       OrderTestFactory.createPendingPaymentOrder({ id: 2 }),
     );
 
-    mockOrderRepository.findByStatusBefore.mockResolvedValue({
-      isFailure: false,
-      isSuccess: true,
-      value: [pendingOrder1, pendingOrder2],
-      error: undefined,
-    } as any);
+    mockOrderRepository.findByStatusBefore.mockResolvedValue(
+      Result.success([pendingOrder1, pendingOrder2]),
+    );
 
     mockCancelOrderUseCase.execute.mockResolvedValue(
-      Result.success({ id: 1, status: OrderStatus.CANCELLED } as any),
+      Result.success(OrderTestFactory.createCancelledOrder({ id: 1 })),
     );
 
     const result = await useCase.execute({ expirationMinutes: 30 });
@@ -66,12 +73,9 @@ describe('ExpirePendingOrdersUseCase', () => {
   });
 
   it('should return failure if repository fails to find orders', async () => {
-    mockOrderRepository.findByStatusBefore.mockResolvedValue({
-      isFailure: true,
-      isSuccess: false,
-      error: new RepositoryError('DB Error'),
-      value: undefined,
-    } as any);
+    mockOrderRepository.findByStatusBefore.mockResolvedValue(
+      Result.failure(new RepositoryError('DB Error')),
+    );
 
     const result = await useCase.execute({ expirationMinutes: 30 });
 
@@ -91,18 +95,15 @@ describe('ExpirePendingOrdersUseCase', () => {
       OrderTestFactory.createPendingPaymentOrder({ id: 2 }),
     );
 
-    mockOrderRepository.findByStatusBefore.mockResolvedValue({
-      isFailure: false,
-      isSuccess: true,
-      value: [pendingOrder1, pendingOrder2],
-      error: undefined,
-    } as any);
+    mockOrderRepository.findByStatusBefore.mockResolvedValue(
+      Result.success([pendingOrder1, pendingOrder2]),
+    );
 
     // First order fails, second succeeds
     mockCancelOrderUseCase.execute
       .mockResolvedValueOnce(Result.failure(new UseCaseError('Cancel failed')))
       .mockResolvedValueOnce(
-        Result.success({ id: 2, status: OrderStatus.CANCELLED } as any),
+        Result.success(OrderTestFactory.createCancelledOrder({ id: 2 })),
       );
 
     const result = await useCase.execute({ expirationMinutes: 30 });
@@ -115,12 +116,9 @@ describe('ExpirePendingOrdersUseCase', () => {
   });
 
   it('should return zero counts when no pending orders found', async () => {
-    mockOrderRepository.findByStatusBefore.mockResolvedValue({
-      isFailure: false,
-      isSuccess: true,
-      value: [],
-      error: undefined,
-    } as any);
+    mockOrderRepository.findByStatusBefore.mockResolvedValue(
+      Result.success([]),
+    );
 
     const result = await useCase.execute({ expirationMinutes: 30 });
 
