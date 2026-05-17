@@ -103,7 +103,7 @@ export class InventoryCommandTestFactory {
   static createInvalidAdjustStockCommand(): AdjustStockCommand {
     return {
       quantity: -10,
-      type: 'INVALID_TYPE' as any,
+      type: 'INVALID_TYPE' as unknown as StockAdjustmentType,
       reason: '',
     };
   }

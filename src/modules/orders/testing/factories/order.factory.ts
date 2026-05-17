@@ -1,6 +1,7 @@
 // src/modules/order/testing/factories/order.test.factory.ts
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { Order, OrderProps } from '../../core/domain/entities/order';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderTestFactory {
@@ -211,5 +212,47 @@ export class OrderTestFactory {
       paymentMethod,
       ...overrides,
     });
+  }
+
+  static createOrderProps(overrides?: Partial<OrderProps>): OrderProps {
+    const baseProps: OrderProps = {
+      id: 1,
+      customerId: 1,
+      paymentId: null,
+      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      shippingAddressId: 1,
+      items: [
+        {
+          id: 1,
+          productId: 1,
+          productName: 'Product 1',
+          quantity: 1,
+          unitPrice: 10,
+        },
+      ],
+      shippingAddress: {
+        id: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        street: '123 Main Street',
+        street2: null,
+        city: 'New York',
+        state: 'NY',
+        postalCode: '10001',
+        country: 'dz',
+        phone: '+1234567890',
+        deliveryInstructions: null,
+      },
+      customerNotes: 'Please ring doorbell upon delivery',
+      status: OrderStatus.PENDING_PAYMENT,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+    };
+
+    return { ...baseProps, ...overrides };
+  }
+
+  static createOrderEntity(overrides?: Partial<OrderProps>): Order {
+    return new Order(this.createOrderProps(overrides));
   }
 }

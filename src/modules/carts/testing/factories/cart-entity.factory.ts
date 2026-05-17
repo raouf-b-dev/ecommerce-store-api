@@ -26,7 +26,7 @@ export class CartEntityTestFactory {
       price: 100,
       quantity: 1,
       imageUrl: 'http://example.com/image.jpg',
-      cart: null as any,
+      cart: null as unknown as CartEntity,
     };
 
     return { ...defaultEntity, ...overrides };
