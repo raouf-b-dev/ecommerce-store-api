@@ -7,7 +7,7 @@ import {
 } from './inventory.token';
 import { PostgresInventoryRepository } from './secondary-adapters/repositories/postgres-inventory-repository/postgres-inventory-repository';
 import { CachedInventoryRepository } from './secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 import { InventoryRepository } from './core/domain/repositories/inventory.repository';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { InventoryEntity } from './secondary-adapters/orm/inventory.schema';
@@ -47,12 +47,12 @@ import { ReservationRepository } from './core/domain/repositories/reservation.re
     {
       provide: CACHED_INVENTORY_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresInventoryRepository,
       ) => {
         return new CachedInventoryRepository(cacheService, postgresRepo);
       },
-      inject: [CacheService, POSTGRES_INVENTORY_REPOSITORY],
+      inject: [CachePort, POSTGRES_INVENTORY_REPOSITORY],
     },
 
     // Default Repository Binding

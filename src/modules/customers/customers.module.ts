@@ -10,7 +10,7 @@ import {
 } from './customer.tokens';
 import { PostgresCustomerRepository } from './secondary-adapters/repositories/postgres-customer-repository/postgres.customer-repository';
 import { CachedCustomerRepository } from './secondary-adapters/repositories/cached-customer-repository/cached.customer-repository';
-import { CacheService } from '../../infrastructure/redis/cache/cache.service';
+import { CachePort } from '../../infrastructure/redis/cache/cache.port';
 import { CustomerRepository } from './core/domain/repositories/customer.repository';
 
 // Use Cases
@@ -40,7 +40,7 @@ import { SetDefaultAddressUseCase } from './core/application/usecases/set-defaul
     {
       provide: CACHED_CUSTOMER_REPOSITORY,
       useFactory: (
-        cacheService: CacheService,
+        cacheService: CachePort,
         postgresRepo: PostgresCustomerRepository,
       ) => {
         return new CachedCustomerRepository(
@@ -49,7 +49,7 @@ import { SetDefaultAddressUseCase } from './core/application/usecases/set-defaul
           new Logger(CachedCustomerRepository.name),
         );
       },
-      inject: [CacheService, POSTGRES_CUSTOMER_REPOSITORY],
+      inject: [CachePort, POSTGRES_CUSTOMER_REPOSITORY],
     },
 
     // Default Repository Binding

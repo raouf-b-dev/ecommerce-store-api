@@ -5,13 +5,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtVerifierService } from '../infrastructure/jwt/jwt-verifier.service';
+import { JwtVerifierPort } from '../infrastructure/jwt/ports/jwt-verifier.port';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwtVerifierService: JwtVerifierService,
+    private jwtVerifierService: JwtVerifierPort,
     private reflector: Reflector,
   ) {}
 
@@ -38,7 +38,7 @@ export class AuthGuard implements CanActivate {
       // the payload contains sub, email, role, customerId
       // we attach exactly what current-user.decorator.ts expects
       request['user'] = {
-        userId: payload.sub,
+        userId: Number(payload.sub),
         email: payload.email,
         role: payload.role,
         customerId: payload.customerId ?? null,

@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtVerifierService } from '../../../../../../infrastructure/jwt/jwt-verifier.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
+import { JwtVerifierPort } from '../../../../../../infrastructure/jwt/ports/jwt-verifier.port';
 
 @Injectable()
 export class LogoutUseCase extends UseCase<
@@ -14,7 +14,7 @@ export class LogoutUseCase extends UseCase<
   private readonly logger = new Logger(LogoutUseCase.name);
 
   constructor(
-    private readonly jwtVerifierService: JwtVerifierService,
+    private readonly jwtVerifierService: JwtVerifierPort,
     private readonly sessionTokenRepository: SessionTokenRepository,
   ) {
     super();
@@ -28,7 +28,7 @@ export class LogoutUseCase extends UseCase<
         input.refreshToken,
       );
       const sessionId = payload.sessionId;
-      const userId = payload.sub;
+      const userId = Number(payload.sub);
 
       const sessionResult =
         await this.sessionTokenRepository.findById(sessionId);

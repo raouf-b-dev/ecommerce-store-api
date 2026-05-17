@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtSignerService } from '../../../../../../infrastructure/jwt/jwt-signer.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -10,6 +9,8 @@ import { SessionTokenRepository } from '../../../domain/repositories/session-tok
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { JwtSignerPort } from '../../ports/jwt-signer.port';
+
 export interface LoginCommand {
   email: string;
   password: string;
@@ -28,7 +29,7 @@ export class LoginUserUseCase extends UseCase<
     private readonly roleRepository: RoleRepository,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
-    private readonly jwtSignerService: JwtSignerService,
+    private readonly jwtSignerService: JwtSignerPort,
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
