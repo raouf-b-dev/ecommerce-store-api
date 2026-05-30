@@ -13,17 +13,13 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
 import { PermissionsGuard } from './primary-adapters/guards/permissions.guard';
 import { RequirePermissions } from './primary-adapters/decorators/require-permissions.decorator';
-import {
-  CreateRoleUseCase,
-  CreateRoleDTO,
-} from './core/application/usecases/role/create-role.usecase';
-import {
-  UpdateRoleUseCase,
-  UpdateRoleDTO,
-} from './core/application/usecases/role/update-role.usecase';
+import { CreateRoleUseCase } from './core/application/usecases/role/create-role.usecase';
+import { UpdateRoleUseCase } from './core/application/usecases/role/update-role.usecase';
 import { DeleteRoleUseCase } from './core/application/usecases/role/delete-role.usecase';
 import { FindAllRolesUseCase } from './core/application/usecases/role/find-all-roles.usecase';
 import { FindRoleByIdUseCase } from './core/application/usecases/role/find-role-by-id.usecase';
+import { CreateRoleDto } from './primary-adapters/dto/create-role.dto';
+import { UpdateRoleDto } from './primary-adapters/dto/update-role.dto';
 
 @ApiTags('Roles')
 @ApiBearerAuth()
@@ -50,16 +46,16 @@ export class RolesController {
   }
 
   @Post()
-  async create(@Body() dto: CreateRoleDTO) {
+  async create(@Body() dto: CreateRoleDto) {
     return this.createRoleUseCase.execute(dto);
   }
 
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Omit<UpdateRoleDTO, 'id'>,
+    @Body() dto: UpdateRoleDto,
   ) {
-    return this.updateRoleUseCase.execute({ id, ...dto });
+    return this.updateRoleUseCase.execute({ ...dto, id });
   }
 
   @Delete(':id')

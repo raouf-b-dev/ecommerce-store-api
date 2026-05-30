@@ -26,47 +26,35 @@ export class RedisIndexInitializerService implements OnModuleInit {
   constructor(private readonly redisSearch: RedisSearchClient) {}
 
   async onModuleInit() {
-    await this.ensureIndex(
-      ORDER_REDIS.INDEX,
-      OrderIndexSchema,
-      ORDER_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      PRODUCT_REDIS.INDEX,
-      ProductIndexSchema,
-      PRODUCT_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      INVENTORY_REDIS.INDEX,
-      InventoryIndexSchema,
-      INVENTORY_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      CART_REDIS.INDEX,
-      CartIndexSchema,
-      CART_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      PAYMENT_REDIS.INDEX,
-      PaymentIndexSchema,
-      PAYMENT_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      CUSTOMER_REDIS.INDEX,
-      CustomerIndexSchema,
-      CUSTOMER_REDIS.CACHE_KEY,
-    );
-
-    await this.ensureIndex(
-      USER_REDIS.INDEX,
-      UserIndexSchema,
-      USER_REDIS.CACHE_KEY,
-    );
+    await Promise.all([
+      this.ensureIndex(
+        ORDER_REDIS.INDEX,
+        OrderIndexSchema,
+        ORDER_REDIS.CACHE_KEY,
+      ),
+      this.ensureIndex(
+        PRODUCT_REDIS.INDEX,
+        ProductIndexSchema,
+        PRODUCT_REDIS.CACHE_KEY,
+      ),
+      this.ensureIndex(
+        INVENTORY_REDIS.INDEX,
+        InventoryIndexSchema,
+        INVENTORY_REDIS.CACHE_KEY,
+      ),
+      this.ensureIndex(CART_REDIS.INDEX, CartIndexSchema, CART_REDIS.CACHE_KEY),
+      this.ensureIndex(
+        PAYMENT_REDIS.INDEX,
+        PaymentIndexSchema,
+        PAYMENT_REDIS.CACHE_KEY,
+      ),
+      this.ensureIndex(
+        CUSTOMER_REDIS.INDEX,
+        CustomerIndexSchema,
+        CUSTOMER_REDIS.CACHE_KEY,
+      ),
+      this.ensureIndex(USER_REDIS.INDEX, UserIndexSchema, USER_REDIS.CACHE_KEY),
+    ]);
   }
 
   private async ensureIndex(index: string, schema: any, prefix: string) {

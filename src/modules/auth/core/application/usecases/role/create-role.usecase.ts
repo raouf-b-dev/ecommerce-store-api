@@ -9,7 +9,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { Role, IRole } from '../../../domain/entities/role';
 
-export interface CreateRoleDTO {
+export interface CreateRoleCommand {
   code: string;
   name: string;
   permissions: string[];
@@ -17,7 +17,7 @@ export interface CreateRoleDTO {
 
 @Injectable()
 export class CreateRoleUseCase extends UseCase<
-  CreateRoleDTO,
+  CreateRoleCommand,
   IRole,
   UseCaseError
 > {
@@ -25,7 +25,7 @@ export class CreateRoleUseCase extends UseCase<
     super();
   }
 
-  async execute(dto: CreateRoleDTO): Promise<Result<IRole, UseCaseError>> {
+  async execute(dto: CreateRoleCommand): Promise<Result<IRole, UseCaseError>> {
     const existing = await this.roleRepository.findByCode(dto.code);
     if (isFailure(existing)) {
       return ErrorFactory.UseCaseError(

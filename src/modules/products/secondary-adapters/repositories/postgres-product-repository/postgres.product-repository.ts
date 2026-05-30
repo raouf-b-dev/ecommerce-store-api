@@ -75,12 +75,7 @@ export class PostgresProductRepository implements ProductRepository {
   }
   async findAll(): Promise<Result<IProduct[], RepositoryError>> {
     try {
-      const productsList = await this.ormRepo.find();
-
-      if (productsList.length <= 0) {
-        return ErrorFactory.RepositoryError('Did not find any products');
-      }
-      const products = productsList;
+      const products = await this.ormRepo.find();
       return Result.success<IProduct[]>(products);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find products`, error);

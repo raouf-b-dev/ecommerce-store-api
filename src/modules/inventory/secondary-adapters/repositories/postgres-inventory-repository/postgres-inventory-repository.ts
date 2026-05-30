@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
@@ -26,7 +26,11 @@ export class PostgresInventoryRepository implements InventoryRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Inventory not found');
+        return ErrorFactory.RepositoryError(
+          'Inventory not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       const inventory = InventoryMapper.toDomain(entity);
@@ -47,6 +51,8 @@ export class PostgresInventoryRepository implements InventoryRepository {
       if (!entity) {
         return ErrorFactory.RepositoryError(
           `Inventory not found for product ${productId}`,
+          undefined,
+          HttpStatus.NOT_FOUND,
         );
       }
 
@@ -205,7 +211,11 @@ export class PostgresInventoryRepository implements InventoryRepository {
       const deleteResult = await this.ormRepo.delete({ id });
 
       if (deleteResult.affected === 0) {
-        return ErrorFactory.RepositoryError('Inventory not found');
+        return ErrorFactory.RepositoryError(
+          'Inventory not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       return Result.success<void>(undefined);

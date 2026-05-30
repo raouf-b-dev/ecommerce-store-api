@@ -1,5 +1,5 @@
 import { Order } from '../entities/order';
-import { CheckoutCartInfo } from '../../application/ports/cart.gateway';
+import { CheckoutCartInfo } from '../interfaces/checkout-cart';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 import { OrderItemProps } from '../entities/order-items';

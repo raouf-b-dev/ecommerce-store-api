@@ -34,6 +34,8 @@ import { FindAllRolesUseCase } from './core/application/usecases/role/find-all-r
 import { FindRoleByIdUseCase } from './core/application/usecases/role/find-role-by-id.usecase';
 import { ActivateUserUseCase } from './core/application/usecases/activate-user/activate-user.usecase';
 import { DeactivateUserUseCase } from './core/application/usecases/deactivate-user/deactivate-user.usecase';
+import { SeedDemoAuthUsersUseCase } from './core/application/seed/seed-demo-auth-users.usecase';
+import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.usecase';
 import { RefreshTokenCookieInterceptor } from './primary-adapters/interceptors/refresh-token-cookie.interceptor';
 import { RolesController } from './roles.controller';
 import { PermissionsController } from './permissions.controller';
@@ -133,6 +135,8 @@ import { CachePort } from '../../infrastructure/redis/cache/cache.port';
     FindRoleByIdUseCase,
     ActivateUserUseCase,
     DeactivateUserUseCase,
+    SeedDemoAuthUsersUseCase,
+    SeedSuperAdminUseCase,
     RefreshTokenCookieInterceptor,
   ],
   exports: [ResolveRolePermissionsService],

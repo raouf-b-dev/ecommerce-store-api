@@ -16,6 +16,7 @@ import { CreateProductUseCase } from './core/application/usecases/create-product
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
+import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalog.usecase';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductEntity]), RedisModule],
@@ -52,6 +53,7 @@ import { UpdateProductUseCase } from './core/application/usecases/update-product
     DeleteProductUseCase,
     ListProductsUseCase,
     UpdateProductUseCase,
+    SeedDemoCatalogUseCase,
   ],
   exports: [ProductRepository, GetProductUseCase],
 })

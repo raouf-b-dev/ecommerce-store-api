@@ -6,25 +6,15 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StripeSignatureVerifier } from '../../ports/stripe-signature-verifier';
+import {
+  StripeSignatureVerifier,
+  StripeWebhookPayload,
+} from '../../ports/stripe-signature-verifier';
 import {
   HandlePaymentWebhookService,
   PaymentWebhookResult,
 } from '../../services/handle-payment-webhook/handle-payment-webhook.service';
 import { PaymentEventType } from '../../../domain/value-objects/payment-event-type';
-
-export interface StripeWebhookPayload {
-  type: string;
-  data: {
-    object: {
-      id: string;
-      metadata: Record<string, string>;
-      last_payment_error?: {
-        message: string;
-      };
-    };
-  };
-}
 
 export interface StripeWebhookCommand {
   signature: string;

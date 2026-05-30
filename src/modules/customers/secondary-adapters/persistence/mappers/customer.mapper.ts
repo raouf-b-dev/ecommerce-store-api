@@ -33,12 +33,8 @@ export class CustomerMapper {
   static toEntity(domain: Customer): CustomerEntity {
     const primitives = domain.toPrimitives();
 
-    if (!primitives.id) {
-      throw new Error('Customer ID is required for persistence');
-    }
-
     const customerPayload: CustomerCreate = {
-      id: primitives.id,
+      id: primitives.id || 0,
       firstName: primitives.firstName,
       lastName: primitives.lastName,
       email: primitives.email,
@@ -52,9 +48,8 @@ export class CustomerMapper {
       customerPayload,
     );
 
-    const addressEntities: AddressEntity[] = AddressMapper.toEntityArray(
-      domain.addresses.map((addr) => domain.findAddress(addr.id!)),
-    );
+    const addressEntities: AddressEntity[] =
+      AddressMapper.fromPrimitiveArrayToEntityArray(primitives.addresses);
 
     entity.addresses = addressEntities.map((addressEntity) => {
       addressEntity.customer = entity;

@@ -25,6 +25,7 @@ import { GetOrderReservationsUseCase } from './core/application/get-order-reserv
 import { POSTGRES_RESERVATION_REPOSITORY } from './inventory.token';
 import { PostgresReservationRepository } from './secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository';
 import { ReservationRepository } from './core/domain/repositories/reservation.repository';
+import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inventory.usecase';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ReservationRepository } from './core/domain/repositories/reservation.re
     BulkCheckStockUseCase,
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
+    SeedDemoInventoryUseCase,
   ],
   exports: [
     CheckStockUseCase,

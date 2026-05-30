@@ -4,6 +4,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { CUSTOMER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
+import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
 import { Customer } from '../../../core/domain/entities/customer';
 import { CustomerRepository } from '../../../core/domain/repositories/customer.repository';
 import {
@@ -48,7 +49,7 @@ export class CachedCustomerRepository implements CustomerRepository {
     try {
       const cachedCustomers = await this.cacheService.search<CustomerForCache>(
         CUSTOMER_REDIS.INDEX,
-        `@email:${email}`,
+        `@email:"${escapeRedisSearchTextValue(email)}"`,
       );
 
       if (cachedCustomers.length > 0) {
@@ -80,7 +81,7 @@ export class CachedCustomerRepository implements CustomerRepository {
     try {
       const cachedCustomers = await this.cacheService.search<CustomerForCache>(
         CUSTOMER_REDIS.INDEX,
-        `@phone:${phone}`,
+        `@phone:"${escapeRedisSearchTextValue(phone)}"`,
       );
 
       if (cachedCustomers.length > 0) {
@@ -179,12 +180,21 @@ export class CachedCustomerRepository implements CustomerRepository {
       if (saveResult.isFailure) return saveResult;
       const savedCustomer = saveResult.value;
 
-      await this.cacheService.set(
-        `${CUSTOMER_REDIS.CACHE_KEY}:${savedCustomer.id}`,
-        CustomerCacheMapper.toCache(savedCustomer),
-        { ttl: CUSTOMER_REDIS.EXPIRATION },
-      );
-      await this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG);
+      try {
+        await Promise.all([
+          this.cacheService.set(
+            `${CUSTOMER_REDIS.CACHE_KEY}:${savedCustomer.id}`,
+            CustomerCacheMapper.toCache(savedCustomer),
+            { ttl: CUSTOMER_REDIS.EXPIRATION },
+          ),
+          this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG),
+        ]);
+      } catch (cacheError) {
+        this.logger.warn(
+          'Cache update failed after successful DB write (save)',
+          cacheError,
+        );
+      }
 
       return Result.success(savedCustomer);
     } catch (error) {
@@ -198,12 +208,21 @@ export class CachedCustomerRepository implements CustomerRepository {
       if (updateResult.isFailure) return updateResult;
       const updatedCustomer = updateResult.value;
 
-      await this.cacheService.set(
-        `${CUSTOMER_REDIS.CACHE_KEY}:${updatedCustomer.id}`,
-        CustomerCacheMapper.toCache(updatedCustomer),
-        { ttl: CUSTOMER_REDIS.EXPIRATION },
-      );
-      await this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG);
+      try {
+        await Promise.all([
+          this.cacheService.set(
+            `${CUSTOMER_REDIS.CACHE_KEY}:${updatedCustomer.id}`,
+            CustomerCacheMapper.toCache(updatedCustomer),
+            { ttl: CUSTOMER_REDIS.EXPIRATION },
+          ),
+          this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG),
+        ]);
+      } catch (cacheError) {
+        this.logger.warn(
+          'Cache update failed after successful DB write (update)',
+          cacheError,
+        );
+      }
 
       return Result.success(updatedCustomer);
     } catch (error) {
@@ -216,8 +235,17 @@ export class CachedCustomerRepository implements CustomerRepository {
       const deleteResult = await this.postgresRepo.delete(id);
       if (deleteResult.isFailure) return deleteResult;
 
-      await this.cacheService.delete(`${CUSTOMER_REDIS.CACHE_KEY}:${id}`);
-      await this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG);
+      try {
+        await Promise.all([
+          this.cacheService.delete(`${CUSTOMER_REDIS.CACHE_KEY}:${id}`),
+          this.cacheService.delete(CUSTOMER_REDIS.IS_CACHED_FLAG),
+        ]);
+      } catch (cacheError) {
+        this.logger.warn(
+          'Cache delete failed after successful DB write (delete)',
+          cacheError,
+        );
+      }
 
       return Result.success(undefined);
     } catch (error) {

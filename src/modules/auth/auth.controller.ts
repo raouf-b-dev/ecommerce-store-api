@@ -58,6 +58,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
     return this.loginUseCase.execute(dto);
   }
