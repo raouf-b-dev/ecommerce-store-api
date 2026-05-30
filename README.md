@@ -7,6 +7,7 @@
 ## 📋 Table of Contents
 
 - [What Is This?](#what-is-this)
+- [How to Review This Project in 5 Minutes](#how-to-review-this-project-in-5-minutes)
 - [🚀 Quick Start](#quick-start)
 - [Architecture at a Glance](#architecture-at-a-glance)
 - [⭐ Feature Catalog](#feature-catalog)
@@ -25,6 +26,26 @@
 A production-grade e-commerce API built as a **modular monolith** with NestJS and TypeScript. The codebase implements Domain-Driven Design (both Strategic and Tactical), Hexagonal Architecture, and the distributed systems patterns that most tutorials skip — SAGA orchestration with compensation, strict bounded context isolation via ACL Gateways, Redis-backed idempotency, structured observability, and a full RSA-based auth stack with refresh token rotation and RBAC.
 
 Designed as a reference for how to build enterprise backend systems that are testable, maintainable, and production-ready from day one.
+
+---
+
+<a id="how-to-review-this-project-in-5-minutes"></a>
+
+## How to Review This Project in 5 Minutes
+
+Start with the areas that demonstrate the most critical patterns:
+
+| What to inspect                  | Why it matters                                            | Where to look                                                                 |
+| :------------------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------------------- |
+| Checkout orchestration           | Shows multi-step business workflow and failure handling   | `src/modules/orders/core/application/usecases/checkout/`                      |
+| SAGA compensation                | Shows stock release/refund/cancel behavior after failures | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`  |
+| Auth, RBAC, and refresh sessions | Shows production-style security decisions                 | `src/modules/auth/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md)         |
+| Redis idempotency                | Shows retry-safe critical API behavior                    | `src/infrastructure/idempotency/`                                             |
+| Hexagonal boundaries             | Shows domain/application isolation from adapters          | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/` |
+| Observability                    | Shows logs, metrics, traces, and dashboards               | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`       |
+| Tests and factories              | Shows maintainability and behavior coverage               | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                  |
+
+The shortest walkthrough is: **Auth/RBAC → Checkout use case → SAGA compensation → Redis idempotency → tests**.
 
 ---
 
