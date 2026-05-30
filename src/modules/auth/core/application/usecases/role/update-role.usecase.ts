@@ -7,9 +7,8 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
-import { Role } from '../../../domain/entities/role';
 
-export interface UpdateRoleDTO {
+export interface UpdateRoleComand {
   id: number;
   name: string;
   permissions: string[];
@@ -17,7 +16,7 @@ export interface UpdateRoleDTO {
 
 @Injectable()
 export class UpdateRoleUseCase extends UseCase<
-  UpdateRoleDTO,
+  UpdateRoleComand,
   void,
   UseCaseError
 > {
@@ -25,7 +24,7 @@ export class UpdateRoleUseCase extends UseCase<
     super();
   }
 
-  async execute(dto: UpdateRoleDTO): Promise<Result<void, UseCaseError>> {
+  async execute(dto: UpdateRoleComand): Promise<Result<void, UseCaseError>> {
     const result = await this.roleRepository.findById(dto.id);
 
     if (isFailure(result) || !result.value) {
