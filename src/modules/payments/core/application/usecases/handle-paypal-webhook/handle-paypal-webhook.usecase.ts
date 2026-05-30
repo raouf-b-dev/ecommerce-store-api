@@ -6,27 +6,15 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { PayPalSignatureVerifier } from '../../ports/paypal-signature-verifier';
+import {
+  PayPalSignatureVerifier,
+  PayPalWebhookPayload,
+} from '../../ports/paypal-signature-verifier';
 import {
   HandlePaymentWebhookService,
   PaymentWebhookResult,
 } from '../../services/handle-payment-webhook/handle-payment-webhook.service';
 import { PaymentEventType } from '../../../domain/value-objects/payment-event-type';
-
-export interface PayPalWebhookPayload {
-  event_type: string;
-  resource: {
-    id: string;
-    status_details?: {
-      reason: string;
-    };
-    supplementary_data?: {
-      related_ids?: {
-        order_id?: string;
-      };
-    };
-  };
-}
 
 export interface PayPalWebhookCommand {
   headers: Record<string, string>;
