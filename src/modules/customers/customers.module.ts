@@ -23,6 +23,7 @@ import { AddAddressUseCase } from './core/application/usecases/add-address/add-a
 import { UpdateAddressUseCase } from './core/application/usecases/update-address/update-address.usecase';
 import { DeleteAddressUseCase } from './core/application/usecases/delete-address/delete-address.usecase';
 import { SetDefaultAddressUseCase } from './core/application/usecases/set-default-address/set-default-address.usecase';
+import { SeedDemoCustomerUseCase } from './core/application/seed/seed-demo-customer.usecase';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { SetDefaultAddressUseCase } from './core/application/usecases/set-defaul
     UpdateAddressUseCase,
     DeleteAddressUseCase,
     SetDefaultAddressUseCase,
+    SeedDemoCustomerUseCase,
   ],
 })
 export class CustomersModule {}
