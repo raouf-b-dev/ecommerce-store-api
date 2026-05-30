@@ -72,6 +72,7 @@ The application is a Modular Monolith split into 9 strictly isolated **Bounded C
 - ✅ API Versioning (URI-based, NestJS `VersioningType.URI`)
 - ✅ Prometheus Metrics (`GET /metrics`, API-key protected)
 - ✅ Domain Event Bus (`DomainEventPublisher` + EventEmitter2)
-- ❌ OpenTelemetry Distributed Tracing (Pending)
-- ❌ Grafana Monitoring Stack (Pending)
-- ❌ Event-Driven Notifications (Pending)
+- ✅ OpenTelemetry Distributed Tracing
+- ✅ Grafana Monitoring Stack (Loki, Tempo, Dashboards)
+- ✅ Event-Driven Notifications
+- ✅ Local Database Seeding (`npm run db:seed`)
