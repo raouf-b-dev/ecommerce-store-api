@@ -11,6 +11,7 @@ import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
+import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
 
 describe('CachedUserRepository', () => {
   let repository: CachedUserRepository;
@@ -88,7 +89,20 @@ describe('CachedUserRepository', () => {
       expect(postgresRepo.findByEmail).not.toHaveBeenCalled();
       expect(cacheService.getAll).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:"${mockUser.email}"`,
+        `@email:"${escapeRedisSearchTextValue(mockUser.email)}"`,
+      );
+    });
+
+    it('should escape email with special characters', async () => {
+      cacheService.getAll.mockResolvedValue([]);
+      postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
+
+      const specialEmail = 'test"admin\\special@example.com';
+      await repository.findByEmail(specialEmail);
+
+      expect(cacheService.getAll).toHaveBeenCalledWith(
+        USER_REDIS.INDEX,
+        `@email:"test\\"admin\\\\special@example.com"`,
       );
     });
 

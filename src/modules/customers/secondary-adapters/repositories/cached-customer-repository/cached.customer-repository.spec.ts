@@ -11,6 +11,7 @@ import { MockCustomerRepository } from '../../../testing/mocks/customer-reposito
 import { CustomerCacheMapper } from '../../persistence/mappers/customer.mapper';
 import { CachedCustomerRepository } from './cached.customer-repository';
 import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
+import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
 
 describe('CachedCustomerRepository', () => {
   let repository: CachedCustomerRepository;
@@ -175,6 +176,72 @@ describe('CachedCustomerRepository', () => {
         CUSTOMER_REDIS.IS_CACHED_FLAG,
       );
       expect(postgresRepo.findAll).toHaveBeenCalledWith(2, 10);
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('should return cached customer if available with escaped email', async () => {
+      const customerPrimitives = CustomerTestFactory.createMockCustomer();
+      const customer = Customer.fromPrimitives(customerPrimitives);
+      const cachedCustomer = CustomerCacheMapper.toCache(customer);
+
+      mockCacheService.search.mockResolvedValue([cachedCustomer]);
+
+      const result = await repository.findByEmail(customer.email);
+
+      expect(result.isSuccess).toBe(true);
+      expect(mockCacheService.search).toHaveBeenCalledWith(
+        CUSTOMER_REDIS.INDEX,
+        `@email:"${escapeRedisSearchTextValue(customer.email)}"`,
+      );
+    });
+
+    it('should escape special characters in email query', async () => {
+      mockCacheService.search.mockResolvedValue([]);
+      postgresRepo.findByEmail.mockResolvedValue(
+        Result.failure(new RepositoryError('Customer not found')),
+      );
+
+      const specialEmail = 'test"customer\\special@example.com';
+      await repository.findByEmail(specialEmail);
+
+      expect(mockCacheService.search).toHaveBeenCalledWith(
+        CUSTOMER_REDIS.INDEX,
+        `@email:"test\\"customer\\\\special@example.com"`,
+      );
+    });
+  });
+
+  describe('findByPhone', () => {
+    it('should return cached customer if available with escaped phone', async () => {
+      const customerPrimitives = CustomerTestFactory.createMockCustomer();
+      const customer = Customer.fromPrimitives(customerPrimitives);
+      const cachedCustomer = CustomerCacheMapper.toCache(customer);
+
+      mockCacheService.search.mockResolvedValue([cachedCustomer]);
+
+      const result = await repository.findByPhone(customer.phone!);
+
+      expect(result.isSuccess).toBe(true);
+      expect(mockCacheService.search).toHaveBeenCalledWith(
+        CUSTOMER_REDIS.INDEX,
+        `@phone:"${escapeRedisSearchTextValue(customer.phone!)}"`,
+      );
+    });
+
+    it('should escape special characters in phone query', async () => {
+      mockCacheService.search.mockResolvedValue([]);
+      postgresRepo.findByPhone.mockResolvedValue(
+        Result.failure(new RepositoryError('Customer not found')),
+      );
+
+      const specialPhone = '+1"555\\555-5555';
+      await repository.findByPhone(specialPhone);
+
+      expect(mockCacheService.search).toHaveBeenCalledWith(
+        CUSTOMER_REDIS.INDEX,
+        `@phone:"+1\\"555\\\\555-5555"`,
+      );
     });
   });
 });
