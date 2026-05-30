@@ -1,5 +1,6 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Address, AddressProps } from '../../../core/domain/entities/address';
+import { IAddress } from '../../../core/domain/interfaces/address.interface';
 import { AddressEntity } from '../../orm/address.schema';
 
 type AddressCreate = CreateFromEntity<AddressEntity, 'customer'>;
@@ -26,33 +27,36 @@ export class AddressMapper {
   }
 
   static toEntity(domain: Address): AddressEntity {
-    const primitives = domain.toPrimitives();
-
-    const addressPayload: AddressCreate = {
-      id: primitives.id || 0,
-      customerId: primitives.customerId,
-      street: primitives.street,
-      street2: primitives.street2,
-      city: primitives.city,
-      state: primitives.state,
-      postalCode: primitives.postalCode,
-      country: primitives.country,
-      type: primitives.type,
-      isDefault: primitives.isDefault,
-      deliveryInstructions: primitives.deliveryInstructions,
-      createdAt: primitives.createdAt,
-      updatedAt: primitives.updatedAt,
-    };
-
-    const entity: AddressEntity = Object.assign(
-      new AddressEntity(),
-      addressPayload,
-    );
-
-    return entity;
+    return this.fromPrimitiveToEntity(domain.toPrimitives());
   }
 
   static toEntityArray(domainAddresses: Address[]): AddressEntity[] {
     return domainAddresses.map((address) => this.toEntity(address));
+  }
+
+  static fromPrimitiveToEntity(address: IAddress): AddressEntity {
+    const addressPayload: AddressCreate = {
+      id: address.id || 0,
+      customerId: address.customerId,
+      street: address.street,
+      street2: address.street2,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country,
+      type: address.type,
+      isDefault: address.isDefault,
+      deliveryInstructions: address.deliveryInstructions,
+      createdAt: address.createdAt,
+      updatedAt: address.updatedAt,
+    };
+
+    return Object.assign(new AddressEntity(), addressPayload);
+  }
+
+  static fromPrimitiveArrayToEntityArray(
+    addresses: IAddress[],
+  ): AddressEntity[] {
+    return addresses.map((address) => this.fromPrimitiveToEntity(address));
   }
 }
