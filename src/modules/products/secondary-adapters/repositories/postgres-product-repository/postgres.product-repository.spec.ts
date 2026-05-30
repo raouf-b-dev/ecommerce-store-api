@@ -271,16 +271,13 @@ describe('PostgresProductRepository', () => {
       expect(result.value).toHaveLength(3);
     });
 
-    it('should return failure when no products found', async () => {
+    it('should return success with empty array when no products found', async () => {
       ormRepo.find.mockResolvedValue([]);
 
       const result = await repository.findAll();
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Did not find any products',
-        RepositoryError,
-      );
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual([]);
     });
 
     it('should return failure when database query fails', async () => {

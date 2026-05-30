@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -23,7 +23,11 @@ export class PostgresCustomerRepository implements CustomerRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Customer not found');
+        return ErrorFactory.RepositoryError(
+          'Customer not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       return Result.success(CustomerMapper.toDomain(entity));
@@ -39,7 +43,11 @@ export class PostgresCustomerRepository implements CustomerRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Customer not found');
+        return ErrorFactory.RepositoryError(
+          'Customer not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       return Result.success(CustomerMapper.toDomain(entity));
@@ -58,7 +66,11 @@ export class PostgresCustomerRepository implements CustomerRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Customer not found');
+        return ErrorFactory.RepositoryError(
+          'Customer not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       return Result.success(CustomerMapper.toDomain(entity));
@@ -119,7 +131,11 @@ export class PostgresCustomerRepository implements CustomerRepository {
     try {
       const result = await this.repository.delete(id);
       if (result.affected === 0) {
-        return ErrorFactory.RepositoryError('Customer not found');
+        return ErrorFactory.RepositoryError(
+          'Customer not found',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
       }
       return Result.success(undefined);
     } catch (error) {
