@@ -12,6 +12,7 @@
 - [📦 Infrastructure](#infrastructure)
 - [🔭 Observability](#observability)
 - [🧪 Testing](#testing)
+- [🌱 Database Seeding](#database-seeding)
 - [📜 Available Scripts](#available-scripts)
 
 ---
@@ -254,6 +255,23 @@ Each module has its own `testing/` directory with:
 
 ---
 
+<a id="database-seeding"></a>
+
+## 🌱 Database Seeding
+
+### Mock Catalog & Test Accounts
+
+A non-interactive database seeding command populates the local PostgreSQL database with standard test accounts and a diverse product catalog for developmental and manual verification workflows.
+
+- **Admin Account**: `admin@store.local` / `Admin123!` (ADMIN role)
+- **Customer Account**: `customer@store.local` / `Customer123!` (CUSTOMER role with a default shipping address)
+- **15-Product Catalog**: Distributed across 5 categories (Electronics, Clothing, Home & Garden, Sports, Books) with varying inventory stock levels (5 high, 5 medium, 3 low, 2 zero stock) to test low-stock alerts and out-of-stock validation rules.
+- **Safety & Idempotency**: Running the script with `NODE_ENV=production` is blocked. It skips existing catalog SKUs and user accounts to enable safe reruns.
+
+**Location**: `scripts/seed.ts`, module-owned seed use cases under `src/modules/*/core/application/seed/` · **Deep-dive**: [SEEDING.md](development/SEEDING.md)
+
+---
+
 <a id="available-scripts"></a>
 
 ## 📜 Available Scripts
@@ -302,7 +320,8 @@ Each module has its own `testing/` directory with:
 
 ### Utilities
 
-| Script             | Description                    |
-| :----------------- | :----------------------------- |
-| `npm run env:init` | Generate all environment files |
-| `npm run clean`    | Remove build artifacts         |
+| Script             | Description                             |
+| :----------------- | :-------------------------------------- |
+| `npm run db:seed`  | Seed development database (idempotency) |
+| `npm run env:init` | Generate all environment files          |
+| `npm run clean`    | Remove build artifacts                  |
