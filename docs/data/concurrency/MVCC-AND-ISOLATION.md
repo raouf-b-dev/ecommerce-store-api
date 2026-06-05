@@ -62,8 +62,8 @@ flowchart TD
 
     v1 -->|t_ctid pointer| v2
 
-    tx150["Transaction 150<br/>(Started before Tx 200)"] -->|Reads V1 (Visible)| v1
-    tx200["Transaction 200<br/>(Started at t=1)"] -->|Creates V2 & Marks V1 Dead| v2
+    tx150["Transaction 150<br/>(Started before Tx 200)"] -->|Reads V1 - Visible| v1
+    tx200["Transaction 200<br/>(Started at t=1)"] -->|Creates V2 and Marks V1 Dead| v2
 ```
 
 ### 2.2 Visibility Rules (Snapshot Isolation)

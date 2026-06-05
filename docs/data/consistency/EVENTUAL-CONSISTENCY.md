@@ -103,7 +103,7 @@ flowchart TD
     t2["<b>t=35s</b> (TTL Expiry)<br/>Cache expires and refreshes<br/>Database: price = 59.99<br/>Cache: price = 59.99 (CONVERGED)"]
 
     t0 -->|Write occurs| t1
-    t1 -->|Inconsistency Window (30s cache TTL)| t2
+    t1 -->|Inconsistency Window - 30s cache TTL| t2
 ```
 
 **Strategies for reducing the inconsistency window**:
