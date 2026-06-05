@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 510" width="100%" height="510">
+  <defs>
+    <pattern id="dotGrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#e2e8f0" />
+    </pattern>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.08" />
+    </filter>
+  </defs>
+
+  <style>
+    .grid-bg { fill: url(#dotGrid); }
+    .bg { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1; rx: 12; filter: url(#shadow); }
+    .code-bg { fill: #0f172a; rx: 8; }
+    
+    .text-code { font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; font-size: 13px; letter-spacing: 0px; }
+    .text-label { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; fill: #475569; }
+    .text-title { font-family: system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; fill: #0f172a; }
+    .col-title { font-family: system-ui, -apple-system, sans-serif; font-size: 12px; font-weight: bold; fill: #334155; text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    /* Highlight pills for variables */
+    .hl-cost-start { fill: #3b82f6; fill-opacity: 0.15; stroke: #3b82f6; stroke-width: 1; rx: 4; }
+    .hl-cost-total { fill: #14b8a6; fill-opacity: 0.15; stroke: #14b8a6; stroke-width: 1; rx: 4; }
+    .hl-rows-est { fill: #8b5cf6; fill-opacity: 0.15; stroke: #8b5cf6; stroke-width: 1; rx: 4; }
+    .hl-width-est { fill: #f59e0b; fill-opacity: 0.15; stroke: #f59e0b; stroke-width: 1; rx: 4; }
+    
+    .hl-time-start { fill: #3b82f6; fill-opacity: 0.15; stroke: #3b82f6; stroke-width: 1; rx: 4; }
+    .hl-time-total { fill: #14b8a6; fill-opacity: 0.15; stroke: #14b8a6; stroke-width: 1; rx: 4; }
+    .hl-rows-act { fill: #8b5cf6; fill-opacity: 0.15; stroke: #8b5cf6; stroke-width: 1; rx: 4; }
+    .hl-loops { fill: #ef4444; fill-opacity: 0.15; stroke: #ef4444; stroke-width: 1; rx: 4; }
+
+    /* Label text highlights */
+    .lbl-cost-start { fill: #2563eb; font-weight: 600; }
+    .lbl-cost-total { fill: #0d9488; font-weight: 600; }
+    .lbl-rows-est { fill: #7c3aed; font-weight: 600; }
+    .lbl-width-est { fill: #d97706; font-weight: 600; }
+    
+    .lbl-time-start { fill: #2563eb; font-weight: 600; }
+    .lbl-time-total { fill: #0d9488; font-weight: 600; }
+    .lbl-rows-act { fill: #7c3aed; font-weight: 600; }
+    .lbl-loops { fill: #dc2626; font-weight: 600; }
+
+    .card-divider { stroke: #cbd5e1; stroke-width: 1; }
+
+    @media (prefers-color-scheme: dark) {
+      #dotGrid circle { fill: #1e293b; }
+      .bg { fill: #0f172a; stroke: #1e293b; }
+      .code-bg { fill: #020617; }
+      .text-title { fill: #f8fafc; }
+      .col-title { fill: #cbd5e1; }
+      .text-label { fill: #94a3b8; }
+      .card-divider { stroke: #334155; }
+      
+      .lbl-cost-start { fill: #60a5fa; }
+      .lbl-cost-total { fill: #2dd4bf; }
+      .lbl-rows-est { fill: #c084fc; }
+      .lbl-width-est { fill: #fbbf24; }
+      
+      .lbl-time-start { fill: #60a5fa; }
+      .lbl-time-total { fill: #2dd4bf; }
+      .lbl-rows-act { fill: #c084fc; }
+      .lbl-loops { fill: #f87171; }
+    }
+  </style>
+
+  <!-- Grid Background -->
+  <rect width="800" height="510" class="grid-bg" />
+
+  <!-- Container -->
+  <rect x="15" y="15" width="770" height="480" class="bg" />
+
+  <text x="35" y="42" class="text-title">PostgreSQL EXPLAIN Node Anatomy</text>
+
+  <!-- Code Block Box -->
+  <rect x="35" y="55" width="730" height="120" class="code-bg" />
+  
+  <!-- Window Controls -->
+  <circle cx="55" cy="73" r="5" fill="#ff5f56" />
+  <circle cx="70" cy="73" r="5" fill="#ffbd2e" />
+  <circle cx="85" cy="73" r="5" fill="#27c93f" />
+
+  <!-- Code Line 1 -->
+  <g>
+    <text x="55" y="112" class="text-code" fill="#64748b" textLength="315" lengthAdjust="spacingAndGlyphs">Index Scan using idx_name on table  (cost=</text>
+    <rect x="368" y="97" width="34" height="20" class="hl-cost-start" />
+    <text x="370" y="112" class="text-code" fill="#3b82f6" font-weight="bold" textLength="30" lengthAdjust="spacingAndGlyphs">0.42</text>
+    <text x="400" y="112" class="text-code" fill="#64748b" textLength="15" lengthAdjust="spacingAndGlyphs">..</text>
+    <rect x="413" y="97" width="49" height="20" class="hl-cost-total" />
+    <text x="415" y="112" class="text-code" fill="#14b8a6" font-weight="bold" textLength="45" lengthAdjust="spacingAndGlyphs">385.43</text>
+    <text x="468" y="112" class="text-code" fill="#64748b" textLength="37.5" lengthAdjust="spacingAndGlyphs">rows=</text>
+    <rect x="509" y="97" width="34" height="20" class="hl-rows-est" />
+    <text x="511" y="112" class="text-code" fill="#8b5cf6" font-weight="bold" textLength="30" lengthAdjust="spacingAndGlyphs">1000</text>
+    <text x="549" y="112" class="text-code" fill="#64748b" textLength="45" lengthAdjust="spacingAndGlyphs">width=</text>
+    <rect x="598" y="97" width="19" height="20" class="hl-width-est" />
+    <text x="600" y="112" class="text-code" fill="#f59e0b" font-weight="bold" textLength="15" lengthAdjust="spacingAndGlyphs">52</text>
+    <text x="615" y="112" class="text-code" fill="#64748b" textLength="7.5" lengthAdjust="spacingAndGlyphs">)</text>
+  </g>
+  
+  <!-- Code Line 2 -->
+  <g>
+    <text x="55" y="142" class="text-code" fill="#64748b" textLength="97.5" lengthAdjust="spacingAndGlyphs">(actual time=</text>
+    <rect x="150.5" y="127" width="41.5" height="20" class="hl-time-start" />
+    <text x="152.5" y="142" class="text-code" fill="#3b82f6" font-weight="bold" textLength="37.5" lengthAdjust="spacingAndGlyphs">0.065</text>
+    <text x="190" y="142" class="text-code" fill="#64748b" textLength="15" lengthAdjust="spacingAndGlyphs">..</text>
+    <rect x="203" y="127" width="41.5" height="20" class="hl-time-total" />
+    <text x="205" y="142" class="text-code" fill="#14b8a6" font-weight="bold" textLength="37.5" lengthAdjust="spacingAndGlyphs">0.078</text>
+    <text x="250.5" y="142" class="text-code" fill="#64748b" textLength="37.5" lengthAdjust="spacingAndGlyphs">rows=</text>
+    <rect x="292" y="127" width="19" height="20" class="hl-rows-act" />
+    <text x="294" y="142" class="text-code" fill="#8b5cf6" font-weight="bold" textLength="15" lengthAdjust="spacingAndGlyphs">10</text>
+    <text x="317" y="142" class="text-code" fill="#64748b" textLength="45" lengthAdjust="spacingAndGlyphs">loops=</text>
+    <rect x="366" y="127" width="11.5" height="20" class="hl-loops" />
+    <text x="368" y="142" class="text-code" fill="#ef4444" font-weight="bold" textLength="7.5" lengthAdjust="spacingAndGlyphs">1</text>
+    <text x="375.5" y="142" class="text-code" fill="#64748b" textLength="7.5" lengthAdjust="spacingAndGlyphs">)</text>
+  </g>
+
+  <!-- Columns Divider -->
+  <line x1="400" y1="200" x2="400" y2="470" class="card-divider" />
+
+  <!-- LEFT COLUMN: PLANNER ESTIMATIONS -->
+  <g transform="translate(35, 200)">
+    <text x="0" y="15" class="col-title">Planner Estimations (cost=...)</text>
+    <text x="0" y="28" class="text-label" font-size="11" fill-opacity="0.9">Computed based on table statistics.</text>
+    <text x="0" y="41" class="text-label" font-size="11" fill-opacity="0.75">Unit-less (1 = 1 sequential page read).</text>
+    
+    <!-- Startup Cost -->
+    <g transform="translate(0, 65)">
+      <circle cx="10" cy="10" r="4" fill="#3b82f6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-cost-start">Startup Cost (0.42):</tspan> Work done before first row is returned</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(e.g., B-tree traversal to find the first matching key)</text>
+    </g>
+
+    <!-- Total Cost -->
+    <g transform="translate(0, 125)">
+      <circle cx="10" cy="10" r="4" fill="#14b8a6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-cost-total">Total Cost (385.43):</tspan> Est. cost to fetch all matching rows</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(Assumes query will run to completion)</text>
+    </g>
+
+    <!-- Estimated Rows -->
+    <g transform="translate(0, 185)">
+      <circle cx="10" cy="10" r="4" fill="#8b5cf6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-rows-est">Estimated Rows (1000):</tspan> Expected rows returned by this node</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(Calculated using database table histograms and stats)</text>
+    </g>
+
+    <!-- Avg Row Width -->
+    <g transform="translate(0, 245)">
+      <circle cx="10" cy="10" r="4" fill="#f59e0b" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-width-est">Avg Row Width (52):</tspan> Size of average row in bytes</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(Helps planner estimate memory needed for sorting/hashes)</text>
+    </g>
+  </g>
+
+  <!-- RIGHT COLUMN: ACTUAL RUNTIME STATISTICS -->
+  <g transform="translate(425, 200)">
+    <text x="0" y="15" class="col-title">Actual Runtime Statistics (actual time=...)</text>
+    <text x="0" y="28" class="text-label" font-size="11" fill-opacity="0.9">Generated only when using EXPLAIN ANALYZE</text>
+    <text x="0" y="41" class="text-label" font-size="11" fill-opacity="0.75">(which actually executes the query).</text>
+
+    <!-- Actual Startup Time -->
+    <g transform="translate(0, 65)">
+      <circle cx="10" cy="10" r="4" fill="#3b82f6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-time-start">Startup Time (0.065 ms):</tspan> Time elapsed to return 1st row</text>
+    </g>
+
+    <!-- Actual Total Time -->
+    <g transform="translate(0, 125)">
+      <circle cx="10" cy="10" r="4" fill="#14b8a6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-time-total">Total Time (0.078 ms):</tspan> Time elapsed to return all rows</text>
+    </g>
+
+    <!-- Actual Rows -->
+    <g transform="translate(0, 185)">
+      <circle cx="10" cy="10" r="4" fill="#8b5cf6" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-rows-act">Actual Rows (10):</tspan> Real number of rows returned</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(If 10x different from Estimated, run ANALYZE to update stats)</text>
+    </g>
+
+    <!-- Loops -->
+    <g transform="translate(0, 245)">
+      <circle cx="10" cy="10" r="4" fill="#ef4444" />
+      <text x="25" y="14" class="text-label"><tspan class="lbl-loops">Loops (1):</tspan> Number of times this node was executed</text>
+      <text x="25" y="30" class="text-label" font-size="11" fill="#64748b">(Actual total time = actual time * loops)</text>
+    </g>
+  </g>
+</svg>

@@ -245,47 +245,34 @@ With HttpOnly cookies, the browser handles storage and transmission automaticall
 
 ## 5. The Complete Authentication Flow
 
-```
-┌──────────┐                       ┌──────────────────┐                    ┌──────────┐
-│  Client  │                       │   Auth Server    │                    │ Database │
-│ (Browser)│                       │                  │                    │          │
-└────┬─────┘                       └────────┬─────────┘                    └────┬─────┘
-     │                                      │                                   │
-     │  1. POST /auth/login {email, pass}   │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 2. Verify credentials              │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │                                      │ 3. Sign access token (RS256)      │
-     │                                      │ 4. Sign refresh token (RS256)     │
-     │                                      │ 5. Store session (SHA-256 hash)   │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │  6. Response:                        │                                   │
-     │     Body: { access_token }           │                                   │
-     │     Cookie: refresh_token (HttpOnly) │                                   │
-     │◄─────────────────────────────────────│                                   │
-     │                                      │                                   │
-     │  7. GET /api/resource                │                                   │
-     │     Authorization: Bearer <access>   │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 8. Verify signature (public key)  │
-     │  9. 200 OK { data }                  │    No DB lookup needed!           │
-     │◄─────────────────────────────────────│                                   │
-     │                                      │                                   │
-     │  — access token expires —            │                                   │
-     │                                      │                                   │
-     │  10. POST /auth/refresh              │                                   │
-     │      Cookie: refresh_token (auto)    │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 11. Verify refresh JWT            │
-     │                                      │ 12. Check session in DB           │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │                                      │ 13. Revoke old, create new session│
-     │                                      │──────────────────────────────────►│
-     │  14. New access + refresh tokens     │                                   │
-     │◄─────────────────────────────────────│                                   │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Client (Browser)
+    participant Auth as Auth Server
+    participant DB as Database
+
+    Client->>Auth: POST /auth/login {email, pass}
+    Auth->>DB: Verify credentials
+    DB-->>Auth: Credentials OK
+    Note over Auth: 3. Sign access token (RS256)<br/>4. Sign refresh token (RS256)
+    Auth->>DB: 5. Store session (SHA-256 hash)
+    DB-->>Auth: Session stored
+    Auth-->>Client: 6. Response:<br/>Body: { access_token }<br/>Cookie: refresh_token (HttpOnly)
+
+    Client->>Auth: 7. GET /api/resource<br/>Authorization: Bearer <access_token>
+    Note over Auth: 8. Verify signature (public key)<br/>(No DB lookup needed!)
+    Auth-->>Client: 9. 200 OK { data }
+
+    Note over Client, Auth: — access token expires —
+
+    Client->>Auth: 10. POST /auth/refresh<br/>Cookie: refresh_token (auto)
+    Note over Auth: 11. Verify refresh JWT
+    Auth->>DB: 12. Check session in DB
+    DB-->>Auth: Session valid
+    Auth->>DB: 13. Revoke old session,<br/>create new session
+    DB-->>Auth: Sessions updated
+    Auth-->>Client: 14. New access + refresh tokens
 ```
 
 ---
