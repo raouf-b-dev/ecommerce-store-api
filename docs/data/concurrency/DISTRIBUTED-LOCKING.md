@@ -137,44 +137,61 @@ A **fencing token** is a monotonically increasing number issued each time a lock
 
 ### 4.1 The Problem Without Fencing
 
-```
-Time ──────────────────────────────────────────────────────────►
+```mermaid
+sequenceDiagram
+    participant A as Process A
+    participant Lock as Lock Store
+    participant B as Process B
+    participant DB as Storage System
 
-Process A                                Process B
-─────────                                ─────────
-Acquires lock (token=33) ✅
+    A->>Lock: Acquire lock (token=33)
+    Lock-->>A: Acquired ✅
 
-Enters GC pause...
-                                         Lock expires (TTL)
-                                         Acquires lock (token=34) ✅
-  ... (A is paused, unaware             Writes to storage with token=34 ✅
-       that its lock expired) ...
-                                         Releases lock
+    Note over A: Enters GC pause...
 
-A resumes, believes it still holds lock
-Writes to storage (STALE!) ❌
-→ Overwrites B's write → DATA CORRUPTION
+    Note over Lock: Lock TTL expires
+
+    B->>Lock: Acquire lock (token=34)
+    Lock-->>B: Acquired ✅
+
+    B->>DB: Write data (token=34)
+    DB-->>B: Write accepted ✅
+    B->>Lock: Release lock
+
+    Note over A: A resumes (unaware lock expired)
+    A->>DB: Write data (token=33, stale!)
+    DB-->>A: Write accepted ❌ (DATA CORRUPTION!)
 ```
 
 ### 4.2 The Solution With Fencing
 
-```
-Time ──────────────────────────────────────────────────────────►
+```mermaid
+sequenceDiagram
+    participant A as Process A
+    participant Lock as Lock Store
+    participant B as Process B
+    participant DB as Storage System (Last seen token = 0)
 
-Process A                                Process B
-─────────                                ─────────
-Acquires lock (token=33) ✅
+    A->>Lock: Acquire lock (token=33)
+    Lock-->>A: Acquired ✅
 
-Enters GC pause...
-                                         Lock expires (TTL)
-                                         Acquires lock (token=34) ✅
-                                         Writes to storage with token=34 ✅
-                                         Releases lock
+    Note over A: Enters GC pause...
 
-A resumes, believes it still holds lock
-Writes to storage with token=33
-→ Storage rejects: 33 < 34 (highest seen) ✅ SAFE
-→ A detects its lock was superseded
+    Note over Lock: Lock TTL expires
+
+    B->>Lock: Acquire lock (token=34)
+    Lock-->>B: Acquired ✅
+
+    B->>DB: Write data (token=34)
+    Note over DB: Validates: 34 > 0. Sets last seen = 34.
+    DB-->>B: Write accepted ✅
+    B->>Lock: Release lock
+
+    Note over A: A resumes (unaware lock expired)
+    A->>DB: Write data (token=33)
+    Note over DB: Validates: 33 < 34. REJECTED.
+    DB-->>A: ERROR: Stale fencing token ❌ (SAFE)
+    Note over A: A detects lock loss
 ```
 
 ### 4.3 Implementation Pattern
@@ -201,18 +218,19 @@ A **lease** is a time-limited grant of exclusive access to a resource. Unlike a 
 
 ### 5.1 Lease Lifecycle
 
-```
-┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-│  ACQUIRE │ ──► │  ACTIVE  │ ──► │  RENEW   │ ──► │ RELEASE  │
-│          │     │          │     │ (extend  │     │ (or TTL  │
-│ SET NX   │     │ Critical │     │  TTL)    │     │  expiry) │
-│ PX ttl   │     │ section  │     │          │     │          │
-└──────────┘     └──────────┘     └──────────┘     └──────────┘
-                       │
-                  ┌────┴────┐
-                  │ EXPIRED │  ← TTL reached before renewal
-                  │ (lost)  │     Process must stop and re-acquire
-                  └─────────┘
+```mermaid
+flowchart TD
+    acquire["<b>ACQUIRE</b><br/>SET key value NX PX ttl"]
+    active["<b>ACTIVE</b><br/>Execute critical section"]
+    renew["<b>RENEW</b><br/>Extend TTL (Watchdog)"]
+    release["<b>RELEASE</b><br/>Delete key (or TTL expiry)"]
+    expired["<b>EXPIRED</b><br/>Lease lost, abort work"]
+
+    acquire --> active
+    active --> renew
+    renew --> active
+    active --> release
+    active -->|TTL timeout before renewal| expired
 ```
 
 ### 5.2 Lease Renewal (Watchdog Pattern)

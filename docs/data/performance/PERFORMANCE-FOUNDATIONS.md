@@ -54,17 +54,12 @@ Database performance is fundamentally governed by the **I/O cost model**. Data r
 
 The query planner decides between a sequential scan and an index scan based on **selectivity** — the fraction of rows the query is expected to return.
 
-```
-Selectivity = (matching rows) / (total rows)
+```mermaid
+flowchart LR
+    idx["<b>Index Scan (0% to ~5-20% selectivity)</b><br/>Fewer pages accessed. Faster for highly selective queries."]
+    seq["<b>Sequential Scan (~5-20% to 100% selectivity)</b><br/>Sequential I/O is faster than random I/O for large volumes."]
 
-  0%                                                         100%
-  │                                                            │
-  ▼                                                            ▼
-  Index Scan                                          Sequential Scan
-  ◄────────────────── Crossover (~5-20%) ──────────────────────►
-
-  Below the crossover: index scan wins (fewer pages accessed)
-  Above the crossover: sequential scan wins (sequential I/O is faster than random)
+    idx --- crossover["<b>Crossover Point (~5-20%)</b>"] --- seq
 ```
 
 The exact crossover point depends on table size, correlation between indexed column and physical row order, and whether the data is cached in `shared_buffers`.
@@ -101,37 +96,60 @@ For each step's details: identifying slow queries (§7.2 of [Query Analysis](QUE
 
 When a query is slow, use this decision tree to identify the right deep-dive:
 
-```
-Is the query slow?
-│
-├── Is it doing a Seq Scan on a large table?
-│   └── YES → Missing index → See INDEX-DESIGN.md
-│
-├── Is it using an index but still slow?
-│   │
-│   ├── "Rows Removed by Filter" is high?
-│   │   └── Index covers partial predicate → Refine composite index → INDEX-DESIGN.md §1
-│   │
-│   ├── Index Scan + many heap fetches?
-│   │   └── Need covering index → INDEX-DESIGN.md §2
-│   │
-│   └── Correct plan but high latency?
-│       └── I/O bottleneck → Check shared_buffers, disk → CONNECTION-AND-REPLICATION.md §3
-│
-├── Is it doing too many queries (N+1)?
-│   └── YES → ORM relation loading problem → QUERY-ANALYSIS.md §4
-│
-├── Is the sort spilling to disk?
-│   └── YES → Increase work_mem or add sorted index → CONNECTION-AND-REPLICATION.md §3
-│
-├── Is the table very large (100M+ rows)?
-│   └── Consider partitioning → STORAGE-AND-MAINTENANCE.md §4
-│
-├── Is VACUUM not keeping up?
-│   └── Autovacuum tuning → STORAGE-AND-MAINTENANCE.md §2
-│
-└── Is the database overloaded (high connection count, CPU)?
-    └── Connection pooling / read replicas → CONNECTION-AND-REPLICATION.md
+```mermaid
+flowchart TD
+    root{"Is the query slow?"}
+
+    q_seq{"Seq Scan on a large table?"}
+    r_missing["Missing index<br/>→ See INDEX-DESIGN.md"]
+
+    q_idx{"Using index but still slow?"}
+
+    q_rows{"'Rows Removed by Filter' is high?"}
+    r_composite["Index covers partial predicate<br/>→ Refine composite index (INDEX-DESIGN.md §1)"]
+
+    q_fetches{"Index Scan + many heap fetches?"}
+    r_covering["Need covering index<br/>→ INDEX-DESIGN.md §2"]
+
+    q_io{"Correct plan but high latency?"}
+    r_io["I/O bottleneck (check shared_buffers, disk)<br/>→ CONNECTION-AND-REPLICATION.md §3"]
+
+    q_n1{"Doing too many queries (N+1)?"}
+    r_n1["ORM relation loading problem<br/>→ QUERY-ANALYSIS.md §4"]
+
+    q_sort{"Sort spilling to disk?"}
+    r_sort["Increase work_mem or add sorted index<br/>→ CONNECTION-AND-REPLICATION.md §3"]
+
+    q_large{"Table very large (100M+ rows)?"}
+    r_part["Consider partitioning<br/>→ STORAGE-AND-MAINTENANCE.md §4"]
+
+    q_vacuum{"VACUUM not keeping up?"}
+    r_vacuum["Autovacuum tuning<br/>→ STORAGE-AND-MAINTENANCE.md §2"]
+
+    q_overload{"Database overloaded (connections, CPU)?"}
+    r_replica["Connection pooling / Read replicas<br/>→ CONNECTION-AND-REPLICATION.md"]
+
+    root --> q_seq
+    q_seq -->|Yes| r_missing
+    q_seq -->|No| q_idx
+
+    q_idx -->|Yes| q_rows
+    q_rows -->|Yes| r_composite
+    q_rows -->|No| q_fetches
+    q_fetches -->|Yes| r_covering
+    q_fetches -->|No| q_io
+    q_io -->|Yes| r_io
+
+    q_idx -->|No| q_n1
+    q_n1 -->|Yes| r_n1
+    q_n1 -->|No| q_sort
+    q_sort -->|Yes| r_sort
+    q_sort -->|No| q_large
+    q_large -->|Yes| r_part
+    q_large -->|No| q_vacuum
+    q_vacuum -->|Yes| r_vacuum
+    q_vacuum -->|No| q_overload
+    q_overload -->|Yes| r_replica
 ```
 
 ---

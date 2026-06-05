@@ -20,15 +20,18 @@ MVCC is PostgreSQL's fundamental concurrency control mechanism. Rather than usin
 
 Every row (tuple) in PostgreSQL contains hidden system columns that track its visibility:
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        Physical Tuple                                │
-├──────────┬──────────┬─────────┬─────────┬───────────────────────────┤
-│  t_xmin  │  t_xmax  │ t_cid   │ t_ctid  │   User-visible columns   │
-│ (create) │ (delete) │ (cmd)   │ (self)  │                           │
-├──────────┼──────────┼─────────┼─────────┼───────────────────────────┤
-│   100    │    0     │    0    │ (0, 1)  │ stock_level = 50          │
-└──────────┴──────────┴─────────┴─────────┴───────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Tuple ["Physical Tuple Structure"]
+        direction LR
+        xmin["t_xmin<br/>(create tx)<br/><b>100</b>"]
+        xmax["t_xmax<br/>(delete tx)<br/><b>0</b>"]
+        cid["t_cid<br/>(command id)<br/><b>0</b>"]
+        ctid["t_ctid<br/>(version pointer)<br/><b>(0, 1)</b>"]
+        data["User-visible Columns<br/>(stock_level = 50)"]
+
+        xmin --- xmax --- cid --- ctid --- data
+    end
 ```
 
 | Column   | Purpose                                                                                           |
@@ -46,27 +49,21 @@ An `UPDATE` in PostgreSQL does not modify a tuple in place. Instead, it:
 2. Inserts a **new tuple** with the updated values and `t_xmin` set to the current transaction ID.
 3. Updates the old tuple's `t_ctid` to point to the new tuple's physical location.
 
-```
-Time ──────────────────────────────────────────────────────────►
+```mermaid
+flowchart TD
+    subgraph V1 ["Tuple Version 1"]
+        direction TB
+        v1["t_xmin: 100<br/>t_xmax: 200<br/>stock_level: 50"]
+    end
+    subgraph V2 ["Tuple Version 2"]
+        direction TB
+        v2["t_xmin: 200<br/>t_xmax: 0<br/>stock_level: 48"]
+    end
 
-Transaction 100 inserts the row:
-  ┌──────────────────────────────────────────────────┐
-  │ Tuple v1: t_xmin=100, t_xmax=0, stock_level=50  │  ← LIVE
-  └──────────────────────────────────────────────────┘
+    v1 -->|t_ctid pointer| v2
 
-Transaction 200 updates stock_level to 48:
-  ┌──────────────────────────────────────────────────┐
-  │ Tuple v1: t_xmin=100, t_xmax=200, stock_level=50│  ← DEAD (superseded)
-  │              t_ctid ──────────────────────┐      │
-  └──────────────────────────────────────────│──────┘
-                                              ▼
-  ┌──────────────────────────────────────────────────┐
-  │ Tuple v2: t_xmin=200, t_xmax=0, stock_level=48  │  ← LIVE
-  └──────────────────────────────────────────────────┘
-
-Transaction 150 (started before 200) still sees Tuple v1:
-  → Visibility rule: t_xmin (100) < 150 AND t_xmax (200) > 150
-  → Transaction 150 reads stock_level = 50 (the snapshot value)
+    tx150["Transaction 150<br/>(Started before Tx 200)"] -->|Reads V1 (Visible)| v1
+    tx200["Transaction 200<br/>(Started at t=1)"] -->|Creates V2 & Marks V1 Dead| v2
 ```
 
 ### 2.2 Visibility Rules (Snapshot Isolation)
@@ -139,26 +136,26 @@ PostgreSQL implements only three distinct behaviours, because it uses MVCC rathe
 
 Each **SQL statement** within a transaction sees a snapshot of all data committed at the instant the statement begins. Different statements within the same transaction may see different committed states.
 
-```
-Transaction T₁                          Transaction T₂
-──────────────                          ──────────────
-BEGIN;                                  BEGIN;
+```mermaid
+sequenceDiagram
+    participant T1 as Transaction T₁
+    participant DB as Database (stock = 10)
+    participant T2 as Transaction T₂
 
-SELECT stock FROM inventory
-WHERE product_id = 42;
-→ stock = 10
+    T1->>DB: BEGIN (READ COMMITTED)
+    T2->>DB: BEGIN (READ COMMITTED)
 
-                                        UPDATE inventory
-                                        SET stock = stock - 3
-                                        WHERE product_id = 42;
-                                        COMMIT;
+    T1->>DB: SELECT stock WHERE product_id=42
+    DB-->>T1: stock = 10
 
-SELECT stock FROM inventory
-WHERE product_id = 42;
-→ stock = 7  ← T₁ sees T₂'s committed change
-              (non-repeatable read — same query, different result)
+    T2->>DB: UPDATE stock = 7 WHERE product_id=42
+    T2->>DB: COMMIT
+    Note over DB: stock is now 7
 
-COMMIT;
+    T1->>DB: SELECT stock WHERE product_id=42
+    DB-->>T1: stock = 7 (Non-repeatable read!)
+
+    T1->>DB: COMMIT
 ```
 
 **Key property under concurrent `UPDATE`**: When T₁ executes an `UPDATE` and the target row has been modified by a concurrent committed transaction, PostgreSQL **re-evaluates** the `WHERE` clause against the newly committed row version. If the row still matches, the update proceeds on the new version. If not, the row is skipped.
@@ -169,29 +166,28 @@ This prevents dirty writes but does **not** prevent the application-level Lost U
 
 The transaction's snapshot is taken at the first SQL statement and held constant for the entire transaction.
 
-```
-Transaction T₁ (REPEATABLE READ)        Transaction T₂
-────────────────────────────────        ──────────────
-BEGIN ISOLATION LEVEL REPEATABLE READ;  BEGIN;
+```mermaid
+sequenceDiagram
+    participant T1 as Transaction T₁ (REPEATABLE READ)
+    participant DB as Database (stock = 10)
+    participant T2 as Transaction T₂
 
-SELECT stock FROM inventory
-WHERE product_id = 42;
-→ stock = 10
+    T1->>DB: BEGIN ISOLATION LEVEL REPEATABLE READ
+    T2->>DB: BEGIN
 
-                                        UPDATE inventory
-                                        SET stock = stock - 3
-                                        WHERE product_id = 42;
-                                        COMMIT;
+    T1->>DB: SELECT stock WHERE product_id=42
+    DB-->>T1: stock = 10 (Snapshot established)
 
-SELECT stock FROM inventory
-WHERE product_id = 42;
-→ stock = 10  ← T₁ still sees the snapshot value
+    T2->>DB: UPDATE stock = 7 WHERE product_id=42
+    T2->>DB: COMMIT
+    Note over DB: stock is now 7
 
-UPDATE inventory
-SET stock = stock - 1
-WHERE product_id = 42;
-→ ERROR: could not serialize access due to concurrent update
-  (PostgreSQL error code 40001)
+    T1->>DB: SELECT stock WHERE product_id=42
+    DB-->>T1: stock = 10 (Snapshot read)
+
+    T1->>DB: UPDATE stock = 9 (10 - 1) WHERE product_id=42
+    DB-->>T1: ERROR 40001 (Could not serialize access!)
+    Note over T1: Transaction aborted, must retry
 ```
 
 **Key property**: If T₁ attempts to `UPDATE` a row modified and committed by another transaction since T₁'s snapshot, PostgreSQL aborts T₁ with error `40001`. The application **must** catch this error and retry the entire transaction.
@@ -202,28 +198,30 @@ The strongest guarantee: the result of any set of concurrent transactions is equ
 
 **When to use**: Business invariants that span multiple rows or tables and cannot be enforced by a single `SELECT ... FOR UPDATE` or version check. The classic example is **write skew**:
 
-```
--- Business rule: At least one doctor must always be on call.
+```mermaid
+sequenceDiagram
+    participant T1 as Transaction T₁ (Alice)
+    participant DB as Database (2 doctors on call)
+    participant T2 as Transaction T₂ (Bob)
 
-Transaction T₁ (Alice)                  Transaction T₂ (Bob)
-──────────────────────                  ──────────────────
-BEGIN ISOLATION LEVEL SERIALIZABLE;     BEGIN ISOLATION LEVEL SERIALIZABLE;
+    T1->>DB: BEGIN ISOLATION LEVEL SERIALIZABLE
+    T2->>DB: BEGIN ISOLATION LEVEL SERIALIZABLE
 
-SELECT count(*) FROM doctors
-WHERE on_call = true;
-→ 2 (safe to remove one)
-                                        SELECT count(*) FROM doctors
-                                        WHERE on_call = true;
-                                        → 2 (safe to remove one)
+    T1->>DB: SELECT count(*) WHERE on_call=true
+    DB-->>T1: 2
 
-UPDATE doctors SET on_call = false
-WHERE name = 'Alice';
-                                        UPDATE doctors SET on_call = false
-                                        WHERE name = 'Bob';
+    T2->>DB: SELECT count(*) WHERE on_call=true
+    DB-->>T2: 2
 
-COMMIT; ✅
-                                        COMMIT; ❌ ERROR 40001
-                                        (SSI detects the rw-antidependency cycle)
+    T1->>DB: UPDATE doctors SET on_call=false WHERE name='Alice'
+    T2->>DB: UPDATE doctors SET on_call=false WHERE name='Bob'
+
+    T1->>DB: COMMIT
+    DB-->>T1: Success ✅
+
+    T2->>DB: COMMIT
+    DB-->>T2: ERROR 40001 (Serializable failure!) ❌
+    Note over T2: Bob's transaction aborted to prevent write skew
 ```
 
 **Cost**: SSI adds overhead for tracking read and write dependencies. Every transaction must be prepared for serialisation failures and implement retry logic.

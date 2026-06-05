@@ -154,11 +154,17 @@ FK: student_id → students, course_code → courses
 
 **Analysis** — In the `courses` table:
 
-```
-course_code → instructor_name → instructor_dept
-              ▲                  ▲
-              directly depends   TRANSITIVELY depends on course_code
-              on course_code     (via instructor_name)
+```mermaid
+flowchart LR
+    cc["course_code"]
+    in["instructor_name"]
+    id["instructor_dept"]
+
+    cc -->|Direct dependency| in
+    in -->|Direct dependency| id
+    cc -.->|Transitive dependency| id
+
+    style id stroke:#ef4444,stroke-width:1px;
 ```
 
 `instructor_dept` is a fact about the **instructor**, not about the **course**. If Dr. Howe moves to the Mathematics department, we would need to update every course she teaches — an update anomaly.
@@ -622,35 +628,39 @@ These are **domain invariants**, not performance optimisations. They should be m
 
 ### 5.2 The Decision Flowchart
 
-```
-Is the duplicated value a HISTORICAL RECORD (snapshot)?
-  └─ YES → Model as a first-class property on the owning entity.
-           Document as a snapshot. Do NOT synchronise on source change.
-  └─ NO  → Continue ↓
+```mermaid
+flowchart TD
+    q1{"Is duplicated value a HISTORICAL RECORD (snapshot)?"}
+    r1["Model as first-class property.<br/>Do NOT synchronise on source change."]
 
-Is there a MEASURED performance problem caused by JOINs?
-  └─ NO  → Do NOT denormalise. Normalised schema is correct.
-  └─ YES → Continue ↓
+    q2{"Is there a MEASURED performance problem caused by JOINs?"}
+    r2["Do NOT denormalise.<br/>Normalised schema is correct."]
 
-Have you tried INDEXES on the join columns?
-  └─ NO  → Add indexes. Re-measure.
-  └─ YES → Continue ↓
+    q3{"Have you tried INDEXES on the join columns?"}
+    r3["Add indexes. Re-measure."]
 
-Have you tried a CQRS READ MODEL (dedicated query repository)?
-  └─ NO  → Implement a read-optimised repository or query method.
-           See CQRS.md §6 — Phase 2/3.
-  └─ YES → Continue ↓
+    q4{"Have you tried a CQRS READ MODEL?"}
+    r4["Implement a read-optimised repository or query method."]
 
-Have you tried a MATERIALISED VIEW?
-  └─ NO  → Create a materialised view with scheduled refresh.
-  └─ YES → Continue ↓
+    q5{"Have you tried a MATERIALISED VIEW?"}
+    r5["Create a materialised view with scheduled refresh."]
 
-Denormalise. But:
-  1. Document the justification in a comment or ADR.
-  2. Implement synchronisation via domain events or database triggers.
-  3. Add integration tests that verify consistency.
-  4. Review the denormalisation periodically — the bottleneck may disappear
-     as data volumes or access patterns change.
+    denorm["Denormalise. But:<br/>1. Document justification (ADR)<br/>2. Implement sync mechanism<br/>3. Add integration tests"]
+
+    q1 -->|Yes| r1
+    q1 -->|No| q2
+
+    q2 -->|No| r2
+    q2 -->|Yes| q3
+
+    q3 -->|No| r3
+    q3 -->|Yes| q4
+
+    q4 -->|No| r4
+    q4 -->|Yes| q5
+
+    q5 -->|No| r5
+    q5 -->|Yes| denorm
 ```
 
 ### 5.3 CQRS Alignment

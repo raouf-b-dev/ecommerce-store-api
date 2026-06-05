@@ -36,19 +36,19 @@ In the context of HTTP APIs, an operation is idempotent if repeating the same re
 
 In a distributed system, every network call has three possible outcomes:
 
+```mermaid
+sequenceDiagram
+    autonumber
+    Client->>Server: Request
+    Note over Server: Process request<br/>Execute business logic<br/>Commit to database
+    Server-->>Client: Response (201 Created)
 ```
-Client                        Server
-──────                        ──────
-Request ────────────────────► Process request
-                              Execute business logic
-                              Commit to database
-         ◄──── Response ───── Return 201 Created
 
 Three failure modes:
-  1. Request lost (server never receives it)         → Client retries → SAFE
-  2. Response lost (server processed, client unaware) → Client retries → DUPLICATE!
-  3. Timeout (client doesn't know which of 1 or 2)   → Client retries → MAYBE DUPLICATE
-```
+
+1. Request lost (server never receives it) → Client retries → SAFE
+2. Response lost (server processed, client unaware) → Client retries → DUPLICATE!
+3. Timeout (client doesn't know which of 1 or 2) → Client retries → MAYBE DUPLICATE
 
 **The fundamental problem**: When a client receives a timeout or network error, it **cannot distinguish** between "the server never received my request" and "the server processed my request but the response was lost." The only safe action is to retry — but retrying a non-idempotent operation (e.g., `POST /checkout`) can cause **duplicate processing** (double charges, duplicate orders).
 
@@ -68,33 +68,29 @@ Three failure modes:
 
 An **idempotency key** is a client-generated unique identifier (typically a UUID) that the server uses to deduplicate requests. The protocol:
 
-```
-Client                                    Server
-──────                                    ──────
-POST /checkout
-Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000
-Body: { cartId: "cart-42", paymentMethod: "card" }
-                  ────────────────────────►
-                                          1. Check: does key exist in the store?
-                                             → NO: proceed to step 2
-                                          2. Acquire lock on the key (Redis SETNX)
-                                          3. Execute the operation
-                                          4. Store the response keyed by the idempotency key
-                                          5. Release lock
-                                          6. Return response
-                  ◄────────────────────────
-                  201 Created
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Server
+    participant Redis as Redis / Cache Store
+    participant DB as Database
 
---- Client retries (network error, timeout) ---
+    Note over Client, Server: Initial Request
+    Client->>Server: POST /checkout (Idempotency-Key: 550e...)
+    Server->>Redis: Check: does key exist?
+    Redis-->>Server: NO
+    Server->>Redis: Acquire lock on key (SETNX)
+    Server->>DB: Execute transaction / write operation
+    DB-->>Server: Done
+    Server->>Redis: Store response details & Release lock
+    Server-->>Client: 201 Created (Response)
 
-POST /checkout
-Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000  (SAME key)
-Body: { cartId: "cart-42", paymentMethod: "card" }
-                  ────────────────────────►
-                                          1. Check: does key exist in the store?
-                                             → YES: return the STORED response
-                  ◄────────────────────────
-                  201 Created (same response as before, no re-execution)
+    Note over Client, Server: Client Retries (due to timeout/network error)
+    Client->>Server: POST /checkout (Idempotency-Key: 550e...)
+    Server->>Redis: Check: does key exist?
+    Redis-->>Server: YES (Return stored response)
+    Server-->>Client: 201 Created (Cached Response, no execution)
 ```
 
 ### 3.1 Idempotency Key Storage
@@ -121,22 +117,33 @@ Body: { cartId: "cart-42", paymentMethod: "card" }
 
 Idempotency keys are fundamentally a **concurrency control mechanism**. Two concurrent requests with the same idempotency key represent a race condition that must be resolved:
 
-```
-Request A (key=abc)                      Request B (key=abc, retry)
-───────────────────                      ────────────────────────
-Arrives at t=0                           Arrives at t=5ms
+```mermaid
+sequenceDiagram
+    autonumber
+    participant ReqA as Request A (key=abc, t=0)
+    participant Lock as Redis Lock (key=abc)
+    participant Store as Idempotency Store
+    participant ReqB as Request B (key=abc, retry, t=5ms)
 
-Check store: key not found
-Acquire lock on key=abc ✅
-Begin processing...
-                                         Check store: key not found
-                                         Acquire lock on key=abc → BLOCKED ⏳
+    ReqA->>Store: Check: key exists?
+    Store-->>ReqA: Not found
+    ReqA->>Lock: Acquire lock
+    Lock-->>ReqA: Acquired (OK)
+    Note over ReqA: Begin processing...
 
-Processing completes
-Store response for key=abc
-Release lock
-                                         Lock acquired
-                                         Check store: key FOUND → return stored response
+    ReqB->>Store: Check: key exists?
+    Store-->>ReqB: Not found
+    ReqB->>Lock: Acquire lock
+    Note over ReqB: BLOCKED (Lock held by A)
+
+    Note over ReqA: Processing completes
+    ReqA->>Store: Store response
+    ReqA->>Lock: Release lock
+    Lock-->>ReqB: Lock acquired
+
+    ReqB->>Store: Check: key exists?
+    Store-->>ReqB: FOUND (Return stored response)
+    Note over ReqB: Complete request without re-executing
 ```
 
 **Without the lock**: Both requests pass the "key not found" check and both execute the operation — defeating the purpose of idempotency. The lock ensures exactly-once execution.
@@ -192,30 +199,26 @@ Queue systems (BullMQ, SQS, Kafka) provide **at-least-once** delivery — a mess
 
 The outbox pattern solves the dual-write problem: "How do I atomically update the database AND publish an event?" Without it, the database write and the queue publish are two separate operations — if the process crashes between them, they become inconsistent.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│           Single Database Transaction                    │
-│                                                          │
-│  1. UPDATE orders SET status = 'CONFIRMED'               │
-│  2. INSERT INTO outbox (event_type, payload, published)  │
-│     VALUES ('order.confirmed', '{...}', false)           │
-│                                                          │
-│  COMMIT (both or neither)                                │
-└─────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│  Outbox Poller (background)     │
-│                                 │
-│  SELECT * FROM outbox           │
-│  WHERE published = false        │
-│  ORDER BY created_at            │
-│  FOR UPDATE SKIP LOCKED;        │
-│                                 │
-│  → Publish to BullMQ/Kafka      │
-│  → UPDATE outbox                │
-│    SET published = true          │
-└─────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Tx ["Single Database Transaction"]
+        direction TB
+        w1["1. UPDATE orders SET status = 'CONFIRMED'"]
+        w2["2. INSERT INTO outbox (event_type, payload, published=false)"]
+        w1 --- w2
+        commit["COMMIT (Both or neither)"]
+        w2 --> commit
+    end
+
+    subgraph Poller ["Outbox Poller (Background Job)"]
+        direction TB
+        p1["SELECT * FROM outbox<br/>WHERE published = false<br/>FOR UPDATE SKIP LOCKED"]
+        p2["Publish to Message Queue (BullMQ/Kafka)"]
+        p3["UPDATE outbox SET published = true"]
+        p1 --> p2 --> p3
+    end
+
+    Tx -->|Asynchronously read by| Poller
 ```
 
 ---

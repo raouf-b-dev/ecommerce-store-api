@@ -81,20 +81,13 @@ COMMIT;
 
 When two or more transactions each hold a lock that the other needs, a **deadlock** occurs — a circular wait condition where no transaction can proceed.
 
-```
-Transaction T₁                          Transaction T₂
-──────────────                          ──────────────
-LOCK row A ✅                           LOCK row B ✅
+```mermaid
+flowchart TD
+    T1["Transaction T₁<br/>(Holds Row A)"]
+    T2["Transaction T₂<br/>(Holds Row B)"]
 
-LOCK row B                              LOCK row A
-→ BLOCKED (T₂ holds B)                 → BLOCKED (T₁ holds A)
-
-         ┌──────────────────────┐
-         │   CIRCULAR WAIT      │
-         │   T₁ waits for T₂   │
-         │   T₂ waits for T₁   │
-         │   = DEADLOCK         │
-         └──────────────────────┘
+    T1 -->|Requests / Blocks on| T2
+    T2 -->|Requests / Blocks on| T1
 ```
 
 **PostgreSQL's deadlock resolution**: A **deadlock detector** (configurable via `deadlock_timeout`, default 1 second) aborts one transaction with error `40P01`. The aborted transaction must be retried.
@@ -135,53 +128,57 @@ Advisory locks are useful for coordinating work across multiple processes sharin
 
 The most critical concurrency problem in e-commerce systems is **overselling**: concurrent checkout transactions each read sufficient stock, each decrement — resulting in a negative stock level.
 
-```
-Invariant: stock_level >= 0 (must NEVER be violated)
-Initial state: product_id=42, stock_level=1
+```mermaid
+sequenceDiagram
+    participant T1 as Checkout T₁ (Customer A)
+    participant DB as Database (stock_level = 1)
+    participant T2 as Checkout T₂ (Customer B)
 
-Checkout T₁ (Customer A)                Checkout T₂ (Customer B)
-────────────────────────                ────────────────────────
-BEGIN;                                  BEGIN;
+    T1->>DB: BEGIN
+    T2->>DB: BEGIN
 
-SELECT stock_level FROM inventory
-WHERE product_id = 42;
-→ stock_level = 1 (sufficient)
-                                        SELECT stock_level FROM inventory
-                                        WHERE product_id = 42;
-                                        → stock_level = 1 (sufficient)
+    T1->>DB: SELECT stock_level FROM inventory WHERE id=42
+    DB-->>T1: stock_level = 1 (sufficient)
 
-UPDATE inventory SET stock_level = 0;
-COMMIT;
-                                        UPDATE inventory SET stock_level = -1;
-                                        COMMIT;
+    T2->>DB: SELECT stock_level FROM inventory WHERE id=42
+    DB-->>T2: stock_level = 1 (sufficient)
 
-Final state: stock_level = -1 → INVARIANT VIOLATED
+    T1->>DB: UPDATE inventory SET stock_level = 0 (1 - 1)
+    T1->>DB: COMMIT (stock_level is now 0)
+
+    T2->>DB: UPDATE inventory SET stock_level = -1 (1 - 1)
+    T2->>DB: COMMIT (stock_level is now -1)
+
+    Note over DB: Final state: stock_level = -1 (INVARIANT VIOLATED!)
 ```
 
 ### 6.1 Solution: `SELECT ... FOR UPDATE`
 
-```
-Checkout T₁ (Customer A)                Checkout T₂ (Customer B)
-────────────────────────                ────────────────────────
-BEGIN;                                  BEGIN;
+```mermaid
+sequenceDiagram
+    participant T1 as Checkout T₁ (Customer A)
+    participant DB as Database (stock_level = 1)
+    participant T2 as Checkout T₂ (Customer B)
 
-SELECT stock_level FROM inventory
-WHERE product_id = 42
-FOR UPDATE;
-→ stock_level = 1, row LOCKED ✅
-                                        SELECT stock_level FROM inventory
-                                        WHERE product_id = 42
-                                        FOR UPDATE;
-                                        → BLOCKED ⏳ (waiting for T₁)
+    T1->>DB: BEGIN
+    T2->>DB: BEGIN
 
-UPDATE inventory SET stock_level = 0;
-COMMIT; (lock released)
-                                        → Lock acquired!
-                                        → stock_level = 0 (reads committed value)
-                                        → 0 < 1 → INSUFFICIENT STOCK
-                                        → ROLLBACK
+    T1->>DB: SELECT stock_level FOR UPDATE
+    Note over DB: Row 42 LOCKED by T₁
+    DB-->>T1: stock_level = 1
 
-Final state: stock_level = 0 ✅ (invariant preserved)
+    T2->>DB: SELECT stock_level FOR UPDATE
+    Note over T2, DB: BLOCKED ⏳ (waiting for T₁'s lock)
+
+    T1->>DB: UPDATE inventory SET stock_level = 0
+    T1->>DB: COMMIT (lock released)
+
+    Note over DB: Lock acquired by T₂
+    DB-->>T2: stock_level = 0 (reads committed value)
+    Note over T2: 0 < 1 requested quantity
+    T2->>DB: ROLLBACK
+
+    Note over DB: Final state: stock_level = 0 (INVARIANT PRESERVED)
 ```
 
 ### 6.2 Defense in Depth: CHECK Constraint

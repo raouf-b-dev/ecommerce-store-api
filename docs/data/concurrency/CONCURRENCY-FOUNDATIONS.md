@@ -49,18 +49,26 @@ The ANSI SQL standard (ANSI, 1992) identifies three classical anomalies. Berenso
 
 Concurrency control strategies divide into two philosophical families:
 
-```
-                    Concurrency Control
-                          │
-              ┌───────────┴───────────┐
-              │                       │
-      Pessimistic                Optimistic
-   "Prevent conflicts"      "Detect conflicts"
-              │                       │
-    ┌─────────┴─────────┐    ┌────────┴────────┐
-    │                   │    │                 │
- Lock-based          MVCC  Version-based    Timestamp-based
- (2PL, S/X)    (PostgreSQL) (App-level)    (Serialisable SI)
+```mermaid
+flowchart TD
+    root["<b>Concurrency Control</b>"]
+    pess["<b>Pessimistic</b><br/>'Prevent conflicts'"]
+    opt["<b>Optimistic</b><br/>'Detect conflicts'"]
+
+    lock["<b>Lock-based</b><br/>(2PL, Shared/Exclusive)"]
+    mvcc["<b>MVCC</b><br/>(PostgreSQL Row Versions)"]
+
+    ver["<b>Version-based</b><br/>(App-level @VersionColumn)"]
+    ts["<b>Timestamp-based</b><br/>(Serializable Snapshot Isolation)"]
+
+    root --> pess
+    root --> opt
+
+    pess --> lock
+    pess --> mvcc
+
+    opt --> ver
+    opt --> ts
 ```
 
 | Approach        | Philosophy                                                                                                    | When to Use                                                                                                                             | Cost Model                                                             |
@@ -77,28 +85,15 @@ Concurrency control strategies divide into two philosophical families:
 
 Concurrency control is not a single-layer concern. Different mechanisms operate at different layers of the stack:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Application Layer                          │
-│  Idempotency keys, API-level deduplication, request queuing     │
-│  → See: consistency/IDEMPOTENCY.md                              │
-├─────────────────────────────────────────────────────────────────┤
-│                      Framework Layer                            │
-│  ORM version columns, application-level OCC (@VersionColumn)    │
-│  → See: OPTIMISTIC-LOCKING.md                                   │
-├─────────────────────────────────────────────────────────────────┤
-│                      Database Layer                             │
-│  MVCC, isolation levels, row-level locks, advisory locks        │
-│  → See: MVCC-AND-ISOLATION.md, PESSIMISTIC-LOCKING.md           │
-├─────────────────────────────────────────────────────────────────┤
-│                      Distributed Layer                          │
-│  Redis distributed locks, Redlock, fencing tokens, leases       │
-│  → See: DISTRIBUTED-LOCKING.md                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                      Architectural Layer                        │
-│  Sagas, eventual consistency, compensating transactions         │
-│  → See: consistency/SAGAS-AND-COMPENSATION.md                   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    app["<b>Application Layer</b><br/>Idempotency keys, API-level deduplication, request queuing"]
+    fw["<b>Framework Layer</b><br/>ORM version columns, application-level OCC (@VersionColumn)"]
+    db["<b>Database Layer</b><br/>MVCC, isolation levels, row-level locks, advisory locks"]
+    dist["<b>Distributed Layer</b><br/>Redis distributed locks, Redlock, fencing tokens, leases"]
+    arch["<b>Architectural Layer</b><br/>Sagas, eventual consistency, compensating transactions"]
+
+    app --> fw --> db --> dist --> arch
 ```
 
 Each layer addresses a different failure mode. A well-designed system uses **multiple layers** — for example, a checkout flow might use:

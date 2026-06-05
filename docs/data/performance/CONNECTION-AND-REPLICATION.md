@@ -171,15 +171,16 @@ RESET work_mem;
 
 Streaming replication sends WAL records from the **primary** to one or more **replicas** (standbys) in near-real-time:
 
-```
-Primary                              Replica(s)
-───────                              ──────────
-Writes data → WAL record created
-              WAL record sent ──────► WAL record received
-                                      WAL record replayed
-                                      → Data visible on replica
+```mermaid
+sequenceDiagram
+    participant Primary as Primary Database
+    participant Replica as Replica Database(s)
 
-Replication lag: typically 10-100ms (network + replay time)
+    Note over Primary: Writes data & creates WAL record
+    Primary->>Replica: Send WAL record (asynchronous or synchronous)
+    Note over Replica: WAL record received
+    Note over Replica: WAL record replayed
+    Note over Replica: Data visible on replica (Replication lag: ~10-100ms)
 ```
 
 ### 4.2 Synchronous vs. Asynchronous
@@ -218,12 +219,26 @@ Replication lag: typically 10-100ms (network + replay time)
 
 Logical replication enables **Change Data Capture** — streaming database changes to external systems:
 
-```
-PostgreSQL (logical replication slot)
-     │
-     ├── Debezium / pgoutput → Kafka → Analytics pipeline
-     ├── Debezium / pgoutput → Kafka → Search index (Elasticsearch)
-     └── Direct logical subscriber → Another PostgreSQL instance
+```mermaid
+flowchart LR
+    slot["PostgreSQL<br/>(Logical replication slot)"]
+    deb["Debezium / pgoutput<br/>(Logical decoder)"]
+    kafka["Apache Kafka<br/>(Message broker)"]
+
+    subgraph Consumers
+        direction TB
+        ap["Analytics Pipeline"]
+        se["Search Index (Elasticsearch)"]
+    end
+
+    subgraph LogicalSubscriber ["Alternative"]
+        sub["Direct Logical Subscriber<br/>(Another PostgreSQL instance)"]
+    end
+
+    slot --> deb --> kafka
+    kafka --> ap
+    kafka --> se
+    slot --> sub
 ```
 
 ---

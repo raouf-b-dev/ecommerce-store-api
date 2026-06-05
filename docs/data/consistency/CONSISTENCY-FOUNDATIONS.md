@@ -39,23 +39,19 @@ ACID transactions are the gold standard for data integrity — but they apply **
 
 Real-world systems operate across a spectrum — not a binary choice between "consistent" and "inconsistent":
 
-```
-Strict                                                           Eventual
-Serialisability                                                  Consistency
-     │                                                               │
-     ▼                                                               ▼
-┌─────────┐  ┌─────────────┐  ┌────────────┐  ┌──────────┐  ┌──────────────┐
-│ SERIAL- │  │  SNAPSHOT    │  │   READ     │  │ CAUSAL   │  │   EVENTUAL   │
-│ IZABLE  │  │  ISOLATION   │  │  COMMITTED │  │          │  │              │
-│         │  │              │  │            │  │          │  │              │
-│ Single  │  │ Per-tx       │  │ Per-stmt   │  │ Partial  │  │ "Eventually  │
-│ serial  │  │ snapshot,    │  │ snapshot,  │  │ order    │  │  all replicas│
-│ order   │  │ full tx      │  │ per stmt   │  │ preserved│  │  converge"   │
-│ equiv.  │  │ repeatable   │  │ may vary   │  │          │  │              │
-└─────────┘  └─────────────┘  └────────────┘  └──────────┘  └──────────────┘
-     ◄── Stronger                                        Weaker ──►
-     ◄── Higher latency                          Lower latency ──►
-     ◄── Lower availability                  Higher availability ──►
+```mermaid
+flowchart LR
+    direction LR
+    subgraph Spectrum ["Consistency Spectrum (Strongest to Weakest)"]
+        direction LR
+        s1["<b>SERIALIZABLE</b><br/>Single serial order equivalence"]
+        s2["<b>SNAPSHOT ISOLATION</b><br/>Per-transaction snapshot"]
+        s3["<b>READ COMMITTED</b><br/>Per-statement snapshot"]
+        s4["<b>CAUSAL</b><br/>Partial order preserved"]
+        s5["<b>EVENTUAL</b><br/>Replicas converge eventually"]
+
+        s1 --> s2 --> s3 --> s4 --> s5
+    end
 ```
 
 Each step to the right trades **consistency** for **availability** and **latency**. The art of distributed system design is choosing the right point on this spectrum for each operation.
@@ -139,33 +135,38 @@ As a counterpoint to ACID, the **BASE** model describes systems that favour avai
 
 When designing a new API endpoint or workflow, use this decision tree:
 
-```
-Does this operation modify state?
-│
-├── NO (read-only)
-│   │
-│   ├── Is stale data acceptable? (e.g., catalogue, search)
-│   │   └── YES → Eventual consistency (cache, read replica)
-│   │
-│   └── Must the user see their own writes? (e.g., "my orders")
-│       └── YES → Read-after-write consistency
-│                  (read from primary, or invalidate cache on write)
-│
-└── YES (mutation)
-    │
-    ├── Does it span a single database?
-    │   └── YES → ACID transaction
-    │           Choose isolation level per MVCC-AND-ISOLATION.md §5.6
-    │
-    └── Does it span multiple steps/services?
-        │
-        ├── Can partial failure corrupt data? (e.g., payment without order)
-        │   └── YES → Saga with compensation
-        │             See SAGAS-AND-COMPENSATION.md
-        │
-        └── Is duplicate execution harmful? (e.g., double charge)
-            └── YES → Idempotency key + distributed lock
-                      See IDEMPOTENCY.md + DISTRIBUTED-LOCKING.md
+```mermaid
+flowchart TD
+    q1{"Does this operation modify state?"}
+
+    q1_no{"Is stale data acceptable?<br/>(e.g., catalogue, search)"}
+    q1_yes{"Does it span a single database?"}
+
+    r_eventual["Eventual consistency<br/>(Cache, read replica)"]
+    r_raw["Read-after-write consistency<br/>(Read from primary, invalidate cache)"]
+
+    r_acid["ACID transaction<br/>(Choose isolation level)"]
+
+    q2{"Can partial failure corrupt data?<br/>(e.g., payment without order)"}
+    r_saga["Saga with compensation"]
+
+    q3{"Is duplicate execution harmful?<br/>(e.g., double charge)"}
+    r_idem["Idempotency key + distributed lock"]
+    r_normal["Standard API flow"]
+
+    q1 -->|No / Read-only| q1_no
+    q1_no -->|Yes| r_eventual
+    q1_no -->|No / Must see own writes| r_raw
+
+    q1 -->|Yes / Mutation| q1_yes
+    q1_yes -->|Yes| r_acid
+    q1_yes -->|No / Multi-service| q2
+
+    q2 -->|Yes| r_saga
+    q2 -->|No| q3
+
+    q3 -->|Yes| r_idem
+    q3 -->|No| r_normal
 ```
 
 ---

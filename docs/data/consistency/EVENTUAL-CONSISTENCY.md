@@ -23,21 +23,15 @@ A deep-dive into eventual consistency: formal convergence definitions, the hiera
 
 Eventual consistency is the weakest useful model. Stronger models add specific guarantees about the **order** and **visibility** of reads and writes:
 
-```
-Strongest ─────────────────────────────────────────── Weakest
+```mermaid
+flowchart TD
+    c1["<b>Linearisability</b> (Strongest)<br/>Real-time ordering. Operations appear instantaneous."]
+    c2["<b>Sequential Consistency</b><br/>Some total order that all nodes agree on."]
+    c3["<b>Causal Consistency</b><br/>Causally related operations are ordered; concurrent may diverge."]
+    c4["<b>Monotonic Reads</b><br/>You never see older data after seeing newer data."]
+    c5["<b>Eventual Consistency</b> (Weakest)<br/>All replicas converge eventually."]
 
- Linearisability   Sequential    Causal     Monotonic    Eventual
-      │            Consistency  Consistency   Reads     Consistency
-      │                │            │          │            │
-      ▼                ▼            ▼          ▼            ▼
- "Real-time        "Some total   "Causally   "You never  "All replicas
-  ordering.         order that    related     see older   converge
-  Operations        all nodes     operations  data after  eventually."
-  appear            agree on."    are         seeing
-  instantaneous."                 ordered;    newer data."
-                                  concurrent
-                                  operations
-                                  may diverge."
+    c1 --> c2 --> c3 --> c4 --> c5
 ```
 
 ### 2.1 Read-After-Write Consistency (Read-Your-Writes)
@@ -91,16 +85,25 @@ GET /orders (my orders)
 
 A cache introduces an **inconsistency window** equal to its TTL (time-to-live). During this window, reads may return stale data.
 
+```mermaid
+flowchart TD
+    subgraph Paths ["Data Access Paths"]
+        direction TB
+        w["Write Path: Client ──> API ──> Database (source of truth)"]
+        r["Read Path: Client ──> API ──> Cache (may be stale) ──> Database (fallback)"]
+    end
 ```
-Write path:   Client → API → Database (source of truth)
-Read path:    Client → API → Cache (may be stale) → Database (fallback)
 
 Timeline:
-  t=0s   Database: price = 49.99, Cache: price = 49.99
-  t=5s   Admin updates: Database: price = 59.99, Cache: price = 49.99 (STALE)
-  t=35s  Cache TTL expires → Cache: price = 59.99 (converged)
 
-  Inconsistency window: 30 seconds (the cache TTL)
+```mermaid
+flowchart TD
+    t0["<b>t=0s</b><br/>Database: price = 49.99<br/>Cache: price = 49.99"]
+    t1["<b>t=5s</b> (Write)<br/>Admin updates price<br/>Database: price = 59.99<br/>Cache: price = 49.99 (STALE)"]
+    t2["<b>t=35s</b> (TTL Expiry)<br/>Cache expires and refreshes<br/>Database: price = 59.99<br/>Cache: price = 59.99 (CONVERGED)"]
+
+    t0 -->|Write occurs| t1
+    t1 -->|Inconsistency Window (30s cache TTL)| t2
 ```
 
 **Strategies for reducing the inconsistency window**:
@@ -120,16 +123,23 @@ Timeline:
 
 PostgreSQL streaming replication introduces **replication lag** — the delay between a write committed on the primary and the same write becoming visible on a replica.
 
-```
-Primary (writes)                   Replica (reads)
-────────────────                   ───────────────
-INSERT order-42 at t=0
+```mermaid
+sequenceDiagram
+    participant Primary as Primary DB (Writes)
+    participant Replica as Replica DB (Reads)
 
-                                   Replication lag: ~10-100ms typical
-                                   (can spike to seconds under load)
+    Note over Primary, Replica: t=0ms: Write to Primary
+    Primary->>Primary: INSERT order-42 (Committed)
 
-                                   SELECT order-42 at t=5ms → NOT FOUND
-                                   SELECT order-42 at t=100ms → FOUND
+    Note over Primary, Replica: t=5ms: Read from Replica (Lagging)
+    Note over Replica: Replication lag in progress (~10-100ms)
+    Note over Replica: SELECT order-42 -> NOT FOUND (Stale Read)
+
+    Note over Primary, Replica: t=50ms: WAL Streaming & Replay
+    Primary->>Replica: Stream WAL record & replay
+
+    Note over Primary, Replica: t=100ms: Read from Replica (Converged)
+    Note over Replica: SELECT order-42 -> FOUND
 ```
 
 **Read-after-write with replicas**: Route the user's own reads to the primary immediately after a write. One approach:
@@ -147,15 +157,14 @@ const dataSource = usePrimary ? primaryDataSource : replicaDataSource;
 
 When a write triggers asynchronous downstream processing (e.g., BullMQ job, domain event subscriber), there is an inherent inconsistency window between the write and the subscriber's processing:
 
-```
-API writes order (t=0) → Publishes OrderCreated event
-  → BullMQ picks up event (t=50ms)
-    → InventoryService processes event (t=100ms)
-      → Inventory is reserved (t=150ms)
+```mermaid
+flowchart TD
+    t0["<b>t=0ms</b><br/>API writes order & publishes OrderCreated event"]
+    t1["<b>t=50ms</b><br/>BullMQ picks up event"]
+    t2["<b>t=100ms</b><br/>InventoryService processes event"]
+    t3["<b>t=150ms</b><br/>Inventory is reserved (Converged)"]
 
-During t=[0, 150ms]:
-  Order exists but inventory is NOT yet reserved.
-  Reading both in this window shows inconsistent state.
+    t0 --> t1 --> t2 --> t3
 ```
 
 This is **by design** — asynchronous processing trades immediate consistency for decoupled, resilient, scalable architectures. The [Saga pattern](SAGAS-AND-COMPENSATION.md) provides the framework for managing this type of distributed consistency.

@@ -14,24 +14,20 @@ Optimistic Concurrency Control (OCC) operates on the assumption that conflicts b
 
 The protocol divides each transaction into three phases:
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Read Phase │ ──► │  Validation │ ──► │ Write Phase │
-│             │     │   Phase     │     │             │
-│ Read data   │     │ Check for   │     │ Apply       │
-│ Compute new │     │ conflicts   │     │ changes to  │
-│ values in   │     │ with other  │     │ database    │
-│ local       │     │ committed   │     │             │
-│ workspace   │     │ transactions│     │             │
-└─────────────┘     └─────────────┘     └─────────────┘
-                           │
-                     ┌─────┴─────┐
-                     │ Conflict? │
-                     └─────┬─────┘
-                      Yes  │  No
-                      ▼    │  ▼
-                   ABORT   │ COMMIT
-                   & Retry │
+```mermaid
+flowchart TD
+    p1["<b>1. Read Phase</b><br/>- Read data from database<br/>- Compute new values in local workspace"]
+    p2["<b>2. Validation Phase</b><br/>Check for conflicts with other committed transactions"]
+    p3["<b>3. Write Phase</b><br/>Apply changes to database"]
+    conflict{"Conflict?"}
+    abort["ABORT & Retry"]
+    commit["COMMIT"]
+
+    p1 --> p2
+    p2 --> conflict
+    conflict -->|Yes| abort
+    conflict -->|No| p3
+    p3 --> commit
 ```
 
 ---
@@ -42,32 +38,28 @@ The **Lost Update** is the primary anomaly that OCC prevents at the application 
 
 **Scenario**: Two administrators simultaneously update the price of a product.
 
-```
-Time ───────────────────────────────────────────────────────────►
+```mermaid
+sequenceDiagram
+    participant A as Admin A (T₁)
+    participant DB as Database (price = 49.99, version = 1)
+    participant B as Admin B (T₂)
 
-Admin A (T₁)                              Admin B (T₂)
-─────────────                              ─────────────
-READ product WHERE id = 42
-→ price = 49.99, version = 1
-                                           READ product WHERE id = 42
-                                           → price = 49.99, version = 1
+    A->>DB: READ product WHERE id = 42
+    DB-->>A: price = 49.99, version = 1
 
-Compute: new price = 54.99
+    B->>DB: READ product WHERE id = 42
+    DB-->>B: price = 49.99, version = 1
 
-UPDATE product
-SET price = 54.99
-WHERE id = 42
-→ price = 54.99 ✅ (T₁ committed)
-                                           Compute: new price = 44.99
+    Note over A: Compute: new price = 54.99
+    Note over B: Compute: new price = 44.99
 
-                                           UPDATE product
-                                           SET price = 44.99
-                                           WHERE id = 42
-                                           → price = 44.99 ✅ (T₂ committed)
+    A->>DB: UPDATE price = 54.99 WHERE id = 42
+    DB-->>A: price = 54.99 (Committed)
 
-Final state: price = 44.99
-Admin A's update to 54.99 is SILENTLY LOST.
-Neither admin receives any error or warning.
+    B->>DB: UPDATE price = 44.99 WHERE id = 42
+    DB-->>B: price = 44.99 (Committed)
+
+    Note over DB: Final state: price = 44.99 (Admin A's update is SILENTLY LOST)
 ```
 
 ---
@@ -92,27 +84,25 @@ WHERE id = 42 AND version = 1;
 
 **With OCC applied to the previous scenario**:
 
-```
-Time ───────────────────────────────────────────────────────────►
+```mermaid
+sequenceDiagram
+    participant A as Admin A (T₁)
+    participant DB as Database (price = 49.99, version = 1)
+    participant B as Admin B (T₂)
 
-Admin A (T₁)                              Admin B (T₂)
-─────────────                              ─────────────
-READ product WHERE id = 42
-→ price = 49.99, version = 1
-                                           READ product WHERE id = 42
-                                           → price = 49.99, version = 1
+    A->>DB: READ product WHERE id = 42
+    DB-->>A: price = 49.99, version = 1
 
-UPDATE product
-SET price = 54.99, version = 2
-WHERE id = 42 AND version = 1
-→ affected_rows = 1 ✅ (committed)
-→ version is now 2
-                                           UPDATE product
-                                           SET price = 44.99, version = 2
-                                           WHERE id = 42 AND version = 1
-                                           → affected_rows = 0 ❌ (version mismatch!)
-                                           → 409 Conflict returned to Admin B
-                                           → Admin B must re-read and retry
+    B->>DB: READ product WHERE id = 42
+    DB-->>B: price = 49.99, version = 1
+
+    A->>DB: UPDATE price = 54.99, version = 2 WHERE id = 42 AND version = 1
+    DB-->>A: affected_rows = 1 (Committed)
+    Note over DB: Database state: price = 54.99, version = 2
+
+    B->>DB: UPDATE price = 44.99, version = 2 WHERE id = 42 AND version = 1
+    DB-->>B: affected_rows = 0 (Conflict!)
+    Note over B: 409 Conflict returned<br/>Admin B must re-read and retry
 ```
 
 ---
@@ -144,21 +134,21 @@ When an optimistic lock conflict is detected, the application must decide how to
 
 The standard HTTP protocol for version-based OCC uses conditional headers:
 
-```
-GET /products/42
-→ 200 OK
-→ ETag: "v3"
-→ { "id": 42, "price": 49.99, "version": 3 }
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Server
 
-PUT /products/42
-If-Match: "v3"
-{ "price": 54.99 }
+    Client->>Server: GET /products/42
+    Server-->>Client: 200 OK (ETag: "v3", price: 49.99)
 
-→ 200 OK (version was 3, now 4)
-   or
-→ 409 Conflict (version is no longer 3)
-   or
-→ 412 Precondition Failed (alternative to 409, per RFC 7232)
+    Note over Client: Attempting Update
+    Client->>Server: PUT /products/42 (If-Match: "v3", price: 54.99)
+    alt Success (Version is still 3)
+        Server-->>Client: 200 OK (ETag: "v4", price: 54.99)
+    else Conflict (Version was updated by another request)
+        Server-->>Client: 412 Precondition Failed (or 409 Conflict)
+    end
 ```
 
 > **Note**: `412 Precondition Failed` is the RFC-correct response for `If-Match` failures. `409 Conflict` is more commonly used in practice because it is semantically clearer to API consumers. Either is acceptable.
@@ -221,13 +211,16 @@ if (exception instanceof OptimisticLockVersionMismatchError) {
 
 In a DDD/Hexagonal architecture, the version must flow through all layers:
 
-```
-HTTP Request (version in body or If-Match header)
-  → Controller (extracts version)
-    → Use Case (passes version to domain entity)
-      → Domain Entity (carries version as a property)
-        → Repository Adapter (maps to ORM entity with @VersionColumn)
-          → TypeORM (includes version in WHERE clause)
+```mermaid
+flowchart LR
+    req["HTTP Request<br/>(version in body/header)"]
+    ctrl["Controller<br/>(extracts version)"]
+    uc["Use Case<br/>(passes version to entity)"]
+    entity["Domain Entity<br/>(carries version)"]
+    repo["Repository Adapter<br/>(maps to ORM entity)"]
+    orm["TypeORM<br/>(includes version in query)"]
+
+    req --> ctrl --> uc --> entity --> repo --> orm
 ```
 
 The version must also be **returned** in all read DTOs so that clients always have the current version for their next update.
