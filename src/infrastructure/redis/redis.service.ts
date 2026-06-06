@@ -23,7 +23,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       database: this.envConfigService.redis.db,
     });
 
-    this.client.on('error', (err) =>
+    this.client.on('error', (err: Error) =>
       this.logger.error('Redis Client Error', err),
     );
     await this.client.connect();

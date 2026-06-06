@@ -75,7 +75,7 @@ describe('RedisService', () => {
       await service.onModuleInit();
 
       const errorHandler = mockClient.on.mock.calls.find(
-        (call) => call[0] === 'error',
+        (call: [string, (err: Error) => void]) => call[0] === 'error',
       )[1];
 
       const testError = new Error('Redis failed');
