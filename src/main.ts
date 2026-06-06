@@ -8,7 +8,7 @@ import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 
 async function bootstrap() {

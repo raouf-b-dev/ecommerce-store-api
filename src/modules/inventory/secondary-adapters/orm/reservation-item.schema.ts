@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { ReservationEntity } from './reservation.schema';
 
@@ -22,5 +23,5 @@ export class ReservationItemEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'reservation_id' })
-  reservation: ReservationEntity;
+  reservation: Relation<ReservationEntity>;
 }

@@ -8,7 +8,7 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
-import { JwtVerifierPort } from '../../../../../../infrastructure/jwt/ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<

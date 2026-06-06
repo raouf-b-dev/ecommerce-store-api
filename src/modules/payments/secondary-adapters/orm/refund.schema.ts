@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { PaymentEntity } from './payment.schema';
 
@@ -33,7 +34,7 @@ export class RefundEntity {
 
   @ManyToOne(() => PaymentEntity, (payment) => payment.refunds)
   @JoinColumn({ name: 'payment_id' })
-  payment: PaymentEntity;
+  payment: Relation<PaymentEntity>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

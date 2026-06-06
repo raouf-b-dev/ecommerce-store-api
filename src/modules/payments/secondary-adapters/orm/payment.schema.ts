@@ -6,6 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { RefundEntity } from './refund.schema';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
@@ -70,7 +71,7 @@ export class PaymentEntity {
     cascade: true,
     eager: true,
   })
-  refunds: RefundEntity[];
+  refunds: Relation<RefundEntity>[];
 
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt: Date | null;

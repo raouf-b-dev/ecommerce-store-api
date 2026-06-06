@@ -5,6 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { OrderEntity } from './order.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
@@ -43,5 +44,5 @@ export class OrderItemEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'order_id' })
-  order: OrderEntity;
+  order: Relation<OrderEntity>;
 }

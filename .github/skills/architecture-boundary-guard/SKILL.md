@@ -15,7 +15,8 @@ Prevent architecture drift and preserve bounded-context integrity.
 4. Flag forbidden cross-context imports.
 5. Confirm controller/use-case layering.
 6. Validate mapper, job/scheduler, and Redis rules when touched.
-7. Produce findings with concrete file paths.
+7. Run `npm run test:arch` to automatically verify hexagonal and cross-module boundary compliance.
+8. Produce findings with concrete file paths.
 
 # Inputs
 

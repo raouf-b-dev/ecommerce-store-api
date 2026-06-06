@@ -1,2 +1,2 @@
 // src/modules/auth/decorators/index.ts
-export { CurrentUser, CurrentUserPayload } from './current-user.decorator';
+export { CurrentUser } from './current-user.decorator';

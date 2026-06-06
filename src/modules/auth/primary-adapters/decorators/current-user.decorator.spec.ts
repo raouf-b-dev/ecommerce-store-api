@@ -20,7 +20,12 @@ describe('CurrentUserDecorator', () => {
 
   it('should extract user from request', () => {
     const factory = getParamDecoratorFactory(CurrentUser);
-    const user = { userId: '123', email: 'test@example.com', role: 'customer' };
+    const user = {
+      userId: 123,
+      email: 'test@example.com',
+      role: 'customer',
+      customerId: null,
+    };
     const request = createMockRequestWithUser(user);
     const ctx = createMockExecutionContext(request);
 
@@ -30,12 +35,17 @@ describe('CurrentUserDecorator', () => {
 
   it('should extract specific property from user', () => {
     const factory = getParamDecoratorFactory(CurrentUser);
-    const user = { userId: '123', email: 'test@example.com', role: 'customer' };
+    const user = {
+      userId: 123,
+      email: 'test@example.com',
+      role: 'customer',
+      customerId: null,
+    };
     const request = createMockRequestWithUser(user);
     const ctx = createMockExecutionContext(request);
 
     const result = factory('userId', ctx);
-    expect(result).toBe('123');
+    expect(result).toBe(123);
   });
 
   it('should return null if no user attached', () => {

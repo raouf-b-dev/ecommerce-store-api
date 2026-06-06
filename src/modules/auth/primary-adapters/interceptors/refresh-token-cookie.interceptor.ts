@@ -7,7 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Response } from 'express';
-import * as ms from 'ms';
+import ms, { StringValue } from 'ms';
 import { EnvConfigService } from '../../../../config/env-config.service';
 
 export const REFRESH_COOKIE_NAME = 'refresh_token';
@@ -31,7 +31,7 @@ export class RefreshTokenCookieInterceptor implements NestInterceptor {
 
   constructor(private readonly configService: EnvConfigService) {
     this.cookieMaxAge = ms(
-      this.configService.jwt.refreshTokenTtl as ms.StringValue,
+      this.configService.jwt.refreshTokenTtl as StringValue,
     );
   }
 

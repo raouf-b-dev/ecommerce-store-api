@@ -5,6 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { AddressEntity } from './address.schema';
 
@@ -29,7 +30,7 @@ export class CustomerEntity {
     cascade: true,
     eager: true,
   })
-  addresses: AddressEntity[];
+  addresses: Relation<AddressEntity>[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

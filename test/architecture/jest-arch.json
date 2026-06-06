@@ -4,7 +4,12 @@
   "testEnvironment": "node",
   "testRegex": "test/architecture/.*\\.spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "test/architecture/tsconfig.arch.json"
+      }
+    ]
   },
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1"

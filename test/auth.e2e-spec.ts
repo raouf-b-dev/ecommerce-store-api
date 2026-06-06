@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AuthController } from 'src/modules/auth/auth.controller';
 import { RegisterUserUseCase } from 'src/modules/auth/core/application/usecases/register-user/register-user.usecase';
 import { LoginUserUseCase } from 'src/modules/auth/core/application/usecases/login-user/login-user.usecase';

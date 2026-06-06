@@ -1,6 +1,7 @@
-export interface IRolePermissions {
-  codes: string[];
-}
+import { IRolePermissions } from '../../../../../shared-kernel/domain/interfaces/role-permissions.interface';
+export type { IRolePermissions };
+
+/** Plain serialized form — no behaviour, safe to cross module boundaries. */
 
 export class RolePermissionsVO implements IRolePermissions {
   private readonly _permissions: Set<string>;
@@ -8,15 +9,14 @@ export class RolePermissionsVO implements IRolePermissions {
   constructor(permissionCodes: string[]) {
     this._permissions = new Set(permissionCodes);
   }
+  /** Get all granted permission codes */
+  get codes(): string[] {
+    return Array.from(this._permissions);
+  }
 
   /** Check if a specific permission is granted */
   has(code: string): boolean {
     return this._permissions.has(code);
-  }
-
-  /** Get all granted permission codes */
-  get codes(): string[] {
-    return Array.from(this._permissions);
   }
 
   toPrimitives(): IRolePermissions {

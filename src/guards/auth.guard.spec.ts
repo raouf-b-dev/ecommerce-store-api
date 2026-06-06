@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthGuard } from './auth.guard';
-import { JwtVerifierPort } from '../infrastructure/jwt/ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../shared-kernel/domain/interfaces/jwt-verifier.port';
 import { Reflector } from '@nestjs/core';
 import {
   MockJwtVerifierService,

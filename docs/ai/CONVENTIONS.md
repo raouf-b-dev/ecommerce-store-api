@@ -216,7 +216,35 @@ The file `.agents/PROJECT-CONTEXT.md` is a compact project snapshot designed for
 3. A significant feature ships (new domain entity, new infrastructure component).
 4. The tech stack changes (new dependency, version bump).
 
-## 11. Canonical References
+## 11. Entity and Relation Conventions
+
+To resolve circular module dependencies and Temporal Dead Zone (TDZ) initialization crashes under fast compiler engines like SWC:
+
+1. **Relation Wrapper**: Always wrap bidirectional entity relation fields in TypeORM's `Relation<T>` type.
+2. **Circular Relations**: Any relationship where two entities point to each other (e.g., `OrderEntity` <-> `OrderItemEntity`) must use the `Relation<T>` wrapper on the property declarations.
+3. **Usage Example**:
+
+   ```typescript
+   import { Entity, ManyToOne, JoinColumn, Relation } from 'typeorm';
+   import { OrderEntity } from './order.schema';
+
+   @Entity('order_items')
+   export class OrderItemEntity {
+     @ManyToOne(() => OrderEntity, (order) => order.items)
+     @JoinColumn({ name: 'order_id' })
+     order: Relation<OrderEntity>;
+   }
+   ```
+
+## 12. Type-Safety and Code Quality Rules
+
+To ensure maximum type safety and prevent runtime errors:
+
+1. **Avoid `any`**: Never use `any` if typing is possible. If a type is unknown or cannot be determined, use `unknown` instead.
+2. **Library Escape Hatches**: The only acceptable exception for using `any` is when a third-party library's types are dynamic, circular, or poorly defined (such as the dynamic JSON/Search modules of the Node-Redis client in `RedisService`), where strict typing would trigger cascade compiler errors across consumers.
+3. **Explicit Callbacks**: Always add explicit parameter typings (such as `(err: Error)`) to event handlers and callbacks instead of letting them fall back to implicit `any`.
+
+## 13. Canonical References
 
 - [../../AGENT.md](../../AGENT.md)
 - [../architecture/DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md)

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { RolePermissionEntity } from './role-permission.schema';
 
@@ -26,7 +27,7 @@ export class RoleEntity {
     eager: true,
     cascade: true,
   })
-  rolePermissions: RolePermissionEntity[];
+  rolePermissions: Relation<RolePermissionEntity>[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
