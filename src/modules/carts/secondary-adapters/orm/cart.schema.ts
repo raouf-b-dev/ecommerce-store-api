@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { CartItemEntity } from './cart-item.schema';
 
@@ -27,7 +28,7 @@ export class CartEntity {
     cascade: true,
     eager: true,
   })
-  items: CartItemEntity[];
+  items: Relation<CartItemEntity>[];
 
   @CreateDateColumn()
   createdAt: Date;

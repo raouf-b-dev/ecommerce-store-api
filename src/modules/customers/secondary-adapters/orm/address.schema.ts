@@ -6,6 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { CustomerEntity } from './customer.schema';
 import { AddressType } from '../../core/domain/value-objects/address-type';
@@ -49,7 +50,7 @@ export class AddressEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'customer_id' })
-  customer: CustomerEntity;
+  customer: Relation<CustomerEntity>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

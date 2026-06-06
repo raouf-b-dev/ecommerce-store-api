@@ -9,6 +9,7 @@ import {
   JoinColumn,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
@@ -45,7 +46,7 @@ export class OrderEntity {
     cascade: true,
     eager: true,
   })
-  items: OrderItemEntity[];
+  items: Relation<OrderItemEntity>[];
 
   @OneToOne(() => ShippingAddressEntity, {
     cascade: true,
