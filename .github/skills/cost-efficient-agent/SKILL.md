@@ -22,7 +22,7 @@ Before opening any file, confirm it contains what you need:
 
 ## 2. Context Acceleration — Load PROJECT-CONTEXT.md First
 
-Load [`.agents/PROJECT-CONTEXT.md`](../../.agents/PROJECT-CONTEXT.md) first (see AGENT.md §Context Acceleration).
+Load [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) first (see AGENT.md §Context Acceleration).
 
 Only load canonical references (`CONVENTIONS.md`, `DDD-HEXAGONAL.md`, etc.) when the task **directly requires generation or refactoring** that those docs govern.
 
@@ -70,7 +70,7 @@ See AGENT.md §3 for forbidden auto-operations requiring explicit user confirmat
 # Inputs
 
 - Task description from the user.
-- [`.agents/PROJECT-CONTEXT.md`](../../.agents/PROJECT-CONTEXT.md) (always load first).
+- [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) (always load first).
 
 # Outputs
 
