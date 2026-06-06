@@ -100,7 +100,8 @@
     "env:init:test": "node scripts/generate-envs.js --envs=test",
     "prepare": "husky",
     "skills:sync": "node scripts/sync-agent-skills.js",
-    "skills:check": "node scripts/sync-agent-skills.js --check"
+    "skills:check": "node scripts/sync-agent-skills.js --check",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.2.0",
@@ -157,6 +158,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/ms": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^6.0.2",
