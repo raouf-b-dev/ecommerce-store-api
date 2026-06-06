@@ -11,9 +11,9 @@ This file is a cross-tool adapter. The canonical policy is [AGENT.md](AGENT.md).
 
 ## Default Behavior
 
-1. Load and follow repository architecture constraints from [docs/architecture/DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md).
-2. Load integration constraints from [docs/integration/INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md).
-3. Enforce quality gates from [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](docs/ai/GOVERNANCE-AND-QUALITY-GATES.md).
+1. Preserve repository architecture constraints from [docs/architecture/DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md) (load only when performing generation or refactoring).
+2. Preserve integration constraints from [docs/integration/INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) (load only when performing generation or refactoring).
+3. Follow quality gates from [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](docs/ai/GOVERNANCE-AND-QUALITY-GATES.md) (load only when verifying changes).
 4. Follow workflow states from [docs/ai/WORKFLOW-PLAYBOOK.md](docs/ai/WORKFLOW-PLAYBOOK.md).
 5. Auto-discover and apply relevant skills from `.agents/skills/*/SKILL.md`.
 

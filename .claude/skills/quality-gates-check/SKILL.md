@@ -12,7 +12,7 @@ Ensure code and docs changes satisfy verification and review standards.
 1. Load and apply [docs/ai/CONVENTIONS.md](../../../docs/ai/CONVENTIONS.md), section 9.
 2. Load governance gates from [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](../../../docs/ai/GOVERNANCE-AND-QUALITY-GATES.md).
 3. Classify risk and map required checks.
-4. Run verification commands and collect outcomes.
+4. Run verification commands (such as compilation check `npm run build`, and architectural check `npm run test:arch`) and collect outcomes.
 5. Summarize residual risks and assumptions in EWC v1 handoff format.
 
 # Inputs
