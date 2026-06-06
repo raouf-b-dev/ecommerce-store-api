@@ -17,6 +17,14 @@ Canonical technical reference documents, organised by category.
 - [PROCESS-LIFECYCLE.md](infrastructure/PROCESS-LIFECYCLE.md) — Process Lifecycle Guide — PIDs, Signals & Graceful Shutdown.
 - [TROUBLESHOOTING.md](infrastructure/TROUBLESHOOTING.md) — Common issues and solutions for the API.
 
+### CI/CD & Deployment
+
+- [CICD-FOUNDATIONS.md](infrastructure/cicd/CICD-FOUNDATIONS.md) — Portable CI/CD definitions, GitHub Actions runners, secrets, and deployment topologies. _(hub)_
+- [PROJECT-PIPELINE.md](infrastructure/cicd/PROJECT-PIPELINE.md) — Applied NestJS API workflow, parallel checks, dynamic Postgres/Redis container boots, and local verification hooks.
+- [PIPELINE-OPTIMIZATION.md](infrastructure/cicd/pipeline/PIPELINE-OPTIMIZATION.md) — Dependency caching, test parallelization state isolation, code quality gates, and SAST/SCA security audits.
+- [DEPLOYMENT-STRATEGIES.md](infrastructure/cicd/deployment/DEPLOYMENT-STRATEGIES.md) — Zero-downtime rolling, blue-green, canary releases, GitOps operators, and 12-factor configuration management.
+- [CONTAINERIZATION.md](infrastructure/cicd/deployment/CONTAINERIZATION.md) — Secure multi-stage Docker builds, image optimizations (Alpine vs Distroless), and root vs non-root execution policies.
+
 ## Data
 
 - [DATA-NORMALIZATION.md](data/DATA-NORMALIZATION.md) — Normalisation, denormalisation, and the decision framework.
