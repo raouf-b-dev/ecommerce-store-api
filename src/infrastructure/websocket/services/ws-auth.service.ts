@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { JwtVerifierPort } from '../../jwt/ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 
 @Injectable()
 export class WsAuthService {

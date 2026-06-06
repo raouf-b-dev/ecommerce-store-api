@@ -1,11 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { errors, jwtVerify, JWTPayload } from 'jose';
 import { JwksPort } from '../ports/jwks.port';
-import { JwtVerifierPort } from '../ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
-} from '../types/jwt-payload.types';
+} from '../../../shared-kernel/domain/interfaces/jwt-payload.interface';
 
 /** Verifier options shared across all token types. */
 const VERIFY_OPTIONS = {

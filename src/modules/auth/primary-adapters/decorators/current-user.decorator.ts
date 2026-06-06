@@ -1,11 +1,6 @@
 // src/modules/auth/decorators/current-user.decorator.ts
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-export interface CurrentUserPayload {
-  userId: number;
-  email: string;
-  role: string;
-  customerId: number | null;
-}
+import { CurrentUserPayload } from '../../../../shared-kernel/domain/interfaces/current-user.interface';
 export const CurrentUser = createParamDecorator(
   (data: keyof CurrentUserPayload | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();

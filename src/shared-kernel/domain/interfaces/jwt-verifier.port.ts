@@ -1,7 +1,7 @@
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
-} from '../types/jwt-payload.types';
+} from './jwt-payload.interface';
 
 /**
  * Port for verifying JWT tokens.

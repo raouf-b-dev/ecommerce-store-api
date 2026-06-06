@@ -1,8 +1,8 @@
-import { JwtVerifierPort } from '../ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
-} from '../types/jwt-payload.types';
+} from '../../../shared-kernel/domain/interfaces/jwt-payload.interface';
 
 export class MockJwtVerifierService implements JwtVerifierPort {
   verifyAccessToken = jest.fn<Promise<VerifiedAccessTokenPayload>, [string]>();

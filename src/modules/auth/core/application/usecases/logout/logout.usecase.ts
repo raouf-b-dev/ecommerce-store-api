@@ -3,7 +3,7 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
-import { JwtVerifierPort } from '../../../../../../infrastructure/jwt/ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 
 @Injectable()
 export class LogoutUseCase extends UseCase<
