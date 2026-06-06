@@ -12,9 +12,9 @@ import {
 } from '../../services/shipping-address-resolver';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
-import { CheckoutCartInfo } from '../../ports/cart.gateway';
 import { CustomerGateway } from '../../ports/customer.gateway';
 import { CartGateway } from '../../ports/cart.gateway';
+import { CheckoutCartInfo } from '../../../domain/interfaces/checkout-cart';
 
 export interface ValidateCheckoutInput {
   cartId: number;

@@ -12,8 +12,8 @@ export {
   createMockRequest,
   createMockResponse,
   createMockRequestWithUser,
-  RequestWithUser,
 } from './fixtures/nestjs-context.fixture';
+export type { RequestWithUser } from './fixtures/nestjs-context.fixture';
 export * from './mocks/jwt-signer.service.mock';
 export * from '../infrastructure/jwt/testing/jwt-verifier.mock';
 export * from './mocks/cache.mock';
