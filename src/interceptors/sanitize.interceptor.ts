@@ -5,9 +5,9 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import * as sanitizeHtml from 'sanitize-html';
+import sanitizeHtml, { IOptions } from 'sanitize-html';
 
-const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+const SANITIZE_OPTIONS: IOptions = {
   allowedTags: [],
   allowedAttributes: {},
 };

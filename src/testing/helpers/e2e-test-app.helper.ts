@@ -5,7 +5,7 @@ import {
   Type,
 } from '@nestjs/common';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from 'src/app.module';
 import { GlobalExceptionFilter } from 'src/filters/global-exception.filter';
 import { ResultInterceptor } from 'src/interceptors/result.interceptor';
