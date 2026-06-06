@@ -83,7 +83,9 @@ describe('PermissionsGuard', () => {
     const context = createMockExecutionContext(request);
 
     expect(await guard.canActivate(context)).toBe(true);
-    expect(request.userPermissions?.has('manage_roles')).toBe(true);
+    expect(
+      (request.userPermissions as RolePermissionsVO)?.has('manage_roles'),
+    ).toBe(true);
   });
 
   it('should return false if resolving permissions fails', async () => {
