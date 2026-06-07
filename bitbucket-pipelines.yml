@@ -1,4 +1,4 @@
-image: node:22
+image: node:24
 
 options:
   max-time: 20
