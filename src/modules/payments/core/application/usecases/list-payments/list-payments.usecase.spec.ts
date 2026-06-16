@@ -7,13 +7,11 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { OrderGateway } from '../../ports/order.gateway';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('ListPaymentsUseCase', () => {
   let useCase: ListPaymentsUseCase;
   let paymentRepository: MockPaymentRepository;
-  let orderGateway: jest.Mocked<OrderGateway>;
 
   const adminContext: CallerContext = {
     kind: 'user',
@@ -32,20 +30,12 @@ describe('ListPaymentsUseCase', () => {
   };
 
   beforeEach(async () => {
-    orderGateway = {
-      getOrderCustomerId: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListPaymentsUseCase,
         {
           provide: PaymentRepository,
           useClass: MockPaymentRepository,
-        },
-        {
-          provide: OrderGateway,
-          useValue: orderGateway,
         },
       ],
     }).compile();
@@ -61,8 +51,6 @@ describe('ListPaymentsUseCase', () => {
   });
 
   it('should list payments by orderId for admin', async () => {
-    orderGateway.getOrderCustomerId.mockResolvedValue(Result.success(456));
-
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       orderId: 123,
       customerId: 456,
@@ -72,7 +60,7 @@ describe('ListPaymentsUseCase', () => {
     paymentRepository.mockSuccessfulFindByOrderId([payment.toPrimitives()]);
 
     const result = await useCase.execute({
-      query: { orderId: 123 },
+      query: { orderId: 123, customerId: 456 },
       callerContext: adminContext,
     });
 
@@ -81,8 +69,6 @@ describe('ListPaymentsUseCase', () => {
   });
 
   it('should list payments by orderId for customer who owns the order', async () => {
-    orderGateway.getOrderCustomerId.mockResolvedValue(Result.success(123));
-
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       orderId: 123,
       customerId: 123,
@@ -93,7 +79,7 @@ describe('ListPaymentsUseCase', () => {
     ]);
 
     const result = await useCase.execute({
-      query: { orderId: 123 },
+      query: { orderId: 123, customerId: 123 },
       callerContext: customerContext,
     });
 
@@ -102,8 +88,6 @@ describe('ListPaymentsUseCase', () => {
   });
 
   it('should return not found when customer queries another customers order payments', async () => {
-    orderGateway.getOrderCustomerId.mockResolvedValue(Result.success(456));
-
     const result = await useCase.execute({
       query: { orderId: 123 },
       callerContext: customerContext,
