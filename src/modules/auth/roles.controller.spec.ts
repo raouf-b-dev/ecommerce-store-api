@@ -7,9 +7,6 @@ import { UpdateRoleUseCase } from './core/application/usecases/role/update-role.
 import { DeleteRoleUseCase } from './core/application/usecases/role/delete-role.usecase';
 import { Result } from '../../shared-kernel/domain/result';
 
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from './primary-adapters/guards/permissions.guard';
-
 describe('RolesController', () => {
   let controller: RolesController;
   let mockFindAll: jest.Mocked<FindAllRolesUseCase>;
@@ -28,12 +25,7 @@ describe('RolesController', () => {
         { provide: UpdateRoleUseCase, useValue: { execute: jest.fn() } },
         { provide: DeleteRoleUseCase, useValue: { execute: jest.fn() } },
       ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(PermissionsGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
     controller = module.get<RolesController>(RolesController);
     mockFindAll = module.get(FindAllRolesUseCase);

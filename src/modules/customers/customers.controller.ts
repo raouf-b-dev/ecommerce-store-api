@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,9 +15,9 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
+import { CallerCtx } from '../auth/primary-adapters/decorators/caller-context.decorator';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CreateCustomerDto } from './primary-adapters/dto/create-customer.dto';
 import { UpdateCustomerDto } from './primary-adapters/dto/update-customer.dto';
 import { AddAddressDto } from './primary-adapters/dto/add-address.dto';
@@ -35,11 +35,9 @@ import { AddAddressUseCase } from './core/application/usecases/add-address/add-a
 import { UpdateAddressUseCase } from './core/application/usecases/update-address/update-address.usecase';
 import { DeleteAddressUseCase } from './core/application/usecases/delete-address/delete-address.usecase';
 import { SetDefaultAddressUseCase } from './core/application/usecases/set-default-address/set-default-address.usecase';
-import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('customers')
 @ApiBearerAuth()
-@UseGuards(AuthGuard, PermissionsGuard)
 @Controller('customers')
 export class CustomersController {
   constructor(
@@ -71,10 +69,17 @@ export class CustomersController {
   }
 
   @Get(':id')
+  @RequirePermissions('view_all_customers', 'view_own_profile')
   @ApiOperation({ summary: 'Get customer by ID' })
   @ApiResponse({ status: 200, type: CustomerResponseDto })
-  async getCustomer(@Param('id') id: string) {
-    return await this.getCustomerUseCase.execute(Number(id));
+  async getCustomer(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.getCustomerUseCase.execute({
+      customerId: id,
+      callerContext,
+    });
   }
 
   @Patch(':id')
@@ -82,11 +87,11 @@ export class CustomersController {
   @ApiOperation({ summary: 'Update customer information' })
   @ApiResponse({ status: 200, type: CustomerResponseDto })
   async updateCustomer(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCustomerDto,
   ) {
     return await this.updateCustomerUseCase.execute({
-      id: Number(id),
+      id: id,
       command: dto,
     });
   }
@@ -95,58 +100,73 @@ export class CustomersController {
   @RequirePermissions('manage_customers')
   @ApiOperation({ summary: 'Delete customer' })
   @ApiResponse({ status: 204, description: 'Customer deleted' })
-  async deleteCustomer(@Param('id') id: string) {
-    return await this.deleteCustomerUseCase.execute(Number(id));
+  async deleteCustomer(@Param('id', ParseIntPipe) id: number) {
+    return await this.deleteCustomerUseCase.execute(id);
   }
 
   @Post(':id/addresses')
+  @RequirePermissions('manage_customers', 'manage_own_addresses')
   @ApiOperation({ summary: 'Add address to customer' })
   @ApiResponse({ status: 201, type: AddressResponseDto })
-  async addAddress(@Param('id') id: string, @Body() dto: AddAddressDto) {
+  async addAddress(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddAddressDto,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
     return await this.addAddressUseCase.execute({
-      customerId: Number(id),
+      customerId: id,
       command: dto,
+      callerContext,
     });
   }
 
   @Patch(':id/addresses/:addressId')
+  @RequirePermissions('manage_customers', 'manage_own_addresses')
   @ApiOperation({ summary: 'Update customer address' })
   @ApiResponse({ status: 200, type: AddressResponseDto })
   async updateAddress(
-    @Param('id') id: string,
-    @Param('addressId') addressId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('addressId', ParseIntPipe) addressId: number,
     @Body() dto: UpdateAddressDto,
+    @CallerCtx() callerContext: CallerContext,
   ) {
     return await this.updateAddressUseCase.execute({
-      customerId: Number(id),
-      addressId: Number(addressId),
+      customerId: id,
+      addressId: addressId,
       command: dto,
+      callerContext,
     });
   }
 
   @Delete(':id/addresses/:addressId')
+  @RequirePermissions('manage_customers', 'manage_own_addresses')
   @ApiOperation({ summary: 'Delete customer address' })
   @ApiResponse({ status: 204, description: 'Address deleted' })
   async deleteAddress(
-    @Param('id') id: string,
-    @Param('addressId') addressId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @CallerCtx() callerContext: CallerContext,
   ) {
     return await this.deleteAddressUseCase.execute({
-      customerId: Number(id),
-      addressId: Number(addressId),
+      customerId: id,
+      addressId: addressId,
+      callerContext,
     });
   }
 
   @Patch(':id/addresses/:addressId/set-default')
+  @RequirePermissions('manage_customers', 'manage_own_addresses')
   @ApiOperation({ summary: 'Set address as default' })
   @ApiResponse({ status: 200, type: CustomerResponseDto })
   async setDefaultAddress(
-    @Param('id') id: string,
-    @Param('addressId') addressId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @CallerCtx() callerContext: CallerContext,
   ) {
     return await this.setDefaultAddressUseCase.execute({
-      customerId: Number(id),
-      addressId: Number(addressId),
+      customerId: id,
+      addressId: addressId,
+      callerContext,
     });
   }
 }

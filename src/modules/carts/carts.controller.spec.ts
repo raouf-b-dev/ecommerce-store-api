@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartsController } from './carts.controller';
 import { Result } from '../../shared-kernel/domain/result';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/add-cart-item.usecase';
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
 import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
@@ -10,6 +8,7 @@ import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.us
 import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
+import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
 
 describe('CartsController', () => {
   let controller: CartsController;
@@ -70,10 +69,11 @@ describe('CartsController', () => {
         },
       ],
     })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(PermissionsGuard)
-      .useValue({ canActivate: () => true })
+      .overrideInterceptor(CartSessionCookieInterceptor)
+      .useValue({
+        intercept: (_ctx: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
       .compile();
 
     controller = module.get<CartsController>(CartsController);

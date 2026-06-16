@@ -6,8 +6,8 @@ import {
   Param,
   Query,
   Headers,
-  UseGuards,
   HttpCode,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,9 +16,10 @@ import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
+import { CallerCtx } from '../auth/primary-adapters/decorators/caller-context.decorator';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
+import { Public } from '../../guards/decorators/public.decorator';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
@@ -54,6 +55,7 @@ export class PaymentsController {
   ) {}
 
   @Post('webhooks/stripe')
+  @Public()
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handleStripeWebhook(
@@ -67,6 +69,7 @@ export class PaymentsController {
   }
 
   @Post('webhooks/paypal')
+  @Public()
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handlePayPalWebhook(@Headers() headers: any, @Body() body: any) {
@@ -77,60 +80,78 @@ export class PaymentsController {
   }
 
   @Post()
-  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_orders', 'view_own_orders')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a payment intent/transaction' })
   @ApiResponse({ status: 201, type: PaymentResponseDto })
-  async createPayment(@Body() dto: CreatePaymentDto) {
-    const result = await this.createPaymentUseCase.execute(dto);
+  async createPayment(
+    @Body() dto: CreatePaymentDto,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    const result = await this.createPaymentUseCase.execute({
+      command: dto,
+      callerContext,
+    });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
-  async getPayment(@Param('id') id: string) {
-    const result = await this.getPaymentUseCase.execute(Number(id));
+  async getPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    const result = await this.getPaymentUseCase.execute({
+      paymentId: id,
+      callerContext,
+    });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get()
-  @UseGuards(AuthGuard, PermissionsGuard)
-  @RequirePermissions('view_all_payments')
+  @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
-  async listPayments(@Query() query: ListPaymentsQueryDto) {
-    const result = await this.listPaymentsUseCase.execute(query);
+  async listPayments(
+    @Query() query: ListPaymentsQueryDto,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    const result = await this.listPaymentsUseCase.execute({
+      query,
+      callerContext,
+    });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 
   @Post(':id/capture')
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Capture an authorized payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
-  async capturePayment(@Param('id') id: string) {
-    const result = await this.capturePaymentUseCase.execute(Number(id));
+  async capturePayment(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.capturePaymentUseCase.execute(id);
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Post(':id/refund')
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process a refund for a payment' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
-  async processRefund(@Param('id') id: string, @Body() dto: ProcessRefundDto) {
+  async processRefund(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ProcessRefundDto,
+  ) {
     const result = await this.processRefundUseCase.execute({
-      id: Number(id),
+      id: id,
       dto,
     });
     if (isFailure(result)) return result;
@@ -138,18 +159,23 @@ export class PaymentsController {
   }
 
   @Post(':id/verify')
-  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
-  async verifyPayment(@Param('id') id: string) {
-    const result = await this.verifyPaymentUseCase.execute(Number(id));
+  async verifyPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    const result = await this.verifyPaymentUseCase.execute({
+      paymentId: id,
+      callerContext,
+    });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Post('cod/record')
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Record cash on delivery payment collection' })
@@ -161,14 +187,17 @@ export class PaymentsController {
   }
 
   @Get('orders/:orderId')
-  @UseGuards(AuthGuard, PermissionsGuard)
-  @RequirePermissions('view_all_payments')
+  @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all payments for an order' })
   @ApiResponse({ status: 200, type: [PaymentResponseDto] })
-  async getOrderPayments(@Param('orderId') orderId: string) {
+  async getOrderPayments(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
     const result = await this.listPaymentsUseCase.execute({
-      orderId: Number(orderId),
+      query: { orderId: orderId },
+      callerContext,
     });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponseList(result.value));

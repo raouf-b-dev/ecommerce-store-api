@@ -141,7 +141,7 @@ describe('AuthController', () => {
 
   it('should read refresh token from body on refresh', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    const res = await controller.refresh(dto, mockReq);
+    const res = await controller.refresh('refresh-456', dto);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
@@ -152,9 +152,8 @@ describe('AuthController', () => {
   });
 
   it('should read refresh token from cookie when body is empty', async () => {
-    mockReq.cookies = { refresh_token: 'cookie-refresh-789' };
     const dto: RefreshTokenDto = {};
-    await controller.refresh(dto, mockReq);
+    await controller.refresh('cookie-refresh-789', dto);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'cookie-refresh-789',
@@ -163,7 +162,7 @@ describe('AuthController', () => {
 
   it('should execute logout', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logout(dto, mockReq);
+    await controller.logout('refresh-456', dto);
 
     expect(logoutUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',
@@ -172,7 +171,7 @@ describe('AuthController', () => {
 
   it('should execute logout-all', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
-    await controller.logoutAll(dto, mockReq);
+    await controller.logoutAll('refresh-456', dto);
 
     expect(logoutAllUseCase.execute).toHaveBeenCalledWith({
       refreshToken: 'refresh-456',

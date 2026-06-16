@@ -15,14 +15,11 @@ import {
 } from '@nestjs/swagger';
 import { ActivateUserUseCase } from './core/application/usecases/activate-user/activate-user.usecase';
 import { DeactivateUserUseCase } from './core/application/usecases/deactivate-user/deactivate-user.usecase';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from './primary-adapters/guards/permissions.guard';
 import { RequirePermissions } from './primary-adapters/decorators/require-permissions.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(AuthGuard, PermissionsGuard)
 @RequirePermissions('manage_users')
 export class UsersController {
   constructor(

@@ -5,12 +5,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Request } from 'express';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
@@ -20,13 +18,13 @@ import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/r
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
 import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
-import {
-  RefreshTokenCookieInterceptor,
-  REFRESH_COOKIE_NAME,
-} from './primary-adapters/interceptors/refresh-token-cookie.interceptor';
+import { RefreshTokenCookieInterceptor } from './primary-adapters/interceptors/refresh-token-cookie.interceptor';
+import { RefreshToken } from './primary-adapters/decorators/refresh-token.decorator';
+import { Public } from '../../guards/decorators/public.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
+@Public()
 @UseInterceptors(RefreshTokenCookieInterceptor)
 export class AuthController {
   constructor(
@@ -72,8 +70,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token successfully refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    const refreshToken = this.extractRefreshToken(dto, req);
+  async refresh(
+    @RefreshToken() refreshToken: string,
+    @Body() _dto: RefreshTokenDto,
+  ) {
     return this.refreshTokenUseCase.execute({ refreshToken });
   }
 
@@ -81,8 +81,10 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({ status: 204, description: 'Successfully logged out' })
-  async logout(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    const refreshToken = this.extractRefreshToken(dto, req);
+  async logout(
+    @RefreshToken() refreshToken: string,
+    @Body() _dto: RefreshTokenDto,
+  ) {
     return this.logoutUseCase.execute({ refreshToken });
   }
 
@@ -93,8 +95,10 @@ export class AuthController {
     status: 204,
     description: 'Successfully logged out all sessions',
   })
-  async logoutAll(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    const refreshToken = this.extractRefreshToken(dto, req);
+  async logoutAll(
+    @RefreshToken() refreshToken: string,
+    @Body() _dto: RefreshTokenDto,
+  ) {
     return this.logoutAllUseCase.execute({ refreshToken });
   }
 
@@ -106,15 +110,5 @@ export class AuthController {
   })
   getJwks() {
     return this.jwksService.getJwks();
-  }
-
-  // ─── Private Helpers ──────────────────────────────────────────────
-
-  /**
-   * Extracts the refresh token from the request body (API/mobile clients)
-   * or from the HttpOnly cookie (browser clients).
-   */
-  private extractRefreshToken(dto: RefreshTokenDto, req: Request): string {
-    return dto.refreshToken || req.cookies?.[REFRESH_COOKIE_NAME] || '';
   }
 }
