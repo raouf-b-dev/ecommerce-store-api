@@ -5,7 +5,7 @@ import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
   cartId: number;
-  userId: number;
+  customerId: number;
   shippingAddress: ShippingAddressProps;
   paymentMethod: PaymentMethodType;
   customerNotes?: string;

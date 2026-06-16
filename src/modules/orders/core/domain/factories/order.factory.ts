@@ -7,7 +7,7 @@ import { OrderItemProps } from '../entities/order-items';
 export class OrderFactory {
   createFromCart(props: {
     cart: CheckoutCartInfo;
-    userId: number;
+    customerId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;
     customerNotes?: string;
@@ -27,7 +27,7 @@ export class OrderFactory {
     const id = props.orderId || null;
     return Order.create({
       id,
-      customerId: props.userId,
+      customerId: props.customerId,
       paymentMethod: props.paymentMethod,
       items,
       shippingAddress: props.shippingAddress,
