@@ -16,6 +16,9 @@ import { WebsocketModule } from './infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './modules/health/health.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './guards/auth.guard';
+import { PermissionsGuard } from './modules/auth/primary-adapters/guards/permissions.guard';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -44,6 +47,16 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
       expandVariables: true,
       load: [configuration],
     }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
+    },
   ],
 })
 export class AppModule {}
