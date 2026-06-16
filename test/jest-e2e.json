@@ -6,6 +6,7 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "transformIgnorePatterns": ["node_modules/(?!jose/.*)"],
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1",
     "^testing/(.*)$": "<rootDir>/../src/testing/$1"

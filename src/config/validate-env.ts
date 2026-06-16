@@ -23,6 +23,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
     JWT_REFRESH_TOKEN_TTL: str({ default: '7d' }),
 
+    JWT_CART_SESSION_TTL: str({ default: '7d' }),
+
     CORS_ALLOWED_ORIGINS: str({
       default: 'http://localhost:3000,http://localhost:5173',
     }),

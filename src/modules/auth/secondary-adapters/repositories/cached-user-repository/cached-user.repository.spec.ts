@@ -89,7 +89,7 @@ describe('CachedUserRepository', () => {
       expect(postgresRepo.findByEmail).not.toHaveBeenCalled();
       expect(cacheService.getAll).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:"${escapeRedisSearchTextValue(mockUser.email)}"`,
+        `@email:{${escapeRedisSearchTextValue(mockUser.email)}}`,
       );
     });
 
@@ -102,7 +102,7 @@ describe('CachedUserRepository', () => {
 
       expect(cacheService.getAll).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:"test\\"admin\\\\special@example.com"`,
+        `@email:{test\\"admin\\\\special@example.com}`,
       );
     });
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -10,6 +10,7 @@ import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
+import { validateCustomerAccessTokenBinding } from '../../services/validate-customer-access-token.service';
 
 export interface LoginCommand {
   email: string;
@@ -42,13 +43,27 @@ export class LoginUserUseCase extends UseCase<
   > {
     // 1. Find User
     const userResult = await this.userRepository.findByEmail(command.email);
-    if (userResult.isFailure || !userResult.value) {
+
+    if (userResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to retrieve user information',
+        userResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const user = userResult.value;
+
+    if (!user) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_user',
       });
-      return ErrorFactory.UseCaseError('Invalid credentials');
+      return ErrorFactory.UseCaseError(
+        'Invalid credentials',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
-    const user = userResult.value;
 
     // 2. Verify Password
     const isMatch = await this.passwordHasher.compare(
@@ -59,7 +74,11 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_password',
       });
-      return ErrorFactory.UseCaseError('Invalid credentials');
+      return ErrorFactory.UseCaseError(
+        'Invalid credentials',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     // 2.5 Check if user is active
@@ -67,7 +86,11 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'inactive_user',
       });
-      return ErrorFactory.UseCaseError('Invalid credentials');
+      return ErrorFactory.UseCaseError(
+        'Invalid credentials',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     // 3. Resolve role code for JWT payload (PermissionsGuard requires the string code)
@@ -75,14 +98,44 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'no_role',
       });
-      return ErrorFactory.UseCaseError('User has no assigned role');
+      return ErrorFactory.UseCaseError(
+        'User has no assigned role',
+        null,
+        HttpStatus.FORBIDDEN,
+      );
     }
     const roleResult = await this.roleRepository.findById(user.roleId);
     if (roleResult.isFailure) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_resolution_failed',
       });
-      return ErrorFactory.UseCaseError('Failed to resolve user role');
+      return ErrorFactory.UseCaseError(
+        'Failed to resolve user role',
+        roleResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (!roleResult.value) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'role_not_found',
+      });
+      return ErrorFactory.UseCaseError(
+        'User role not found',
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const customerBindingError = validateCustomerAccessTokenBinding(
+      roleResult.value.code,
+      user.customerId,
+    );
+    if (customerBindingError) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'customer_not_linked',
+      });
+      return customerBindingError;
     }
 
     // 4. Generate Access Token

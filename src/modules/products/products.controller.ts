@@ -6,7 +6,7 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,8 +14,6 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
@@ -39,7 +37,6 @@ export class ProductsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Create a new product',
@@ -63,7 +60,6 @@ export class ProductsController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('view_all_products')
   @ApiOperation({
     summary: 'List all products',
@@ -80,7 +76,6 @@ export class ProductsController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('view_all_products')
   @ApiOperation({ summary: 'Get product by ID' })
   @ApiResponse({
@@ -89,13 +84,12 @@ export class ProductsController {
     type: ProductResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  async findOne(@Param('id') id: string) {
-    return await this.getProductUseCase.execute(Number(id));
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return await this.getProductUseCase.execute(id);
   }
 
   @Patch(':id')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Update product by ID',
@@ -113,18 +107,17 @@ export class ProductsController {
     description: 'Forbidden - Admin access required.',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
   ) {
     return await this.updateProductUseCase.execute({
-      id: Number(id),
+      id: id,
       dto: updateProductDto,
     });
   }
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('manage_products')
   @ApiOperation({
     summary: 'Delete product by ID',
@@ -138,7 +131,7 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  async remove(@Param('id') id: string) {
-    return await this.deleteProductUseCase.execute(Number(id));
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return await this.deleteProductUseCase.execute(id);
   }
 }

@@ -11,7 +11,10 @@ import { Response } from 'express';
 import { MetricsService } from './metrics.service';
 import { MetricsAuthGuard } from './guards/metrics-auth.guard';
 
+import { Public } from '../../guards/decorators/public.decorator';
+
 @Controller('metrics')
+@Public()
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 

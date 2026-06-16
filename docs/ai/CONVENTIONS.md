@@ -122,7 +122,10 @@ Job handlers must **not** contain business logic, publish domain events, or inje
 ## 9. Verification and Handoff
 
 1. Classify risk (low/medium/high).
-2. Run verification commands for changed behavior.
+2. Run verification commands for changed behavior:
+   - `npm run typecheck` — TypeScript compile check (`tsc --noEmit`); run for any code change.
+   - `npm test` (or targeted `npx jest <path>`) — unit/integration tests for affected behavior.
+   - `npm run test:arch` — hexagonal and cross-module boundary rules; run when layers, modules, ports, or adapters change.
 3. Report outcomes, gaps, assumptions, residual risks.
 4. Use handoff order: summary, changed scope, evidence, risks, assumptions.
 

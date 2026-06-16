@@ -9,6 +9,7 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface ProcessPaymentResult extends ReserveStockResult {
   paymentId: number;
@@ -40,7 +41,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,
   ): Promise<Result<ProcessPaymentResult, AppError>> {
-    const { paymentMethod, userId, orderId } = job.data;
+    const { paymentMethod, customerId, orderId } = job.data;
 
     const childrenValues = await job.getChildrenValues();
     const childData = Object.values(childrenValues)[0] as ReserveStockResult;
@@ -53,7 +54,10 @@ export class ProcessPaymentStep extends BaseJobHandler<
 
     const { reservationId } = childData;
 
-    const orderResult = await this.getOrderUseCase.execute(orderId);
+    const orderResult = await this.getOrderUseCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
     if (isFailure(orderResult)) {
       return ErrorFactory.ServiceError(
         `Failed to fetch order ${orderId}: ${orderResult.error.message}`,
@@ -70,7 +74,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
       amount: orderTotal,
       currency: orderCurrency,
       paymentMethod,
-      customerId: userId,
+      customerId,
       metadata: {
         orderId,
         reservationId,

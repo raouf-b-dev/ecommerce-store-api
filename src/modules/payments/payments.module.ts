@@ -1,4 +1,4 @@
-import { Logger, Module, forwardRef } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
 import { PaymentEntity } from './secondary-adapters/orm/payment.schema';

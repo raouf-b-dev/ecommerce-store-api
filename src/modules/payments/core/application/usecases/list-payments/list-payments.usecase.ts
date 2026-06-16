@@ -5,10 +5,17 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  PAYMENT_ACCESS_PERMISSIONS,
+  ORDER_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
 export interface ListPaymentsQuery {
   orderId?: number;
@@ -19,9 +26,14 @@ export interface ListPaymentsQuery {
   limit?: number;
 }
 
+export interface ListPaymentsInput {
+  query: ListPaymentsQuery;
+  callerContext: CallerContext;
+}
+
 @Injectable()
 export class ListPaymentsUseCase extends UseCase<
-  ListPaymentsQuery,
+  ListPaymentsInput,
   IPayment[],
   UseCaseError
 > {
@@ -30,25 +42,52 @@ export class ListPaymentsUseCase extends UseCase<
   }
 
   async execute(
-    dto: ListPaymentsQuery,
+    input: ListPaymentsInput,
   ): Promise<Result<IPayment[], UseCaseError>> {
-    if (dto.orderId) {
-      const result = await this.paymentRepository.findByOrderId(dto.orderId);
+    const { query, callerContext } = input;
+    const scope = OwnedResourceAccessPolicy.resolveListScope(
+      callerContext,
+      PAYMENT_ACCESS_PERMISSIONS,
+      query.customerId,
+    );
+
+    if (!scope.allowed) {
+      return Result.success([]);
+    }
+
+    if (query.orderId) {
+      if (
+        !OwnedResourceAccessPolicy.canViewResource(
+          callerContext,
+          query.customerId || null,
+          ORDER_ACCESS_PERMISSIONS,
+        )
+      ) {
+        return ErrorFactory.UseCaseError(
+          `Order with id ${query.orderId} not found`,
+        );
+      }
+
+      const result = await this.paymentRepository.findByOrderId(query.orderId);
       if (isFailure(result)) return result;
+
       return Result.success(result.value.map((p) => p.toPrimitives()));
     }
 
-    if (dto.customerId) {
+    if (scope.customerId) {
       const result = await this.paymentRepository.findByCustomerId(
-        dto.customerId,
-        dto.page,
-        dto.limit,
+        scope.customerId,
+        query.page,
+        query.limit,
       );
       if (isFailure(result)) return result;
       return Result.success(result.value.map((p) => p.toPrimitives()));
     }
 
-    // TODO: Implement general findAll if needed, or return empty array
+    if (callerContext.permissions.has(PAYMENT_ACCESS_PERMISSIONS.viewAll)) {
+      return Result.success([]);
+    }
+
     return Result.success([]);
   }
 }

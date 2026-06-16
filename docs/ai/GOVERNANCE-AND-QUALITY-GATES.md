@@ -29,7 +29,9 @@ A task is done only if all are true:
 
 ### Gate C: Verification
 
+- `npm run typecheck` passes for code changes.
 - Tests run at the right level (unit/integration/e2e as needed).
+- `npm run test:arch` passes when module boundaries, ports, or adapters change.
 - New failure modes are covered.
 - Logs, metrics, or traces are considered when behavior changes.
 

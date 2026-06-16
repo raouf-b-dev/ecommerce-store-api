@@ -3,9 +3,6 @@ import { PermissionsController } from './permissions.controller';
 import { FindAllPermissionsUseCase } from './core/application/usecases/find-all-permissions.usecase';
 import { Result } from '../../shared-kernel/domain/result';
 
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from './primary-adapters/guards/permissions.guard';
-
 describe('PermissionsController', () => {
   let controller: PermissionsController;
   let mockFindAll: jest.Mocked<FindAllPermissionsUseCase>;
@@ -19,12 +16,7 @@ describe('PermissionsController', () => {
           useValue: { execute: jest.fn() },
         },
       ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(PermissionsGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
     controller = module.get<PermissionsController>(PermissionsController);
     mockFindAll = module.get(FindAllPermissionsUseCase);

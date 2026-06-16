@@ -1,6 +1,7 @@
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
+  VerifiedCartSessionPayload,
 } from './jwt-payload.interface';
 
 /**
@@ -14,4 +15,7 @@ export abstract class JwtVerifierPort {
   abstract verifyRefreshToken(
     token: string,
   ): Promise<VerifiedRefreshTokenPayload>;
+  abstract verifyCartSessionToken(
+    token: string,
+  ): Promise<VerifiedCartSessionPayload>;
 }

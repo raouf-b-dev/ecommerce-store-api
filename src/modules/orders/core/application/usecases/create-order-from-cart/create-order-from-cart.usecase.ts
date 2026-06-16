@@ -17,7 +17,7 @@ import { CART_GATEWAY } from '../../../../order.token';
 
 export interface CreateOrderFromCartCommand {
   cartId: number;
-  userId: number;
+  customerId: number;
   shippingAddress: ShippingAddressProps;
   paymentMethod: PaymentMethodType;
   customerNotes?: string;
@@ -57,7 +57,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
 
     const order = this.orderFactory.createFromCart({
       cart,
-      userId: dto.userId,
+      customerId: dto.customerId,
       shippingAddress: dto.shippingAddress,
       paymentMethod: dto.paymentMethod,
       customerNotes: dto.customerNotes,

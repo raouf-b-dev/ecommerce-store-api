@@ -50,6 +50,8 @@ import { JwtSignerPort } from './core/application/ports/jwt-signer.port';
 import { JwtSignerService } from './core/application/services/jwt-signer.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CartSessionTokenService } from './core/application/services/cart-session-token.service';
+import { JwtCartSessionTokenService } from './secondary-adapters/services/jwt-cart-session-token.service';
 
 @Global()
 @Module({
@@ -120,6 +122,10 @@ import { CachePort } from '../../infrastructure/redis/cache/cache.port';
       provide: JwtSignerPort,
       useClass: JwtSignerService,
     },
+    {
+      provide: CartSessionTokenService,
+      useClass: JwtCartSessionTokenService,
+    },
 
     // Use Cases
     RegisterUserUseCase,
@@ -139,6 +145,6 @@ import { CachePort } from '../../infrastructure/redis/cache/cache.port';
     SeedSuperAdminUseCase,
     RefreshTokenCookieInterceptor,
   ],
-  exports: [ResolveRolePermissionsService],
+  exports: [ResolveRolePermissionsService, CartSessionTokenService],
 })
 export class AuthModule {}

@@ -7,6 +7,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { Role } from '../../domain/entities/role';
 import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
+import { LoggerTestHelper } from '../../../../../testing';
 
 describe('RoleSystemDataInitializer', () => {
   let initializer: RoleSystemDataInitializer;
@@ -14,6 +15,9 @@ describe('RoleSystemDataInitializer', () => {
   let mockPermissionRepo: MockPermissionRepository;
 
   beforeEach(async () => {
+    // Silence logs during tests
+    LoggerTestHelper.silence();
+
     mockRoleRepo = new MockRoleRepository();
 
     mockPermissionRepo = new MockPermissionRepository();
@@ -35,6 +39,11 @@ describe('RoleSystemDataInitializer', () => {
     initializer = module.get<RoleSystemDataInitializer>(
       RoleSystemDataInitializer,
     );
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('should create system roles if they do not exist', async () => {

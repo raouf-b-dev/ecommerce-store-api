@@ -25,6 +25,6 @@ export interface CheckoutCustomerInfo {
 
 export abstract class CustomerGateway {
   abstract validateCustomer(
-    userId: number,
+    customerId: number,
   ): Promise<Result<CheckoutCustomerInfo, InfrastructureError>>;
 }

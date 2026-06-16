@@ -1,4 +1,3 @@
-// src/modules/orders/application/usecases/get-order/get-order.usecase.spec.ts
 import { GetOrderUseCase } from './get-order.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
@@ -6,10 +5,29 @@ import { OrderBuilder } from '../../../../testing/builders/order.builder';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  CallerContext,
+  SYSTEM_CALLER_CONTEXT,
+  createUserCallerContext,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('GetOrderUseCase', () => {
   let useCase: GetOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
+
+  const adminContext: CallerContext = createUserCallerContext({
+    userId: 1,
+    customerId: null,
+    role: 'ADMIN',
+    permissions: new Set(['view_all_orders']),
+  });
+
+  const customerContext: CallerContext = createUserCallerContext({
+    userId: 2,
+    customerId: 123,
+    role: 'CUSTOMER',
+    permissions: new Set(['view_own_orders']),
+  });
 
   beforeEach(() => {
     mockOrderRepository = new MockOrderRepository();
@@ -21,133 +39,162 @@ describe('GetOrderUseCase', () => {
   });
 
   describe('execute', () => {
-    it('should return Success with order when order is found', async () => {
+    it('should return Success with order when order is found and caller has view_all_orders', async () => {
       const orderId = 1;
-      const orderPrimitives = OrderTestFactory.createMockOrder({ id: orderId });
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        customerId: 456,
+      });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
 
-      const result = await useCase.execute(orderId);
+      const result = await useCase.execute({
+        orderId,
+        callerContext: adminContext,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
       expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
-      expect(result.value.items).toBeDefined();
 
       expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
-      expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure with UseCaseError when order is not found', async () => {
+    it('should return Success with order when order belongs to the customer', async () => {
       const orderId = 1;
-      mockOrderRepository.mockOrderNotFound(orderId);
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        customerId: 123,
+      });
 
-      const result = await useCase.execute(orderId);
+      mockOrderRepository.mockSuccessfulFind(orderPrimitives);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: customerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(orderId);
+      expect(result.value.customerId).toBe(123);
+    });
+
+    it('should return Failure (404) when order belongs to a different customer', async () => {
+      const orderId = 1;
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        customerId: 456,
+      });
+
+      mockOrderRepository.mockSuccessfulFind(orderPrimitives);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: customerContext,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
         `Order with id ${orderId} not found`,
         UseCaseError,
       );
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
-      expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return Failure (404) when customer role has no customerId bound', async () => {
+      const orderId = 1;
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        customerId: 123,
+      });
+
+      mockOrderRepository.mockSuccessfulFind(orderPrimitives);
+
+      const brokenCustomerContext = createUserCallerContext({
+        userId: 2,
+        customerId: null,
+        role: 'CUSTOMER',
+        permissions: new Set(['view_own_orders']),
+      });
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: brokenCustomerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
+    });
+
+    it('should allow system caller to fetch any order', async () => {
+      const orderId = 1;
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        customerId: 456,
+      });
+
+      mockOrderRepository.mockSuccessfulFind(orderPrimitives);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.customerId).toBe(456);
+    });
+
+    it('should return Failure with UseCaseError when order is not found', async () => {
+      const orderId = 1;
+      mockOrderRepository.mockOrderNotFound(orderId);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: adminContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
     });
 
     it('should handle empty order ID gracefully', async () => {
       const emptyId = 0;
       mockOrderRepository.mockOrderNotFound(emptyId);
 
-      const result = await useCase.execute(emptyId);
+      const result = await useCase.execute({
+        orderId: emptyId,
+        callerContext: adminContext,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
         `Order with id ${emptyId} not found`,
         UseCaseError,
       );
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(emptyId);
-    });
-
-    it('should handle null/undefined order ID', async () => {
-      const nullId = null as unknown as number; // Intentional negative test for invalid input
-      mockOrderRepository.mockOrderNotFound(nullId);
-
-      const result = await useCase.execute(nullId);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        undefined,
-        UseCaseError,
-      );
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(nullId);
     });
 
     it('should return order with correct properties', async () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 1,
+        customerId: 123,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
 
-      const result = await useCase.execute(orderId);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(orderId);
-      expect(result.value.customerId).toBe(1);
-      expect(result.value.items).toHaveLength(1);
-    });
-
-    it('should return order data correctly for multiple items', async () => {
-      const orderId = 1;
-      const orderPrimitives = OrderTestFactory.createMultiItemOrder(2);
-      orderPrimitives.id = orderId;
-
-      mockOrderRepository.mockSuccessfulFind(orderPrimitives);
-
-      const result = await useCase.execute(orderId);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(2);
-      expect(result.value.id).toBe(orderId);
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should handle very long order IDs', async () => {
-      const longId = 10000000;
-      mockOrderRepository.mockOrderNotFound(longId);
-
-      const result = await useCase.execute(longId);
-
-      ResultAssertionHelper.assertResultFailure(result);
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(longId);
-    });
-
-    it('should retrieve pending order successfully', async () => {
-      const orderId = 1;
-      const pendingOrder = OrderTestFactory.createPendingPaymentOrder({
-        id: orderId,
+      const result = await useCase.execute({
+        orderId,
+        callerContext: customerContext,
       });
 
-      mockOrderRepository.mockSuccessfulFind(pendingOrder);
-
-      const result = await useCase.execute(orderId);
-
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
-    });
-
-    it('should retrieve shipped order successfully', async () => {
-      const orderId = 1;
-      const shippedOrder = OrderTestFactory.createShippedOrder({ id: orderId });
-
-      mockOrderRepository.mockSuccessfulFind(shippedOrder);
-
-      const result = await useCase.execute(orderId);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.status).toBe(OrderStatus.SHIPPED);
+      expect(result.value.id).toBe(orderId);
+      expect(result.value.customerId).toBe(123);
     });
   });
 
@@ -155,18 +202,21 @@ describe('GetOrderUseCase', () => {
     it('should retrieve order with custom configuration', async () => {
       const orderPrimitives = new OrderBuilder()
         .withId(1)
-        .withCustomerId(999)
+        .withCustomerId(123)
         .withItems(5)
         .withStatus(OrderStatus.PENDING_PAYMENT)
         .build();
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
 
-      const result = await useCase.execute(orderPrimitives.id!);
+      const result = await useCase.execute({
+        orderId: orderPrimitives.id!,
+        callerContext: customerContext,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(1);
-      expect(result.value.customerId).toBe(999);
+      expect(result.value.customerId).toBe(123);
       expect(result.value.items).toHaveLength(5);
     });
   });

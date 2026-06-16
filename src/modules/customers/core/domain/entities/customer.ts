@@ -141,7 +141,7 @@ export class Customer implements ICustomer {
     return this._addresses.find((addr) => addr.id === addressId)!;
   }
 
-  addAddress(address: Address): Result<void, DomainError> {
+  addAddress(address: Address): Result<Address, DomainError> {
     if (this._addresses.length >= 10) {
       return ErrorFactory.DomainError('Customer can have maximum 10 addresses');
     }
@@ -155,7 +155,7 @@ export class Customer implements ICustomer {
 
     this._addresses.push(address);
     this._updatedAt = new Date();
-    return Result.success(undefined);
+    return Result.success(address);
   }
 
   updateAddress(

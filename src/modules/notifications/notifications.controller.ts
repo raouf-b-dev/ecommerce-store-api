@@ -1,21 +1,12 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Param, Query } from '@nestjs/common';
 import { CurrentUser } from '../auth/primary-adapters/decorators/current-user.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
 import { GetUserNotificationsDto } from './primary-adapters/dto/get-user-notifications.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(

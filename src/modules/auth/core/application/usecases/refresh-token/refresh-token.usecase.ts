@@ -9,6 +9,7 @@ import { SessionTokenRepository } from '../../../domain/repositories/session-tok
 import { SessionToken } from '../../../domain/entities/session-token';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
+import { validateCustomerAccessTokenBinding } from '../../services/validate-customer-access-token.service';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -107,6 +108,14 @@ export class RefreshTokenUseCase extends UseCase<
           null,
           HttpStatus.UNAUTHORIZED,
         );
+      }
+
+      const customerBindingError = validateCustomerAccessTokenBinding(
+        roleResult.value.code,
+        user.customerId,
+      );
+      if (customerBindingError) {
+        return customerBindingError;
       }
 
       // 7. Generate new tokens

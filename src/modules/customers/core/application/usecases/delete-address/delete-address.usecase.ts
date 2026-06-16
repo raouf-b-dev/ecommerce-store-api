@@ -8,10 +8,16 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CUSTOMER_MUTATION_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
 export interface DeleteAddressInput {
   customerId: number;
   addressId: number;
+  callerContext: CallerContext;
 }
 
 @Injectable()
@@ -27,19 +33,28 @@ export class DeleteAddressUseCase extends UseCase<
   async execute(
     input: DeleteAddressInput,
   ): Promise<Result<void, UseCaseError>> {
-    const { customerId, addressId } = input;
+    const { customerId, addressId, callerContext } = input;
 
-    // Retrieve the customer
+    if (
+      !OwnedResourceAccessPolicy.canMutateResource(
+        callerContext,
+        customerId,
+        CUSTOMER_MUTATION_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `Customer with id ${customerId} not found`,
+      );
+    }
+
     const customerResult = await this.customerRepository.findById(customerId);
     if (isFailure(customerResult)) return customerResult;
 
     const customer = customerResult.value;
 
-    // Remove the address
     const removeResult = customer.removeAddress(addressId);
     if (isFailure(removeResult)) return removeResult;
 
-    // Save the updated customer
     const saveResult = await this.customerRepository.update(customer);
     if (isFailure(saveResult)) return saveResult;
 

@@ -5,14 +5,40 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ListOrdersQuery } from '../../../domain/repositories/order-repository';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  ORDER_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+
+export interface ListOrdersInput {
+  query: ListOrdersQuery;
+  callerContext: CallerContext;
+}
 
 @Injectable()
 export class ListOrdersUsecase
-  implements UseCase<ListOrdersQuery, IOrder[], UseCaseError>
+  implements UseCase<ListOrdersInput, IOrder[], UseCaseError>
 {
   constructor(private orderRepository: OrderRepository) {}
-  async execute(dto: ListOrdersQuery): Promise<Result<IOrder[], UseCaseError>> {
-    const ordersResult = await this.orderRepository.listOrders(dto);
+
+  async execute(
+    input: ListOrdersInput,
+  ): Promise<Result<IOrder[], UseCaseError>> {
+    const { query, callerContext } = input;
+    const scope = OwnedResourceAccessPolicy.resolveListScope(
+      callerContext,
+      ORDER_ACCESS_PERMISSIONS,
+      query.customerId,
+    );
+
+    if (!scope.allowed) {
+      return Result.success([]);
+    }
+
+    const filteredQuery = { ...query, customerId: scope.customerId };
+
+    const ordersResult = await this.orderRepository.listOrders(filteredQuery);
     if (ordersResult.isFailure) {
       return ordersResult;
     }

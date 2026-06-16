@@ -6,13 +6,9 @@ import {
   Delete,
   Body,
   Param,
-  UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from './primary-adapters/guards/permissions.guard';
-import { RequirePermissions } from './primary-adapters/decorators/require-permissions.decorator';
 import { CreateRoleUseCase } from './core/application/usecases/role/create-role.usecase';
 import { UpdateRoleUseCase } from './core/application/usecases/role/update-role.usecase';
 import { DeleteRoleUseCase } from './core/application/usecases/role/delete-role.usecase';
@@ -20,11 +16,11 @@ import { FindAllRolesUseCase } from './core/application/usecases/role/find-all-r
 import { FindRoleByIdUseCase } from './core/application/usecases/role/find-role-by-id.usecase';
 import { CreateRoleDto } from './primary-adapters/dto/create-role.dto';
 import { UpdateRoleDto } from './primary-adapters/dto/update-role.dto';
+import { RequirePermissions } from './primary-adapters/decorators/require-permissions.decorator';
 
 @ApiTags('Roles')
 @ApiBearerAuth()
 @Controller('roles')
-@UseGuards(AuthGuard, PermissionsGuard)
 @RequirePermissions('manage_roles')
 export class RolesController {
   constructor(

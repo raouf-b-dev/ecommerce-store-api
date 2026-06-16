@@ -10,6 +10,11 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { AddressType } from '../../../domain/value-objects/address-type';
 import { IAddress } from '../../../domain/interfaces/address.interface';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CUSTOMER_MUTATION_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
 export interface UpdateAddressCommand {
   street?: string;
@@ -26,6 +31,7 @@ export interface UpdateAddressInput {
   customerId: number;
   addressId: number;
   command: UpdateAddressCommand;
+  callerContext: CallerContext;
 }
 
 @Injectable()
@@ -41,7 +47,19 @@ export class UpdateAddressUseCase extends UseCase<
   async execute(
     input: UpdateAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    const { customerId, addressId, command: dto } = input;
+    const { customerId, addressId, command: dto, callerContext } = input;
+
+    if (
+      !OwnedResourceAccessPolicy.canMutateResource(
+        callerContext,
+        customerId,
+        CUSTOMER_MUTATION_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `Customer with id ${customerId} not found`,
+      );
+    }
 
     const customerResult = await this.customerRepository.findById(customerId);
     if (isFailure(customerResult)) return customerResult;

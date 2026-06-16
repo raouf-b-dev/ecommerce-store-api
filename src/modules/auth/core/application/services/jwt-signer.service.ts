@@ -73,4 +73,20 @@ export class JwtSignerService implements JwtSignerPort {
 
     return { token, sessionId, expiresAt };
   }
+
+  async signCartSessionToken(cartId: number): Promise<string> {
+    const pem = this.configService.jwt.privateKey;
+    const privateKey = await importPKCS8(pem, 'RS256');
+
+    return new SignJWT({ sub: 'guest', cartId, typ: 'cart_session' })
+      .setProtectedHeader({
+        alg: 'RS256',
+        kid: this.jwksService.getKid(),
+        typ: 'JWT',
+      })
+      .setIssuedAt()
+      .setIssuer('ecommerce-api')
+      .setExpirationTime(this.configService.jwt.cartSessionTtl)
+      .sign(privateKey);
+  }
 }

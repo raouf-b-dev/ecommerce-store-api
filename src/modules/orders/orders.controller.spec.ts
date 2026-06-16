@@ -5,8 +5,6 @@ import { OrderTestFactory } from './testing/factories/order.factory';
 import { OrderCommandTestFactory } from './testing/factories/create-order-dto.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { ShipOrderUseCase } from './core/application/usecases/ship-order/ship-order.usecase';
@@ -20,6 +18,7 @@ import { Order } from './core/domain/entities/order';
 import { OrderStatus } from './core/domain/value-objects/order-status';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -38,6 +37,7 @@ describe('OrdersController', () => {
   let deliveredOrder: Order;
   let createDeliveredOrderDto: DeliverOrderCommand;
   let checkoutDto: CheckoutDto;
+  let callerContext: CallerContext;
 
   beforeEach(async () => {
     mockOrder = OrderTestFactory.createOrderEntity();
@@ -65,6 +65,13 @@ describe('OrdersController', () => {
             lastName: cmd.shippingAddress.lastName || 'User',
           }
         : undefined,
+    };
+    callerContext = {
+      kind: 'user',
+      userId: 123,
+      customerId: 100,
+      role: 'CUSTOMER',
+      permissions: new Set(['manage_own_cart']),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -135,12 +142,7 @@ describe('OrdersController', () => {
           },
         },
       ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(PermissionsGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
     controller = module.get<OrdersController>(OrdersController);
     checkoutUseCase = module.get(CheckoutUseCase);
@@ -162,39 +164,45 @@ describe('OrdersController', () => {
   });
 
   it('should call CheckoutUseCase.execute when checkout is called', async () => {
-    const userId = '123';
-    await controller.checkout(checkoutDto, userId);
+    await controller.checkout(checkoutDto, callerContext, 'cart-token');
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
       command: checkoutDto,
-      userId: Number(userId),
+      callerContext,
+      cartToken: 'cart-token',
     });
   });
 
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
-    const res = await controller.findOne(String(mockOrder.id));
-    expect(getOrderUseCase.execute).toHaveBeenCalledWith(Number(mockOrder.id));
+    const res = await controller.findOne(mockOrder.id!, callerContext);
+    expect(getOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: mockOrder.id!,
+      callerContext,
+    });
     expect(res).toEqual(Result.success(mockOrder));
   });
 
   it('should call ListOrdersUseCase.execute when findAll is called and return its result', async () => {
     const query = new ListOrdersQueryDto();
-    const res = await controller.findAll(query);
-    expect(listOrdersUseCase.execute).toHaveBeenCalledWith(query);
+    const res = await controller.findAll(query, callerContext);
+    expect(listOrdersUseCase.execute).toHaveBeenCalledWith({
+      query,
+      callerContext,
+    });
     expect(res).toEqual(Result.success([mockOrder]));
   });
 
   it('should call CancelOrderUseCase.execute when cancelOrder is called and return its result', async () => {
-    const res = await controller.cancelOrder(String(cancelledOrder.id));
+    const res = await controller.cancelOrder(cancelledOrder.id!);
     expect(cancelOrderUseCase.execute).toHaveBeenCalledWith({
-      orderId: Number(cancelledOrder.id),
+      orderId: cancelledOrder.id!,
     });
     expect(res).toEqual(Result.success(cancelledOrder));
   });
 
   it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
-    const res = await controller.confirmOrder(String(confirmedOrder.id));
+    const res = await controller.confirmOrder(confirmedOrder.id!);
     expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
-      orderId: Number(confirmedOrder.id),
+      orderId: confirmedOrder.id!,
       reservationId: undefined,
       cartId: undefined,
     });
@@ -202,20 +210,20 @@ describe('OrdersController', () => {
   });
 
   it('should call ProcessOrderUseCase.execute when processOrder is called and return its result', async () => {
-    const res = await controller.processOrder(String(processingOrder.id));
+    const res = await controller.processOrder(processingOrder.id!);
     expect(processOrderUseCase.execute).toHaveBeenCalledWith(
-      Number(processingOrder.id),
+      processingOrder.id!,
     );
     expect(res).toEqual(Result.success(processingOrder));
   });
 
   it('should call DeliverOrderUseCase.execute when deliverOrder is called and return its result', async () => {
     const res = await controller.deliverOrder(
-      String(deliveredOrder.id),
+      deliveredOrder.id!,
       createDeliveredOrderDto,
     );
     expect(deliverOrderUseCase.execute).toHaveBeenCalledWith({
-      id: Number(deliveredOrder.id),
+      id: deliveredOrder.id!,
       command: createDeliveredOrderDto,
     });
     expect(res).toEqual(Result.success(deliveredOrder));

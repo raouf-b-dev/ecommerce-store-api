@@ -7,14 +7,15 @@ import {
 import { Reflector } from '@nestjs/core';
 import { REQUIRED_PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
 import { ResolveRolePermissionsService } from '../../core/application/services/resolve-role-permissions.service';
+import { RolePermissionsVO } from '../../core/domain/value-objects/role-permissions';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   private readonly logger = new Logger(PermissionsGuard.name);
 
   constructor(
-    private reflector: Reflector,
-    private resolveRolePermissionsService: ResolveRolePermissionsService,
+    private readonly reflector: Reflector,
+    private readonly resolveRolePermissionsService: ResolveRolePermissionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -23,18 +24,12 @@ export class PermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user || !user.role) {
-      this.logger.warn(
-        'PermissionsGuard: No authenticated user found on request',
-      );
-      return false;
+      request.userPermissions = RolePermissionsVO.fromCodes([]);
+      return !requiredPermissions || requiredPermissions.length === 0;
     }
 
     const permissionsResult = await this.resolveRolePermissionsService.execute(
@@ -49,17 +44,17 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const permissions = permissionsResult.value;
-    // Attach to request for the @UserPermissions() decorator
+    // Attach to request for the @CallerCtx() decorator / other layers
     request.userPermissions = permissions;
+
+    if (!requiredPermissions || requiredPermissions.length === 0) {
+      return true;
+    }
 
     const hasPermission = requiredPermissions.some((permission) =>
       permissions.has(permission),
     );
 
-    if (!hasPermission) {
-      return false;
-    }
-
-    return true;
+    return hasPermission;
   }
 }
