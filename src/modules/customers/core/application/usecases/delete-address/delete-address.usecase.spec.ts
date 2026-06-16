@@ -8,6 +8,31 @@ import { Customer } from '../../../domain/entities/customer';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import {
+  createUserCallerContext,
+  SYSTEM_CALLER_CONTEXT,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+
+const adminCallerContext = createUserCallerContext({
+  userId: 1,
+  customerId: null,
+  role: 'ADMIN',
+  permissions: new Set(['manage_customers']),
+});
+
+const ownCustomerContext = createUserCallerContext({
+  userId: 2,
+  customerId: 123,
+  role: 'CUSTOMER',
+  permissions: new Set(['manage_own_addresses']),
+});
+
+const otherCustomerContext = createUserCallerContext({
+  userId: 3,
+  customerId: 456,
+  role: 'CUSTOMER',
+  permissions: new Set(['manage_own_addresses']),
+});
 
 describe('DeleteAddressUseCase', () => {
   let useCase: DeleteAddressUseCase;
@@ -36,7 +61,11 @@ describe('DeleteAddressUseCase', () => {
         Result.success(mockCustomer),
       );
 
-      const result = await useCase.execute({ customerId, addressId });
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: adminCallerContext,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockCustomerRepository.findById).toHaveBeenCalledWith(customerId);
@@ -49,7 +78,11 @@ describe('DeleteAddressUseCase', () => {
 
       mockCustomerRepository.mockCustomerNotFound();
 
-      const result = await useCase.execute({ customerId, addressId });
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: adminCallerContext,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -66,7 +99,11 @@ describe('DeleteAddressUseCase', () => {
         CustomerTestFactory.createMockCustomer({ id: customerId }),
       );
 
-      const result = await useCase.execute({ customerId, addressId });
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: adminCallerContext,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -86,13 +123,79 @@ describe('DeleteAddressUseCase', () => {
         ErrorFactory.RepositoryError('Failed to update customer'),
       );
 
-      const result = await useCase.execute({ customerId, addressId });
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: adminCallerContext,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
         'Failed to update customer',
         RepositoryError,
       );
+    });
+
+    it('should allow customer to delete own address', async () => {
+      const customerId = 123;
+      const addressId = 123;
+      const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
+        id: customerId,
+      });
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
+
+      mockCustomerRepository.mockSuccessfulFind(mockCustomerData);
+      mockCustomerRepository.update.mockResolvedValue(
+        Result.success(mockCustomer),
+      );
+
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: ownCustomerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should deny customer trying to delete address of another customer', async () => {
+      const customerId = 123;
+      const addressId = 123;
+
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: otherCustomerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Customer with id 123 not found',
+        UseCaseError,
+      );
+      expect(mockCustomerRepository.findById).not.toHaveBeenCalled();
+    });
+
+    it('should allow system caller to delete address', async () => {
+      const customerId = 123;
+      const addressId = 123;
+      const mockCustomerData = CustomerTestFactory.createCustomerWithAddress({
+        id: customerId,
+      });
+      const mockCustomer = Customer.fromPrimitives(mockCustomerData);
+
+      mockCustomerRepository.mockSuccessfulFind(mockCustomerData);
+      mockCustomerRepository.update.mockResolvedValue(
+        Result.success(mockCustomer),
+      );
+
+      const result = await useCase.execute({
+        customerId,
+        addressId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
     });
   });
 });

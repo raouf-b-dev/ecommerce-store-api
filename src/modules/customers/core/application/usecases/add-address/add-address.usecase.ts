@@ -7,9 +7,15 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { AddressType } from '../../../domain/value-objects/address-type';
 import { IAddress } from '../../../domain/interfaces/address.interface';
 import { Address } from '../../../domain/entities/address';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CUSTOMER_MUTATION_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
 export interface AddAddressCommand {
   street: string;
@@ -26,6 +32,7 @@ export interface AddAddressCommand {
 export interface AddAddressInput {
   customerId: number;
   command: AddAddressCommand;
+  callerContext: CallerContext;
 }
 
 @Injectable()
@@ -41,15 +48,25 @@ export class AddAddressUseCase extends UseCase<
   async execute(
     input: AddAddressInput,
   ): Promise<Result<IAddress, UseCaseError>> {
-    const { customerId, command: dto } = input;
+    const { customerId, command: dto, callerContext } = input;
 
-    // Retrieve the customer
+    if (
+      !OwnedResourceAccessPolicy.canMutateResource(
+        callerContext,
+        customerId,
+        CUSTOMER_MUTATION_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `Customer with id ${customerId} not found`,
+      );
+    }
+
     const customerResult = await this.customerRepository.findById(customerId);
     if (isFailure(customerResult)) return customerResult;
 
     const customer = customerResult.value;
 
-    // Create new address - repository will generate ID during save
     const address = Address.create(
       customerId,
       dto.street,
@@ -63,17 +80,23 @@ export class AddAddressUseCase extends UseCase<
       dto.isDefault,
     );
 
-    // Add address to customer
     const addResult = customer.addAddress(address);
     if (isFailure(addResult)) return addResult;
 
-    // Save the updated customer - repository will generate address ID
+    const existingAddressIds = new Set(
+      customer.addresses
+        .map((addr) => addr.id)
+        .filter((id): id is number => id !== null),
+    );
+
     const saveResult = await this.customerRepository.update(customer);
     if (isFailure(saveResult)) return saveResult;
 
-    // Find and return the newly added address (it will have ID now)
-    const addresses = saveResult.value.addresses;
-    const newAddress = addresses[addresses.length - 1]; // Last added address
+    const savedAddresses = saveResult.value.addresses;
+    const newAddress =
+      savedAddresses.find(
+        (addr) => addr.id !== null && !existingAddressIds.has(addr.id),
+      ) ?? savedAddresses[savedAddresses.length - 1];
 
     return Result.success<IAddress>(newAddress);
   }
