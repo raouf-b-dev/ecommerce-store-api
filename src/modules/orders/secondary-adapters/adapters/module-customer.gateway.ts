@@ -8,15 +8,19 @@ import { GetCustomerUseCase } from '../../../customers/core/application/usecases
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 @Injectable()
 export class ModuleCustomerGateway implements CustomerGateway {
   constructor(private readonly getCustomerUseCase: GetCustomerUseCase) {}
 
   async validateCustomer(
-    userId: number,
+    customerId: number,
   ): Promise<Result<CheckoutCustomerInfo, InfrastructureError>> {
-    const result = await this.getCustomerUseCase.execute(userId);
+    const result = await this.getCustomerUseCase.execute({
+      customerId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError(
@@ -27,7 +31,6 @@ export class ModuleCustomerGateway implements CustomerGateway {
 
     const customer = result.value;
 
-    // Translate upstream Customer → downstream CheckoutCustomerInfo
     const customerInfo: CheckoutCustomerInfo = {
       id: customer.id,
       firstName: customer.firstName,
