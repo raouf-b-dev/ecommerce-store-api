@@ -34,6 +34,12 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
     code: SystemRoleCode.CUSTOMER,
     name: 'Customer',
     isSystem: true,
-    permissions: [],
+    permissions: [
+      'view_own_orders',
+      'view_own_payments',
+      'manage_own_cart',
+      'view_own_profile',
+      'manage_own_addresses',
+    ],
   },
 ];
