@@ -7,16 +7,19 @@ import {
 import { Request } from 'express';
 import { JwtVerifierPort } from '../shared-kernel/domain/interfaces/jwt-verifier.port';
 import { Reflector } from '@nestjs/core';
+import { extractBearerToken } from './extract-bearer-token';
+import { IS_PUBLIC_KEY } from './decorators/public.decorator';
+import { IS_OPTIONAL_AUTH_KEY } from './decorators/optional-auth.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private jwtVerifierService: JwtVerifierPort,
-    private reflector: Reflector,
+    private readonly jwtVerifierService: JwtVerifierPort,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>('PUBLIC_ROUTE', [
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -25,10 +28,19 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
+    const isOptionalAuth = this.reflector.getAllAndOverride<boolean>(
+      IS_OPTIONAL_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
     const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromHeader(request);
+    const token = extractBearerToken(request);
 
     if (!token) {
+      if (isOptionalAuth) {
+        request.user = undefined;
+        return true;
+      }
       throw new UnauthorizedException('Missing authentication token');
     }
 
@@ -37,11 +49,14 @@ export class AuthGuard implements CanActivate {
 
       // the payload contains sub, email, role, customerId
       // we attach exactly what current-user.decorator.ts expects
-      request['user'] = {
+      request.user = {
         userId: Number(payload.sub),
         email: payload.email,
         role: payload.role,
-        customerId: payload.customerId ?? null,
+        customerId:
+          payload.customerId !== null && payload.customerId !== undefined
+            ? Number(payload.customerId)
+            : null,
       };
     } catch {
       throw new UnauthorizedException(
@@ -50,10 +65,5 @@ export class AuthGuard implements CanActivate {
     }
 
     return true;
-  }
-
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
   }
 }
