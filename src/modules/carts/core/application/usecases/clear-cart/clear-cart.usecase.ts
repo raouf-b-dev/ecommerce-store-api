@@ -8,14 +8,32 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+
+export interface ClearCartUseCaseInput {
+  cartId: number;
+  callerContext: CallerContext | null;
+  cartToken: string | null;
+}
 
 @Injectable()
-export class ClearCartUseCase extends UseCase<number, ICart, UseCaseError> {
-  constructor(private readonly cartRepository: CartRepository) {
+export class ClearCartUseCase extends UseCase<
+  ClearCartUseCaseInput,
+  ICart,
+  UseCaseError
+> {
+  constructor(
+    private readonly cartRepository: CartRepository,
+    private readonly cartOwnershipValidator: CartOwnershipValidator,
+  ) {
     super();
   }
 
-  async execute(cartId: number): Promise<Result<ICart, UseCaseError>> {
+  async execute(
+    input: ClearCartUseCaseInput,
+  ): Promise<Result<ICart, UseCaseError>> {
+    const { cartId, callerContext, cartToken } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -24,6 +42,14 @@ export class ClearCartUseCase extends UseCase<number, ICart, UseCaseError> {
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    const ownershipResult = await this.cartOwnershipValidator.validate(
+      cart,
+      callerContext,
+      cartToken,
+    );
+
+    if (isFailure(ownershipResult)) return ownershipResult;
 
     cart.clearItems();
 
