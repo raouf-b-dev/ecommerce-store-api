@@ -15,6 +15,7 @@ export class MockEnvConfigService extends EnvConfigService {
       refreshTokenTtl: '7d',
       accessTokenTtl: '1h',
       privateKey: 'test-private-key',
+      cartSessionTtl: '7d',
     },
     node: {
       env: 'test',
