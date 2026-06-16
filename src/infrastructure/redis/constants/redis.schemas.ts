@@ -53,7 +53,7 @@ export const CustomerIndexSchema = {
 
 export const UserIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
-  '$.email': { type: 'TEXT', AS: 'email' },
+  '$.email': { type: 'TAG', AS: 'email' },
   '$.role': { type: 'TEXT', AS: 'role' },
   '$.customerId': { type: 'TEXT', AS: 'customerId' },
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },

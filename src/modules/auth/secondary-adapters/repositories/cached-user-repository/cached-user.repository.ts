@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -14,6 +14,8 @@ import {
 
 @Injectable()
 export class CachedUserRepository implements UserRepository {
+  private readonly logger = new Logger(CachedUserRepository.name);
+
   constructor(
     private readonly cacheService: CachePort,
     private readonly postgresRepo: UserRepository,
@@ -30,11 +32,18 @@ export class CachedUserRepository implements UserRepository {
 
       const saved = dbResult.value;
 
-      await this.cacheService.set(
-        this.idKey(saved.id!),
-        UserCacheMapper.toCache(saved),
-        { ttl: USER_REDIS.EXPIRATION },
-      );
+      try {
+        await this.cacheService.set(
+          this.idKey(saved.id!),
+          UserCacheMapper.toCache(saved),
+          { ttl: USER_REDIS.EXPIRATION },
+        );
+      } catch (cacheError) {
+        this.logger.warn(
+          `Failed to cache user ${saved.id} after save`,
+          cacheError,
+        );
+      }
 
       return Result.success(saved);
     } catch (error) {
@@ -48,23 +57,34 @@ export class CachedUserRepository implements UserRepository {
     try {
       const cachedUsers = await this.cacheService.getAll<UserForCache>(
         USER_REDIS.INDEX,
-        `@email:"${escapeRedisSearchTextValue(email)}"`,
+        `@email:{${escapeRedisSearchTextValue(email)}}`,
       );
 
       if (cachedUsers.length > 0) {
         return Result.success(UserCacheMapper.fromCache(cachedUsers[0]));
       }
+    } catch (error) {
+      this.logger.warn(`Cache lookup failed for email: ${email}`, error);
+    }
 
+    try {
       const dbResult = await this.postgresRepo.findByEmail(email);
       if (dbResult.isFailure) return dbResult;
 
       const user = dbResult.value;
       if (user) {
-        await this.cacheService.set(
-          this.idKey(user.id!),
-          UserCacheMapper.toCache(user),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
+        try {
+          await this.cacheService.set(
+            this.idKey(user.id!),
+            UserCacheMapper.toCache(user),
+            { ttl: USER_REDIS.EXPIRATION },
+          );
+        } catch (cacheError) {
+          this.logger.warn(
+            `Failed to cache user ${user.id} after DB lookup`,
+            cacheError,
+          );
+        }
       }
 
       return dbResult;
@@ -82,17 +102,28 @@ export class CachedUserRepository implements UserRepository {
       if (cached) {
         return Result.success(UserCacheMapper.fromCache(cached));
       }
+    } catch (error) {
+      this.logger.warn(`Cache lookup failed for ID: ${id}`, error);
+    }
 
+    try {
       const dbResult = await this.postgresRepo.findById(id);
       if (dbResult.isFailure) return dbResult;
 
       const user = dbResult.value;
       if (user) {
-        await this.cacheService.set(
-          this.idKey(user.id!),
-          UserCacheMapper.toCache(user),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
+        try {
+          await this.cacheService.set(
+            this.idKey(user.id!),
+            UserCacheMapper.toCache(user),
+            { ttl: USER_REDIS.EXPIRATION },
+          );
+        } catch (cacheError) {
+          this.logger.warn(
+            `Failed to cache user ${user.id} after DB lookup`,
+            cacheError,
+          );
+        }
       }
 
       return dbResult;
@@ -103,7 +134,11 @@ export class CachedUserRepository implements UserRepository {
 
   async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
-      await this.cacheService.delete(this.idKey(id));
+      try {
+        await this.cacheService.delete(this.idKey(id));
+      } catch (cacheError) {
+        this.logger.warn(`Failed to delete user ${id} from cache`, cacheError);
+      }
       return this.postgresRepo.delete(id);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to delete user', error);
