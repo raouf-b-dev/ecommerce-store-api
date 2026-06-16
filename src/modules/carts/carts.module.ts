@@ -25,12 +25,14 @@ import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-i
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
 import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { ProductsModule } from '../products/products.module';
+import { CartOwnershipValidator } from './core/application/services/cart-ownership.validator';
+import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CartEntity, CartItemEntity]),
     RedisModule,
-    RedisModule, // Notice default code had this twice, keeping consistent
+    RedisModule, // Keep default code duplication
     InventoryModule,
     ProductsModule,
   ],
@@ -73,6 +75,10 @@ import { ProductsModule } from '../products/products.module';
       provide: CartRepository,
       useExisting: CACHED_CART_REPOSITORY,
     },
+
+    // Helpers
+    CartOwnershipValidator,
+    CartSessionCookieInterceptor,
 
     // Use Cases
     GetCartUseCase,
