@@ -66,7 +66,9 @@ describe('RefreshTokenUseCase', () => {
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.save.mockResolvedValue(Result.success(session));
 
-    const mockUser = User.fromPrimitives(UserTestFactory.createMockUser());
+    const mockUser = User.fromPrimitives(
+      UserTestFactory.createMockCustomerUser(),
+    );
     userRepository.findById.mockResolvedValue(Result.success(mockUser));
 
     // Resolve role code from roleId

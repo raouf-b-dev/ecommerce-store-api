@@ -10,6 +10,7 @@ import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
+import { validateCustomerAccessTokenBinding } from '../../services/validate-customer-access-token.service';
 
 export interface LoginCommand {
   email: string;
@@ -83,6 +84,17 @@ export class LoginUserUseCase extends UseCase<
         reason: 'role_resolution_failed',
       });
       return ErrorFactory.UseCaseError('Failed to resolve user role');
+    }
+
+    const customerBindingError = validateCustomerAccessTokenBinding(
+      roleResult.value.code,
+      user.customerId,
+    );
+    if (customerBindingError) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'customer_not_linked',
+      });
+      return customerBindingError;
     }
 
     // 4. Generate Access Token

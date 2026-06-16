@@ -135,4 +135,24 @@ describe('LoginUserUseCase', () => {
       UseCaseError,
     );
   });
+
+  it('should return failure if customer role is not linked to a customer profile', async () => {
+    const unlinkedCustomer = User.fromPrimitives(
+      UserTestFactory.createMockCustomerUser({ customerId: null }),
+    );
+    userRepository.findByEmail.mockResolvedValue(
+      Result.success(unlinkedCustomer),
+    );
+
+    const result = await usecase.execute({
+      email: 'test@example.com',
+      password: 'password',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Customer account is not fully configured',
+      UseCaseError,
+    );
+  });
 });
