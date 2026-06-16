@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -45,7 +45,11 @@ export class RegisterUserUseCase extends UseCase<
     // 1. Check if user exists
     const existingUser = await this.userRepository.findByEmail(command.email);
     if (existingUser.isSuccess && existingUser.value) {
-      return ErrorFactory.UseCaseError('User with this email already exists');
+      return ErrorFactory.UseCaseError(
+        'User with this email already exists',
+        null,
+        HttpStatus.CONFLICT,
+      );
     }
 
     // 2. Create Customer
