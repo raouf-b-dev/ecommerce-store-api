@@ -6,12 +6,16 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { Permission } from '../../domain/entities/permission';
 import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 import { SYSTEM_PERMISSIONS } from '../../domain/reference-data/permission-definitions';
+import { LoggerTestHelper } from '../../../../../testing';
 
 describe('PermissionSystemDataInitializer', () => {
   let initializer: PermissionSystemDataInitializer;
   let mockPermissionRepo: MockPermissionRepository;
 
   beforeEach(async () => {
+    // Silence logs during tests
+    LoggerTestHelper.silence();
+
     mockPermissionRepo = new MockPermissionRepository();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -27,6 +31,10 @@ describe('PermissionSystemDataInitializer', () => {
     initializer = module.get<PermissionSystemDataInitializer>(
       PermissionSystemDataInitializer,
     );
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('should initialize permissions if none exist', async () => {

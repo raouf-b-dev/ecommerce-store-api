@@ -1,14 +1,15 @@
 // src/modules/orders/application/usecases/confirm-order/confirm-order.usecase.spec.ts
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
-import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  ResultAssertionHelper,
+  LoggerTestHelper,
+} from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-import { Result } from '../../../../../../shared-kernel/domain/result';
 
 import { MockOrderScheduler } from '../../../../testing/mocks/order-scheduler.mock';
 
@@ -18,6 +19,9 @@ describe('ConfirmOrderUseCase', () => {
   let mockOrderScheduler: MockOrderScheduler;
 
   beforeEach(() => {
+    // Silence logs during tests
+    LoggerTestHelper.silence();
+
     mockOrderRepository = new MockOrderRepository();
     mockOrderScheduler = new MockOrderScheduler();
     useCase = new ConfirmOrderUseCase(mockOrderRepository, mockOrderScheduler);
@@ -25,6 +29,7 @@ describe('ConfirmOrderUseCase', () => {
 
   afterEach(() => {
     mockOrderRepository.reset();
+    jest.restoreAllMocks();
   });
 
   describe('execute', () => {

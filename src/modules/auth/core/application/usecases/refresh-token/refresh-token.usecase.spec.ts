@@ -10,6 +10,7 @@ import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import {
   MockJwtVerifierService,
   ResultAssertionHelper,
+  LoggerTestHelper,
 } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -23,6 +24,9 @@ describe('RefreshTokenUseCase', () => {
   let roleRepository: MockRoleRepository;
 
   beforeEach(() => {
+    // Silence logs during tests
+    LoggerTestHelper.silence();
+
     jwtVerifierService = new MockJwtVerifierService();
     jwtSignerService = new MockJwtSignerService();
     sessionTokenRepository = new MockSessionTokenRepository();
@@ -41,6 +45,7 @@ describe('RefreshTokenUseCase', () => {
   afterEach(() => {
     sessionTokenRepository.reset();
     userRepository.reset();
+    jest.restoreAllMocks();
   });
 
   it('should refresh token successfully', async () => {
