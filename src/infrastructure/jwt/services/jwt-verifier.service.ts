@@ -5,6 +5,7 @@ import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-ve
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
+  VerifiedCartSessionPayload,
 } from '../../../shared-kernel/domain/interfaces/jwt-payload.interface';
 
 /** Verifier options shared across all token types. */
@@ -20,7 +21,7 @@ export class JwtVerifierService implements JwtVerifierPort {
   async verifyAccessToken(token: string): Promise<VerifiedAccessTokenPayload> {
     const payload = await this.verify(token);
 
-    if (payload.typ === 'refresh') {
+    if (payload.typ === 'refresh' || payload.typ === 'cart_session') {
       throw new UnauthorizedException('Invalid token type');
     }
 
@@ -38,6 +39,19 @@ export class JwtVerifierService implements JwtVerifierPort {
     }
 
     this.assertRefreshTokenPayload(payload);
+    return payload;
+  }
+
+  async verifyCartSessionToken(
+    token: string,
+  ): Promise<VerifiedCartSessionPayload> {
+    const payload = await this.verify(token);
+
+    if (payload.typ !== 'cart_session') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    this.assertCartSessionPayload(payload);
     return payload;
   }
 
@@ -102,6 +116,25 @@ export class JwtVerifierService implements JwtVerifierPort {
       typeof payload.exp !== 'number'
     ) {
       throw new UnauthorizedException('Malformed refresh token payload');
+    }
+  }
+
+  /**
+   * Runtime assertion that narrows JWTPayload → VerifiedCartSessionPayload.
+   * Throws if required claims are missing or malformed.
+   */
+  private assertCartSessionPayload(
+    payload: JWTPayload,
+  ): asserts payload is VerifiedCartSessionPayload {
+    if (
+      typeof payload.sub !== 'string' ||
+      typeof payload['cartId'] !== 'number' ||
+      typeof payload['typ'] !== 'string' ||
+      typeof payload.iss !== 'string' ||
+      typeof payload.iat !== 'number' ||
+      typeof payload.exp !== 'number'
+    ) {
+      throw new UnauthorizedException('Malformed cart session token payload');
     }
   }
 }

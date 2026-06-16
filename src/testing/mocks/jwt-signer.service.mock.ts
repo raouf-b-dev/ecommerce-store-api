@@ -23,4 +23,7 @@ export class MockJwtSignerService implements JwtSignerPort {
       sessionId: 'mock-session-id',
       expiresAt: new Date(Date.now() + 3600_000),
     });
+  signCartSessionToken = jest
+    .fn<Promise<string>, [number]>()
+    .mockResolvedValue(dummyToken);
 }
