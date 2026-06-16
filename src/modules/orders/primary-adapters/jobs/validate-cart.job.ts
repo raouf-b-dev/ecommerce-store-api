@@ -7,6 +7,7 @@ import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error'
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ShippingAddressDto } from '../dto/shipping-address.dto';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface ValidateCartResult {
   cartId: number;
@@ -34,12 +35,13 @@ export class ValidateCartStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,
   ): Promise<Result<ValidateCartResult, AppError>> {
-    const { cartId, userId, shippingAddress } = job.data;
+    const { cartId, shippingAddress } = job.data;
     this.logger.log(`Validating checkout context for cart ${cartId}...`);
 
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId,
-      userId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+      cartToken: null,
       shippingAddress: shippingAddress
         ? ShippingAddressDto.fromDomain(shippingAddress)
         : undefined,
