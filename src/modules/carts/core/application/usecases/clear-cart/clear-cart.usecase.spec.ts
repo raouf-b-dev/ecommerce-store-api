@@ -16,8 +16,7 @@ describe('ClearCartUseCase', () => {
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
@@ -41,7 +40,7 @@ describe('ClearCartUseCase', () => {
 
       const mockCartData = CartTestFactory.createCartWithItems(3, {
         id: cartId,
-        customerId: 123,
+        userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
 

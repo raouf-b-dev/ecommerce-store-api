@@ -11,7 +11,7 @@ export class TestDataHelper {
   }) {
     const orderId = options?.orderId || 1;
     const productId = options?.productId || 3;
-    const customerId = 1;
+    const userId = 1;
     const paymentId = 1;
     const shippingAddressId = 1;
 
@@ -26,7 +26,7 @@ export class TestDataHelper {
     const orderEntity = options?.useCOD
       ? OrderEntityTestFactory.createCODOrderEntity({
           id: orderId,
-          customerId,
+          userId,
           paymentId: null,
           shippingAddressId,
           items: [
@@ -37,7 +37,7 @@ export class TestDataHelper {
         })
       : OrderEntityTestFactory.createOrderEntity({
           id: orderId,
-          customerId,
+          userId,
           paymentId,
           shippingAddressId,
           items: [
@@ -50,7 +50,7 @@ export class TestDataHelper {
     return {
       // IDs
       orderId,
-      customerId,
+      userId,
       paymentId,
       shippingAddressId,
       productId,

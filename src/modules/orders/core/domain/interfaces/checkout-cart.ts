@@ -7,6 +7,6 @@ export interface CheckoutCartItem {
 
 export interface CheckoutCartInfo {
   id: number | null;
-  customerId: number | null;
+  userId: number | null;
   items: CheckoutCartItem[];
 }

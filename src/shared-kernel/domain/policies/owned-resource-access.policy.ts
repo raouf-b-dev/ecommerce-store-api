@@ -36,10 +36,10 @@ export const CUSTOMER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
 export class OwnedResourceAccessPolicy {
   static canViewResource(
     callerContext: CallerContext,
-    resourceCustomerId: number | null,
+    resourceUserId: number | null,
     permissions: OwnedResourcePermissions,
   ): boolean {
-    if (resourceCustomerId === null) {
+    if (resourceUserId === null) {
       return false;
     }
 
@@ -53,17 +53,17 @@ export class OwnedResourceAccessPolicy {
 
     return (
       callerContext.permissions.has(permissions.viewOwn) &&
-      callerContext.customerId !== null &&
-      Number(callerContext.customerId) === Number(resourceCustomerId)
+      callerContext.userId !== null &&
+      Number(callerContext.userId) === Number(resourceUserId)
     );
   }
 
   static canMutateResource(
     callerContext: CallerContext,
-    resourceCustomerId: number | null,
+    resourceUserId: number | null,
     permissions: OwnedResourceMutationPermissions,
   ): boolean {
-    if (resourceCustomerId === null) {
+    if (resourceUserId === null) {
       return false;
     }
 
@@ -77,30 +77,30 @@ export class OwnedResourceAccessPolicy {
 
     return (
       callerContext.permissions.has(permissions.manageOwn) &&
-      callerContext.customerId !== null &&
-      Number(callerContext.customerId) === Number(resourceCustomerId)
+      callerContext.userId !== null &&
+      Number(callerContext.userId) === Number(resourceUserId)
     );
   }
 
   static resolveListScope(
     callerContext: CallerContext,
     permissions: OwnedResourcePermissions,
-    requestedCustomerId?: number,
-  ): { allowed: true; customerId: number | undefined } | { allowed: false } {
+    requestedUserId?: number,
+  ): { allowed: true; userId: number | undefined } | { allowed: false } {
     if (isSystemCaller(callerContext)) {
-      return { allowed: true, customerId: requestedCustomerId };
+      return { allowed: true, userId: requestedUserId };
     }
 
     if (callerContext.permissions.has(permissions.viewAll)) {
-      return { allowed: true, customerId: requestedCustomerId };
+      return { allowed: true, userId: requestedUserId };
     }
 
     if (callerContext.permissions.has(permissions.viewOwn)) {
-      if (callerContext.customerId === null) {
+      if (!callerContext.userId) {
         return { allowed: false };
       }
 
-      return { allowed: true, customerId: Number(callerContext.customerId) };
+      return { allowed: true, userId: Number(callerContext.userId) };
     }
 
     return { allowed: false };

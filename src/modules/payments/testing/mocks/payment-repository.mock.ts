@@ -19,7 +19,7 @@ export class MockPaymentRepository implements PaymentRepository {
     Promise<Result<Payment, RepositoryError>>,
     [string]
   >();
-  findByCustomerId = jest.fn<
+  findByUserId = jest.fn<
     Promise<Result<Payment[], RepositoryError>>,
     [number, number?, number?]
   >();
@@ -84,6 +84,6 @@ export class MockPaymentRepository implements PaymentRepository {
     expect(this.saveRefund).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.findByOrderId).not.toHaveBeenCalled();
-    expect(this.findByCustomerId).not.toHaveBeenCalled();
+    expect(this.findByUserId).not.toHaveBeenCalled();
   }
 }

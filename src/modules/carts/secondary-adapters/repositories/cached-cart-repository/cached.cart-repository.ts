@@ -47,20 +47,18 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async findByCustomerId(
-    customerId: number,
-  ): Promise<Result<Cart, RepositoryError>> {
+  async findByuserId(userId: number): Promise<Result<Cart, RepositoryError>> {
     try {
       const cachedCarts = await this.cacheService.search<CartForCache>(
         CART_REDIS.INDEX,
-        `@customerId:${customerId}`,
+        `@userId:${userId}`,
       );
 
       if (cachedCarts.length > 0) {
         return Result.success(CartCacheMapper.fromCache(cachedCarts[0]));
       }
 
-      const dbResult = await this.postgresRepo.findByCustomerId(customerId);
+      const dbResult = await this.postgresRepo.findByuserId(userId);
       if (dbResult.isFailure) return dbResult;
       const cart = dbResult.value;
 
@@ -73,7 +71,7 @@ export class CachedCartRepository implements CartRepository {
       return dbResult;
     } catch (error) {
       return ErrorFactory.RepositoryError(
-        'Failed to find cart by customer ID',
+        'Failed to find cart by user ID',
         error,
       );
     }

@@ -34,7 +34,7 @@ export class RecordCodPaymentDto {
   collectedBy?: string;
 
   @ApiPropertyOptional({
-    example: 'Collected at customer doorstep',
+    example: 'Collected at user doorstep',
     description: 'Collection notes',
   })
   @IsOptional()

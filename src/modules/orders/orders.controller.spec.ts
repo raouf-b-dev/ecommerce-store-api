@@ -69,7 +69,6 @@ describe('OrdersController', () => {
     callerContext = {
       kind: 'user',
       userId: 123,
-      customerId: 100,
       role: 'CUSTOMER',
       permissions: new Set(['manage_own_cart']),
     };

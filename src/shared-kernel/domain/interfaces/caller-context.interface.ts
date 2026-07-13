@@ -3,7 +3,6 @@ export type CallerKind = 'user' | 'system';
 export interface CallerContext {
   kind: CallerKind;
   userId: number;
-  customerId: number | null;
   role: string;
   permissions: ReadonlySet<string>;
 }
@@ -15,7 +14,6 @@ export type UserCallerContext = CallerContext & { kind: 'user' };
 export const SYSTEM_CALLER_CONTEXT: SystemCallerContext = {
   kind: 'system',
   userId: 0,
-  customerId: null,
   role: 'SYSTEM',
   permissions: new Set(),
 };
@@ -28,17 +26,12 @@ export function isSystemCaller(
 
 export function createUserCallerContext(input: {
   userId: number;
-  customerId: number | null;
   role: string;
   permissions: ReadonlySet<string> | { has(code: string): boolean };
 }): UserCallerContext {
   return {
     kind: 'user',
     userId: Number(input.userId),
-    customerId:
-      input.customerId !== null && input.customerId !== undefined
-        ? Number(input.customerId)
-        : null,
     role: input.role,
     permissions: input.permissions as ReadonlySet<string>,
   };

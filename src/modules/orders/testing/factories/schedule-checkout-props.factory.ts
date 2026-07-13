@@ -7,7 +7,7 @@ export class ScheduleCheckoutPropsFactory {
   ): ScheduleCheckoutProps {
     const baseProps: ScheduleCheckoutProps = {
       cartId: 1,
-      customerId: 1,
+      userId: 1,
       orderId: 100,
       shippingAddress: {
         id: 1,

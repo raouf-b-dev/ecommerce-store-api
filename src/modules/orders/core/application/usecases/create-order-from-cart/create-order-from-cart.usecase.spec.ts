@@ -70,7 +70,7 @@ describe('CreateOrderFromCartUseCase', () => {
   it('should create an order successfully', async () => {
     // Arrange
     const cartId = 1;
-    const customerId = 1;
+    const userId = 1;
     const cartData = CartTestFactory.createCartWithItems(3, { id: cartId });
     const cart = Cart.fromPrimitives(cartData);
     const order = OrderTestFactory.createOrderEntity({ id: 1 });
@@ -81,7 +81,7 @@ describe('CreateOrderFromCartUseCase', () => {
 
     const dto = {
       cartId,
-      customerId,
+      userId,
       shippingAddress: mockShippingAddress,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };
@@ -104,7 +104,7 @@ describe('CreateOrderFromCartUseCase', () => {
 
     const dto = {
       cartId,
-      customerId: 1,
+      userId: 1,
       shippingAddress: mockShippingAddress,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };
@@ -130,7 +130,7 @@ describe('CreateOrderFromCartUseCase', () => {
 
     const dto = {
       cartId,
-      customerId: 1,
+      userId: 1,
       shippingAddress: mockShippingAddress,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };

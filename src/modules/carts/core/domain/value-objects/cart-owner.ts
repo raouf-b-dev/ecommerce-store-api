@@ -52,7 +52,7 @@ export class CartOwner {
     return new CartOwner(CartOwnerType.GUEST, sessionId);
   }
 
-  static forUser(customerId: string): CartOwner {
-    return new CartOwner(CartOwnerType.USER, customerId);
+  static forUser(userId: string): CartOwner {
+    return new CartOwner(CartOwnerType.USER, userId);
   }
 }

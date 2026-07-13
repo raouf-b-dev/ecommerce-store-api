@@ -9,7 +9,7 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartSessionTokenService } from '../../../../../auth/core/application/services/cart-session-token.service';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 export interface CreateCartUseCaseInput {
@@ -29,7 +29,7 @@ export class CreateCartUseCase extends UseCase<
 > {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly cartSessionTokenService: CartSessionTokenService,
+    private readonly sessionTokenGateway: CartSessionTokenGateway,
   ) {
     super();
   }
@@ -39,7 +39,7 @@ export class CreateCartUseCase extends UseCase<
   ): Promise<Result<CreateCartResponse, UseCaseError>> {
     const { callerContext } = input;
     const isCustomerCaller =
-      callerContext?.kind === 'user' && callerContext.customerId !== null;
+      callerContext?.kind === 'user' && callerContext.role === 'CUSTOMER';
 
     if (isCustomerCaller) {
       if (!callerContext.permissions.has('manage_own_cart')) {
@@ -49,7 +49,7 @@ export class CreateCartUseCase extends UseCase<
       }
 
       const createResult = await this.cartRepository.create({
-        customerId: callerContext.customerId!,
+        userId: callerContext.userId,
       });
 
       if (isFailure(createResult)) return createResult;
@@ -70,9 +70,9 @@ export class CreateCartUseCase extends UseCase<
     };
 
     if (cart.id !== null) {
-      response.token = await this.cartSessionTokenService.generateToken(
-        cart.id,
-      );
+      const token = await this.sessionTokenGateway.generateToken(cart.id);
+      if (token.isFailure) return token;
+      response.token = token.value;
     }
 
     return Result.success(response);

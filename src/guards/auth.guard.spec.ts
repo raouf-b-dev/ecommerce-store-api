@@ -51,7 +51,6 @@ describe('AuthGuard', () => {
       sub: '1',
       email: 'test@example.com',
       role: 'ADMIN',
-      customerId: null,
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -67,7 +66,6 @@ describe('AuthGuard', () => {
       userId: 1,
       email: 'test@example.com',
       role: 'ADMIN',
-      customerId: null,
     });
   });
 
@@ -120,7 +118,6 @@ describe('AuthGuard', () => {
       sub: '2',
       email: 'customer@example.com',
       role: 'CUSTOMER',
-      customerId: 42,
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -136,7 +133,6 @@ describe('AuthGuard', () => {
       userId: 2,
       email: 'customer@example.com',
       role: 'CUSTOMER',
-      customerId: 42,
     });
   });
 });

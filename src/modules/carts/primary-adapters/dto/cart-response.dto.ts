@@ -12,9 +12,9 @@ export class CartResponseDto {
 
   @ApiPropertyOptional({
     example: 123,
-    description: 'Customer ID',
+    description: 'User ID',
   })
-  customerId?: string;
+  userId?: string;
 
   @ApiPropertyOptional({
     example: 'session-abc-xyz',

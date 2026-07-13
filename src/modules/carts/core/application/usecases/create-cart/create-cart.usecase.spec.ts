@@ -7,29 +7,33 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartSessionTokenService } from '../../../../../auth/core/application/services/cart-session-token.service';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('CreateCartUseCase', () => {
   let usecase: CreateCartUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockTokenService: jest.Mocked<CartSessionTokenService>;
+  let mockSessionTokenGateway: jest.Mocked<CartSessionTokenGateway>;
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 1,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockTokenService = {
-      generateToken: jest.fn().mockResolvedValue('mock-session-token'),
+    mockSessionTokenGateway = {
+      generateToken: jest
+        .fn()
+        .mockResolvedValue(Result.success('mock-session-token')),
       validateToken: jest.fn(),
     } as any;
 
-    usecase = new CreateCartUseCase(mockCartRepository, mockTokenService);
+    usecase = new CreateCartUseCase(
+      mockCartRepository,
+      mockSessionTokenGateway,
+    );
   });
 
   afterEach(() => {
@@ -47,10 +51,10 @@ describe('CreateCartUseCase', () => {
       const result = await usecase.execute({ callerContext: customerContext });
 
       expect(mockCartRepository.create).toHaveBeenCalledWith({
-        customerId: 123,
+        userId: 123,
       });
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.cart.customerId).toBe(123);
+      expect(result.value.cart.userId).toBe(123);
       expect(result.value.token).toBeUndefined();
     });
 
@@ -71,14 +75,13 @@ describe('CreateCartUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.cart.sessionId).toBe(456);
       expect(result.value.token).toBe('mock-session-token');
-      expect(mockTokenService.generateToken).toHaveBeenCalledWith(777);
+      expect(mockSessionTokenGateway.generateToken).toHaveBeenCalledWith(777);
     });
 
     it('should create a guest cart for authenticated callers without a customer profile', async () => {
       const adminContext: CallerContext = {
         kind: 'user',
         userId: 1,
-        customerId: null,
         role: 'ADMIN',
         permissions: new Set(['manage_carts']),
       };
@@ -104,7 +107,6 @@ describe('CreateCartUseCase', () => {
       const unscopedCustomer: CallerContext = {
         kind: 'user',
         userId: 1,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(),
       };

@@ -9,7 +9,7 @@ export class PaymentEntityTestFactory {
     const defaultEntity: PaymentEntity = {
       id: 1,
       orderId: 1,
-      customerId: 1,
+      userId: 1,
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,

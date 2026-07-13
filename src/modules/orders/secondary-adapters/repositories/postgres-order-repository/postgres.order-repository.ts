@@ -32,7 +32,7 @@ export class PostgresOrderRepository implements OrderRepository {
       const {
         page = 1,
         limit = 10,
-        customerId,
+        userId,
         status,
         sortBy = 'createdAt',
         sortOrder = 'desc',
@@ -43,8 +43,8 @@ export class PostgresOrderRepository implements OrderRepository {
         .leftJoinAndSelect('order.items', 'items')
         .leftJoinAndSelect('order.shippingAddress', 'shippingAddress');
 
-      if (customerId) {
-        queryBuilder.andWhere('order.customerId = :customerId', { customerId });
+      if (userId) {
+        queryBuilder.andWhere('order.userId = :userId', { userId });
       }
 
       if (status) {

@@ -71,19 +71,19 @@ export class CheckoutUseCase extends UseCase<
       return Result.failure(validationResult.error);
     }
 
-    const { cart, shippingAddress, customerId } = validationResult.value;
+    const { cart, shippingAddress, userId } = validationResult.value;
 
     this.domainEventPublisher.publish('cart.checkout.initiated', {
       cartId: command.cartId,
-      customerId,
+      userId,
     });
 
     const order = this.orderFactory.createFromCart({
       cart,
-      customerId,
+      userId,
       shippingAddress,
       paymentMethod: command.paymentMethod,
-      customerNotes: command.customerNotes,
+      userNotes: command.customerNotes,
       orderId: null,
     });
 
@@ -94,11 +94,11 @@ export class CheckoutUseCase extends UseCase<
     const savedOrder = saveResult.value;
     const orderId = savedOrder.id!;
 
-    this.domainEventPublisher.publish('order.created', { orderId, customerId });
+    this.domainEventPublisher.publish('order.created', { orderId, userId });
 
     const scheduleResult = await this.orderScheduler.scheduleCheckout({
       cartId: command.cartId,
-      customerId,
+      userId,
       shippingAddress,
       paymentMethod: command.paymentMethod,
       customerNotes: command.customerNotes,

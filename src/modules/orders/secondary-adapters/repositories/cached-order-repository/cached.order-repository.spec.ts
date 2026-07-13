@@ -486,7 +486,7 @@ describe('CachedOrderRepository', () => {
     it('should fetch from postgres when filters are applied', async () => {
       const dto: ListOrdersQuery = {
         status: OrderStatus.PENDING_PAYMENT,
-        customerId: 1,
+        userId: 1,
       };
 
       postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));

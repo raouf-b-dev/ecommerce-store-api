@@ -16,11 +16,11 @@ export class ListPaymentsQueryDto {
 
   @ApiPropertyOptional({
     example: 123,
-    description: 'Filter by customer ID',
+    description: 'Filter by user ID',
   })
   @IsOptional()
   @IsNumber()
-  customerId?: number;
+  userId?: number;
 
   @ApiPropertyOptional({
     enum: PaymentStatusType,

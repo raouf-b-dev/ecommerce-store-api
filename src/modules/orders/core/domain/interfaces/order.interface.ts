@@ -9,13 +9,13 @@ import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-obj
 
 export interface IOrder {
   id: number | null;
-  customerId: number;
+  userId: number;
   paymentId: number | null;
   paymentMethod: PaymentMethodType;
   shippingAddressId: number | null;
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
-  customerNotes: string | null;
+  userNotes: string | null;
   subtotal: number;
   shippingCost: number;
   totalPrice: number;
@@ -28,5 +28,5 @@ export interface IOrder {
 export interface IOrderEditable {
   items: IOrderItem[];
   shippingAddress: IShippingAddressEditable;
-  customerNotes: string | null;
+  userNotes: string | null;
 }

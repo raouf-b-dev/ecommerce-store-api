@@ -39,13 +39,6 @@ export const PAYMENT_REDIS: IRedisContstant = {
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
 
-export const CUSTOMER_REDIS: IRedisContstant = {
-  INDEX: 'customer_index',
-  CACHE_KEY: 'customer_cache',
-  IS_CACHED_FLAG: 'customer_list:isCached',
-  EXPIRATION: 3600 * 24 * 7, // 7 days
-};
-
 export const USER_REDIS: IRedisContstant = {
   INDEX: 'user_index',
   CACHE_KEY: 'user_cache',

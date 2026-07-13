@@ -98,7 +98,7 @@ export class ModuleCartGateway implements CartGateway {
 
   private toCheckoutCartInfo(cart: {
     id: number | null;
-    customerId: number | null;
+    userId: number | null;
     items?: Array<{
       productId: number;
       productName: string;
@@ -108,7 +108,7 @@ export class ModuleCartGateway implements CartGateway {
   }): CheckoutCartInfo {
     return {
       id: cart.id,
-      customerId: cart.customerId,
+      userId: cart.userId,
       items: (cart.items || []).map(
         (item): CheckoutCartItem => ({
           productId: item.productId,

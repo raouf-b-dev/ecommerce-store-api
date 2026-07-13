@@ -14,7 +14,7 @@ export abstract class CartGateway {
     cartToken?: string | null;
   }): Promise<Result<CheckoutCartInfo, UseCaseError>>;
   abstract getCart(
-    customerId: number,
+    userId: number,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>>;
   abstract clearCart(
     cartId: number,

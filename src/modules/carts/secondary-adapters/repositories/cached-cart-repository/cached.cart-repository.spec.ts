@@ -47,7 +47,7 @@ describe('CachedCartRepository', () => {
 
   describe('create', () => {
     it('should create cart in postgres and cache', async () => {
-      const dto = { customerId: 123 };
+      const dto = { userId: 123 };
       postgresRepo.create.mockResolvedValue(Result.success(mockCart));
       cacheService.set.mockResolvedValue(undefined);
 
@@ -63,7 +63,7 @@ describe('CachedCartRepository', () => {
     });
 
     it('should return failure if postgres create fails', async () => {
-      const dto = { customerId: 123 };
+      const dto = { userId: 123 };
       const error = new RepositoryError('Postgres create failed');
       postgresRepo.create.mockResolvedValue(Result.failure(error));
 
@@ -99,11 +99,11 @@ describe('CachedCartRepository', () => {
     });
   });
 
-  describe('findByCustomerId', () => {
+  describe('findByuserId', () => {
     it('should return cart from cache (search)', async () => {
       cacheService.search.mockResolvedValue([mockCachedCart]);
 
-      const result = await repository.findByCustomerId(mockCart.customerId!);
+      const result = await repository.findByuserId(mockCart.userId!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
@@ -113,10 +113,10 @@ describe('CachedCartRepository', () => {
 
     it('should fetch from postgres and cache if not found in cache', async () => {
       cacheService.search.mockResolvedValue([]);
-      postgresRepo.findByCustomerId.mockResolvedValue(Result.success(mockCart));
+      postgresRepo.findByuserId.mockResolvedValue(Result.success(mockCart));
       cacheService.set.mockResolvedValue(undefined);
 
-      const result = await repository.findByCustomerId(mockCart.customerId!);
+      const result = await repository.findByuserId(mockCart.userId!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cacheService.set).toHaveBeenCalled();

@@ -15,7 +15,6 @@ describe('GetPaymentUseCase', () => {
   const adminContext: CallerContext = {
     kind: 'user',
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['view_all_payments']),
   };
@@ -23,7 +22,6 @@ describe('GetPaymentUseCase', () => {
   const customerContext: CallerContext = {
     kind: 'user',
     userId: 2,
-    customerId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_payments']),
   };
@@ -52,7 +50,7 @@ describe('GetPaymentUseCase', () => {
   it('should return a payment if found and caller is admin', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
-      customerId: 456,
+      userId: 456,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
@@ -71,7 +69,7 @@ describe('GetPaymentUseCase', () => {
   it('should return a payment if found and caller is the owner', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
-      customerId: 123,
+      userId: 2,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
@@ -86,10 +84,10 @@ describe('GetPaymentUseCase', () => {
     expect(result.value.id).toBe(123);
   });
 
-  it('should return 404 if payment customerId does not match caller customerId', async () => {
+  it('should return 404 if payment userId does not match caller userId', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
-      customerId: 456,
+      userId: 456,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 

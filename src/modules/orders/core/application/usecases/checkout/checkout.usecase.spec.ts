@@ -11,11 +11,11 @@ import { PaymentMethodPolicy } from '../../../domain/services/payment-method-pol
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
-import { Customer } from '../../../../../customers/core/domain/entities/customer';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { User } from 'src/modules/access/core/domain/entities/user';
+import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
@@ -23,16 +23,16 @@ describe('CheckoutUseCase', () => {
   let validateCheckoutUseCase: jest.Mocked<ValidateCheckoutUseCase>;
   let domainEventPublisher: DomainEventPublisher;
 
-  const mockCustomerId = 123;
+  const mockuserId = 123;
   const mockCartId = 123;
 
-  const mockCustomer = Customer.fromPrimitives(
-    CustomerTestFactory.createCustomerWithAddress({ id: mockCustomerId }),
+  const mockUser = User.fromProps(
+    UserTestFactory.createMockUser({ id: mockuserId }),
   );
 
   const mockCart = CartTestFactory.createCartWithItems(1, {
     id: mockCartId,
-    customerId: mockCustomerId,
+    userId: mockuserId,
   });
 
   const mockResolvedAddress =
@@ -40,7 +40,6 @@ describe('CheckoutUseCase', () => {
 
   const customerCallerContext = createUserCallerContext({
     userId: 10,
-    customerId: mockCustomerId,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   });
@@ -69,10 +68,10 @@ describe('CheckoutUseCase', () => {
     const mockValidateCheckoutUseCase = {
       execute: jest.fn().mockResolvedValue(
         Result.success({
-          customer: mockCustomer,
+          customer: mockUser,
           cart: mockCart,
           shippingAddress: mockResolvedAddress,
-          customerId: mockCustomerId,
+          userId: mockuserId,
         }),
       ),
     };
@@ -139,7 +138,7 @@ describe('CheckoutUseCase', () => {
     expect(orderScheduler.scheduleCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
         shippingAddress: mockResolvedAddress,
-        customerId: mockCustomerId,
+        userId: mockuserId,
       }),
     );
 
@@ -147,12 +146,12 @@ describe('CheckoutUseCase', () => {
       'cart.checkout.initiated',
       {
         cartId: mockCartId,
-        customerId: mockCustomerId,
+        userId: mockuserId,
       },
     );
     expect(domainEventPublisher.publish).toHaveBeenCalledWith('order.created', {
       orderId: '1001',
-      customerId: mockCustomerId,
+      userId: mockuserId,
     });
   });
 

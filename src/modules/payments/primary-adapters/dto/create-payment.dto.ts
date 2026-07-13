@@ -54,9 +54,9 @@ export class CreatePaymentDto {
 
   @ApiPropertyOptional({
     example: 123,
-    description: 'Customer ID',
+    description: 'User ID',
   })
   @IsOptional()
   @IsNumber()
-  customerId?: number;
+  userId?: number;
 }

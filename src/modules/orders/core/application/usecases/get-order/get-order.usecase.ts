@@ -45,7 +45,7 @@ export class GetOrderUseCase extends UseCase<
     if (
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
-        order.customerId,
+        order.userId,
         ORDER_ACCESS_PERMISSIONS,
       )
     ) {

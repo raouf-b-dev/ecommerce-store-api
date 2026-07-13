@@ -16,7 +16,6 @@ describe('ListOrdersUsecase', () => {
   const adminContext: CallerContext = {
     kind: 'user',
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['view_all_orders']),
   };
@@ -24,7 +23,6 @@ describe('ListOrdersUsecase', () => {
   const customerContext: CallerContext = {
     kind: 'user',
     userId: 2,
-    customerId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_orders']),
   };
@@ -56,10 +54,10 @@ describe('ListOrdersUsecase', () => {
     expect(result.value).toEqual([sampleOrder]);
   });
 
-  it('filters by customer ID when caller is customer, ignoring tampered customerId query param', async () => {
-    const query: ListOrdersQuery = { customerId: 999 }; // tampered
+  it('filters by customer ID when caller is customer, ignoring tampered userId query param', async () => {
+    const query: ListOrdersQuery = { userId: 999 }; // tampered
     const sampleOrder = Order.fromPrimitives(
-      OrderTestFactory.createMockOrder({ customerId: 123 }),
+      OrderTestFactory.createMockOrder({ userId: 123 }),
     );
 
     mockRepository.mockSuccessfulList([sampleOrder]);
@@ -69,7 +67,7 @@ describe('ListOrdersUsecase', () => {
       callerContext: customerContext,
     });
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith({ customerId: 123 });
+    expect(mockRepository.listOrders).toHaveBeenCalledWith({ userId: 2 });
     ResultAssertionHelper.assertResultSuccess(result);
   });
 

@@ -29,14 +29,14 @@ export class ListOrdersUsecase
     const scope = OwnedResourceAccessPolicy.resolveListScope(
       callerContext,
       ORDER_ACCESS_PERMISSIONS,
-      query.customerId,
+      query.userId,
     );
 
     if (!scope.allowed) {
       return Result.success([]);
     }
 
-    const filteredQuery = { ...query, customerId: scope.customerId };
+    const filteredQuery = { ...query, userId: scope.userId };
 
     const ordersResult = await this.orderRepository.listOrders(filteredQuery);
     if (ordersResult.isFailure) {

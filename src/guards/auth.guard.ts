@@ -47,16 +47,12 @@ export class AuthGuard implements CanActivate {
     try {
       const payload = await this.jwtVerifierService.verifyAccessToken(token);
 
-      // the payload contains sub, email, role, customerId
+      // the payload contains sub, email, role
       // we attach exactly what current-user.decorator.ts expects
       request.user = {
         userId: Number(payload.sub),
         email: payload.email,
         role: payload.role,
-        customerId:
-          payload.customerId !== null && payload.customerId !== undefined
-            ? Number(payload.customerId)
-            : null,
       };
     } catch {
       throw new UnauthorizedException(

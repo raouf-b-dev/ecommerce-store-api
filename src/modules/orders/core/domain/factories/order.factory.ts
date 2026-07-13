@@ -7,10 +7,10 @@ import { OrderItemProps } from '../entities/order-items';
 export class OrderFactory {
   createFromCart(props: {
     cart: CheckoutCartInfo;
-    customerId: number;
+    userId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;
-    customerNotes?: string;
+    userNotes?: string;
     orderId?: number | null;
   }): Order {
     const items = props.cart.items.map((item) => {
@@ -27,11 +27,11 @@ export class OrderFactory {
     const id = props.orderId || null;
     return Order.create({
       id,
-      customerId: props.customerId,
+      userId: props.userId,
       paymentMethod: props.paymentMethod,
       items,
       shippingAddress: props.shippingAddress,
-      customerNotes: props.customerNotes || null,
+      customerNotes: props.userNotes || null,
     });
   }
 }
