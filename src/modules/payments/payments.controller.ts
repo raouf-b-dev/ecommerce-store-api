@@ -16,8 +16,8 @@ import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
-import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
-import { CallerCtx } from '../auth/primary-adapters/decorators/caller-context.decorator';
+import { RequirePermissions } from '../access/primary-adapters/decorators/require-permissions.decorator';
+import { CallerCtx } from '../access/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Public } from '../../guards/decorators/public.decorator';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';

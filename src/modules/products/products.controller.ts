@@ -14,7 +14,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
+import { RequirePermissions } from '../access/primary-adapters/decorators/require-permissions.decorator';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { ProductResponseDto } from './primary-adapters/dto/product-response.dto';

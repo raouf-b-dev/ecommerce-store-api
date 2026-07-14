@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Param, Query } from '@nestjs/common';
-import { CurrentUser } from '../auth/primary-adapters/decorators/current-user.decorator';
+import { CurrentUser } from '../access/primary-adapters/decorators/current-user.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
