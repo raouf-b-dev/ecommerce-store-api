@@ -2,18 +2,17 @@ import {
   ShippingAddressResolver,
   ShippingAddressInput,
 } from './shipping-address-resolver';
-import { CustomerTestFactory } from '../../../../customers/testing/factories/customer.factory';
-import { CheckoutCustomerInfo } from '../ports/customer.gateway';
+import { CheckoutUserInfoResult } from '../ports/user.gateway';
+import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
+import { AddressTestFactory } from 'src/modules/access/testing/factories/address.entity.factory';
 
 /**
- * Helpers to build a CheckoutCustomerInfo from the customer test factory.
+ * Helpers to build a CheckoutUserInfo from the user test factory.
  */
 function buildCheckoutCustomerInfo(
-  overrides: Partial<
-    ReturnType<typeof CustomerTestFactory.createCustomerWithAddress>
-  > = {},
-): CheckoutCustomerInfo {
-  const raw = CustomerTestFactory.createCustomerWithAddress({
+  overrides: Partial<ReturnType<typeof UserTestFactory.createMockUser>> = {},
+): CheckoutUserInfoResult {
+  const raw = UserTestFactory.createMockUser({
     id: 1,
     firstName: 'John',
     lastName: 'Doe',
@@ -22,6 +21,9 @@ function buildCheckoutCustomerInfo(
   });
   return {
     id: raw.id ?? null,
+    mustChangePassword: raw.mustChangePassword,
+    passwordHash: raw.passwordHash,
+    roleId: raw.roleId,
     firstName: raw.firstName,
     lastName: raw.lastName,
     email: raw.email,
@@ -42,15 +44,15 @@ function buildCheckoutCustomerInfo(
 
 describe('ShippingAddressResolver', () => {
   let resolver: ShippingAddressResolver;
-  let mockCustomer: CheckoutCustomerInfo;
+  let mockUser: CheckoutUserInfoResult;
 
   beforeEach(() => {
     resolver = new ShippingAddressResolver();
-    mockCustomer = buildCheckoutCustomerInfo({
+    mockUser = buildCheckoutCustomerInfo({
       addresses: [
-        CustomerTestFactory.createMockAddress({
+        AddressTestFactory.createMockAddress({
           id: 10,
-          customerId: 1,
+          userId: 1,
           street: '123 Default St',
           street2: 'Apt 1',
           city: 'New York',
@@ -60,9 +62,9 @@ describe('ShippingAddressResolver', () => {
           isDefault: true,
           deliveryInstructions: 'Leave at door',
         }),
-        CustomerTestFactory.createMockAddress({
+        AddressTestFactory.createMockAddress({
           id: 11,
-          customerId: 1,
+          userId: 1,
           street: '456 Other St',
           street2: null,
           city: 'Los Angeles',
@@ -91,7 +93,7 @@ describe('ShippingAddressResolver', () => {
         deliveryInstructions: 'Ring bell',
       };
 
-      const result = resolver.resolveFromDto(input, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockUser);
 
       expect(result).toEqual({
         id: 0,
@@ -119,7 +121,7 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolveFromDto(input, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockUser);
 
       expect(result.firstName).toBe('Jane');
       expect(result.lastName).toBe('Smith');
@@ -137,7 +139,7 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolveFromDto(input, mockCustomer);
+      const result = resolver.resolveFromDto(input, mockUser);
 
       expect(result.street2).toBeNull();
       expect(result.deliveryInstructions).toBeNull();
@@ -146,7 +148,7 @@ describe('ShippingAddressResolver', () => {
 
   describe('resolveFromDefault', () => {
     it('should return default address when customer has one', () => {
-      const result = resolver.resolveFromDefault(mockCustomer);
+      const result = resolver.resolveFromDefault(mockUser);
 
       expect(result).toEqual({
         id: 10,
@@ -164,9 +166,9 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should return null when customer has no default address', () => {
-      const customerWithoutDefault: CheckoutCustomerInfo = {
-        ...mockCustomer,
-        addresses: [{ ...mockCustomer.addresses[0], isDefault: false }],
+      const customerWithoutDefault: CheckoutUserInfoResult = {
+        ...mockUser,
+        addresses: [{ ...mockUser.addresses[0], isDefault: false }],
       };
 
       const result = resolver.resolveFromDefault(customerWithoutDefault);
@@ -175,8 +177,8 @@ describe('ShippingAddressResolver', () => {
     });
 
     it('should return null when customer has no addresses', () => {
-      const customerWithNoAddresses: CheckoutCustomerInfo = {
-        ...mockCustomer,
+      const customerWithNoAddresses: CheckoutUserInfoResult = {
+        ...mockUser,
         addresses: [],
       };
 
@@ -198,20 +200,20 @@ describe('ShippingAddressResolver', () => {
         country: 'USA',
       };
 
-      const result = resolver.resolve(input, mockCustomer);
+      const result = resolver.resolve(input, mockUser);
 
       expect(result?.street).toBe('789 Custom St');
     });
 
     it('should fall back to default address when DTO is undefined', () => {
-      const result = resolver.resolve(undefined, mockCustomer);
+      const result = resolver.resolve(undefined, mockUser);
 
       expect(result?.street).toBe('123 Default St');
     });
 
     it('should return null when no DTO and no default address', () => {
-      const customerWithoutDefault: CheckoutCustomerInfo = {
-        ...mockCustomer,
+      const customerWithoutDefault: CheckoutUserInfoResult = {
+        ...mockUser,
         addresses: [],
       };
 

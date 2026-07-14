@@ -16,15 +16,13 @@ describe('ListPaymentsUseCase', () => {
   const adminContext: CallerContext = {
     kind: 'user',
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['view_all_payments', 'view_all_orders']),
   };
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_payments', 'view_own_orders']),
   };
@@ -53,14 +51,14 @@ describe('ListPaymentsUseCase', () => {
   it('should list payments by orderId for admin', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       orderId: 123,
-      customerId: 456,
+      userId: 456,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindByOrderId([payment.toPrimitives()]);
 
     const result = await useCase.execute({
-      query: { orderId: 123, customerId: 456 },
+      query: { orderId: 123, userId: 456 },
       callerContext: adminContext,
     });
 
@@ -71,7 +69,7 @@ describe('ListPaymentsUseCase', () => {
   it('should list payments by orderId for customer who owns the order', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       orderId: 123,
-      customerId: 123,
+      userId: 123,
     });
 
     paymentRepository.mockSuccessfulFindByOrderId([
@@ -79,7 +77,7 @@ describe('ListPaymentsUseCase', () => {
     ]);
 
     const result = await useCase.execute({
-      query: { orderId: 123, customerId: 123 },
+      query: { orderId: 123, userId: 123 },
       callerContext: customerContext,
     });
 
@@ -100,23 +98,23 @@ describe('ListPaymentsUseCase', () => {
     );
   });
 
-  it('should force customerId when listing by customerId for customer', async () => {
+  it('should force userId when listing by userId for customer', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      customerId: 123,
+      userId: 123,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
-    (paymentRepository.findByCustomerId as jest.Mock).mockResolvedValue(
+    (paymentRepository.findByUserId as jest.Mock).mockResolvedValue(
       Result.success([payment]),
     );
 
     const result = await useCase.execute({
-      query: { customerId: 999 },
+      query: { userId: 999 },
       callerContext: customerContext,
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(paymentRepository.findByCustomerId).toHaveBeenCalledWith(
+    expect(paymentRepository.findByUserId).toHaveBeenCalledWith(
       123,
       undefined,
       undefined,

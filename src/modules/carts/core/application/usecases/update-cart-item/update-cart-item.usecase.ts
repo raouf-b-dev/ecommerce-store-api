@@ -11,7 +11,7 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { InventoryGateway } from '../../ports/inventory.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { INVENTORY_GATEWAY } from '../../../../carts.token';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
@@ -34,7 +34,7 @@ export class UpdateCartItemUseCase extends UseCase<
     private readonly cartRepository: CartRepository,
     private readonly cartOwnershipValidator: CartOwnershipValidator,
     @Inject(INVENTORY_GATEWAY)
-    private readonly inventoryGateway: InventoryGateway,
+    private readonly inventoryGateway: CartInventoryGateway,
   ) {
     super();
   }

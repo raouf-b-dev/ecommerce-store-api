@@ -8,30 +8,28 @@ import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptio
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-
-import { CartSessionTokenService } from '../../../../../auth/core/application/services/cart-session-token.service';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('MergeCartsUseCase', () => {
   let usecase: MergeCartsUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
-  let mockTokenService: jest.Mocked<CartSessionTokenService>;
+  let mockSessionTokenGateway: jest.Mocked<CartSessionTokenGateway>;
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockTokenService = {
+    mockSessionTokenGateway = {
       generateToken: jest.fn(),
       validateToken: jest.fn().mockResolvedValue(true),
     } as any;
-    validator = new CartOwnershipValidator(mockTokenService);
+    validator = new CartOwnershipValidator(mockSessionTokenGateway);
     usecase = new MergeCartsUseCase(mockCartRepository, validator);
   });
 
@@ -56,7 +54,7 @@ describe('MergeCartsUseCase', () => {
 
       const mergedCartData = CartTestFactory.createCartWithItems(3, {
         id: userCartId,
-        customerId: 123,
+        userId: 123,
       });
       const mergedCart = Cart.fromPrimitives(mergedCartData);
 

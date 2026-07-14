@@ -11,8 +11,8 @@ import {
   ShippingAddressInput,
 } from '../../services/shipping-address-resolver';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
-import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
-import { CustomerGateway } from '../../ports/customer.gateway';
+import { CheckoutUserInfoResult } from '../../ports/user.gateway';
+import { UserGateway } from '../../ports/user.gateway';
 import { CartGateway } from '../../ports/cart.gateway';
 import { CheckoutCartInfo } from '../../../domain/interfaces/checkout-cart';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -26,10 +26,10 @@ export interface ValidateCheckoutInput {
 }
 
 export interface ValidatedCheckoutContext {
-  customer: CheckoutCustomerInfo | null;
+  customer: CheckoutUserInfoResult | null;
   cart: CheckoutCartInfo;
   shippingAddress: ShippingAddressProps;
-  customerId: number;
+  userId: number;
 }
 
 @Injectable()
@@ -39,7 +39,7 @@ export class ValidateCheckoutUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    private readonly customerGateway: CustomerGateway,
+    private readonly userGateway: UserGateway,
     private readonly cartGateway: CartGateway,
     private readonly addressResolver: ShippingAddressResolver,
   ) {
@@ -54,7 +54,7 @@ export class ValidateCheckoutUseCase extends UseCase<
     if (!isSystemCaller(callerContext)) {
       if (
         !callerContext ||
-        callerContext.customerId === null ||
+        callerContext.userId === null ||
         !callerContext.permissions.has('manage_own_cart')
       ) {
         return ErrorFactory.UseCaseError(
@@ -78,15 +78,13 @@ export class ValidateCheckoutUseCase extends UseCase<
     }
 
     if (isSystemCaller(callerContext)) {
-      if (!cart.customerId) {
+      if (!cart.userId) {
         return ErrorFactory.UseCaseError(
           'Checkout requires a customer account',
         );
       }
 
-      const customerResult = await this.customerGateway.validateCustomer(
-        cart.customerId,
-      );
+      const customerResult = await this.userGateway.validateUser(cart.userId);
       if (isFailure(customerResult)) {
         return Result.failure(customerResult.error);
       }
@@ -107,14 +105,13 @@ export class ValidateCheckoutUseCase extends UseCase<
         customer,
         cart,
         shippingAddress: resolvedAddress,
-        customerId: cart.customerId,
+        userId: cart.userId,
       });
     }
 
-    const customerId = callerContext.customerId!;
+    const userId = callerContext.userId;
 
-    const customerResult =
-      await this.customerGateway.validateCustomer(customerId);
+    const customerResult = await this.userGateway.validateUser(userId);
     if (isFailure(customerResult)) {
       return Result.failure(customerResult.error);
     }
@@ -135,7 +132,7 @@ export class ValidateCheckoutUseCase extends UseCase<
       customer,
       cart,
       shippingAddress: resolvedAddress,
-      customerId,
+      userId,
     });
   }
 }

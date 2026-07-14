@@ -7,16 +7,16 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { AddCartItemInput } from './add-cart-item.usecase';
-import { ProductGateway, ProductData } from '../../ports/product.gateway';
-import { InventoryGateway } from '../../ports/inventory.gateway';
+import { CartProductGateway, ProductData } from '../../ports/product.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockProductGateway: jest.Mocked<ProductGateway>;
-  let mockInventoryGateway: jest.Mocked<InventoryGateway>;
+  let mockProductGateway: jest.Mocked<CartProductGateway>;
+  let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
   let validator: CartOwnershipValidator;
   let mockTokenService: any;
 
@@ -29,15 +29,13 @@ describe('AddCartItemUseCase', () => {
   const adminContext: CallerContext = {
     kind: 'user',
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['manage_carts']),
   };
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };

@@ -19,7 +19,7 @@ import {
 
 export interface ListPaymentsQuery {
   orderId?: number;
-  customerId?: number;
+  userId?: number;
   status?: PaymentStatusType;
   paymentMethod?: PaymentMethodType;
   page?: number;
@@ -48,7 +48,7 @@ export class ListPaymentsUseCase extends UseCase<
     const scope = OwnedResourceAccessPolicy.resolveListScope(
       callerContext,
       PAYMENT_ACCESS_PERMISSIONS,
-      query.customerId,
+      query.userId,
     );
 
     if (!scope.allowed) {
@@ -59,7 +59,7 @@ export class ListPaymentsUseCase extends UseCase<
       if (
         !OwnedResourceAccessPolicy.canViewResource(
           callerContext,
-          query.customerId || null,
+          query.userId || null,
           ORDER_ACCESS_PERMISSIONS,
         )
       ) {
@@ -74,9 +74,9 @@ export class ListPaymentsUseCase extends UseCase<
       return Result.success(result.value.map((p) => p.toPrimitives()));
     }
 
-    if (scope.customerId) {
-      const result = await this.paymentRepository.findByCustomerId(
-        scope.customerId,
+    if (scope.userId) {
+      const result = await this.paymentRepository.findByUserId(
+        scope.userId,
         query.page,
         query.limit,
       );

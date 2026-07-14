@@ -9,7 +9,7 @@ import { LogoutUseCase } from 'src/modules/auth/core/application/usecases/logout
 import { LogoutAllUseCase } from 'src/modules/auth/core/application/usecases/logout-all/logout-all.usecase';
 import { RegisterCommandTestFactory } from 'src/modules/auth/testing/factories/register-dto.factory';
 import { LoginCommandTestFactory } from 'src/modules/auth/testing/factories/login-dto.factory';
-import { UserTestFactory } from 'src/modules/auth/testing/factories/user.factory';
+import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
 import { EnvConfigService } from 'src/config/env-config.service';
 import { JwksPort } from 'src/infrastructure/jwt/ports/jwks.port';
 import { GlobalExceptionFilter } from 'src/filters/global-exception.filter';
@@ -50,7 +50,7 @@ describe('Auth HTTP contract (e2e)', () => {
 
   beforeEach(async () => {
     registerUseCase.execute.mockResolvedValue(
-      Result.success({ user: mockUser, customerId: mockUser.customerId }),
+      Result.success({ user: mockUser, id: mockUser.id }),
     );
     loginUseCase.execute.mockResolvedValue(
       Result.success({
@@ -108,7 +108,7 @@ describe('Auth HTTP contract (e2e)', () => {
       .expect(201)
       .expect(({ body }) => {
         expect(body.user.email).toBe(mockUser.email);
-        expect(body.customerId).toBe(mockUser.customerId);
+        expect(body.id).toBe(mockUser.id);
       });
 
     const loginResponse = await request(app.getHttpServer())
