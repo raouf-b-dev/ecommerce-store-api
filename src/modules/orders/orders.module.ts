@@ -8,7 +8,7 @@ import { OrderRepository } from './core/domain/repositories/order-repository';
 import {
   POSTGRES_ORDER_REPOSITORY,
   CACHED_ORDER_REPOSITORY,
-  CUSTOMER_GATEWAY,
+  USER_GATEWAY,
   CART_GATEWAY,
   INVENTORY_RESERVATION_GATEWAY,
   PAYMENT_GATEWAY,
@@ -16,11 +16,11 @@ import {
 
 import { CachedOrderRepository } from './secondary-adapters/repositories/cached-order-repository/cached.order-repository';
 import { PostgresOrderRepository } from './secondary-adapters/repositories/postgres-order-repository/postgres.order-repository';
-import { ModuleCustomerGateway } from './secondary-adapters/adapters/module-customer.gateway';
+import { ModuleUserGateway } from './secondary-adapters/adapters/module-user.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
 import { ModuleInventoryReservationGateway } from './secondary-adapters/adapters/module-inventory-reservation.gateway';
 import { ModulePaymentGateway } from './secondary-adapters/adapters/module-payment.gateway';
-import { CustomerGateway } from './core/application/ports/customer.gateway';
+import { UserGateway } from './core/application/ports/user.gateway';
 import { CartGateway } from './core/application/ports/cart.gateway';
 import { InventoryReservationGateway } from './core/application/ports/inventory-reservation.gateway';
 import { PaymentGateway } from './core/application/ports/payment.gateway';
@@ -39,7 +39,7 @@ import { ProcessOrderUseCase } from './core/application/usecases/process-order/p
 import { PaymentsModule } from '../payments/payments.module';
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { CreateOrderFromCartUseCase } from './core/application/usecases/create-order-from-cart/create-order-from-cart.usecase';
-import { CustomersModule } from '../customers/customers.module';
+import { AccessModule } from '../access/access.module';
 import { CheckoutFailureListener } from './primary-adapters/listeners/checkout-failure.listener';
 import { CartsModule } from '../carts/carts.module';
 import { InventoryModule } from '../inventory/inventory.module';
@@ -88,7 +88,7 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     RedisModule,
     RedisModule,
     PaymentsModule,
-    CustomersModule,
+    AccessModule,
     CartsModule,
     InventoryModule,
     BullModule.registerQueue({
@@ -120,12 +120,12 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
 
     // Gateways
     {
-      provide: CUSTOMER_GATEWAY,
-      useClass: ModuleCustomerGateway,
+      provide: USER_GATEWAY,
+      useClass: ModuleUserGateway,
     },
     {
-      provide: CustomerGateway,
-      useExisting: CUSTOMER_GATEWAY,
+      provide: UserGateway,
+      useExisting: USER_GATEWAY,
     },
     {
       provide: CART_GATEWAY,
