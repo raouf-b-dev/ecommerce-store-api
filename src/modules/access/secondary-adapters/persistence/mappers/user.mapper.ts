@@ -17,7 +17,9 @@ export class UserMapper {
       passwordHash: entity.passwordHash,
       mustChangePassword: entity.mustChangePassword,
       roleId: entity.roleId,
-      addresses: entity.addresses.map((addr) => AddressMapper.toDomain(addr)),
+      addresses: entity.addresses
+        ? entity.addresses.map((addr) => AddressMapper.toDomain(addr))
+        : [],
       isActive: entity.isActive,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
