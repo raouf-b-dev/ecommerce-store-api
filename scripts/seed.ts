@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { SeedDemoAuthUsersUseCase } from '../src/modules/auth/core/application/seed/seed-demo-auth-users.usecase';
-import { SeedDemoCustomerUseCase } from '../src/modules/customers/core/application/seed/seed-demo-customer.usecase';
+import { SeedDemoAuthUsersUseCase } from '../src/modules/access/core/application/seed/seed-demo-auth-users.usecase';
 import { SeedDemoCatalogUseCase } from '../src/modules/products/core/application/seed/seed-demo-catalog.usecase';
 import { SeedDemoInventoryUseCase } from '../src/modules/inventory/core/application/seed/seed-demo-inventory.usecase';
 import { maskEmail, statusLabel } from './utils/log-helpers';
@@ -21,7 +20,6 @@ async function bootstrap() {
   try {
     app = await NestFactory.createApplicationContext(AppModule);
 
-    const seedCustomerUseCase = app.get(SeedDemoCustomerUseCase);
     const seedAuthUsersUseCase = app.get(SeedDemoAuthUsersUseCase);
     const seedCatalogUseCase = app.get(SeedDemoCatalogUseCase);
     const seedInventoryUseCase = app.get(SeedDemoInventoryUseCase);
@@ -29,19 +27,7 @@ async function bootstrap() {
     console.log('\n--- Starting Local Database Seeding ---');
 
     const seedAuthFlow = async () => {
-      const customerResult = await seedCustomerUseCase.execute();
-      if (customerResult.isFailure) {
-        throw customerResult.error;
-      }
-      console.log(
-        `Customer profile ${statusLabel(customerResult.value.status)}: ${maskEmail(
-          customerResult.value.email,
-        )} (ID: ${customerResult.value.id})`,
-      );
-
-      const authUsersResult = await seedAuthUsersUseCase.execute({
-        customerId: customerResult.value.id,
-      });
+      const authUsersResult = await seedAuthUsersUseCase.execute();
       if (authUsersResult.isFailure) {
         throw authUsersResult.error;
       }
