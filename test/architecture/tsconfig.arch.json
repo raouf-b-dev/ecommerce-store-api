@@ -3,6 +3,12 @@
   "compilerOptions": {
     "isolatedModules": true
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts"],
-  "exclude": ["node_modules", "dist", "test", "coverage", ".gemini"]
+  "include": ["../../src/**/*.ts", "../../scripts/**/*.ts"],
+  "exclude": [
+    "../../node_modules",
+    "../../dist",
+    "..",
+    "../../coverage",
+    "../../.gemini"
+  ]
 }

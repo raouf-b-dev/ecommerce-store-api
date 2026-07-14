@@ -9,7 +9,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
       .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
-      .inFolder('src/modules/*/primary-adapters/**');
+      .inFolder(/src\/modules\/[a-z-]+\/primary-adapters\/.*/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
@@ -19,7 +19,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
       .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
-      .inFolder('src/modules/*/secondary-adapters/**');
+      .inFolder(/src\/modules\/[a-z-]+\/secondary-adapters\/.*/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
@@ -31,7 +31,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
       .inPath(domainPattern)
       .shouldNot()
       .dependOnFiles()
-      .inFolder('src/modules/*/core/application/**');
+      .inFolder(/src\/modules\/[a-z-]+\/core\/application\/.*/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
@@ -47,19 +47,19 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
 
   it('Rule 5: Primary adapters must not depend on secondary adapters', async () => {
     const rule = projectFiles('test/architecture/tsconfig.arch.json')
-      .inFolder('src/modules/*/primary-adapters/**')
+      .inFolder(/src\/modules\/[a-z-]+\/primary-adapters\/.*/)
       .shouldNot()
       .dependOnFiles()
-      .inFolder('src/modules/*/secondary-adapters/**');
+      .inFolder(/src\/modules\/[a-z-]+\/secondary-adapters\/.*/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
 
-  it('Rule 6: Cross-module core isolation', async () => {
+  describe('Rule 6: Cross-module core isolation', () => {
     const modules = [
+      'access',
       'auth',
       'carts',
-      'customers',
       'health',
       'inventory',
       'notifications',
@@ -69,35 +69,50 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
     ];
 
     for (const currentModule of modules) {
-      const otherModulesPattern = `src/modules/!(${currentModule})/**`;
-      const rule = projectFiles('test/architecture/tsconfig.arch.json')
-        .inPath(
-          new RegExp(`src/modules/${currentModule}/core/(?!.*\\.spec\\.ts$).*`),
-        )
-        .shouldNot()
-        .dependOnFiles()
-        .inFolder(otherModulesPattern);
+      it(`should isolate core of ${currentModule} from other modules`, async () => {
+        const otherModulesPattern = new RegExp(
+          `src/modules/(?!${currentModule})[a-z-]+/.*`,
+        );
+        const rule = projectFiles('test/architecture/tsconfig.arch.json')
+          .inPath(
+            new RegExp(
+              `src/modules/${currentModule}/core/(?!.*\\.spec\\.ts$).*`,
+            ),
+          )
+          .shouldNot()
+          .dependOnFiles()
+          .inFolder(otherModulesPattern);
 
-      await expect(rule).toPassAsync({ allowEmptyTests: true });
+        await expect(rule).toPassAsync({ allowEmptyTests: true });
+      });
     }
   });
 
-  it('Rule 7: Core must not depend on general infrastructure (with whitelist exception for JWT ports)', async () => {
+  it('Rule 7: Core must not contain DTO files', async () => {
     const rule = projectFiles('test/architecture/tsconfig.arch.json')
       .inPath(coreSourcePattern)
       .shouldNot()
-      .dependOnFiles()
-      .inFolder('src/infrastructure/!(jwt)/**');
+      .haveName(/.*\.dto\.ts/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
 
-  it('Rule 8: Scripts must not depend on domain entities or repositories directly', async () => {
+  it('Rule 8: Core must not depend on general infrastructure (with whitelist exception for JWT ports)', async () => {
     const rule = projectFiles('test/architecture/tsconfig.arch.json')
-      .inFolder('scripts/**')
+      .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
-      .inFolder('src/modules/*/core/domain/**');
+      .inFolder(/src\/infrastructure\/(?!jwt\/)[a-z-]+\/.*/);
+
+    await expect(rule).toPassAsync({ allowEmptyTests: true });
+  });
+
+  it('Rule 9: Scripts must not depend on domain entities or repositories directly', async () => {
+    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+      .inFolder(/scripts\/.*/)
+      .shouldNot()
+      .dependOnFiles()
+      .inFolder(/src\/modules\/[a-z-]+\/core\/domain\/.*/);
 
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
