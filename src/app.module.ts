@@ -8,7 +8,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { CartsModule } from './modules/carts/carts.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { CustomersModule } from './modules/customers/customers.module';
+import { AccessModule } from './modules/access/access.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -18,7 +18,7 @@ import { HealthModule } from './modules/health/health.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './guards/auth.guard';
-import { PermissionsGuard } from './modules/auth/primary-adapters/guards/permissions.guard';
+import { PermissionsGuard } from './modules/access/primary-adapters/guards/permissions.guard';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -34,7 +34,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     CartsModule,
     PaymentsModule,
     InventoryModule,
-    CustomersModule,
+    AccessModule,
     AuthModule,
     WebsocketModule,
     NotificationsModule,
