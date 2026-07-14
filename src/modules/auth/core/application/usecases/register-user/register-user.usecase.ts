@@ -37,7 +37,7 @@ export class RegisterUserUseCase extends UseCase<
   ): Promise<Result<UserRecord, UseCaseError>> {
     // 1. Check if user exists
     const existingUser = await this.userGateway.checkEmailExists(command.email);
-    if (existingUser.isSuccess && !existingUser.value) {
+    if (existingUser.isSuccess && existingUser.value) {
       return ErrorFactory.UseCaseError(
         'User with this email already exists',
         null,

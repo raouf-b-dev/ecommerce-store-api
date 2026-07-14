@@ -57,7 +57,7 @@ describe('RegisterUserUseCase', () => {
 
   it('should register a user successfully', async () => {
     identityAccessGatewayMock.checkEmailExists.mockResolvedValue(
-      Result.success(true),
+      Result.success(false),
     );
     const userResult = Result.success(mockUserRecord);
     identityAccessGatewayMock.createUser.mockResolvedValue(userResult);
@@ -69,7 +69,7 @@ describe('RegisterUserUseCase', () => {
 
   it('should return failure if email already exists', async () => {
     identityAccessGatewayMock.checkEmailExists.mockResolvedValue(
-      Result.success(false),
+      Result.success(true),
     );
 
     const result = await usecase.execute(mockRegisterCommand);
