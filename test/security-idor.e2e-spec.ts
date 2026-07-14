@@ -33,7 +33,7 @@ async function registeruser(
   });
 
   expect(registerResponse.status).toBe(201);
-  const registereduserId = registerResponse.body.userId as number;
+  const registereduserId = registerResponse.body.id as number;
   expect(registereduserId).toBeGreaterThan(0);
 
   const loginResponse = await http.post(`${API}/auth/login`).send({
@@ -45,7 +45,7 @@ async function registeruser(
   expect(loginResponse.body.accessToken).toBeDefined();
 
   const claims = decodeJwt(loginResponse.body.accessToken as string);
-  const userId = Number(claims.userId);
+  const userId = Number(claims.sub);
   expect(userId).toBe(registereduserId);
 
   return {
