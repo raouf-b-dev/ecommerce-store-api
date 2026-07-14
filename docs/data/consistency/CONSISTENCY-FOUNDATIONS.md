@@ -126,7 +126,7 @@ As a counterpoint to ACID, the **BASE** model describes systems that favour avai
 | **Order list query**                            | Read-after-write                 | After creating an order, the customer must see it immediately in their order list. Stale-read from a cache is unacceptable here. |
 | **Search results**                              | Eventual                         | Full-text search indexes (Elasticsearch) are asynchronously updated. Brief staleness is acceptable.                              |
 | **Checkout SAGA** (order → payment → inventory) | Saga consistency                 | Not ACID — each step is a local transaction. Failures trigger compensating actions. See [Sagas](SAGAS-AND-COMPENSATION.md).      |
-| **Customer profile update**                     | Optimistic (version column)      | Low contention. Conflicts detected and reported. See [Optimistic Locking](../concurrency/OPTIMISTIC-LOCKING.md).                 |
+| **User profile update**                         | Optimistic (version column)      | Low contention. Conflicts detected and reported. See [Optimistic Locking](../concurrency/OPTIMISTIC-LOCKING.md).                 |
 | **Domain event processing**                     | Eventual                         | Events are published asynchronously via outbox/queue. Subscribers process them with a latency window.                            |
 
 ---

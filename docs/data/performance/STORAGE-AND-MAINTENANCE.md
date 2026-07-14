@@ -159,11 +159,11 @@ Table partitioning divides a large table into smaller physical **partitions** th
 
 ### 4.2 Partition Types
 
-| Type      | Partition Key                       | Example                                                                 | Use Case                                                      |
-| :-------- | :---------------------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------------ |
-| **Range** | Contiguous ranges of a column value | Monthly: `orders_2024_01`, `orders_2024_02`, ...                        | Time-series data, audit logs, orders by date                  |
-| **List**  | Explicit list of values             | By status: `orders_active`, `orders_archived`                           | Categorical data with a small, fixed set of values            |
-| **Hash**  | Hash of the column value            | By customer_id hash: `orders_p0`, `orders_p1`, `orders_p2`, `orders_p3` | Even distribution across N partitions for parallel processing |
+| Type      | Partition Key                       | Example                                                             | Use Case                                                      |
+| :-------- | :---------------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------ |
+| **Range** | Contiguous ranges of a column value | Monthly: `orders_2024_01`, `orders_2024_02`, ...                    | Time-series data, audit logs, orders by date                  |
+| **List**  | Explicit list of values             | By status: `orders_active`, `orders_archived`                       | Categorical data with a small, fixed set of values            |
+| **Hash**  | Hash of the column value            | By user_id hash: `orders_p0`, `orders_p1`, `orders_p2`, `orders_p3` | Even distribution across N partitions for parallel processing |
 
 ### 4.3 Range Partitioning Example
 
@@ -171,7 +171,7 @@ Table partitioning divides a large table into smaller physical **partitions** th
 -- Parent table (no data stored here directly)
 CREATE TABLE orders (
   id UUID NOT NULL,
-  customer_id UUID NOT NULL,
+  user_id UUID NOT NULL,
   status VARCHAR(50) NOT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL

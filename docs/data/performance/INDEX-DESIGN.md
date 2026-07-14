@@ -13,39 +13,39 @@ The order of columns in a composite index significantly affects which queries ca
 ### 1.1 Rule 1 — Equality Columns First, Range Columns Last
 
 ```sql
--- Query: WHERE customer_id = ? AND created_at > ?
+-- Query: WHERE user_id = ? AND created_at > ?
 -- ✅ Optimal: equality first, range second
-CREATE INDEX idx_optimal ON orders (customer_id, created_at);
--- PostgreSQL navigates to the exact customer_id, then scans the range
+CREATE INDEX idx_optimal ON orders (user_id, created_at);
+-- PostgreSQL navigates to the exact user_id, then scans the range
 
 -- ❌ Suboptimal: range first
-CREATE INDEX idx_suboptimal ON orders (created_at, customer_id);
--- Scans the date range, then filters by customer_id within each date
+CREATE INDEX idx_suboptimal ON orders (created_at, user_id);
+-- Scans the date range, then filters by user_id within each date
 ```
 
 ### 1.2 Rule 2 — High-Selectivity Columns First (Both Equality)
 
 ```sql
--- customer_id: 10,000 distinct values; status: 5 distinct values
+-- user_id: 10,000 distinct values; status: 5 distinct values
 -- ✅ Optimal: high-selectivity first
-CREATE INDEX idx_optimal ON orders (customer_id, status);
+CREATE INDEX idx_optimal ON orders (user_id, status);
 -- Narrows to ~0.01% immediately
 
 -- ⚠️ Less optimal: low-selectivity first
-CREATE INDEX idx_suboptimal ON orders (status, customer_id);
+CREATE INDEX idx_suboptimal ON orders (status, user_id);
 -- Narrows to ~20% first, then filters
 ```
 
 ### 1.3 Rule 3 — Match `ORDER BY` Direction
 
 ```sql
--- Query: WHERE customer_id = ? ORDER BY created_at DESC LIMIT 10
+-- Query: WHERE user_id = ? ORDER BY created_at DESC LIMIT 10
 -- ✅ Optimal: index provides both filter and sort
-CREATE INDEX idx_optimal ON orders (customer_id, created_at DESC);
+CREATE INDEX idx_optimal ON orders (user_id, created_at DESC);
 -- No separate sort step needed
 
 -- ❌ Suboptimal: sort column missing or wrong direction
-CREATE INDEX idx_suboptimal ON orders (customer_id);
+CREATE INDEX idx_suboptimal ON orders (user_id);
 -- Must fetch all matches and sort them
 ```
 
@@ -58,16 +58,16 @@ CREATE INDEX idx_suboptimal ON orders (customer_id);
 A **covering index** includes all columns required by a query, enabling PostgreSQL to satisfy the query entirely from the index without accessing the table heap. This is called an **index-only scan**.
 
 ```sql
--- Query: SELECT customer_id, status, created_at FROM orders
---        WHERE customer_id = ? AND status = 'ACTIVE'
+-- Query: SELECT user_id, status, created_at FROM orders
+--        WHERE user_id = ? AND status = 'ACTIVE'
 --        ORDER BY created_at DESC;
 
 -- Standard index (requires heap access for created_at):
-CREATE INDEX idx_orders_cust_status ON orders (customer_id, status);
+CREATE INDEX idx_orders_user_status ON orders (user_id, status);
 
 -- Covering index (enables index-only scan):
-CREATE INDEX idx_orders_cust_status_covering
-ON orders (customer_id, status)
+CREATE INDEX idx_orders_user_status_covering
+ON orders (user_id, status)
 INCLUDE (created_at);
 ```
 
@@ -95,7 +95,7 @@ A **partial index** includes only rows satisfying a `WHERE` clause, reducing siz
 
 ```sql
 -- Only active carts (most queries filter for active)
-CREATE INDEX idx_carts_active ON carts (customer_id) WHERE is_active = true;
+CREATE INDEX idx_carts_active ON carts (user_id) WHERE is_active = true;
 
 -- Only pending orders (monitoring and processing)
 CREATE INDEX idx_orders_pending ON orders (created_at) WHERE status = 'PENDING_PAYMENT';
@@ -181,14 +181,14 @@ ORDER BY heap_blks_read DESC LIMIT 10;
 ### 6.1 Orders Module
 
 ```sql
-CREATE INDEX idx_orders_customer_status ON orders (customer_id, status);
-CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at DESC);
+CREATE INDEX idx_orders_user_status ON orders (user_id, status);
+CREATE INDEX idx_orders_user_created ON orders (user_id, created_at DESC);
 
 CREATE INDEX idx_orders_pending ON orders (created_at)
 WHERE status IN ('PENDING_PAYMENT', 'CONFIRMED', 'PROCESSING');
 
 CREATE INDEX idx_orders_list_covering
-ON orders (customer_id, status, created_at DESC) INCLUDE (total_amount);
+ON orders (user_id, status, created_at DESC) INCLUDE (total_amount);
 ```
 
 ### 6.2 Inventory Module
@@ -209,10 +209,10 @@ CREATE INDEX idx_products_category_price ON products (category_id, price)
 WHERE is_active = true;
 ```
 
-### 6.4 Customers Module
+### 6.4 Access Module
 
 ```sql
-CREATE INDEX idx_customers_active ON customers (last_login_at DESC) WHERE is_active = true;
+CREATE INDEX idx_users_active ON users (last_login_at DESC) WHERE is_active = true;
 ```
 
 ---

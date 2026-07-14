@@ -162,7 +162,7 @@ For operations that can be expressed as "create if not exists, otherwise update,
 
 ```sql
 -- Idempotent order creation keyed by idempotency_key
-INSERT INTO orders (id, idempotency_key, customer_id, total, status)
+INSERT INTO orders (id, idempotency_key, user_id, total, status)
 VALUES ($1, $2, $3, $4, 'PENDING')
 ON CONFLICT (idempotency_key) DO NOTHING
 RETURNING *;
