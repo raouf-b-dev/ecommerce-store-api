@@ -1,6 +1,7 @@
 import { CartOwnershipValidator } from './cart-ownership.validator';
 import { CartSessionTokenGateway } from '../ports/session-token.gateway';
 import { Cart } from '../../domain/entities/cart';
+import { Result } from '../../../../../shared-kernel/domain/result';
 import {
   CallerContext,
   SYSTEM_CALLER_CONTEXT,
@@ -111,7 +112,9 @@ describe('CartOwnershipValidator', () => {
       const cart = Cart.createGuestCart(123);
       Object.defineProperty(cart, 'id', { value: 789 });
 
-      mockSessionTokenGateway.validateToken.mockResolvedValue(true);
+      mockSessionTokenGateway.validateToken.mockResolvedValue(
+        Result.success(true),
+      );
 
       const callerContext: CallerContext = {
         kind: 'user',
@@ -134,7 +137,9 @@ describe('CartOwnershipValidator', () => {
 
     it('should deny guest cart token on user carts even when user is authenticated', async () => {
       const cart = Cart.createUserCart(123);
-      mockSessionTokenGateway.validateToken.mockResolvedValue(true);
+      mockSessionTokenGateway.validateToken.mockResolvedValue(
+        Result.success(true),
+      );
 
       const callerContext: CallerContext = {
         kind: 'user',
@@ -156,7 +161,9 @@ describe('CartOwnershipValidator', () => {
       const cart = Cart.createGuestCart(123);
       Object.defineProperty(cart, 'id', { value: 789 });
 
-      mockSessionTokenGateway.validateToken.mockResolvedValue(true);
+      mockSessionTokenGateway.validateToken.mockResolvedValue(
+        Result.success(true),
+      );
 
       const result = await validator.validate(cart, null, 'valid-token');
       expect(result.isSuccess).toBe(true);
@@ -170,7 +177,9 @@ describe('CartOwnershipValidator', () => {
       const cart = Cart.createGuestCart(123);
       Object.defineProperty(cart, 'id', { value: 789 });
 
-      mockSessionTokenGateway.validateToken.mockResolvedValue(false);
+      mockSessionTokenGateway.validateToken.mockResolvedValue(
+        Result.success(false),
+      );
 
       const result = await validator.validate(cart, null, 'invalid-token');
       expect(result.isFailure).toBe(true);

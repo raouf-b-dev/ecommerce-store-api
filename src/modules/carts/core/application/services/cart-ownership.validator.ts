@@ -42,10 +42,14 @@ export class CartOwnershipValidator {
 
     // Guest cart -> validate session token (works for anonymous and logged-in clients)
     if (cart.isGuestCart()) {
-      if (
-        !cartToken ||
-        !(await this.sessionTokenGateway.validateToken(cartToken, cart.id!))
-      ) {
+      if (!cartToken) {
+        return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
+      }
+      const tokenResult = await this.sessionTokenGateway.validateToken(
+        cartToken,
+        cart.id!,
+      );
+      if (tokenResult.isFailure || !tokenResult.value) {
         return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
       }
       return Result.success(undefined);
