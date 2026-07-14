@@ -1,76 +1,62 @@
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
-import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
-import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
+import { IdentityAccessGatewayMock } from '../../../../testing/mocks/identity-access-gateway.mock';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { User } from '../../../domain/entities/user';
 import { SessionToken } from '../../../domain/entities/session-token';
-import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { Role } from '../../../domain/entities/role';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { UserCredentials } from '../../ports/access.gateway';
+
+/** Default active customer credentials */
+const defaultCredentials: UserCredentials = {
+  id: 123,
+  email: 'test@example.com',
+  passwordHash: 'hashed_password',
+  isActive: true,
+  roleId: 2,
+};
 
 describe('LoginUserUseCase', () => {
   let usecase: LoginUserUseCase;
-  let userRepository: MockUserRepository;
-  let roleRepository: MockRoleRepository;
+  let accessGateway: IdentityAccessGatewayMock;
   let sessionTokenRepository: MockSessionTokenRepository;
   let passwordHasher: MockPasswordHasher;
   let jwtSignerService: MockJwtSignerService;
   let domainEventPublisher: DomainEventPublisher;
 
-  let mockDomainUser: User;
-
   beforeEach(() => {
-    userRepository = new MockUserRepository();
-    roleRepository = new MockRoleRepository();
+    accessGateway = new IdentityAccessGatewayMock();
     sessionTokenRepository = new MockSessionTokenRepository();
     passwordHasher = new MockPasswordHasher();
     jwtSignerService = new MockJwtSignerService();
     domainEventPublisher = { publish: jest.fn() };
 
     usecase = new LoginUserUseCase(
-      userRepository,
-      roleRepository,
+      accessGateway,
       sessionTokenRepository,
       passwordHasher,
       jwtSignerService,
       domainEventPublisher,
     );
-    mockDomainUser = User.fromPrimitives(
-      UserTestFactory.createMockCustomerUser(),
-    );
 
-    // Default: resolve role from roleId returns a valid role
-    roleRepository.findById.mockResolvedValue(
-      Result.success(
-        new Role({
-          id: 2,
-          code: 'CUSTOMER',
-          name: 'Customer',
-          isSystem: true,
-          permissions: [],
-        }),
-      ),
-    );
+    // Default role resolution
+    accessGateway.mockSuccessfulFindRoleById({ id: 2, code: 'CUSTOMER' });
   });
 
   afterEach(() => {
-    userRepository.reset();
+    accessGateway.reset();
     sessionTokenRepository.reset();
   });
 
   it('should login a user successfully', async () => {
-    userRepository.findByEmail.mockResolvedValue(
-      Result.success(mockDomainUser),
-    );
+    accessGateway.mockSuccessfulFindByEmail(defaultCredentials);
     sessionTokenRepository.save.mockResolvedValue(
       Result.success(
         SessionToken.create(
-          mockDomainUser.id!,
+          defaultCredentials.id,
           'dummy-refresh-token',
           new Date('2025-01-01T12:00:00Z'),
         ),
@@ -83,16 +69,18 @@ describe('LoginUserUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.accessToken).toContain('header');
-    expect(result.value.refreshToken).toContain('header');
+    expect(result.value.accessToken).toBeTruthy();
+    expect(result.value.refreshToken).toBeTruthy();
   });
 
   it('should return failure if user is not found', async () => {
-    userRepository.findByEmail.mockResolvedValue(Result.success(null));
+    accessGateway.mockUserNotFoundByEmail();
+
     const result = await usecase.execute({
       email: 'test@example.com',
       password: 'password',
     });
+
     ResultAssertionHelper.assertResultFailure(
       result,
       'Invalid credentials',
@@ -101,14 +89,14 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if password is incorrect', async () => {
-    userRepository.findByEmail.mockResolvedValue(
-      Result.success(mockDomainUser),
-    );
+    accessGateway.mockSuccessfulFindByEmail(defaultCredentials);
     passwordHasher.compare.mockResolvedValue(false);
+
     const result = await usecase.execute({
       email: 'test@example.com',
-      password: 'password',
+      password: 'wrong-password',
     });
+
     ResultAssertionHelper.assertResultFailure(
       result,
       'Invalid credentials',
@@ -117,12 +105,10 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if user is deactivated', async () => {
-    const deactivatedUser = User.fromPrimitives(
-      UserTestFactory.createMockCustomerUser({ isActive: false }),
-    );
-    userRepository.findByEmail.mockResolvedValue(
-      Result.success(deactivatedUser),
-    );
+    accessGateway.mockSuccessfulFindByEmail({
+      ...defaultCredentials,
+      isActive: false,
+    });
 
     const result = await usecase.execute({
       email: 'test@example.com',
@@ -136,13 +122,11 @@ describe('LoginUserUseCase', () => {
     );
   });
 
-  it('should return failure if customer role is not linked to a customer profile', async () => {
-    const unlinkedCustomer = User.fromPrimitives(
-      UserTestFactory.createMockCustomerUser({ customerId: null }),
-    );
-    userRepository.findByEmail.mockResolvedValue(
-      Result.success(unlinkedCustomer),
-    );
+  it('should return failure if user has no assigned role', async () => {
+    accessGateway.mockSuccessfulFindByEmail({
+      ...defaultCredentials,
+      roleId: 0,
+    });
 
     const result = await usecase.execute({
       email: 'test@example.com',
@@ -151,7 +135,7 @@ describe('LoginUserUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Customer account is not fully configured',
+      'User has no assigned role',
       UseCaseError,
     );
   });

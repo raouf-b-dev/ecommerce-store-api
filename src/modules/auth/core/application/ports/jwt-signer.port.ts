@@ -6,7 +6,6 @@ export interface SignAccessTokenPayload {
   sub: number | null;
   email: string;
   role: string;
-  customerId: number | null;
 }
 
 /**

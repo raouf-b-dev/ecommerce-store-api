@@ -24,7 +24,6 @@ import { Public } from '../../guards/decorators/public.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
-@Public()
 @UseInterceptors(RefreshTokenCookieInterceptor)
 export class AuthController {
   constructor(
@@ -37,6 +36,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @Public()
   @Throttle({
     default: { limit: 10, ttl: 60000 },
     strict: { limit: 10, ttl: 60000 },
@@ -49,6 +49,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Public()
   @Throttle({
     default: { limit: 10, ttl: 60000 },
     strict: { limit: 10, ttl: 60000 },
@@ -62,6 +63,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({
     default: { limit: 20, ttl: 60000 },
@@ -103,6 +105,7 @@ export class AuthController {
   }
 
   @Get('.well-known/jwks.json')
+  @Public()
   @ApiOperation({ summary: 'Get JWKS (JSON Web Key Set)' })
   @ApiResponse({
     status: 200,

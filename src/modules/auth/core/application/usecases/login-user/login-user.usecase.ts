@@ -3,14 +3,12 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { UserRepository } from '../../../domain/repositories/user.repository';
-import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
-import { validateCustomerAccessTokenBinding } from '../../services/validate-customer-access-token.service';
+import { IdentityAccessGateway } from '../../ports/access.gateway';
 
 export interface LoginCommand {
   email: string;
@@ -26,8 +24,7 @@ export class LoginUserUseCase extends UseCase<
   private readonly logger = new Logger(LoginUserUseCase.name);
 
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly roleRepository: RoleRepository,
+    private readonly identityAccessGateway: IdentityAccessGateway,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerPort,
@@ -42,7 +39,9 @@ export class LoginUserUseCase extends UseCase<
     Result<{ accessToken: string; refreshToken: string }, UseCaseError>
   > {
     // 1. Find User
-    const userResult = await this.userRepository.findByEmail(command.email);
+    const userResult = await this.identityAccessGateway.findCredentialsByEmail(
+      command.email,
+    );
 
     if (userResult.isFailure) {
       return ErrorFactory.UseCaseError(
@@ -104,7 +103,9 @@ export class LoginUserUseCase extends UseCase<
         HttpStatus.FORBIDDEN,
       );
     }
-    const roleResult = await this.roleRepository.findById(user.roleId);
+    const roleResult = await this.identityAccessGateway.findRoleById(
+      user.roleId,
+    );
     if (roleResult.isFailure) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_resolution_failed',
@@ -127,23 +128,11 @@ export class LoginUserUseCase extends UseCase<
       );
     }
 
-    const customerBindingError = validateCustomerAccessTokenBinding(
-      roleResult.value.code,
-      user.customerId,
-    );
-    if (customerBindingError) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'customer_not_linked',
-      });
-      return customerBindingError;
-    }
-
     // 4. Generate Access Token
     const accessToken = await this.jwtSignerService.signAccessToken({
       sub: user.id,
       email: user.email,
       role: roleResult.value.code,
-      customerId: user.customerId,
     });
 
     // 4. Generate Refresh Token (JwtSignerService handles sessionId generation and expiry extraction)
@@ -157,7 +146,7 @@ export class LoginUserUseCase extends UseCase<
 
     // 5. Save Session
     const session = SessionToken.create(
-      user.id as number,
+      user.id,
       refreshToken,
       expiresAt,
       sessionId,

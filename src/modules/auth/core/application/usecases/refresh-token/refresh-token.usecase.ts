@@ -3,13 +3,11 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { UserRepository } from '../../../domain/repositories/user.repository';
-import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
-import { validateCustomerAccessTokenBinding } from '../../services/validate-customer-access-token.service';
+import { IdentityAccessGateway } from '../../ports/access.gateway';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -23,8 +21,7 @@ export class RefreshTokenUseCase extends UseCase<
     private readonly jwtVerifierService: JwtVerifierPort,
     private readonly jwtSignerService: JwtSignerPort,
     private readonly sessionTokenRepository: SessionTokenRepository,
-    private readonly userRepository: UserRepository,
-    private readonly roleRepository: RoleRepository,
+    private readonly accessGateway: IdentityAccessGateway,
   ) {
     super();
   }
@@ -83,7 +80,7 @@ export class RefreshTokenUseCase extends UseCase<
       await this.sessionTokenRepository.save(session);
 
       // 5. Load user to get updated access token payload
-      const userResult = await this.userRepository.findById(userId);
+      const userResult = await this.accessGateway.findCredentialsById(userId);
       if (userResult.isFailure || !userResult.value) {
         return ErrorFactory.UseCaseError(
           'User not found',
@@ -101,8 +98,8 @@ export class RefreshTokenUseCase extends UseCase<
           HttpStatus.UNAUTHORIZED,
         );
       }
-      const roleResult = await this.roleRepository.findById(user.roleId);
-      if (roleResult.isFailure) {
+      const roleResult = await this.accessGateway.findRoleById(user.roleId);
+      if (roleResult.isFailure || !roleResult.value) {
         return ErrorFactory.UseCaseError(
           'Failed to resolve user role',
           null,
@@ -110,20 +107,11 @@ export class RefreshTokenUseCase extends UseCase<
         );
       }
 
-      const customerBindingError = validateCustomerAccessTokenBinding(
-        roleResult.value.code,
-        user.customerId,
-      );
-      if (customerBindingError) {
-        return customerBindingError;
-      }
-
       // 7. Generate new tokens
       const newAccessToken = await this.jwtSignerService.signAccessToken({
         sub: user.id,
         email: user.email,
         role: roleResult.value.code,
-        customerId: user.customerId,
       });
 
       const {
@@ -136,7 +124,7 @@ export class RefreshTokenUseCase extends UseCase<
 
       // 7. Save new session
       const newSession = SessionToken.create(
-        user.id as number,
+        user.id,
         newRefreshToken,
         expiresAt,
         newSessionId,

@@ -9,6 +9,7 @@ export class RegisterCommandTestFactory {
       password: 'password',
       firstName: 'John',
       lastName: 'Doe',
+      phone: 'phone',
     };
 
     return { ...baseCommand, ...overrides };
@@ -20,6 +21,7 @@ export class RegisterCommandTestFactory {
       password: '',
       firstName: '',
       lastName: '',
+      phone: '',
     };
   }
 }

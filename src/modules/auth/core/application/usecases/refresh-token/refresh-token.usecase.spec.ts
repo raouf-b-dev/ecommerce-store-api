@@ -1,12 +1,7 @@
 import { RefreshTokenUseCase } from './refresh-token.usecase';
 import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
 import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
-import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
-import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
 import { SessionToken } from '../../../domain/entities/session-token';
-import { User } from '../../../domain/entities/user';
-import { Role } from '../../../domain/entities/role';
-import { UserTestFactory } from '../../../../testing/factories/user.factory';
 import {
   MockJwtVerifierService,
   ResultAssertionHelper,
@@ -14,37 +9,34 @@ import {
 } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { IdentityAccessGatewayMock } from '../../../../testing/mocks/identity-access-gateway.mock';
 
 describe('RefreshTokenUseCase', () => {
   let usecase: RefreshTokenUseCase;
   let jwtVerifierService: MockJwtVerifierService;
   let jwtSignerService: MockJwtSignerService;
   let sessionTokenRepository: MockSessionTokenRepository;
-  let userRepository: MockUserRepository;
-  let roleRepository: MockRoleRepository;
+  let accessGateway: IdentityAccessGatewayMock;
 
   beforeEach(() => {
-    // Silence logs during tests
     LoggerTestHelper.silence();
 
     jwtVerifierService = new MockJwtVerifierService();
     jwtSignerService = new MockJwtSignerService();
     sessionTokenRepository = new MockSessionTokenRepository();
-    userRepository = new MockUserRepository();
-    roleRepository = new MockRoleRepository();
+    accessGateway = new IdentityAccessGatewayMock();
 
     usecase = new RefreshTokenUseCase(
       jwtVerifierService,
       jwtSignerService,
       sessionTokenRepository,
-      userRepository,
-      roleRepository,
+      accessGateway,
     );
   });
 
   afterEach(() => {
     sessionTokenRepository.reset();
-    userRepository.reset();
+    accessGateway.reset();
     jest.restoreAllMocks();
   });
 
@@ -55,7 +47,6 @@ describe('RefreshTokenUseCase', () => {
     const rawToken = `header.${dummyPayload}.signature`;
     const sessionId = 'mock-session-id';
 
-    // Mock the JWT verifier payload
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
       sessionId: sessionId,
@@ -71,23 +62,14 @@ describe('RefreshTokenUseCase', () => {
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.save.mockResolvedValue(Result.success(session));
 
-    const mockUser = User.fromPrimitives(
-      UserTestFactory.createMockCustomerUser(),
-    );
-    userRepository.findById.mockResolvedValue(Result.success(mockUser));
-
-    // Resolve role code from roleId
-    roleRepository.findById.mockResolvedValue(
-      Result.success(
-        new Role({
-          id: 2,
-          code: 'CUSTOMER',
-          name: 'Customer',
-          isSystem: true,
-          permissions: [],
-        }),
-      ),
-    );
+    accessGateway.mockSuccessfulFindById({
+      id: 1,
+      email: 'user@example.com',
+      passwordHash: 'hashed',
+      isActive: true,
+      roleId: 2,
+    });
+    accessGateway.mockSuccessfulFindRoleById({ id: 2, code: 'CUSTOMER' });
 
     const newAccessToken = 'new-access-token';
     const newRefreshToken = 'new-refresh-token';
@@ -148,7 +130,6 @@ describe('RefreshTokenUseCase', () => {
       exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
     });
 
-    // Session is valid but was created with a DIFFERENT token (rotation happened)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
     const session = SessionToken.create(

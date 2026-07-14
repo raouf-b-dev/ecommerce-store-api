@@ -6,9 +6,7 @@ import { LoginUserUseCase } from './core/application/usecases/login-user/login-u
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
-import { UserTestFactory } from './testing/factories/user.factory';
-import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
-import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
+import { UserTestFactory } from '../access/testing/factories/user.factory';
 import { Result } from '../../shared-kernel/domain/result';
 import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
 import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
@@ -16,9 +14,11 @@ import { EnvConfigService } from '../../config/env-config.service';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
-import { IUser } from './core/domain/interfaces/user.interface';
+import { IUser } from '../access/core/domain/interfaces/user.interface';
 import { Request, Response } from 'express';
 import { createMockRequest, MockEnvConfigService } from '../../testing';
+import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
+import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -53,7 +53,7 @@ describe('AuthController', () => {
             execute: jest.fn().mockResolvedValue(
               Result.success({
                 user: mockUser,
-                customerId: mockUser.customerId,
+                userId: mockUser.id,
               }),
             ),
           },
@@ -122,7 +122,7 @@ describe('AuthController', () => {
     expect(res).toEqual(
       Result.success({
         user: mockUser,
-        customerId: mockUser.customerId,
+        userId: mockUser.id,
       }),
     );
   });

@@ -2,89 +2,82 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { CustomerGateway, CustomerRecord } from '../../ports/customer.gateway';
-import { User } from '../../../domain/entities/user';
-import { UserTestFactory } from '../../../../testing/factories/user.factory';
-import { MockUserRepository } from '../../../../testing/mocks/user-repository.mock';
-import { RegisterUserUseCase } from './register-user.usecase';
+import { User } from '../../../../../access/core/domain/entities/user';
+import { UserTestFactory } from '../../../../../access/testing/factories/user.factory';
+import { RegisterCommand, RegisterUserUseCase } from './register-user.usecase';
 import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
-import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
-import { RoleTestFactory } from '../../../../testing/factories/role.factory';
+import { RoleTestFactory } from '../../../../../access/testing/factories/role.factory';
+import {
+  CreateUserInput,
+  RoleCredentials,
+  UserCredentials,
+  UserRecord,
+} from '../../ports/access.gateway';
+import { IdentityAccessGatewayMock } from 'src/modules/auth/testing/mocks/identity-access-gateway.mock';
+import { IdentityAccessGatewayCommandTestFactory } from 'src/modules/auth/testing/factories/indentity-gateway-dto.factory';
+import { RegisterCommandTestFactory } from 'src/modules/auth/testing/factories/register-dto.factory';
+import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 
 describe('RegisterUserUseCase', () => {
   let usecase: RegisterUserUseCase;
-  let userRepository: MockUserRepository;
-  let roleRepository: MockRoleRepository;
-  let mockCustomerGateway: jest.Mocked<CustomerGateway>;
+  let identityAccessGatewayMock: IdentityAccessGatewayMock;
   let passwordHasher: MockPasswordHasher;
-  let mockDomainUser: User;
-  let mockCustomerRecord: CustomerRecord;
-
+  let mockUserRecord: UserRecord;
+  let mockCreateUserInput: CreateUserInput;
+  let mockRoleCredentialsCommand: RoleCredentials;
+  let mockUserCredentialsCommand: UserCredentials;
+  let mockRegisterCommand: RegisterCommand;
   beforeEach(() => {
-    userRepository = new MockUserRepository();
-    roleRepository = new MockRoleRepository();
-    mockCustomerGateway = {
-      createCustomer: jest.fn(),
-    };
+    identityAccessGatewayMock = new IdentityAccessGatewayMock();
 
     passwordHasher = new MockPasswordHasher();
     usecase = new RegisterUserUseCase(
-      userRepository,
-      roleRepository,
       passwordHasher,
-      mockCustomerGateway,
+      identityAccessGatewayMock,
     );
-    mockDomainUser = User.fromPrimitives(
-      UserTestFactory.createMockCustomerUser(),
-    );
-    mockCustomerRecord = { id: 1 };
+    mockUserRecord = IdentityAccessGatewayCommandTestFactory.createUserRecord();
+    mockCreateUserInput =
+      IdentityAccessGatewayCommandTestFactory.createUserInputCommand();
+    mockRoleCredentialsCommand =
+      IdentityAccessGatewayCommandTestFactory.createRoleCredentialsCommand();
+    mockUserCredentialsCommand =
+      IdentityAccessGatewayCommandTestFactory.createUserCredentialsCommand();
+    mockRegisterCommand = RegisterCommandTestFactory.createRegisterCommand();
 
     const customerRole = RoleTestFactory.buildEntity({ code: 'CUSTOMER' });
-    roleRepository.findByCode.mockResolvedValue(Result.success(customerRole));
+    identityAccessGatewayMock.mockSuccessfulFindRoleById({
+      id: 2,
+      code: 'CUSTOMER',
+    });
   });
 
   afterEach(() => {
-    userRepository.reset();
+    identityAccessGatewayMock.reset();
   });
 
   it('should register a user successfully', async () => {
-    userRepository.findByEmail.mockResolvedValue(Result.success(null)); // User does not exist
-    const customerResult = Result.success(mockCustomerRecord);
-    mockCustomerGateway.createCustomer.mockResolvedValue(customerResult);
-    userRepository.save.mockResolvedValue(Result.success(mockDomainUser));
+    identityAccessGatewayMock.checkEmailExists.mockResolvedValue(
+      Result.success(true),
+    );
+    const userResult = Result.success(mockUserRecord);
+    identityAccessGatewayMock.createUser.mockResolvedValue(userResult);
 
-    const result = await usecase.execute({
-      email: 'test@example.com',
-      password: 'password',
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '1234567890',
-    });
+    const result = await usecase.execute(mockRegisterCommand);
 
     ResultAssertionHelper.assertResultSuccess(result);
   });
 
-  it('should return failure if user already exists', async () => {
-    userRepository.findByEmail.mockResolvedValue(Result.success(null)); // Race condition simulation
-    mockCustomerGateway.createCustomer.mockResolvedValue(
-      Result.success(mockCustomerRecord),
-    );
-    userRepository.save.mockResolvedValue(
-      ErrorFactory.RepositoryError('User with this email already exists'),
+  it('should return failure if email already exists', async () => {
+    identityAccessGatewayMock.checkEmailExists.mockResolvedValue(
+      Result.success(false),
     );
 
-    const result = await usecase.execute({
-      email: 'test@example.com',
-      password: 'password',
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '1234567890',
-    });
+    const result = await usecase.execute(mockRegisterCommand);
 
     ResultAssertionHelper.assertResultFailure(
       result,
       'User with this email already exists',
-      RepositoryError,
+      UseCaseError,
     );
   });
 });
