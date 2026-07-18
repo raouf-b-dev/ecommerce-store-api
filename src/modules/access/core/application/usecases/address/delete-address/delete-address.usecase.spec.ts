@@ -16,7 +16,7 @@ import { User } from '../../../../domain/entities/user';
 const adminCallerContext = createUserCallerContext({
   userId: 1,
   role: 'ADMIN',
-  permissions: new Set(['manage_customers']),
+  permissions: new Set(['manage_users']),
 });
 
 const ownUserContext = createUserCallerContext({
@@ -71,7 +71,7 @@ describe('DeleteAddressUseCase', () => {
       const userId = 0;
       const addressId = 123;
 
-      mockUserRepository.mockCustomerNotFound();
+      mockUserRepository.mockUserNotFound();
 
       const result = await useCase.execute({
         userId,

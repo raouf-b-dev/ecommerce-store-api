@@ -23,13 +23,13 @@ export const PAYMENT_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
   viewOwn: 'view_own_payments',
 };
 
-export const CUSTOMER_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
-  viewAll: 'view_all_customers',
+export const USER_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
+  viewAll: 'view_all_users',
   viewOwn: 'view_own_profile',
 };
 
-export const CUSTOMER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
-  manageAll: 'manage_customers',
+export const USER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
+  manageAll: 'manage_users',
   manageOwn: 'manage_own_addresses',
 };
 

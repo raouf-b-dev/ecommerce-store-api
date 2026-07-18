@@ -37,7 +37,7 @@ export class AddressesController {
   ) {}
 
   @Post(':id/addresses')
-  @RequirePermissions('manage_customers', 'manage_own_addresses')
+  @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Add address to customer' })
   @ApiResponse({ status: 201, type: AddressResponseDto })
   async addAddress(
@@ -53,7 +53,7 @@ export class AddressesController {
   }
 
   @Patch(':id/addresses/:addressId')
-  @RequirePermissions('manage_customers', 'manage_own_addresses')
+  @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Update customer address' })
   @ApiResponse({ status: 200, type: AddressResponseDto })
   async updateAddress(
@@ -71,7 +71,7 @@ export class AddressesController {
   }
 
   @Delete(':id/addresses/:addressId')
-  @RequirePermissions('manage_customers', 'manage_own_addresses')
+  @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Delete customer address' })
   @ApiResponse({ status: 204, description: 'Address deleted' })
   async deleteAddress(
@@ -87,7 +87,7 @@ export class AddressesController {
   }
 
   @Patch(':id/addresses/:addressId/set-default')
-  @RequirePermissions('manage_customers', 'manage_own_addresses')
+  @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Set address as default' })
   @ApiResponse({ status: 200 })
   async setDefaultAddress(

@@ -1,8 +1,20 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CheckoutCartInfo } from '../../domain/interfaces/checkout-cart';
 import { CallerContext } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+
+export interface CheckoutCartItem {
+  productId: number;
+  productName: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CheckoutCartInfo {
+  id: number | null;
+  userId: number | null;
+  items: CheckoutCartItem[];
+}
 
 export abstract class CartGateway {
   abstract validateCart(

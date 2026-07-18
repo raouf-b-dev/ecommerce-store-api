@@ -4,8 +4,8 @@ import {
 } from '../interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
-  CUSTOMER_ACCESS_PERMISSIONS,
-  CUSTOMER_MUTATION_PERMISSIONS,
+  USER_ACCESS_PERMISSIONS,
+  USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from './owned-resource-access.policy';
 
@@ -107,14 +107,14 @@ describe('OwnedResourceAccessPolicy', () => {
       const admin = createUserCallerContext({
         userId: 1,
         role: 'ADMIN',
-        permissions: new Set(['manage_customers']),
+        permissions: new Set(['manage_users']),
       });
 
       expect(
         OwnedResourceAccessPolicy.canMutateResource(
           admin,
           999,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(true);
     });
@@ -130,7 +130,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           123,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(true);
     });
@@ -146,7 +146,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           456,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(false);
     });
@@ -162,7 +162,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           null,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(false);
     });
@@ -180,7 +180,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canViewResource(
           customer,
           123,
-          CUSTOMER_ACCESS_PERMISSIONS,
+          USER_ACCESS_PERMISSIONS,
         ),
       ).toBe(true);
     });

@@ -14,7 +14,7 @@ import { CallerContext } from '../../../../../../../shared-kernel/domain/interfa
 import { HttpStatus } from '@nestjs/common';
 
 import {
-  CUSTOMER_ACCESS_PERMISSIONS,
+  USER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
@@ -55,7 +55,7 @@ export class GetUserByEmailUseCase extends UseCase<
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
         user.id,
-        CUSTOMER_ACCESS_PERMISSIONS,
+        USER_ACCESS_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(

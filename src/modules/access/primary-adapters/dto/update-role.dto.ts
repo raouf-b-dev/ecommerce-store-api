@@ -8,7 +8,7 @@ export class UpdateRoleDto {
 
   @ApiProperty({
     example: [
-      'view_all_customers',
+      'manage_users',
       'view_all_inventory',
       'view_all_orders',
       'view_all_payments',

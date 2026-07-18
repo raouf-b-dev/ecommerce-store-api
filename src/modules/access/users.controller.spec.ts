@@ -11,10 +11,10 @@ import { DeactivateUserUseCase } from './core/application/usecases/user/deactiva
 describe('UsersController', () => {
   let controller: UsersController;
 
-  let getCustomerUseCase: GetUserUseCase;
-  let listCustomersUseCase: ListUsersUseCase;
-  let updateCustomerUseCase: UpdateUserUseCase;
-  let deleteCustomerUseCase: DeleteUserUseCase;
+  let getUserUseCase: GetUserUseCase;
+  let listUsersUseCase: ListUsersUseCase;
+  let updateUserUseCase: UpdateUserUseCase;
+  let deleteUserUseCase: DeleteUserUseCase;
   let activateUserUseCase: ActivateUserUseCase;
   let deactivateUserUseCase: DeactivateUserUseCase;
 
@@ -63,10 +63,10 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
 
-    getCustomerUseCase = module.get<GetUserUseCase>(GetUserUseCase);
-    listCustomersUseCase = module.get<ListUsersUseCase>(ListUsersUseCase);
-    updateCustomerUseCase = module.get<UpdateUserUseCase>(UpdateUserUseCase);
-    deleteCustomerUseCase = module.get<DeleteUserUseCase>(DeleteUserUseCase);
+    getUserUseCase = module.get<GetUserUseCase>(GetUserUseCase);
+    listUsersUseCase = module.get<ListUsersUseCase>(ListUsersUseCase);
+    updateUserUseCase = module.get<UpdateUserUseCase>(UpdateUserUseCase);
+    deleteUserUseCase = module.get<DeleteUserUseCase>(DeleteUserUseCase);
     activateUserUseCase = module.get<ActivateUserUseCase>(ActivateUserUseCase);
     deactivateUserUseCase = module.get<DeactivateUserUseCase>(
       DeactivateUserUseCase,

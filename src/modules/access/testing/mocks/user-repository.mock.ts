@@ -102,7 +102,7 @@ export class MockUserRepository implements UserRepository {
     this.findById.mockResolvedValue(Result.success(user));
   }
 
-  mockCustomerNotFound(): void {
+  mockUserNotFound(): void {
     this.findById.mockResolvedValue(
       Result.failure(new RepositoryError('User not found')),
     );
@@ -111,18 +111,6 @@ export class MockUserRepository implements UserRepository {
   /** Alias used in some legacy specs */
   mockUser(): void {
     this.findById.mockResolvedValue(Result.success(null));
-  }
-
-  /** Alias used in some legacy specs */
-  mockCustomekUser(): void {
-    this.findById.mockResolvedValue(
-      Result.failure(new RepositoryError('User not found')),
-    );
-  }
-
-  /** Alias used in some legacy specs */
-  mockMockCustomer(userData: any): void {
-    this.mockSuccessfulFind(userData);
   }
 
   reset(): void {

@@ -8,7 +8,7 @@ import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptio
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
-  CUSTOMER_MUTATION_PERMISSIONS,
+  USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { UserRepository } from 'src/modules/access/core/domain/repositories/user.repository';
@@ -38,7 +38,7 @@ export class DeleteAddressUseCase extends UseCase<
       !OwnedResourceAccessPolicy.canMutateResource(
         callerContext,
         userId,
-        CUSTOMER_MUTATION_PERMISSIONS,
+        USER_MUTATION_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);

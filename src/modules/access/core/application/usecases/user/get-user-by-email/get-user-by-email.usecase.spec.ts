@@ -32,7 +32,7 @@ describe('GetUserByEmailUseCase', () => {
   const adminContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
-    permissions: new Set(['view_all_customers']),
+    permissions: new Set(['view_all_users']),
   });
 
   beforeEach(() => {

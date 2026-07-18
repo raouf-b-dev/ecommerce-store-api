@@ -1,4 +1,4 @@
-// src/modules/auth/decorators/current-user.decorator.ts
+// src/modules/access/primary-adapters/decorators/current-user.decorator.ts
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { CurrentUserPayload } from '../../../../shared-kernel/domain/interfaces/current-user.interface';
 export const CurrentUser = createParamDecorator(

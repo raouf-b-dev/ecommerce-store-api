@@ -9,7 +9,7 @@ import { AddressTestFactory } from 'src/modules/access/testing/factories/address
 /**
  * Helpers to build a CheckoutUserInfo from the user test factory.
  */
-function buildCheckoutCustomerInfo(
+function buildCheckoutUserInfo(
   overrides: Partial<ReturnType<typeof UserTestFactory.createMockUser>> = {},
 ): CheckoutUserInfoResult {
   const raw = UserTestFactory.createMockUser({
@@ -20,10 +20,7 @@ function buildCheckoutCustomerInfo(
     ...overrides,
   });
   return {
-    id: raw.id ?? null,
-    mustChangePassword: raw.mustChangePassword,
-    passwordHash: raw.passwordHash,
-    roleId: raw.roleId,
+    id: raw.id!,
     firstName: raw.firstName,
     lastName: raw.lastName,
     email: raw.email,
@@ -48,7 +45,7 @@ describe('ShippingAddressResolver', () => {
 
   beforeEach(() => {
     resolver = new ShippingAddressResolver();
-    mockUser = buildCheckoutCustomerInfo({
+    mockUser = buildCheckoutUserInfo({
       addresses: [
         AddressTestFactory.createMockAddress({
           id: 10,

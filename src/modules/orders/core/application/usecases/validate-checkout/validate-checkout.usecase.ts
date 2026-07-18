@@ -13,8 +13,7 @@ import {
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { CheckoutUserInfoResult } from '../../ports/user.gateway';
 import { UserGateway } from '../../ports/user.gateway';
-import { CartGateway } from '../../ports/cart.gateway';
-import { CheckoutCartInfo } from '../../../domain/interfaces/checkout-cart';
+import { CartGateway, CheckoutCartInfo } from '../../ports/cart.gateway';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
@@ -26,7 +25,7 @@ export interface ValidateCheckoutInput {
 }
 
 export interface ValidatedCheckoutContext {
-  customer: CheckoutUserInfoResult | null;
+  user: CheckoutUserInfoResult | null;
   cart: CheckoutCartInfo;
   shippingAddress: ShippingAddressProps;
   userId: number;
@@ -84,15 +83,15 @@ export class ValidateCheckoutUseCase extends UseCase<
         );
       }
 
-      const customerResult = await this.userGateway.validateUser(cart.userId);
-      if (isFailure(customerResult)) {
-        return Result.failure(customerResult.error);
+      const userResult = await this.userGateway.getUserInfo(cart.userId);
+      if (isFailure(userResult)) {
+        return Result.failure(userResult.error);
       }
 
-      const customer = customerResult.value;
+      const user = userResult.value;
       const resolvedAddress = this.addressResolver.resolve(
         shippingAddress,
-        customer,
+        user,
       );
 
       if (!resolvedAddress) {
@@ -102,7 +101,7 @@ export class ValidateCheckoutUseCase extends UseCase<
       }
 
       return Result.success({
-        customer,
+        user,
         cart,
         shippingAddress: resolvedAddress,
         userId: cart.userId,
@@ -111,16 +110,13 @@ export class ValidateCheckoutUseCase extends UseCase<
 
     const userId = callerContext.userId;
 
-    const customerResult = await this.userGateway.validateUser(userId);
-    if (isFailure(customerResult)) {
-      return Result.failure(customerResult.error);
+    const userResult = await this.userGateway.getUserInfo(userId);
+    if (isFailure(userResult)) {
+      return Result.failure(userResult.error);
     }
-    const customer = customerResult.value;
+    const user = userResult.value;
 
-    const resolvedAddress = this.addressResolver.resolve(
-      shippingAddress,
-      customer,
-    );
+    const resolvedAddress = this.addressResolver.resolve(shippingAddress, user);
 
     if (!resolvedAddress) {
       return ErrorFactory.UseCaseError(
@@ -129,7 +125,7 @@ export class ValidateCheckoutUseCase extends UseCase<
     }
 
     return Result.success({
-      customer,
+      user,
       cart,
       shippingAddress: resolvedAddress,
       userId,

@@ -1,5 +1,5 @@
 // src/testing/helpers/test-data.helper.ts
-import { OrderCommandTestFactory } from '../../modules/orders/testing/factories/create-order-dto.factory';
+import { OrderDtoTestFactory } from '../../modules/orders/testing/factories/order-dto.factory';
 import { OrderEntityTestFactory } from '../../modules/orders/testing/factories/order-entity.factory';
 import { ProductEntityTestFactory } from '../../modules/products/testing/factories/product-entity.factory';
 
@@ -16,8 +16,8 @@ export class TestDataHelper {
     const shippingAddressId = 1;
 
     const createOrderDto = options?.useCOD
-      ? OrderCommandTestFactory.createCashOnDeliveryCheckoutCommand()
-      : OrderCommandTestFactory.createCreditCardCheckoutCommand();
+      ? OrderDtoTestFactory.createCashOnDeliveryCheckoutCommand()
+      : OrderDtoTestFactory.createCreditCardCheckoutCommand();
 
     const productEntity = ProductEntityTestFactory.createProductEntity({
       id: productId,
@@ -73,7 +73,7 @@ export class TestDataHelper {
 
     return {
       productIds,
-      createOrderDto: OrderCommandTestFactory.createCheckoutCommand(),
+      createOrderDto: OrderDtoTestFactory.createCheckoutCommand(),
       productEntities:
         ProductEntityTestFactory.createProductEntities(productIds),
       orderEntity: OrderEntityTestFactory.createMultiItemOrderEntity(itemCount),

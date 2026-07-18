@@ -2,7 +2,7 @@ import {
   JwtSignerPort,
   RefreshTokenResult,
   SignAccessTokenPayload,
-} from '../../modules/auth/core/application/ports/jwt-signer.port';
+} from '../../modules/authentication/core/application/ports/jwt-signer.port';
 
 const dummyPayload = Buffer.from(
   JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }),

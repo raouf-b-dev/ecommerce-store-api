@@ -8,7 +8,7 @@ import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptio
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
-  CUSTOMER_ACCESS_PERMISSIONS,
+  USER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { IUser } from 'src/modules/access/core/domain/interfaces/user.interface';
@@ -32,7 +32,7 @@ export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
         userId,
-        CUSTOMER_ACCESS_PERMISSIONS,
+        USER_ACCESS_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);

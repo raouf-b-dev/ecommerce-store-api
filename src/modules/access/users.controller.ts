@@ -45,15 +45,15 @@ export class UsersController {
   ) {}
 
   @Get()
-  @RequirePermissions('view_all_customers')
-  @ApiOperation({ summary: 'List all customers with pagination' })
+  @RequirePermissions('view_all_users')
+  @ApiOperation({ summary: 'List all users with pagination' })
   @ApiResponse({ status: 200, type: [UserResponseDto] })
   async listUsers(@Query() query: ListUsersQueryDto) {
     return await this.listUsersUseCase.execute(query);
   }
 
   @Get(':id')
-  @RequirePermissions('view_all_customers', 'view_own_profile')
+  @RequirePermissions('view_all_users', 'view_own_profile')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: UserResponseDto })
   async getUser(
@@ -67,7 +67,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @RequirePermissions('manage_customers')
+  @RequirePermissions('manage_users')
   @ApiOperation({ summary: 'Update user information' })
   @ApiResponse({ status: 200, type: UserResponseDto })
   async updateUser(
@@ -81,7 +81,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @RequirePermissions('manage_customers')
+  @RequirePermissions('manage_users')
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 204, description: 'User deleted' })
   async deleteUser(@Param('id', ParseIntPipe) id: number) {

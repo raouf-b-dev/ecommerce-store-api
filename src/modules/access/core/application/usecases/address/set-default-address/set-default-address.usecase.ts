@@ -8,7 +8,7 @@ import { UseCase } from 'src/shared-kernel/domain/interfaces/base.usecase';
 import { CallerContext } from 'src/shared-kernel/domain/interfaces/caller-context.interface';
 import {
   OwnedResourceAccessPolicy,
-  CUSTOMER_MUTATION_PERMISSIONS,
+  USER_MUTATION_PERMISSIONS,
 } from 'src/shared-kernel/domain/policies/owned-resource-access.policy';
 import { isFailure, Result } from 'src/shared-kernel/domain/result';
 
@@ -37,7 +37,7 @@ export class SetDefaultAddressUseCase extends UseCase<
       !OwnedResourceAccessPolicy.canMutateResource(
         callerContext,
         userId,
-        CUSTOMER_MUTATION_PERMISSIONS,
+        USER_MUTATION_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);

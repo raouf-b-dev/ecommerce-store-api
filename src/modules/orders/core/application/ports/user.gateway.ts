@@ -17,10 +17,7 @@ export interface CheckoutUserAddress {
 }
 
 export interface CheckoutUserInfoResult {
-  id: number | null;
-  passwordHash: string;
-  roleId: number;
-  mustChangePassword: boolean;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -28,21 +25,8 @@ export interface CheckoutUserInfoResult {
   addresses: CheckoutUserAddress[];
 }
 
-export interface CheckoutUserInfoInput {
-  passwordHash: string;
-  roleId: number;
-  mustChangePassword: boolean;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-}
-
 export abstract class UserGateway {
-  abstract createUser(
-    input: CheckoutUserInfoResult,
-  ): Promise<Result<CheckoutUserInfoResult, InfrastructureError>>;
-  abstract validateUser(
+  abstract getUserInfo(
     userId: number,
   ): Promise<Result<CheckoutUserInfoResult, InfrastructureError>>;
 }

@@ -20,7 +20,7 @@ import { DomainError } from 'src/shared-kernel/domain/exceptions/domain.error';
 const adminCallerContext = createUserCallerContext({
   userId: 1,
   role: 'ADMIN',
-  permissions: new Set(['manage_customers']),
+  permissions: new Set(['manage_users']),
 });
 
 const ownUserContext = createUserCallerContext({

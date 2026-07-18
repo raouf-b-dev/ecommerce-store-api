@@ -1,12 +1,21 @@
 import { Order } from '../entities/order';
-import { CheckoutCartInfo } from '../interfaces/checkout-cart';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 import { OrderItemProps } from '../entities/order-items';
+export interface OrderCartItemInput {
+  productId: number;
+  productName: string;
+  price: number;
+  quantity: number;
+}
+
+export interface OrderCartInput {
+  items: OrderCartItemInput[];
+}
 
 export class OrderFactory {
   createFromCart(props: {
-    cart: CheckoutCartInfo;
+    cart: OrderCartInput;
     userId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;

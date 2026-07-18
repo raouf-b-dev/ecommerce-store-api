@@ -21,7 +21,7 @@ const newAddressCommand = (): AddAddressCommand =>
 const adminCallerContext = createUserCallerContext({
   userId: 1,
   role: 'ADMIN',
-  permissions: new Set(['manage_customers']),
+  permissions: new Set(['manage_users']),
 });
 
 const ownCustomerContext = createUserCallerContext({
