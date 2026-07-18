@@ -21,10 +21,13 @@ import { AccessModule } from '../access/access.module';
 import { IdentityAccessGateway } from './core/application/ports/access.gateway';
 import { RevokeAllForUserUsecase } from './core/application/usecases/revoke-all-for-user/revoke-all-for-user.usecase';
 import { UserDeactivatedListener } from './primary-adapters/listeners/user-deactivated.listener';
+import { CredentialRepository } from './core/domain/repositories/credential.repository';
+import { PostgresCredentialRepository } from './secondary-adapters/repositories/postgres-credential.repository/postgres-credential.repository';
+import { CredentialEntity } from './secondary-adapters/orm/credential.schema';
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SessionTokenEntity]),
+    TypeOrmModule.forFeature([SessionTokenEntity, CredentialEntity]),
     RedisModule,
     AccessModule,
   ],
@@ -39,6 +42,8 @@ import { UserDeactivatedListener } from './primary-adapters/listeners/user-deact
       provide: SessionTokenRepository,
       useClass: PostgresSessionTokenRepository,
     },
+
+    { provide: CredentialRepository, useClass: PostgresCredentialRepository },
 
     // Gateways
     {
