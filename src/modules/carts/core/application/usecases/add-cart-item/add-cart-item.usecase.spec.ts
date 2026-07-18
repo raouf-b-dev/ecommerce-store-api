@@ -11,6 +11,7 @@ import { CartProductGateway, ProductData } from '../../ports/product.gateway';
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
@@ -18,7 +19,7 @@ describe('AddCartItemUseCase', () => {
   let mockProductGateway: jest.Mocked<CartProductGateway>;
   let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
+  let mockTokenService: jest.Mocked<CartSessionTokenGateway>;
 
   const mockProduct: ProductData = {
     id: 1,
@@ -49,8 +50,10 @@ describe('AddCartItemUseCase', () => {
       checkStock: jest.fn(),
     };
     mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
+      generateToken: jest.fn(),
+      validateToken: jest.fn().mockResolvedValue(Result.success(true)),
     };
+
     validator = new CartOwnershipValidator(mockTokenService);
 
     usecase = new AddCartItemUseCase(

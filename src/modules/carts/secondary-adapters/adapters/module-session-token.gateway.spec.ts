@@ -1,4 +1,4 @@
-import { JwtSignerPort } from 'src/modules/auth/core/application/ports/jwt-signer.port.js';
+import { JwtSignerPort } from 'src/modules/authentication/core/application/ports/jwt-signer.port.js';
 import { JwtVerifierPort } from 'src/shared-kernel/domain/interfaces/jwt-verifier.port.js';
 import { ModuleCartSessionTokenGateway } from './module-session-token.gateway';
 import { ResultAssertionHelper } from '../../../../testing/helpers/result-assertion.helper';

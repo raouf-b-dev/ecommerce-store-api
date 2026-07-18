@@ -27,8 +27,9 @@ describe('MergeCartsUseCase', () => {
     mockCartRepository = new MockCartRepository();
     mockSessionTokenGateway = {
       generateToken: jest.fn(),
-      validateToken: jest.fn().mockResolvedValue(true),
-    } as any;
+      validateToken: jest.fn().mockResolvedValue(Result.success(true)),
+    } as jest.Mocked<CartSessionTokenGateway>;
+
     validator = new CartOwnershipValidator(mockSessionTokenGateway);
     usecase = new MergeCartsUseCase(mockCartRepository, validator);
   });

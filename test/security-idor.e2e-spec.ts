@@ -25,18 +25,20 @@ async function registeruser(
   const email = `idor-${label}-${Date.now()}@example.com`;
   const password = 'Password123!';
 
-  const registerResponse = await http.post(`${API}/auth/register`).send({
-    email,
-    password,
-    firstName: label,
-    lastName: 'Tester',
-  });
+  const registerResponse = await http
+    .post(`${API}/authentication/register`)
+    .send({
+      email,
+      password,
+      firstName: label,
+      lastName: 'Tester',
+    });
 
   expect(registerResponse.status).toBe(201);
   const registereduserId = registerResponse.body.id as number;
   expect(registereduserId).toBeGreaterThan(0);
 
-  const loginResponse = await http.post(`${API}/auth/login`).send({
+  const loginResponse = await http.post(`${API}/authentication/login`).send({
     email,
     password,
   });

@@ -5,7 +5,7 @@ import { RoleRepository } from '../../domain/repositories/role.repository';
 import { PasswordHasher } from '../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
 import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
-import { MockPasswordHasher } from '../../../../auth/testing/mocks/password-hasher.mock';
+import { MockPasswordHasher } from '../../../../authentication/testing/mocks/password-hasher.mock';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { Role } from '../../domain/entities/role';
 import { SystemRoleCode } from '../../domain/reference-data/system-roles';

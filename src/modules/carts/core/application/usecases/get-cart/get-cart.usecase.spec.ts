@@ -8,12 +8,13 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('GetCartUseCase', () => {
   let usecase: GetCartUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
+  let mockTokenService: jest.Mocked<CartSessionTokenGateway>;
 
   const adminContext: CallerContext = {
     kind: 'user',
@@ -32,8 +33,12 @@ describe('GetCartUseCase', () => {
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
     mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
+      generateToken: jest.fn(),
+      validateToken: jest.fn(),
     };
+
+    mockTokenService.validateToken.mockResolvedValue(Result.success(true));
+
     validator = new CartOwnershipValidator(mockTokenService);
     usecase = new GetCartUseCase(mockCartRepository, validator);
   });

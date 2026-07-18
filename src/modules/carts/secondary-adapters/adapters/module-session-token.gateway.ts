@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JwtSignerPort } from 'src/modules/auth/core/application/ports/jwt-signer.port';
+import { JwtSignerPort } from 'src/modules/authentication/core/application/ports/jwt-signer.port';
 import { CartSessionTokenGateway } from 'src/modules/carts/core/application/ports/session-token.gateway';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { JwtVerifierPort } from 'src/shared-kernel/domain/interfaces/jwt-verifier.port';

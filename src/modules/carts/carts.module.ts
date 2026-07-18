@@ -30,7 +30,7 @@ import { CartOwnershipValidator } from './core/application/services/cart-ownersh
 import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
 import { CartSessionTokenGateway } from './core/application/ports/session-token.gateway';
 import { ModuleCartSessionTokenGateway } from './secondary-adapters/adapters/module-session-token.gateway';
-import { AuthModule } from '../auth/auth.module';
+import { AuthenticationModule } from '../authentication/authentication.module';
 
 @Module({
   imports: [
@@ -39,7 +39,7 @@ import { AuthModule } from '../auth/auth.module';
     RedisModule, // Keep default code duplication
     InventoryModule,
     ProductsModule,
-    AuthModule,
+    AuthenticationModule,
   ],
   controllers: [CartsController],
   providers: [
