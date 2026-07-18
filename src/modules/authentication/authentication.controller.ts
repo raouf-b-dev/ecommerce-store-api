@@ -22,10 +22,10 @@ import { RefreshTokenCookieInterceptor } from './primary-adapters/interceptors/r
 import { RefreshToken } from './primary-adapters/decorators/refresh-token.decorator';
 import { Public } from '../../guards/decorators/public.decorator';
 
-@ApiTags('Auth')
-@Controller('auth')
+@ApiTags('Authentication')
+@Controller('authentication')
 @UseInterceptors(RefreshTokenCookieInterceptor)
-export class AuthController {
+export class AuthenticationController {
   constructor(
     private readonly registerUseCase: RegisterUserUseCase,
     private readonly loginUseCase: LoginUserUseCase,

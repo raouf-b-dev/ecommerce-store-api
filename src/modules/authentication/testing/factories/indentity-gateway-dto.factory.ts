@@ -3,7 +3,7 @@ import {
   RoleCredentials,
   UserCredentials,
   UserRecord,
-} from '../../../auth/core/application/ports/access.gateway';
+} from '../../../authentication/core/application/ports/access.gateway';
 
 export class IdentityAccessGatewayCommandTestFactory {
   static createUserInputCommand(

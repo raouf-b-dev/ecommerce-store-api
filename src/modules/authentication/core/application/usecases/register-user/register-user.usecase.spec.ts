@@ -13,9 +13,9 @@ import {
   UserCredentials,
   UserRecord,
 } from '../../ports/access.gateway';
-import { IdentityAccessGatewayMock } from 'src/modules/auth/testing/mocks/identity-access-gateway.mock';
-import { IdentityAccessGatewayCommandTestFactory } from 'src/modules/auth/testing/factories/indentity-gateway-dto.factory';
-import { RegisterCommandTestFactory } from 'src/modules/auth/testing/factories/register-dto.factory';
+import { IdentityAccessGatewayMock } from 'src/modules/authentication/testing/mocks/identity-access-gateway.mock';
+import { IdentityAccessGatewayCommandTestFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
+import { RegisterCommandTestFactory } from 'src/modules/authentication/testing/factories/register-dto.factory';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 
 describe('RegisterUserUseCase', () => {

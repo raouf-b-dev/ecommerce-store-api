@@ -1,4 +1,4 @@
-import { LoginCommand } from '../../../auth/core/application/usecases/login-user/login-user.usecase';
+import { LoginCommand } from '../../../authentication/core/application/usecases/login-user/login-user.usecase';
 
 export class LoginCommandTestFactory {
   static createLoginCommand(overrides?: Partial<LoginCommand>): LoginCommand {

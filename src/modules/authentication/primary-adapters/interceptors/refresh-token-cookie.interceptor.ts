@@ -13,16 +13,19 @@ import { EnvConfigService } from '../../../../config/env-config.service';
 export const REFRESH_COOKIE_NAME = 'refresh_token';
 
 /** Routes where the refresh token cookie should be set on success. */
-const SET_COOKIE_ROUTES = ['/auth/login', '/auth/refresh'];
+const SET_COOKIE_ROUTES = ['/authentication/login', '/authentication/refresh'];
 
 /** Routes where the refresh token cookie should be cleared on success. */
-const CLEAR_COOKIE_ROUTES = ['/auth/logout', '/auth/logout-all'];
+const CLEAR_COOKIE_ROUTES = [
+  '/authentication/logout',
+  '/authentication/logout-all',
+];
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite: 'strict' as const,
-  path: '/auth',
+  path: '/authentication',
 };
 
 @Injectable()

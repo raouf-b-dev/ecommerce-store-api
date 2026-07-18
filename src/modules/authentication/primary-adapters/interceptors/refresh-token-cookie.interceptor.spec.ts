@@ -19,10 +19,10 @@ describe('RefreshTokenCookieInterceptor', () => {
     interceptor = new RefreshTokenCookieInterceptor(mockConfigService);
   });
 
-  it('should set cookie on /auth/login', (done) => {
+  it('should set cookie on /authentication/login', (done) => {
     const mockResponse = { cookie: jest.fn() };
     const context = createMockExecutionContext(
-      { route: { path: '/auth/login' } },
+      { route: { path: '/authentication/login' } },
       mockResponse,
     );
     const next: CallHandler = {
@@ -39,10 +39,10 @@ describe('RefreshTokenCookieInterceptor', () => {
     });
   });
 
-  it('should clear cookie on /auth/logout', (done) => {
+  it('should clear cookie on /authentication/logout', (done) => {
     const mockResponse = { clearCookie: jest.fn() };
     const context = createMockExecutionContext(
-      { route: { path: '/auth/logout' } },
+      { route: { path: '/authentication/logout' } },
       mockResponse,
     );
     const next: CallHandler = {

@@ -1,6 +1,6 @@
-// src/modules/auth/auth.controller.spec.ts
+// src/modules/authentication/authentication.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
+import { AuthenticationController } from './authentication.controller';
 import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
 import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
@@ -21,7 +21,7 @@ import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
 import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
 
 describe('AuthController', () => {
-  let controller: AuthController;
+  let controller: AuthenticationController;
   let registerUseCase: RegisterUserUseCase;
   let loginUseCase: LoginUserUseCase;
   let refreshTokenUseCase: RefreshTokenUseCase;
@@ -45,7 +45,7 @@ describe('AuthController', () => {
     });
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AuthController],
+      controllers: [AuthenticationController],
       providers: [
         {
           provide: RegisterUserUseCase,
@@ -103,7 +103,7 @@ describe('AuthController', () => {
       ],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
+    controller = module.get<AuthenticationController>(AuthenticationController);
     registerUseCase = module.get<RegisterUserUseCase>(RegisterUserUseCase);
     loginUseCase = module.get<LoginUserUseCase>(LoginUserUseCase);
     refreshTokenUseCase = module.get<RefreshTokenUseCase>(RefreshTokenUseCase);

@@ -116,7 +116,7 @@ export class ModuleAccessGateway implements IdentityAccessGateway {
 
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError(
-        'Failed to create customer',
+        'Failed to create user',
         result.error,
       );
     }

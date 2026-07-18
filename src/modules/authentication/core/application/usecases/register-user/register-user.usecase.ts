@@ -7,7 +7,7 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
-import { ACCESS_GATEWAY } from '../../../../auth.tokens';
+import { ACCESS_GATEWAY } from '../../../../authentication.tokens';
 import { IdentityAccessGateway, UserRecord } from '../../ports/access.gateway';
 
 export interface RegisterCommand {
@@ -48,7 +48,7 @@ export class RegisterUserUseCase extends UseCase<
     // 3. Hash Password
     const passwordHash = await this.passwordHasher.hash(command.password);
 
-    // 2. Create Customer
+    // 2. Create User
     const createUserResult = await this.userGateway.createUser({
       firstName: command.firstName,
       lastName: command.lastName,
