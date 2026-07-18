@@ -53,7 +53,7 @@ The stack comes with 4 pre-provisioned dashboards in the **"E-Commerce API"** fo
 2. **Business Metrics**:
    - **Orders**: Total orders created and creation rate.
    - **Payments**: Captured and Refunded payment totals.
-   - **Auth**: Success vs Failure login rates with failure reasons.
+   - **Authenticated**: Success vs Failure login rates with failure reasons.
    - **Checkouts**: Cart checkout initiation vs completion rates.
 
 3. **Infrastructure (USE Method)**:

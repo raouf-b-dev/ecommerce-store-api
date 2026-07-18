@@ -155,7 +155,7 @@ graph TD
     SK --> P[Products]
     SK --> Cu[Access]
     SK --> Pa[Payments]
-    SK --> Au[Auth]
+    SK --> Au[Authentication]
     SK --> N[Notifications]
 
     subgraph ACL_Orders["ACL Gateways (in Orders)"]
