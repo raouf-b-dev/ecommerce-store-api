@@ -7,8 +7,7 @@ import { LoginUserUseCase } from 'src/modules/authentication/core/application/us
 import { RefreshTokenUseCase } from 'src/modules/authentication/core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from 'src/modules/authentication/core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from 'src/modules/authentication/core/application/usecases/logout-all/logout-all.usecase';
-import { RegisterCommandTestFactory } from 'src/modules/authentication/testing/factories/register-dto.factory';
-import { LoginCommandTestFactory } from 'src/modules/authentication/testing/factories/login-dto.factory';
+import { AuthenticationDtoFactory } from 'src/modules/authentication/testing/factories/authentication-dto.factory';
 import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
 import { EnvConfigService } from 'src/config/env-config.service';
 import { JwksPort } from 'src/infrastructure/jwt/ports/jwks.port';
@@ -25,10 +24,10 @@ describe('Authentication HTTP contract (e2e)', () => {
   const mockUser = UserTestFactory.createMockUser({
     email: 'client-proof@example.com',
   });
-  const registerDto = RegisterCommandTestFactory.createRegisterCommand({
+  const registerDto = AuthenticationDtoFactory.createRegisterCommand({
     email: mockUser.email,
   });
-  const loginDto = LoginCommandTestFactory.createLoginCommand({
+  const loginDto = AuthenticationDtoFactory.createLoginCommand({
     email: mockUser.email,
   });
 

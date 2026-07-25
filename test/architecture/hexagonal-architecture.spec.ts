@@ -59,6 +59,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
     const modules = [
       'access',
       'authentication',
+      'authorization',
       'carts',
       'health',
       'inventory',
@@ -72,11 +73,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
       it(`Core of module "${currentModule}" must not depend on other modules`, async () => {
         const otherModulesPattern = `src/modules/!(${currentModule})/**`;
         const rule = projectFiles('tsconfig.arch.json')
-          .inPath(
-            new RegExp(
-              `src/modules/${currentModule}/core/(?!.*\\.spec\\.ts$).*`,
-            ),
-          )
+          .inPath(new RegExp(`src/modules/${currentModule}/core/.*`))
           .shouldNot()
           .dependOnFiles()
           .inFolder(otherModulesPattern);
