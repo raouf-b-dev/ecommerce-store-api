@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
-import { RequirePermissions } from '../access/primary-adapters/decorators/require-permissions.decorator';
+import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../access/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Public } from '../../guards/decorators/public.decorator';

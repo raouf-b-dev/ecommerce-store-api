@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { RequirePermissions } from '../access/primary-adapters/decorators/require-permissions.decorator';
+import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { Public } from '../../guards/decorators/public.decorator';
 import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';

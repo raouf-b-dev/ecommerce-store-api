@@ -10,6 +10,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { AccessModule } from './modules/access/access.module';
 import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { AuthorizationModule } from './modules/authorization/authorization.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WebsocketModule } from './infrastructure/websocket/websocket.module';
@@ -17,7 +18,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { HealthModule } from './modules/health/health.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 import { APP_GUARD } from '@nestjs/core';
-import { PermissionsGuard } from './modules/access/primary-adapters/guards/permissions.guard';
+import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
 import { AuthGuard } from './guards/auth.guard';
 
 const env = process.env.NODE_ENV || 'development';
@@ -35,6 +36,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     PaymentsModule,
     InventoryModule,
     AccessModule,
+    AuthorizationModule,
     AuthenticationModule,
     WebsocketModule,
     NotificationsModule,
