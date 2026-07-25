@@ -7,7 +7,8 @@ import { SessionTokenRepository } from '../../../domain/repositories/session-tok
 import { SessionToken } from '../../../domain/entities/session-token';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
-import { IdentityAccessGateway } from '../../ports/access.gateway';
+import { IdentityGateway } from '../../ports/identity.gateway';
+import { AuthorizationGateway } from '../../ports/authorization.gateway';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -21,7 +22,8 @@ export class RefreshTokenUseCase extends UseCase<
     private readonly jwtVerifierService: JwtVerifierPort,
     private readonly jwtSignerService: JwtSignerPort,
     private readonly sessionTokenRepository: SessionTokenRepository,
-    private readonly accessGateway: IdentityAccessGateway,
+    private readonly identityGateway: IdentityGateway,
+    private readonly authorizationGateway: AuthorizationGateway,
   ) {
     super();
   }
@@ -80,7 +82,7 @@ export class RefreshTokenUseCase extends UseCase<
       await this.sessionTokenRepository.save(session);
 
       // 5. Load user to get updated access token payload
-      const userResult = await this.accessGateway.findCredentialsById(userId);
+      const userResult = await this.identityGateway.findUserById(userId);
       if (userResult.isFailure || !userResult.value) {
         return ErrorFactory.UseCaseError(
           'User not found',
@@ -91,14 +93,9 @@ export class RefreshTokenUseCase extends UseCase<
       const user = userResult.value;
 
       // 6. Resolve role code for JWT payload (PermissionsGuard requires the string code)
-      if (!user.roleId) {
-        return ErrorFactory.UseCaseError(
-          'User has no assigned role',
-          null,
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
-      const roleResult = await this.accessGateway.findRoleById(user.roleId);
+      const roleResult = await this.authorizationGateway.findRoleByUserId(
+        user.id,
+      );
       if (roleResult.isFailure || !roleResult.value) {
         return ErrorFactory.UseCaseError(
           'Failed to resolve user role',

@@ -8,55 +8,76 @@ import { SessionToken } from '../../../domain/entities/session-token';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { UserCredentials } from '../../ports/access.gateway';
-
-/** Default active customer credentials */
-const defaultCredentials: UserCredentials = {
-  id: 123,
-  email: 'test@example.com',
-  passwordHash: 'hashed_password',
-  isActive: true,
-  roleId: 2,
-};
+import { UserRecord } from '../../ports/identity.gateway';
+import { IdentityAccessGatewayDtoFactory } from '../../../../testing/factories/indentity-gateway-dto.factory';
+import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/mocks/authorization-gateway.mock';
+import { CredentialRepositoryMock } from 'src/modules/authentication/testing/mocks/credential-repository.mock';
+import { Credential } from '../../../domain/entities/credential';
 
 describe('LoginUserUseCase', () => {
+  let defaultUserRecord: UserRecord;
+  let defaultCredential: Credential;
   let usecase: LoginUserUseCase;
-  let accessGateway: IdentityAccessGatewayMock;
+  let identityGateway: IdentityAccessGatewayMock;
+  let authorizationGateway: AuthorizationGatewayMock;
+  let credentialRepository: CredentialRepositoryMock;
   let sessionTokenRepository: MockSessionTokenRepository;
   let passwordHasher: MockPasswordHasher;
   let jwtSignerService: MockJwtSignerService;
   let domainEventPublisher: DomainEventPublisher;
 
   beforeEach(() => {
-    accessGateway = new IdentityAccessGatewayMock();
+    defaultUserRecord = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 123,
+      email: 'test@example.com',
+      isActive: true,
+    });
+    defaultCredential = Credential.fromPersistence({
+      id: 1,
+      userId: 123,
+      passwordHash: 'hashed_password',
+      mustChangePassword: false,
+    });
+    identityGateway = new IdentityAccessGatewayMock();
+    authorizationGateway = new AuthorizationGatewayMock();
+    credentialRepository = new CredentialRepositoryMock();
     sessionTokenRepository = new MockSessionTokenRepository();
     passwordHasher = new MockPasswordHasher();
     jwtSignerService = new MockJwtSignerService();
     domainEventPublisher = { publish: jest.fn() };
 
     usecase = new LoginUserUseCase(
-      accessGateway,
+      identityGateway,
+      authorizationGateway,
+      credentialRepository,
       sessionTokenRepository,
       passwordHasher,
       jwtSignerService,
       domainEventPublisher,
     );
 
-    // Default role resolution
-    accessGateway.mockSuccessfulFindRoleById({ id: 2, code: 'CUSTOMER' });
+    // Default mocks
+    identityGateway.mockFindUserByEmail(defaultUserRecord);
+    credentialRepository.mockSuccessfulFindByUserId(defaultCredential);
+    authorizationGateway.mockSuccessfulFindRoleByUserId({
+      id: 2,
+      code: 'CUSTOMER',
+    });
+    passwordHasher.compare.mockResolvedValue(true);
   });
 
   afterEach(() => {
-    accessGateway.reset();
+    identityGateway.reset();
+    authorizationGateway.reset();
+    credentialRepository.reset();
     sessionTokenRepository.reset();
   });
 
   it('should login a user successfully', async () => {
-    accessGateway.mockSuccessfulFindByEmail(defaultCredentials);
     sessionTokenRepository.save.mockResolvedValue(
       Result.success(
         SessionToken.create(
-          defaultCredentials.id,
+          defaultUserRecord.id,
           'dummy-refresh-token',
           new Date('2025-01-01T12:00:00Z'),
         ),
@@ -74,7 +95,7 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if user is not found', async () => {
-    accessGateway.mockUserNotFoundByEmail();
+    identityGateway.mockFindUserByEmail(null);
 
     const result = await usecase.execute({
       email: 'test@example.com',
@@ -89,7 +110,6 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if password is incorrect', async () => {
-    accessGateway.mockSuccessfulFindByEmail(defaultCredentials);
     passwordHasher.compare.mockResolvedValue(false);
 
     const result = await usecase.execute({
@@ -105,8 +125,8 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if user is deactivated', async () => {
-    accessGateway.mockSuccessfulFindByEmail({
-      ...defaultCredentials,
+    identityGateway.mockFindUserByEmail({
+      ...defaultUserRecord,
       isActive: false,
     });
 
@@ -123,10 +143,7 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should return failure if user has no assigned role', async () => {
-    accessGateway.mockSuccessfulFindByEmail({
-      ...defaultCredentials,
-      roleId: 0,
-    });
+    authorizationGateway.mockSuccessfulFindRoleByUserId(null);
 
     const result = await usecase.execute({
       email: 'test@example.com',
@@ -135,7 +152,7 @@ describe('LoginUserUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'User has no assigned role',
+      'User role not found',
       UseCaseError,
     );
   });

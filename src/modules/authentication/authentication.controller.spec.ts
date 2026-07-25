@@ -17,8 +17,7 @@ import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
 import { IUser } from '../access/core/domain/interfaces/user.interface';
 import { Request, Response } from 'express';
 import { createMockRequest, MockEnvConfigService } from '../../testing';
-import { LoginCommandTestFactory } from './testing/factories/login-dto.factory';
-import { RegisterCommandTestFactory } from './testing/factories/register-dto.factory';
+import { AuthenticationDtoFactory } from './testing/factories/authentication-dto.factory';
 
 describe('AuthController', () => {
   let controller: AuthenticationController;
@@ -37,8 +36,8 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockUser = UserTestFactory.createMockUser();
-    registerDto = RegisterCommandTestFactory.createRegisterCommand();
-    loginDto = LoginCommandTestFactory.createLoginCommand();
+    registerDto = AuthenticationDtoFactory.createRegisterCommand();
+    loginDto = AuthenticationDtoFactory.createLoginCommand();
 
     mockReq = createMockRequest({
       cookies: {},

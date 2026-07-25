@@ -8,7 +8,9 @@ import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
-import { IdentityAccessGateway } from '../../ports/access.gateway';
+import { IdentityGateway } from '../../ports/identity.gateway';
+import { AuthorizationGateway } from '../../ports/authorization.gateway';
+import { CredentialRepository } from '../../../domain/repositories/credential.repository';
 
 export interface LoginCommand {
   email: string;
@@ -24,7 +26,9 @@ export class LoginUserUseCase extends UseCase<
   private readonly logger = new Logger(LoginUserUseCase.name);
 
   constructor(
-    private readonly identityAccessGateway: IdentityAccessGateway,
+    private readonly identityGateway: IdentityGateway,
+    private readonly authorizationGateway: AuthorizationGateway,
+    private readonly credentialRepository: CredentialRepository,
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerPort,
@@ -38,8 +42,8 @@ export class LoginUserUseCase extends UseCase<
   ): Promise<
     Result<{ accessToken: string; refreshToken: string }, UseCaseError>
   > {
-    // 1. Find User
-    const userResult = await this.identityAccessGateway.findCredentialsByEmail(
+    // 1. Find User Identity
+    const userResult = await this.identityGateway.findUserByEmail(
       command.email,
     );
 
@@ -64,10 +68,47 @@ export class LoginUserUseCase extends UseCase<
       );
     }
 
-    // 2. Verify Password
+    // 2. Check if user is active
+    if (!user.isActive) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'inactive_user',
+      });
+      return ErrorFactory.UseCaseError(
+        'Invalid credentials',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    // 3. Find Credential by UserId & Verify Password
+    const credentialResult = await this.credentialRepository.findByUserId(
+      user.id,
+    );
+
+    if (credentialResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to retrieve credential information',
+        credentialResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const credential = credentialResult.value;
+
+    if (!credential) {
+      this.domainEventPublisher.publish('auth.login.failure', {
+        reason: 'invalid_credential',
+      });
+      return ErrorFactory.UseCaseError(
+        'Invalid credentials',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     const isMatch = await this.passwordHasher.compare(
       command.password,
-      user.passwordHash,
+      credential.passwordHash,
     );
     if (!isMatch) {
       this.domainEventPublisher.publish('auth.login.failure', {
@@ -80,31 +121,9 @@ export class LoginUserUseCase extends UseCase<
       );
     }
 
-    // 2.5 Check if user is active
-    if (!user.isActive) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'inactive_user',
-      });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    // 3. Resolve role code for JWT payload (PermissionsGuard requires the string code)
-    if (!user.roleId) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'no_role',
-      });
-      return ErrorFactory.UseCaseError(
-        'User has no assigned role',
-        null,
-        HttpStatus.FORBIDDEN,
-      );
-    }
-    const roleResult = await this.identityAccessGateway.findRoleById(
-      user.roleId,
+    // 4. Resolve role code for JWT payload (PermissionsGuard requires the string code)
+    const roleResult = await this.authorizationGateway.findRoleByUserId(
+      user.id,
     );
     if (roleResult.isFailure) {
       this.domainEventPublisher.publish('auth.login.failure', {
@@ -128,14 +147,14 @@ export class LoginUserUseCase extends UseCase<
       );
     }
 
-    // 4. Generate Access Token
+    // 5. Generate Access Token
     const accessToken = await this.jwtSignerService.signAccessToken({
       sub: user.id,
       email: user.email,
       role: roleResult.value.code,
     });
 
-    // 4. Generate Refresh Token (JwtSignerService handles sessionId generation and expiry extraction)
+    // 6. Generate Refresh Token
     const {
       token: refreshToken,
       sessionId,
@@ -144,7 +163,7 @@ export class LoginUserUseCase extends UseCase<
       sub: user.id,
     });
 
-    // 5. Save Session
+    // 7. Save Session
     const session = SessionToken.create(
       user.id,
       refreshToken,
@@ -157,7 +176,7 @@ export class LoginUserUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Failed to create session');
     }
 
-    this.logger.log(`User ${user.email} logged in successfully`);
+    this.logger.log(`User ${command.email} logged in successfully`);
     this.domainEventPublisher.publish('auth.login.success', {
       userId: user.id,
     });

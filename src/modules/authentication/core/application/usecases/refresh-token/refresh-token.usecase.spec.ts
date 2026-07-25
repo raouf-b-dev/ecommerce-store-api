@@ -10,6 +10,11 @@ import {
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { IdentityAccessGatewayMock } from '../../../../testing/mocks/identity-access-gateway.mock';
+import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/mocks/authorization-gateway.mock';
+import { UserRecord } from '../../ports/identity.gateway';
+import { IdentityAccessGatewayDtoFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
+import { RoleRecord } from '../../ports/authorization.gateway';
+import { AuthorizationGatewayDtoFactory } from 'src/modules/authentication/testing/factories/authorization-gateway-dto.factory';
 
 describe('RefreshTokenUseCase', () => {
   let usecase: RefreshTokenUseCase;
@@ -17,20 +22,34 @@ describe('RefreshTokenUseCase', () => {
   let jwtSignerService: MockJwtSignerService;
   let sessionTokenRepository: MockSessionTokenRepository;
   let accessGateway: IdentityAccessGatewayMock;
+  let authorizationGateway: AuthorizationGatewayMock;
+  let userRecord: UserRecord;
+  let roleRecord: RoleRecord;
 
   beforeEach(() => {
     LoggerTestHelper.silence();
+    userRecord = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 1,
+      email: 'user@example.com',
+      isActive: true,
+    });
+    roleRecord = AuthorizationGatewayDtoFactory.buildRoleRecord({
+      id: 2,
+      code: 'CUSTOMER',
+    });
 
     jwtVerifierService = new MockJwtVerifierService();
     jwtSignerService = new MockJwtSignerService();
     sessionTokenRepository = new MockSessionTokenRepository();
     accessGateway = new IdentityAccessGatewayMock();
+    authorizationGateway = new AuthorizationGatewayMock();
 
     usecase = new RefreshTokenUseCase(
       jwtVerifierService,
       jwtSignerService,
       sessionTokenRepository,
       accessGateway,
+      authorizationGateway,
     );
   });
 
@@ -62,14 +81,8 @@ describe('RefreshTokenUseCase', () => {
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.save.mockResolvedValue(Result.success(session));
 
-    accessGateway.mockSuccessfulFindById({
-      id: 1,
-      email: 'user@example.com',
-      passwordHash: 'hashed',
-      isActive: true,
-      roleId: 2,
-    });
-    accessGateway.mockSuccessfulFindRoleById({ id: 2, code: 'CUSTOMER' });
+    accessGateway.mockFindUserById(userRecord);
+    authorizationGateway.mockSuccessfulFindRoleByUserId(roleRecord);
 
     const newAccessToken = 'new-access-token';
     const newRefreshToken = 'new-refresh-token';

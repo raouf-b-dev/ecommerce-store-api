@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -7,8 +7,10 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
-import { ACCESS_GATEWAY } from '../../../../authentication.tokens';
-import { IdentityAccessGateway, UserRecord } from '../../ports/access.gateway';
+import { IdentityGateway, UserRecord } from '../../ports/identity.gateway';
+import { CredentialRepository } from '../../../domain/repositories/credential.repository';
+import { AuthorizationGateway } from '../../ports/authorization.gateway';
+import { Credential } from '../../../domain/entities/credential';
 
 export interface RegisterCommand {
   email: string;
@@ -26,8 +28,9 @@ export class RegisterUserUseCase extends UseCase<
 > {
   constructor(
     private readonly passwordHasher: PasswordHasher,
-    @Inject(ACCESS_GATEWAY)
-    private readonly userGateway: IdentityAccessGateway,
+    private readonly identityGateway: IdentityGateway,
+    private readonly authorizationGateway: AuthorizationGateway,
+    private readonly credentialRepository: CredentialRepository,
   ) {
     super();
   }
@@ -35,9 +38,17 @@ export class RegisterUserUseCase extends UseCase<
   async execute(
     command: RegisterCommand,
   ): Promise<Result<UserRecord, UseCaseError>> {
-    // 1. Check if user exists
-    const existingUser = await this.userGateway.checkEmailExists(command.email);
-    if (existingUser.isSuccess && existingUser.value) {
+    const existsResult = await this.identityGateway.checkEmailExists(
+      command.email,
+    );
+    if (isFailure(existsResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to verify email availability',
+        existsResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    if (existsResult.value) {
       return ErrorFactory.UseCaseError(
         'User with this email already exists',
         null,
@@ -45,23 +56,50 @@ export class RegisterUserUseCase extends UseCase<
       );
     }
 
-    // 3. Hash Password
     const passwordHash = await this.passwordHasher.hash(command.password);
 
-    // 2. Create User
-    const createUserResult = await this.userGateway.createUser({
+    // Step 1: Create identity
+    const createUserResult = await this.identityGateway.createUser({
       firstName: command.firstName,
       lastName: command.lastName,
       email: command.email,
       phone: command.phone,
-      mustChangePassword: false,
-      passwordHash: passwordHash,
     });
-
     if (isFailure(createUserResult)) return createUserResult;
 
-    const registredUser = createUserResult.value;
+    const registeredUser = createUserResult.value;
 
-    return Result.success(registredUser);
+    // Step 2: Create credential
+    const credentialResult = await this.credentialRepository.save(
+      Credential.create({
+        userId: registeredUser.id,
+        passwordHash,
+        mustChangePassword: false,
+      }),
+    );
+    if (isFailure(credentialResult)) {
+      await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
+      return ErrorFactory.UseCaseError(
+        'Failed to complete registration',
+        credentialResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    // Step 3: Assign default role
+    const roleResult = await this.authorizationGateway.assignDefaultRole(
+      registeredUser.id,
+    );
+    if (isFailure(roleResult)) {
+      await this.credentialRepository.deleteByUserId(registeredUser.id); // compensate step 2
+      await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
+      return ErrorFactory.UseCaseError(
+        'Failed to complete registration',
+        roleResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return Result.success(registeredUser);
   }
 }

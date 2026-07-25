@@ -1,11 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import {
-  IdentityAccessGateway,
-  CreateUserInput,
-  UserRecord,
-  UserCredentials,
-  RoleCredentials,
-} from '../../core/application/ports/access.gateway';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -13,39 +6,37 @@ import { CreateUserUseCase } from 'src/modules/access/core/application/usecases/
 import { CheckEmailExistsUseCase } from 'src/modules/access/core/application/usecases/user/check-user-by-email/check-user-by-email.usecase';
 import { GetUserByEmailUseCase } from 'src/modules/access/core/application/usecases/user/get-user-by-email/get-user-by-email.usecase';
 import { GetUserUseCase } from 'src/modules/access/core/application/usecases/user/get-user/get-user.usecase';
-import { FindRoleByIdUseCase } from 'src/modules/access/core/application/usecases/role/find-role-by-id.usecase';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CreateUserInput,
+  IdentityGateway,
+  UserRecord,
+} from '../../core/application/ports/identity.gateway';
+import { DeleteUserUseCase } from 'src/modules/access/core/application/usecases/user/delete-user/delete-user.usecase';
 
 @Injectable()
-export class ModuleAccessGateway implements IdentityAccessGateway {
+export class ModuleIdentityGateway implements IdentityGateway {
   constructor(
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly getUserUseCase: GetUserUseCase,
-    private readonly findRoleByIdUseCase: FindRoleByIdUseCase,
     private readonly getUserByEmailUseCase: GetUserByEmailUseCase,
     private readonly checkEmailExistsUseCase: CheckEmailExistsUseCase,
+    private readonly deleteUserUseCase: DeleteUserUseCase,
   ) {}
-  async findRoleById(
-    id: number,
-  ): Promise<Result<RoleCredentials | null, InfrastructureError>> {
-    const result = await this.findRoleByIdUseCase.execute(id);
-    if (isFailure(result)) return result;
 
-    if (!result.value) {
-      return ErrorFactory.InfrastructureError('Failed to find role by id');
+  async deleteUser(id: number): Promise<Result<void, InfrastructureError>> {
+    const result = await this.deleteUserUseCase.execute(id);
+
+    if (isFailure(result)) {
+      return ErrorFactory.InfrastructureError('Failed to delete user');
     }
 
-    const role = result.value;
-
-    const RoleCredentials: RoleCredentials = {
-      id: role.id,
-      code: role.code,
-    };
-    return Result.success(RoleCredentials);
+    return Result.success(undefined);
   }
-  async findCredentialsById(
+
+  async findUserById(
     id: number,
-  ): Promise<Result<UserCredentials | null, InfrastructureError>> {
+  ): Promise<Result<UserRecord | null, InfrastructureError>> {
     const result = await this.getUserUseCase.execute({
       userId: id,
       callerContext: SYSTEM_CALLER_CONTEXT,
@@ -58,19 +49,20 @@ export class ModuleAccessGateway implements IdentityAccessGateway {
 
     const user = result.value;
 
-    const UserCredentials: UserCredentials = {
+    const userRecord: UserRecord = {
       id: user.id!,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      passwordHash: user.passwordHash,
+      phone: user.phone,
       isActive: user.isActive,
-      roleId: user.roleId,
     };
-    return Result.success(UserCredentials);
+    return Result.success(userRecord);
   }
 
-  async findCredentialsByEmail(
+  async findUserByEmail(
     email: string,
-  ): Promise<Result<UserCredentials | null, InfrastructureError>> {
+  ): Promise<Result<UserRecord | null, InfrastructureError>> {
     const result = await this.getUserByEmailUseCase.execute({
       email,
       callerContext: SYSTEM_CALLER_CONTEXT,
@@ -83,14 +75,15 @@ export class ModuleAccessGateway implements IdentityAccessGateway {
 
     const user = result.value;
 
-    const UserCredentials: UserCredentials = {
+    const userRecord: UserRecord = {
       id: user.id!,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
-      passwordHash: user.passwordHash,
+      phone: user.phone,
       isActive: user.isActive,
-      roleId: user.roleId,
     };
-    return Result.success(UserCredentials);
+    return Result.success(userRecord);
   }
 
   async checkEmailExists(
@@ -110,8 +103,6 @@ export class ModuleAccessGateway implements IdentityAccessGateway {
       lastName: input.lastName,
       email: input.email,
       phone: input.phone ?? undefined,
-      mustChangePassword: input.mustChangePassword,
-      passwordHash: input.passwordHash,
     });
 
     if (isFailure(result)) {
@@ -121,6 +112,15 @@ export class ModuleAccessGateway implements IdentityAccessGateway {
       );
     }
 
-    return Result.success({ id: result.value.id });
+    const userRecord: UserRecord = {
+      id: result.value.id!,
+      firstName: result.value.firstName,
+      lastName: result.value.lastName,
+      email: result.value.email,
+      phone: result.value.phone,
+      isActive: result.value.isActive,
+    };
+
+    return Result.success(userRecord);
   }
 }
