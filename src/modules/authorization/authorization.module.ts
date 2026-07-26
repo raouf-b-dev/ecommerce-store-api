@@ -21,6 +21,9 @@ import { PostgresRoleRepository } from './secondary-adapter/repositories/postgre
 import { RoleEntity } from './secondary-adapter/orm/role.schema';
 import { UserRoleAssignmentEntity } from './secondary-adapter/orm/user-role-assignment.schema';
 import { UserRoleAssignmentRepository } from './core/domain/repositories/user-role-assignment.repository';
+import { AssignRoleUseCase } from './core/application/usecases/user-role/assign-role.usecase';
+import { AssignDefaultRoleUseCase } from './core/application/usecases/user-role/assign-default-role.usecase';
+import { FindRoleByUserIdUseCase } from './core/application/usecases/user-role/find-role-by-user-id.usecase';
 import { PostgresUserRoleAssignmentRepository } from './secondary-adapter/repositories/postgres-user-role-assignment-repository/postgres-user-role-assignment.repository';
 
 @Module({
@@ -59,7 +62,16 @@ import { PostgresUserRoleAssignmentRepository } from './secondary-adapter/reposi
     DeleteRoleUseCase,
     FindAllRolesUseCase,
     FindRoleByIdUseCase,
+    AssignRoleUseCase,
+    AssignDefaultRoleUseCase,
+    FindRoleByUserIdUseCase,
   ],
-  exports: [ResolveRolePermissionsService, FindRoleByIdUseCase],
+  exports: [
+    ResolveRolePermissionsService,
+    FindRoleByIdUseCase,
+    AssignRoleUseCase,
+    AssignDefaultRoleUseCase,
+    FindRoleByUserIdUseCase,
+  ],
 })
 export class AuthorizationModule {}

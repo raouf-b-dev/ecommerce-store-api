@@ -25,8 +25,6 @@ import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/
 import { GetUserUseCase } from './core/application/usecases/user/get-user/get-user.usecase';
 import { ListUsersUseCase } from './core/application/usecases/user/list-users/list-users.usecase';
 import { UpdateUserUseCase } from './core/application/usecases/user/update-user/update-user.usecase';
-import { SeedDemoAuthUsersUseCase } from './core/application/seed/seed-demo-auth-users.usecase';
-import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.usecase';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity, AddressEntity]), RedisModule],
@@ -65,8 +63,6 @@ import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.
     UpdateUserUseCase,
     CheckEmailExistsUseCase,
     GetUserByEmailUseCase,
-    SeedDemoAuthUsersUseCase,
-    SeedSuperAdminUseCase,
   ],
   exports: [
     CreateUserUseCase,

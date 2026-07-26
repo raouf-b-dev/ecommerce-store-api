@@ -7,6 +7,10 @@ export interface RoleRecord {
 }
 
 export abstract class AuthorizationGateway {
+  abstract assignRole(
+    userId: number,
+    roleCode: string,
+  ): Promise<Result<void, InfrastructureError>>;
   abstract assignDefaultRole(
     userId: number,
   ): Promise<Result<void, InfrastructureError>>;

@@ -7,6 +7,11 @@ import {
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 export class AuthorizationGatewayMock implements AuthorizationGateway {
+  assignRole = jest.fn<
+    Promise<Result<void, InfrastructureError>>,
+    [number, string]
+  >();
+
   assignDefaultRole = jest.fn<
     Promise<Result<void, InfrastructureError>>,
     [number]
@@ -16,6 +21,16 @@ export class AuthorizationGatewayMock implements AuthorizationGateway {
     Promise<Result<RoleRecord | null, InfrastructureError>>,
     [number]
   >();
+
+  mockSuccessfulAssignRole() {
+    this.assignRole.mockResolvedValue(Result.success(undefined));
+  }
+
+  mockFailedAssignRole(message: string) {
+    this.assignRole.mockResolvedValue(
+      ErrorFactory.InfrastructureError(message),
+    );
+  }
 
   mockSuccessfulAssignDefaultRole() {
     this.assignDefaultRole.mockResolvedValue(Result.success(undefined));
@@ -39,11 +54,13 @@ export class AuthorizationGatewayMock implements AuthorizationGateway {
 
   // Reset mock
   reset() {
+    this.assignRole.mockClear();
     this.assignDefaultRole.mockClear();
     this.findRoleByUserId.mockClear();
   }
 
   verifyNoUnexpectedCalls(): void {
+    expect(this.assignRole).not.toHaveBeenCalled();
     expect(this.assignDefaultRole).not.toHaveBeenCalled();
     expect(this.findRoleByUserId).not.toHaveBeenCalled();
   }

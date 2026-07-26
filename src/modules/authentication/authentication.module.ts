@@ -29,6 +29,8 @@ import { CredentialEntity } from './secondary-adapters/orm/credential.schema';
 import { IdentityGateway } from './core/application/ports/identity.gateway';
 import { ModuleAuthorizationGateway } from './secondary-adapters/adapters/module-authorization.gateway';
 import { AuthorizationGateway } from './core/application/ports/authorization.gateway';
+import { SeedDemoAuthUsersUseCase } from './core/application/seed/seed-demo-auth-users.usecase';
+import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.usecase';
 @Global()
 @Module({
   imports: [
@@ -83,7 +85,15 @@ import { AuthorizationGateway } from './core/application/ports/authorization.gat
     RefreshTokenCookieInterceptor,
     RevokeAllForUserUsecase,
     UserDeactivatedListener,
+    SeedDemoAuthUsersUseCase,
+    SeedSuperAdminUseCase,
   ],
-  exports: [RevokeAllForUserUsecase, PasswordHasher, JwtSignerPort],
+  exports: [
+    RevokeAllForUserUsecase,
+    PasswordHasher,
+    JwtSignerPort,
+    SeedDemoAuthUsersUseCase,
+    SeedSuperAdminUseCase,
+  ],
 })
 export class AuthenticationModule {}
