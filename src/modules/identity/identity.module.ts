@@ -69,6 +69,7 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
     GetUserUseCase,
     GetUserByEmailUseCase,
     CheckEmailExistsUseCase,
+    DeleteUserUseCase,
   ],
 })
 export class IdentityModule {}

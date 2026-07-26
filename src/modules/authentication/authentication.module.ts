@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BcryptService } from './secondary-adapters/services/bcrypt.service';
 import { PasswordHasher } from '../../shared-kernel/domain/interfaces/password-hasher.interface';
@@ -31,7 +31,6 @@ import { ModuleAuthorizationGateway } from './secondary-adapters/adapters/module
 import { AuthorizationGateway } from './core/application/ports/authorization.gateway';
 import { SeedDemoAuthUsersUseCase } from './core/application/seed/seed-demo-auth-users.usecase';
 import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.usecase';
-@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([SessionTokenEntity, CredentialEntity]),

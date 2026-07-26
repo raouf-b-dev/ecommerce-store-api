@@ -57,7 +57,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
 
   describe('Rule 6: Cross-module core isolation', () => {
     const modules = [
-      'access',
+      'identity',
       'authentication',
       'authorization',
       'carts',

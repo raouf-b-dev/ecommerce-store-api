@@ -5,8 +5,7 @@ import { OrderFactory } from '../../../domain/factories/order.factory';
 import { CART_GATEWAY } from '../../../../order.token';
 import { CartGateway } from '../../ports/cart.gateway';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { Cart } from '../../../../../carts/core/domain/entities/cart';
-import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
+import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
@@ -71,11 +70,21 @@ describe('CreateOrderFromCartUseCase', () => {
     // Arrange
     const cartId = 1;
     const userId = 1;
-    const cartData = CartTestFactory.createCartWithItems(3, { id: cartId });
-    const cart = Cart.fromPrimitives(cartData);
+    const cartInfo = OrderDtoTestFactory.createCheckoutCartInfo({
+      id: cartId,
+      userId,
+      items: [
+        OrderDtoTestFactory.createCheckoutCartItem({
+          productId: 101,
+          productName: 'Test Product',
+          price: 50,
+          quantity: 2,
+        }),
+      ],
+    });
     const order = OrderTestFactory.createOrderEntity({ id: 1 });
 
-    cartGateway.getCart.mockResolvedValue(Result.success(cart));
+    cartGateway.getCart.mockResolvedValue(Result.success(cartInfo));
     orderFactory.createFromCart.mockReturnValue(order);
     orderRepository.save.mockResolvedValue(Result.success(order));
 
@@ -123,10 +132,13 @@ describe('CreateOrderFromCartUseCase', () => {
   it('should fail if cart is empty', async () => {
     // Arrange
     const cartId = 1;
-    const cartData = CartTestFactory.createEmptyCart({ id: cartId });
-    const cart = Cart.fromPrimitives(cartData);
+    const emptyCartInfo = OrderDtoTestFactory.createCheckoutCartInfo({
+      id: cartId,
+      userId: 1,
+      items: [],
+    });
 
-    cartGateway.getCart.mockResolvedValue(Result.success(cart));
+    cartGateway.getCart.mockResolvedValue(Result.success(emptyCartInfo));
 
     const dto = {
       cartId,

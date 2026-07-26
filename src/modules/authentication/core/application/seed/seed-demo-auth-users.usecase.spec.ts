@@ -9,7 +9,7 @@ import { AuthorizationGatewayMock } from '../../../testing/mocks/authorization-g
 import { CredentialRepositoryMock } from '../../../testing/mocks/credential-repository.mock';
 import { MockPasswordHasher } from '../../../testing/mocks/password-hasher.mock';
 import { IdentityAccessGatewayDtoFactory } from '../../../testing/factories/indentity-gateway-dto.factory';
-import { SystemRoleCode } from '../../../../authorization/core/domain/reference-data/system-roles';
+import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('SeedDemoAuthUsersUseCase', () => {

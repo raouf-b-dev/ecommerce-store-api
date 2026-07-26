@@ -1,32 +1,18 @@
 import { CreateUserUseCase, CreateUserCommand } from './create-user.usecase';
 import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { MockRoleRepository } from '../../../../../../authorization/testing/mocks/role-repository.mock';
-import { AuthorizationDtoFactory } from '../../../../../../authorization/testing/factories/authorization.dto.factory';
-import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { User } from '../../../../domain/entities/user';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { DEFAULT_ROLE_CODE } from '../../../../../../authorization/core/domain/reference-data/system-roles';
 
 describe('CreateUserUseCase', () => {
   let useCase: CreateUserUseCase;
   let mockUserRepository: MockUserRepository;
-  let mockRoleRepository: MockRoleRepository;
 
   beforeEach(() => {
     mockUserRepository = new MockUserRepository();
-    mockRoleRepository = new MockRoleRepository();
-    useCase = new CreateUserUseCase(mockUserRepository, mockRoleRepository);
-
-    // Mock successful default role retrieval
-    const defaultRole = AuthorizationDtoFactory.buildEntity({
-      code: DEFAULT_ROLE_CODE,
-    });
-    mockRoleRepository.findByCode.mockResolvedValue(
-      Result.success(defaultRole),
-    );
+    useCase = new CreateUserUseCase(mockUserRepository);
 
     // Mock successful user save
     mockUserRepository.save.mockImplementation((user) => {
@@ -40,7 +26,6 @@ describe('CreateUserUseCase', () => {
 
   afterEach(() => {
     mockUserRepository.reset();
-    mockRoleRepository.reset();
   });
 
   describe('execute', () => {
@@ -57,25 +42,6 @@ describe('CreateUserUseCase', () => {
       expect(result.value.firstName).toBe(createUserDto.firstName);
       expect(result.value.email).toBe(createUserDto.email);
       expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return Failure(UseCaseError) if default role cannot be resolved', async () => {
-      mockRoleRepository.findByCode.mockResolvedValue(Result.success(null));
-
-      const createUserDto: CreateUserCommand = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-      };
-
-      const result = await useCase.execute(createUserDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to find default role',
-        UseCaseError,
-      );
-      expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
     it('should return Failure(RepositoryError) if repository save fails', async () => {

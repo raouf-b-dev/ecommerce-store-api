@@ -9,13 +9,11 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
-import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
+import { DomainEventPublisher } from 'src/shared-kernel/domain/interfaces/domain-event-publisher';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { User } from 'src/modules/identity/core/domain/entities/user';
-import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
@@ -26,11 +24,11 @@ describe('CheckoutUseCase', () => {
   const mockuserId = 123;
   const mockCartId = 123;
 
-  const mockUser = User.fromProps(
-    UserTestFactory.createMockUser({ id: mockuserId }),
-  );
+  const mockUser = OrderDtoTestFactory.createCheckoutUserInfoResult({
+    id: mockuserId,
+  });
 
-  const mockCart = CartTestFactory.createCartWithItems(1, {
+  const mockCart = OrderDtoTestFactory.createCheckoutCartInfo({
     id: mockCartId,
     userId: mockuserId,
   });

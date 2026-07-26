@@ -8,7 +8,7 @@ import { IdentityGateway } from '../ports/identity.gateway';
 import { AuthorizationGateway } from '../ports/authorization.gateway';
 import { CredentialRepository } from '../../domain/repositories/credential.repository';
 import { Credential } from '../../domain/entities/credential';
-import { SystemRoleCode } from '../../../../authorization/core/domain/reference-data/system-roles';
+import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 
 export interface SeedSuperAdminCommand {
   email: string;

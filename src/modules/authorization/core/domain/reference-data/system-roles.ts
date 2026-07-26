@@ -1,12 +1,10 @@
 import { SYSTEM_PERMISSIONS } from './permission-definitions';
+import {
+  SystemRoleCode,
+  DEFAULT_ROLE_CODE,
+} from 'src/shared-kernel/domain/value-objects/system-roles';
 
-export enum SystemRoleCode {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  CUSTOMER = 'CUSTOMER',
-}
-
-export const DEFAULT_ROLE_CODE = SystemRoleCode.CUSTOMER;
+export { SystemRoleCode, DEFAULT_ROLE_CODE };
 
 export interface SystemRoleDefinition {
   code: SystemRoleCode;

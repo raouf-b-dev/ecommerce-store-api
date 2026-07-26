@@ -10,7 +10,7 @@ import { CredentialRepositoryMock } from '../../../testing/mocks/credential-repo
 import { MockPasswordHasher } from '../../../testing/mocks/password-hasher.mock';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { IdentityAccessGatewayDtoFactory } from '../../../testing/factories/indentity-gateway-dto.factory';
-import { SystemRoleCode } from '../../../../authorization/core/domain/reference-data/system-roles';
+import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 import { Credential } from '../../domain/entities/credential';
 
 describe('SeedSuperAdminUseCase', () => {

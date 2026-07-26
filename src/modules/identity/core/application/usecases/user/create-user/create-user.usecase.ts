@@ -1,4 +1,3 @@
-// src/modules/users/application/usecases/create-users/create-user.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -10,9 +9,6 @@ import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
 import { IUser } from 'src/modules/identity/core/domain/interfaces/user.interface';
 import { User } from 'src/modules/identity/core/domain/entities/user';
-import { DEFAULT_ROLE_CODE } from 'src/modules/authorization/core/domain/reference-data/system-roles';
-import { RoleRepository } from 'src/modules/authorization/core/domain/repositories/role.repository';
-import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 export interface CreateUserAddressInput {
   id: number | null;
@@ -40,21 +36,11 @@ export class CreateUserUseCase extends UseCase<
   IUser,
   UseCaseError
 > {
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly roleRepository: RoleRepository,
-  ) {
+  constructor(private readonly userRepository: UserRepository) {
     super();
   }
 
   async execute(dto: CreateUserCommand): Promise<Result<IUser, UseCaseError>> {
-    const defaultRoleResult =
-      await this.roleRepository.findByCode(DEFAULT_ROLE_CODE);
-    if (isFailure(defaultRoleResult) || !defaultRoleResult.value) {
-      return ErrorFactory.UseCaseError('Failed to find default role');
-    }
-    const defaultRole = defaultRoleResult.value;
-
     const user = User.create({
       id: null,
       firstName: dto.firstName,
