@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -35,7 +35,11 @@ export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
         USER_ACCESS_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+      return ErrorFactory.UseCaseError(
+        `User with id ${userId} not found`,
+        null,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     const userResult = await this.userRepository.findById(userId);
@@ -44,7 +48,11 @@ export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
 
     const user = userResult.value;
     if (!user) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+      return ErrorFactory.UseCaseError(
+        `User with id ${userId} not found`,
+        null,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return Result.success(userResult.value.toPrimitives());

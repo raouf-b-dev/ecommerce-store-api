@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -41,13 +41,17 @@ export class ModuleIdentityGateway implements IdentityGateway {
       userId: id,
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
-    if (isFailure(result)) return result;
-
-    if (!result.value) {
-      return ErrorFactory.InfrastructureError('Failed to find user by id');
+    if (isFailure(result)) {
+      if (result.error.statusCode === HttpStatus.NOT_FOUND) {
+        return Result.success(null);
+      }
+      return Result.failure(new InfrastructureError(result.error.message));
     }
 
     const user = result.value;
+    if (!user) {
+      return Result.success(null);
+    }
 
     const userRecord: UserRecord = {
       id: user.id!,
@@ -67,13 +71,17 @@ export class ModuleIdentityGateway implements IdentityGateway {
       email,
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
-    if (isFailure(result)) return result;
-
-    if (!result.value) {
-      return ErrorFactory.InfrastructureError('Failed to find user by email');
+    if (isFailure(result)) {
+      if (result.error.statusCode === HttpStatus.NOT_FOUND) {
+        return Result.success(null);
+      }
+      return Result.failure(new InfrastructureError(result.error.message));
     }
 
     const user = result.value;
+    if (!user) {
+      return Result.success(null);
+    }
 
     const userRecord: UserRecord = {
       id: user.id!,

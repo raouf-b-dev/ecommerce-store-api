@@ -60,7 +60,7 @@ export class PostgresUserRepository implements UserRepository {
   ): Promise<Result<User[], RepositoryError>> {
     try {
       const entities = await this.repository.find({
-        relations: ['roleEntity'],
+        relations: ['addresses'],
         take: limit,
         skip: (page - 1) * limit,
       });
@@ -76,7 +76,7 @@ export class PostgresUserRepository implements UserRepository {
     try {
       const entity = await this.repository.findOne({
         where: { email },
-        relations: ['roleEntity'],
+        relations: ['addresses'],
       });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
@@ -92,7 +92,7 @@ export class PostgresUserRepository implements UserRepository {
     try {
       const entity = await this.repository.findOne({
         where: { id },
-        relations: ['roleEntity'],
+        relations: ['addresses'],
       });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));

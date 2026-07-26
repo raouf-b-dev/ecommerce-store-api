@@ -21,6 +21,7 @@ import { JwtSignerService } from './core/application/services/jwt-signer.service
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { PostgresSessionTokenRepository } from './secondary-adapters/repositories/postgres-session-token-repository/postgres-session-token.repository';
 import { IdentityModule } from '../identity/identity.module';
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { RevokeAllForUserUsecase } from './core/application/usecases/revoke-all-for-user/revoke-all-for-user.usecase';
 import { UserDeactivatedListener } from './primary-adapters/listeners/user-deactivated.listener';
 import { CredentialRepository } from './core/domain/repositories/credential.repository';
@@ -36,6 +37,7 @@ import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.
     TypeOrmModule.forFeature([SessionTokenEntity, CredentialEntity]),
     RedisModule,
     IdentityModule,
+    AuthorizationModule,
   ],
   controllers: [AuthenticationController],
   providers: [

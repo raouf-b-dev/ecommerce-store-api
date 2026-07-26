@@ -18,7 +18,7 @@ interface AuthSession {
   userId: number;
 }
 
-async function registeruser(
+async function registerUser(
   http: E2eHttpClient,
   label: string,
 ): Promise<AuthSession> {
@@ -35,8 +35,8 @@ async function registeruser(
     });
 
   expect(registerResponse.status).toBe(201);
-  const registereduserId = registerResponse.body.id as number;
-  expect(registereduserId).toBeGreaterThan(0);
+  const registeredUserId = registerResponse.body.id as number;
+  expect(registeredUserId).toBeGreaterThan(0);
 
   const loginResponse = await http.post(`${API}/authentication/login`).send({
     email,
@@ -48,7 +48,7 @@ async function registeruser(
 
   const claims = decodeJwt(loginResponse.body.accessToken as string);
   const userId = Number(claims.sub);
-  expect(userId).toBe(registereduserId);
+  expect(userId).toBe(registeredUserId);
 
   return {
     email,
@@ -72,8 +72,8 @@ describe('Security IDOR (e2e)', () => {
     app = context.app;
     http = E2eTestAppHelper.getHttp(app);
 
-    userA = await registeruser(http, 'user-a');
-    userB = await registeruser(http, 'user-b');
+    userA = await registerUser(http, 'user-a');
+    userB = await registerUser(http, 'user-b');
   }, 120_000);
 
   afterAll(async () => {
