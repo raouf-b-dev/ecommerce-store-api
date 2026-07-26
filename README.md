@@ -161,8 +161,8 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 | Strategic DDD          | Subdomains, Bounded Contexts, Context Mapping             | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
 | Tactical DDD           | Entities, Value Objects, Aggregates, Domain Services      | `src/modules/*/core/domain/`                                        |
 | Hexagonal Architecture | Ports & Adapters — infrastructure-agnostic domain core    | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
-| ACL Gateway Pattern    | 7 gateway ports decoupling 8 bounded contexts             | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
-| Modular Monolith       | 9 isolated modules, microservice-extraction ready         | `src/modules/`                                                      |
+| ACL Gateway Pattern    | 8 gateway ports decoupling 10 bounded contexts            | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
+| Modular Monolith       | 10 isolated modules, microservice-extraction ready        | `src/modules/`                                                      |
 | Result Pattern         | Functional `Result<T, E>` replacing exception-driven flow | `src/shared-kernel/domain/`                                         |
 
 ### 🔄 Distributed Systems
@@ -188,7 +188,7 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 | :--------------------- | :----------------------------------------------------------- | :----------------------------------------------- |
 | RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
 | Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/authentication/`                    |
-| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/authentication/core/domain/`        |
+| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/authorization/`                     |
 | API Rate Limiting      | Redis-backed throttling via `@nestjs/throttler`              | `src/infrastructure/throttler/`                  |
 | Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                                    |
 | CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                                    |

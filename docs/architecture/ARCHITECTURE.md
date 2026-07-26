@@ -22,16 +22,17 @@ We utilize **Strategic DDD** to define boundaries and relationships between diff
 
 ### Subdomains
 
-| Subdomain          | Type            | Description                                                                                                                         |
-| :----------------- | :-------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Orders**         | **Core Domain** | The heart of the business. Handles the complex lifecycle of customer orders, SAGA orchestration, and revenue generation.            |
-| **Carts**          | Supporting      | Manages temporary shopping sessions, item selection, and cart persistence.                                                          |
-| **Inventory**      | Supporting      | Manages stock levels and reservations. Essential but not the primary competitive advantage.                                         |
-| **Products**       | Supporting      | Manages the product catalog, categories, and search indexing. Supports the core selling process.                                    |
-| **Access**         | Supporting      | Manages user profiles, shipping addresses, roles, and permissions (RBAC). Custom-built to support authentication and authorization. |
-| **Payments**       | Generic         | Handles transaction processing. Uses standard patterns (Stripe/PayPal) that can be bought/outsourced.                               |
-| **Authentication** | Generic         | Identity and Session/JWT Management. Standard JWT implementation.                                                                   |
-| **Notifications**  | Generic         | Delivery mechanism for real-time and background alerts.                                                                             |
+| Subdomain          | Type            | Description                                                                                                              |
+| :----------------- | :-------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| **Orders**         | **Core Domain** | The heart of the business. Handles the complex lifecycle of customer orders, SAGA orchestration, and revenue generation. |
+| **Identity**       | Supporting      | Manages user account identities, profile details, contact info, and shipping addresses.                                  |
+| **Authorization**  | Supporting      | Role-based access control (RBAC), permission resolution, and user role assignments.                                      |
+| **Carts**          | Supporting      | Manages temporary shopping sessions, item selection, and cart persistence.                                               |
+| **Inventory**      | Supporting      | Manages stock levels and reservations. Essential but not the primary competitive advantage.                              |
+| **Products**       | Supporting      | Manages the product catalog, categories, and search indexing. Supports the core selling process.                         |
+| **Payments**       | Generic         | Handles transaction processing. Uses standard patterns (Stripe/PayPal) that can be bought/outsourced.                    |
+| **Authentication** | Generic         | User credentials, password hashing, and Session/JWT Management. Standard JWT implementation.                             |
+| **Notifications**  | Generic         | Delivery mechanism for real-time and background alerts.                                                                  |
 
 ### Bounded Contexts & Context Mapping
 
@@ -43,7 +44,8 @@ graph TD
     SK --> Carts[Carts]
     SK --> Inventory[Inventory]
     SK --> Products[Products]
-    SK --> Access[Access]
+    SK --> Identity[Identity]
+    SK --> Authorization[Authorization]
     SK --> Payments[Payments]
     SK --> Authentication[Authentication]
     SK --> Notifications[Notifications]
@@ -55,7 +57,7 @@ graph TD
         PayGW["PaymentGateway"]
     end
 
-    Access -.-|"GetUserUseCase"| CustGW
+    Identity -.-|"GetUserUseCase"| CustGW
     Carts -.-|"GetCartUseCase / ClearCartUseCase"| CartGW
     Inventory -.-|"ReserveStockUseCase / ReleaseStockUseCase"| InvGW
     Payments -.-|"ProcessPaymentUseCase"| PayGW
@@ -76,7 +78,8 @@ graph TD
     ProdGW -->|"getProduct()"| Carts
     InvGW2 -->|"checkStock()"| Carts
 
-    Authentication -->|"ACL / IdentityAccessGateway"| Access
+    Authentication -->|"ACL / IdentityGateway"| Identity
+    Authentication -->|"ACL / AuthorizationGateway"| Authorization
     Orders -->|"Event"| Notifications
 
     style Orders fill:#ff6b6b,stroke:#333,color:#fff
@@ -87,11 +90,11 @@ graph TD
     classDef support fill:#99ff99,stroke:#333,stroke-width:1px;
     classDef generic fill:#9999ff,stroke:#333,stroke-width:1px;
 
-    class Inventory,Products,Carts,Access support;
+    class Inventory,Products,Carts,Identity,Authorization support;
     class Payments,Authentication,Notifications generic;
 ```
 
-> **Anti-Corruption Layer (ACL)**: Downstream contexts define their own **Ports** (Gateway interfaces) with only the data they need. **Adapters** in the secondary layer translate upstream models into the downstream domain's language. This protects every module from schema changes in its dependencies — if `Access` changes its user entity, only the `UserGatewayAdapter` needs updating, not the `Orders` use cases.
+> **Anti-Corruption Layer (ACL)**: Downstream contexts define their own **Ports** (Gateway interfaces) with only the data they need. **Adapters** in the secondary layer translate upstream models into the downstream domain's language. This protects every module from schema changes in its dependencies — if `Identity` changes its user entity, only the `UserGatewayAdapter` needs updating, not the `Orders` use cases.
 
 ## 🌍 System Context (C4 Level 1)
 
@@ -132,7 +135,8 @@ graph TD
         API --> Carts["🛒 Carts Module"]
         API --> Payments["💳 Payments Module"]
         API --> Inventory["🏭 Inventory Module"]
-        API --> Access["👥 Access Module"]
+        API --> Identity["👥 Identity Module"]
+        API --> Authorization["🛡️ Authorization Module"]
 
         WS --> Notifications["🔔 Notifications Module"]
 
@@ -174,7 +178,8 @@ graph TD
         Inventory["🏭 Inventory Module"]
         Payments["💳 Payments Module"]
         Products["🏷️ Products Module"]
-        Access["👥 Access Module"]
+        Identity["👥 Identity Module"]
+        Authorization["🛡️ Authorization Module"]
         Carts["🛒 Carts Module"]
     end
 
@@ -186,7 +191,7 @@ graph TD
     %% Orders Dependencies
     Orders -->|ACL| Inventory
     Orders -->|ACL| Payments
-    Orders -->|ACL| Access
+    Orders -->|ACL| Identity
     Orders -->|ACL| Carts
     Orders -->|Event| Notifications
 
@@ -195,7 +200,8 @@ graph TD
     Carts -->|Validates Item| Products
 
     %% Auth Dependencies
-    Authentication -->|ACL / IdentityAccessGateway| Access
+    Authentication -->|ACL / IdentityGateway| Identity
+    Authentication -->|ACL / AuthorizationGateway| Authorization
     Payments -->|Verifies| Authentication
 ```
 

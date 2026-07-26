@@ -14,8 +14,8 @@ import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { User } from 'src/modules/access/core/domain/entities/user';
-import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
+import { User } from 'src/modules/identity/core/domain/entities/user';
+import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;

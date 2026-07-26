@@ -3,8 +3,8 @@ import {
   ShippingAddressInput,
 } from './shipping-address-resolver';
 import { CheckoutUserInfoResult } from '../ports/user.gateway';
-import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
-import { AddressTestFactory } from 'src/modules/access/testing/factories/address.entity.factory';
+import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
+import { AddressTestFactory } from 'src/modules/identity/testing/factories/address.entity.factory';
 
 /**
  * Helpers to build a CheckoutUserInfo from the user test factory.

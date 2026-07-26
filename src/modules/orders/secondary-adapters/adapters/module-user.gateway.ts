@@ -8,7 +8,7 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { GetUserUseCase } from 'src/modules/access/core/application/usecases/user/get-user/get-user.usecase';
+import { GetUserUseCase } from 'src/modules/identity/core/application/usecases/user/get-user/get-user.usecase';
 
 @Injectable()
 export class ModuleUserGateway implements UserGateway {

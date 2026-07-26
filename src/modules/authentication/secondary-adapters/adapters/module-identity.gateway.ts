@@ -2,17 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { CreateUserUseCase } from 'src/modules/access/core/application/usecases/user/create-user/create-user.usecase';
-import { CheckEmailExistsUseCase } from 'src/modules/access/core/application/usecases/user/check-user-by-email/check-user-by-email.usecase';
-import { GetUserByEmailUseCase } from 'src/modules/access/core/application/usecases/user/get-user-by-email/get-user-by-email.usecase';
-import { GetUserUseCase } from 'src/modules/access/core/application/usecases/user/get-user/get-user.usecase';
+import { CreateUserUseCase } from 'src/modules/identity/core/application/usecases/user/create-user/create-user.usecase';
+import { CheckEmailExistsUseCase } from 'src/modules/identity/core/application/usecases/user/check-user-by-email/check-user-by-email.usecase';
+import { GetUserByEmailUseCase } from 'src/modules/identity/core/application/usecases/user/get-user-by-email/get-user-by-email.usecase';
+import { GetUserUseCase } from 'src/modules/identity/core/application/usecases/user/get-user/get-user.usecase';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   CreateUserInput,
   IdentityGateway,
   UserRecord,
 } from '../../core/application/ports/identity.gateway';
-import { DeleteUserUseCase } from 'src/modules/access/core/application/usecases/user/delete-user/delete-user.usecase';
+import { DeleteUserUseCase } from 'src/modules/identity/core/application/usecases/user/delete-user/delete-user.usecase';
 
 @Injectable()
 export class ModuleIdentityGateway implements IdentityGateway {

@@ -39,7 +39,7 @@ import { ProcessOrderUseCase } from './core/application/usecases/process-order/p
 import { PaymentsModule } from '../payments/payments.module';
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { CreateOrderFromCartUseCase } from './core/application/usecases/create-order-from-cart/create-order-from-cart.usecase';
-import { AccessModule } from '../access/access.module';
+import { IdentityModule } from '../identity/identity.module';
 import { CheckoutFailureListener } from './primary-adapters/listeners/checkout-failure.listener';
 import { CartsModule } from '../carts/carts.module';
 import { InventoryModule } from '../inventory/inventory.module';
@@ -88,7 +88,7 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     RedisModule,
     RedisModule,
     PaymentsModule,
-    AccessModule,
+    IdentityModule,
     CartsModule,
     InventoryModule,
     BullModule.registerQueue({

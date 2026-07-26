@@ -195,7 +195,7 @@ See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) for full
 
 ### 5.3 Cross-Context Query Performance — The N+1 Boundary Problem
 
-When a query needs data from multiple bounded contexts (e.g., Orders needs user details from Access, product names from Products, payment status from Payments), three approaches exist. This project uses **Approach 3** for the modular monolith.
+When a query needs data from multiple bounded contexts (e.g., Orders needs user details from Identity, product names from Products, payment status from Payments), three approaches exist. This project uses **Approach 3** for the modular monolith.
 
 #### Approach 1: N+1 via ACL Gateways — ❌ Rejected
 

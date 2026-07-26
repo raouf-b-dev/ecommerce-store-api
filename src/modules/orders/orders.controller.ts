@@ -15,7 +15,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
-import { CallerCtx } from '../access/primary-adapters/decorators/caller-context.decorator';
+import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartToken } from '../carts/primary-adapters/decorators/cart-token.decorator';
 import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';

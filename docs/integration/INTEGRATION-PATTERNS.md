@@ -151,15 +151,16 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 
 ### Example Implementation (E-Commerce — 7 Gateways)
 
-| Gateway                       | Downstream → Upstream   | What It Wraps                          |
-| ----------------------------- | ----------------------- | -------------------------------------- |
-| `UserGateway`                 | Orders → Access         | User validation and details lookup     |
-| `CartGateway`                 | Orders → Carts          | Cart retrieval and clearing            |
-| `InventoryReservationGateway` | Orders → Inventory      | Stock reservation/release/confirmation |
-| `PaymentGateway`              | Orders → Payments       | Payment processing                     |
-| `ProductGateway`              | Carts → Products        | Product validation for cart items      |
-| `InventoryGateway`            | Carts → Inventory       | Stock availability checks              |
-| `IdentityAccessGateway`       | Authentication → Access | User creation and login credentials    |
+| Gateway                       | Downstream → Upstream          | What It Wraps                          |
+| ----------------------------- | ------------------------------ | -------------------------------------- |
+| `UserGateway`                 | Orders → Identity              | User validation and details lookup     |
+| `CartGateway`                 | Orders → Carts                 | Cart retrieval and clearing            |
+| `InventoryReservationGateway` | Orders → Inventory             | Stock reservation/release/confirmation |
+| `PaymentGateway`              | Orders → Payments              | Payment processing                     |
+| `ProductGateway`              | Carts → Products               | Product validation for cart items      |
+| `InventoryGateway`            | Carts → Inventory              | Stock availability checks              |
+| `IdentityGateway`             | Authentication → Identity      | User identity lookup and user creation |
+| `AuthorizationGateway`        | Authentication → Authorization | Role resolution and role assignment    |
 
 ### Microservice Migration
 

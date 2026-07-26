@@ -47,7 +47,7 @@ The core domain has zero dependency on infrastructure. All external concerns (da
 
 ### Modular Monolith
 
-All 9 modules (Authentication, Carts, Customers, Health, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
+All 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
 
 **Location**: `src/modules/`
 
@@ -161,13 +161,13 @@ All DTOs use `class-validator` decorators for type-safe input validation. Pagina
 
 Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
 
-**Location**: `src/modules/access/`
+**Location**: `src/modules/identity/`
 
 ### Forced Credential Rotation (mustChangePassword)
 
 Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
 
-**Location**: `src/modules/access/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+**Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
 ### Rate Limiting & Throttling
 

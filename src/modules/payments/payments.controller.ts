@@ -17,7 +17,7 @@ import {
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
-import { CallerCtx } from '../access/primary-adapters/decorators/caller-context.decorator';
+import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Public } from '../../guards/decorators/public.decorator';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';

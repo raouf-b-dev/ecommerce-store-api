@@ -6,7 +6,7 @@ import { LoginUserUseCase } from './core/application/usecases/login-user/login-u
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
-import { UserTestFactory } from '../access/testing/factories/user.factory';
+import { UserTestFactory } from '../identity/testing/factories/user.factory';
 import { Result } from '../../shared-kernel/domain/result';
 import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
 import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
@@ -14,7 +14,7 @@ import { EnvConfigService } from '../../config/env-config.service';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
-import { IUser } from '../access/core/domain/interfaces/user.interface';
+import { IUser } from '../identity/core/domain/interfaces/user.interface';
 import { Request, Response } from 'express';
 import { createMockRequest, MockEnvConfigService } from '../../testing';
 import { AuthenticationDtoFactory } from './testing/factories/authentication-dto.factory';

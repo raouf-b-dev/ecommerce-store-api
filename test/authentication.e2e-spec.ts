@@ -8,7 +8,7 @@ import { RefreshTokenUseCase } from 'src/modules/authentication/core/application
 import { LogoutUseCase } from 'src/modules/authentication/core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from 'src/modules/authentication/core/application/usecases/logout-all/logout-all.usecase';
 import { AuthenticationDtoFactory } from 'src/modules/authentication/testing/factories/authentication-dto.factory';
-import { UserTestFactory } from 'src/modules/access/testing/factories/user.factory';
+import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
 import { EnvConfigService } from 'src/config/env-config.service';
 import { JwksPort } from 'src/infrastructure/jwt/ports/jwks.port';
 import { GlobalExceptionFilter } from 'src/filters/global-exception.filter';

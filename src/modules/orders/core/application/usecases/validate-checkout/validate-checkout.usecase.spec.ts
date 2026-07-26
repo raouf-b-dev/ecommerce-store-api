@@ -18,10 +18,6 @@ import { MockCartGateway } from 'src/modules/orders/testing/mocks/cart-gateway.m
 import { MockUserGateway } from 'src/modules/orders/testing/mocks/user-gateway.mock';
 import { OrderDtoTestFactory } from 'src/modules/orders/testing';
 
-import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
-import { User } from '../../../../../access/core/domain/entities/user';
-import { UserTestFactory } from '../../../../../access/testing/factories/user.factory';
-
 describe('ValidateCheckoutUseCase', () => {
   let useCase: ValidateCheckoutUseCase;
   let userGateway: MockUserGateway;

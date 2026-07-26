@@ -20,7 +20,7 @@ import { JwtSignerPort } from './core/application/ports/jwt-signer.port';
 import { JwtSignerService } from './core/application/services/jwt-signer.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { PostgresSessionTokenRepository } from './secondary-adapters/repositories/postgres-session-token-repository/postgres-session-token.repository';
-import { AccessModule } from '../access/access.module';
+import { IdentityModule } from '../identity/identity.module';
 import { RevokeAllForUserUsecase } from './core/application/usecases/revoke-all-for-user/revoke-all-for-user.usecase';
 import { UserDeactivatedListener } from './primary-adapters/listeners/user-deactivated.listener';
 import { CredentialRepository } from './core/domain/repositories/credential.repository';
@@ -34,7 +34,7 @@ import { AuthorizationGateway } from './core/application/ports/authorization.gat
   imports: [
     TypeOrmModule.forFeature([SessionTokenEntity, CredentialEntity]),
     RedisModule,
-    AccessModule,
+    IdentityModule,
   ],
   controllers: [AuthenticationController],
   providers: [

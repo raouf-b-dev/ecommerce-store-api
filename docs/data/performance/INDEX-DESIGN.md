@@ -209,7 +209,7 @@ CREATE INDEX idx_products_category_price ON products (category_id, price)
 WHERE is_active = true;
 ```
 
-### 6.4 Access Module
+### 6.4 Identity Module
 
 ```sql
 CREATE INDEX idx_users_active ON users (last_login_at DESC) WHERE is_active = true;

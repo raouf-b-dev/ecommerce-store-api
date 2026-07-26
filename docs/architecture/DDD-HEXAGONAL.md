@@ -100,8 +100,8 @@ src/modules/[module]/
 | ------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context**       | A boundary within which a domain model is defined and applicable                                       | Each folder in `src/modules/` is a Bounded Context                                                                   |
 | **Shared Kernel**         | A subset of the domain model shared between multiple contexts. Must be pure domain — no infrastructure | `src/shared-kernel/domain/` — contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore` |
-| **Context Map**           | Documents the relationships between Bounded Contexts                                                   | Orders imports from Access (ACL via UserGateway), Carts (ACL via CartGateway)                                        |
-| **Upstream/Downstream**   | One context provides, another consumes                                                                 | Orders (downstream) consumes Access, Carts, Inventory, Payments (upstream)                                           |
+| **Context Map**           | Documents the relationships between Bounded Contexts                                                   | Orders imports from Identity (ACL via UserGateway), Carts (ACL via CartGateway)                                      |
+| **Upstream/Downstream**   | One context provides, another consumes                                                                 | Orders (downstream) consumes Identity, Carts, Inventory, Payments (upstream)                                         |
 | **Anti-Corruption Layer** | Translates between two contexts' models                                                                | Gateway adapters in `secondary-adapters/adapters/` (e.g., `UserGatewayAdapter`, `CartGatewayAdapter`)                |
 
 ### 2.2 Tactical Design Patterns
@@ -153,7 +153,8 @@ graph TD
     SK --> C[Carts]
     SK --> I[Inventory]
     SK --> P[Products]
-    SK --> Cu[Access]
+    SK --> Id[Identity]
+    SK --> Az[Authorization]
     SK --> Pa[Payments]
     SK --> Au[Authentication]
     SK --> N[Notifications]
@@ -165,7 +166,7 @@ graph TD
         PaGW["PaymentGateway"]
     end
 
-    Cu -.-|"GetUserUseCase"| CuGW
+    Id -.-|"GetUserUseCase"| CuGW
     C -.-|"GetCartUseCase / ClearCartUseCase"| CaGW
     I -.-|"ReserveStockUseCase / ReleaseStockUseCase"| IGW
     Pa -.-|"ProcessPaymentUseCase"| PaGW
@@ -186,7 +187,8 @@ graph TD
     PrGW -->|"getProduct()"| C
     IGW2 -->|"checkStock()"| C
 
-    Au -->|"ACL / IdentityAccessGateway"| Cu
+    Au -->|"ACL / IdentityGateway"| Id
+    Au -->|"ACL / AuthorizationGateway"| Az
 
     style O fill:#ff6b6b,stroke:#333,color:#fff
     style SK fill:#4ecdc4,stroke:#333,color:#fff
@@ -196,18 +198,18 @@ graph TD
     classDef support fill:#99ff99,stroke:#333,stroke-width:1px;
     classDef generic fill:#9999ff,stroke:#333,stroke-width:1px;
 
-    class I,P,C,Cu support;
+    class I,P,C,Id,Az support;
     class Pa,Au,N generic;
 ```
 
-**Live example — Orders → Access:**
+**Live example — Orders → Identity:**
 
 ```
  Port (abstract class)                    Adapter (concrete impl)
  ─────────────────────                    ──────────────────────
  orders/core/application/ports/           orders/secondary-adapters/gateways/
    user.gateway.ts                          user-gateway.adapter.ts
-   └─ UserGateway                           └─ injects GetUserUseCase from Access
+   └─ UserGateway                           └─ injects GetUserUseCase from Identity
    └─ defines CheckoutUserInfoResult        └─ translates User → CheckoutUserInfoResult
 ```
 
@@ -231,13 +233,13 @@ constructor(private userGateway: UserGateway) {}
 import { NotificationScheduler } from 'src/modules/notifications/core/application/ports/notification.scheduler';
 
 // ❌ WRONG: Direct repository import from another module
-import { UserRepository } from 'src/modules/access/core/domain/repositories/user.repository';
+import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
 
 // ❌ WRONG: Direct entity import from another module for data access
-import { User } from 'src/modules/access/core/domain/entities/user';
+import { User } from 'src/modules/identity/core/domain/entities/user';
 
 // ❌ WRONG: Importing adapters from another module
-import { CachedUserRepository } from 'src/modules/access/secondary-adapters/repositories/cached-user-repository/cached-user.repository';
+import { CachedUserRepository } from 'src/modules/identity/secondary-adapters/repositories/cached-user-repository/cached-user.repository';
 ```
 
 **Rule**: Only the ACL adapter (in `secondary-adapters/gateways/`) may import upstream application-layer exports (Use Cases or Application Services). The application core sees only its own gateway port. For the full catalogue of integration patterns (ACL Gateway, Domain Events, Saga, Transactional Outbox), see [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md).
@@ -246,7 +248,7 @@ import { CachedUserRepository } from 'src/modules/access/secondary-adapters/repo
 
 > **Derived guideline** _(Evans Ch. 14 & 15; Vernon Ch. 3)_: If a use case mutates aggregates from multiple contexts, it belongs in the Bounded Context that owns the **primary aggregate** being mutated — typically the Core Domain.
 
-The `CheckoutUseCase` touches Orders, Carts, Inventory, Payments, and Access. It belongs in **Orders** because:
+The `CheckoutUseCase` touches Orders, Carts, Inventory, Payments, and Identity. It belongs in **Orders** because:
 
 1. The primary _consequential mutation_ is on `Order` — an Orders aggregate
 2. If it lived in Carts or Payments, it would need gateways _back_ to Orders — creating **bidirectional dependencies** (a DDD anti-pattern)

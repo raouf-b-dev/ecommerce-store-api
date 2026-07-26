@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { SeedDemoAuthUsersUseCase } from '../src/modules/access/core/application/seed/seed-demo-auth-users.usecase';
+import { SeedDemoAuthUsersUseCase } from '../src/modules/identity/core/application/seed/seed-demo-auth-users.usecase';
 import { SeedDemoCatalogUseCase } from '../src/modules/products/core/application/seed/seed-demo-catalog.usecase';
 import { SeedDemoInventoryUseCase } from '../src/modules/inventory/core/application/seed/seed-demo-inventory.usecase';
 import { maskEmail, statusLabel } from './utils/log-helpers';

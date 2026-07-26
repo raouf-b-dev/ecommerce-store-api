@@ -8,7 +8,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { CartsModule } from './modules/carts/carts.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { AccessModule } from './modules/access/access.module';
+import { IdentityModule } from './modules/identity/identity.module';
 import { AuthenticationModule } from './modules/authentication/authentication.module';
 import { AuthorizationModule } from './modules/authorization/authorization.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
@@ -35,7 +35,7 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     CartsModule,
     PaymentsModule,
     InventoryModule,
-    AccessModule,
+    IdentityModule,
     AuthorizationModule,
     AuthenticationModule,
     WebsocketModule,
