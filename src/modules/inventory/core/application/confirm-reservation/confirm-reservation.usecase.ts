@@ -2,7 +2,6 @@ import { Injectable, Inject } from '@nestjs/common';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ReservationRepository } from '../../domain/repositories/reservation.repository';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../inventory.token';
 

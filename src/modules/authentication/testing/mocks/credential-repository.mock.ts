@@ -29,7 +29,7 @@ export class CredentialRepositoryMock extends CredentialRepository {
     this.findByUserId.mockResolvedValue(ErrorFactory.RepositoryError(message));
   }
 
-  mockSuccessfulUpdate(credential: Credential) {
+  mockSuccessfulUpdate() {
     this.update.mockResolvedValue(Result.success(undefined));
   }
 

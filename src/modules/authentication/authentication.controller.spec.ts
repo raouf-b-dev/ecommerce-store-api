@@ -31,7 +31,6 @@ describe('AuthController', () => {
   let mockUser: IUser;
   let registerDto: RegisterDto;
   let loginDto: LoginDto;
-  let mockRes: jest.Mocked<Response>;
   let mockReq: jest.Mocked<Request>;
 
   beforeEach(async () => {

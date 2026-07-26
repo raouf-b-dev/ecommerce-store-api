@@ -1,5 +1,4 @@
 // src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.spec.ts
-import { CacheService } from '../../../../../infrastructure/redis/cache/cache.service';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
   InventoryCacheMapper,

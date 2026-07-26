@@ -1,5 +1,4 @@
 import { CorrelationIdMiddleware } from './correlation-id.middleware';
-import { CorrelationService } from '../correlation/correlation.service';
 import { Request, Response } from 'express';
 import {
   MockCorrelationService,

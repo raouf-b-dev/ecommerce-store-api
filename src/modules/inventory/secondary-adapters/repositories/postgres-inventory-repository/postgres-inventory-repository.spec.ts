@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import {
-  createMockDataSource,
   createMockTransactionManager,
   createMockQueryBuilder,
 } from '../../../../../testing/mocks/typeorm.mocks';

@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './users.controller';
 import { Result } from '../../shared-kernel/domain/result';
 import { AddAddressUseCase } from './core/application/usecases/address/add-address/add-address.usecase';
 import { UpdateAddressUseCase } from './core/application/usecases/address/update-address/update-address.usecase';

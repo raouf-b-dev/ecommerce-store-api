@@ -8,7 +8,6 @@ import {
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { MockUserRepository } from 'src/modules/identity/testing/mocks/user-repository.mock';
 import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
-import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { HttpStatus } from '@nestjs/common';
 
 describe('GetUserByEmailUseCase', () => {
