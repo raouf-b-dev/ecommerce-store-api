@@ -1,5 +1,5 @@
 // src/testing/helpers/test-data.helper.ts
-import { OrderCommandTestFactory } from '../../modules/orders/testing/factories/create-order-dto.factory';
+import { OrderDtoTestFactory } from '../../modules/orders/testing/factories/order-dto.factory';
 import { OrderEntityTestFactory } from '../../modules/orders/testing/factories/order-entity.factory';
 import { ProductEntityTestFactory } from '../../modules/products/testing/factories/product-entity.factory';
 
@@ -11,13 +11,13 @@ export class TestDataHelper {
   }) {
     const orderId = options?.orderId || 1;
     const productId = options?.productId || 3;
-    const customerId = 1;
+    const userId = 1;
     const paymentId = 1;
     const shippingAddressId = 1;
 
     const createOrderDto = options?.useCOD
-      ? OrderCommandTestFactory.createCashOnDeliveryCheckoutCommand()
-      : OrderCommandTestFactory.createCreditCardCheckoutCommand();
+      ? OrderDtoTestFactory.createCashOnDeliveryCheckoutCommand()
+      : OrderDtoTestFactory.createCreditCardCheckoutCommand();
 
     const productEntity = ProductEntityTestFactory.createProductEntity({
       id: productId,
@@ -26,7 +26,7 @@ export class TestDataHelper {
     const orderEntity = options?.useCOD
       ? OrderEntityTestFactory.createCODOrderEntity({
           id: orderId,
-          customerId,
+          userId,
           paymentId: null,
           shippingAddressId,
           items: [
@@ -37,7 +37,7 @@ export class TestDataHelper {
         })
       : OrderEntityTestFactory.createOrderEntity({
           id: orderId,
-          customerId,
+          userId,
           paymentId,
           shippingAddressId,
           items: [
@@ -50,7 +50,7 @@ export class TestDataHelper {
     return {
       // IDs
       orderId,
-      customerId,
+      userId,
       paymentId,
       shippingAddressId,
       productId,
@@ -73,7 +73,7 @@ export class TestDataHelper {
 
     return {
       productIds,
-      createOrderDto: OrderCommandTestFactory.createCheckoutCommand(),
+      createOrderDto: OrderDtoTestFactory.createCheckoutCommand(),
       productEntities:
         ProductEntityTestFactory.createProductEntities(productIds),
       orderEntity: OrderEntityTestFactory.createMultiItemOrderEntity(itemCount),

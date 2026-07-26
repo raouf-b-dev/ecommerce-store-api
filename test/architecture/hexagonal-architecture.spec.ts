@@ -5,7 +5,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
   const coreSourcePattern = /src\/modules\/[a-z-]+\/core\/(?!.*\.spec\.ts$).*/;
 
   it('Rule 1: Core must not depend on primary-adapters', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+    const rule = projectFiles('tsconfig.arch.json')
       .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
@@ -15,7 +15,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
   });
 
   it('Rule 2: Core must not depend on secondary-adapters', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+    const rule = projectFiles('tsconfig.arch.json')
       .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
@@ -27,7 +27,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
   it('Rule 3: Domain must not depend on application', async () => {
     const domainPattern =
       /src\/modules\/[a-z-]+\/core\/domain\/(?!.*\.spec\.ts$).*/;
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+    const rule = projectFiles('tsconfig.arch.json')
       .inPath(domainPattern)
       .shouldNot()
       .dependOnFiles()
@@ -37,7 +37,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
   });
 
   it('Rule 4: No circular dependencies in core', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+    const rule = projectFiles('tsconfig.arch.json')
       .inPath(coreSourcePattern)
       .should()
       .haveNoCycles();
@@ -46,7 +46,7 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
   });
 
   it('Rule 5: Primary adapters must not depend on secondary adapters', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+    const rule = projectFiles('tsconfig.arch.json')
       .inFolder('src/modules/*/primary-adapters/**')
       .shouldNot()
       .dependOnFiles()
@@ -55,11 +55,12 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
 
-  it('Rule 6: Cross-module core isolation', async () => {
+  describe('Rule 6: Cross-module core isolation', () => {
     const modules = [
-      'auth',
+      'identity',
+      'authentication',
+      'authorization',
       'carts',
-      'customers',
       'health',
       'inventory',
       'notifications',
@@ -69,21 +70,30 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
     ];
 
     for (const currentModule of modules) {
-      const otherModulesPattern = `src/modules/!(${currentModule})/**`;
-      const rule = projectFiles('test/architecture/tsconfig.arch.json')
-        .inPath(
-          new RegExp(`src/modules/${currentModule}/core/(?!.*\\.spec\\.ts$).*`),
-        )
-        .shouldNot()
-        .dependOnFiles()
-        .inFolder(otherModulesPattern);
+      it(`Core of module "${currentModule}" must not depend on other modules`, async () => {
+        const otherModulesPattern = `src/modules/!(${currentModule})/**`;
+        const rule = projectFiles('tsconfig.arch.json')
+          .inPath(new RegExp(`src/modules/${currentModule}/core/.*`))
+          .shouldNot()
+          .dependOnFiles()
+          .inFolder(otherModulesPattern);
 
-      await expect(rule).toPassAsync({ allowEmptyTests: true });
+        await expect(rule).toPassAsync({ allowEmptyTests: true });
+      });
     }
   });
 
-  it('Rule 7: Core must not depend on general infrastructure (with whitelist exception for JWT ports)', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+  it('Rule 7: Core must not contain DTO files', async () => {
+    const rule = projectFiles('tsconfig.arch.json')
+      .inPath(coreSourcePattern)
+      .shouldNot()
+      .haveName('**/*.dto.ts');
+
+    await expect(rule).toPassAsync({ allowEmptyTests: true });
+  });
+
+  it('Rule 8: Core must not depend on general infrastructure (with whitelist exception for JWT ports)', async () => {
+    const rule = projectFiles('tsconfig.arch.json')
       .inPath(coreSourcePattern)
       .shouldNot()
       .dependOnFiles()
@@ -92,8 +102,8 @@ describe('Hexagonal Architecture & Cross-Module Boundaries', () => {
     await expect(rule).toPassAsync({ allowEmptyTests: true });
   });
 
-  it('Rule 8: Scripts must not depend on domain entities or repositories directly', async () => {
-    const rule = projectFiles('test/architecture/tsconfig.arch.json')
+  it('Rule 9: Scripts must not depend on domain entities or repositories directly', async () => {
+    const rule = projectFiles('tsconfig.arch.json')
       .inFolder('scripts/**')
       .shouldNot()
       .dependOnFiles()

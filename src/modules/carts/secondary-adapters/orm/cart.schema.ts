@@ -12,14 +12,14 @@ import {
 import { CartItemEntity } from './cart-item.schema';
 
 @Entity({ name: 'carts' })
-@Index('idx_carts_customer_id', ['customerId'])
+@Index('idx_carts_user_id', ['userId'])
 @Index('idx_carts_session_id', ['sessionId'])
 export class CartEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'customer_id', type: 'int', nullable: true })
-  customerId: number | null;
+  @Column({ name: 'user_id', type: 'int', nullable: true })
+  userId: number | null;
 
   @Column({ name: 'session_id', type: 'int', nullable: true })
   sessionId: number | null;

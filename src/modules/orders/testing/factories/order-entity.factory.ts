@@ -16,7 +16,7 @@ export class OrderEntityTestFactory {
   static createOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
     const defaultEntity: OrderEntity = {
       id: 1,
-      customerId: 1,
+      userId: 1,
       paymentId: null,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
       shippingAddressId: 1,
@@ -24,7 +24,7 @@ export class OrderEntityTestFactory {
       shippingAddress: this.createShippingAddressEntity(),
       items: [this.createOrderItemEntity()],
 
-      customerNotes: 'Test order notes',
+      userNotes: 'Test order notes',
       subtotal: 100,
       shippingCost: 0,
       totalPrice: 100,

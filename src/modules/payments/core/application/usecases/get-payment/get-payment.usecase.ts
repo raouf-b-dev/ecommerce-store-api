@@ -47,7 +47,7 @@ export class GetPaymentUseCase extends UseCase<
     if (
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
-        payment.customerId,
+        payment.userId,
         PAYMENT_ACCESS_PERMISSIONS,
       )
     ) {

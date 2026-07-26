@@ -5,11 +5,11 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateCartDto {
   @ApiPropertyOptional({
     example: 123,
-    description: 'Customer ID for authenticated users',
+    description: 'User ID for authenticated users',
   })
   @IsOptional()
   @IsNumber()
-  customerId?: number;
+  userId?: number;
 
   @ApiPropertyOptional({
     example: 123,

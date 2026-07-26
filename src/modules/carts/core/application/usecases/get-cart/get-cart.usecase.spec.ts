@@ -8,25 +8,24 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('GetCartUseCase', () => {
   let usecase: GetCartUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
+  let mockTokenService: jest.Mocked<CartSessionTokenGateway>;
 
   const adminContext: CallerContext = {
     kind: 'user',
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['manage_carts']),
   };
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
@@ -34,8 +33,12 @@ describe('GetCartUseCase', () => {
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
     mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
+      generateToken: jest.fn(),
+      validateToken: jest.fn(),
     };
+
+    mockTokenService.validateToken.mockResolvedValue(Result.success(true));
+
     validator = new CartOwnershipValidator(mockTokenService);
     usecase = new GetCartUseCase(mockCartRepository, validator);
   });
@@ -60,7 +63,7 @@ describe('GetCartUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.customerId).toBe(456);
+      expect(result.value.userId).toBe(456);
     });
 
     it('should return cart when caller owns the user cart', async () => {
@@ -78,7 +81,7 @@ describe('GetCartUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.customerId).toBe(123);
+      expect(result.value.userId).toBe(123);
     });
 
     it('should return 404 when customer does not own the cart', async () => {

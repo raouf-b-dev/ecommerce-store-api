@@ -7,13 +7,11 @@ import {
   CallerContext,
   isSystemCaller,
 } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartSessionTokenService } from '../../../../auth/core/application/services/cart-session-token.service';
+import { CartSessionTokenGateway } from '../ports/session-token.gateway';
 
 @Injectable()
 export class CartOwnershipValidator {
-  constructor(
-    private readonly cartSessionTokenService: CartSessionTokenService,
-  ) {}
+  constructor(private readonly sessionTokenGateway: CartSessionTokenGateway) {}
 
   async validate(
     cart: Cart,
@@ -29,13 +27,13 @@ export class CartOwnershipValidator {
       return Result.success(undefined);
     }
 
-    // User cart -> match customerId and verify caller has manage_own_cart permission
+    // User cart -> match userId and verify caller has manage_own_cart permission
     if (cart.isUserCart()) {
       if (
         !callerContext ||
         !callerContext.permissions.has('manage_own_cart') ||
-        callerContext.customerId === null ||
-        Number(callerContext.customerId) !== Number(cart.customerId)
+        callerContext.userId === null ||
+        Number(callerContext.userId) !== Number(cart.userId)
       ) {
         return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
       }
@@ -44,10 +42,14 @@ export class CartOwnershipValidator {
 
     // Guest cart -> validate session token (works for anonymous and logged-in clients)
     if (cart.isGuestCart()) {
-      if (
-        !cartToken ||
-        !(await this.cartSessionTokenService.validateToken(cartToken, cart.id!))
-      ) {
+      if (!cartToken) {
+        return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
+      }
+      const tokenResult = await this.sessionTokenGateway.validateToken(
+        cartToken,
+        cart.id!,
+      );
+      if (tokenResult.isFailure || !tokenResult.value) {
         return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
       }
       return Result.success(undefined);

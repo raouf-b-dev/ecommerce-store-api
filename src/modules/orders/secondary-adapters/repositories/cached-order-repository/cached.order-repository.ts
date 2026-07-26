@@ -32,13 +32,13 @@ export class CachedOrderRepository implements OrderRepository {
       const {
         page = 1,
         limit = 10,
-        customerId,
+        userId,
         status,
         sortBy = 'createdAt',
         sortOrder = 'desc',
       } = listOrdersQueryDto;
 
-      const hasFilters = customerId || status;
+      const hasFilters = userId || status;
 
       const shouldUseCache =
         !hasFilters &&

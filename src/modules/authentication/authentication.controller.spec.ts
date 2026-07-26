@@ -1,0 +1,184 @@
+// src/modules/authentication/authentication.controller.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthenticationController } from './authentication.controller';
+import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
+import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
+import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
+import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
+import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
+import { UserTestFactory } from '../identity/testing/factories/user.factory';
+import { Result } from '../../shared-kernel/domain/result';
+import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
+import { MockJwksService } from '../../testing/mocks/jwks.service.mock';
+import { EnvConfigService } from '../../config/env-config.service';
+import { RegisterDto } from './primary-adapters/dto/register.dto';
+import { LoginDto } from './primary-adapters/dto/login.dto';
+import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
+import { IUser } from '../identity/core/domain/interfaces/user.interface';
+import { Request, Response } from 'express';
+import { createMockRequest, MockEnvConfigService } from '../../testing';
+import { AuthenticationDtoFactory } from './testing/factories/authentication-dto.factory';
+
+describe('AuthController', () => {
+  let controller: AuthenticationController;
+  let registerUseCase: RegisterUserUseCase;
+  let loginUseCase: LoginUserUseCase;
+  let refreshTokenUseCase: RefreshTokenUseCase;
+  let logoutUseCase: LogoutUseCase;
+  let logoutAllUseCase: LogoutAllUseCase;
+  let jwksService: MockJwksService;
+
+  let mockUser: IUser;
+  let registerDto: RegisterDto;
+  let loginDto: LoginDto;
+  let mockReq: jest.Mocked<Request>;
+
+  beforeEach(async () => {
+    mockUser = UserTestFactory.createMockUser();
+    registerDto = AuthenticationDtoFactory.createRegisterCommand();
+    loginDto = AuthenticationDtoFactory.createLoginCommand();
+
+    mockReq = createMockRequest({
+      cookies: {},
+    });
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AuthenticationController],
+      providers: [
+        {
+          provide: RegisterUserUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                user: mockUser,
+                userId: mockUser.id,
+              }),
+            ),
+          },
+        },
+        {
+          provide: LoginUserUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                accessToken: 'access-123',
+                refreshToken: 'refresh-456',
+              }),
+            ),
+          },
+        },
+        {
+          provide: RefreshTokenUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                accessToken: 'new-access-123',
+                refreshToken: 'new-refresh-456',
+              }),
+            ),
+          },
+        },
+        {
+          provide: LogoutUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
+        {
+          provide: LogoutAllUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
+        {
+          provide: JwksPort,
+          useClass: MockJwksService,
+        },
+        {
+          provide: EnvConfigService,
+          useClass: MockEnvConfigService,
+        },
+      ],
+    }).compile();
+
+    controller = module.get<AuthenticationController>(AuthenticationController);
+    registerUseCase = module.get<RegisterUserUseCase>(RegisterUserUseCase);
+    loginUseCase = module.get<LoginUserUseCase>(LoginUserUseCase);
+    refreshTokenUseCase = module.get<RefreshTokenUseCase>(RefreshTokenUseCase);
+    logoutUseCase = module.get<LogoutUseCase>(LogoutUseCase);
+    logoutAllUseCase = module.get<LogoutAllUseCase>(LogoutAllUseCase);
+    jwksService = module.get(JwksPort);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should call RegisterUserUseCase.execute when register is called', async () => {
+    const res = await controller.register(registerDto);
+    expect(registerUseCase.execute).toHaveBeenCalledWith(registerDto);
+    expect(res).toEqual(
+      Result.success({
+        user: mockUser,
+        userId: mockUser.id,
+      }),
+    );
+  });
+
+  it('should return login tokens successfully', async () => {
+    const res = await controller.login(loginDto);
+
+    expect(loginUseCase.execute).toHaveBeenCalledWith(loginDto);
+    expect(res).toEqual(
+      Result.success({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-456',
+      }),
+    );
+  });
+
+  it('should read refresh token from body on refresh', async () => {
+    const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
+    const res = await controller.refresh('refresh-456', dto);
+
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
+      refreshToken: 'refresh-456',
+    });
+    if (res.isSuccess) {
+      expect(res.value.accessToken).toBe('new-access-123');
+    }
+  });
+
+  it('should read refresh token from cookie when body is empty', async () => {
+    const dto: RefreshTokenDto = {};
+    await controller.refresh('cookie-refresh-789', dto);
+
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
+      refreshToken: 'cookie-refresh-789',
+    });
+  });
+
+  it('should execute logout', async () => {
+    const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
+    await controller.logout('refresh-456', dto);
+
+    expect(logoutUseCase.execute).toHaveBeenCalledWith({
+      refreshToken: 'refresh-456',
+    });
+  });
+
+  it('should execute logout-all', async () => {
+    const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
+    await controller.logoutAll('refresh-456', dto);
+
+    expect(logoutAllUseCase.execute).toHaveBeenCalledWith({
+      refreshToken: 'refresh-456',
+    });
+  });
+
+  it('should call getJwks and return keys', () => {
+    const res = controller.getJwks();
+    expect(jwksService.getJwks).toHaveBeenCalled();
+    expect(res).toEqual({ keys: [] });
+  });
+});

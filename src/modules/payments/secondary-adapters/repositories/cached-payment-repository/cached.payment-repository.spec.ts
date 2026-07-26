@@ -1,4 +1,3 @@
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { Payment } from '../../../core/domain/entities/payment';
 import {
   PaymentCacheMapper,

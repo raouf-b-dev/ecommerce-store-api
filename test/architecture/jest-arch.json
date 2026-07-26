@@ -1,13 +1,12 @@
 {
   "moduleFileExtensions": ["js", "json", "ts"],
-  "rootDir": "../..",
   "testEnvironment": "node",
   "testRegex": "test/architecture/.*\\.spec\\.ts$",
   "transform": {
     "^.+\\.(t|j)s$": [
       "ts-jest",
       {
-        "tsconfig": "test/architecture/tsconfig.arch.json"
+        "tsconfig": "tsconfig.arch.json"
       }
     ]
   },

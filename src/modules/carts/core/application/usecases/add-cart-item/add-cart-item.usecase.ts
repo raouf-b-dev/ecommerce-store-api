@@ -8,8 +8,8 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { InventoryGateway } from '../../ports/inventory.gateway';
-import { ProductGateway } from '../../ports/product.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
+import { CartProductGateway } from '../../ports/product.gateway';
 import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
@@ -36,9 +36,9 @@ export class AddCartItemUseCase extends UseCase<
     private readonly cartRepository: CartRepository,
     private readonly cartOwnershipValidator: CartOwnershipValidator,
     @Inject(PRODUCT_GATEWAY)
-    private readonly productGateway: ProductGateway,
+    private readonly productGateway: CartProductGateway,
     @Inject(INVENTORY_GATEWAY)
-    private readonly inventoryGateway: InventoryGateway,
+    private readonly inventoryGateway: CartInventoryGateway,
   ) {
     super();
   }

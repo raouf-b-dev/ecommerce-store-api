@@ -7,21 +7,20 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UpdateCartItemInput } from './update-cart-item.usecase';
-import { InventoryGateway } from '../../ports/inventory.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('UpdateCartItemUseCase', () => {
   let usecase: UpdateCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockInventoryGateway: jest.Mocked<InventoryGateway>;
+  let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
   let validator: CartOwnershipValidator;
   let mockTokenService: any;
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
@@ -55,7 +54,7 @@ describe('UpdateCartItemUseCase', () => {
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
         id: cartId,
-        customerId: 123,
+        userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
       const items = mockCart.getItems();
@@ -118,7 +117,7 @@ describe('UpdateCartItemUseCase', () => {
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
         id: cartId,
-        customerId: 123,
+        userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
       const items = mockCart.getItems();

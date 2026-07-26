@@ -16,8 +16,7 @@ describe('RemoveCartItemUseCase', () => {
 
   const customerContext: CallerContext = {
     kind: 'user',
-    userId: 2,
-    customerId: 123,
+    userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
   };
@@ -42,7 +41,7 @@ describe('RemoveCartItemUseCase', () => {
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
         id: cartId,
-        customerId: 123,
+        userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
       // Ensure the items array actually has a mock item with matching ID

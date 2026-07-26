@@ -57,7 +57,7 @@ The Command side is responsible for enforcing invariants, validating business ru
 
 **Example workflow:**
 
-`OrdersController (POST /checkout)` → `CheckoutUseCase` → Validates via ACL Gateways (`CustomerGateway`, `CartGateway`) → `OrderFactory.createFromCart()` → `OrderRepository.save()` → `OrderScheduler.scheduleCheckout()` (BullMQ SAGA flow).
+`OrdersController (POST /checkout)` → `CheckoutUseCase` → Validates via ACL Gateways (`UserGateway`, `CartGateway`) → `OrderFactory.createFromCart()` → `OrderRepository.save()` → `OrderScheduler.scheduleCheckout()` (BullMQ SAGA flow).
 
 `OrdersController (PATCH /confirm)` → `ConfirmOrderUseCase` → Loads `Order` from repository → Invokes `Order.confirm()` (domain behaviour method) → `OrderRepository.updateStatus()`.
 
@@ -89,13 +89,13 @@ The **N+1 query problem** is one of the most damaging performance anti-patterns 
 
 **Why DDD/Hexagonal Architecture amplifies the risk**:
 
-In a DDD architecture with strict bounded contexts, the N+1 problem is especially dangerous because cross-context data (e.g., customer names for the Orders context) cannot be fetched via ORM relations — it must go through ACL Gateways. Each gateway call is a method invocation through a port → adapter → upstream service chain. If the read path resolves names by calling `customerGateway.getCustomerName(id)` inside a loop for each order, the performance is catastrophic:
+In a DDD architecture with strict bounded contexts, the N+1 problem is especially dangerous because cross-context data (e.g., user details for the Orders context) cannot be fetched via ORM relations — it must go through ACL Gateways. Each gateway call is a method invocation through a port → adapter → upstream service chain. If the read path resolves details by calling `userGateway.validateUser(id)` inside a loop for each order, the performance is catastrophic:
 
 ```
 // ❌ ANTI-PATTERN: N+1 via ACL Gateway in a query use case
 const orders = await this.orderRepo.listOrders(filters);   // 1 query
 for (const order of orders) {
-  const customer = await this.customerGateway.getCustomer(order.customerId);  // N queries
+  const user = await this.userGateway.validateUser(order.userId);  // N queries
   const payment = await this.paymentGateway.getPayment(order.paymentId);      // N queries
   // Total: 1 + N + N queries — unacceptable
 }
@@ -166,7 +166,7 @@ By utilising Single-DB CQRS, this platform achieves:
 
 A concern unique to the query stack is **row-level data scoping** — restricting which records a user can see based on their role and permissions. In the E-Commerce Store API, this manifests as:
 
-- Customers see only their own orders (e.g., `ListOrdersUseCase` filters by `customerId`)
+- Customers see only their own orders (e.g., `ListOrdersUseCase` filters by `userId`)
 - Admins with `view_all_orders` permission see all orders
 - Payment data is restricted — customers should never see other customers' payment details
 
@@ -176,11 +176,9 @@ A concern unique to the query stack is **row-level data scoping** — restrictin
 
 ## 5. CQRS and Cross-Context Patterns
 
-CQRS interacts with other architectural patterns in this project:
-
 ### 5.1 ACL Gateways (Command Stack Only)
 
-Cross-context validation happens exclusively on the **command side**. When `CheckoutUseCase` needs to validate that a customer exists and a cart is valid, it calls the appropriate ACL Gateway ports (`CustomerGateway`, `CartGateway`). Command use cases enforce invariants; they must never bypass the ACL boundary.
+Cross-context validation happens exclusively on the **command side**. When `CheckoutUseCase` needs to validate that a user exists and a cart is valid, it calls the appropriate ACL Gateway ports (`UserGateway`, `CartGateway`). Command use cases enforce invariants; they must never bypass the ACL boundary.
 
 On the **query side**, the approach differs depending on the CQRS evolution phase (see §6). In Phase 1, query use cases return whatever data is in their own context's persistence (IDs only). From Phase 2 onwards, query **adapters** may perform controlled cross-context reads (e.g., SQL JOINs in a monolith, batched API calls in microservices) to resolve names alongside IDs — but this is an **adapter-level concern**, not an application-layer concern. The query port contract remains infrastructure-agnostic and never exposes foreign domain concepts.
 
@@ -197,17 +195,17 @@ See [`INTEGRATION-PATTERNS.md`](../integration/INTEGRATION-PATTERNS.md) for full
 
 ### 5.3 Cross-Context Query Performance — The N+1 Boundary Problem
 
-When a query needs data from multiple bounded contexts (e.g., Orders needs customer names from Customers, product names from Products, payment status from Payments), three approaches exist. This project uses **Approach 3** for the modular monolith.
+When a query needs data from multiple bounded contexts (e.g., Orders needs user details from Identity, product names from Products, payment status from Payments), three approaches exist. This project uses **Approach 3** for the modular monolith.
 
 #### Approach 1: N+1 via ACL Gateways — ❌ Rejected
 
-Call ACL Gateways in a loop to resolve each foreign ID to a name. This respects DDD boundaries perfectly but produces catastrophic N+1 performance (see §2.2.1). Even batching the calls (`customerGateway.batchGetNames([id1, id2, ...])`) still routes through the full port → adapter → service → repository chain, constructing objects at every layer — unnecessary overhead for read-only projections.
+Call ACL Gateways in a loop to resolve each foreign ID to a name. This respects DDD boundaries perfectly but produces catastrophic N+1 performance (see §2.2.1). Even batching the calls (`userGateway.batchGetNames([id1, id2, ...])`) still routes through the full port → adapter → service → repository chain, constructing objects at every layer — unnecessary overhead for read-only projections.
 
 > This approach is **never acceptable** for list/search endpoints in this project.
 
 #### Approach 2: Data Duplication via Events — ⏸️ Deferred
 
-Store name snapshots in the owning context's own tables (e.g., `order_customer_snapshots`), kept in sync by domain event listeners. This is the **academically pure distributed systems solution** (Richardson, 2018, Ch. 7) and the correct approach when bounded contexts live in separate databases.
+Store name/details snapshots in the owning context's own tables (e.g., `order_user_snapshots`), kept in sync by domain event listeners. This is the **academically pure distributed systems solution** (Richardson, 2018, Ch. 7) and the correct approach when bounded contexts live in separate databases.
 
 However, for a single-database modular monolith, it introduces significant complexity (event handlers, snapshot tables, staleness windows, consistency guarantees) to avoid a JOIN that costs 0ms because the tables are co-located. This is **over-engineering for the current architecture** and is deferred until microservice extraction requires it.
 
@@ -260,7 +258,7 @@ Introduce a **dedicated query port** (`OrderQueryService`) in the application la
 
 **Critical distinction**: The query port lives in `core/application/ports/`, NOT in `core/domain/repositories/`. The domain repository is a write-side concept — it manages aggregates and must never depend on presentation DTOs.
 
-**Cross-context read access**: In a single-database modular monolith, the query adapter may perform controlled `LEFT JOIN` operations against tables owned by other bounded contexts (e.g., `customers`, `payments`, `products`) to resolve names alongside IDs. This is a **deliberate pragmatic compromise** acceptable only because:
+**Cross-context read access**: In a single-database modular monolith, the query adapter may perform controlled `LEFT JOIN` operations against tables owned by other bounded contexts (e.g., `users`, `payments`, `products`) to resolve names alongside IDs. This is a **deliberate pragmatic compromise** acceptable only because:
 
 1. The query path never mutates state — reads can't break invariants
 2. The query adapter never hydrates domain entities — no aggregate construction

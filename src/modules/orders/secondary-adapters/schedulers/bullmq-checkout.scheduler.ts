@@ -184,7 +184,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
 
   /**
    * Schedule post-confirmation flow for COD orders.
-   * Called after manual confirmation (e.g., phone call with customer).
+   * Called after manual confirmation (e.g., phone call with user).
    * Triggers: CONFIRM_RESERVATION -> CLEAR_CART -> FINALIZE
    */
   async schedulePostConfirmation(

@@ -15,8 +15,8 @@ export abstract class PaymentRepository {
   abstract findByGatewayPaymentIntentId(
     paymentIntentId: string,
   ): Promise<Result<Payment, RepositoryError>>;
-  abstract findByCustomerId(
-    customerId: number,
+  abstract findByUserId(
+    userId: number,
     page?: number,
     limit?: number,
   ): Promise<Result<Payment[], RepositoryError>>;

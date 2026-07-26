@@ -19,7 +19,7 @@ export class OrderMapper {
   static toDomain(entity: OrderEntity): Order {
     const props: OrderProps = {
       id: entity.id,
-      customerId: entity.customerId,
+      userId: entity.userId,
       paymentId: entity.paymentId,
       paymentMethod: entity.paymentMethod,
       shippingAddressId: entity.shippingAddressId,
@@ -30,7 +30,7 @@ export class OrderMapper {
         (itemEntity): OrderItemProps =>
           OrderItemMapper.toDomain(itemEntity).toPrimitives(),
       ),
-      customerNotes: entity.customerNotes,
+      userNotes: entity.userNotes,
       status: entity.status,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -44,14 +44,14 @@ export class OrderMapper {
 
     const orderPayload: OrderCreate = {
       id: primitives.id || 0,
-      customerId: primitives.customerId,
+      userId: primitives.userId,
       paymentId: primitives.paymentId,
       paymentMethod: primitives.paymentMethod,
       shippingAddressId: primitives.shippingAddressId || 0,
       shippingAddress: ShippingAddressMapper.toEntity(
         primitives.shippingAddress,
       ),
-      customerNotes: primitives.customerNotes ?? '',
+      userNotes: primitives.userNotes ?? '',
       status: primitives.status,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,

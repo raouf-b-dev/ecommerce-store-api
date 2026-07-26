@@ -50,9 +50,9 @@ export class PaymentResponseDto {
 
   @ApiPropertyOptional({
     example: 123,
-    description: 'Customer ID',
+    description: 'User ID',
   })
-  customerId?: number;
+  userId?: number;
 
   @ApiPropertyOptional({
     example: '**** 1234',

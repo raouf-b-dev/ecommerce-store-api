@@ -47,7 +47,7 @@ The core domain has zero dependency on infrastructure. All external concerns (da
 
 ### Modular Monolith
 
-All 9 modules (Auth, Carts, Customers, Health, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
+All 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
 
 **Location**: `src/modules/`
 
@@ -123,7 +123,7 @@ Relational persistence with TypeORM, including automated migration CLI scripts f
 
 ### RSA JWT Authentication (RS256 + JWKS)
 
-Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /auth/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
+Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /authentication/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
 
 **Location**: `src/infrastructure/jwt/` · **Deep-dive**: [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md)
 
@@ -131,7 +131,7 @@ Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a
 
 Session-based refresh tokens stored in PostgreSQL with SHA-256 hashing. Supports: token rotation (old token invalidated on use), single-session logout, and all-session logout. Refresh tokens are transported via HttpOnly cookies.
 
-**Location**: `src/modules/auth/core/domain/entities/`, `src/modules/auth/secondary-adapters/`
+**Location**: `src/modules/authentication/core/domain/entities/`, `src/modules/authentication/secondary-adapters/`
 
 ### Helmet Security Headers
 
@@ -161,17 +161,17 @@ All DTOs use `class-validator` decorators for type-safe input validation. Pagina
 
 Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
 
-**Location**: `src/modules/auth/`, `src/infrastructure/guards/`
+**Location**: `src/modules/identity/`
 
 ### Forced Credential Rotation (mustChangePassword)
 
 Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
 
-**Location**: `src/modules/auth/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+**Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
 ### Rate Limiting & Throttling
 
-Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/auth/login`.
+Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/authentication/login`.
 
 **Location**: `src/infrastructure/throttler/`
 

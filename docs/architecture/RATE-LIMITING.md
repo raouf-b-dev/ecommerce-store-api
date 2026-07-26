@@ -270,13 +270,13 @@ X-RateLimit-Reset: 1620000060
 
 Rate limits must be scoped to an identity. The key determines _who_ is being limited:
 
-| Key              | Use Case                        | Pros                          | Cons                                                        |
-| ---------------- | ------------------------------- | ----------------------------- | ----------------------------------------------------------- |
-| **IP Address**   | Unauthenticated endpoints       | Simple, no auth required      | Shared IPs (NAT, corporate proxies) penalize innocent users |
-| **API Key**      | Public APIs with key-based auth | Precise per-consumer tracking | Requires key management infrastructure                      |
-| **User ID**      | Authenticated endpoints         | Accurate per-user limiting    | Requires authentication to have already succeeded           |
-| **IP + User ID** | Defense in depth                | Covers both auth and pre-auth | More complex key management                                 |
-| **Tenant ID**    | Multi-tenant SaaS               | Fair per-tenant limiting      | Requires tenant context extraction                          |
+| Key              | Use Case                                  | Pros                                              | Cons                                                        |
+| ---------------- | ----------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------- |
+| **IP Address**   | Unauthenticated endpoints                 | Simple, no authentication required                | Shared IPs (NAT, corporate proxies) penalize innocent users |
+| **API Key**      | Public APIs with key-based authentication | Precise per-consumer tracking                     | Requires key management infrastructure                      |
+| **User ID**      | Authenticated endpoints                   | Accurate per-user limiting                        | Requires authentication to have already succeeded           |
+| **IP + User ID** | Defense in depth                          | Covers both authentication and pre-authentication | More complex key management                                 |
+| **Tenant ID**    | Multi-tenant SaaS                         | Fair per-tenant limiting                          | Requires tenant context extraction                          |
 
 > **Best practice**: Use **IP** for unauthenticated endpoints (login, registration) and **User ID** or **Tenant ID** for authenticated endpoints.
 

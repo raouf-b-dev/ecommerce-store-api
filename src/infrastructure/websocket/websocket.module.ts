@@ -1,11 +1,11 @@
 import { Module, Global } from '@nestjs/common';
 import { WebsocketConnectionGateway } from './websocket.connection.gateway';
-import { AuthModule } from 'src/modules/auth/auth.module';
+import { AuthenticationModule } from 'src/modules/authentication/authentication.module';
 import { WsAuthService } from './services/ws-auth.service';
 
 @Global()
 @Module({
-  imports: [AuthModule],
+  imports: [AuthenticationModule],
   providers: [WebsocketConnectionGateway, WsAuthService],
   exports: [WebsocketConnectionGateway, WsAuthService],
 })

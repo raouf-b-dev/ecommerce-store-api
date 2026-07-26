@@ -1,16 +1,25 @@
 import { Order } from '../entities/order';
-import { CheckoutCartInfo } from '../interfaces/checkout-cart';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 import { OrderItemProps } from '../entities/order-items';
+export interface OrderCartItemInput {
+  productId: number;
+  productName: string;
+  price: number;
+  quantity: number;
+}
+
+export interface OrderCartInput {
+  items: OrderCartItemInput[];
+}
 
 export class OrderFactory {
   createFromCart(props: {
-    cart: CheckoutCartInfo;
-    customerId: number;
+    cart: OrderCartInput;
+    userId: number;
     shippingAddress: ShippingAddressProps;
     paymentMethod: PaymentMethodType;
-    customerNotes?: string;
+    userNotes?: string;
     orderId?: number | null;
   }): Order {
     const items = props.cart.items.map((item) => {
@@ -27,11 +36,11 @@ export class OrderFactory {
     const id = props.orderId || null;
     return Order.create({
       id,
-      customerId: props.customerId,
+      userId: props.userId,
       paymentMethod: props.paymentMethod,
       items,
       shippingAddress: props.shippingAddress,
-      customerNotes: props.customerNotes || null,
+      customerNotes: props.userNotes || null,
     });
   }
 }

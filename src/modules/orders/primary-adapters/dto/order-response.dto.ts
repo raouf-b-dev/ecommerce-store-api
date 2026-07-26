@@ -7,7 +7,7 @@ export class OrderResponseDto {
   id: string;
 
   @ApiProperty({ example: 'cust_456' })
-  customerId: string;
+  userId: string;
 
   @ApiProperty({ type: [OrderItemResponseDto] })
   items: OrderItemResponseDto[];

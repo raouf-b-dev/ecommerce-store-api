@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CartGateway } from '../../core/application/ports/cart.gateway';
+import {
+  CartGateway,
+  CheckoutCartInfo,
+  CheckoutCartItem,
+} from '../../core/application/ports/cart.gateway';
 import { GetCartUseCase } from '../../../carts/core/application/usecases/get-cart/get-cart.usecase';
 import { ClearCartUseCase } from '../../../carts/core/application/usecases/clear-cart/clear-cart.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
@@ -8,10 +12,6 @@ import { UseCaseError } from '../../../../shared-kernel/domain/exceptions/usecas
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CallerContext } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import {
-  CheckoutCartInfo,
-  CheckoutCartItem,
-} from '../../core/domain/interfaces/checkout-cart';
 
 @Injectable()
 export class ModuleCartGateway implements CartGateway {
@@ -98,7 +98,7 @@ export class ModuleCartGateway implements CartGateway {
 
   private toCheckoutCartInfo(cart: {
     id: number | null;
-    customerId: number | null;
+    userId: number | null;
     items?: Array<{
       productId: number;
       productName: string;
@@ -108,7 +108,7 @@ export class ModuleCartGateway implements CartGateway {
   }): CheckoutCartInfo {
     return {
       id: cart.id,
-      customerId: cart.customerId,
+      userId: cart.userId,
       items: (cart.items || []).map(
         (item): CheckoutCartItem => ({
           productId: item.productId,

@@ -16,7 +16,7 @@ export interface CreatePaymentIntentCommand {
   currency: string;
   paymentMethod: PaymentMethodType;
   orderId: number;
-  customerId: number;
+  userId: number;
   metadata?: Record<string, any>;
 }
 
@@ -67,7 +67,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
       dto.amount,
       dto.currency,
       dto.paymentMethod,
-      dto.customerId,
+      dto.userId,
       dto.metadata ? JSON.stringify(dto.metadata) : undefined,
     );
 

@@ -3,7 +3,6 @@
 import { ProcessOrderUseCase } from './process-order.usecase';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { MockOrderRepository } from '../../../../testing';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';

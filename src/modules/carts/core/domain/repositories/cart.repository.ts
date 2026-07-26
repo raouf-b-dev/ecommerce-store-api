@@ -2,15 +2,13 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Cart } from '../entities/cart';
 export interface CreateCartInput {
-  customerId?: number;
+  userId?: number;
   sessionId?: number;
 }
 
 export abstract class CartRepository {
   abstract findById(id: number): Promise<Result<Cart, RepositoryError>>;
-  abstract findByCustomerId(
-    customerId: number,
-  ): Promise<Result<Cart, RepositoryError>>;
+  abstract findByuserId(userId: number): Promise<Result<Cart, RepositoryError>>;
   abstract findBySessionId(
     sessionId: number,
   ): Promise<Result<Cart, RepositoryError>>;

@@ -4,8 +4,8 @@ import {
 } from '../interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
-  CUSTOMER_ACCESS_PERMISSIONS,
-  CUSTOMER_MUTATION_PERMISSIONS,
+  USER_ACCESS_PERMISSIONS,
+  USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from './owned-resource-access.policy';
 
@@ -21,10 +21,9 @@ describe('OwnedResourceAccessPolicy', () => {
       ).toBe(true);
     });
 
-    it('allows staff with view-all permission regardless of customerId', () => {
+    it('allows staff with view-all permission regardless of userId', () => {
       const admin = createUserCallerContext({
         userId: 1,
-        customerId: null,
         role: 'ADMIN',
         permissions: new Set(['view_all_orders']),
       });
@@ -40,8 +39,7 @@ describe('OwnedResourceAccessPolicy', () => {
 
     it('allows customers to view their own resources', () => {
       const customer = createUserCallerContext({
-        userId: 2,
-        customerId: 123,
+        userId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -55,10 +53,9 @@ describe('OwnedResourceAccessPolicy', () => {
       ).toBe(true);
     });
 
-    it('denies access when resource has no customerId', () => {
+    it('denies access when resource has no userId', () => {
       const customer = createUserCallerContext({
         userId: 2,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -75,7 +72,6 @@ describe('OwnedResourceAccessPolicy', () => {
     it('denies customers viewing another customers resources', () => {
       const customer = createUserCallerContext({
         userId: 2,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -89,10 +85,9 @@ describe('OwnedResourceAccessPolicy', () => {
       ).toBe(false);
     });
 
-    it('denies customer role with null customerId even when view_own is present', () => {
+    it('denies customer role with null userId even when view_own is present', () => {
       const brokenCustomer = createUserCallerContext({
-        userId: 2,
-        customerId: null,
+        userId: null as any,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -111,24 +106,22 @@ describe('OwnedResourceAccessPolicy', () => {
     it('allows admin with manage_all permission', () => {
       const admin = createUserCallerContext({
         userId: 1,
-        customerId: null,
         role: 'ADMIN',
-        permissions: new Set(['manage_customers']),
+        permissions: new Set(['manage_users']),
       });
 
       expect(
         OwnedResourceAccessPolicy.canMutateResource(
           admin,
           999,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(true);
     });
 
     it('allows customers to mutate their own resources', () => {
       const customer = createUserCallerContext({
-        userId: 2,
-        customerId: 123,
+        userId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['manage_own_addresses']),
       });
@@ -137,7 +130,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           123,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(true);
     });
@@ -145,7 +138,6 @@ describe('OwnedResourceAccessPolicy', () => {
     it('denies customers mutating another customers resources', () => {
       const customer = createUserCallerContext({
         userId: 2,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['manage_own_addresses']),
       });
@@ -154,15 +146,14 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           456,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(false);
     });
 
-    it('denies when resource has no customerId', () => {
+    it('denies when resource has no userId', () => {
       const customer = createUserCallerContext({
         userId: 2,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['manage_own_addresses']),
       });
@@ -171,7 +162,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canMutateResource(
           customer,
           null,
-          CUSTOMER_MUTATION_PERMISSIONS,
+          USER_MUTATION_PERMISSIONS,
         ),
       ).toBe(false);
     });
@@ -180,8 +171,7 @@ describe('OwnedResourceAccessPolicy', () => {
   describe('customer view permissions', () => {
     it('allows customers to view their own profile', () => {
       const customer = createUserCallerContext({
-        userId: 2,
-        customerId: 123,
+        userId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_profile']),
       });
@@ -190,7 +180,7 @@ describe('OwnedResourceAccessPolicy', () => {
         OwnedResourceAccessPolicy.canViewResource(
           customer,
           123,
-          CUSTOMER_ACCESS_PERMISSIONS,
+          USER_ACCESS_PERMISSIONS,
         ),
       ).toBe(true);
     });
@@ -200,7 +190,6 @@ describe('OwnedResourceAccessPolicy', () => {
     it('forces customer scope and ignores tampered query params', () => {
       const customer = createUserCallerContext({
         userId: 2,
-        customerId: 123,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -211,13 +200,12 @@ describe('OwnedResourceAccessPolicy', () => {
         999,
       );
 
-      expect(scope).toEqual({ allowed: true, customerId: 123 });
+      expect(scope).toEqual({ allowed: true, userId: 2 });
     });
 
-    it('denies list access when customer role has no customerId', () => {
+    it('denies list access when customer role has no userId', () => {
       const brokenCustomer = createUserCallerContext({
-        userId: 2,
-        customerId: null,
+        userId: null as any,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });

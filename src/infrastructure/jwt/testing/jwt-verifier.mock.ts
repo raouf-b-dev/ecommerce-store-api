@@ -21,7 +21,6 @@ export class MockJwtVerifierService implements JwtVerifierPort {
       sub: '1',
       email: 'test@example.com',
       role: 'CUSTOMER',
-      customerId: 1,
       iss: 'ecommerce-api',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,

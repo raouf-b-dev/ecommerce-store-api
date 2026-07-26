@@ -24,14 +24,14 @@
 
 | Phase | Name                         | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                         | Location                                                                                       |
 | :---- | :--------------------------- | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **0** | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Auth, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                             | `src/modules/`, `src/infrastructure/`                                                          |
-| **1** | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Auth · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                   | `src/modules/orders/`, `src/modules/carts/`                                                    |
+| **0** | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Authentication, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                   | `src/modules/`, `src/infrastructure/`                                                          |
+| **1** | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                         | `src/modules/orders/`, `src/modules/carts/`                                                    |
 | **2** | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection · idempotency fail-open on Redis errors                                                                                                                                                                          | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                        |
 | **3** | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                               | `src/modules/*/secondary-adapters/repositories/cached-*/`                                      |
 | **4** | Test Suite Foundation        | ✅ Done | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                     | `src/modules/*/`, `src/testing/`, `test/architecture/`                                         |
 | **5** | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                | `data-source.ts`, `package.json`                                                               |
 | **6** | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                    | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                            |
-| **7** | Security & Auth              | ✅ Done | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · auth endpoint `@Throttle`                                           | `src/main.ts`, `src/modules/auth/`, `src/infrastructure/jwt/`                                  |
+| **7** | Security & Authentication    | ✅ Done | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                 | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                        |
 | **8** | Observability & SaaS         | ✅ Done | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`) | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md` |
 | **9** | Local DB Seeding             | ✅ Done | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                             | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                        |
 
@@ -69,32 +69,32 @@
 
 ### Required (production gate)
 
-| Blocker                                                                          | Phase  | Why it blocks prod                                                                                                                                                                                               |
-| :------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| IDOR / ownership on carts, orders, payments, customers                           | **10** | **Addressed**                                                                                                                                                                                                    |
-| Customer-scoped permissions (`view_own_orders`, cart session strategy)           | **10** | **Addressed** — customer role permissions and cart session validation are implemented                                                                                                                            |
-| OWASP audit doc + dependency scanning in CI (`npm audit`, fail on high/critical) | **10** | No systematic security review or supply-chain gate in pipeline (CI runs lint/test/build only)                                                                                                                    |
-| Production PII/payment data masking verified in logs                             | **10** | `GlobalExceptionFilter` hides stacks in prod; payment payloads and customer PII in structured logs still need audit                                                                                              |
-| Optimistic concurrency (`version` column + 409 on conflict)                      | **11** | Concurrent admin/customer updates can silently overwrite each other — no `@VersionColumn()` on core entities yet                                                                                                 |
-| Hot-path query audit (`EXPLAIN ANALYZE`) + missing composite/partial indexes     | **11** | Theory docs exist under `docs/data/` and orders indexes were trimmed (Phase 5), but prod-scale filter queries are not benchmarked                                                                                |
-| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs               | **12** | `ListOrdersUseCase` / `GetOrderUseCase` hydrate full domain aggregates via write repositories; frontends must N+1-fetch customer names and product SKUs per row — poor UX and unsustainable API chatter at scale |
-| Cross-context SQL JOINs on read path (orders ↔ customers, products)             | **12** | Without single-query projections, every admin order list forces the client to resolve IDs — the N+1 problem is delegated to the UI                                                                               |
-| Concurrent checkout integration proof (pessimistic lock regression)              | **13** | Pessimistic locking is implemented in `PostgresReservationRepository`, but no real-DB concurrent worker test proves oversell prevention                                                                          |
-| Repository integration tests (Testcontainers / CI Postgres)                      | **13** | Repository specs exist but use mocked TypeORM repositories — transactional paths untested against real PostgreSQL                                                                                                |
-| E2E tests — auth lifecycle + IDOR denial + checkout SAGA + CQRS list shapes      | **13** | `test/security-idor.e2e-spec.ts` exists with HTTP IDOR denial proofs; remaining auth/SAGA/CQRS E2E coverage is scheduled                                                                                         |
-| Initial database baseline migration generated & verified                         | **14** | No files under `src/infrastructure/database/migrations/`; non-prod still uses `synchronize: true`                                                                                                                |
-| Redis graceful degradation (cache, throttler, idempotency, sessions)             | **14** | Idempotency fails open; cached repositories and throttler still throw or fail when Redis is unavailable                                                                                                          |
-| Backup, restore, release, and rollback runbooks + smoke test runner              | **14** | No verified recovery path or post-deploy health verification scripts                                                                                                                                             |
-| Public demo/staging deploy with migrations (not `synchronize`)                   | **14** | Demo deployment belongs at the production gate once Phases 10–13 are complete                                                                                                                                    |
+| Blocker                                                                               | Phase  | Why it blocks prod                                                                                                                                                                                               |
+| :------------------------------------------------------------------------------------ | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IDOR / ownership on carts, orders, payments, customers                                | **10** | **Addressed**                                                                                                                                                                                                    |
+| User-scoped permissions (`view_own_profile`, `manage_own_addresses`)                  | **10** | **Addressed** — user role permissions and session validation are implemented                                                                                                                                     |
+| OWASP audit doc + dependency scanning in CI (`npm audit`, fail on high/critical)      | **10** | No systematic security review or supply-chain gate in pipeline (CI runs lint/test/build only)                                                                                                                    |
+| Production PII/payment data masking verified in logs                                  | **10** | `GlobalExceptionFilter` hides stacks in prod; payment payloads and customer PII in structured logs still need audit                                                                                              |
+| Optimistic concurrency (`version` column + 409 on conflict)                           | **11** | Concurrent admin/customer updates can silently overwrite each other — no `@VersionColumn()` on core entities yet                                                                                                 |
+| Hot-path query audit (`EXPLAIN ANALYZE`) + missing composite/partial indexes          | **11** | Theory docs exist under `docs/data/` and orders indexes were trimmed (Phase 5), but prod-scale filter queries are not benchmarked                                                                                |
+| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                    | **12** | `ListOrdersUseCase` / `GetOrderUseCase` hydrate full domain aggregates via write repositories; frontends must N+1-fetch customer names and product SKUs per row — poor UX and unsustainable API chatter at scale |
+| Cross-context SQL JOINs on read path (orders ↔ customers, products)                  | **12** | Without single-query projections, every admin order list forces the client to resolve IDs — the N+1 problem is delegated to the UI                                                                               |
+| Concurrent checkout integration proof (pessimistic lock regression)                   | **13** | Pessimistic locking is implemented in `PostgresReservationRepository`, but no real-DB concurrent worker test proves oversell prevention                                                                          |
+| Repository integration tests (Testcontainers / CI Postgres)                           | **13** | Repository specs exist but use mocked TypeORM repositories — transactional paths untested against real PostgreSQL                                                                                                |
+| E2E tests — authentication lifecycle + IDOR denial + checkout SAGA + CQRS list shapes | **13** | `test/security-idor.e2e-spec.ts` exists with HTTP IDOR denial proofs; remaining authentication/SAGA/CQRS E2E coverage is scheduled                                                                               |
+| Initial database baseline migration generated & verified                              | **14** | No files under `src/infrastructure/database/migrations/`; non-prod still uses `synchronize: true`                                                                                                                |
+| Redis graceful degradation (cache, throttler, idempotency, sessions)                  | **14** | Idempotency fails open; cached repositories and throttler still throw or fail when Redis is unavailable                                                                                                          |
+| Backup, restore, release, and rollback runbooks + smoke test runner                   | **14** | No verified recovery path or post-deploy health verification scripts                                                                                                                                             |
+| Public demo/staging deploy with migrations (not `synchronize`)                        | **14** | Demo deployment belongs at the production gate once Phases 10–13 are complete                                                                                                                                    |
 
 ### Recommended before multi-instance / high-traffic production
 
-| Blocker                                                      | Phase  | Why                                                                              |
-| :----------------------------------------------------------- | :----- | :------------------------------------------------------------------------------- |
-| Transactional outbox for domain events                       | **15** | In-process events can be lost if the process crashes after DB commit             |
-| User-scoped adaptive rate limiting (beyond auth `@Throttle`) | **10** | Global IP-based limiter; checkout and catalog abuse needs per-user keys          |
-| k6 load baseline + p95 SLO thresholds                        | **16** | Unknown capacity limits before traffic spikes (flash sales, concurrent checkout) |
-| Alert rules + RED/USE Grafana dashboards                     | **16** | Observability stack exists (Phase 8) but actionable alerting is incomplete       |
+| Blocker                                                                | Phase  | Why                                                                              |
+| :--------------------------------------------------------------------- | :----- | :------------------------------------------------------------------------------- |
+| Transactional outbox for domain events                                 | **15** | In-process events can be lost if the process crashes after DB commit             |
+| User-scoped adaptive rate limiting (beyond authentication `@Throttle`) | **10** | Global IP-based limiter; checkout and catalog abuse needs per-user keys          |
+| k6 load baseline + p95 SLO thresholds                                  | **16** | Unknown capacity limits before traffic spikes (flash sales, concurrent checkout) |
+| Alert rules + RED/USE Grafana dashboards                               | **16** | Observability stack exists (Phase 8) but actionable alerting is incomplete       |
 
 ---
 
@@ -102,7 +102,7 @@
 
 > **Goal**: Close access-control gaps left after Phase 7 transport/input hardening. **Complete before Phase 13 E2E tests** so security scenarios can be asserted in the test suite.
 >
-> Phase 7 covered Helmet, CORS, sanitization, validation, RBAC guards, refresh rotation, and auth rate limits. Phase 10 covers **who can access which records** — especially customer-owned carts, orders, and payments.
+> Phase 7 covered Helmet, CORS, sanitization, validation, RBAC guards, refresh rotation, and authentication rate limits. Phase 10 covers **who can access which records** — especially customer-owned carts, orders, and payments.
 
 ---
 
@@ -151,7 +151,7 @@
 **Scope**:
 
 - Scope rate limit keys using authenticated user IDs (`sub` / `customerId`) in addition to IP addresses once `AuthGuard` has run.
-- Apply stricter limits to `/auth/login`, `/auth/refresh` (extend existing `@Throttle` on auth controller), `/orders/checkout`, and cart mutation endpoints.
+- Apply stricter limits to `/authentication/login`, `/authentication/refresh` (extend existing `@Throttle` on auth controller), `/orders/checkout`, and cart mutation endpoints.
 - Expose standard rate limit headers on throttled responses.
 
 **Location**: `src/infrastructure/throttler/`
@@ -303,7 +303,7 @@
 **Scope**:
 
 - _Done:_ Shared helpers under `src/testing/helpers/` (`result-assertion`, `database-test`, `e2e-test-app`, `auth-test`, `clock-test`, `nestjs-context.fixture`).
-- _Remaining:_ Create `testing/index.ts` barrel files for **Auth**, **Carts**, **Inventory**, and **Payments** modules to unify exports.
+- _Remaining:_ Create `testing/index.ts` barrel files for **Authentication**, **Carts**, **Inventory**, and **Payments** modules to unify exports.
 
 **Location**: `src/testing/`, `src/modules/*/testing/`
 
@@ -332,7 +332,7 @@
 
 **Scope**:
 
-- _Status:_ Done for **Auth** module (5 specs). Missing for Orders, Carts, Customers, Inventory, Payments, Products.
+- _Status:_ Done for **Authentication** module (5 specs). Missing for Orders, Carts, Customers, Inventory, Payments, Products.
 - Cover order state transitions, cart invariants, address promotion, reservation TTL, payment capture/refund rules, product SKU/price invariants.
 
 **Location**: `src/modules/*/core/domain/entities/`
@@ -380,8 +380,8 @@
 
 **Scope**:
 
-- _Status:_ `test/auth.e2e-spec.ts` exists but mocks use cases — not a full-app integration test.
-- Auth: register → login → token usage → refresh (with rotation) → logout
+- _Status:_ `test/authentication.e2e-spec.ts` exists but mocks use cases — not a full-app integration test.
+- Authentication: register → login → token usage → refresh (with rotation) → logout
 - **Security**: Customer A blocked from reading/updating Customer B's carts, orders, and payments (Phase 10 IDOR)
 - Catalog & purchase: browse → add to cart → checkout SAGA success
 - **SAGA compensation**: payment failure → inventory released, order cancelled, compensations logged
@@ -667,7 +667,7 @@
 
 **What**: Wire `user_permission_overrides` schema into guards for granular store-admin exceptions.
 
-**Location**: `src/modules/auth/`
+**Location**: `src/modules/authentication/`
 
 ---
 

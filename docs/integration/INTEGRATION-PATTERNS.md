@@ -126,18 +126,18 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 ### Architecture
 
 ```
-┌─── DOWNSTREAM (Orders) ──────────────┐     ┌─── UPSTREAM (Customers) ───┐
+┌─── DOWNSTREAM (Orders) ──────────────┐     ┌─── UPSTREAM (Access) ──────┐
 │                                       │     │                            │
-│  CheckoutUseCase                      │     │  FindCustomerUseCase       │
-│  └── customerGateway.getCustomer()    │     │         ▲                  │
+│  CheckoutUseCase                      │     │  GetUserUseCase            │
+│  └── userGateway.validateUser()       │     │         ▲                  │
 │                                       │     │         │                  │
 │  Port (application layer)             │     │         │                  │
-│  └── ports/customer.gateway.ts        │     │         │                  │
-│      (defines CustomerCheckoutInfo)   │     │         │                  │
+│  └── ports/user.gateway.ts            │     │         │                  │
+│      (defines CheckoutUserInfoResult) │     │         │                  │
 │                                       │     │         │                  │
 │  ACL Adapter (secondary adapter)      │     │         │                  │
-│  └── gateways/customer-gateway ───────┼────►│    (direct call in        │
-│      (translates Customer → DTO)      │     │     monolith, HTTP in     │
+│  └── gateways/user-gateway ───────────┼────►│    (direct call in        │
+│      (translates User → DTO)          │     │     monolith, HTTP in     │
 │                                       │     │     microservices)         │
 └───────────────────────────────────────┘     └────────────────────────────┘
 ```
@@ -151,15 +151,16 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 
 ### Example Implementation (E-Commerce — 7 Gateways)
 
-| Gateway                       | Downstream → Upstream | What It Wraps                          |
-| ----------------------------- | --------------------- | -------------------------------------- |
-| `CustomerGateway`             | Orders → Customers    | Customer lookup for checkout           |
-| `CartGateway`                 | Orders → Carts        | Cart retrieval and clearing            |
-| `InventoryReservationGateway` | Orders → Inventory    | Stock reservation/release/confirmation |
-| `PaymentGateway`              | Orders → Payments     | Payment processing                     |
-| `ProductGateway`              | Carts → Products      | Product validation for cart items      |
-| `InventoryGateway`            | Carts → Inventory     | Stock availability checks              |
-| `CustomerGateway`             | Auth → Customers      | Customer creation on registration      |
+| Gateway                       | Downstream → Upstream          | What It Wraps                          |
+| ----------------------------- | ------------------------------ | -------------------------------------- |
+| `UserGateway`                 | Orders → Identity              | User validation and details lookup     |
+| `CartGateway`                 | Orders → Carts                 | Cart retrieval and clearing            |
+| `InventoryReservationGateway` | Orders → Inventory             | Stock reservation/release/confirmation |
+| `PaymentGateway`              | Orders → Payments              | Payment processing                     |
+| `ProductGateway`              | Carts → Products               | Product validation for cart items      |
+| `InventoryGateway`            | Carts → Inventory              | Stock availability checks              |
+| `IdentityGateway`             | Authentication → Identity      | User identity lookup and user creation |
+| `AuthorizationGateway`        | Authentication → Authorization | Role resolution and role assignment    |
 
 ### Microservice Migration
 

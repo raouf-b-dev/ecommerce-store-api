@@ -1,0 +1,144 @@
+import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
+import { Result } from '../../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
+import { SessionToken } from '../../../domain/entities/session-token';
+import { JwtSignerPort } from '../../ports/jwt-signer.port';
+import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
+import { IdentityGateway } from '../../ports/identity.gateway';
+import { AuthorizationGateway } from '../../ports/authorization.gateway';
+
+@Injectable()
+export class RefreshTokenUseCase extends UseCase<
+  { refreshToken: string },
+  { accessToken: string; refreshToken: string },
+  UseCaseError
+> {
+  private readonly logger = new Logger(RefreshTokenUseCase.name);
+
+  constructor(
+    private readonly jwtVerifierService: JwtVerifierPort,
+    private readonly jwtSignerService: JwtSignerPort,
+    private readonly sessionTokenRepository: SessionTokenRepository,
+    private readonly identityGateway: IdentityGateway,
+    private readonly authorizationGateway: AuthorizationGateway,
+  ) {
+    super();
+  }
+
+  async execute(input: {
+    refreshToken: string;
+  }): Promise<
+    Result<{ accessToken: string; refreshToken: string }, UseCaseError>
+  > {
+    try {
+      // 1. Verify token signature and expiration
+      const payload = await this.jwtVerifierService.verifyRefreshToken(
+        input.refreshToken,
+      );
+      const sessionId = payload.sessionId;
+      const userId = Number(payload.sub);
+
+      // 2. Find session in DB
+      const sessionResult =
+        await this.sessionTokenRepository.findById(sessionId);
+      if (sessionResult.isFailure || !sessionResult.value) {
+        return ErrorFactory.UseCaseError(
+          'Session not found',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const session = sessionResult.value;
+
+      // 3. Check if session is valid (not revoked / not expired)
+      if (!session.isValid) {
+        return ErrorFactory.UseCaseError(
+          'Invalid or expired session',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      // 3b. Reuse detection — token hash mismatch on a valid session means
+      //     a previously rotated token is being replayed (stolen token attack)
+      if (!session.isTokenMatch(input.refreshToken)) {
+        this.logger.warn(
+          `Refresh token reuse detected for user ${userId}. Revoking all sessions.`,
+        );
+        await this.sessionTokenRepository.revokeAllForUser(userId);
+
+        return ErrorFactory.UseCaseError(
+          'Refresh token reuse detected. All sessions revoked.',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      // 4. Revoke old session
+      session.revoke();
+      await this.sessionTokenRepository.save(session);
+
+      // 5. Load user to get updated access token payload
+      const userResult = await this.identityGateway.findUserById(userId);
+      if (userResult.isFailure || !userResult.value) {
+        return ErrorFactory.UseCaseError(
+          'User not found',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const user = userResult.value;
+
+      // 6. Resolve role code for JWT payload (PermissionsGuard requires the string code)
+      const roleResult = await this.authorizationGateway.findRoleByUserId(
+        user.id,
+      );
+      if (roleResult.isFailure || !roleResult.value) {
+        return ErrorFactory.UseCaseError(
+          'Failed to resolve user role',
+          null,
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      // 7. Generate new tokens
+      const newAccessToken = await this.jwtSignerService.signAccessToken({
+        sub: user.id,
+        email: user.email,
+        role: roleResult.value.code,
+      });
+
+      const {
+        token: newRefreshToken,
+        sessionId: newSessionId,
+        expiresAt,
+      } = await this.jwtSignerService.signRefreshTokenWithSession({
+        sub: user.id,
+      });
+
+      // 7. Save new session
+      const newSession = SessionToken.create(
+        user.id,
+        newRefreshToken,
+        expiresAt,
+        newSessionId,
+      );
+
+      await this.sessionTokenRepository.save(newSession);
+
+      return Result.success({
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      });
+    } catch {
+      return ErrorFactory.UseCaseError(
+        'Invalid refresh token',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+  }
+}

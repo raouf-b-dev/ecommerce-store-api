@@ -34,7 +34,7 @@ describe('SanitizeInterceptor', () => {
 
   it('should strip HTML from nested object fields', () => {
     const body = {
-      customer: {
+      user: {
         name: '<b>Bold Name</b>',
         address: {
           street: '<img src=x onerror=alert(1)>123 Main St',
@@ -46,8 +46,8 @@ describe('SanitizeInterceptor', () => {
     interceptor.intercept(context, createMockCallHandler());
 
     const request = context.switchToHttp().getRequest();
-    expect(request.body.customer.name).toBe('Bold Name');
-    expect(request.body.customer.address.street).toBe('123 Main St');
+    expect(request.body.user.name).toBe('Bold Name');
+    expect(request.body.user.address.street).toBe('123 Main St');
   });
 
   it('should strip HTML from array elements', () => {

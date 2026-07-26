@@ -25,7 +25,7 @@ A task is done only if all are true:
 
 - Change conforms to [DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md).
 - Integration style conforms to [INTEGRATION-PATTERNS.md](../integration/INTEGRATION-PATTERNS.md).
-- Secrets and auth paths conform to [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md).
+- Secrets and authentication paths conform to [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md).
 
 ### Gate C: Verification
 

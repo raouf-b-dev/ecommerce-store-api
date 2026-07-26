@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { SeedSuperAdminUseCase } from '../src/modules/auth/core/application/seed/seed-super-admin.usecase';
+import { SeedSuperAdminUseCase } from '../src/modules/authentication/core/application/seed/seed-super-admin.usecase';
 import * as readline from 'readline';
 import { maskEmail } from './utils/log-helpers';
 

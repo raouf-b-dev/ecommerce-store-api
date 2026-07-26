@@ -8,7 +8,7 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
-import { Result } from '../../../../../../shared-kernel/domain/result';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('CreatePaymentUseCase', () => {
@@ -17,7 +17,6 @@ describe('CreatePaymentUseCase', () => {
 
   const customerContext = createUserCallerContext({
     userId: 2,
-    customerId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_orders']),
   });
@@ -68,7 +67,7 @@ describe('CreatePaymentUseCase', () => {
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 123,
+      userId: 2,
       paymentMethodDetails: { cardLast4: '4242' },
     };
 
@@ -77,7 +76,7 @@ describe('CreatePaymentUseCase', () => {
       amount: dto.amount,
       currency: dto.currency,
       paymentMethod: dto.paymentMethod,
-      customerId: dto.customerId,
+      userId: dto.userId,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
@@ -99,7 +98,7 @@ describe('CreatePaymentUseCase', () => {
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 123,
+      userId: 2,
     };
 
     paymentRepository.mockSaveFailure('Save failed');
@@ -109,6 +108,10 @@ describe('CreatePaymentUseCase', () => {
       callerContext: customerContext,
     });
 
-    ResultAssertionHelper.assertResultFailure(result, 'Save failed');
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Save failed',
+      RepositoryError,
+    );
   });
 });

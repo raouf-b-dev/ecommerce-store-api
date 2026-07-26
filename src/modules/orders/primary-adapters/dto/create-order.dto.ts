@@ -19,7 +19,7 @@ export class CreateOrderDto {
     description: 'Customer ID placing the order',
   })
   @IsNumber()
-  customerId: number;
+  userId: number;
 
   @ApiProperty({
     type: [CreateOrderItemDto],

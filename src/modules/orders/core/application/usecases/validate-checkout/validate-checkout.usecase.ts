@@ -11,10 +11,9 @@ import {
   ShippingAddressInput,
 } from '../../services/shipping-address-resolver';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
-import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
-import { CustomerGateway } from '../../ports/customer.gateway';
-import { CartGateway } from '../../ports/cart.gateway';
-import { CheckoutCartInfo } from '../../../domain/interfaces/checkout-cart';
+import { CheckoutUserInfoResult } from '../../ports/user.gateway';
+import { UserGateway } from '../../ports/user.gateway';
+import { CartGateway, CheckoutCartInfo } from '../../ports/cart.gateway';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
@@ -26,10 +25,10 @@ export interface ValidateCheckoutInput {
 }
 
 export interface ValidatedCheckoutContext {
-  customer: CheckoutCustomerInfo | null;
+  user: CheckoutUserInfoResult | null;
   cart: CheckoutCartInfo;
   shippingAddress: ShippingAddressProps;
-  customerId: number;
+  userId: number;
 }
 
 @Injectable()
@@ -39,7 +38,7 @@ export class ValidateCheckoutUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    private readonly customerGateway: CustomerGateway,
+    private readonly userGateway: UserGateway,
     private readonly cartGateway: CartGateway,
     private readonly addressResolver: ShippingAddressResolver,
   ) {
@@ -54,7 +53,7 @@ export class ValidateCheckoutUseCase extends UseCase<
     if (!isSystemCaller(callerContext)) {
       if (
         !callerContext ||
-        callerContext.customerId === null ||
+        callerContext.userId === null ||
         !callerContext.permissions.has('manage_own_cart')
       ) {
         return ErrorFactory.UseCaseError(
@@ -78,23 +77,21 @@ export class ValidateCheckoutUseCase extends UseCase<
     }
 
     if (isSystemCaller(callerContext)) {
-      if (!cart.customerId) {
+      if (!cart.userId) {
         return ErrorFactory.UseCaseError(
           'Checkout requires a customer account',
         );
       }
 
-      const customerResult = await this.customerGateway.validateCustomer(
-        cart.customerId,
-      );
-      if (isFailure(customerResult)) {
-        return Result.failure(customerResult.error);
+      const userResult = await this.userGateway.getUserInfo(cart.userId);
+      if (isFailure(userResult)) {
+        return Result.failure(userResult.error);
       }
 
-      const customer = customerResult.value;
+      const user = userResult.value;
       const resolvedAddress = this.addressResolver.resolve(
         shippingAddress,
-        customer,
+        user,
       );
 
       if (!resolvedAddress) {
@@ -104,26 +101,22 @@ export class ValidateCheckoutUseCase extends UseCase<
       }
 
       return Result.success({
-        customer,
+        user,
         cart,
         shippingAddress: resolvedAddress,
-        customerId: cart.customerId,
+        userId: cart.userId,
       });
     }
 
-    const customerId = callerContext.customerId!;
+    const userId = callerContext.userId;
 
-    const customerResult =
-      await this.customerGateway.validateCustomer(customerId);
-    if (isFailure(customerResult)) {
-      return Result.failure(customerResult.error);
+    const userResult = await this.userGateway.getUserInfo(userId);
+    if (isFailure(userResult)) {
+      return Result.failure(userResult.error);
     }
-    const customer = customerResult.value;
+    const user = userResult.value;
 
-    const resolvedAddress = this.addressResolver.resolve(
-      shippingAddress,
-      customer,
-    );
+    const resolvedAddress = this.addressResolver.resolve(shippingAddress, user);
 
     if (!resolvedAddress) {
       return ErrorFactory.UseCaseError(
@@ -132,10 +125,10 @@ export class ValidateCheckoutUseCase extends UseCase<
     }
 
     return Result.success({
-      customer,
+      user,
       cart,
       shippingAddress: resolvedAddress,
-      customerId,
+      userId,
     });
   }
 }

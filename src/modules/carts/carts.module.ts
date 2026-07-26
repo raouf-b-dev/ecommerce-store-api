@@ -9,6 +9,7 @@ import {
   CACHED_CART_REPOSITORY,
   INVENTORY_GATEWAY,
   PRODUCT_GATEWAY,
+  CART_SESSION_TOKEN_GATEWAY,
 } from './carts.token';
 import { PostgresCartRepository } from './secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository';
 import { CachedCartRepository } from './secondary-adapters/repositories/cached-cart-repository/cached.cart-repository';
@@ -27,6 +28,9 @@ import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge
 import { ProductsModule } from '../products/products.module';
 import { CartOwnershipValidator } from './core/application/services/cart-ownership.validator';
 import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
+import { CartSessionTokenGateway } from './core/application/ports/session-token.gateway';
+import { ModuleCartSessionTokenGateway } from './secondary-adapters/adapters/module-session-token.gateway';
+import { AuthenticationModule } from '../authentication/authentication.module';
 
 @Module({
   imports: [
@@ -35,6 +39,7 @@ import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/ca
     RedisModule, // Keep default code duplication
     InventoryModule,
     ProductsModule,
+    AuthenticationModule,
   ],
   controllers: [CartsController],
   providers: [
@@ -62,6 +67,11 @@ import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/ca
 
     // Gateways
     {
+      provide: CART_SESSION_TOKEN_GATEWAY,
+      useClass: ModuleCartSessionTokenGateway,
+    },
+
+    {
       provide: INVENTORY_GATEWAY,
       useClass: ModuleInventoryGateway,
     },
@@ -74,6 +84,11 @@ import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/ca
     {
       provide: CartRepository,
       useExisting: CACHED_CART_REPOSITORY,
+    },
+
+    {
+      provide: CartSessionTokenGateway,
+      useExisting: CART_SESSION_TOKEN_GATEWAY,
     },
 
     // Helpers

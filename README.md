@@ -35,15 +35,15 @@ Designed as a reference for how to build enterprise backend systems that are tes
 
 Start with the areas that demonstrate the most critical patterns:
 
-| What to inspect                  | Why it matters                                            | Where to look                                                                 |
-| :------------------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------------------- |
-| Checkout orchestration           | Shows multi-step business workflow and failure handling   | `src/modules/orders/core/application/usecases/checkout/`                      |
-| SAGA compensation                | Shows stock release/refund/cancel behavior after failures | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`  |
-| Auth, RBAC, and refresh sessions | Shows production-style security decisions                 | `src/modules/auth/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md)         |
-| Redis idempotency                | Shows retry-safe critical API behavior                    | `src/infrastructure/idempotency/`                                             |
-| Hexagonal boundaries             | Shows domain/application isolation from adapters          | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/` |
-| Observability                    | Shows logs, metrics, traces, and dashboards               | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`       |
-| Tests and factories              | Shows maintainability and behavior coverage               | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                  |
+| What to inspect                  | Why it matters                                            | Where to look                                                                   |
+| :------------------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| Checkout orchestration           | Shows multi-step business workflow and failure handling   | `src/modules/orders/core/application/usecases/checkout/`                        |
+| SAGA compensation                | Shows stock release/refund/cancel behavior after failures | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`    |
+| Auth, RBAC, and refresh sessions | Shows production-style security decisions                 | `src/modules/authentication/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
+| Redis idempotency                | Shows retry-safe critical API behavior                    | `src/infrastructure/idempotency/`                                               |
+| Hexagonal boundaries             | Shows domain/application isolation from adapters          | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/`   |
+| Observability                    | Shows logs, metrics, traces, and dashboards               | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`         |
+| Tests and factories              | Shows maintainability and behavior coverage               | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                    |
 
 The shortest walkthrough is: **Auth/RBAC → Checkout use case → SAGA compensation → Redis idempotency → tests**.
 
@@ -161,8 +161,8 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 | Strategic DDD          | Subdomains, Bounded Contexts, Context Mapping             | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
 | Tactical DDD           | Entities, Value Objects, Aggregates, Domain Services      | `src/modules/*/core/domain/`                                        |
 | Hexagonal Architecture | Ports & Adapters — infrastructure-agnostic domain core    | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
-| ACL Gateway Pattern    | 7 gateway ports decoupling 8 bounded contexts             | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
-| Modular Monolith       | 9 isolated modules, microservice-extraction ready         | `src/modules/`                                                      |
+| ACL Gateway Pattern    | 8 gateway ports decoupling 10 bounded contexts            | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
+| Modular Monolith       | 10 isolated modules, microservice-extraction ready        | `src/modules/`                                                      |
 | Result Pattern         | Functional `Result<T, E>` replacing exception-driven flow | `src/shared-kernel/domain/`                                         |
 
 ### 🔄 Distributed Systems
@@ -187,8 +187,8 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 | Feature                | Description                                                  | Location                                         |
 | :--------------------- | :----------------------------------------------------------- | :----------------------------------------------- |
 | RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
-| Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/auth/`                              |
-| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/auth/core/domain/`                  |
+| Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/authentication/`                    |
+| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/authorization/`                     |
 | API Rate Limiting      | Redis-backed throttling via `@nestjs/throttler`              | `src/infrastructure/throttler/`                  |
 | Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                                    |
 | CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                                    |

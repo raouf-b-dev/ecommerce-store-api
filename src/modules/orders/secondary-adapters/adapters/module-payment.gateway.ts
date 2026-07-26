@@ -51,7 +51,7 @@ export class ModulePaymentGateway implements PaymentGateway {
       amount: input.amount,
       currency: input.currency,
       paymentMethod: input.paymentMethod,
-      customerId: input.customerId,
+      userId: input.userId,
       metadata: input.metadata,
     });
 

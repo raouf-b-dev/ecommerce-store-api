@@ -15,7 +15,7 @@ A comprehensive, framework-agnostic guide to API versioning strategy for RESTful
 ```http
 GET /v1/products
 GET /v1/orders/123
-POST /v1/auth/login
+POST /v1/authentication/login
 ```
 
 | Strategy     | Example                                     | Pros                                                | Cons                                          |
@@ -63,13 +63,13 @@ export class HealthController { ... }
 
 ### 1.3 What Gets Versioned vs What Doesn't
 
-| Category                                    | Versioned?                | Rationale                                                  |
-| ------------------------------------------- | ------------------------- | ---------------------------------------------------------- |
-| **Business endpoints** (CRUD, auth, etc.)   | ✅ Yes                    | API contract — breaking changes require a new version      |
-| **Health checks** (`/health`, `/readiness`) | ❌ No (`VERSION_NEUTRAL`) | Infrastructure probes — must be stable across all versions |
-| **Metrics** (`/metrics`)                    | ❌ No (`VERSION_NEUTRAL`) | Prometheus/monitoring scrape targets — version-agnostic    |
-| **Documentation** (`/api/docs`)             | ❌ No                     | Static content served outside the controller layer         |
-| **WebSocket Gateways**                      | ❌ No                     | Socket protocols use their own versioning mechanisms       |
+| Category                                            | Versioned?                | Rationale                                                  |
+| --------------------------------------------------- | ------------------------- | ---------------------------------------------------------- |
+| **Business endpoints** (CRUD, Authentication, etc.) | ✅ Yes                    | API contract — breaking changes require a new version      |
+| **Health checks** (`/health`, `/readiness`)         | ❌ No (`VERSION_NEUTRAL`) | Infrastructure probes — must be stable across all versions |
+| **Metrics** (`/metrics`)                            | ❌ No (`VERSION_NEUTRAL`) | Prometheus/monitoring scrape targets — version-agnostic    |
+| **Documentation** (`/api/docs`)                     | ❌ No                     | Static content served outside the controller layer         |
+| **WebSocket Gateways**                              | ❌ No                     | Socket protocols use their own versioning mechanisms       |
 
 ---
 

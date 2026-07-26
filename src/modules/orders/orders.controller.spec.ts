@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrderTestFactory } from './testing/factories/order.factory';
-import { OrderCommandTestFactory } from './testing/factories/create-order-dto.factory';
+import { OrderDtoTestFactory } from './testing/factories/order-dto.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
@@ -53,9 +53,8 @@ describe('OrdersController', () => {
     deliveredOrder = OrderTestFactory.createOrderEntity({
       status: OrderStatus.DELIVERED,
     });
-    createDeliveredOrderDto =
-      OrderCommandTestFactory.createDeliverOrderCommand();
-    const cmd = OrderCommandTestFactory.createCreditCardCheckoutCommand();
+    createDeliveredOrderDto = OrderDtoTestFactory.createDeliverOrderCommand();
+    const cmd = OrderDtoTestFactory.createCreditCardCheckoutCommand();
     checkoutDto = {
       ...cmd,
       shippingAddress: cmd.shippingAddress
@@ -69,7 +68,6 @@ describe('OrdersController', () => {
     callerContext = {
       kind: 'user',
       userId: 123,
-      customerId: 100,
       role: 'CUSTOMER',
       permissions: new Set(['manage_own_cart']),
     };

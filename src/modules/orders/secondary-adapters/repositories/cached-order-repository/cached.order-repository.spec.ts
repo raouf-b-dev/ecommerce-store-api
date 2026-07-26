@@ -18,7 +18,7 @@ import {
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
 import { Order } from '../../../core/domain/entities/order';
-import { OrderCommandTestFactory } from '../../../testing/factories/create-order-dto.factory';
+import { OrderDtoTestFactory } from '../../../testing/factories/order-dto.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
@@ -118,8 +118,7 @@ describe('CachedOrderRepository', () => {
     });
 
     it('should save cash on delivery order', async () => {
-      const codDto =
-        OrderCommandTestFactory.createCashOnDeliveryCheckoutCommand();
+      const codDto = OrderDtoTestFactory.createCashOnDeliveryCheckoutCommand();
       const codOrder = Order.fromPrimitives(
         OrderTestFactory.createCashOnDeliveryOrder(),
       );
@@ -486,7 +485,7 @@ describe('CachedOrderRepository', () => {
     it('should fetch from postgres when filters are applied', async () => {
       const dto: ListOrdersQuery = {
         status: OrderStatus.PENDING_PAYMENT,
-        customerId: 1,
+        userId: 1,
       };
 
       postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));

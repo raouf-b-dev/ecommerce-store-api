@@ -33,9 +33,9 @@ An `EXPLAIN` plan is a tree of **plan nodes**. Execution flows from leaf nodes (
 
 ```sql
 EXPLAIN ANALYZE
-SELECT o.id, o.status, c.email
+SELECT o.id, o.status, u.email
 FROM orders o
-JOIN customers c ON o.customer_id = c.id
+JOIN users u ON o.user_id = u.id
 WHERE o.status = 'PENDING_PAYMENT'
 ORDER BY o.created_at DESC
 LIMIT 10;
@@ -48,10 +48,10 @@ Limit  (cost=0.71..12.45 rows=10 width=68) (actual time=0.089..0.134 rows=10 loo
               on orders o  (cost=0.42..385.43 rows=1000 width=52)
               (actual time=0.065..0.078 rows=10 loops=1)
               Filter: (status = 'PENDING_PAYMENT')
-        ->  Index Scan using customers_pkey
-              on customers c  (cost=0.29..0.79 rows=1 width=36)
+        ->  Index Scan using users_pkey
+              on users u  (cost=0.29..0.79 rows=1 width=36)
               (actual time=0.004..0.004 rows=1 loops=10)
-              Index Cond: (id = o.customer_id)
+              Index Cond: (id = o.user_id)
 Planning Time: 0.285 ms
 Execution Time: 0.168 ms
 ```
@@ -102,7 +102,7 @@ The N+1 problem occurs when an ORM executes 1 query to fetch N parents, then N q
 ```
 N+1 Problem — Order with OrderItems:
 
-Query 1:   SELECT * FROM orders WHERE customer_id = ?;          → 100 rows
+Query 1:   SELECT * FROM orders WHERE user_id = ?;          → 100 rows
 Query 2:   SELECT * FROM order_items WHERE order_id = 'order_1'; → 3 rows
 Query 3:   SELECT * FROM order_items WHERE order_id = 'order_2'; → 5 rows
 ...

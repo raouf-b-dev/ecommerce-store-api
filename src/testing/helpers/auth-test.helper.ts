@@ -22,7 +22,7 @@ export class AuthTestHelper {
     expectedStatus: number = HttpStatus.OK,
   ): Promise<AuthSession> {
     const response = await http
-      .post('/auth/login')
+      .post('/authentication/login')
       .send(credentials)
       .expect(expectedStatus);
 
@@ -46,7 +46,7 @@ export class AuthTestHelper {
     expectedStatus: number = HttpStatus.OK,
   ): Promise<string> {
     const response = await http
-      .post('/auth/refresh')
+      .post('/authentication/refresh')
       .send({ refreshToken })
       .expect(expectedStatus);
 
@@ -66,7 +66,7 @@ export class AuthTestHelper {
     expectedStatus: number = HttpStatus.NO_CONTENT,
   ): Promise<void> {
     await http
-      .post('/auth/logout')
+      .post('/authentication/logout')
       .set('Authorization', this.bearer(accessToken))
       .expect(expectedStatus);
   }
@@ -77,7 +77,7 @@ export class AuthTestHelper {
     expectedStatus: number = HttpStatus.NO_CONTENT,
   ): Promise<void> {
     await http
-      .post('/auth/logout-all')
+      .post('/authentication/logout-all')
       .set('Authorization', this.bearer(accessToken))
       .expect(expectedStatus);
   }

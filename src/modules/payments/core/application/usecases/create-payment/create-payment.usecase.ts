@@ -31,7 +31,7 @@ export interface CreatePaymentCommand {
   paymentMethod: PaymentMethodType;
   currency: string;
   paymentMethodDetails?: PaymentMethodDetailsInput;
-  customerId?: number;
+  userId?: number;
 }
 
 export interface CreatePaymentInput {
@@ -60,12 +60,12 @@ export class CreatePaymentUseCase extends UseCase<
     if (
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
-        dto.customerId || null,
+        dto.userId || null,
         ORDER_ACCESS_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(
-        `User ${dto.customerId} is not allowed to create a payment for order ${dto.orderId}`,
+        `User ${dto.userId} is not allowed to create a payment for order ${dto.orderId}`,
       );
     }
 
@@ -94,7 +94,7 @@ export class CreatePaymentUseCase extends UseCase<
       dto.amount,
       dto.currency,
       dto.paymentMethod,
-      dto.customerId,
+      dto.userId,
       dto.paymentMethodDetails
         ? JSON.stringify(dto.paymentMethodDetails)
         : undefined,

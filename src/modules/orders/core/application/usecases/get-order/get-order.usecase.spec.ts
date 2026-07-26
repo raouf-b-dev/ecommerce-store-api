@@ -17,14 +17,12 @@ describe('GetOrderUseCase', () => {
 
   const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
-    customerId: null,
     role: 'ADMIN',
     permissions: new Set(['view_all_orders']),
   });
 
   const customerContext: CallerContext = createUserCallerContext({
     userId: 2,
-    customerId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_orders']),
   });
@@ -43,7 +41,7 @@ describe('GetOrderUseCase', () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 456,
+        userId: 456,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -64,7 +62,7 @@ describe('GetOrderUseCase', () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 123,
+        userId: 2,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -76,14 +74,14 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
-      expect(result.value.customerId).toBe(123);
+      expect(result.value.userId).toBe(2);
     });
 
     it('should return Failure (404) when order belongs to a different customer', async () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 456,
+        userId: 456,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -100,18 +98,17 @@ describe('GetOrderUseCase', () => {
       );
     });
 
-    it('should return Failure (404) when customer role has no customerId bound', async () => {
+    it('should return Failure (404) when customer role has no userId bound', async () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 123,
+        userId: 123,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
 
       const brokenCustomerContext = createUserCallerContext({
         userId: 2,
-        customerId: null,
         role: 'CUSTOMER',
         permissions: new Set(['view_own_orders']),
       });
@@ -132,7 +129,7 @@ describe('GetOrderUseCase', () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 456,
+        userId: 456,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -143,7 +140,7 @@ describe('GetOrderUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.customerId).toBe(456);
+      expect(result.value.userId).toBe(456);
     });
 
     it('should return Failure with UseCaseError when order is not found', async () => {
@@ -182,7 +179,7 @@ describe('GetOrderUseCase', () => {
       const orderId = 1;
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
-        customerId: 123,
+        userId: 2,
       });
 
       mockOrderRepository.mockSuccessfulFind(orderPrimitives);
@@ -194,7 +191,7 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
-      expect(result.value.customerId).toBe(123);
+      expect(result.value.userId).toBe(2);
     });
   });
 
@@ -202,7 +199,7 @@ describe('GetOrderUseCase', () => {
     it('should retrieve order with custom configuration', async () => {
       const orderPrimitives = new OrderBuilder()
         .withId(1)
-        .withCustomerId(123)
+        .withuserId(2)
         .withItems(5)
         .withStatus(OrderStatus.PENDING_PAYMENT)
         .build();
@@ -216,7 +213,7 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(1);
-      expect(result.value.customerId).toBe(123);
+      expect(result.value.userId).toBe(2);
       expect(result.value.items).toHaveLength(5);
     });
   });

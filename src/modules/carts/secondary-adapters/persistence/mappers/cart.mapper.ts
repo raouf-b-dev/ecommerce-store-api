@@ -17,7 +17,7 @@ export class CartMapper {
   static toDomain(entity: CartEntity): Cart {
     const props: CartProps = {
       id: entity.id || null,
-      customerId: entity.customerId,
+      userId: entity.userId,
       sessionId: entity.sessionId,
       items: entity.items.map((item) => CartItemMapper.toDomain(item).props),
       createdAt: entity.createdAt,
@@ -32,7 +32,7 @@ export class CartMapper {
 
     const cartPayload: CartCreate = {
       id: primitives.id || 0,
-      customerId: primitives.customerId,
+      userId: primitives.userId,
       sessionId: primitives.sessionId,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,

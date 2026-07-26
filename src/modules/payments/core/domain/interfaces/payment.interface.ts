@@ -6,7 +6,7 @@ import { IRefund } from './refund.interface';
 export interface IPayment {
   id: number | null;
   orderId: number;
-  customerId: number | null;
+  userId: number | null;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
