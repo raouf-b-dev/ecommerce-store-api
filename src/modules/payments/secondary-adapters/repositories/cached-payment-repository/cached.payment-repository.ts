@@ -115,12 +115,12 @@ export class CachedPaymentRepository implements PaymentRepository {
     }
   }
 
-  async findByCustomerId(
-    customerId: number,
+  async findByUserId(
+    userId: number,
     page?: number,
     limit?: number,
   ): Promise<Result<Payment[], RepositoryError>> {
-    return this.postgresRepo.findByCustomerId(customerId, page, limit);
+    return this.postgresRepo.findByUserId(userId, page, limit);
   }
 
   async findByGatewayPaymentIntentId(

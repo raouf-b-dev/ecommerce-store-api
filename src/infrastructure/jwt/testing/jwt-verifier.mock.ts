@@ -1,13 +1,18 @@
-import { JwtVerifierPort } from '../ports/jwt-verifier.port';
+import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
-} from '../types/jwt-payload.types';
+  VerifiedCartSessionPayload,
+} from '../../../shared-kernel/domain/interfaces/jwt-payload.interface';
 
 export class MockJwtVerifierService implements JwtVerifierPort {
   verifyAccessToken = jest.fn<Promise<VerifiedAccessTokenPayload>, [string]>();
   verifyRefreshToken = jest.fn<
     Promise<VerifiedRefreshTokenPayload>,
+    [string]
+  >();
+  verifyCartSessionToken = jest.fn<
+    Promise<VerifiedCartSessionPayload>,
     [string]
   >();
 
@@ -16,7 +21,6 @@ export class MockJwtVerifierService implements JwtVerifierPort {
       sub: '1',
       email: 'test@example.com',
       role: 'CUSTOMER',
-      customerId: 1,
       iss: 'ecommerce-api',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -26,6 +30,15 @@ export class MockJwtVerifierService implements JwtVerifierPort {
       sub: '1',
       sessionId: 'mock-session-id',
       typ: 'refresh',
+      iss: 'ecommerce-api',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,
+    });
+
+    this.verifyCartSessionToken.mockResolvedValue({
+      sub: 'guest',
+      cartId: 1,
+      typ: 'cart_session',
       iss: 'ecommerce-api',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 7,

@@ -1,4 +1,4 @@
-import { Logger, Module, forwardRef } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
 import { PaymentEntity } from './secondary-adapters/orm/payment.schema';
@@ -23,7 +23,7 @@ import { HandlePaymentWebhookService } from './core/application/services/handle-
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
-import { AuthModule } from '../auth/auth.module';
+import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
 import { CodGateway } from './secondary-adapters/gateways/cod.gateway';
 import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
@@ -41,7 +41,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
   imports: [
     TypeOrmModule.forFeature([PaymentEntity, RefundEntity]),
     RedisModule,
-    AuthModule,
+    AuthenticationModule,
     BullModule.registerQueue({
       name: 'payment-events',
     }),

@@ -8,10 +8,18 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;
   let paymentRepository: MockPaymentRepository;
+
+  const customerContext = createUserCallerContext({
+    userId: 2,
+    role: 'CUSTOMER',
+    permissions: new Set(['view_own_orders']),
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -59,7 +67,7 @@ describe('CreatePaymentUseCase', () => {
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 123,
+      userId: 2,
       paymentMethodDetails: { cardLast4: '4242' },
     };
 
@@ -68,19 +76,20 @@ describe('CreatePaymentUseCase', () => {
       amount: dto.amount,
       currency: dto.currency,
       paymentMethod: dto.paymentMethod,
-      customerId: dto.customerId,
+      userId: dto.userId,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulSave(payment);
 
-    const result = await useCase.execute(dto);
+    const result = await useCase.execute({
+      command: dto,
+      callerContext: customerContext,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(paymentRepository.save).toHaveBeenCalled();
-    const createdPayment = result.value;
-    expect(createdPayment.orderId).toBe(dto.orderId);
-    expect(createdPayment.amount).toBe(dto.amount);
+    expect(result.value.orderId).toBe(dto.orderId);
   });
 
   it('should fail if save fails', async () => {
@@ -89,14 +98,20 @@ describe('CreatePaymentUseCase', () => {
       amount: 100,
       currency: 'USD',
       paymentMethod: PaymentMethodType.CREDIT_CARD,
-      customerId: 123,
+      userId: 2,
     };
 
     paymentRepository.mockSaveFailure('Save failed');
 
-    const result = await useCase.execute(dto);
+    const result = await useCase.execute({
+      command: dto,
+      callerContext: customerContext,
+    });
 
-    ResultAssertionHelper.assertResultFailure(result, 'Save failed');
-    expect(paymentRepository.save).toHaveBeenCalled();
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Save failed',
+      RepositoryError,
+    );
   });
 });

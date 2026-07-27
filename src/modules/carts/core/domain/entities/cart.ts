@@ -8,7 +8,7 @@ import { CartItem, CartItemProps } from './cart-item';
 
 export interface CartProps {
   id: number | null;
-  customerId: number | null;
+  userId: number | null;
   sessionId: number | null;
   items: CartItemProps[];
   createdAt: Date | null;
@@ -17,7 +17,7 @@ export interface CartProps {
 
 export class Cart implements ICart {
   private readonly _id: number | null;
-  private _customerId: number | null;
+  private _userId: number | null;
   private _sessionId: number | null;
   private _items: CartItem[];
   private readonly _createdAt: Date;
@@ -28,7 +28,7 @@ export class Cart implements ICart {
     if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id ? props.id : null;
-    this._customerId = props.customerId ? props.customerId : null;
+    this._userId = props.userId ? props.userId : null;
     this._sessionId = props.sessionId ? props.sessionId : null;
     this._items = props.items.map((item) => CartItem.fromPrimitives(item));
     this._createdAt = props.createdAt || new Date();
@@ -37,14 +37,14 @@ export class Cart implements ICart {
 
   private validateProps(props: CartProps): Result<void, DomainError> {
     // ID is optional for new carts
-    if (!props.customerId && !props.sessionId) {
+    if (!props.userId && !props.sessionId) {
       return ErrorFactory.DomainError(
-        'Either customerId or sessionId must be provided',
+        'Either userId or sessionId must be provided',
       );
     }
-    if (props.customerId && props.sessionId) {
+    if (props.userId && props.sessionId) {
       return ErrorFactory.DomainError(
-        'Cart cannot have both customerId and sessionId',
+        'Cart cannot have both userId and sessionId',
       );
     }
 
@@ -60,8 +60,8 @@ export class Cart implements ICart {
     return this._id;
   }
 
-  get customerId(): number | null {
-    return this._customerId;
+  get userId(): number | null {
+    return this._userId;
   }
 
   get sessionId(): number | null {
@@ -226,35 +226,33 @@ export class Cart implements ICart {
     return Result.success(undefined);
   }
 
-  convertToUserCart(customerId: number): Result<void, DomainError> {
-    if (!customerId) {
-      return ErrorFactory.DomainError('Customer ID is required');
+  convertToUserCart(userId: number): Result<void, DomainError> {
+    if (!userId) {
+      return ErrorFactory.DomainError('User ID is required');
     }
-    if (this._customerId) {
-      return ErrorFactory.DomainError(
-        'Cart is already associated with a customer',
-      );
+    if (this._userId) {
+      return ErrorFactory.DomainError('Cart is already associated with a user');
     }
 
-    this._customerId = customerId;
+    this._userId = userId;
     this._sessionId = null;
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
 
   isGuestCart(): boolean {
-    return this._sessionId !== null && this._customerId === null;
+    return this._sessionId !== null && this._userId === null;
   }
 
   isUserCart(): boolean {
-    return this._customerId !== null && this._sessionId === null;
+    return this._userId !== null && this._sessionId === null;
   }
 
   // Serialization
   toPrimitives(): ICart {
     return {
       id: this._id,
-      customerId: this._customerId,
+      userId: this._userId,
       sessionId: this._sessionId,
       items: this._items.map((item) => item.toPrimitives()),
       itemCount: this.itemCount,
@@ -275,7 +273,7 @@ export class Cart implements ICart {
   get props(): CartProps {
     return {
       id: this._id,
-      customerId: this._customerId,
+      userId: this._userId,
       sessionId: this._sessionId,
       items: this._items,
       createdAt: this._createdAt,
@@ -294,7 +292,7 @@ export class Cart implements ICart {
   static createGuestCart(sessionId: number): Cart {
     return new Cart({
       id: null,
-      customerId: null,
+      userId: null,
       sessionId,
       items: [],
       createdAt: new Date(),
@@ -302,10 +300,10 @@ export class Cart implements ICart {
     });
   }
 
-  static createUserCart(customerId: number): Cart {
+  static createUserCart(userId: number): Cart {
     return new Cart({
       id: null,
-      customerId,
+      userId,
       sessionId: null,
       items: [],
       createdAt: new Date(),

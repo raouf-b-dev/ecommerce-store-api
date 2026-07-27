@@ -12,6 +12,11 @@ import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  ORDER_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 
 export interface PaymentMethodDetailsInput {
   token?: string;
@@ -26,12 +31,17 @@ export interface CreatePaymentCommand {
   paymentMethod: PaymentMethodType;
   currency: string;
   paymentMethodDetails?: PaymentMethodDetailsInput;
-  customerId?: number;
+  userId?: number;
+}
+
+export interface CreatePaymentInput {
+  command: CreatePaymentCommand;
+  callerContext: CallerContext;
 }
 
 @Injectable()
 export class CreatePaymentUseCase extends UseCase<
-  CreatePaymentCommand,
+  CreatePaymentInput,
   IPayment,
   UseCaseError
 > {
@@ -43,12 +53,24 @@ export class CreatePaymentUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreatePaymentCommand,
+    input: CreatePaymentInput,
   ): Promise<Result<IPayment, UseCaseError>> {
-    // 1. Get Gateway
+    const { command: dto, callerContext } = input;
+
+    if (
+      !OwnedResourceAccessPolicy.canViewResource(
+        callerContext,
+        dto.userId || null,
+        ORDER_ACCESS_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `User ${dto.userId} is not allowed to create a payment for order ${dto.orderId}`,
+      );
+    }
+
     const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
 
-    // 2. Authorize Payment
     const authResult = await gateway.authorize(
       dto.amount,
       dto.currency,
@@ -66,45 +88,30 @@ export class CreatePaymentUseCase extends UseCase<
 
     const paymentResult = authResult.value;
 
-    // 3. Create Payment Entity
     const payment = Payment.create(
       null,
       dto.orderId,
       dto.amount,
       dto.currency,
       dto.paymentMethod,
-      dto.customerId,
+      dto.userId,
       dto.paymentMethodDetails
         ? JSON.stringify(dto.paymentMethodDetails)
         : undefined,
     );
 
-    // Update status and transaction ID from gateway result
     if (paymentResult.success) {
       if (paymentResult.transactionId) {
-        // Map status
         if (paymentResult.status === PaymentStatusType.AUTHORIZED) {
           payment.authorize(paymentResult.transactionId);
         } else if (paymentResult.status === PaymentStatusType.CAPTURED) {
-          payment.authorize(paymentResult.transactionId); // Must authorize first if pending
+          payment.authorize(paymentResult.transactionId);
           payment.capture();
         } else if (paymentResult.status === PaymentStatusType.COMPLETED) {
           payment.complete(paymentResult.transactionId);
-        } else if (
-          paymentResult.status === PaymentStatusType.NOT_REQUIRED_YET
-        ) {
-          // Do nothing, stays pending or specific status for COD?
-          // COD createCOD sets it to NOT_REQUIRED_YET.
-          // If we used Payment.create, it's PENDING.
-          // We might need to handle COD specifically or just leave it PENDING/AUTHORIZED depending on flow.
-          // For COD, gateway returned AUTHORIZED (in my stub).
-          // So it will call authorize.
         }
       }
     } else {
-      // If gateway failed but didn't throw (e.g. declined), we might want to save as FAILED.
-      // But current logic returns failure if authResult is failure.
-      // If authResult is success but paymentResult.success is false (soft decline?), we handle it here.
       if (paymentResult.errorMessage) {
         payment.fail(paymentResult.errorMessage);
       } else {

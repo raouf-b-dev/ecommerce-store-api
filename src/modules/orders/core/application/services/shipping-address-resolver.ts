@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CheckoutCustomerInfo } from '../ports/customer.gateway';
+import { CheckoutUserInfoResult } from '../ports/user.gateway';
 import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';
 
 export interface ShippingAddressInput {
@@ -17,11 +17,11 @@ export interface ShippingAddressInput {
 
 /**
  * Application Service — Resolves shipping address from either an explicit DTO
- * or the customer's default address.
+ * or the user's default address.
  *
  * Lives in the application layer because it coordinates between:
  *  - An incoming DTO (primary adapter input)
- *  - A gateway DTO (CheckoutCustomerInfo from CustomerGateway port)
+ *  - A gateway DTO (CheckoutUserInfo from UserGateway port)
  *  - A domain value object (ShippingAddressProps)
  *
  * The domain layer only ever sees ShippingAddressProps — it has no knowledge
@@ -31,51 +31,51 @@ export interface ShippingAddressInput {
 export class ShippingAddressResolver {
   resolveFromDto(
     dto: ShippingAddressInput,
-    customer: CheckoutCustomerInfo,
+    user: CheckoutUserInfoResult,
   ): ShippingAddressProps {
     return {
       id: 0,
-      firstName: dto.firstName ?? customer.firstName,
-      lastName: dto.lastName ?? customer.lastName,
+      firstName: dto.firstName ?? user.firstName,
+      lastName: dto.lastName ?? user.lastName,
       street: dto.street,
       street2: dto.street2 ?? null,
       city: dto.city,
       state: dto.state,
       postalCode: dto.postalCode,
       country: dto.country,
-      phone: dto.phone ?? customer.phone,
+      phone: dto.phone ?? user.phone,
       deliveryInstructions: dto.deliveryInstructions ?? null,
     };
   }
 
   resolveFromDefault(
-    customer: CheckoutCustomerInfo,
+    user: CheckoutUserInfoResult,
   ): ShippingAddressProps | null {
-    const defaultAddress = customer.addresses.find((addr) => addr.isDefault);
+    const defaultAddress = user.addresses.find((addr) => addr.isDefault);
     if (!defaultAddress) return null;
 
     return {
       id: defaultAddress.id!,
-      firstName: customer.firstName,
-      lastName: customer.lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       street: defaultAddress.street,
       street2: defaultAddress.street2,
       city: defaultAddress.city,
       state: defaultAddress.state,
       postalCode: defaultAddress.postalCode,
       country: defaultAddress.country,
-      phone: customer.phone,
+      phone: user.phone,
       deliveryInstructions: defaultAddress.deliveryInstructions,
     };
   }
 
   resolve(
     dto: ShippingAddressInput | undefined,
-    customer: CheckoutCustomerInfo,
+    user: CheckoutUserInfoResult,
   ): ShippingAddressProps | null {
     if (dto) {
-      return this.resolveFromDto(dto, customer);
+      return this.resolveFromDto(dto, user);
     }
-    return this.resolveFromDefault(customer);
+    return this.resolveFromDefault(user);
   }
 }

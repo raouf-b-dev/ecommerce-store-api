@@ -21,8 +21,8 @@ export class OrderBuilder {
     return this;
   }
 
-  withCustomerId(customerId: number): this {
-    this.order.customerId = customerId;
+  withuserId(userId: number): this {
+    this.order.userId = userId;
     return this;
   }
 

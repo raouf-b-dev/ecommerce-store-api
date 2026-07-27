@@ -1,6 +1,6 @@
 {
   "name": "ecommerce-store-api",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Enterprise-level NestJS e-commerce API built with Domain-Driven Design, SAGA pattern with compensation, Redis Stack, and BullMQ for background processing",
   "author": "Abderaouf .B <https://github.com/raouf-b-dev>",
   "private": false,
@@ -38,6 +38,8 @@
     "build:clean": "npm run clean && nest build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "test:arch": "cross-env NODE_ENV=test jest --config ./test/architecture/jest-arch.json",
+    "lint:arch": "npm run test:arch",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\" \"test/**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\" \"test/**/*.{ts,js,json,md}\"",
     "test": "cross-env NODE_ENV=test jest",
@@ -89,6 +91,7 @@
     "migration:show:test": "cross-env NODE_ENV=test npm run typeorm -- -d ./data-source.ts migration:show",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "seed:admin": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed-admin.ts",
+    "db:seed": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed.ts",
     "env:init": "node scripts/generate-envs.js",
     "env:init:force": "node scripts/generate-envs.js --overwrite",
     "env:init:dev": "node scripts/generate-envs.js --envs=development",
@@ -97,7 +100,8 @@
     "env:init:test": "node scripts/generate-envs.js --envs=test",
     "prepare": "husky",
     "skills:sync": "node scripts/sync-agent-skills.js",
-    "skills:check": "node scripts/sync-agent-skills.js --check"
+    "skills:check": "node scripts/sync-agent-skills.js --check",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.2.0",
@@ -154,9 +158,11 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/ms": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^6.0.2",
+    "archunit": "^2.3.0",
     "cross-env": "^7.0.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",

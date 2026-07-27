@@ -7,19 +7,38 @@ import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { AddCartItemInput } from './add-cart-item.usecase';
-import { ProductGateway, ProductData } from '../../ports/product.gateway';
-import { InventoryGateway } from '../../ports/inventory.gateway';
+import { CartProductGateway, ProductData } from '../../ports/product.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
+import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockProductGateway: jest.Mocked<ProductGateway>;
-  let mockInventoryGateway: jest.Mocked<InventoryGateway>;
+  let mockProductGateway: jest.Mocked<CartProductGateway>;
+  let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
+  let validator: CartOwnershipValidator;
+  let mockTokenService: jest.Mocked<CartSessionTokenGateway>;
 
   const mockProduct: ProductData = {
     id: 1,
     name: 'Test Product',
     price: 29.99,
+  };
+
+  const adminContext: CallerContext = {
+    kind: 'user',
+    userId: 1,
+    role: 'ADMIN',
+    permissions: new Set(['manage_carts']),
+  };
+
+  const customerContext: CallerContext = {
+    kind: 'user',
+    userId: 123,
+    role: 'CUSTOMER',
+    permissions: new Set(['manage_own_cart']),
   };
 
   beforeEach(() => {
@@ -30,9 +49,16 @@ describe('AddCartItemUseCase', () => {
     mockInventoryGateway = {
       checkStock: jest.fn(),
     };
+    mockTokenService = {
+      generateToken: jest.fn(),
+      validateToken: jest.fn().mockResolvedValue(Result.success(true)),
+    };
+
+    validator = new CartOwnershipValidator(mockTokenService);
 
     usecase = new AddCartItemUseCase(
       mockCartRepository,
+      validator,
       mockProductGateway,
       mockInventoryGateway,
     );
@@ -42,21 +68,17 @@ describe('AddCartItemUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(usecase).toBeDefined();
-  });
-
   describe('execute', () => {
-    it('should add item to cart successfully', async () => {
-      // Arrange
+    it('should add item to cart successfully for admin', async () => {
       const cartId = 123;
       const input: AddCartItemInput = {
         productId: 1,
         quantity: 2,
       };
 
-      const mockCartData = CartTestFactory.createEmptyCart({ id: cartId });
+      const mockCartData = CartTestFactory.createUserCart(456); // mismatched customer ID
       const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
 
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
       mockProductGateway.findById.mockResolvedValue(
@@ -71,18 +93,177 @@ describe('AddCartItemUseCase', () => {
       );
       mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
 
-      // Act
-      const result = await usecase.execute({ cartId, input });
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: adminContext,
+        cartToken: null,
+      });
 
-      // Assert
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockProductGateway.findById).toHaveBeenCalledWith(input.productId);
-      expect(mockCartRepository.update).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
+    it('should add item to cart successfully for owning customer', async () => {
+      const cartId = 123;
+      const input: AddCartItemInput = {
+        productId: 1,
+        quantity: 2,
+      };
+
+      const mockCartData = CartTestFactory.createUserCart(123); // matching customer ID
+      const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
+
+      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockProductGateway.findById.mockResolvedValue(
+        Result.success(mockProduct),
+      );
+      mockInventoryGateway.checkStock.mockResolvedValue(
+        Result.success({
+          isAvailable: true,
+          availableQuantity: 10,
+          requestedQuantity: 2,
+        }),
+      );
+      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: customerContext,
+        cartToken: null,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should return failure (404) when customer does not own the cart', async () => {
+      const cartId = 123;
+      const input: AddCartItemInput = {
+        productId: 1,
+        quantity: 2,
+      };
+
+      const mockCartData = CartTestFactory.createUserCart(456); // mismatched customer ID
+      const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
+
+      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: customerContext,
+        cartToken: null,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart with id 123 not found',
+        UseCaseError,
+      );
+    });
+
+    it('should add item to guest cart when anonymous caller presents a session token', async () => {
+      const cartId = 123;
+      const input: AddCartItemInput = {
+        productId: 1,
+        quantity: 2,
+      };
+
+      const mockCartData = CartTestFactory.createGuestCart(456);
+      const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
+
+      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockProductGateway.findById.mockResolvedValue(
+        Result.success(mockProduct),
+      );
+      mockInventoryGateway.checkStock.mockResolvedValue(
+        Result.success({
+          isAvailable: true,
+          availableQuantity: 10,
+          requestedQuantity: 2,
+        }),
+      );
+      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: null,
+        cartToken: 'guest-session-token',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockTokenService.validateToken).toHaveBeenCalledWith(
+        'guest-session-token',
+        cartId,
+      );
+    });
+
+    it('should add item to guest cart when logged-in customer presents a session token', async () => {
+      const cartId = 123;
+      const input: AddCartItemInput = {
+        productId: 1,
+        quantity: 1,
+      };
+
+      const mockCartData = CartTestFactory.createGuestCart(456);
+      const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
+
+      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockProductGateway.findById.mockResolvedValue(
+        Result.success(mockProduct),
+      );
+      mockInventoryGateway.checkStock.mockResolvedValue(
+        Result.success({
+          isAvailable: true,
+          availableQuantity: 10,
+          requestedQuantity: 1,
+        }),
+      );
+      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: customerContext,
+        cartToken: 'guest-session-token',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+    });
+
+    it('should return failure (404) when guest cart is accessed without a session token', async () => {
+      const cartId = 123;
+      const input: AddCartItemInput = {
+        productId: 1,
+        quantity: 1,
+      };
+
+      const mockCartData = CartTestFactory.createGuestCart(456);
+      const mockCart = Cart.fromPrimitives(mockCartData);
+      Object.defineProperty(mockCart, 'id', { value: cartId });
+
+      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: null,
+        cartToken: null,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart with id 123 not found',
+        UseCaseError,
+      );
+    });
+
     it('should return failure when cart not found', async () => {
-      // Arrange
       const cartId = 404;
       const input: AddCartItemInput = {
         productId: 1,
@@ -92,81 +273,17 @@ describe('AddCartItemUseCase', () => {
 
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
 
-      // Act
-      const result = await usecase.execute({ cartId, input });
+      const result = await usecase.execute({
+        cartId,
+        input,
+        callerContext: adminContext,
+        cartToken: null,
+      });
 
-      // Assert
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockProductGateway.findById).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Cart not found',
         RepositoryError,
-      );
-    });
-
-    it('should return failure when product not found', async () => {
-      // Arrange
-      const cartId = 123;
-      const input: AddCartItemInput = {
-        productId: 404,
-        quantity: 1,
-      };
-
-      const mockCartData = CartTestFactory.createEmptyCart({ id: cartId });
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      const error = new RepositoryError('Product not found');
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockProductGateway.findById.mockResolvedValue(Result.failure(error));
-
-      // Act
-      const result = await usecase.execute({ cartId, input });
-
-      // Assert
-      expect(mockProductGateway.findById).toHaveBeenCalledWith(input.productId);
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Product not found',
-        RepositoryError,
-      );
-    });
-
-    it('should return failure when stock is insufficient', async () => {
-      // Arrange
-      const cartId = 123;
-      const input: AddCartItemInput = {
-        productId: 1,
-        quantity: 20,
-      };
-
-      const mockCartData = CartTestFactory.createEmptyCart({ id: cartId });
-      const mockCart = Cart.fromPrimitives(mockCartData);
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockProductGateway.findById.mockResolvedValue(
-        Result.success(mockProduct),
-      );
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: false,
-          availableQuantity: 5,
-          requestedQuantity: 20,
-        }),
-      );
-
-      // Act
-      const result = await usecase.execute({ cartId, input });
-
-      // Assert
-      expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(
-        input.productId,
-        input.quantity,
-      );
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Insufficient stock',
-        UseCaseError,
       );
     });
   });

@@ -6,14 +6,15 @@ export * from './helpers/e2e-test-app.helper';
 export * from './helpers/http-error-assertion.helper';
 export * from './helpers/result-assertion.helper';
 export * from './helpers/test-data.helper';
+export * from './helpers/logger-test.helper';
 export {
   createMockArgumentsHost,
   createMockExecutionContext,
   createMockRequest,
   createMockResponse,
   createMockRequestWithUser,
-  RequestWithUser,
 } from './fixtures/nestjs-context.fixture';
+export type { RequestWithUser } from './fixtures/nestjs-context.fixture';
 export * from './mocks/jwt-signer.service.mock';
 export * from '../infrastructure/jwt/testing/jwt-verifier.mock';
 export * from './mocks/cache.mock';

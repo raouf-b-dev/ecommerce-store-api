@@ -16,13 +16,13 @@ import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-obj
 
 export interface OrderProps {
   id: number | null;
-  customerId: number;
+  userId: number;
   paymentId: number | null;
   paymentMethod: PaymentMethodType;
   shippingAddressId: number | null;
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
-  customerNotes: string | null;
+  userNotes: string | null;
   status: string | OrderStatus;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -30,13 +30,13 @@ export interface OrderProps {
 
 export class Order implements IOrder {
   private _id: number | null;
-  private readonly _customerId: number;
+  private readonly _userId: number;
   private _paymentId: number | null;
   private readonly _paymentMethod: PaymentMethodType;
   private _shippingAddressId: number | null;
   private _items: OrderItem[];
   private _shippingAddress: ShippingAddress;
-  private _customerNotes: string | null;
+  private _userNotes: string | null;
   private _status: OrderStatusVO;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -46,7 +46,7 @@ export class Order implements IOrder {
     this.validateProps(props);
 
     this._id = props.id || null;
-    this._customerId = props.customerId;
+    this._userId = props.userId;
     this._paymentId = props.paymentId || null;
     this._paymentMethod = props.paymentMethod;
     this._shippingAddressId = props.shippingAddressId || null;
@@ -54,9 +54,7 @@ export class Order implements IOrder {
     this._shippingAddress = ShippingAddress.fromPrimitives(
       props.shippingAddress,
     );
-    this._customerNotes = props.customerNotes
-      ? props.customerNotes.trim()
-      : null;
+    this._userNotes = props.userNotes ? props.userNotes.trim() : null;
     this._status = new OrderStatusVO(
       props.status || OrderStatus.PENDING_PAYMENT,
     );
@@ -67,7 +65,7 @@ export class Order implements IOrder {
 
   private validateProps(props: OrderProps): Result<void, DomainError> {
     // ID can be null initially
-    if (!props.customerId) {
+    if (!props.userId) {
       return ErrorFactory.DomainError('Customer ID is required');
     }
     if (!props.items || props.items.length === 0) {
@@ -92,8 +90,8 @@ export class Order implements IOrder {
     this._id = id;
   }
 
-  get customerId(): number {
-    return this._customerId;
+  get userId(): number {
+    return this._userId;
   }
 
   get paymentId(): number | null {
@@ -116,8 +114,8 @@ export class Order implements IOrder {
     return this._shippingAddress.toPrimitives();
   }
 
-  get customerNotes(): string | null {
-    return this._customerNotes;
+  get userNotes(): string | null {
+    return this._userNotes;
   }
 
   get status(): OrderStatus {
@@ -329,8 +327,8 @@ export class Order implements IOrder {
     }
 
     if (reason) {
-      this._customerNotes = this._customerNotes
-        ? `${this._customerNotes}\n\nCancellation reason: ${reason}`
+      this._userNotes = this._userNotes
+        ? `${this._userNotes}\n\nCancellation reason: ${reason}`
         : `Cancellation reason: ${reason}`;
     }
 
@@ -343,8 +341,8 @@ export class Order implements IOrder {
     }
 
     if (reason) {
-      this._customerNotes = this._customerNotes
-        ? `${this._customerNotes}\n\nRefund reason: ${reason}`
+      this._userNotes = this._userNotes
+        ? `${this._userNotes}\n\nRefund reason: ${reason}`
         : `Refund reason: ${reason}`;
     }
 
@@ -423,7 +421,7 @@ export class Order implements IOrder {
     const canUpdate = this.assertCanBeUpdated();
     if (canUpdate.isFailure) return canUpdate;
 
-    this._customerNotes = notes ? notes.trim() : null;
+    this._userNotes = notes ? notes.trim() : null;
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
@@ -476,13 +474,13 @@ export class Order implements IOrder {
   toPrimitives(): IOrder {
     return {
       id: this._id,
-      customerId: this._customerId,
+      userId: this._userId,
       paymentId: this._paymentId,
       paymentMethod: this._paymentMethod,
       shippingAddressId: this._shippingAddressId,
       items: this.items,
       shippingAddress: this.shippingAddress,
-      customerNotes: this._customerNotes,
+      userNotes: this._userNotes,
       subtotal: this.subtotal,
       shippingCost: this.shippingCost,
       totalPrice: this.totalPrice,
@@ -499,7 +497,7 @@ export class Order implements IOrder {
 
   static create(props: {
     id: number | null;
-    customerId: number;
+    userId: number;
     paymentMethod: PaymentMethodType;
     items: OrderItemProps[];
     shippingAddress: ShippingAddressProps;
@@ -509,13 +507,13 @@ export class Order implements IOrder {
 
     return new Order({
       id: props.id,
-      customerId: props.customerId,
+      userId: props.userId,
       paymentId: null,
       paymentMethod: props.paymentMethod,
       shippingAddressId: props.shippingAddress.id,
       items: props.items,
       shippingAddress: props.shippingAddress,
-      customerNotes: props.customerNotes,
+      userNotes: props.customerNotes,
       status: isCOD
         ? OrderStatus.PENDING_CONFIRMATION
         : OrderStatus.PENDING_PAYMENT,
@@ -526,20 +524,20 @@ export class Order implements IOrder {
 
   static createForCOD(props: {
     id: number | null;
-    customerId: number;
+    userId: number;
     items: OrderItemProps[];
     shippingAddress: ShippingAddressProps;
     customerNotes: string | null;
   }): Order {
     return new Order({
       id: props.id,
-      customerId: props.customerId,
+      userId: props.userId,
       paymentId: null,
       paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
       shippingAddressId: props.shippingAddress.id,
       items: props.items,
       shippingAddress: props.shippingAddress,
-      customerNotes: props.customerNotes,
+      userNotes: props.customerNotes,
       status: OrderStatus.PENDING_CONFIRMATION,
       createdAt: null,
       updatedAt: null,

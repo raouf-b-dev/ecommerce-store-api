@@ -4,33 +4,43 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
 import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('ClearCartUseCase', () => {
   let usecase: ClearCartUseCase;
   let mockCartRepository: MockCartRepository;
+  let validator: CartOwnershipValidator;
+  let mockTokenService: any;
+
+  const customerContext: CallerContext = {
+    kind: 'user',
+    userId: 123,
+    role: 'CUSTOMER',
+    permissions: new Set(['manage_own_cart']),
+  };
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    usecase = new ClearCartUseCase(mockCartRepository);
+    mockTokenService = {
+      validateToken: jest.fn().mockResolvedValue(true),
+    };
+    validator = new CartOwnershipValidator(mockTokenService);
+    usecase = new ClearCartUseCase(mockCartRepository, validator);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(usecase).toBeDefined();
-  });
-
   describe('execute', () => {
     it('should clear cart successfully', async () => {
-      // Arrange
       const cartId = 123;
 
       const mockCartData = CartTestFactory.createCartWithItems(3, {
         id: cartId,
+        userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
 
@@ -40,26 +50,29 @@ describe('ClearCartUseCase', () => {
       mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
       mockCartRepository.update.mockResolvedValue(Result.success(clearedCart));
 
-      // Act
-      const result = await usecase.execute(cartId);
+      const result = await usecase.execute({
+        cartId,
+        callerContext: customerContext,
+        cartToken: null,
+      });
 
-      // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
       expect(mockCartRepository.update).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should return failure when cart not found', async () => {
-      // Arrange
       const cartId = 404;
       const error = new RepositoryError('Cart not found');
 
       mockCartRepository.findById.mockResolvedValue(Result.failure(error));
 
-      // Act
-      const result = await usecase.execute(cartId);
+      const result = await usecase.execute({
+        cartId,
+        callerContext: customerContext,
+        cartToken: null,
+      });
 
-      // Assert
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
       expect(mockCartRepository.update).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(

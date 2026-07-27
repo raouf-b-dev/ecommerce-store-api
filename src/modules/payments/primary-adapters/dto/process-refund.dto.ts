@@ -12,7 +12,7 @@ export class ProcessRefundDto {
   amount: number;
 
   @ApiPropertyOptional({
-    example: 'Customer requested cancellation',
+    example: 'User  requested cancellation',
     description: 'Reason for refund',
   })
   @IsOptional()

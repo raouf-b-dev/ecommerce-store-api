@@ -7,7 +7,7 @@ export interface ProductData {
   price: number;
 }
 
-export interface ProductGateway {
+export interface CartProductGateway {
   findById(
     productId: number,
   ): Promise<Result<ProductData | null, InfrastructureError>>;

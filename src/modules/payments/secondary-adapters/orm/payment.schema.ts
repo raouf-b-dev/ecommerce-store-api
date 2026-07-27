@@ -6,6 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { RefundEntity } from './refund.schema';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
@@ -13,7 +14,7 @@ import { PaymentStatusType } from '../../core/domain/value-objects/payment-statu
 
 @Entity({ name: 'payments' })
 @Index('idx_payments_order_id', ['orderId'])
-@Index('idx_payments_customer_id', ['customerId'])
+@Index('idx_payments_user_id', ['userId'])
 @Index('idx_payments_transaction_id', ['transactionId'])
 @Index('idx_payments_gateway_intent_id', ['gatewayPaymentIntentId'])
 export class PaymentEntity {
@@ -23,8 +24,8 @@ export class PaymentEntity {
   @Column({ name: 'order_id', type: 'int' })
   orderId: number;
 
-  @Column({ name: 'customer_id', type: 'int', nullable: true })
-  customerId: number | null;
+  @Column({ name: 'user_id', type: 'int', nullable: true })
+  userId: number | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number;
@@ -70,7 +71,7 @@ export class PaymentEntity {
     cascade: true,
     eager: true,
   })
-  refunds: RefundEntity[];
+  refunds: Relation<RefundEntity>[];
 
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt: Date | null;

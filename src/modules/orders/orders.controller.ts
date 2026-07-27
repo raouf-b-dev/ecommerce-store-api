@@ -4,9 +4,9 @@ import {
   Patch,
   Param,
   Query,
-  UseGuards,
   Body,
   Post,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -14,10 +14,11 @@ import {
   ApiTags,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
-import { RequirePermissions } from '../auth/primary-adapters/decorators/require-permissions.decorator';
-import { CurrentUser } from '../auth/primary-adapters/decorators/current-user.decorator';
+import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartToken } from '../carts/primary-adapters/decorators/cart-token.decorator';
+import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
 import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
@@ -33,11 +34,9 @@ import { ProcessOrderUseCase } from './core/application/usecases/process-order/p
 import { ShipOrderUseCase } from './core/application/usecases/ship-order/ship-order.usecase';
 import { DeliverOrderUseCase } from './core/application/usecases/deliver-order/deliver-order.usecase';
 import { CancelOrderUseCase } from './core/application/usecases/cancel-order/cancel-order.usecase';
-import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('orders')
 @ApiBearerAuth()
-@UseGuards(AuthGuard, PermissionsGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(
@@ -52,6 +51,8 @@ export class OrdersController {
   ) {}
 
   @Post('checkout')
+  @OptionalAuth()
+  @RequirePermissions('manage_own_cart')
   @ApiOperation({
     summary: 'Initiate checkout process',
     description:
@@ -78,16 +79,18 @@ export class OrdersController {
   @Idempotent()
   async checkout(
     @Body() dto: CheckoutDto,
-    @CurrentUser('userId') userId: string,
+    @CallerCtx() callerContext: CallerContext | null,
+    @CartToken() cartToken: string | null,
   ) {
     return await this.checkoutUseCase.execute({
       command: dto,
-      userId: Number(userId),
+      callerContext,
+      cartToken,
     });
   }
 
   @Get()
-  @RequirePermissions('view_all_orders')
+  @RequirePermissions('view_all_orders', 'view_own_orders')
   @ApiOperation({
     summary: 'Get orders list with pagination and filtering',
     description: 'Retrieve a paginated list of orders with various filters.',
@@ -98,11 +101,15 @@ export class OrdersController {
     type: [OrderResponseDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async findAll(@Query() query: ListOrdersQueryDto) {
-    return await this.listOrdersUseCase.execute(query);
+  async findAll(
+    @Query() query: ListOrdersQueryDto,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.listOrdersUseCase.execute({ query, callerContext });
   }
 
   @Get(':id')
+  @RequirePermissions('view_all_orders', 'view_own_orders')
   @ApiOperation({ summary: 'Get order by ID' })
   @ApiResponse({
     status: 200,
@@ -111,8 +118,14 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async findOne(@Param('id') id: string) {
-    return await this.getOrderUseCase.execute(Number(id));
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.getOrderUseCase.execute({
+      orderId: id,
+      callerContext,
+    });
   }
 
   @Patch(':id/confirm')
@@ -130,11 +143,11 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be confirmed.' })
   async confirmOrder(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body?: { reservationId?: number; cartId?: number },
   ) {
     return await this.confirmOrderUseCase.execute({
-      orderId: Number(id),
+      orderId: id,
       reservationId: body?.reservationId,
       cartId: body?.cartId,
     });
@@ -152,8 +165,8 @@ export class OrdersController {
     type: OrderResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
-  async processOrder(@Param('id') id: string) {
-    return await this.processOrderUseCase.execute(Number(id));
+  async processOrder(@Param('id', ParseIntPipe) id: number) {
+    return await this.processOrderUseCase.execute(id);
   }
 
   @Patch(':id/ship')
@@ -165,8 +178,8 @@ export class OrdersController {
     type: OrderResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
-  async shipOrder(@Param('id') id: string) {
-    return await this.shipOrderUseCase.execute(Number(id));
+  async shipOrder(@Param('id', ParseIntPipe) id: number) {
+    return await this.shipOrderUseCase.execute(id);
   }
 
   @Patch(':id/deliver')
@@ -183,11 +196,11 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async deliverOrder(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() deliverOrderDto: DeliverOrderDto,
   ) {
     return await this.deliverOrderUseCase.execute({
-      id: Number(id),
+      id: id,
       command: deliverOrderDto,
     });
   }
@@ -205,7 +218,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })
-  async cancelOrder(@Param('id') id: string) {
-    return await this.cancelOrderUseCase.execute({ orderId: Number(id) });
+  async cancelOrder(@Param('id', ParseIntPipe) id: number) {
+    return await this.cancelOrderUseCase.execute({ orderId: id });
   }
 }

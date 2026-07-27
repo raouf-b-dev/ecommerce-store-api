@@ -11,29 +11,44 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { InventoryGateway } from '../../ports/inventory.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { INVENTORY_GATEWAY } from '../../../../carts.token';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+
+export interface UpdateCartItemUseCaseInput {
+  cartId: number;
+  itemId: number;
+  input: UpdateCartItemInput;
+  callerContext: CallerContext | null;
+  cartToken: string | null;
+}
 
 @Injectable()
 export class UpdateCartItemUseCase extends UseCase<
-  { cartId: number; itemId: number; input: UpdateCartItemInput },
+  UpdateCartItemUseCaseInput,
   ICart,
   UseCaseError
 > {
   constructor(
     private readonly cartRepository: CartRepository,
+    private readonly cartOwnershipValidator: CartOwnershipValidator,
     @Inject(INVENTORY_GATEWAY)
-    private readonly inventoryGateway: InventoryGateway,
+    private readonly inventoryGateway: CartInventoryGateway,
   ) {
     super();
   }
 
-  async execute(input: {
-    cartId: number;
-    itemId: number;
-    input: UpdateCartItemInput;
-  }): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, itemId, input: updateInput } = input;
+  async execute(
+    input: UpdateCartItemUseCaseInput,
+  ): Promise<Result<ICart, UseCaseError>> {
+    const {
+      cartId,
+      itemId,
+      input: updateInput,
+      callerContext,
+      cartToken,
+    } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -42,6 +57,14 @@ export class UpdateCartItemUseCase extends UseCase<
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    const ownershipResult = await this.cartOwnershipValidator.validate(
+      cart,
+      callerContext,
+      cartToken,
+    );
+
+    if (isFailure(ownershipResult)) return ownershipResult;
 
     const item = cart.findItemById(itemId);
     if (!item) {

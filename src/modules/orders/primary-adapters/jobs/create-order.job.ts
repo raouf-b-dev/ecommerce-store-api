@@ -8,6 +8,7 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface CreateOrderResult extends ReserveStockResult {
   orderId: number;
@@ -57,7 +58,10 @@ export class CreateOrderStep extends BaseJobHandler<
     }
 
     this.logger.log(`Fetching order ${orderId}...`);
-    const orderResult = await this.getOrderUseCase.execute(orderId);
+    const orderResult = await this.getOrderUseCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     if (isFailure(orderResult)) {
       return ErrorFactory.ServiceError(

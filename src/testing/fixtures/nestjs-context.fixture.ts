@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import { ArgumentsHost, ExecutionContext } from '@nestjs/common';
 import { HttpArgumentsHost } from '@nestjs/common/interfaces';
+import { IRolePermissions } from '../../shared-kernel/domain/interfaces/role-permissions.interface';
+import { CurrentUserPayload } from '../../shared-kernel/domain/interfaces/current-user.interface';
 
 export interface RequestWithUser extends Request {
-  user?: any;
-  userPermissions?: Set<string>;
+  user?: CurrentUserPayload;
+  userPermissions?: IRolePermissions;
 }
 
 /**
@@ -77,7 +79,7 @@ export function createMockResponse(
 }
 
 export function createMockRequestWithUser(
-  user: any,
+  user: CurrentUserPayload | Partial<CurrentUserPayload> | null,
   overrides: Partial<RequestWithUser> = {},
 ): jest.Mocked<RequestWithUser> {
   return createMockRequest({

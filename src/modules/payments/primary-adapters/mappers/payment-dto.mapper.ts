@@ -11,7 +11,7 @@ export class PaymentDtoMapper {
       paymentMethod: payment.paymentMethod,
       status: payment.status,
       transactionId: payment.transactionId || undefined,
-      customerId: payment.customerId || undefined,
+      userId: payment.userId || undefined,
       paymentMethodInfo: payment.paymentMethodInfo || undefined,
       refundedAmount: payment.refundedAmount,
       failureReason: payment.failureReason || undefined,

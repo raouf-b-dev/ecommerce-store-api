@@ -8,6 +8,13 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ShippingAddressInput } from '../../services/shipping-address-resolver';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
+import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
+import { OrderRepository } from '../../../domain/repositories/order-repository';
+import { OrderFactory } from '../../../domain/factories/order.factory';
+import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
+import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
+import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface CheckoutCommand {
   cartId: number;
@@ -22,16 +29,16 @@ export interface CheckoutResult {
   status: OrderStatus;
   message: string;
 }
-import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
-import { OrderRepository } from '../../../domain/repositories/order-repository';
-import { OrderFactory } from '../../../domain/factories/order.factory';
-import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
-import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
-import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+
+export interface CheckoutInput {
+  command: CheckoutCommand;
+  callerContext: CallerContext | null;
+  cartToken?: string | null;
+}
 
 @Injectable()
 export class CheckoutUseCase extends UseCase<
-  { command: CheckoutCommand; userId: number },
+  CheckoutInput,
   CheckoutResult,
   UseCaseError
 > {
@@ -48,16 +55,15 @@ export class CheckoutUseCase extends UseCase<
     super();
   }
 
-  async execute(input: {
-    command: CheckoutCommand;
-    userId: number;
-  }): Promise<Result<CheckoutResult, UseCaseError>> {
-    const { command, userId } = input;
+  async execute(
+    input: CheckoutInput,
+  ): Promise<Result<CheckoutResult, UseCaseError>> {
+    const { command, callerContext, cartToken } = input;
 
-    // 1. Validate Checkout Context (Customer, Cart, Address)
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId: command.cartId,
-      userId,
+      callerContext,
+      cartToken: cartToken ?? null,
       shippingAddress: command.shippingAddress,
     });
 
@@ -65,21 +71,20 @@ export class CheckoutUseCase extends UseCase<
       return Result.failure(validationResult.error);
     }
 
+    const { cart, shippingAddress, userId } = validationResult.value;
+
     this.domainEventPublisher.publish('cart.checkout.initiated', {
       cartId: command.cartId,
       userId,
     });
 
-    const { cart, shippingAddress } = validationResult.value;
-
-    // 2. Create Order Synchronously (to generate ID)
     const order = this.orderFactory.createFromCart({
       cart,
       userId,
       shippingAddress,
       paymentMethod: command.paymentMethod,
-      customerNotes: command.customerNotes,
-      orderId: null, // Let DB generate ID
+      userNotes: command.customerNotes,
+      orderId: null,
     });
 
     const saveResult = await this.orderRepository.save(order);
@@ -91,7 +96,6 @@ export class CheckoutUseCase extends UseCase<
 
     this.domainEventPublisher.publish('order.created', { orderId, userId });
 
-    // 3. Schedule Checkout Flow
     const scheduleResult = await this.orderScheduler.scheduleCheckout({
       cartId: command.cartId,
       userId,
@@ -113,7 +117,6 @@ export class CheckoutUseCase extends UseCase<
 
     const flowId = scheduleResult.value;
 
-    // 4. Build Response (using domain policy for message)
     const response: CheckoutResult = {
       orderId,
       jobId: flowId,

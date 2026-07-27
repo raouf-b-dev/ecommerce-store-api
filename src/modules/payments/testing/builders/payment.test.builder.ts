@@ -20,8 +20,8 @@ export class PaymentBuilder {
     return this;
   }
 
-  withCustomerId(customerId: number): this {
-    this.payment.customerId = customerId;
+  withuserId(userId: number): this {
+    this.payment.userId = userId;
     return this;
   }
 

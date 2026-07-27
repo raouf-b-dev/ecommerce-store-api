@@ -189,15 +189,15 @@ Key rotation is the process of introducing a new signing key and retiring the ol
 
 Modern authentication systems use two distinct tokens:
 
-| Property       | Access Token                             | Refresh Token                                        |
-| :------------- | :--------------------------------------- | :--------------------------------------------------- |
-| **Purpose**    | Authorize API requests                   | Obtain new access tokens without re-authentication   |
-| **Lifetime**   | Short (5–15 minutes)                     | Long (hours to days)                                 |
-| **Storage**    | Application memory (JavaScript variable) | HttpOnly + Secure + SameSite cookie                  |
-| **Sent via**   | `Authorization: Bearer <token>` header   | Automatically via cookie on `/auth/refresh` requests |
-| **Payload**    | User identity, role, permissions         | Minimal — user ID + session ID                       |
-| **Stateless?** | Yes — verified via signature only        | No — validated against server-side session store     |
-| **Revocable?** | Not immediately (expires naturally)      | Yes — server revokes the session record              |
+| Property       | Access Token                             | Refresh Token                                                  |
+| :------------- | :--------------------------------------- | :------------------------------------------------------------- |
+| **Purpose**    | Authorize API requests                   | Obtain new access tokens without re-authentication             |
+| **Lifetime**   | Short (5–15 minutes)                     | Long (hours to days)                                           |
+| **Storage**    | Application memory (JavaScript variable) | HttpOnly + Secure + SameSite cookie                            |
+| **Sent via**   | `Authorization: Bearer <token>` header   | Automatically via cookie on `/authentication/refresh` requests |
+| **Payload**    | User identity, role, permissions         | Minimal — user ID + session ID                                 |
+| **Stateless?** | Yes — verified via signature only        | No — validated against server-side session store               |
+| **Revocable?** | Not immediately (expires naturally)      | Yes — server revokes the session record                        |
 
 ### 4.2 Why Two Tokens?
 
@@ -222,13 +222,13 @@ This limits the window of opportunity for a stolen refresh token. If an attacker
 
 > **OWASP and industry consensus**: Refresh tokens should be transported via **HttpOnly, Secure, SameSite cookies** — never in the JSON response body for browser-based clients.
 
-| Cookie Attribute | Value      | Purpose                                                    |
-| :--------------- | :--------- | :--------------------------------------------------------- |
-| `HttpOnly`       | `true`     | Prevents JavaScript access — mitigates XSS token theft     |
-| `Secure`         | `true`     | Cookie only sent over HTTPS                                |
-| `SameSite`       | `Strict`   | Prevents CSRF by blocking cross-origin cookie transmission |
-| `Path`           | `/auth`    | Cookie only sent to auth endpoints — minimizes exposure    |
-| `Max-Age`        | TTL in sec | Matches the refresh token's server-side expiration         |
+| Cookie Attribute | Value             | Purpose                                                    |
+| :--------------- | :---------------- | :--------------------------------------------------------- |
+| `HttpOnly`       | `true`            | Prevents JavaScript access — mitigates XSS token theft     |
+| `Secure`         | `true`            | Cookie only sent over HTTPS                                |
+| `SameSite`       | `Strict`          | Prevents CSRF by blocking cross-origin cookie transmission |
+| `Path`           | `/authentication` | Cookie only sent to auth endpoints — minimizes exposure    |
+| `Max-Age`        | TTL in sec        | Matches the refresh token's server-side expiration         |
 
 **Why not the response body?**
 
@@ -245,47 +245,34 @@ With HttpOnly cookies, the browser handles storage and transmission automaticall
 
 ## 5. The Complete Authentication Flow
 
-```
-┌──────────┐                       ┌──────────────────┐                    ┌──────────┐
-│  Client  │                       │   Auth Server    │                    │ Database │
-│ (Browser)│                       │                  │                    │          │
-└────┬─────┘                       └────────┬─────────┘                    └────┬─────┘
-     │                                      │                                   │
-     │  1. POST /auth/login {email, pass}   │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 2. Verify credentials              │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │                                      │ 3. Sign access token (RS256)      │
-     │                                      │ 4. Sign refresh token (RS256)     │
-     │                                      │ 5. Store session (SHA-256 hash)   │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │  6. Response:                        │                                   │
-     │     Body: { access_token }           │                                   │
-     │     Cookie: refresh_token (HttpOnly) │                                   │
-     │◄─────────────────────────────────────│                                   │
-     │                                      │                                   │
-     │  7. GET /api/resource                │                                   │
-     │     Authorization: Bearer <access>   │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 8. Verify signature (public key)  │
-     │  9. 200 OK { data }                  │    No DB lookup needed!           │
-     │◄─────────────────────────────────────│                                   │
-     │                                      │                                   │
-     │  — access token expires —            │                                   │
-     │                                      │                                   │
-     │  10. POST /auth/refresh              │                                   │
-     │      Cookie: refresh_token (auto)    │                                   │
-     │─────────────────────────────────────►│                                   │
-     │                                      │ 11. Verify refresh JWT            │
-     │                                      │ 12. Check session in DB           │
-     │                                      │──────────────────────────────────►│
-     │                                      │◄──────────────────────────────────│
-     │                                      │ 13. Revoke old, create new session│
-     │                                      │──────────────────────────────────►│
-     │  14. New access + refresh tokens     │                                   │
-     │◄─────────────────────────────────────│                                   │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Client (Browser)
+    participant Authentication as Authentication Server
+    participant DB as Database
+
+    Client->>Authentication: POST /authentication/login {email, pass}
+    Authentication->>DB: Verify credentials
+    DB-->>Authentication: Credentials OK
+    Note over Authentication: 3. Sign access token (RS256)<br/>4. Sign refresh token (RS256)
+    Authentication->>DB: 5. Store session (SHA-256 hash)
+    DB-->>Authentication: Session stored
+    Authentication-->>Client: 6. Response:<br/>Body: { access_token }<br/>Cookie: refresh_token (HttpOnly)
+
+    Client->>Authentication: 7. GET /api/resource<br/>Authorization: Bearer <access_token>
+    Note over Authentication: 8. Verify signature (public key)<br/>(No DB lookup needed!)
+    Authentication-->>Client: 9. 200 OK { data }
+
+    Note over Client, Authentication: — access token expires —
+
+    Client->>Authentication: 10. POST /authentication/refresh<br/>Cookie: refresh_token (auto)
+    Note over Authentication: 11. Verify refresh JWT
+    Authentication->>DB: 12. Check session in DB
+    DB-->>Authentication: Session valid
+    Authentication->>DB: 13. Revoke old session,<br/>create new session
+    DB-->>Authentication: Sessions updated
+    Authentication-->>Client: 14. New access + refresh tokens
 ```
 
 ---
@@ -297,7 +284,7 @@ With HttpOnly cookies, the browser handles storage and transmission automaticall
 | Threat               | Mitigation                                                           |
 | :------------------- | :------------------------------------------------------------------- |
 | XSS steals tokens    | HttpOnly cookies for refresh; access token in memory only            |
-| CSRF on cookie       | `SameSite=Strict`, scope cookie `Path=/auth`                         |
+| CSRF on cookie       | `SameSite=Strict`, scope cookie `Path=/authentication`               |
 | Stolen refresh token | Rotation + reuse detection → revoke all sessions on reuse            |
 | Man-in-the-middle    | `Secure` flag, HTTPS everywhere, HSTS headers                        |
 | Token replay         | Short `exp` on access tokens, `jti` for additional replay prevention |

@@ -35,12 +35,10 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async findByCustomerId(
-    customerId: number,
-  ): Promise<Result<Cart, RepositoryError>> {
+  async findByuserId(userId: number): Promise<Result<Cart, RepositoryError>> {
     try {
       const entity = await this.repository.findOne({
-        where: { customerId },
+        where: { userId: userId },
       });
 
       if (!entity) {
@@ -50,7 +48,7 @@ export class PostgresCartRepository implements CartRepository {
       return Result.success(CartMapper.toDomain(entity));
     } catch (error) {
       return ErrorFactory.RepositoryError(
-        'Failed to find cart by customer ID',
+        'Failed to find cart by user ID',
         error,
       );
     }
@@ -81,8 +79,8 @@ export class PostgresCartRepository implements CartRepository {
     try {
       let cart: Cart;
 
-      if (input.customerId) {
-        cart = Cart.createUserCart(input.customerId);
+      if (input.userId) {
+        cart = Cart.createUserCart(input.userId);
       } else {
         if (!input.sessionId) {
           return ErrorFactory.RepositoryError(

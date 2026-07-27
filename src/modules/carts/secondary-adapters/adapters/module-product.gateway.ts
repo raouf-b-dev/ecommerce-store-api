@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
-  ProductGateway,
+  CartProductGateway,
   ProductData,
 } from '../../core/application/ports/product.gateway';
 import { GetProductUseCase } from '../../../products/core/application/usecases/get-product/get-product.usecase';
@@ -9,7 +9,7 @@ import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
-export class ModuleProductGateway implements ProductGateway {
+export class ModuleProductGateway implements CartProductGateway {
   constructor(private readonly getProductUseCase: GetProductUseCase) {}
 
   async findById(

@@ -6,6 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Relation,
 } from 'typeorm';
 import { ReservationStatus } from '../../core/domain/value-objects/reservation-status';
 import { ReservationItemEntity } from './reservation-item.schema';
@@ -44,5 +45,5 @@ export class ReservationEntity {
       eager: true,
     },
   )
-  items: ReservationItemEntity[];
+  items: Relation<ReservationItemEntity>[];
 }

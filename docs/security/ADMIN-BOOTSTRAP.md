@@ -72,7 +72,7 @@ The `User` domain entity implements a `mustChangePassword` boolean flag:
 
 ## 6. Login Response Contract
 
-When a user authenticates successfully via `/auth/login`, the response body explicitly includes the `mustChangePassword` flag:
+When a user authenticates successfully via `/authentication/login`, the response body explicitly includes the `mustChangePassword` flag:
 
 - `mustChangePassword: true` → The frontend must immediately route the user to a mandatory password-change form. No other API actions are permitted.
 - `mustChangePassword: false` → The frontend proceeds to the dashboard.

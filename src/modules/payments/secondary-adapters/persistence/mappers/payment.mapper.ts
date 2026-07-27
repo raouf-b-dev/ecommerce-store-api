@@ -20,7 +20,7 @@ export class PaymentMapper {
     const props: PaymentProps = {
       id: entity.id,
       orderId: entity.orderId,
-      customerId: entity.customerId,
+      userId: entity.userId,
       amount: Number(entity.amount),
       currency: entity.currency,
       paymentMethod: entity.paymentMethod,
@@ -48,7 +48,7 @@ export class PaymentMapper {
     const paymentPayload: PaymentCreate = {
       id: primitives.id || 0,
       orderId: primitives.orderId,
-      customerId: primitives.customerId,
+      userId: primitives.userId,
       amount: primitives.amount,
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,

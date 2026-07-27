@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
-  InventoryGateway,
+  CartInventoryGateway,
   StockCheckResult,
 } from '../../core/application/ports/inventory.gateway';
 import { CheckStockUseCase } from '../../../inventory/core/application/check-stock/check-stock.usecase';
@@ -9,7 +9,7 @@ import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
-export class ModuleInventoryGateway implements InventoryGateway {
+export class ModuleInventoryGateway implements CartInventoryGateway {
   constructor(private readonly checkStockUseCase: CheckStockUseCase) {}
 
   async checkStock(

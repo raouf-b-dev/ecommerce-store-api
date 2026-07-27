@@ -1,6 +1,6 @@
 export const OrderIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
-  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.userId': { type: 'TEXT', AS: 'userId' },
   '$.status': { type: 'TEXT', AS: 'status' },
   '$.totalPrice': { type: 'NUMERIC', AS: 'totalPrice', SORTABLE: true },
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
@@ -25,7 +25,7 @@ export const InventoryIndexSchema = {
 
 export const CartIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
-  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.userId': { type: 'TEXT', AS: 'userId' },
   '$.sessionId': { type: 'TEXT', AS: 'sessionId' },
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
@@ -34,28 +34,17 @@ export const CartIndexSchema = {
 export const PaymentIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
   '$.orderId': { type: 'TEXT', AS: 'orderId' },
-  '$.customerId': { type: 'TEXT', AS: 'customerId' },
+  '$.userId': { type: 'TEXT', AS: 'userId' },
   '$.status': { type: 'TEXT', AS: 'status' },
   '$.transactionId': { type: 'TEXT', AS: 'transactionId' },
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };
 
-export const CustomerIndexSchema = {
-  '$.id': { type: 'TEXT', AS: 'id' },
-  '$.firstName': { type: 'TEXT', AS: 'firstName' },
-  '$.lastName': { type: 'TEXT', AS: 'lastName' },
-  '$.email': { type: 'TEXT', AS: 'email' },
-  '$.phone': { type: 'TEXT', AS: 'phone' },
-  '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
-  '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
-};
-
 export const UserIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
-  '$.email': { type: 'TEXT', AS: 'email' },
+  '$.email': { type: 'TAG', AS: 'email' },
   '$.role': { type: 'TEXT', AS: 'role' },
-  '$.customerId': { type: 'TEXT', AS: 'customerId' },
   '$.createdAt': { type: 'NUMERIC', AS: 'createdAt', SORTABLE: true },
   '$.updatedAt': { type: 'NUMERIC', AS: 'updatedAt', SORTABLE: true },
 };

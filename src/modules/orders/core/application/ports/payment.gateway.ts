@@ -19,7 +19,7 @@ export interface CreatePaymentIntentInput {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
-  customerId: number;
+  userId: number;
   metadata?: Record<string, any>;
 }
 

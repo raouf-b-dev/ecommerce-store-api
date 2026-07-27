@@ -8,14 +8,18 @@ import { ProductsModule } from './modules/products/products.module';
 import { CartsModule } from './modules/carts/carts.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
-import { CustomersModule } from './modules/customers/customers.module';
-import { AuthModule } from './modules/auth/auth.module';
+import { IdentityModule } from './modules/identity/identity.module';
+import { AuthenticationModule } from './modules/authentication/authentication.module';
+import { AuthorizationModule } from './modules/authorization/authorization.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WebsocketModule } from './infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './modules/health/health.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
+import { APP_GUARD } from '@nestjs/core';
+import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
+import { AuthGuard } from './guards/auth.guard';
 
 const env = process.env.NODE_ENV || 'development';
 const envFilePath = `.env.${env}`;
@@ -31,8 +35,9 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
     CartsModule,
     PaymentsModule,
     InventoryModule,
-    CustomersModule,
-    AuthModule,
+    IdentityModule,
+    AuthorizationModule,
+    AuthenticationModule,
     WebsocketModule,
     NotificationsModule,
     HealthModule,
@@ -44,6 +49,16 @@ const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
       expandVariables: true,
       load: [configuration],
     }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
+    },
   ],
 })
 export class AppModule {}

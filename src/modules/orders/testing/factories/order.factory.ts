@@ -9,7 +9,7 @@ export class OrderTestFactory {
     const baseOrder: IOrder = {
       // Basic identifiers
       id: 1,
-      customerId: 1,
+      userId: 1,
       paymentId: null,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
       shippingAddressId: 1,
@@ -51,8 +51,8 @@ export class OrderTestFactory {
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
 
-      // Optional customer notes
-      customerNotes: 'Please ring doorbell upon delivery',
+      // Optional user notes
+      userNotes: 'Please ring doorbell upon delivery',
     };
 
     return { ...baseOrder, ...overrides };
@@ -107,7 +107,7 @@ export class OrderTestFactory {
   static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.CANCELLED,
-      customerNotes: 'Order cancelled by customer',
+      userNotes: 'Order cancelled by user',
       ...overrides,
     });
   }
@@ -217,7 +217,7 @@ export class OrderTestFactory {
   static createOrderProps(overrides?: Partial<OrderProps>): OrderProps {
     const baseProps: OrderProps = {
       id: 1,
-      customerId: 1,
+      userId: 1,
       paymentId: null,
       paymentMethod: PaymentMethodType.CREDIT_CARD,
       shippingAddressId: 1,
@@ -243,7 +243,7 @@ export class OrderTestFactory {
         phone: '+1234567890',
         deliveryInstructions: null,
       },
-      customerNotes: 'Please ring doorbell upon delivery',
+      userNotes: 'Please ring doorbell upon delivery',
       status: OrderStatus.PENDING_PAYMENT,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),

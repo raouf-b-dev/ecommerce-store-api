@@ -18,7 +18,7 @@ import { Refund, RefundProps } from './refund';
 export interface PaymentProps {
   id: number | null;
   orderId: number;
-  customerId: number | null;
+  userId: number | null;
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
@@ -38,7 +38,7 @@ export interface PaymentProps {
 export class Payment implements IPayment {
   private readonly _id: number | null;
   private readonly _orderId: number;
-  private _customerId: number | null;
+  private _userId: number | null;
   private _amount: Money;
   private _paymentMethod: PaymentMethod;
   private _status: PaymentStatus;
@@ -59,7 +59,7 @@ export class Payment implements IPayment {
 
     this._id = props.id || null;
     this._orderId = props.orderId;
-    this._customerId = props.customerId || null;
+    this._userId = props.userId || null;
     this._amount = Money.from(props.amount, props.currency);
     this._paymentMethod = new PaymentMethod(props.paymentMethod);
     this._status = new PaymentStatus(props.status);
@@ -111,8 +111,8 @@ export class Payment implements IPayment {
     return this._orderId;
   }
 
-  get customerId(): number | null {
-    return this._customerId;
+  get userId(): number | null {
+    return this._userId;
   }
 
   get amount(): number {
@@ -355,7 +355,7 @@ export class Payment implements IPayment {
     return {
       id: this._id,
       orderId: this._orderId,
-      customerId: this._customerId,
+      userId: this._userId,
       amount: this._amount.amount,
       currency: this._amount.currency,
       paymentMethod: this._paymentMethod.type,
@@ -383,13 +383,13 @@ export class Payment implements IPayment {
     amount: number,
     currency: string,
     paymentMethod: PaymentMethodType,
-    customerId?: number,
+    userId?: number,
     paymentMethodInfo?: string,
   ): Payment {
     return new Payment({
       id,
       orderId,
-      customerId: customerId || null,
+      userId: userId || null,
       amount,
       currency,
       paymentMethod,
@@ -412,12 +412,12 @@ export class Payment implements IPayment {
     orderId: number,
     amount: number,
     currency: string,
-    customerId?: number,
+    userId?: number,
   ): Payment {
     return new Payment({
       id,
       orderId,
-      customerId: customerId || null,
+      userId: userId || null,
       amount,
       currency,
       paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,

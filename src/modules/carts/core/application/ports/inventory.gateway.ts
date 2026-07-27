@@ -7,7 +7,7 @@ export interface StockCheckResult {
   requestedQuantity: number;
 }
 
-export interface InventoryGateway {
+export interface CartInventoryGateway {
   checkStock(
     productId: number,
     quantity: number,

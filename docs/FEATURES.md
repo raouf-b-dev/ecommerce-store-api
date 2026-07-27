@@ -12,6 +12,7 @@
 - [📦 Infrastructure](#infrastructure)
 - [🔭 Observability](#observability)
 - [🧪 Testing](#testing)
+- [🌱 Database Seeding](#database-seeding)
 - [📜 Available Scripts](#available-scripts)
 
 ---
@@ -46,7 +47,7 @@ The core domain has zero dependency on infrastructure. All external concerns (da
 
 ### Modular Monolith
 
-All 9 modules (Auth, Carts, Customers, Health, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
+All 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
 
 **Location**: `src/modules/`
 
@@ -122,7 +123,7 @@ Relational persistence with TypeORM, including automated migration CLI scripts f
 
 ### RSA JWT Authentication (RS256 + JWKS)
 
-Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /auth/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
+Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /authentication/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
 
 **Location**: `src/infrastructure/jwt/` · **Deep-dive**: [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md)
 
@@ -130,7 +131,7 @@ Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a
 
 Session-based refresh tokens stored in PostgreSQL with SHA-256 hashing. Supports: token rotation (old token invalidated on use), single-session logout, and all-session logout. Refresh tokens are transported via HttpOnly cookies.
 
-**Location**: `src/modules/auth/core/domain/entities/`, `src/modules/auth/secondary-adapters/`
+**Location**: `src/modules/authentication/core/domain/entities/`, `src/modules/authentication/secondary-adapters/`
 
 ### Helmet Security Headers
 
@@ -160,17 +161,17 @@ All DTOs use `class-validator` decorators for type-safe input validation. Pagina
 
 Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
 
-**Location**: `src/modules/auth/`, `src/infrastructure/guards/`
+**Location**: `src/modules/identity/`
 
 ### Forced Credential Rotation (mustChangePassword)
 
 Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
 
-**Location**: `src/modules/auth/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+**Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
 ### Rate Limiting & Throttling
 
-Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/auth/login`.
+Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/authentication/login`.
 
 **Location**: `src/infrastructure/throttler/`
 
@@ -254,6 +255,23 @@ Each module has its own `testing/` directory with:
 
 ---
 
+<a id="database-seeding"></a>
+
+## 🌱 Database Seeding
+
+### Mock Catalog & Test Accounts
+
+A non-interactive database seeding command populates the local PostgreSQL database with standard test accounts and a diverse product catalog for developmental and manual verification workflows.
+
+- **Admin Account**: `admin@store.local` / `Admin123!` (ADMIN role)
+- **Customer Account**: `customer@store.local` / `Customer123!` (CUSTOMER role with a default shipping address)
+- **15-Product Catalog**: Distributed across 5 categories (Electronics, Clothing, Home & Garden, Sports, Books) with varying inventory stock levels (5 high, 5 medium, 3 low, 2 zero stock) to test low-stock alerts and out-of-stock validation rules.
+- **Safety & Idempotency**: Running the script with `NODE_ENV=production` is blocked. It skips existing catalog SKUs and user accounts to enable safe reruns.
+
+**Location**: `scripts/seed.ts`, module-owned seed use cases under `src/modules/*/core/application/seed/` · **Deep-dive**: [SEEDING.md](development/SEEDING.md)
+
+---
+
 <a id="available-scripts"></a>
 
 ## 📜 Available Scripts
@@ -302,7 +320,8 @@ Each module has its own `testing/` directory with:
 
 ### Utilities
 
-| Script             | Description                    |
-| :----------------- | :----------------------------- |
-| `npm run env:init` | Generate all environment files |
-| `npm run clean`    | Remove build artifacts         |
+| Script             | Description                             |
+| :----------------- | :-------------------------------------- |
+| `npm run db:seed`  | Seed development database (idempotency) |
+| `npm run env:init` | Generate all environment files          |
+| `npm run clean`    | Remove build artifacts                  |

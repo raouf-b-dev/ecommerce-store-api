@@ -177,26 +177,22 @@ SELECT meta_key, meta_value FROM wp_postmeta WHERE post_id = 42;
 
 The EAV system fits our Hexagonal Architecture:
 
-```
-┌─────────────────────────────────────────────────────┐
-│  Primary Adapters (Controllers / DTOs)              │
-│  POST /products/attributes/definitions              │
-│  PUT  /products/:id/attributes/:defId               │
-├─────────────────────────────────────────────────────┤
-│  Application Layer (Use Cases)                      │
-│  CreateAttributeDefinitionUseCase                   │
-│  SetProductAttributeUseCase (validates type+options) │
-├─────────────────────────────────────────────────────┤
-│  Domain Layer                                       │
-│  ProductAttributeDefinition (entity)                │
-│  ProductAttributeValue (entity)                     │
-│  AttributeDataType (value object / enum)            │
-│  ProductAttributeDefinitionRepository (port)        │
-├─────────────────────────────────────────────────────┤
-│  Secondary Adapters (Postgres + TypeORM)             │
-│  product_attribute_definitions table                │
-│  product_attribute_values table                     │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Layer1 ["Primary Adapters (Controllers / DTOs)"]
+        l1["POST /products/attributes/definitions<br/>PUT /products/:id/attributes/:defId"]
+    end
+    subgraph Layer2 ["Application Layer (Use Cases)"]
+        l2["CreateAttributeDefinitionUseCase<br/>SetProductAttributeUseCase (validates type + options)"]
+    end
+    subgraph Layer3 ["Domain Layer"]
+        l3["ProductAttributeDefinition (entity)<br/>ProductAttributeValue (entity)<br/>AttributeDataType (enum/VO)<br/>ProductAttributeDefinitionRepository (port)"]
+    end
+    subgraph Layer4 ["Secondary Adapters (Postgres + TypeORM)"]
+        l4["product_attribute_definitions table<br/>product_attribute_values table"]
+    end
+
+    Layer1 --> Layer2 --> Layer3 --> Layer4
 ```
 
 ---

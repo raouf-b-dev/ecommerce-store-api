@@ -9,12 +9,11 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
-import { CartTestFactory } from '../../../../../carts/testing/factories/cart.factory';
+import { DomainEventPublisher } from 'src/shared-kernel/domain/interfaces/domain-event-publisher';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { CustomerTestFactory } from '../../../../../customers/testing/factories/customer.factory';
-import { Customer } from '../../../../../customers/core/domain/entities/customer';
-import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
@@ -22,20 +21,26 @@ describe('CheckoutUseCase', () => {
   let validateCheckoutUseCase: jest.Mocked<ValidateCheckoutUseCase>;
   let domainEventPublisher: DomainEventPublisher;
 
-  const mockUserId = 123;
+  const mockuserId = 123;
   const mockCartId = 123;
 
-  const mockCustomer = Customer.fromPrimitives(
-    CustomerTestFactory.createCustomerWithAddress({ id: mockUserId }),
-  );
+  const mockUser = OrderDtoTestFactory.createCheckoutUserInfoResult({
+    id: mockuserId,
+  });
 
-  const mockCart = CartTestFactory.createCartWithItems(1, {
+  const mockCart = OrderDtoTestFactory.createCheckoutCartInfo({
     id: mockCartId,
-    customerId: mockUserId,
+    userId: mockuserId,
   });
 
   const mockResolvedAddress =
     OrderTestFactory.createMockOrder().shippingAddress;
+
+  const customerCallerContext = createUserCallerContext({
+    userId: 10,
+    role: 'CUSTOMER',
+    permissions: new Set(['manage_own_cart']),
+  });
 
   beforeEach(async () => {
     const mockOrderScheduler = {
@@ -61,9 +66,10 @@ describe('CheckoutUseCase', () => {
     const mockValidateCheckoutUseCase = {
       execute: jest.fn().mockResolvedValue(
         Result.success({
-          customer: mockCustomer,
+          customer: mockUser,
           cart: mockCart,
           shippingAddress: mockResolvedAddress,
+          userId: mockuserId,
         }),
       ),
     };
@@ -114,17 +120,23 @@ describe('CheckoutUseCase', () => {
       Result.success('job-123'),
     );
 
-    const result = await useCase.execute({ command, userId: mockUserId });
+    const result = await useCase.execute({
+      command,
+      callerContext: customerCallerContext,
+      cartToken: null,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
       cartId: mockCartId,
-      userId: mockUserId,
+      callerContext: customerCallerContext,
+      cartToken: null,
       shippingAddress: undefined,
     });
     expect(orderScheduler.scheduleCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
         shippingAddress: mockResolvedAddress,
+        userId: mockuserId,
       }),
     );
 
@@ -132,12 +144,12 @@ describe('CheckoutUseCase', () => {
       'cart.checkout.initiated',
       {
         cartId: mockCartId,
-        userId: mockUserId,
+        userId: mockuserId,
       },
     );
     expect(domainEventPublisher.publish).toHaveBeenCalledWith('order.created', {
       orderId: '1001',
-      userId: mockUserId,
+      userId: mockuserId,
     });
   });
 
@@ -165,12 +177,17 @@ describe('CheckoutUseCase', () => {
       Result.success('job-123'),
     );
 
-    const result = await useCase.execute({ command, userId: mockUserId });
+    const result = await useCase.execute({
+      command,
+      callerContext: customerCallerContext,
+      cartToken: null,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
       cartId: mockCartId,
-      userId: mockUserId,
+      callerContext: customerCallerContext,
+      cartToken: null,
       shippingAddress: shippingAddressDto,
     });
   });
@@ -185,7 +202,11 @@ describe('CheckoutUseCase', () => {
       paymentMethod: PaymentMethodType.CREDIT_CARD,
     };
 
-    const result = await useCase.execute({ command, userId: mockUserId });
+    const result = await useCase.execute({
+      command,
+      callerContext: customerCallerContext,
+      cartToken: null,
+    });
 
     ResultAssertionHelper.assertResultFailure(result);
     expect(orderScheduler.scheduleCheckout).not.toHaveBeenCalled();

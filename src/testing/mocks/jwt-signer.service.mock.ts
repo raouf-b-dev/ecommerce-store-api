@@ -2,7 +2,7 @@ import {
   JwtSignerPort,
   RefreshTokenResult,
   SignAccessTokenPayload,
-} from '../../modules/auth/core/application/ports/jwt-signer.port';
+} from '../../modules/authentication/core/application/ports/jwt-signer.port';
 
 const dummyPayload = Buffer.from(
   JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }),
@@ -23,4 +23,7 @@ export class MockJwtSignerService implements JwtSignerPort {
       sessionId: 'mock-session-id',
       expiresAt: new Date(Date.now() + 3600_000),
     });
+  signCartSessionToken = jest
+    .fn<Promise<string>, [number]>()
+    .mockResolvedValue(dummyToken);
 }

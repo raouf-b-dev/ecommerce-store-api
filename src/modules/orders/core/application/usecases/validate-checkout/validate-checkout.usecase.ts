@@ -11,21 +11,24 @@ import {
   ShippingAddressInput,
 } from '../../services/shipping-address-resolver';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
-import { CheckoutCustomerInfo } from '../../ports/customer.gateway';
-import { CheckoutCartInfo } from '../../ports/cart.gateway';
-import { CustomerGateway } from '../../ports/customer.gateway';
-import { CartGateway } from '../../ports/cart.gateway';
+import { CheckoutUserInfoResult } from '../../ports/user.gateway';
+import { UserGateway } from '../../ports/user.gateway';
+import { CartGateway, CheckoutCartInfo } from '../../ports/cart.gateway';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface ValidateCheckoutInput {
   cartId: number;
-  userId: number;
+  callerContext: CallerContext | null;
+  cartToken?: string | null;
   shippingAddress?: ShippingAddressInput;
 }
 
 export interface ValidatedCheckoutContext {
-  customer: CheckoutCustomerInfo;
+  user: CheckoutUserInfoResult | null;
   cart: CheckoutCartInfo;
   shippingAddress: ShippingAddressProps;
+  userId: number;
 }
 
 @Injectable()
@@ -35,7 +38,7 @@ export class ValidateCheckoutUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    private readonly customerGateway: CustomerGateway,
+    private readonly userGateway: UserGateway,
     private readonly cartGateway: CartGateway,
     private readonly addressResolver: ShippingAddressResolver,
   ) {
@@ -45,17 +48,25 @@ export class ValidateCheckoutUseCase extends UseCase<
   async execute(
     input: ValidateCheckoutInput,
   ): Promise<Result<ValidatedCheckoutContext, UseCaseError>> {
-    const { cartId, userId, shippingAddress } = input;
+    const { cartId, callerContext, cartToken, shippingAddress } = input;
 
-    // 1. Validate Customer exists
-    const customerResult = await this.customerGateway.validateCustomer(userId);
-    if (isFailure(customerResult)) {
-      return Result.failure(customerResult.error);
+    if (!isSystemCaller(callerContext)) {
+      if (
+        !callerContext ||
+        callerContext.userId === null ||
+        !callerContext.permissions.has('manage_own_cart')
+      ) {
+        return ErrorFactory.UseCaseError(
+          'Checkout requires a customer account',
+        );
+      }
     }
-    const customer = customerResult.value;
 
-    // 2. Validate Cart exists and is not empty
-    const cartResult = await this.cartGateway.validateCart(cartId);
+    const cartResult = await this.cartGateway.validateCartForCheckout({
+      cartId,
+      callerContext,
+      cartToken: cartToken ?? null,
+    });
     if (isFailure(cartResult)) {
       return Result.failure(cartResult.error);
     }
@@ -65,11 +76,47 @@ export class ValidateCheckoutUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Cart is empty');
     }
 
-    // 3. Resolve and validate Shipping Address
-    const resolvedAddress = this.addressResolver.resolve(
-      shippingAddress,
-      customer,
-    );
+    if (isSystemCaller(callerContext)) {
+      if (!cart.userId) {
+        return ErrorFactory.UseCaseError(
+          'Checkout requires a customer account',
+        );
+      }
+
+      const userResult = await this.userGateway.getUserInfo(cart.userId);
+      if (isFailure(userResult)) {
+        return Result.failure(userResult.error);
+      }
+
+      const user = userResult.value;
+      const resolvedAddress = this.addressResolver.resolve(
+        shippingAddress,
+        user,
+      );
+
+      if (!resolvedAddress) {
+        return ErrorFactory.UseCaseError(
+          'No default address found. Please provide a shipping address.',
+        );
+      }
+
+      return Result.success({
+        user,
+        cart,
+        shippingAddress: resolvedAddress,
+        userId: cart.userId,
+      });
+    }
+
+    const userId = callerContext.userId;
+
+    const userResult = await this.userGateway.getUserInfo(userId);
+    if (isFailure(userResult)) {
+      return Result.failure(userResult.error);
+    }
+    const user = userResult.value;
+
+    const resolvedAddress = this.addressResolver.resolve(shippingAddress, user);
 
     if (!resolvedAddress) {
       return ErrorFactory.UseCaseError(
@@ -78,9 +125,10 @@ export class ValidateCheckoutUseCase extends UseCase<
     }
 
     return Result.success({
-      customer,
+      user,
       cart,
       shippingAddress: resolvedAddress,
+      userId,
     });
   }
 }

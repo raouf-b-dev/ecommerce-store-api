@@ -14,8 +14,153 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  setup:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24 (cache npm)
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-nodemodules
+        uses: actions/cache@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install deps
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run ESLint
+        run: npm run lint:check
+
+      - name: Run Prettier formatting check
+        run: npm run format:check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run Unit Tests
+        run: npm run test -- --ci
+
+  arch:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run Architecture Boundary Tests
+        run: npm run test:arch
+
+  build:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run Build
+        run: npm run build
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests, arch, build]
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
     services:
       postgres:
@@ -47,18 +192,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - name: Setup Node.js 20 (cache npm)
-        uses: actions/setup-node@v4
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
 
-      - name: Install deps
-        run: npm ci
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
 
       - name: Install network and DB clients
         run: |
@@ -66,7 +213,6 @@ jobs:
           sudo apt-get install -y netcat-openbsd redis-tools postgresql-client
 
       - name: Wait for services, detect hosts and create .env.test
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           CI_DB_USERNAME: ${{ secrets.CI_DB_USERNAME }}
           CI_DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
@@ -147,29 +293,54 @@ jobs:
           echo "DETECTED_DB_USER=${DB_USER}" >> $GITHUB_ENV
           echo "DETECTED_DB_NAME=${DB_NAME}" >> $GITHUB_ENV
 
-      - name: Safe checks for fork PRs (no secrets)
-        if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        run: |
-          echo "Running safe checks (no secrets). Integration tests are skipped."
-          CI_SKIP_INTEGRATION=true npm run test:ci
-        env:
-          NODE_ENV: test
-
       - name: Run DB migrations (test)
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: npm run migration:run:test
         env:
           NODE_ENV: test
 
-      - name: Run tests (CI)
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        run: npm run test:ci
+      - name: Run E2E tests (CI)
+        run: npm run test:e2e
         env:
           NODE_ENV: test
-
-      - name: Build
-        run: npm run build
 
       - name: Cleanup .env.test
         if: always()
         run: rm -f .env.test || true
+
+  ci:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests, arch, build, integration]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          lint_status="${{ needs.lint.result }}"
+          typecheck_status="${{ needs.typecheck.result }}"
+          unit_status="${{ needs.unit-tests.result }}"
+          arch_status="${{ needs.arch.result }}"
+          build_status="${{ needs.build.result }}"
+          integration_status="${{ needs.integration.result }}"
+
+          echo "lint: $lint_status"
+          echo "typecheck: $typecheck_status"
+          echo "unit-tests: $unit_status"
+          echo "arch: $arch_status"
+          echo "build: $build_status"
+          echo "integration: $integration_status"
+
+          # Check for failures/cancellations of parallel jobs
+          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$build_status"; do
+            if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
+              echo "One of the required parallel jobs failed or was cancelled."
+              exit 1
+            fi
+          done
+
+          # Integration job is only required to pass if it actually ran (not skipped)
+          if [ "$integration_status" = "failure" ] || [ "$integration_status" = "cancelled" ]; then
+            echo "Integration tests failed or were cancelled."
+            exit 1
+          fi
+
+          echo "All checks passed successfully!"

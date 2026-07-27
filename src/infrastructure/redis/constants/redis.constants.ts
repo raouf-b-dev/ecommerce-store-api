@@ -19,9 +19,9 @@ export const PRODUCT_REDIS: IRedisContstant = {
 };
 
 export const INVENTORY_REDIS: IRedisContstant = {
-  INDEX: 'order_index',
-  CACHE_KEY: 'order_cache',
-  IS_CACHED_FLAG: 'order_list:isCached',
+  INDEX: 'inventory_index',
+  CACHE_KEY: 'inventory_cache',
+  IS_CACHED_FLAG: 'inventory_list:isCached',
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
 
@@ -36,13 +36,6 @@ export const PAYMENT_REDIS: IRedisContstant = {
   INDEX: 'payment_index',
   CACHE_KEY: 'payment_cache',
   IS_CACHED_FLAG: 'payment_list:isCached',
-  EXPIRATION: 3600 * 24 * 7, // 7 days
-};
-
-export const CUSTOMER_REDIS: IRedisContstant = {
-  INDEX: 'customer_index',
-  CACHE_KEY: 'customer_cache',
-  IS_CACHED_FLAG: 'customer_list:isCached',
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
 

@@ -60,7 +60,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
       userId: dto.userId,
       shippingAddress: dto.shippingAddress,
       paymentMethod: dto.paymentMethod,
-      customerNotes: dto.customerNotes,
+      userNotes: dto.customerNotes,
       orderId: dto.orderId,
     });
 

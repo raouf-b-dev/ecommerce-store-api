@@ -12,8 +12,8 @@ export interface OrderItemInput {
 export interface ListOrdersQuery {
   page?: number;
   limit?: number;
-  customerId?: number;
-  customerEmail?: string;
+  userId?: number;
+  userEmail?: string;
   status?: OrderStatus;
   sortBy?: 'createdAt' | 'updatedAt' | 'totalPrice';
   sortOrder?: 'asc' | 'desc';

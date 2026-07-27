@@ -7,18 +7,55 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  PAYMENT_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+
+export interface GetPaymentInput {
+  paymentId: number;
+  callerContext: CallerContext;
+}
 
 @Injectable()
-export class GetPaymentUseCase extends UseCase<number, IPayment, UseCaseError> {
+export class GetPaymentUseCase extends UseCase<
+  GetPaymentInput,
+  IPayment,
+  UseCaseError
+> {
   constructor(private readonly paymentRepository: PaymentRepository) {
     super();
   }
 
-  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
-    const result = await this.paymentRepository.findById(id);
+  async execute(
+    input: GetPaymentInput,
+  ): Promise<Result<IPayment, UseCaseError>> {
+    const { paymentId, callerContext } = input;
+    const result = await this.paymentRepository.findById(paymentId);
 
     if (isFailure(result)) return result;
 
-    return Result.success(result.value.toPrimitives());
+    const payment = result.value;
+    if (!payment) {
+      return ErrorFactory.UseCaseError(
+        `Payment with id ${paymentId} not found`,
+      );
+    }
+
+    if (
+      !OwnedResourceAccessPolicy.canViewResource(
+        callerContext,
+        payment.userId,
+        PAYMENT_ACCESS_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `Payment with id ${paymentId} not found`,
+      );
+    }
+
+    return Result.success(payment.toPrimitives());
   }
 }

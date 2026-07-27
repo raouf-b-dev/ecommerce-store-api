@@ -34,6 +34,7 @@ Before starting any task, read `.agents/PROJECT-CONTEXT.md` for a compact projec
 5. Do not bypass ports with direct cross-context repository/entity imports.
 6. Treat security-sensitive changes as high-risk by default.
 7. Require verification evidence for behavior changes.
+8. Never execute the following operations without explicit user confirmation: `git push`, `git push --force`, `npm publish`, database migrations (`migration:run`, `migration:revert`), destructive file operations (`rm -rf`, bulk deletes), or any command that modifies production configuration files.
 
 ## 4. Conventions Application Rule
 

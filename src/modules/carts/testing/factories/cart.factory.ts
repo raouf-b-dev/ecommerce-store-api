@@ -5,7 +5,7 @@ export class CartTestFactory {
   static createMockCart(overrides?: Partial<ICart>): ICart {
     const baseCart: ICart = {
       id: 123,
-      customerId: 123,
+      userId: 123,
       sessionId: null,
       items: [],
       itemCount: 0,
@@ -52,15 +52,15 @@ export class CartTestFactory {
 
   static createGuestCart(sessionId: number, overrides?: Partial<ICart>): ICart {
     return this.createMockCart({
-      customerId: null,
+      userId: null,
       sessionId,
       ...overrides,
     });
   }
 
-  static createUserCart(customerId: number, overrides?: Partial<ICart>): ICart {
+  static createUserCart(userId: number, overrides?: Partial<ICart>): ICart {
     return this.createMockCart({
-      customerId,
+      userId: userId,
       sessionId: null,
       ...overrides,
     });

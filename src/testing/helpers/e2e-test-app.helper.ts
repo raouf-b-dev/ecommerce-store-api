@@ -3,9 +3,11 @@ import {
   ValidationPipe,
   DynamicModule,
   Type,
+  VersioningType,
 } from '@nestjs/common';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import { AppModule } from 'src/app.module';
 import { GlobalExceptionFilter } from 'src/filters/global-exception.filter';
 import { ResultInterceptor } from 'src/interceptors/result.interceptor';
@@ -42,6 +44,12 @@ export class E2eTestAppHelper {
 
     const moduleRef = await builder.compile();
     const app = moduleRef.createNestApplication();
+
+    app.enableVersioning({
+      type: VersioningType.URI,
+      defaultVersion: '1',
+    });
+    app.use(cookieParser());
 
     if (applyGlobals) {
       app.useGlobalInterceptors(

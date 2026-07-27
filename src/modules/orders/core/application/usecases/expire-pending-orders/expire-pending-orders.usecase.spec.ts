@@ -3,7 +3,10 @@ import { ExpirePendingOrdersUseCase } from './expire-pending-orders.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { ResultAssertionHelper } from '../../../../../../testing';
+import {
+  ResultAssertionHelper,
+  LoggerTestHelper,
+} from '../../../../../../testing';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Order } from '../../../domain/entities/order';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
@@ -17,6 +20,9 @@ describe('ExpirePendingOrdersUseCase', () => {
   let mockCancelOrderUseCase: jest.Mocked<CancelOrderUseCase>;
 
   beforeEach(async () => {
+    // Silence logs during tests
+    LoggerTestHelper.silence();
+
     mockOrderRepository = new MockOrderRepository();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,6 +44,7 @@ describe('ExpirePendingOrdersUseCase', () => {
   afterEach(() => {
     mockOrderRepository.reset();
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('should expire pending orders older than the threshold', async () => {

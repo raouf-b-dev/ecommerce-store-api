@@ -25,11 +25,13 @@ A task is done only if all are true:
 
 - Change conforms to [DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md).
 - Integration style conforms to [INTEGRATION-PATTERNS.md](../integration/INTEGRATION-PATTERNS.md).
-- Secrets and auth paths conform to [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md).
+- Secrets and authentication paths conform to [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md).
 
 ### Gate C: Verification
 
+- `npm run typecheck` passes for code changes.
 - Tests run at the right level (unit/integration/e2e as needed).
+- `npm run test:arch` passes when module boundaries, ports, or adapters change.
 - New failure modes are covered.
 - Logs, metrics, or traces are considered when behavior changes.
 

@@ -7,10 +7,21 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  PAYMENT_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+
+export interface VerifyPaymentInput {
+  paymentId: number;
+  callerContext: CallerContext;
+}
 
 @Injectable()
 export class VerifyPaymentUseCase extends UseCase<
-  number,
+  VerifyPaymentInput,
   IPayment,
   UseCaseError
 > {
@@ -18,14 +29,33 @@ export class VerifyPaymentUseCase extends UseCase<
     super();
   }
 
-  async execute(id: number): Promise<Result<IPayment, UseCaseError>> {
-    const result = await this.paymentRepository.findById(id);
+  async execute(
+    input: VerifyPaymentInput,
+  ): Promise<Result<IPayment, UseCaseError>> {
+    const { paymentId, callerContext } = input;
+    const result = await this.paymentRepository.findById(paymentId);
 
     if (isFailure(result)) return result;
 
-    // Logic to verify payment status with external provider could be added here
-    // For now, we just return the payment
+    const payment = result.value;
+    if (!payment) {
+      return ErrorFactory.UseCaseError(
+        `Payment with id ${paymentId} not found`,
+      );
+    }
 
-    return Result.success(result.value.toPrimitives());
+    if (
+      !OwnedResourceAccessPolicy.canViewResource(
+        callerContext,
+        payment.userId,
+        PAYMENT_ACCESS_PERMISSIONS,
+      )
+    ) {
+      return ErrorFactory.UseCaseError(
+        `Payment with id ${paymentId} not found`,
+      );
+    }
+
+    return Result.success(payment.toPrimitives());
   }
 }

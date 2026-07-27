@@ -1,9 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-export interface AddCartItemInput {
-  productId: number;
-  quantity: number;
-}
 import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
@@ -12,31 +8,45 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { InventoryGateway } from '../../ports/inventory.gateway';
-import { ProductGateway } from '../../ports/product.gateway';
+import { CartInventoryGateway } from '../../ports/inventory.gateway';
+import { CartProductGateway } from '../../ports/product.gateway';
 import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+
+export interface AddCartItemInput {
+  productId: number;
+  quantity: number;
+}
+
+export interface AddCartItemUseCaseInput {
+  cartId: number;
+  input: AddCartItemInput;
+  callerContext: CallerContext | null;
+  cartToken: string | null;
+}
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
-  { cartId: number; input: AddCartItemInput },
+  AddCartItemUseCaseInput,
   ICart,
   UseCaseError
 > {
   constructor(
     private readonly cartRepository: CartRepository,
+    private readonly cartOwnershipValidator: CartOwnershipValidator,
     @Inject(PRODUCT_GATEWAY)
-    private readonly productGateway: ProductGateway,
+    private readonly productGateway: CartProductGateway,
     @Inject(INVENTORY_GATEWAY)
-    private readonly inventoryGateway: InventoryGateway,
+    private readonly inventoryGateway: CartInventoryGateway,
   ) {
     super();
   }
 
-  async execute(input: {
-    cartId: number;
-    input: AddCartItemInput;
-  }): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, input: addInput } = input;
+  async execute(
+    input: AddCartItemUseCaseInput,
+  ): Promise<Result<ICart, UseCaseError>> {
+    const { cartId, input: addInput, callerContext, cartToken } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -45,6 +55,14 @@ export class AddCartItemUseCase extends UseCase<
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
+
+    const ownershipResult = await this.cartOwnershipValidator.validate(
+      cart,
+      callerContext,
+      cartToken,
+    );
+
+    if (isFailure(ownershipResult)) return ownershipResult;
 
     const productResult = await this.productGateway.findById(
       addInput.productId,

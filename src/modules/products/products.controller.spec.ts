@@ -9,8 +9,6 @@ import { ListProductsUseCase } from './core/application/usecases/list-products/l
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { Result } from '../../shared-kernel/domain/result';
-import { AuthGuard } from '../../guards/auth.guard';
-import { PermissionsGuard } from '../auth/primary-adapters/guards/permissions.guard';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -89,12 +87,7 @@ describe('ProductsController', () => {
           },
         },
       ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(PermissionsGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
     controller = module.get<ProductsController>(ProductsController);
 
@@ -113,7 +106,7 @@ describe('ProductsController', () => {
   });
 
   it('should call GetProductUseCase.execute when findOne is called', async () => {
-    await controller.findOne(id.toString());
+    await controller.findOne(id);
     expect(getProductUseCase.execute).toHaveBeenCalledWith(id);
   });
 
@@ -128,7 +121,7 @@ describe('ProductsController', () => {
   });
 
   it('should call UpdateProductUseCase.execute when createProduct is called', async () => {
-    await controller.update(id.toString(), updateProductDto);
+    await controller.update(id, updateProductDto);
     expect(updateProductUseCase.execute).toHaveBeenCalledWith({
       id: id,
       dto: updateProductDto,
@@ -136,7 +129,7 @@ describe('ProductsController', () => {
   });
 
   it('should call DeleteProductUseCase.execute when remove is called', async () => {
-    await controller.remove(id.toString());
+    await controller.remove(id);
     expect(deleteProductUseCase.execute).toHaveBeenCalledWith(id);
   });
 });

@@ -1,0 +1,56 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { FindAllRolesUseCase } from './find-all-roles.usecase';
+import { RoleRepository } from '../../../domain/repositories/role.repository';
+import { ResultAssertionHelper } from '../../../../../../testing';
+import { Result } from '../../../../../../shared-kernel/domain/result';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
+import { AuthorizationDtoFactory } from '../../../../testing/factories/authorization.dto.factory';
+
+describe('FindAllRolesUseCase', () => {
+  let useCase: FindAllRolesUseCase;
+  let mockRoleRepo: MockRoleRepository;
+
+  beforeEach(async () => {
+    mockRoleRepo = new MockRoleRepository();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        FindAllRolesUseCase,
+        {
+          provide: RoleRepository,
+          useValue: mockRoleRepo,
+        },
+      ],
+    }).compile();
+
+    useCase = module.get<FindAllRolesUseCase>(FindAllRolesUseCase);
+  });
+
+  it('should successfully return all roles as primitives', async () => {
+    // Arrange
+    const role = AuthorizationDtoFactory.buildEntity();
+
+    mockRoleRepo.findAll.mockResolvedValue(Result.success([role]));
+
+    // Act
+    const result = await useCase.execute();
+
+    // Assert
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual([role.toPrimitives()]);
+  });
+
+  it('should return failure if repository fails', async () => {
+    // Arrange
+    mockRoleRepo.findAll.mockResolvedValue(
+      ErrorFactory.RepositoryError('DB Error'),
+    );
+
+    // Act
+    const result = await useCase.execute();
+
+    // Assert
+    ResultAssertionHelper.assertResultFailure(result, 'Failed to load roles');
+  });
+});

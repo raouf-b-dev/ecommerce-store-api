@@ -9,8 +9,11 @@ import { WebSocketHealthIndicator } from './indicators/websocket.health-indicato
 import { ServiceUnavailableException } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 
+import { Public } from '../../guards/decorators/public.decorator';
+
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 @SkipThrottle()
+@Public()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,

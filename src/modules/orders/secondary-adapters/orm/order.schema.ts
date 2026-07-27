@@ -9,6 +9,7 @@ import {
   JoinColumn,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
@@ -18,15 +19,15 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 
 @Entity({ name: 'orders' })
 @Index('idx_orders_status', ['status'])
-@Index('idx_orders_customer_id', ['customerId'])
+@Index('idx_orders_user_id', ['userId'])
 @Index('idx_orders_payment_id', ['paymentId'])
-@Index('idx_orders_customer_status', ['customerId', 'status'])
+@Index('idx_orders_user_status', ['userId', 'status'])
 export class OrderEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'customer_id' })
-  customerId: number;
+  @Column({ name: 'user_id' })
+  userId: number;
 
   @Column({ name: 'payment_id', type: 'int', nullable: true })
   paymentId: number | null;
@@ -45,7 +46,7 @@ export class OrderEntity {
     cascade: true,
     eager: true,
   })
-  items: OrderItemEntity[];
+  items: Relation<OrderItemEntity>[];
 
   @OneToOne(() => ShippingAddressEntity, {
     cascade: true,
@@ -56,7 +57,7 @@ export class OrderEntity {
   shippingAddress: ShippingAddressEntity;
 
   @Column({ type: 'text', nullable: true })
-  customerNotes: string | null;
+  userNotes: string | null;
 
   @Column({
     type: 'numeric',

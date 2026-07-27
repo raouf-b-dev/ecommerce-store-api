@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 import { CartEntity } from './cart.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
@@ -38,5 +39,5 @@ export class CartItemEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'cart_id' })
-  cart: CartEntity;
+  cart: Relation<CartEntity>;
 }

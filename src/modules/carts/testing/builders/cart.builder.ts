@@ -14,15 +14,15 @@ export class CartBuilder {
     return this;
   }
 
-  withCustomerId(customerId: number): this {
-    this.cart.customerId = customerId;
+  withuserId(userId: number): this {
+    this.cart.userId = userId;
     this.cart.sessionId = null;
     return this;
   }
 
   withSessionId(sessionId: number): this {
     this.cart.sessionId = sessionId;
-    this.cart.customerId = null;
+    this.cart.userId = null;
     return this;
   }
 

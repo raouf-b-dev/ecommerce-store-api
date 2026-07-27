@@ -1,7 +1,8 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { CallerContext } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
-// Downstream-specific DTO — Orders never sees the full Cart entity
 export interface CheckoutCartItem {
   productId: number;
   productName: string;
@@ -11,7 +12,7 @@ export interface CheckoutCartItem {
 
 export interface CheckoutCartInfo {
   id: number | null;
-  customerId: number | null;
+  userId: number | null;
   items: CheckoutCartItem[];
 }
 
@@ -19,8 +20,13 @@ export abstract class CartGateway {
   abstract validateCart(
     cartId: number,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>>;
+  abstract validateCartForCheckout(input: {
+    cartId: number;
+    callerContext: CallerContext | null;
+    cartToken?: string | null;
+  }): Promise<Result<CheckoutCartInfo, UseCaseError>>;
   abstract getCart(
-    customerId: number,
+    userId: number,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>>;
   abstract clearCart(
     cartId: number,
