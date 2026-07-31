@@ -7,7 +7,6 @@ export class TestDataHelper {
   static createRepositoryTestData(options?: {
     orderId?: number;
     productId?: number;
-    useCOD?: boolean;
   }) {
     const orderId = options?.orderId || 1;
     const productId = options?.productId || 3;
@@ -15,37 +14,23 @@ export class TestDataHelper {
     const paymentId = 1;
     const shippingAddressId = 1;
 
-    const createOrderDto = options?.useCOD
-      ? OrderDtoTestFactory.createCashOnDeliveryCheckoutCommand()
-      : OrderDtoTestFactory.createCreditCardCheckoutCommand();
+    const createOrderDto = OrderDtoTestFactory.createCheckoutCommand();
 
     const productEntity = ProductEntityTestFactory.createProductEntity({
       id: productId,
     });
 
-    const orderEntity = options?.useCOD
-      ? OrderEntityTestFactory.createCODOrderEntity({
-          id: orderId,
-          userId,
-          paymentId: null,
-          shippingAddressId,
-          items: [
-            OrderEntityTestFactory.createOrderItemEntity({
-              productId,
-            }),
-          ],
-        })
-      : OrderEntityTestFactory.createOrderEntity({
-          id: orderId,
-          userId,
-          paymentId,
-          shippingAddressId,
-          items: [
-            OrderEntityTestFactory.createOrderItemEntity({
-              productId,
-            }),
-          ],
-        });
+    const orderEntity = OrderEntityTestFactory.createOrderEntity({
+      id: orderId,
+      userId,
+      paymentId,
+      shippingAddressId,
+      items: [
+        OrderEntityTestFactory.createOrderItemEntity({
+          productId,
+        }),
+      ],
+    });
 
     return {
       // IDs

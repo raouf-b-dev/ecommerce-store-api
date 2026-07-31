@@ -40,21 +40,21 @@ describe('OrdersController', () => {
   let callerContext: CallerContext;
 
   beforeEach(async () => {
-    mockOrder = OrderTestFactory.createOrderEntity();
-    cancelledOrder = OrderTestFactory.createOrderEntity({
+    mockOrder = OrderTestFactory.createDomainOrder();
+    cancelledOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.CANCELLED,
     });
-    confirmedOrder = OrderTestFactory.createOrderEntity({
+    confirmedOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.CONFIRMED,
     });
-    processingOrder = OrderTestFactory.createOrderEntity({
+    processingOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.PROCESSING,
     });
-    deliveredOrder = OrderTestFactory.createOrderEntity({
+    deliveredOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.DELIVERED,
     });
     createDeliveredOrderDto = OrderDtoTestFactory.createDeliverOrderCommand();
-    const cmd = OrderDtoTestFactory.createCreditCardCheckoutCommand();
+    const cmd = OrderDtoTestFactory.createCheckoutCommand();
     checkoutDto = {
       ...cmd,
       shippingAddress: cmd.shippingAddress
@@ -162,11 +162,10 @@ describe('OrdersController', () => {
   });
 
   it('should call CheckoutUseCase.execute when checkout is called', async () => {
-    await controller.checkout(checkoutDto, callerContext, 'cart-token');
+    await controller.checkout(checkoutDto, callerContext);
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
       command: checkoutDto,
       callerContext,
-      cartToken: 'cart-token',
     });
   });
 
@@ -201,8 +200,6 @@ describe('OrdersController', () => {
     const res = await controller.confirmOrder(confirmedOrder.id!);
     expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
       orderId: confirmedOrder.id!,
-      reservationId: undefined,
-      cartId: undefined,
     });
     expect(res).toEqual(Result.success(confirmedOrder));
   });

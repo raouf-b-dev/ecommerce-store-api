@@ -7,16 +7,12 @@ import {
   CallerContext,
   isSystemCaller,
 } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartSessionTokenGateway } from '../ports/session-token.gateway';
 
 @Injectable()
 export class CartOwnershipValidator {
-  constructor(private readonly sessionTokenGateway: CartSessionTokenGateway) {}
-
   async validate(
     cart: Cart,
     callerContext: CallerContext | null,
-    cartToken: string | null,
   ): Promise<Result<void, UseCaseError>> {
     if (isSystemCaller(callerContext)) {
       return Result.success(undefined);
@@ -28,33 +24,15 @@ export class CartOwnershipValidator {
     }
 
     // User cart -> match userId and verify caller has manage_own_cart permission
-    if (cart.isUserCart()) {
-      if (
-        !callerContext ||
-        !callerContext.permissions.has('manage_own_cart') ||
-        callerContext.userId === null ||
-        Number(callerContext.userId) !== Number(cart.userId)
-      ) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
-      }
-      return Result.success(undefined);
+    if (
+      !callerContext ||
+      !callerContext.permissions.has('manage_own_cart') ||
+      callerContext.userId === null ||
+      Number(callerContext.userId) !== Number(cart.userId)
+    ) {
+      return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
     }
 
-    // Guest cart -> validate session token (works for anonymous and logged-in clients)
-    if (cart.isGuestCart()) {
-      if (!cartToken) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
-      }
-      const tokenResult = await this.sessionTokenGateway.validateToken(
-        cartToken,
-        cart.id!,
-      );
-      if (tokenResult.isFailure || !tokenResult.value) {
-        return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
-      }
-      return Result.success(undefined);
-    }
-
-    return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
+    return Result.success(undefined);
   }
 }

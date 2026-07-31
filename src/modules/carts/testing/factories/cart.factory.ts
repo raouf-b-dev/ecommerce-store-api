@@ -6,7 +6,6 @@ export class CartTestFactory {
     const baseCart: ICart = {
       id: 123,
       userId: 123,
-      sessionId: null,
       items: [],
       itemCount: 0,
       totalAmount: 0,
@@ -50,18 +49,9 @@ export class CartTestFactory {
     });
   }
 
-  static createGuestCart(sessionId: number, overrides?: Partial<ICart>): ICart {
-    return this.createMockCart({
-      userId: null,
-      sessionId,
-      ...overrides,
-    });
-  }
-
   static createUserCart(userId: number, overrides?: Partial<ICart>): ICart {
     return this.createMockCart({
       userId: userId,
-      sessionId: null,
       ...overrides,
     });
   }

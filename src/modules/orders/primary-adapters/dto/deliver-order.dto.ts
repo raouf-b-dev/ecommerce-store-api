@@ -1,11 +1,14 @@
-// src/modules/orders/presentation/dto/deliver-order.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
+// src/modules/orders/primary-adapters/dto/deliver-order.dto.ts
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class DeliverOrderDto {
-  @ApiProperty({ required: false })
-  codPayment?: {
-    transactionId?: string;
-    notes?: string;
-    collectedBy?: string;
-  };
+  @ApiPropertyOptional({
+    example: 'Left package at front desk',
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
 }

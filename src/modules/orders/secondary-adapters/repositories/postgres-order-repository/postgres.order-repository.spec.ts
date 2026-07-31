@@ -15,7 +15,7 @@ describe('PostgresOrderRepository', () => {
   let repository: PostgresOrderRepository;
   let mockOrmRepo: jest.Mocked<Repository<OrderEntity>>;
 
-  const testData = TestDataHelper.createRepositoryTestData({ useCOD: true });
+  const testData = TestDataHelper.createRepositoryTestData();
 
   beforeEach(async () => {
     mockOrmRepo = createMockRepository<OrderEntity>();

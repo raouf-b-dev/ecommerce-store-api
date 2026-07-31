@@ -33,7 +33,7 @@ export class ListPaymentsQueryDto {
 
   @ApiPropertyOptional({
     enum: PaymentMethodType,
-    example: PaymentMethodType.CREDIT_CARD,
+    example: PaymentMethodType.STRIPE,
     description: 'Filter by payment method',
   })
   @IsOptional()

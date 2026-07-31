@@ -167,12 +167,12 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 
 ### 🔄 Distributed Systems
 
-| Feature                 | Description                                                   | Location                                    |
-| :---------------------- | :------------------------------------------------------------ | :------------------------------------------ |
-| SAGA Orchestration      | Multi-step checkout with automatic compensation on failure    | `src/modules/orders/primary-adapters/jobs/` |
-| Idempotency             | Redis-backed `@Idempotent()` decorator — execute-exactly-once | `src/infrastructure/idempotency/`           |
-| BullMQ Nested Flows     | Composed background job pipelines for notifications           | `src/modules/notifications/`                |
-| Hybrid Payment Strategy | Unified COD + Online checkout via Strategy Pattern            | `src/modules/payments/`                     |
+| Feature                | Description                                                   | Location                                    |
+| :--------------------- | :------------------------------------------------------------ | :------------------------------------------ |
+| SAGA Orchestration     | Multi-step checkout with automatic compensation on failure    | `src/modules/orders/primary-adapters/jobs/` |
+| Idempotency            | Redis-backed `@Idempotent()` decorator — execute-exactly-once | `src/infrastructure/idempotency/`           |
+| BullMQ Nested Flows    | Composed background job pipelines for notifications           | `src/modules/notifications/`                |
+| Stripe Payment Gateway | Production Stripe checkout intent and webhook event handling  | `src/modules/payments/`                     |
 
 ### ⚡ Data & Performance
 

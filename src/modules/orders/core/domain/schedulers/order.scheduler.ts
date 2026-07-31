@@ -28,12 +28,6 @@ export abstract class OrderScheduler {
     reservationId: number,
   ): Promise<Result<string, InfrastructureError>>;
 
-  abstract schedulePostConfirmation(
-    orderId: number,
-    reservationId: number,
-    cartId: number,
-  ): Promise<Result<string, InfrastructureError>>;
-
   abstract scheduleOrderStockRelease(
     orderId: number,
   ): Promise<Result<string, InfrastructureError>>;

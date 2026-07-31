@@ -12,7 +12,6 @@ describe('ClearCartUseCase', () => {
   let usecase: ClearCartUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
 
   const customerContext: CallerContext = {
     kind: 'user',
@@ -23,10 +22,7 @@ describe('ClearCartUseCase', () => {
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
-    };
-    validator = new CartOwnershipValidator(mockTokenService);
+    validator = new CartOwnershipValidator();
     usecase = new ClearCartUseCase(mockCartRepository, validator);
   });
 
@@ -53,7 +49,6 @@ describe('ClearCartUseCase', () => {
       const result = await usecase.execute({
         cartId,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
@@ -70,7 +65,6 @@ describe('ClearCartUseCase', () => {
       const result = await usecase.execute({
         cartId,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);

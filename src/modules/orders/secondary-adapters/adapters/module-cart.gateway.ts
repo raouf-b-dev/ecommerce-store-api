@@ -23,23 +23,16 @@ export class ModuleCartGateway implements CartGateway {
   async validateCart(
     cartId: number,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>> {
-    return this.fetchAndTranslate(
-      cartId,
-      'validate',
-      SYSTEM_CALLER_CONTEXT,
-      null,
-    );
+    return this.fetchAndTranslate(cartId, 'validate', SYSTEM_CALLER_CONTEXT);
   }
 
   async validateCartForCheckout(input: {
     cartId: number;
     callerContext: CallerContext | null;
-    cartToken?: string | null;
   }): Promise<Result<CheckoutCartInfo, UseCaseError>> {
     const result = await this.getCartUseCase.execute({
       cartId: input.cartId,
       callerContext: input.callerContext,
-      cartToken: input.cartToken ?? null,
     });
 
     if (isFailure(result)) {
@@ -52,14 +45,13 @@ export class ModuleCartGateway implements CartGateway {
   async getCart(
     cartId: number,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>> {
-    return this.fetchAndTranslate(cartId, 'get', SYSTEM_CALLER_CONTEXT, null);
+    return this.fetchAndTranslate(cartId, 'get', SYSTEM_CALLER_CONTEXT);
   }
 
   async clearCart(cartId: number): Promise<Result<void, InfrastructureError>> {
     const result = await this.clearCartUseCase.execute({
       cartId,
       callerContext: SYSTEM_CALLER_CONTEXT,
-      cartToken: null,
     });
 
     if (isFailure(result)) {
@@ -76,12 +68,10 @@ export class ModuleCartGateway implements CartGateway {
     cartId: number,
     operation: string,
     callerContext: CallerContext | null,
-    cartToken: string | null,
   ): Promise<Result<CheckoutCartInfo, InfrastructureError>> {
     const result = await this.getCartUseCase.execute({
       cartId,
       callerContext,
-      cartToken,
     });
 
     if (isFailure(result)) {
@@ -98,7 +88,7 @@ export class ModuleCartGateway implements CartGateway {
 
   private toCheckoutCartInfo(cart: {
     id: number | null;
-    userId: number | null;
+    userId: number;
     items?: Array<{
       productId: number;
       productName: string;

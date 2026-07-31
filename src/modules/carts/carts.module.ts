@@ -9,7 +9,6 @@ import {
   CACHED_CART_REPOSITORY,
   INVENTORY_GATEWAY,
   PRODUCT_GATEWAY,
-  CART_SESSION_TOKEN_GATEWAY,
 } from './carts.token';
 import { PostgresCartRepository } from './secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository';
 import { CachedCartRepository } from './secondary-adapters/repositories/cached-cart-repository/cached.cart-repository';
@@ -24,22 +23,15 @@ import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/ad
 import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
-import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { ProductsModule } from '../products/products.module';
 import { CartOwnershipValidator } from './core/application/services/cart-ownership.validator';
-import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
-import { CartSessionTokenGateway } from './core/application/ports/session-token.gateway';
-import { ModuleCartSessionTokenGateway } from './secondary-adapters/adapters/module-session-token.gateway';
-import { AuthenticationModule } from '../authentication/authentication.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CartEntity, CartItemEntity]),
     RedisModule,
-    RedisModule, // Keep default code duplication
     InventoryModule,
     ProductsModule,
-    AuthenticationModule,
   ],
   controllers: [CartsController],
   providers: [
@@ -67,11 +59,6 @@ import { AuthenticationModule } from '../authentication/authentication.module';
 
     // Gateways
     {
-      provide: CART_SESSION_TOKEN_GATEWAY,
-      useClass: ModuleCartSessionTokenGateway,
-    },
-
-    {
       provide: INVENTORY_GATEWAY,
       useClass: ModuleInventoryGateway,
     },
@@ -86,14 +73,8 @@ import { AuthenticationModule } from '../authentication/authentication.module';
       useExisting: CACHED_CART_REPOSITORY,
     },
 
-    {
-      provide: CartSessionTokenGateway,
-      useExisting: CART_SESSION_TOKEN_GATEWAY,
-    },
-
     // Helpers
     CartOwnershipValidator,
-    CartSessionCookieInterceptor,
 
     // Use Cases
     GetCartUseCase,
@@ -102,7 +83,6 @@ import { AuthenticationModule } from '../authentication/authentication.module';
     UpdateCartItemUseCase,
     RemoveCartItemUseCase,
     ClearCartUseCase,
-    MergeCartsUseCase,
   ],
   exports: [GetCartUseCase, ClearCartUseCase],
 })

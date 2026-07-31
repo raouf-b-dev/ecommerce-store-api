@@ -10,7 +10,7 @@ export class PaymentTestFactory {
       userId: 1,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       status: PaymentStatusType.COMPLETED,
       transactionId: 'tx_123456789',
       gatewayPaymentIntentId: null,
@@ -59,16 +59,6 @@ export class PaymentTestFactory {
     return this.createMockPayment({
       status: PaymentStatusType.PARTIALLY_REFUNDED,
       refundedAmount: 50,
-      ...overrides,
-    });
-  }
-
-  static createCODPayment(overrides?: Partial<IPayment>): IPayment {
-    return this.createMockPayment({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      status: PaymentStatusType.NOT_REQUIRED_YET,
-      transactionId: null,
-      completedAt: null,
       ...overrides,
     });
   }

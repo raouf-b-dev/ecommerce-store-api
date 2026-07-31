@@ -12,7 +12,7 @@ export interface CheckoutCartItem {
 
 export interface CheckoutCartInfo {
   id: number | null;
-  userId: number | null;
+  userId: number;
   items: CheckoutCartItem[];
 }
 
@@ -23,7 +23,6 @@ export abstract class CartGateway {
   abstract validateCartForCheckout(input: {
     cartId: number;
     callerContext: CallerContext | null;
-    cartToken?: string | null;
   }): Promise<Result<CheckoutCartInfo, UseCaseError>>;
   abstract getCart(
     userId: number,

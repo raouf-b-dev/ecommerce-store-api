@@ -116,26 +116,6 @@ describe('CachedOrderRepository', () => {
         RepositoryError,
       );
     });
-
-    it('should save cash on delivery order', async () => {
-      const codDto = OrderDtoTestFactory.createCashOnDeliveryCheckoutCommand();
-      const codOrder = Order.fromPrimitives(
-        OrderTestFactory.createCashOnDeliveryOrder(),
-      );
-
-      postgresRepo.save.mockResolvedValue(Result.success(codOrder));
-      cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockResolvedValue(undefined);
-
-      const result = await repository.save(codOrder);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.paymentMethod).toBe(
-          PaymentMethodType.CASH_ON_DELIVERY,
-        );
-      }
-    });
   });
 
   describe('updateStatus', () => {

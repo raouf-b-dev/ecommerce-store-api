@@ -66,7 +66,7 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       userId: 2,
       paymentMethodDetails: { cardLast4: '4242' },
     };
@@ -97,7 +97,7 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       userId: 2,
     };
 

@@ -1,4 +1,3 @@
-import { type } from 'os';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import {
   CheckoutCartItem,
@@ -18,7 +17,7 @@ export class OrderDtoTestFactory {
   ): CheckoutCommand {
     const baseCommand: CheckoutCommand = {
       cartId: 1,
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddress: {
         firstName: 'Jane',
         lastName: 'Smith',
@@ -33,40 +32,14 @@ export class OrderDtoTestFactory {
     return { ...baseCommand, ...overrides };
   }
 
-  static createCreditCardCheckoutCommand(
-    overrides?: Partial<CheckoutCommand>,
-  ): CheckoutCommand {
-    return this.createCheckoutCommand({
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
-      ...overrides,
-    });
-  }
-
-  static createCashOnDeliveryCheckoutCommand(
-    overrides?: Partial<CheckoutCommand>,
-  ): CheckoutCommand {
-    return this.createCheckoutCommand({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      ...overrides,
-    });
-  }
-
   static createDeliverOrderCommand(
     overrides?: Partial<DeliverOrderCommand>,
   ): DeliverOrderCommand {
     const baseCommand: DeliverOrderCommand = {
-      codPayment: {
-        transactionId: 'COD-123456',
-        notes: 'Cash collected on delivery',
-        collectedBy: 'Driver John Doe',
-      },
+      notes: 'Delivered successfully',
     };
 
     return { ...baseCommand, ...overrides };
-  }
-
-  static createEmptyDeliverOrderCommand(): DeliverOrderCommand {
-    return {};
   }
 
   static createCheckoutUserAddress(
@@ -120,7 +93,7 @@ export class OrderDtoTestFactory {
     const items = [this.createCheckoutCartItem()];
     const baseUser: CheckoutCartInfo = {
       id: 1,
-      userId: null,
+      userId: 1,
       items: items,
     };
     return { ...baseUser, ...overrides };

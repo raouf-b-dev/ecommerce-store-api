@@ -41,7 +41,6 @@ export class ValidateCartStep extends BaseJobHandler<
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId,
       callerContext: SYSTEM_CALLER_CONTEXT,
-      cartToken: null,
       shippingAddress: shippingAddress
         ? ShippingAddressDto.fromDomain(shippingAddress)
         : undefined,

@@ -24,8 +24,8 @@
 
 | Phase | Name                         | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                         | Location                                                                                       |
 | :---- | :--------------------------- | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **0** | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 8 modules (Authentication, Carts, Customers, Inventory, Orders, Payments, Products, Notifications) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                   | `src/modules/`, `src/infrastructure/`                                                          |
-| **1** | ACL Gateway & SAGA           | ✅ Done | 7 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                         | `src/modules/orders/`, `src/modules/carts/`                                                    |
+| **0** | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                            | `src/modules/`, `src/infrastructure/`                                                          |
+| **1** | ACL Gateway & SAGA           | ✅ Done | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                         | `src/modules/orders/`, `src/modules/carts/`                                                    |
 | **2** | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection · idempotency fail-open on Redis errors                                                                                                                                                                          | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                        |
 | **3** | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                               | `src/modules/*/secondary-adapters/repositories/cached-*/`                                      |
 | **4** | Test Suite Foundation        | ✅ Done | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                     | `src/modules/*/`, `src/testing/`, `test/architecture/`                                         |
@@ -55,7 +55,7 @@
 | **17** | Product Ecosystem & Automation    | `[ ]`  | Post-MVP — email, abandoned cart recovery, shipping notifications                           |
 | **18** | Message Broker Adapter            | `[ ]`  | Enterprise scale — Kafka/RabbitMQ durable event backbone                                    |
 | **19** | Outbound Webhooks                 | `[ ]`  | Merchant integrations — order/payment event subscriptions                                   |
-| **20** | Payment Provider Integrations     | `[ ]`  | Real Stripe/PayPal adapters replacing mock gateways                                         |
+| **20** | Payment Provider Integrations     | `[ ]`  | Production Stripe adapter replacing mock gateway                                            |
 | **21** | Access Control & SaaS Readiness   | `[ ]`  | Only when needed — multi-tenant, audit trail, bulk import/export                            |
 | **22** | Deployment Maturity & GitOps      | `[ ]`  | After first prod deploy — K8s, feature flags, canary rollouts                               |
 
@@ -110,13 +110,13 @@
 
 **Status**: Implemented. See E2E suite [test/security-idor.e2e-spec.ts](../test/security-idor.e2e-spec.ts).
 
-**What**: Entity-level access control so customers can only access resources they own. Guest carts bound to session tokens.
+**What**: Entity-level access control so customers can only access resources they own. Shopping carts strictly bound to authenticated user accounts (`userId: number`).
 
 **Delivered**:
 
 - Customer-scoped permissions including `view_own_profile`, `manage_own_addresses`, `view_own_orders`, `view_own_payments`, `manage_own_cart`
 - `OwnedResourceAccessPolicy` in shared-kernel for orders, payments, customers
-- `CartOwnershipValidator` + JWT cart session tokens (header + HttpOnly cookie)
+- `CartOwnershipValidator` for authenticated user cart validation
 - Checkout cart validation via `validateCartForCheckout` with real `CallerContext`
 - `@RequirePermissions` + `@CallerCtx()` on customer, order, payment endpoints
 - Full-app IDOR E2E tests (requires PostgreSQL + Redis)
@@ -635,9 +635,9 @@
 
 ## 💳 Phase 20 — Payment Provider Integrations
 
-> **Goal**: Replace mock payment adapters with real Stripe and PayPal integrations.
+> **Goal**: Replace mock payment gateway with production Stripe integration.
 
-> **Note**: Webhook controller stubs exist (`handleStripeWebhook`, `handlePayPalWebhook`) but no real SDK adapters under `secondary-adapters/stripe/` or `paypal/` yet.
+> **Note**: Webhook controller stub (`handleStripeWebhook`) exists; SDK adapter under `secondary-adapters/stripe/` will handle live PaymentIntents and signed webhook events.
 
 ---
 
@@ -646,14 +646,6 @@
 **What**: Stripe SDK for PaymentIntents, captures, refunds, and signed webhook reconciliation.
 
 **Location**: `src/modules/payments/secondary-adapters/stripe/`
-
----
-
-### [ ] Real PayPal Integration
-
-**What**: PayPal REST SDK for order creation, capture, and webhook reconciliation.
-
-**Location**: `src/modules/payments/secondary-adapters/paypal/`
 
 ---
 

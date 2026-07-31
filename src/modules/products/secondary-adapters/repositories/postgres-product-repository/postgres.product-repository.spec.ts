@@ -9,21 +9,14 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ResultAssertionHelper } from '../../../../../testing';
 import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
 import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
+import { ProductEntityTestFactory } from 'src/modules/products/testing';
 
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;
   let ormRepo: jest.Mocked<Repository<ProductEntity>>;
 
-  const mockProduct = ProductTestFactory.createMockProduct();
-  const mockProductEntity: ProductEntity = {
-    id: 1,
-    name: mockProduct.name,
-    description: mockProduct.description,
-    price: mockProduct.price,
-    sku: mockProduct.sku,
-    createdAt: mockProduct.createdAt,
-    updatedAt: mockProduct.updatedAt,
-  };
+  const mockProductEntity: ProductEntity =
+    ProductEntityTestFactory.createProductEntity();
 
   beforeEach(async () => {
     const mockOrmRepo = {
@@ -77,12 +70,10 @@ describe('PostgresProductRepository', () => {
     it('should save expensive product', async () => {
       const expensiveDto =
         CreateProductInputFactory.createExpensiveProductDto();
-      const expensiveProduct = ProductTestFactory.createExpensiveProduct();
-      const expensiveEntity = {
-        ...mockProductEntity,
-        ...expensiveProduct,
+      const expensiveEntity = ProductEntityTestFactory.createProductEntity({
+        price: 35000,
         id: 2,
-      };
+      });
 
       ormRepo.create.mockReturnValue(expensiveEntity);
       ormRepo.save.mockResolvedValue(expensiveEntity);
@@ -240,7 +231,9 @@ describe('PostgresProductRepository', () => {
 
   describe('findAll', () => {
     it('should successfully find all products', async () => {
-      const mockProducts = ProductTestFactory.createProductList(3);
+      const mockProducts = ProductEntityTestFactory.createProductEntities([
+        1, 2, 3,
+      ]);
       const mockEntities = mockProducts.map((p, index) => ({
         ...p,
         id: index + 1,
@@ -253,22 +246,6 @@ describe('PostgresProductRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toHaveLength(3);
       expect(ormRepo.find).toHaveBeenCalledTimes(1);
-    });
-
-    it('should find products with different stock levels', async () => {
-      const products = [
-        ProductTestFactory.createInStockProduct(),
-        ProductTestFactory.createLowStockProduct(),
-        ProductTestFactory.createOutOfStockProduct(),
-      ];
-      const entities = products.map((p, index) => ({ ...p, id: index + 1 }));
-
-      ormRepo.find.mockResolvedValue(entities);
-
-      const result = await repository.findAll();
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toHaveLength(3);
     });
 
     it('should return success with empty array when no products found', async () => {

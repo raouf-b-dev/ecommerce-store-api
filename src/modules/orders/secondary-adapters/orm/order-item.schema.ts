@@ -18,8 +18,14 @@ export class OrderItemEntity {
   @Column({ name: 'product_id', type: 'int' })
   productId: number;
 
+  @Column({ type: 'varchar', name: 'product_name', default: '' })
+  productName: string;
+
   @Column({ type: 'varchar', nullable: true })
-  productName: string | null;
+  sku: string | null;
+
+  @Column({ type: 'varchar', nullable: true, name: 'image_url' })
+  imageUrl: string | null;
 
   @Column({
     type: 'numeric',

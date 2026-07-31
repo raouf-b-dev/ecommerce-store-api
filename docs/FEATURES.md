@@ -41,7 +41,7 @@ The core domain has zero dependency on infrastructure. All external concerns (da
 
 ### ACL Gateway Pattern
 
-8 bounded contexts communicate through **7 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
+10 bounded contexts communicate through **8 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
 
 **Location**: `src/modules/orders/secondary-adapters/gateways/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
 
@@ -81,12 +81,12 @@ Background job processing using BullMQ with nested flow orchestration. The Notif
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Hybrid Payment Orchestration (COD + Online)
+### Unified Stripe Payment Strategy
 
-A unified **Strategy Pattern** handles both payment types through the same checkout flow:
+A streamlined, deterministic **Strategy Pattern** handles online payment processing through Stripe via SAGA orchestration:
 
-- **Online**: Full SAGA (Validate → Reserve → Pay → Confirm)
-- **COD**: Async Pause (Validate → Reserve → **Stop & Wait** → Manual Confirm)
+- **Flow**: Full SAGA (Validate Cart → Reserve Stock → Process Stripe Payment → Confirm Order)
+- **Webhooks**: Async payment confirmation and automated status synchronization via Stripe webhooks.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -219,7 +219,7 @@ Production-grade structured logging with Winston. JSON output format for log agg
 
 ### Correlation ID Propagation
 
-A middleware injects/reads `X-Request-Id` headers and propagates the correlation ID through the entire request lifecycle — including all 18 BullMQ job handlers and schedulers. Enables end-to-end request tracing across synchronous and asynchronous flows.
+A middleware injects/reads `X-Request-Id` headers and propagates the correlation ID through the entire request lifecycle — including all 19 BullMQ job handlers and schedulers. Enables end-to-end request tracing across synchronous and asynchronous flows.
 
 **Location**: `src/infrastructure/logging/`, `src/infrastructure/jobs/`
 

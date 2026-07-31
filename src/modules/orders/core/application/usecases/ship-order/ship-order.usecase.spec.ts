@@ -175,23 +175,6 @@ describe('ShipOrderUseCase', () => {
       );
     });
 
-    it('should ship order with COD payment method', async () => {
-      const codOrder = OrderTestFactory.createCashOnDeliveryOrder({
-        status: OrderStatus.PROCESSING,
-      });
-
-      mockOrderRepository.mockSuccessfulFind(codOrder);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
-
-      const result = await useCase.execute(codOrder.id!);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.status).toBe(OrderStatus.SHIPPED);
-      expect(result.value.paymentMethod).toBe(
-        PaymentMethodType.CASH_ON_DELIVERY,
-      );
-    });
-
     it('should ship order with online payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PROCESSING,

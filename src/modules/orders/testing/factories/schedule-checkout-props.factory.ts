@@ -22,7 +22,7 @@ export class ScheduleCheckoutPropsFactory {
         phone: '1234567890',
         deliveryInstructions: 'Test Delivery Instructions',
       },
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       flowId: 'flow-123',
     };
 
