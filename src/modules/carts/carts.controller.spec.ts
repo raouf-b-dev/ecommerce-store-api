@@ -5,10 +5,8 @@ import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/ad
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
 import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
 import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
-import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
-import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
 
 describe('CartsController', () => {
   let controller: CartsController;
@@ -19,7 +17,6 @@ describe('CartsController', () => {
   let updateCartItemUseCase: UpdateCartItemUseCase;
   let removeCartItemUseCase: RemoveCartItemUseCase;
   let clearCartUseCase: ClearCartUseCase;
-  let mergeCartsUseCase: MergeCartsUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -61,20 +58,8 @@ describe('CartsController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
-        {
-          provide: MergeCartsUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
-          },
-        },
       ],
-    })
-      .overrideInterceptor(CartSessionCookieInterceptor)
-      .useValue({
-        intercept: (_ctx: unknown, next: { handle: () => unknown }) =>
-          next.handle(),
-      })
-      .compile();
+    }).compile();
 
     controller = module.get<CartsController>(CartsController);
 
@@ -88,7 +73,6 @@ describe('CartsController', () => {
       RemoveCartItemUseCase,
     );
     clearCartUseCase = module.get<ClearCartUseCase>(ClearCartUseCase);
-    mergeCartsUseCase = module.get<MergeCartsUseCase>(MergeCartsUseCase);
   });
 
   it('should be defined', () => {
