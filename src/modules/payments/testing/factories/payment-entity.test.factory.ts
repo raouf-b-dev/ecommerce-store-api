@@ -12,7 +12,7 @@ export class PaymentEntityTestFactory {
       userId: 1,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       status: PaymentStatusType.COMPLETED,
       transactionId: 'tx_123456789',
       gatewayPaymentIntentId: null,
@@ -55,16 +55,6 @@ export class PaymentEntityTestFactory {
     return this.createPaymentEntity({
       status: PaymentStatusType.REFUNDED,
       refundedAmount: 100,
-      ...overrides,
-    });
-  }
-
-  static createCODEntity(overrides?: Partial<PaymentEntity>): PaymentEntity {
-    return this.createPaymentEntity({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      status: PaymentStatusType.NOT_REQUIRED_YET,
-      transactionId: null,
-      completedAt: null,
       ...overrides,
     });
   }
