@@ -12,7 +12,6 @@ import { ReleaseStockStep } from './primary-adapters/jobs/release-stock.job';
 import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
 import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
-import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 
 @Processor('checkout')
@@ -34,7 +33,6 @@ export class OrdersProcessor
     private readonly cancelOrderStep: CancelOrderStep,
     private readonly refundPaymentStep: RefundPaymentStep,
     private readonly finalizeCheckoutStep: FinalizeCheckoutStep,
-    private readonly confirmOrderStep: ConfirmOrderStep,
     private readonly releaseOrderStockJob: ReleaseOrderStockJob,
   ) {
     super();
@@ -63,8 +61,6 @@ export class OrdersProcessor
         return this.clearCartStep.handle(job);
       case JobNames.FINALIZE_CHECKOUT:
         return this.finalizeCheckoutStep.handle(job);
-      case JobNames.CONFIRM_ORDER:
-        return this.confirmOrderStep.handle(job);
 
       // Compensations
       case JobNames.RELEASE_STOCK:

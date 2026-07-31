@@ -56,7 +56,6 @@ import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-o
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 import { ReleaseOrderStockUseCase } from './core/application/usecases/release-order-stock/release-order-stock.usecase';
 import { ShippingAddressResolver } from './core/application/services/shipping-address-resolver';
-import { PaymentMethodPolicy } from './core/domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from './core/application/usecases/validate-checkout/validate-checkout.usecase';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
 import { ReserveStockStep } from './primary-adapters/jobs/reserve-stock-job/reserve-stock.job';
@@ -68,7 +67,6 @@ import { ReleaseStockStep } from './primary-adapters/jobs/release-stock.job';
 import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
 import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
-import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
 import { OrdersProcessor } from './orders.processor';
 import { ReserveStockForCheckoutUseCase } from './core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 import { ReleaseCheckoutStockUseCase } from './core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
@@ -85,7 +83,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
       OrderItemEntity,
       ShippingAddressEntity,
     ]),
-    RedisModule,
     RedisModule,
     PaymentsModule,
     IdentityModule,
@@ -167,7 +164,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     // Domain
     OrderFactory,
     ShippingAddressResolver,
-    PaymentMethodPolicy,
 
     // Use cases
     GetOrderUseCase,
@@ -207,7 +203,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     CancelOrderStep,
     RefundPaymentStep,
     FinalizeCheckoutStep,
-    ConfirmOrderStep,
 
     // Listeners
     CheckoutFailureListener,
