@@ -17,8 +17,6 @@ import {
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartToken } from '../carts/primary-adapters/decorators/cart-token.decorator';
-import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
 import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
@@ -51,7 +49,6 @@ export class OrdersController {
   ) {}
 
   @Post('checkout')
-  @OptionalAuth()
   @RequirePermissions('manage_own_cart')
   @ApiOperation({
     summary: 'Initiate checkout process',
@@ -80,12 +77,10 @@ export class OrdersController {
   async checkout(
     @Body() dto: CheckoutDto,
     @CallerCtx() callerContext: CallerContext | null,
-    @CartToken() cartToken: string | null,
   ) {
     return await this.checkoutUseCase.execute({
       command: dto,
       callerContext,
-      cartToken,
     });
   }
 
@@ -142,14 +137,9 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be confirmed.' })
-  async confirmOrder(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body?: { reservationId?: number; cartId?: number },
-  ) {
+  async confirmOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.confirmOrderUseCase.execute({
       orderId: id,
-      reservationId: body?.reservationId,
-      cartId: body?.cartId,
     });
   }
 
@@ -186,8 +176,7 @@ export class OrdersController {
   @RequirePermissions('manage_orders')
   @ApiOperation({
     summary: 'Mark order as delivered',
-    description:
-      'Mark order as delivered and collects COD payment if applicable.',
+    description: 'Mark order as delivered.',
   })
   @ApiResponse({
     status: 200,
@@ -197,7 +186,7 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async deliverOrder(
     @Param('id', ParseIntPipe) id: number,
-    @Body() deliverOrderDto: DeliverOrderDto,
+    @Body() deliverOrderDto?: DeliverOrderDto,
   ) {
     return await this.deliverOrderUseCase.execute({
       id: id,

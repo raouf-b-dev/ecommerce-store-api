@@ -11,7 +11,6 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
-import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -33,7 +32,6 @@ export interface CheckoutResult {
 export interface CheckoutInput {
   command: CheckoutCommand;
   callerContext: CallerContext | null;
-  cartToken?: string | null;
 }
 
 @Injectable()
@@ -48,7 +46,6 @@ export class CheckoutUseCase extends UseCase<
     private readonly orderScheduler: OrderScheduler,
     private readonly orderRepository: OrderRepository,
     private readonly orderFactory: OrderFactory,
-    private readonly paymentPolicy: PaymentMethodPolicy,
     private readonly validateCheckoutUseCase: ValidateCheckoutUseCase,
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {
@@ -58,12 +55,11 @@ export class CheckoutUseCase extends UseCase<
   async execute(
     input: CheckoutInput,
   ): Promise<Result<CheckoutResult, UseCaseError>> {
-    const { command, callerContext, cartToken } = input;
+    const { command, callerContext } = input;
 
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId: command.cartId,
       callerContext,
-      cartToken: cartToken ?? null,
       shippingAddress: command.shippingAddress,
     });
 
@@ -121,7 +117,8 @@ export class CheckoutUseCase extends UseCase<
       orderId,
       jobId: flowId,
       status: savedOrder.status,
-      message: this.paymentPolicy.getCheckoutMessage(command.paymentMethod),
+      message:
+        'Checkout initiated. Please check order status for payment details.',
     };
 
     return Result.success(response);

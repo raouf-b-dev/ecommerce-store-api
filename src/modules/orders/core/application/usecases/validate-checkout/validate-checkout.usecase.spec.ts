@@ -84,7 +84,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -96,7 +95,6 @@ describe('ValidateCheckoutUseCase', () => {
       expect(cartGateway.validateCartForCheckout).toHaveBeenCalledWith({
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       });
     });
 
@@ -120,7 +118,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
         shippingAddress: shippingAddressDto,
       };
 
@@ -145,7 +142,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -161,7 +157,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -178,7 +173,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -190,7 +184,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: null,
-        cartToken: 'guest-token',
       };
 
       const result = await useCase.execute(input);
@@ -211,14 +204,12 @@ describe('ValidateCheckoutUseCase', () => {
       const result = await useCase.execute({
         cartId: mockCartId,
         callerContext: SYSTEM_CALLER_CONTEXT,
-        cartToken: null,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cartGateway.validateCartForCheckout).toHaveBeenCalledWith({
         cartId: mockCartId,
         callerContext: SYSTEM_CALLER_CONTEXT,
-        cartToken: null,
       });
     });
   });

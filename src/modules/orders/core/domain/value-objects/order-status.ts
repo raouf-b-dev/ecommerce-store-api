@@ -1,14 +1,11 @@
 // src/modules/orders/domain/value-objects/order-status.ts
 export enum OrderStatus {
-  // Payment Phase (online payments only)
+  // Payment Phase
   PENDING_PAYMENT = 'pending_payment',
   PAYMENT_FAILED = 'payment_failed',
 
-  // Confirmation Phase
-  PENDING_CONFIRMATION = 'pending_confirmation',
+  // Confirmation & Fulfillment Phase
   CONFIRMED = 'confirmed',
-
-  // Fulfillment Phase
   PROCESSING = 'processing',
   SHIPPED = 'shipped',
   DELIVERED = 'delivered',
@@ -41,16 +38,11 @@ export class OrderStatusVO {
     return this._status === OrderStatus.PAYMENT_FAILED;
   }
 
-  // Confirmation phase checks
-  isPendingConfirmation(): boolean {
-    return this._status === OrderStatus.PENDING_CONFIRMATION;
-  }
-
+  // Fulfillment phase checks
   isConfirmed(): boolean {
     return this._status === OrderStatus.CONFIRMED;
   }
 
-  // Fulfillment phase checks
   isProcessing(): boolean {
     return this._status === OrderStatus.PROCESSING;
   }
@@ -100,11 +92,7 @@ export class OrderStatusVO {
         OrderStatus.CANCELLED, // Abandon
       ],
 
-      // Confirmation phase transitions
-      [OrderStatus.PENDING_CONFIRMATION]: [
-        OrderStatus.CONFIRMED,
-        OrderStatus.CANCELLED,
-      ],
+      // Fulfillment phase transitions
       [OrderStatus.CONFIRMED]: [
         OrderStatus.PROCESSING,
         OrderStatus.CANCELLED, // Cancel before processing
@@ -144,10 +132,6 @@ export class OrderStatusVO {
 
   static paymentFailed(): OrderStatusVO {
     return new OrderStatusVO(OrderStatus.PAYMENT_FAILED);
-  }
-
-  static pendingConfirmation(): OrderStatusVO {
-    return new OrderStatusVO(OrderStatus.PENDING_CONFIRMATION);
   }
 
   static confirmed(): OrderStatusVO {

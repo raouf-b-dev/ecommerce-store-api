@@ -82,7 +82,7 @@ describe('CreateOrderFromCartUseCase', () => {
         }),
       ],
     });
-    const order = OrderTestFactory.createOrderEntity({ id: 1 });
+    const order = OrderTestFactory.createDomainOrder({ id: 1 });
 
     cartGateway.getCart.mockResolvedValue(Result.success(cartInfo));
     orderFactory.createFromCart.mockReturnValue(order);
@@ -92,7 +92,7 @@ describe('CreateOrderFromCartUseCase', () => {
       cartId,
       userId,
       shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
     };
 
     // Act
@@ -115,7 +115,7 @@ describe('CreateOrderFromCartUseCase', () => {
       cartId,
       userId: 1,
       shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
     };
 
     // Act
@@ -144,7 +144,7 @@ describe('CreateOrderFromCartUseCase', () => {
       cartId,
       userId: 1,
       shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
     };
 
     // Act

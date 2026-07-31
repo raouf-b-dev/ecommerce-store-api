@@ -18,7 +18,7 @@ export class OrderEntityTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddressId: 1,
 
       shippingAddress: this.createShippingAddressEntity(),
@@ -70,6 +70,8 @@ export class OrderEntityTestFactory {
       id: 1,
       productId: 3,
       productName: 'Test Product',
+      sku: 'SKU-001',
+      imageUrl: null,
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
@@ -88,22 +90,12 @@ export class OrderEntityTestFactory {
         id: i + 1,
         productId: i + 1,
         productName: `Product ${i + 1}`,
+        sku: `SKU-${i + 1}`,
         quantity: i + 1,
         unitPrice: 10 * (i + 1),
         lineTotal: 10 * (i + 1) * (i + 1),
       }),
     );
-  }
-
-  /**
-   * Creates COD OrderEntity
-   */
-  static createCODOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
-    return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      paymentId: null,
-      ...overrides,
-    });
   }
 
   /**
@@ -157,7 +149,7 @@ export class OrderEntityTestFactory {
    */
   static createOrderEntityWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
+    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
     return this.createOrderEntity({
@@ -175,19 +167,6 @@ export class OrderEntityTestFactory {
   ): OrderEntity {
     return this.createOrderEntity({
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 1,
-      ...overrides,
-    });
-  }
-
-  /**
-   * Creates PayPal OrderEntity
-   */
-  static createPayPalOrderEntity(
-    overrides?: Partial<OrderEntity>,
-  ): OrderEntity {
-    return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.PAYPAL,
       paymentId: 1,
       ...overrides,
     });

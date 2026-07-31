@@ -7,7 +7,6 @@ import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
-import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { DomainEventPublisher } from 'src/shared-kernel/domain/interfaces/domain-event-publisher';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
@@ -74,25 +73,12 @@ describe('CheckoutUseCase', () => {
       ),
     };
 
-    const mockPaymentPolicy = {
-      isOnlinePayment: jest.fn().mockReturnValue(true),
-      isCashOnDelivery: jest.fn().mockReturnValue(false),
-      getCheckoutMessage: jest
-        .fn()
-        .mockReturnValue(
-          'Checkout initiated. Please check order status for payment details.',
-        ),
-      getInitialOrderStatus: jest.fn().mockReturnValue('pending_payment'),
-      requiresManualConfirmation: jest.fn().mockReturnValue(false),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutUseCase,
         { provide: OrderScheduler, useValue: mockOrderScheduler },
         { provide: OrderRepository, useValue: mockOrderRepository },
         { provide: OrderFactory, useValue: mockOrderFactory },
-        { provide: PaymentMethodPolicy, useValue: mockPaymentPolicy },
         {
           provide: ValidateCheckoutUseCase,
           useValue: mockValidateCheckoutUseCase,
@@ -113,7 +99,7 @@ describe('CheckoutUseCase', () => {
   it('should schedule checkout with validated context', async () => {
     const command: CheckoutCommand = {
       cartId: mockCartId,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
     };
 
     orderScheduler.scheduleCheckout.mockResolvedValue(
@@ -123,14 +109,12 @@ describe('CheckoutUseCase', () => {
     const result = await useCase.execute({
       command,
       callerContext: customerCallerContext,
-      cartToken: null,
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
       cartId: mockCartId,
       callerContext: customerCallerContext,
-      cartToken: null,
       shippingAddress: undefined,
     });
     expect(orderScheduler.scheduleCheckout).toHaveBeenCalledWith(
@@ -169,7 +153,7 @@ describe('CheckoutUseCase', () => {
 
     const command: CheckoutCommand = {
       cartId: mockCartId,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddress: shippingAddressDto,
     };
 
@@ -180,14 +164,12 @@ describe('CheckoutUseCase', () => {
     const result = await useCase.execute({
       command,
       callerContext: customerCallerContext,
-      cartToken: null,
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(validateCheckoutUseCase.execute).toHaveBeenCalledWith({
       cartId: mockCartId,
       callerContext: customerCallerContext,
-      cartToken: null,
       shippingAddress: shippingAddressDto,
     });
   });
@@ -199,13 +181,12 @@ describe('CheckoutUseCase', () => {
 
     const command: CheckoutCommand = {
       cartId: mockCartId,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
     };
 
     const result = await useCase.execute({
       command,
       callerContext: customerCallerContext,
-      cartToken: null,
     });
 
     ResultAssertionHelper.assertResultFailure(result);

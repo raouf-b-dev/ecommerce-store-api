@@ -41,7 +41,7 @@ describe('CancelOrderUseCase', () => {
 
   it('should cancel the order and return its data on success', async () => {
     const orderId = 1;
-    const cancellableOrder = OrderTestFactory.createCancellableOrder({
+    const cancellableOrder = OrderTestFactory.createPendingPaymentOrder({
       id: orderId,
     });
 
@@ -64,7 +64,7 @@ describe('CancelOrderUseCase', () => {
 
   it('should publish saga compensation events if requested', async () => {
     const orderId = 1;
-    const cancellableOrder = OrderTestFactory.createCancellableOrder({
+    const cancellableOrder = OrderTestFactory.createPendingPaymentOrder({
       id: orderId,
     });
 
@@ -102,7 +102,7 @@ describe('CancelOrderUseCase', () => {
 
   it('should return a failure result if the Order cannot be cancelled in current state', async () => {
     const orderId = 123;
-    const nonCancellableOrder = OrderTestFactory.createNonCancellableOrder({
+    const nonCancellableOrder = OrderTestFactory.createCompletedOrder({
       id: orderId,
     });
 
@@ -122,7 +122,7 @@ describe('CancelOrderUseCase', () => {
 
   it('should return a failure result if the repository fails to save the cancellation', async () => {
     const orderId = 1;
-    const cancellableOrder = OrderTestFactory.createCancellableOrder({
+    const cancellableOrder = OrderTestFactory.createPendingPaymentOrder({
       id: orderId,
     });
 

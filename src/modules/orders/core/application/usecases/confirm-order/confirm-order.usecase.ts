@@ -1,20 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import {
-  Result,
-  isFailure,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Order } from '../../../domain/entities/order';
-import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 
 export interface ConfirmOrderCommand {
   orderId: number;
-  reservationId?: number;
-  cartId?: number;
 }
 
 @Injectable()
@@ -23,32 +17,24 @@ export class ConfirmOrderUseCase
 {
   private readonly logger = new Logger(ConfirmOrderUseCase.name);
 
-  constructor(
-    private orderRepository: OrderRepository,
-    private orderScheduler: OrderScheduler,
-  ) {}
+  constructor(private readonly orderRepository: OrderRepository) {}
 
   async execute(
     dto: ConfirmOrderCommand,
   ): Promise<Result<IOrder, UseCaseError>> {
-    const { orderId, reservationId, cartId } = dto;
+    const { orderId } = dto;
     const requestedOrder = await this.orderRepository.findById(orderId);
     if (requestedOrder.isFailure) return requestedOrder;
 
     const order: Order = requestedOrder.value;
 
-    let confirmResult;
-    if (order.isCOD()) {
-      confirmResult = order.confirm();
-    } else {
-      if (!order.hasPayment()) {
-        return ErrorFactory.DomainError(
-          'Cannot confirm order - payment must be completed first',
-        );
-      }
-      confirmResult = order.confirmPayment(order.paymentId!);
+    if (!order.hasPayment()) {
+      return ErrorFactory.DomainError(
+        'Cannot confirm order - payment must be completed first',
+      );
     }
 
+    const confirmResult = order.confirmPayment(order.paymentId!);
     if (confirmResult.isFailure) return confirmResult;
 
     const updateResult = await this.orderRepository.updateStatus(
@@ -56,32 +42,6 @@ export class ConfirmOrderUseCase
       order.status,
     );
     if (updateResult.isFailure) return updateResult;
-
-    // For COD orders, trigger post-confirmation flow
-    if (order.isCOD() && reservationId && cartId) {
-      const scheduleResult = await this.orderScheduler.schedulePostConfirmation(
-        orderId,
-        reservationId,
-        cartId,
-      );
-
-      if (isFailure(scheduleResult)) {
-        this.logger.error(
-          `Failed to schedule post-confirmation flow for order ${orderId}. ` +
-            `Manual intervention may be required.`,
-          scheduleResult.error,
-        );
-      } else {
-        this.logger.log(
-          `Post-confirmation flow scheduled for order ${orderId}`,
-        );
-      }
-    } else if (order.isCOD()) {
-      this.logger.warn(
-        `Missing reservationId or cartId for COD order ${orderId}. ` +
-          `Post-confirmation flow not scheduled.`,
-      );
-    }
 
     return Result.success(order.toPrimitives());
   }
