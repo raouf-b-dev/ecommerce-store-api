@@ -7,10 +7,8 @@ import { CreatePaymentUseCase } from './core/application/usecases/create-payment
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
-import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
@@ -21,9 +19,7 @@ describe('PaymentsController', () => {
   let capturePaymentUseCase: CapturePaymentUseCase;
   let processRefundUseCase: ProcessRefundUseCase;
   let verifyPaymentUseCase: VerifyPaymentUseCase;
-  let recordCodPaymentUseCase: RecordCodPaymentUseCase;
   let handleStripeWebhookUseCase: HandleStripeWebhookUseCase;
-  let handlePayPalWebhookUseCase: HandlePayPalWebhookUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -66,19 +62,7 @@ describe('PaymentsController', () => {
           },
         },
         {
-          provide: RecordCodPaymentUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
-          },
-        },
-        {
           provide: HandleStripeWebhookUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
-          },
-        },
-        {
-          provide: HandlePayPalWebhookUseCase,
           useValue: {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
@@ -99,14 +83,8 @@ describe('PaymentsController', () => {
       module.get<ProcessRefundUseCase>(ProcessRefundUseCase);
     verifyPaymentUseCase =
       module.get<VerifyPaymentUseCase>(VerifyPaymentUseCase);
-    recordCodPaymentUseCase = module.get<RecordCodPaymentUseCase>(
-      RecordCodPaymentUseCase,
-    );
     handleStripeWebhookUseCase = module.get<HandleStripeWebhookUseCase>(
       HandleStripeWebhookUseCase,
-    );
-    handlePayPalWebhookUseCase = module.get<HandlePayPalWebhookUseCase>(
-      HandlePayPalWebhookUseCase,
     );
   });
 

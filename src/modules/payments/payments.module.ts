@@ -18,20 +18,14 @@ import { ListPaymentsUseCase } from './core/application/usecases/list-payments/l
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { HandlePaymentWebhookService } from './core/application/services/handle-payment-webhook/handle-payment-webhook.service';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
-import { CodGateway } from './secondary-adapters/gateways/cod.gateway';
 import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
-import { PayPalGateway } from './secondary-adapters/gateways/paypal.gateway';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
-import { PayPalSignatureService } from './secondary-adapters/services/paypal-signature.service';
 import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
-import { PayPalSignatureVerifier } from './core/application/ports/paypal-signature-verifier';
 import { PaymentGatewayResolver } from './core/application/ports/payment-gateway-resolver';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
@@ -49,9 +43,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
   controllers: [PaymentsController],
   providers: [
     // Gateways
-    CodGateway,
     StripeGateway,
-    PayPalGateway,
     PaymentGatewayFactory,
     {
       provide: PaymentGatewayResolver,
@@ -60,14 +52,9 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
 
     // Services
     StripeSignatureService,
-    PayPalSignatureService,
     {
       provide: StripeSignatureVerifier,
       useExisting: StripeSignatureService,
-    },
-    {
-      provide: PayPalSignatureVerifier,
-      useExisting: PayPalSignatureService,
     },
 
     // Schedulers
@@ -111,17 +98,14 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     CapturePaymentUseCase,
     ProcessRefundUseCase,
     VerifyPaymentUseCase,
-    RecordCodPaymentUseCase,
     HandlePaymentWebhookService,
     HandleStripeWebhookUseCase,
-    HandlePayPalWebhookUseCase,
     CreatePaymentIntentUseCase,
   ],
   exports: [
     PaymentRepository,
     CreatePaymentUseCase,
     PaymentGatewayResolver,
-    RecordCodPaymentUseCase,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,
   ],

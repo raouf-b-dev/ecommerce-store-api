@@ -26,7 +26,6 @@ import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto'
 import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
 import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
-import { RecordCodPaymentDto } from './primary-adapters/dto/record-cod-payment.dto';
 
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
@@ -34,9 +33,7 @@ import { ListPaymentsUseCase } from './core/application/usecases/list-payments/l
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('payments')
@@ -49,9 +46,7 @@ export class PaymentsController {
     private readonly capturePaymentUseCase: CapturePaymentUseCase,
     private readonly processRefundUseCase: ProcessRefundUseCase,
     private readonly verifyPaymentUseCase: VerifyPaymentUseCase,
-    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
     private readonly handleStripeWebhookUseCase: HandleStripeWebhookUseCase,
-    private readonly handlePayPalWebhookUseCase: HandlePayPalWebhookUseCase,
   ) {}
 
   @Post('webhooks/stripe')
@@ -64,17 +59,6 @@ export class PaymentsController {
   ) {
     return await this.handleStripeWebhookUseCase.execute({
       signature,
-      payload: body,
-    });
-  }
-
-  @Post('webhooks/paypal')
-  @Public()
-  @HttpCode(200)
-  @ApiExcludeEndpoint()
-  async handlePayPalWebhook(@Headers() headers: any, @Body() body: any) {
-    return await this.handlePayPalWebhookUseCase.execute({
-      headers,
       payload: body,
     });
   }
@@ -171,17 +155,6 @@ export class PaymentsController {
       paymentId: id,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponse(result.value));
-  }
-
-  @Post('cod/record')
-  @RequirePermissions('manage_payments')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Record cash on delivery payment collection' })
-  @ApiResponse({ status: 201, type: PaymentResponseDto })
-  async recordCodPayment(@Body() dto: RecordCodPaymentDto) {
-    const result = await this.recordCodPaymentUseCase.execute(dto);
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
