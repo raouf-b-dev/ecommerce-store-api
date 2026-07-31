@@ -9,11 +9,14 @@ export class ProductEntityTestFactory {
     overrides?: Partial<ProductEntity>,
   ): ProductEntity {
     const defaultEntity: ProductEntity = {
-      id: 3,
+      id: 1,
       name: 'Test Product',
+      slug: 'test-product',
       description: 'A test product for unit tests',
       price: 100,
+      currency: 'USD',
       sku: 'TEST-001',
+      isActive: true,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };
@@ -32,6 +35,7 @@ export class ProductEntityTestFactory {
       this.createProductEntity({
         id,
         name: `Product ${id}`,
+        slug: `product-${id}`,
         sku: `SKU-${id}`,
         ...baseOverrides,
       }),
