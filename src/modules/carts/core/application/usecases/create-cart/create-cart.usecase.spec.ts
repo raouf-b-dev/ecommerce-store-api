@@ -21,6 +21,9 @@ describe('CreateCartUseCase', () => {
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
+    mockCartRepository.findByuserId.mockResolvedValue(
+      Result.failure(new RepositoryError('Cart not found')),
+    );
     usecase = new CreateCartUseCase(mockCartRepository);
   });
 
@@ -41,6 +44,21 @@ describe('CreateCartUseCase', () => {
       expect(mockCartRepository.create).toHaveBeenCalledWith({
         userId: 123,
       });
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.cart.userId).toBe(123);
+    });
+
+    it('should return the existing cart if the user already has one', async () => {
+      const mockCartData = CartTestFactory.createUserCart(123);
+      const mockCart = Cart.fromPrimitives(mockCartData);
+
+      mockCartRepository.findByuserId.mockResolvedValue(
+        Result.success(mockCart),
+      );
+
+      const result = await usecase.execute({ callerContext: customerContext });
+
+      expect(mockCartRepository.create).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.cart.userId).toBe(123);
     });

@@ -43,6 +43,16 @@ export class CreateCartUseCase extends UseCase<
       );
     }
 
+    // Check if the user already has a cart
+    const existingResult = await this.cartRepository.findByuserId(
+      callerContext.userId,
+    );
+    if (existingResult.isSuccess) {
+      return Result.success({
+        cart: existingResult.value.toPrimitives(),
+      });
+    }
+
     const createResult = await this.cartRepository.create({
       userId: callerContext.userId,
     });

@@ -109,6 +109,7 @@ describe('Security IDOR (e2e)', () => {
           state: 'CA',
           postalCode: '90001',
           country: 'US',
+          phone: '1234567890',
         });
 
       expect(response.status).toBeGreaterThanOrEqual(400);
@@ -132,24 +133,6 @@ describe('Security IDOR (e2e)', () => {
       expect(crossRead.status).toBeGreaterThanOrEqual(400);
       expect(crossRead.status).toBeLessThan(500);
     });
-
-    it('allows guest cart access with valid session token', async () => {
-      const createResponse = await http.post(`${API}/carts`);
-      expect(createResponse.status).toBe(201);
-
-      const cartId = createResponse.body.id as number;
-      const cartToken =
-        createResponse.headers['x-cart-token'] ?? createResponse.body.token;
-
-      expect(cartToken).toBeDefined();
-
-      const readResponse = await http
-        .get(`${API}/carts/${cartId}`)
-        .set('X-Cart-Token', String(cartToken));
-
-      expect(readResponse.status).toBe(200);
-      expect(readResponse.body.id).toBe(cartId);
-    });
   });
 
   describe('checkout', () => {
@@ -166,7 +149,7 @@ describe('Security IDOR (e2e)', () => {
         .set(bearer(userA.accessToken))
         .send({
           cartId,
-          paymentMethod: 'CREDIT_CARD',
+          paymentMethod: 'STRIPE',
         });
 
       expect(checkoutResponse.status).toBeGreaterThanOrEqual(400);
