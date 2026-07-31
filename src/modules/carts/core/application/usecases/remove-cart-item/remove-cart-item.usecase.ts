@@ -15,7 +15,6 @@ export interface RemoveCartItemUseCaseInput {
   cartId: number;
   itemId: number;
   callerContext: CallerContext | null;
-  cartToken: string | null;
 }
 
 @Injectable()
@@ -34,7 +33,7 @@ export class RemoveCartItemUseCase extends UseCase<
   async execute(
     input: RemoveCartItemUseCaseInput,
   ): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, itemId, callerContext, cartToken } = input;
+    const { cartId, itemId, callerContext } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -47,7 +46,6 @@ export class RemoveCartItemUseCase extends UseCase<
     const ownershipResult = await this.cartOwnershipValidator.validate(
       cart,
       callerContext,
-      cartToken,
     );
 
     if (isFailure(ownershipResult)) return ownershipResult;

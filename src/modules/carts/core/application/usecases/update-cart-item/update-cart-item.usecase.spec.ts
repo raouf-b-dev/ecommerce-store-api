@@ -16,7 +16,6 @@ describe('UpdateCartItemUseCase', () => {
   let mockCartRepository: MockCartRepository;
   let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
 
   const customerContext: CallerContext = {
     kind: 'user',
@@ -30,10 +29,7 @@ describe('UpdateCartItemUseCase', () => {
     mockInventoryGateway = {
       checkStock: jest.fn(),
     };
-    mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
-    };
-    validator = new CartOwnershipValidator(mockTokenService);
+    validator = new CartOwnershipValidator();
 
     usecase = new UpdateCartItemUseCase(
       mockCartRepository,
@@ -77,7 +73,6 @@ describe('UpdateCartItemUseCase', () => {
         itemId,
         input,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
@@ -98,7 +93,6 @@ describe('UpdateCartItemUseCase', () => {
         itemId,
         input,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
@@ -139,7 +133,6 @@ describe('UpdateCartItemUseCase', () => {
         itemId,
         input,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(

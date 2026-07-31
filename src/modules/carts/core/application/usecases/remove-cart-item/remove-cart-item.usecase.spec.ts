@@ -12,7 +12,6 @@ describe('RemoveCartItemUseCase', () => {
   let usecase: RemoveCartItemUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
-  let mockTokenService: any;
 
   const customerContext: CallerContext = {
     kind: 'user',
@@ -23,10 +22,7 @@ describe('RemoveCartItemUseCase', () => {
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockTokenService = {
-      validateToken: jest.fn().mockResolvedValue(true),
-    };
-    validator = new CartOwnershipValidator(mockTokenService);
+    validator = new CartOwnershipValidator();
     usecase = new RemoveCartItemUseCase(mockCartRepository, validator);
   });
 
@@ -44,7 +40,6 @@ describe('RemoveCartItemUseCase', () => {
         userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
-      // Ensure the items array actually has a mock item with matching ID
       const items = mockCart.getItems();
       if (items.length > 0) {
         Object.defineProperty(items[0], 'id', { value: itemId });
@@ -57,7 +52,6 @@ describe('RemoveCartItemUseCase', () => {
         cartId,
         itemId,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
@@ -76,7 +70,6 @@ describe('RemoveCartItemUseCase', () => {
         cartId,
         itemId,
         callerContext: customerContext,
-        cartToken: null,
       });
 
       expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);

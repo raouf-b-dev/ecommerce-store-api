@@ -13,25 +13,18 @@ export class MockCartRepository implements CartRepository {
   create = jest.fn<Promise<Result<Cart, RepositoryError>>, [CreateCartInput]>();
   findById = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
   update = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart]>();
-  mergeCarts = jest.fn<Promise<Result<Cart, RepositoryError>>, [Cart, Cart]>();
   findByuserId = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
-  findBySessionId = jest.fn<Promise<Result<Cart, RepositoryError>>, [number]>();
   delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   // Helper methods for common test scenarios
   mockSuccessfulFind(cartPrimitives: ICart): void {
     const domainCart = Cart.fromPrimitives(cartPrimitives);
-    if (cartPrimitives.userId) {
-      this.findByuserId.mockResolvedValue(Result.success(domainCart));
-    } else if (cartPrimitives.sessionId) {
-      this.findBySessionId.mockResolvedValue(Result.success(domainCart));
-    }
+    this.findByuserId.mockResolvedValue(Result.success(domainCart));
   }
 
   mockCartNotFound(id: string): void {
     const error = new RepositoryError(`Cart not found`);
     this.findByuserId.mockResolvedValue(Result.failure(error));
-    this.findBySessionId.mockResolvedValue(Result.failure(error));
   }
 
   mockSuccessfulCreate(cart: Cart): void {
@@ -64,9 +57,7 @@ export class MockCartRepository implements CartRepository {
     expect(this.create).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.findByuserId).not.toHaveBeenCalled();
-    expect(this.findBySessionId).not.toHaveBeenCalled();
     expect(this.update).not.toHaveBeenCalled();
     expect(this.delete).not.toHaveBeenCalled();
-    expect(this.mergeCarts).not.toHaveBeenCalled();
   }
 }

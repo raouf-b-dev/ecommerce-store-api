@@ -6,13 +6,14 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Cart } from '../../../core/domain/entities/cart';
-import { CartRepository } from '../../../core/domain/repositories/cart.repository';
+import {
+  CartRepository,
+  CreateCartInput,
+} from '../../../core/domain/repositories/cart.repository';
 import {
   CartCacheMapper,
   CartForCache,
 } from '../../persistence/mappers/cart.mapper';
-
-import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
 
 @Injectable()
 export class CachedCartRepository implements CartRepository {
@@ -77,20 +78,9 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async findBySessionId(
-    sessionId: number,
-  ): Promise<Result<Cart, RepositoryError>> {
+  async create(dto: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
     try {
-      const cachedCarts = await this.cacheService.search<CartForCache>(
-        CART_REDIS.INDEX,
-        `@sessionId:${sessionId}`,
-      );
-
-      if (cachedCarts.length > 0) {
-        return Result.success(CartCacheMapper.fromCache(cachedCarts[0]));
-      }
-
-      const dbResult = await this.postgresRepo.findBySessionId(sessionId);
+      const dbResult = await this.postgresRepo.create(dto);
       if (dbResult.isFailure) return dbResult;
       const cart = dbResult.value;
 
@@ -100,28 +90,7 @@ export class CachedCartRepository implements CartRepository {
         { ttl: CART_REDIS.EXPIRATION },
       );
 
-      return dbResult;
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by session ID',
-        error,
-      );
-    }
-  }
-
-  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const createResult = await this.postgresRepo.create(input);
-      if (createResult.isFailure) return createResult;
-      const savedCart = createResult.value;
-
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${savedCart.id}`,
-        CartCacheMapper.toCache(savedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(savedCart);
+      return Result.success(cart);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to create cart', error);
     }
@@ -129,9 +98,9 @@ export class CachedCartRepository implements CartRepository {
 
   async update(cart: Cart): Promise<Result<Cart, RepositoryError>> {
     try {
-      const updateResult = await this.postgresRepo.update(cart);
-      if (updateResult.isFailure) return updateResult;
-      const updatedCart = updateResult.value;
+      const dbResult = await this.postgresRepo.update(cart);
+      if (dbResult.isFailure) return dbResult;
+      const updatedCart = dbResult.value;
 
       await this.cacheService.set(
         `${CART_REDIS.CACHE_KEY}:${updatedCart.id}`,
@@ -155,34 +124,6 @@ export class CachedCartRepository implements CartRepository {
       return Result.success(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to delete cart', error);
-    }
-  }
-
-  async mergeCarts(
-    guestCart: Cart,
-    userCart: Cart,
-  ): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const mergeResult = await this.postgresRepo.mergeCarts(
-        guestCart,
-        userCart,
-      );
-      if (mergeResult.isFailure) return mergeResult;
-      const mergedCart = mergeResult.value;
-
-      // Invalidate guest cart cache
-      await this.cacheService.delete(`${CART_REDIS.CACHE_KEY}:${guestCart.id}`);
-
-      // Update user cart cache
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${mergedCart.id}`,
-        CartCacheMapper.toCache(mergedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(mergedCart);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to merge carts', error);
     }
   }
 }

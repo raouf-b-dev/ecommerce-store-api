@@ -54,41 +54,9 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async findBySessionId(
-    sessionId: number,
-  ): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const entity = await this.repository.findOne({
-        where: { sessionId },
-      });
-
-      if (!entity) {
-        return ErrorFactory.RepositoryError('Cart not found');
-      }
-
-      return Result.success(CartMapper.toDomain(entity));
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by session ID',
-        error,
-      );
-    }
-  }
-
   async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
     try {
-      let cart: Cart;
-
-      if (input.userId) {
-        cart = Cart.createUserCart(input.userId);
-      } else {
-        if (!input.sessionId) {
-          return ErrorFactory.RepositoryError(
-            'Session ID required for guest cart',
-          );
-        }
-        cart = Cart.createGuestCart(input.sessionId);
-      }
+      const cart = Cart.createUserCart(input.userId);
 
       const entity = CartMapper.toEntity(cart);
       const savedEntity = await this.repository.save(entity);
@@ -117,32 +85,6 @@ export class PostgresCartRepository implements CartRepository {
       return Result.success(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to delete cart', error);
-    }
-  }
-
-  async mergeCarts(
-    guestCart: Cart,
-    userCart: Cart,
-  ): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const mergeResult = userCart.mergeItems(guestCart.getItems());
-      if (mergeResult.isFailure) {
-        return Result.failure(
-          new RepositoryError(mergeResult.error.message, mergeResult.error),
-        );
-      }
-
-      const saveResult = await this.update(userCart);
-      if (saveResult.isFailure) return saveResult;
-
-      if (guestCart.id) {
-        const deleteResult = await this.delete(guestCart.id);
-        if (deleteResult.isFailure) return deleteResult;
-      }
-
-      return Result.success(saveResult.value);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to merge carts', error);
     }
   }
 }

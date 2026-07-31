@@ -21,7 +21,6 @@ export interface UpdateCartItemUseCaseInput {
   itemId: number;
   input: UpdateCartItemInput;
   callerContext: CallerContext | null;
-  cartToken: string | null;
 }
 
 @Injectable()
@@ -42,13 +41,7 @@ export class UpdateCartItemUseCase extends UseCase<
   async execute(
     input: UpdateCartItemUseCaseInput,
   ): Promise<Result<ICart, UseCaseError>> {
-    const {
-      cartId,
-      itemId,
-      input: updateInput,
-      callerContext,
-      cartToken,
-    } = input;
+    const { cartId, itemId, input: updateInput, callerContext } = input;
     const cartResult = await this.cartRepository.findById(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -61,7 +54,6 @@ export class UpdateCartItemUseCase extends UseCase<
     const ownershipResult = await this.cartOwnershipValidator.validate(
       cart,
       callerContext,
-      cartToken,
     );
 
     if (isFailure(ownershipResult)) return ownershipResult;

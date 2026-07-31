@@ -16,13 +16,6 @@ export class CartBuilder {
 
   withuserId(userId: number): this {
     this.cart.userId = userId;
-    this.cart.sessionId = null;
-    return this;
-  }
-
-  withSessionId(sessionId: number): this {
-    this.cart.sessionId = sessionId;
-    this.cart.userId = null;
     return this;
   }
 

@@ -14,7 +14,6 @@ import { CartOwnershipValidator } from '../../services/cart-ownership.validator'
 export interface GetCartInput {
   cartId: number;
   callerContext: CallerContext | null;
-  cartToken: string | null;
 }
 
 @Injectable()
@@ -40,7 +39,6 @@ export class GetCartUseCase extends UseCase<GetCartInput, ICart, UseCaseError> {
     const ownershipResult = await this.cartOwnershipValidator.validate(
       cartResult.value,
       input.callerContext,
-      input.cartToken,
     );
 
     if (isFailure(ownershipResult)) return ownershipResult;
