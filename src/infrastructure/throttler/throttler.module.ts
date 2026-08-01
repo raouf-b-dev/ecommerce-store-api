@@ -2,7 +2,7 @@ import { Module, OnModuleDestroy, Logger, Inject } from '@nestjs/common';
 import { ThrottlerModule, seconds } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { UserThrottlerGuard } from './user-throttler.guard';
 import { EnvConfigService } from '../../config/env-config.service';
 import Redis from 'ioredis';
 
@@ -61,7 +61,7 @@ class ThrottlerRedisModule {}
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: UserThrottlerGuard,
     },
   ],
 })
