@@ -11,16 +11,14 @@
 - `[ ]` — Not started
 - `[/]` — In progress
 - `[x]` — Completed
-- Open a new chat, reference this file, and pick the next unchecked task.
-- **Completed phases 0–9** keep their original numbers. **Pending work starts at Phase 10** (priority-ordered).
+- Open a new chat, reference this file, and pick the next unchecked task in top-to-bottom order.
+- Complete work sequentially by following the priority order below.
 
 ---
 
 ## ✅ Completed Phases — Summary
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
->
-> Sub-phases (7.5, 7.6, 8.1, 8.5, 8.6) are merged into their parent rows below.
 
 | Phase | Name                         | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                         | Location                                                                                       |
 | :---- | :--------------------------- | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
@@ -37,78 +35,76 @@
 
 ---
 
-## 📋 Pending Work — Priority Order
+## 📋 Pending Work — Execution Sequence
 
-> Historical phase numbers **0–9** are fixed (completed work). **Pending phases are renumbered 10+** by execution priority — security and integrity first, CQRS read path second (frontend N+1), tests third, deployment gate last among pre-prod work.
->
-> **Pick the next task**: start at Phase 10 and work downward. Do not start Phase 14 (Deployment) until every **Required** pre-production blocker below is checked off.
+> **Execution guide**: Pick tasks strictly in order from top to bottom. Do not deploy the first production release until **Phase 14 (Single-Instance Production Deploy Gate)** is completed. Complete **Phase 15** before scaling to multiple application instances.
 
-| Phase  | Name                              | Status | When                                                                                        |
-| :----- | :-------------------------------- | :----- | :------------------------------------------------------------------------------------------ |
-| **10** | Security Hardening Phase 2        | `[/]`  | **First** — IDOR controls implemented; OWASP audit/rate limits remain                       |
-| **11** | Data Integrity & Concurrency      | `[/]`  | Before prod load — prevent silent corruption & overselling regressions                      |
-| **12** | CQRS Read Path                    | `[ ]`  | Before ship — flat list/detail DTOs; stop N+1 name resolution hitting the frontend          |
-| **13** | Test Suite (remaining)            | `[/]`  | After Phases 10–12 — validate security, integrity, and read projections with real DB & HTTP |
-| **14** | Deployment & Production Hardening | `[ ]`  | **Production gate** — migrations, resilience, backup, demo deploy                           |
-| **15** | Reliable Event Infrastructure     | `[ ]`  | Before multi-instance / high-reliability prod                                               |
-| **16** | Performance Engineering           | `[ ]`  | Staging baseline — SLOs, load tests, alerting maturity                                      |
-| **17** | Product Ecosystem & Automation    | `[ ]`  | Post-MVP — email, abandoned cart recovery, shipping notifications                           |
-| **18** | Message Broker Adapter            | `[ ]`  | Enterprise scale — Kafka/RabbitMQ durable event backbone                                    |
-| **19** | Outbound Webhooks                 | `[ ]`  | Merchant integrations — order/payment event subscriptions                                   |
-| **20** | Payment Provider Integrations     | `[ ]`  | Production Stripe adapter replacing mock gateway                                            |
-| **21** | Access Control & SaaS Readiness   | `[ ]`  | Only when needed — multi-tenant, audit trail, bulk import/export                            |
-| **22** | Deployment Maturity & GitOps      | `[ ]`  | After first prod deploy — K8s, feature flags, canary rollouts                               |
+| Phase  | Name                             | Status | Target / Focus                                                                       |
+| :----- | :------------------------------- | :----- | :----------------------------------------------------------------------------------- |
+| **10** | Security Hardening Phase 2       | `[/]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                      |
+| **11** | Data Integrity & Concurrency     | `[/]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
+| **12** | CQRS Read Path                   | `[ ]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters                    |
+| **13** | Minimum Viable Test Coverage     | `[/]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E         |
+| **14** | Single-Instance Production Gate  | `[ ]`  | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
+| **15** | Multi-Instance & Scale Readiness | `[ ]`  | **Horizontal Scale** — Transactional Outbox, SAGA DLQ timeout, search sync, locks    |
+| **16** | Performance Engineering          | `[ ]`  | **Observability** — k6 load baselines, V8 profiling, RED/USE Grafana alert rules     |
+| **17** | Product Ecosystem & Integrations | `[ ]`  | **Features & Payments** — real email, cart recovery, webhooks, Stripe webhook dedup  |
+| **18** | Enterprise Scale & GitOps        | `[ ]`  | **Infrastructure & Enterprise** — Kafka/RabbitMQ, K8s, Canary, S3 backup encryption  |
 
 ---
 
-## 🚧 Pre-Production Blockers
+## 🚧 Pre-Production Checklist
 
-> Consolidated checklist of tasks that **must not ship to production without resolution**. Items map to phases above; several were previously buried in later phases (Security Phase 15, CQRS Phase 11, Deployment Phase 16) and are now ordered before the Deployment gate (Phase 14).
->
-> **Already done in this codebase** (not listed as blockers): refresh token rotation · session reuse detection · RBAC infrastructure · checkout SAGA · pessimistic inventory locking at reservation time · production error stack masking · Docker prod compose hardening · migration runner script (`docker-entrypoint.sh`).
+---
 
-### Required (production gate)
+### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Blocker                                                                               | Phase  | Why it blocks prod                                                                                                                                                                                               |
-| :------------------------------------------------------------------------------------ | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| IDOR / ownership on carts, orders, payments, customers                                | **10** | **Addressed**                                                                                                                                                                                                    |
-| User-scoped permissions (`view_own_profile`, `manage_own_addresses`)                  | **10** | **Addressed** — user role permissions and session validation are implemented                                                                                                                                     |
-| OWASP audit doc + dependency scanning in CI (`npm audit`, fail on high/critical)      | **10** | No systematic security review or supply-chain gate in pipeline (CI runs lint/test/build only)                                                                                                                    |
-| Production PII/payment data masking verified in logs                                  | **10** | `GlobalExceptionFilter` hides stacks in prod; payment payloads and customer PII in structured logs still need audit                                                                                              |
-| Optimistic concurrency (`version` column + 409 on conflict)                           | **11** | Concurrent admin/customer updates can silently overwrite each other — no `@VersionColumn()` on core entities yet                                                                                                 |
-| Hot-path query audit (`EXPLAIN ANALYZE`) + missing composite/partial indexes          | **11** | Theory docs exist under `docs/data/` and orders indexes were trimmed (Phase 5), but prod-scale filter queries are not benchmarked                                                                                |
-| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                    | **12** | `ListOrdersUseCase` / `GetOrderUseCase` hydrate full domain aggregates via write repositories; frontends must N+1-fetch customer names and product SKUs per row — poor UX and unsustainable API chatter at scale |
-| Cross-context SQL JOINs on read path (orders ↔ customers, products)                  | **12** | Without single-query projections, every admin order list forces the client to resolve IDs — the N+1 problem is delegated to the UI                                                                               |
-| Concurrent checkout integration proof (pessimistic lock regression)                   | **13** | Pessimistic locking is implemented in `PostgresReservationRepository`, but no real-DB concurrent worker test proves oversell prevention                                                                          |
-| Repository integration tests (Testcontainers / CI Postgres)                           | **13** | Repository specs exist but use mocked TypeORM repositories — transactional paths untested against real PostgreSQL                                                                                                |
-| E2E tests — authentication lifecycle + IDOR denial + checkout SAGA + CQRS list shapes | **13** | `test/security-idor.e2e-spec.ts` exists with HTTP IDOR denial proofs; remaining authentication/SAGA/CQRS E2E coverage is scheduled                                                                               |
-| Initial database baseline migration generated & verified                              | **14** | No files under `src/infrastructure/database/migrations/`; non-prod still uses `synchronize: true`                                                                                                                |
-| Redis graceful degradation (cache, throttler, idempotency, sessions)                  | **14** | Idempotency fails open; cached repositories and throttler still throw or fail when Redis is unavailable                                                                                                          |
-| Backup, restore, release, and rollback runbooks + smoke test runner                   | **14** | No verified recovery path or post-deploy health verification scripts                                                                                                                                             |
-| Public demo/staging deploy with migrations (not `synchronize`)                        | **14** | Demo deployment belongs at the production gate once Phases 10–13 are complete                                                                                                                                    |
+| Task / Item                                                                          | Phase  | Critical Purpose                                                                         |
+| :----------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`) | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
+| Production error stack masking & PII log audit verified                              | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| Optimistic concurrency (`version` column + 409 on conflict)                          | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
+| Shopping Cart Expiration & Redis TTL enforcement                                     | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
+| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                   | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| Initial database baseline migration generated & verified                             | **14** | Schema must be reproducible without relying on `synchronize: true`                       |
+| Redis graceful degradation & `trust proxy` hardening                                 | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy      |
+| Liveness, Readiness & `ProcessHealthIndicator` probes                                | **14** | Exposes `/health/liveness` and `/health/readiness` with event loop & memory thresholds   |
+| Backup, restore, rollback runbook & smoke test runner                                | **14** | Documented runbooks & Node.js scripts (`db-backup.js`, `db-restore.js`, `smoke-test.js`) |
 
-### Recommended before multi-instance / high-traffic production
+---
 
-| Blocker                                                                | Phase  | Why                                                                              |
-| :--------------------------------------------------------------------- | :----- | :------------------------------------------------------------------------------- |
-| Transactional outbox for domain events                                 | **15** | In-process events can be lost if the process crashes after DB commit             |
-| User-scoped adaptive rate limiting (beyond authentication `@Throttle`) | **10** | Global IP-based limiter; checkout and catalog abuse needs per-user keys          |
-| k6 load baseline + p95 SLO thresholds                                  | **16** | Unknown capacity limits before traffic spikes (flash sales, concurrent checkout) |
-| Alert rules + RED/USE Grafana dashboards                               | **16** | Observability stack exists (Phase 8) but actionable alerting is incomplete       |
+### Step 2: Verification & Test Safety Net
+
+| Task / Item                                                                         | Phase  | Critical Purpose                                                                  |
+| :---------------------------------------------------------------------------------- | :----- | :-------------------------------------------------------------------------------- |
+| E2E smoke tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Validates HTTP-level security, auth rotation, checkout SAGA, and read projections |
+| Repository integration tests (Testcontainers / real DB)                             | **13** | Validates transactional persistence against a real PostgreSQL instance            |
+| Concurrent checkout integration proof (pessimistic lock verification)               | **13** | Proves simultaneous checkouts on last stock unit cannot oversell                  |
+
+---
+
+### Step 3: Multi-Instance & Horizontal Scale Readiness (Before scaling to 2+ pods)
+
+| Task / Item                                                      | Phase  | Critical Purpose                                                                     |
+| :--------------------------------------------------------------- | :----- | :----------------------------------------------------------------------------------- |
+| Transactional Outbox Pattern for domain events                   | **15** | Guarantees at-least-once event delivery across process crashes                       |
+| Singleton background jobs & distributed locks (BullMQ / Redlock) | **15** | Prevents duplicated `@Cron()` / BullMQ job execution across multiple pods            |
+| Checkout SAGA Timeout & Dead-Letter Queue (DLQ) Recovery Engine  | **15** | Recovers stuck checkout transactions and dispatches alerts on unrecoverable failures |
+| Product Search Index Reconciliation Job                          | **15** | Reconciles RedisSearch catalog indexes with PostgreSQL source of truth               |
+| User-scoped adaptive rate limiting                               | **10** | Scopes rate limiting per authenticated user ID (`sub`) to stop targeted user abuse   |
 
 ---
 
 ## 🔐 Phase 10 — Security Hardening Phase 2 (OWASP Compliance)
 
-> **Goal**: Close access-control gaps left after Phase 7 transport/input hardening. **Complete before Phase 13 E2E tests** so security scenarios can be asserted in the test suite.
->
-> Phase 7 covered Helmet, CORS, sanitization, validation, RBAC guards, refresh rotation, and authentication rate limits. Phase 10 covers **who can access which records** — especially customer-owned carts, orders, and payments.
+> **Goal**: Close access-control gaps left after Phase 7 transport/input hardening. **Complete before Phase 14 deployment** so security controls and dependency scanners gate every build.
 
 ---
 
 ### [x] IDOR (Insecure Direct Object Reference) Prevention
 
-**Status**: Implemented. See E2E suite [test/security-idor.e2e-spec.ts](../test/security-idor.e2e-spec.ts).
+**Status**: Implemented. See E2E suite [`test/security-idor.e2e-spec.ts`](../test/security-idor.e2e-spec.ts).
 
 **What**: Entity-level access control so customers can only access resources they own. Shopping carts strictly bound to authenticated user accounts (`userId: number`).
 
@@ -119,7 +115,7 @@
 - `CartOwnershipValidator` for authenticated user cart validation
 - Checkout cart validation via `validateCartForCheckout` with real `CallerContext`
 - `@RequirePermissions` + `@CallerCtx()` on customer, order, payment endpoints
-- Full-app IDOR E2E tests (requires PostgreSQL + Redis)
+- Full-app IDOR E2E tests
 
 **Location**: `src/shared-kernel/domain/policies/`, `src/modules/*/core/application/usecases/`, `test/security-idor.e2e-spec.ts`
 
@@ -127,20 +123,21 @@
 
 ### [ ] OWASP Top 10 Audit & Vulnerability Scanning
 
-**What**: Perform a comprehensive security audit, add CI dependency scanning, and document controls.
+**What**: Perform a comprehensive security audit, add GitHub Dependabot and CI dependency scanning, and document controls.
 
 **Scope**:
 
 - Systematically audit the system against OWASP Top 10 categories; map each to existing or new controls.
-- Integrate `npm audit` (fail CI on high/critical) — not present in `.github/workflows/ci.yml` today.
-- Verify error details are completely masked in production responses and logs.
+- Add `.github/dependabot.yml` for automated npm dependency update PRs.
+- Integrate `npm audit` (fail CI on high/critical vulnerabilities) into `.github/workflows/ci.yml`.
 - Audit payment webhook endpoints and checkout flows for injection and replay risks.
+- Audit Winston logging configuration to guarantee payment card data and customer PII are masked in logs.
 
 **New documentation**:
 
-- `docs/security/OWASP-COMPLIANCE.md` — **Created** — A01 access control mapping; extend with full Top 10 audit in remaining Phase 10 work.
+- `docs/security/OWASP-COMPLIANCE.md` — **Created** — A01 access control mapping; extend with full Top 10 audit.
 
-**Location**: `docs/security/`, `.github/workflows/`
+**Location**: `.github/dependabot.yml`, `.github/workflows/ci.yml`, `docs/security/OWASP-COMPLIANCE.md`
 
 ---
 
@@ -150,15 +147,15 @@
 
 **Scope**:
 
-- Scope rate limit keys using authenticated user IDs (`sub` / `customerId`) in addition to IP addresses once `AuthGuard` has run.
-- Apply stricter limits to `/authentication/login`, `/authentication/refresh` (extend existing `@Throttle` on auth controller), `/orders/checkout`, and cart mutation endpoints.
-- Expose standard rate limit headers on throttled responses.
+- Scope rate limit keys using authenticated user IDs (`sub` / `userID`) in addition to IP addresses once `AuthGuard` has run.
+- Apply stricter limits to `/authentication/login`, `/authentication/refresh`, `/orders/checkout`, and cart mutation endpoints.
+- Expose standard rate limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`) on throttled responses.
 
 **Location**: `src/infrastructure/throttler/`
 
 ---
 
-## 🛡️ Phase 11 — Data Integrity & Concurrency Control
+## 🛡️ Phase 11 — Data Integrity, Concurrency & Inventory Control
 
 > **Goal**: Protect the persistence layer from silent data corruption under concurrent writes — especially inventory during flash-sale checkout. **Complete before Phase 14 deployment.**
 
@@ -176,8 +173,6 @@
 - Map TypeORM `OptimisticLockVersionMismatchError` to a clean `409 Conflict` HTTP response via `GlobalExceptionFilter`.
 - Write dedicated unit tests simulating concurrent updates — first succeeds, second returns 409.
 
-**Reference**: Theory docs already exist at `docs/data/concurrency/OPTIMISTIC-LOCKING.md`.
-
 **Location**: `src/modules/*/core/domain/entities/`, `src/modules/*/secondary-adapters/database/`
 
 ---
@@ -188,9 +183,35 @@
 
 **Status**: **Implemented** in `PostgresReservationRepository` — inventory rows are locked with `pessimistic_write` inside a transaction before decrementing `availableQuantity`.
 
-**Remaining** (tracked in Phase 13): concurrent integration test proving two simultaneous checkouts cannot oversell the last unit.
-
 **Location**: `src/modules/inventory/secondary-adapters/repositories/postgres-reservation-repository/`
+
+---
+
+### [ ] Shopping Cart Expiration & Redis TTL Enforcement
+
+**What**: Enforce strict Time-To-Live (TTL) on RedisJSON shopping carts to automatically evict abandoned carts and free memory.
+
+**Scope**:
+
+- Configure configurable TTL (e.g. 7 days for guest carts, 30 days for user carts) on Redis keys created by `RedisCartRepository`.
+- Refresh TTL on every cart update operation.
+- Implement graceful handling when a client attempts to access an expired cart (auto-initialize a fresh cart cleanly).
+
+**Location**: `src/modules/carts/secondary-adapters/repositories/`
+
+---
+
+### [ ] Inventory Reconciliation Audit Job
+
+**What**: Implement a periodic background audit job that verifies inventory mathematical invariants (`totalQuantity == availableQuantity + reservedQuantity + soldQuantity`) and flags discrepancies.
+
+**Scope**:
+
+- Write a BullMQ cron job that scans inventory records and calculates reserved stock against active reservations.
+- Detect stock leaks or drift caused by unhandled system crashes.
+- Log structured warnings and emit Prometheus metrics (`inventory_drift_count`) when discrepancies are detected.
+
+**Location**: `src/modules/inventory/primary-adapters/jobs/`
 
 ---
 
@@ -198,27 +219,20 @@
 
 **What**: Review transaction isolation configurations, analyze slow queries, and provision composite and partial indexes.
 
-**Status**: **Partial** — concurrency theory docs exist under `docs/data/concurrency/` and `docs/data/performance/`; orders table indexes were trimmed in Phase 5; pessimistic reservation path uses explicit transactions.
-
-**Scope** (remaining):
+**Scope**:
 
 - Audit transactional boundaries for isolation overrides (e.g. `REPEATABLE READ` for complex inventory adjustments).
 - Execute `EXPLAIN ANALYZE` on primary search/filter queries under realistic mock database sizes (10k+ rows).
-- Provision composite indexes based on filter frequencies (e.g. `(customerId, status)` on orders — partial index exists; audit other hot tables).
+- Provision composite indexes based on filter frequencies (e.g. `(userID, status)` on orders).
 - Add partial indexes on active flags where missing (e.g. active carts, non-deleted products).
-- Address any N+1 relational query loops detected in TypeORM logging.
 
 **Location**: `src/infrastructure/database/migrations/`, `docs/data/`
 
 ---
 
-## ⚡ Phase 12 — CQRS Read Path & Frontend Response Simplification
+## ⚡ Phase 12 — CQRS Read Path & Presentation Projections
 
 > **Goal**: Ship list and detail endpoints that return flat, presentation-ready DTOs with resolved customer names, emails, and product SKUs — in a single SQL query per page. **Complete before Phase 14 deployment** so the frontend is not forced to N+1-resolve IDs across orders, inventory, and payments.
->
-> **Why this is a pre-production blocker**: Today `ListOrdersUseCase` and `GetOrderUseCase` load full domain aggregates via write repositories. Any admin order list or customer order history forces the UI to fetch customer and product details per row — delegating the N+1 problem to the client, multiplying API calls, and degrading UX under real catalog sizes.
->
-> **Architectural note**: Controlled cross-context SQL JOINs on the **read path only**. Write paths continue to use ACL Gateways exclusively. See [`docs/architecture/CQRS.md`](architecture/CQRS.md) for full rationale.
 
 ---
 
@@ -231,7 +245,6 @@
 - Define `OrderListItemDTO`, `OrderDetailDTO`, `InventoryListItemDTO`, `PaymentListItemDTO` with resolved names/SKUs alongside ID fields.
 - Create query port abstract classes: `OrderQueryService`, `InventoryQueryService`, `PaymentQueryService` in the application layer.
 - Port contracts are infrastructure-agnostic — no assumptions about JOINs, views, or caching.
-- **Do NOT** add read-projection methods to existing domain repositories (`OrderRepository`, `ProductRepository`, etc.).
 
 **Location**: `src/modules/*/core/application/ports/`
 
@@ -245,14 +258,13 @@
 
 - Implement adapters in `secondary-adapters/query/` (not `repositories/`).
 - JOIN orders → `customers` (name, email), `products` (SKU, catalog details) in one query per list/detail request.
-- Document each cross-context JOIN: owning bounded context, why read-only JOIN is acceptable, what changes on microservice extraction.
-- Leave write-path repositories completely untouched.
+- Document each cross-context JOIN: owning bounded context, why read-only JOIN is acceptable.
 
 **Location**: `src/modules/*/secondary-adapters/query/`
 
 ---
 
-### [ ] Query Use Case Refactoring (CQRS Phase 2 Graduation)
+### [ ] Query Use Case Refactoring
 
 **What**: Refactor read-only use cases to inject query ports instead of domain repositories.
 
@@ -261,7 +273,6 @@
 - Update `ListOrdersUseCase` and `GetOrderUseCase` to inject `OrderQueryService`.
 - Update `ListInventoryUseCase` and payment list/detail use cases similarly.
 - Remove costly `.toPrimitives()` mapping on full domain entity arrays for list/search routes.
-- Establish clean separation: read paths → query ports + light DTOs; write paths → domain repository ports + rich entities.
 
 **Location**: `src/modules/*/core/application/usecases/`
 
@@ -275,54 +286,28 @@
 
 - Update REST GET list/detail endpoints in `OrdersController`, `InventoryController`, and `PaymentsController`.
 - Create response DTOs with `customerName`, `customerEmail`, `productSku`, etc. explicitly typed in OpenAPI.
-- Coordinate with frontend to decommission manual ID-to-name mapping layers.
 
 **Location**: `src/modules/*/primary-adapters/controllers/`, `src/modules/*/primary-adapters/dtos/`
 
 ---
 
-## 🧪 Phase 13 — Test Suite _(in progress)_
+## 🧪 Phase 13 — Minimum Viable Test Coverage
 
-> **Goal**: Establish confidence for production deployment. **Run after Phases 10–12** so E2E tests can assert IDOR denial, concurrency behavior, CQRS read projections, and real DB transactions.
->
-> **Completed** (see summary table): use case unit tests · mock-based repository specs · controller/guard tests · architecture boundary tests · shared test helpers.
->
-> **Mandatory prerequisite before starting any remaining Phase 13 item**:
->
-> 1. Follow the testing standards in [`docs/testing/TESTING-TASK-TEMPLATE.md`](testing/TESTING-TASK-TEMPLATE.md) for checklist + evidence in every task/PR
-> 2. Ensure test scope and scenario matrices are explicitly mapped prior to writing specs
-> 3. For Repository Integration/E2E work, define harness + cleanup plan up front (PostgreSQL Testcontainers or CI service containers + `database-test.helper.ts`) before writing specs
-> 4. **Phase 10 IDOR controls must be implemented** before writing IDOR E2E scenarios (or mark those scenarios as `@pending` with linked issue)
+> **Goal**: Establish deployment confidence with smoke-level E2E tests, repository integration tests, and SAGA concurrency proofs.
 
 ---
 
-### [/] Test Infrastructure Baseline (Phase 13 Entry Gate)
+### [/] Test Infrastructure, Fixture & Mock Baseline
 
-**What**: Standardize and complete the shared reusable test infrastructure.
+**What**: Standardize shared helpers and create typed gateway/repository mock classes.
 
 **Scope**:
 
-- _Done:_ Shared helpers under `src/testing/helpers/` (`result-assertion`, `database-test`, `e2e-test-app`, `auth-test`, `clock-test`, `nestjs-context.fixture`).
-- _Remaining:_ Create `testing/index.ts` barrel files for **Authentication**, **Carts**, **Inventory**, and **Payments** modules to unify exports.
+- Create `testing/index.ts` barrel files for **Authentication**, **Carts**, **Inventory**, and **Payments** modules to unify exports.
+- Create reusable, typed **ACL Gateway Mock** classes for the 8 gateway ports.
+- Fix the **Products** testing barrel to export all helpers.
 
 **Location**: `src/testing/`, `src/modules/*/testing/`
-
----
-
-### [/] Fixture, Factory, and Mock Baseline (Phase 13 Entry Gate)
-
-**What**: Standardize deterministic test data builders and reusable mock classes.
-
-**Scope**:
-
-- _Done:_ 47+ fixture/builder/mock files across modules.
-- _Remaining:_
-  - Create reusable, typed **ACL Gateway Mock** classes for the 8 gateway ports (orders, payments, carts, notifications).
-  - Fix the **Products** testing barrel to export all helpers.
-  - Remove redundant `ReservationRepositoryMockFactory` wrapper.
-  - Adopt unused builders (`ProductBuilder`, `InventoryBuilder`); create `CartBuilder` and `PaymentBuilder`.
-
-**Location**: `src/modules/*/testing/`
 
 ---
 
@@ -332,187 +317,198 @@
 
 **Scope**:
 
-- _Status:_ Done for **Authentication** module (5 specs). Missing for Orders, Carts, Customers, Inventory, Payments, Products.
 - Cover order state transitions, cart invariants, address promotion, reservation TTL, payment capture/refund rules, product SKU/price invariants.
 
 **Location**: `src/modules/*/core/domain/entities/`
 
 ---
 
-### [/] Use Case Unit Tests
+### [ ] Repository Integration Tests (Real DB) & Pessimistic Lock Proof
 
-**What**: Refactor specs using centralized mock layers instead of fragile inline `jest.fn()` mocks.
-
-**Scope**:
-
-- _Status:_ 40+ use case spec files exist.
-- _Remaining:_ Refactor checkout/SAGA specs (`checkout.usecase.spec.ts`, `create-order-from-cart.usecase.spec.ts`, `validate-checkout.usecase.spec.ts`, `reserve-stock.job.spec.ts`, `checkout-failure.listener.spec.ts`) to use centralized gateway/repository mocks.
-
-**Location**: `src/modules/*/core/application/usecases/`
-
----
-
-### [/] Controller and Guard Tests
-
-**What**: Standardize controller specs to use `MockUseCase<T>` instead of inline mocks.
-
-**Location**: `src/modules/*/primary-adapters/controllers/`, `src/modules/*/primary-adapters/guards/`
-
----
-
-### [ ] Repository Integration Tests (Real DB)
-
-**What**: Transactional operations and persistence mappings tested against a live PostgreSQL instance.
+**What**: Test transactional persistence boundaries against a real database (PostgreSQL Testcontainers).
 
 **Scope**:
 
-- Run postgres and cached repository specs against real PostgreSQL (Docker Testcontainers or CI service containers) using `database-test.helper.ts` — **not** mocked TypeORM repositories.
-- Verify SAGA transactional operations, pessimistic lock behavior, and tag/category filtering.
+- Run postgres and cached repository specs against real PostgreSQL — **not** mocked TypeORM repositories.
+- **Concurrent Checkout Proof**: Write a multi-threaded test running simultaneous checkouts against the last remaining stock unit to verify pessimistic lock prevents overselling.
 - Test cached repository wrappers: cache hit/miss, invalidation on write, Redis unavailable fallback.
 
 **Location**: `src/modules/*/secondary-adapters/repositories/`
 
 ---
 
-### [ ] E2E Tests
+### [ ] E2E Smoke Tests
 
-**What**: End-to-end HTTP flows using `supertest` against the full NestJS application.
+**What**: End-to-end HTTP tests for core flows, security IDOR denial, and CQRS read shapes via `supertest`.
 
 **Scope**:
 
-- _Status:_ `test/authentication.e2e-spec.ts` exists but mocks use cases — not a full-app integration test.
-- Authentication: register → login → token usage → refresh (with rotation) → logout
-- **Security**: Customer A blocked from reading/updating Customer B's carts, orders, and payments (Phase 10 IDOR)
-- Catalog & purchase: browse → add to cart → checkout SAGA success
-- **SAGA compensation**: payment failure → inventory released, order cancelled, compensations logged
-- **Concurrency**: simultaneous checkout on last stock unit — exactly one succeeds (Phase 11)
-- **CQRS read path**: order/inventory list responses include resolved `customerName`, `productSku` without extra round-trips (Phase 12)
-- Observability: `X-Request-Id` flows through responses, logs, and traces
+- Auth: register → login → get token → use token → refresh (with rotation) → logout
+- Security: Customer A blocked from reading/updating Customer B's carts, orders, and payments (IDOR prevention)
+- Checkout SAGA: full purchase happy path + compensation flow on simulated payment failure
+- CQRS projections: verify order list endpoint returns resolved `customerName` and `productSku` fields
 
 **Location**: `test/`
 
 ---
 
-## 🚢 Phase 14 — Deployment and Production Hardening
+## 🚀 Phase 14 — Single-Instance Production Deploy Gate
 
-> **Goal**: **Production deployment gate.** Harden infrastructure and operational scripts for safe, repeatable staging and production releases. **Do not deploy until Phases 10–13 required blockers are complete.**
+> **Goal**: Complete core infrastructure and operational requirements for a safe, non-destructive first production deployment on a single application instance.
+>
+> **Complete all tasks in this phase to deploy your first production release.**
 
 ---
 
-### [ ] Initial Database Migration
+### [ ] Initial Database Baseline Migration
 
-**What**: Generate the initial database schema baseline migration from current TypeORM entities.
+**What**: Generate the initial database schema baseline migration from the current TypeORM entities to enable safe production schema updates.
 
 **Scope**:
 
-- Run `npm run migration:generate:dev -- src/infrastructure/database/migrations/InitialSchema` (or equivalent path aligned with `data-source.ts`).
-- Verify migration runs cleanly on an empty database and rollback works.
-- Confirm `docker-entrypoint.sh` → `scripts/docker-migrate.js` executes migrations before serving traffic in production.
-- Disable reliance on `synchronize: true` for staging/demo environments.
+- Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
+- Run migrations on a clean PostgreSQL database to ensure schemas build correctly from scratch.
+- Verify migration rollback scripts function properly.
+- Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
 
 **Location**: `src/infrastructure/database/migrations/`, `scripts/docker-migrate.js`
 
 ---
 
-### [ ] Graceful Degradation Hardening (Redis Failover)
+### [ ] Graceful Degradation & Reverse Proxy Hardening (`trust proxy` & Redis)
 
-**What**: Ensure caching, rate limiting, and session layers degrade gracefully (fail open) when Redis goes offline.
+**What**: Configure reverse proxy compatibility and ensure caching, rate limiting, and session layers degrade gracefully if Redis goes offline.
 
 **Scope**:
 
-- Harden central Redis client configuration with retry strategies and connection drop handlers.
-- Refactor cache-aside repository wrappers to catch Redis errors and query Postgres directly on cache miss when Redis is down.
-- Ensure throttler, idempotency (already fail-open), and session stores degrade with logged warnings rather than 5xx errors.
-- Write integration tests simulating Redis stop/start during API requests.
+- Configure `app.set('trust proxy', 1)` in NestJS bootstrap (`src/main.ts`) so Express correctly reads real client IPs from `X-Forwarded-For` when deployed behind reverse proxies.
+- Harden central Redis client configuration with connection retry strategies and drop event handlers.
+- Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
+- Ensure rate-limiting (throttler), idempotency, and session stores catch Redis disconnects and degrade gracefully with logged warnings instead of 5xx HTTP drops.
 
-**Location**: `src/infrastructure/redis/`, `src/infrastructure/idempotency/`, `src/infrastructure/throttler/`
+**Location**: `src/main.ts`, `src/infrastructure/redis/`, `src/infrastructure/idempotency/`
 
 ---
 
-### [ ] Release, Rollback, and Backup Procedures
+### [ ] Liveness, Readiness & Process Health Probes
 
-**What**: Build deployment smoke tests, database backup scripts, and disaster recovery runbooks.
+**What**: Expose dedicated health check endpoints for container runtime orchestrators, including V8 runtime process checks.
 
 **Scope**:
 
-- Write scripts to automate PG database backups and verify restore procedures.
-- Build a post-deploy smoke test runner targeting `/health`, `/metrics`, auth flows, catalog browse, and checkout happy path.
-- Define a structured release and rollback checklist covering migration execution and smoke test verification.
+- Implement `ProcessHealthIndicator` measuring event loop lag (`max 300ms`) and heap memory limits (`max 85%`).
+- Implement `/health/liveness` returning process viability.
+- Implement `/health/readiness` checking external dependencies (PostgreSQL + Redis).
+- Expose probes in HealthController and update Swagger documentation.
 
-**Location**: `scripts/`, `docs/infrastructure/`
+**Location**: `src/modules/health/`
+
+---
+
+### [ ] Release, Rollback, Backup Procedures & Smoke Test Runner
+
+**What**: Build deployment pipeline smoke tests, database backup scripts, and disaster recovery runbooks.
+
+**Scope**:
+
+- Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
+- Build a post-deploy smoke test runner (`smoke-test.js`) targeting `/health`, `/metrics`, auth flows, catalog browse, and checkout happy path.
+- Document comprehensive release, rollback, disaster recovery procedures, and security hardening in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
+
+**Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
 
 ---
 
 ### [ ] Public Demo / Staging Deployment
 
-**What**: Deploy a constrained demo environment for reviewers once security and migrations are ready.
+**What**: Deploy a constrained staging environment for reviewers once security and migrations are verified.
 
 **Scope**:
 
-- Deploy API + managed Postgres/Redis to a fast-iteration platform (Railway, Render, Fly.io, etc.).
-- Expose Swagger/OpenAPI publicly.
-- Protect admin/destructive operations via RBAC guards.
-- Ensure `/health` is public; protect `/metrics` (API key or network restriction).
-- Seed demo data via `npm run db:seed`.
+- Deploy API + managed PostgreSQL/Redis to hosting platform (Railway/Render/Fly.io).
+- Expose Swagger/OpenAPI publicly; protect `/metrics` via API key.
+- Execute seed data script (`npm run db:seed`).
 
 **Location**: `scripts/`, `docs/infrastructure/`
 
 ---
 
-## 🔄 Phase 15 — Reliable Event Infrastructure: The Outbox Pattern
+## 🛡️ Phase 15 — Multi-Instance & Horizontal Scale Readiness
 
-> **Goal**: Guarantee at-least-once delivery of cross-context and external events via the Transactional Outbox pattern.
->
-> **Recommended before multi-instance production** — see Pre-Production Blockers table. Safe to defer for a single-instance staging deploy if domain-event loss on crash is accepted temporarily.
+> **Goal**: Prepare the application for multi-pod scaling behind a load balancer and protect SAGA workflows from background failures. **Complete before deploying to 2+ application instances.**
 
 ---
 
-### [ ] Outbox Event Persistence
+### [ ] Transactional Outbox Pattern (Cross-Instance Event Backbone)
 
-**What**: Store domain events in an `outbox_events` table within the same database transaction as aggregate mutations.
+**What**: Store domain events in an `outbox_events` table within the same database transaction as aggregate mutations to guarantee at-least-once cross-instance event propagation.
 
 **Scope**:
 
-- Design `outbox_events` table schema: `id`, `eventName`, `payload` (JSON), `status`, `retries`, `correlationId`, timestamps.
-- Create `OutboxEventRepository` interface and TypeORM secondary adapter.
-- Intercept domain events during write transactions (`OrderCreated`, `InventoryReserved`, `PaymentCaptured`) and persist to outbox in the same transaction.
+- Create `outbox_events` table schema: `id`, `eventName`, `payload` (JSON), `status`, `retries`, `correlationId`, timestamps.
+- Refactor domain event publisher to intercept domain events emitted during write transactions (`OrderCreated`, `InventoryReserved`, `PaymentCaptured`) and append to `outbox_events`.
+- Implement `ProcessOutboxQueueJob` running via BullMQ / PostgreSQL `SKIP LOCKED` to pull pending outbox events, dispatch to subscribers, and mark `PROCESSED`.
+- Audit domain event listeners to ensure they are **idempotent**.
 
 **Location**: `src/infrastructure/events/outbox/`
 
 ---
 
-### [ ] Resilient BullMQ Outbox Poller and Dispatcher
+### [ ] Singleton Background Jobs & Distributed Locking
 
-**What**: BullMQ recurring task polling pending outbox events, dispatching to subscribers, marking processed/failed.
+**What**: Implement distributed locking mechanisms to ensure background schedulers and cron tasks run on exactly one pod at a time in multi-instance deployments.
 
 **Scope**:
 
-- Implement `ProcessOutboxQueueJob` on a high-frequency schedule.
-- Inject events into local `EventEmitter2` listeners or external brokers (Phase 18).
-- Audit all domain event listeners for **idempotency**.
-- Expose Prometheus metrics for outbox lag and delivery failure rates.
+- Configure BullMQ repeatable job locks / Redis Redlock wrappers for recurring tasks.
+- Prevent duplicate execution of background scheduled jobs (outbox processor, cart recovery, inventory audit) across concurrent API pods.
 
-**Location**: `src/infrastructure/events/outbox/jobs/`
+**Location**: `src/infrastructure/jobs/`
+
+---
+
+### [ ] Checkout SAGA Timeout & Dead-Letter Queue (DLQ) Recovery Engine
+
+**What**: Implement max-duration timeouts and automated compensation trigger for hanging or orphaned checkout SAGA executions.
+
+**Scope**:
+
+- Add SAGA step execution timeout monitor (e.g. 5 minutes max per checkout session).
+- Automatically trigger `CheckoutFailureListener` compensation handlers if a SAGA step crashes without resolving.
+- Route unrecoverable SAGA failures to a dedicated BullMQ Dead-Letter Queue (DLQ) and fire Prometheus alert counters.
+
+**Location**: `src/modules/orders/primary-adapters/jobs/`
+
+---
+
+### [ ] Product Search Index Reconciliation Job
+
+**What**: Build a scheduled background worker to reconcile RedisSearch product catalog indexes with PostgreSQL canonical data.
+
+**Scope**:
+
+- Implement a BullMQ job that periodically scans PostgreSQL products and re-indexes missing or modified items into RedisSearch.
+- Fix catalog search drift caused by direct DB updates or cache flushes.
+
+**Location**: `src/modules/products/primary-adapters/jobs/`
 
 ---
 
 ## 📈 Phase 16 — Performance Engineering & Observability Maturity
 
 > **Goal**: Define reliability metrics, establish automated performance test baselines, profile the runtime, and provision alert dashboards.
->
-> **Run against staging** after Phase 14 first deploy — establishes SLO baselines before scaling traffic.
 
 ---
 
 ### [ ] k6 Load Testing Baseline
 
-**What**: Build and run k6 load testing suites to discover bottlenecks and establish baseline API latency metrics.
+**What**: Build and run k6 load testing suites to discover bottlenecks and establish baseline API latency metrics under stress.
 
 **Scope**:
 
-- Write k6 scripts targeting auth lifecycles, catalog searches, cart operations, and concurrent checkout.
-- Set up load profiles (smoke, stress, spike) and define SLO thresholds (e.g. p95 latency < 150ms, checkout success rate > 99%).
-- Configure CI checks to fail on SLO violations (optional initially).
+- Write k6 scripts targeting auth lifecycles, catalog searches, cart operations, and concurrent checkout SAGA.
+- Set up load profiles (smoke, stress, spike) and define strict target SLO thresholds (e.g. p95 latency < 150ms, checkout success rate > 99%).
+- Configure CI checks to fail the pipeline if recent changes cause latency SLO violations.
 
 **Location**: `test/load/`
 
@@ -520,18 +516,17 @@
 
 ### [ ] Node.js Runtime Profiling & Performance Tuning
 
-**What**: Profile Node's V8 engine and event loop under heavy loads.
+**What**: Profile Node's V8 engine and event loop performance under heavy loads to find memory leaks and CPU-heavy hot paths.
 
 **Scope**:
 
-- Implement Prometheus metrics for Event Loop Lag (`nodejs_eventloop_lag_seconds`).
+- Implement Prometheus metrics tracking Event Loop Lag (`nodejs_eventloop_lag_seconds`).
 - Document heap-dump capture procedures.
-- Generate CPU flame graphs using `clinic.js` or `0x` under k6 load.
-- Resolve synchronous blocking loops or memory leaks found in profiling.
+- Generate CPU flame graphs using `clinic.js` or `0x` under simulated k6 load tests.
 
 **New documentation**:
 
-- `docs/infrastructure/PERFORMANCE-ENGINEERING.md` — k6, capacity planning, profiling, event loop mechanics, caching patterns.
+- `docs/infrastructure/PERFORMANCE-ENGINEERING.md` — Performance engineering guide covering k6, capacity planning, profiling, and caching.
 
 **Location**: `test/load/results/`, `docs/infrastructure/`
 
@@ -539,34 +534,33 @@
 
 ### [ ] Alert Rules, RED/USE Dashboards, and SLOs
 
-**What**: Formulate actionable alerting rules, provision Grafana dashboards, and document operational runbooks.
+**What**: Formulate actionable alerting rules, provision custom Grafana dashboards, and document operational runbooks.
 
 **Scope**:
 
-- Define SLIs/SLOs for latencies, checkout success rates, and queue lags.
+- Define quantitative SLIs/SLOs for latencies, checkout success rates, and queue lags.
 - Build RED dashboards for the API and USE dashboards for PostgreSQL/Redis/BullMQ.
-- Setup Prometheus Alertmanager rules for 5xx spikes, high latency, queue backlog, and failed checkout jobs.
-- Draft symptom-driven troubleshooting runbooks for each alert category.
+- Setup Prometheus Alertmanager rules for 5xx spikes, high latency, queue backlog depths, and failed background jobs.
 
 **Location**: `docker/monitoring/`, `docs/observability/`
 
 ---
 
-## 📦 Phase 17 — Product Ecosystem & Automation
+## 📦 Phase 17 — Product Ecosystem, Webhooks & Real Integrations
 
-> **Goal**: Integrate real communication providers and background automation for cart recovery and shipping notifications.
+> **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, and production Stripe payments with webhook deduplication.
 
 ---
 
 ### [ ] Real Email and Notification Providers
 
-**What**: Integrate SendGrid/Resend behind the existing notification gateway port.
+**What**: Integrate real email delivery gateways (SendGrid/Resend) behind the existing notification gateway port.
 
 **Scope**:
 
-- Implement real mail secondary adapters.
-- Build BullMQ queues for outbound email with retry limits and DLQ isolation.
-- Wire order confirmations, password resets, and shipping updates to trigger real emails.
+- Implement Resend or SendGrid secondary adapters for the notification gateway port.
+- Build BullMQ queues to handle outbound email sending asynchronously with retry policies.
+- Wire up order confirmations, password resets, and shipping updates to trigger real emails.
 
 **Location**: `src/modules/notifications/secondary-adapters/mail/`
 
@@ -574,34 +568,61 @@
 
 ### [ ] Automated Abandoned Cart Recovery & Shipping Notification Engine
 
-**What**: Background schedulers for abandoned carts and shipping status changes.
+**What**: Implement background job schedulers that scan for inactive carts and dispatch recovery emails.
 
 **Scope**:
 
-- BullMQ cron job scanning inactive carts (e.g. 12+ hours).
-- Recovery email templates with checkout links.
-- WebSocket + email alerts on shipping status changes.
-- Mark reminders as sent to prevent duplicates.
+- Implement a BullMQ scheduler job scanning inactive carts (e.g. 12+ hours).
+- Generate recovery email templates with single-click checkout restoration links.
+- Dispatch real-time WebSocket events and emails when order shipping status changes.
 
-**Location**: `src/modules/carts/primary-adapters/jobs/`, `src/modules/notifications/`
+**Location**: `src/modules/carts/primary-adapters/jobs/`
 
 ---
 
-## 🌐 Phase 18 — Message Broker Adapter (Kafka or RabbitMQ)
+### [ ] Outbound Webhook Subscription System
 
-> **Goal**: Transition from local in-process event propagation to a durable, multi-instance event backbone.
+**What**: Build a secure webhook subscription framework that allows external merchant applications to receive real-time order and payment event payloads.
+
+**Scope**:
+
+- Create `WebhookSubscription` aggregate: `id`, `targetUrl`, `secret`, `events` (e.g. `order.created`, `payment.captured`), `isActive`, `createdAt`.
+- Implement admin CRUD endpoints under RBAC.
+- Build BullMQ webhook delivery queue signing payloads with HMAC-SHA256 signatures in headers.
+- Maintain `WebhookDeliveryLog` table recording delivery status, HTTP status codes, and latencies.
+
+**Location**: `src/modules/webhooks/`
+
+---
+
+### [ ] Real Stripe Integration & Webhook Idempotency
+
+**What**: Replace mock payment gateway with production Stripe SDK integration and explicit webhook event deduplication.
+
+**Scope**:
+
+- Implement Stripe SDK secondary adapter for `PaymentIntent` creation, capture, and refunds.
+- Implement signed Stripe webhook controller verifying `stripe-signature` header.
+- **Stripe Webhook Idempotency**: Persist processed `event.id` values to Redis/DB with TTL to prevent duplicate processing of replayed webhook events.
+
+**Location**: `src/modules/payments/secondary-adapters/stripe/`
+
+---
+
+## 🌐 Phase 18 — Enterprise Scale, GitOps & Deployment Maturity
+
+> **Goal**: Support high-scale message streaming, multi-merchant enterprise SaaS capabilities, Kubernetes container orchestration, and zero-downtime Canary deployment pipelines.
 
 ---
 
 ### [ ] Message Broker Adapter (Kafka or RabbitMQ)
 
-**What**: Replace or supplement the local event bus with a broker adapter implementing `DomainEventPublisher`.
+**What**: Replace or supplement local event bus with a real message broker adapter for durable, multi-instance cross-process event streaming.
 
 **Scope**:
 
-- Set up Kafka or RabbitMQ in Docker Compose.
-- Enable consumer group scaling, dead-letter exchanges, and event schema versioning.
-- Add broker health checks to `/health` and consumer lag metrics.
+- Implement broker adapter implementing `DomainEventPublisher` port.
+- Enable consumer group scaling, dead-letter exchanges, and schema versioning.
 
 **New documentation**:
 
@@ -611,113 +632,48 @@
 
 ---
 
-## 🔔 Phase 19 — Outbound Webhook Subscription System
+### [ ] Enterprise SaaS Readiness (Multi-Tenancy, Audit Log & Data Exchange)
 
-> **Goal**: Secure webhook framework for merchant systems to receive real-time order/payment/shipment events.
+**What**: Multi-merchant SaaS scaling, user permission overrides, immutable admin audit trails, and bulk CSV/Excel import/export.
 
----
+**Scope**:
 
-### [ ] Webhook Subscription Management
+- Implement schema-per-tenant or row-level tenant data isolation.
+- Implement user-level permission overrides merging role permissions with explicit user exceptions.
+- Implement append-only `AuditLog` entity recording sensitive admin actions.
+- Build background CSV/Excel import/export processors with dry-run support.
 
-**What**: `WebhookSubscription` aggregate, repository, and admin CRUD controllers under RBAC.
-
-**Location**: `src/modules/webhooks/`
-
----
-
-### [ ] Webhook Delivery Engine & Logging
-
-**What**: BullMQ dispatching queue with HMAC-SHA256 signatures, retries, and `WebhookDeliveryLog`.
-
-**Location**: `src/modules/webhooks/infrastructure/`, `src/modules/webhooks/primary-adapters/`
+**Location**: `src/infrastructure/database/multi-tenancy/`, `src/modules/audit/`, `src/modules/data-exchange/`
 
 ---
 
-## 💳 Phase 20 — Payment Provider Integrations
+### [ ] Kubernetes Deployment Configuration & Zero-Downtime Rollouts
 
-> **Goal**: Replace mock payment gateway with production Stripe integration.
+**What**: Package the API monolith using production-grade Kubernetes resource manifests and Canary deployment rollouts.
 
-> **Note**: Webhook controller stub (`handleStripeWebhook`) exists; SDK adapter under `secondary-adapters/stripe/` will handle live PaymentIntents and signed webhook events.
+**Scope**:
 
----
-
-### [ ] Real Stripe Integration
-
-**What**: Stripe SDK for PaymentIntents, captures, refunds, and signed webhook reconciliation.
-
-**Location**: `src/modules/payments/secondary-adapters/stripe/`
-
----
-
-## 🔐 Phase 21 — Access Control & SaaS Readiness (Only When Needed)
-
-> **Goal**: Multi-merchant SaaS scaling, immutable admin audit trails, permission overrides, and bulk data exchange.
-
----
-
-### [ ] User-Level Permission Overrides
-
-**What**: Wire `user_permission_overrides` schema into guards for granular store-admin exceptions.
-
-**Location**: `src/modules/authentication/`
-
----
-
-### [ ] Multi-Tenant Isolation Model
-
-**What**: Row-level or schema-per-tenant isolation across all tables for multi-merchant storefronts.
-
-**Location**: `src/infrastructure/database/multi-tenancy/`
-
----
-
-### [ ] Immutable Admin Audit Trail
-
-**What**: Append-only audit log for price overrides, order status changes, stock reconciliations.
-
-**Location**: `src/modules/audit/`
-
----
-
-### [ ] Bulk Data Import and Export
-
-**What**: Background CSV/Excel import/export with dry-run and row-level error reporting.
-
-**Location**: `src/modules/data-exchange/`
-
----
-
-## 🚀 Phase 22 — Deployment Maturity & GitOps
-
-> **Goal**: Feature flags, Kubernetes orchestration, and Canary/Blue-Green release rollouts.
-
----
-
-### [ ] Feature Flags System
-
-**What**: Redis-backed feature flag framework with `@FeatureFlag()` decorators.
-
-**Location**: `src/infrastructure/feature-flags/`
-
----
-
-### [ ] Kubernetes Deployment Configuration
-
-**What**: Production-grade K8s manifests (Deployments, Services, Ingress, HPA, ConfigMaps).
-
-**Location**: `k8s/`
-
----
-
-### [ ] Zero-Downtime Releases (Canary & Blue-Green)
-
-**What**: Automated pipelines routing traffic percentages to new versions with SLO-based rollback.
+- Write Pod Deployments, Service routes, Ingress gateways, and HPA templates.
+- Configure Canary routing configurations in Kubernetes Ingress controllers with automated SLO rollback.
 
 **New documentation**:
 
 - `docs/infrastructure/CONTAINER-ORCHESTRATION.md`
 
-**Location**: `k8s/rollouts/`, `docs/infrastructure/`
+**Location**: `k8s/`, `docs/infrastructure/`
+
+---
+
+### [ ] Backup Encryption & Off-Site Cloud Storage
+
+**What**: Encrypt database backup dumps and automate off-site storage to cloud object stores for disaster recovery.
+
+**Scope**:
+
+- Wrap `db-backup.js` with GPG asymmetric encryption.
+- Automate upload of encrypted backups to cloud object stores (AWS S3 / GCS) with retention policies.
+
+**Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
 
 ---
 
@@ -732,5 +688,3 @@
 | Microservices               | Modular monolith with ACL gateways and domain events is architecturally ready for extraction. Extraction is an operational decision requiring independent deployment and on-call per service. | A single module needs independent scaling, release cadence, or technology stack.                                                 |
 | Full Dual-Database CQRS     | CQRS Phase 2 (dedicated read methods, Phase 12) gives most performance benefit at fraction of complexity. Separate read/write DBs require eventual consistency and projection infrastructure. | Read traffic needs independent horizontal scaling from write traffic, or read latency SLOs cannot be met with a single database. |
 | gRPC Internal Communication | REST is sufficient for modular monolith. gRPC shines for inter-service communication with strict contracts and low latency.                                                                   | Microservice extraction happens and services need typed, low-latency internal APIs.                                              |
-| Identity/Access Split       | Separate identity and session modules is an optimization for microservice extraction.                                                                                                         | Auth becomes a separate microservice under independent load.                                                                     |
-| Admin Dashboard (Frontend)  | React/Next.js admin panel deferred to focus on backend positioning.                                                                                                                           | Full-stack demo or merchant self-service portal is required.                                                                     |
