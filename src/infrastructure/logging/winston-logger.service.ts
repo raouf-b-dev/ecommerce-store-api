@@ -24,15 +24,45 @@ export class WinstonLoggerService
     const logLevel = this.config.logLevel;
     const isProduction = this.config.node.env === 'production';
 
+    const SENSITIVE_KEYS_REGEX =
+      /^(password|token|secret|authorization|cookie|cardNumber|cvv|pan|ssn|creditCard)$/i;
+
+    const redactObject = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj !== 'object') return obj;
+
+      if (Array.isArray(obj)) {
+        return obj.map((item) => redactObject(item));
+      }
+
+      const redacted: Record<string, any> = {};
+      for (const key of Object.keys(obj)) {
+        if (SENSITIVE_KEYS_REGEX.test(key)) {
+          redacted[key] = '[REDACTED]';
+        } else if (typeof obj[key] === 'object') {
+          redacted[key] = redactObject(obj[key]);
+        } else {
+          redacted[key] = obj[key];
+        }
+      }
+      return redacted;
+    };
+
+    const piiRedactFormat = winston.format((info) => {
+      return redactObject(info);
+    })();
+
     const jsonFormat = winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
       winston.format.errors({ stack: true }),
+      piiRedactFormat,
       winston.format.json(),
     );
 
     const consoleFormat = winston.format.combine(
       winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
       winston.format.errors({ stack: true }),
+      piiRedactFormat,
       winston.format.colorize({ all: true }),
       winston.format.printf((info) => {
         const { timestamp, level, message, context, correlationId, stack } =

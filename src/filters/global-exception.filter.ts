@@ -102,7 +102,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       statusCode,
       message,
-      ...(code && { code }),
+      ...(!isProduction && code && { code }),
       ...(errors && { errors }),
       ...(!isProduction && errorDetail && { error: errorDetail }),
       ...(!isProduction && stack && { stack }),
