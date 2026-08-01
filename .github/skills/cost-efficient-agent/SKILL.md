@@ -5,7 +5,7 @@ description: Reduce AI agent token consumption and tool call overhead. Apply aut
 
 # Purpose
 
-Minimize token and tool call waste without sacrificing output quality. Enforce disciplined context loading, efficient file access patterns, and clear task boundaries to keep agent sessions focused and cost-effective.
+Minimize token burning and tool call waste while maintaining high architectural and code quality. Enforce disciplined context loading, efficient file access patterns, and clear task boundaries.
 
 # Rules — Always Active
 
@@ -13,69 +13,70 @@ These rules apply to **every agent session** in this repository, regardless of t
 
 ## 1. Search Before Read
 
-Before opening any file, confirm it contains what you need:
+Before opening any file, confirm it contains the exact symbols or logic you need:
 
-- Use `grep` or `find` to locate the relevant file(s) first.
-- Never read entire directories. Use glob patterns or search to narrow targets.
-- When reading a file, request only the line range you need (use `StartLine`/`EndLine`).
-- If a file was already read in this session, do not re-read it unless it has been modified since it was last read.
+- Use `grep_search` to locate relevant files and line numbers first.
+- Never list entire directories unnecessarily. Use specific paths or glob patterns.
+- When calling `view_file`, request only the relevant line range using `StartLine`/`EndLine`.
+- **Single-Pass Reading**: Do not re-read a file in the same session unless it has been modified since it was last read.
 
 ## 2. Context Acceleration — Load PROJECT-CONTEXT.md First
 
-Load [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) first (see AGENT.md §Context Acceleration).
+Always read [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) first (see `AGENT.md` §Context Acceleration). It provides a compact overview of the architecture, security policy, modules, key patterns, and feature status.
 
-Only load canonical references (`CONVENTIONS.md`, `DDD-HEXAGONAL.md`, etc.) when the task **directly requires generation or refactoring** that those docs govern.
+- For **investigatory or quick questions**, answer directly using `PROJECT-CONTEXT.md` and targeted code snippets.
+- Only load heavy canonical documentation (`CONVENTIONS.md`, `DDD-HEXAGONAL.md`, `INTEGRATION-PATTERNS.md`) when the task **requires code generation or structural refactoring**.
+- **Do not** read the full `ROADMAP.md` (800+ lines) unless the task specifically involves roadmap planning. Use grep to find the relevant phase.
 
 ## 3. Loop and Blocker Guardrail
 
-If you have made 20+ consecutive tool calls without producing output or resolving the active task, stop and explain the blocker to the user. Do not loop.
+If you reach 15–20 consecutive tool calls without producing output or resolving the task:
 
-## 4. Task Decomposition
+- Stop immediately.
+- Explain the blocker clearly to the user instead of looping.
 
-When a user prompt contains **multiple independent requests**:
+## 4. Task Decomposition & Scope Control
 
-1. Identify and list each discrete task before starting work.
-2. Execute them sequentially, completing one before starting the next.
-3. Do not load context for Task B while executing Task A.
-4. Summarize completed tasks with a brief checklist at the end.
+When a prompt contains multiple requests:
 
-## 5. Parallel Tool Calls
+1. Break down and execute tasks sequentially.
+2. Do not gather context for downstream tasks while working on the current task.
+3. Summarize completed work concisely with a final checklist.
 
-When multiple tool calls have **no dependencies between them**, execute them in a single parallel batch. Common opportunities:
+## 5. Parallel Tool Call Execution
 
-- Reading 2+ independent files simultaneously.
-- Running grep searches across different directories.
-- Creating multiple independent files.
+When tool calls have **no mutual dependencies**, batch them in a single tool call array:
 
-Never parallelize calls where one depends on the output of another.
+- Reading 2+ independent files at once.
+- Running parallel grep searches across separate subdirectories.
+- Creating/updating distinct files simultaneously.
 
-## 6. Minimal Context Loading
+Never batch calls where one step's input depends on another step's output.
 
-- **Do not** read `CONVENTIONS.md`, `DDD-HEXAGONAL.md`, or `INTEGRATION-PATTERNS.md` for investigatory questions (e.g., "where is X?", "explain Y", "what does Z do?").
-- **Do** read them for generation/refactor tasks that create or modify source code.
-- **Prefer** production code as the primary source. Read test files only when needed to understand behavior, edge cases, or reproduce a bug.
-- **Do not** read the full `ROADMAP.md` (800+ lines) unless the task specifically involves roadmap planning. Use grep to find the relevant phase.
+## 6. Minimal Context Loading & Code Source Preference
 
-## 7. Output Discipline
+- Prefer production code as the primary source. Read test files only when needed to understand behavior, edge cases, or reproduce a bug.
 
-- Do not re-summarize artifacts you just created. Point the user to them.
-- Do not repeat file contents you just read back to the user unless they asked.
-- Keep responses concise. Use tables and lists over prose for structured information.
-- When creating artifacts, prefer focused documents over comprehensive ones.
+## 7. Output Discipline & Response Brevity
+
+- **No Code Back-Echoing**: Do not repeat file contents back to the user unless explicitly requested.
+- **No Artifact Re-Summarization**: After creating or modifying an artifact, point the user to the file link and highlight only open questions or decisions.
+- **Concise Formatting**: Use markdown tables and lists instead of long prose.
+- **Clickable Links**: Always link to relevant files using `file:///` markdown syntax.
 
 ## 8. Forbidden Auto-Operations
 
-See AGENT.md §3 for forbidden auto-operations requiring explicit user confirmation.
+Refer to `AGENT.md` §3 for high-risk operations requiring explicit user confirmation before execution.
 
 # Inputs
 
-- Task description from the user.
-- [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) (always load first).
+- User prompt / task description.
+- [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md).
 
 # Outputs
 
-- Task completion with minimal token overhead.
+- Task resolution achieved with minimal token overhead and maximal speed.
 
 # Failure and Escalation
 
-- If you encounter a loop or exceed the tool call guardrail, pause and report what's blocking progress.
+- Pause and report blockers if context is ambiguous or tool call guardrails are reached.
