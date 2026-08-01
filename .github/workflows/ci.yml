@@ -157,9 +157,32 @@ jobs:
       - name: Run Build
         run: npm run build
 
+  security:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Restore node_modules cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Run npm audit check (informational)
+        run: npm audit --omit=dev || true
+
   integration:
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, unit-tests, arch, build]
+    needs: [lint, typecheck, unit-tests, arch, build, security]
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 
     services:
@@ -310,7 +333,7 @@ jobs:
   ci:
     name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, unit-tests, arch, build, integration]
+    needs: [lint, typecheck, unit-tests, arch, build, security, integration]
     if: always()
     steps:
       - name: Check all jobs status
@@ -320,6 +343,7 @@ jobs:
           unit_status="${{ needs.unit-tests.result }}"
           arch_status="${{ needs.arch.result }}"
           build_status="${{ needs.build.result }}"
+          security_status="${{ needs.security.result }}"
           integration_status="${{ needs.integration.result }}"
 
           echo "lint: $lint_status"
@@ -327,10 +351,11 @@ jobs:
           echo "unit-tests: $unit_status"
           echo "arch: $arch_status"
           echo "build: $build_status"
+          echo "security: $security_status"
           echo "integration: $integration_status"
 
           # Check for failures/cancellations of parallel jobs
-          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$build_status"; do
+          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$build_status" "$security_status"; do
             if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
               echo "One of the required parallel jobs failed or was cancelled."
               exit 1
