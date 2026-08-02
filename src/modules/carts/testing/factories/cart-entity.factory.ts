@@ -8,6 +8,7 @@ export class CartEntityTestFactory {
       id: 123,
       userId: 123,
       items: [],
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };
