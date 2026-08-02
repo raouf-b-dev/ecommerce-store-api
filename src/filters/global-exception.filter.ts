@@ -8,6 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 
 interface ValidationErrorResponse {
@@ -78,6 +79,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       this.logger.warn(
         `[AppError: ${code}] ${message} - Path: ${request.method} ${request.url}`,
+      );
+    }
+    // Branch 4: Optimistic Lock Version Mismatch (TypeORM)
+    else if (exception instanceof OptimisticLockVersionMismatchError) {
+      statusCode = HttpStatus.CONFLICT;
+      message =
+        'Resource was modified by another request. Please reload and retry.';
+      code = 'OPTIMISTIC_LOCK_CONFLICT';
+      errorDetail = exception.message;
+
+      this.logger.warn(
+        `[OptimisticLockConflict] ${exception.message} - Path: ${request.method} ${request.url}`,
       );
     }
     // Branch 4: Generic Error / Unknown
