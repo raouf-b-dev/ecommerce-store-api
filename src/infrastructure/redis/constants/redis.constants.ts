@@ -29,7 +29,7 @@ export const CART_REDIS: IRedisContstant = {
   INDEX: 'cart_index',
   CACHE_KEY: 'cart_cache',
   IS_CACHED_FLAG: 'cart_list:isCached',
-  EXPIRATION: 3600 * 24 * 7, // 7 days
+  EXPIRATION: 3600 * 24 * 30, // 30 days
 };
 
 export const PAYMENT_REDIS: IRedisContstant = {

@@ -99,8 +99,9 @@ describe('CachedCartRepository', () => {
   });
 
   describe('findByuserId', () => {
-    it('should return cart from cache (search)', async () => {
+    it('should return cart from cache (search) and refresh TTL', async () => {
       cacheService.search.mockResolvedValue([mockCachedCart]);
+      cacheService.set.mockResolvedValue(undefined);
 
       const result = await repository.findByuserId(mockCart.userId);
 
@@ -108,9 +109,14 @@ describe('CachedCartRepository', () => {
       if (result.isSuccess) {
         expect(result.value.id).toBe(mockCart.id);
       }
+      expect(cacheService.set).toHaveBeenCalledWith(
+        `${CART_REDIS.CACHE_KEY}:${mockCart.id}`,
+        expect.anything(),
+        { ttl: CART_REDIS.EXPIRATION },
+      );
     });
 
-    it('should fetch from postgres and cache if not found in cache', async () => {
+    it('should fetch from postgres and cache if not found in cache search', async () => {
       cacheService.search.mockResolvedValue([]);
       postgresRepo.findByuserId.mockResolvedValue(Result.success(mockCart));
       cacheService.set.mockResolvedValue(undefined);
@@ -118,6 +124,23 @@ describe('CachedCartRepository', () => {
       const result = await repository.findByuserId(mockCart.userId);
 
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(cacheService.set).toHaveBeenCalled();
+    });
+
+    it('should auto-create a fresh cart if cart is expired/missing from both cache and postgres', async () => {
+      cacheService.search.mockResolvedValue([]);
+      postgresRepo.findByuserId.mockResolvedValue(
+        Result.failure(new RepositoryError('Cart not found')),
+      );
+      postgresRepo.create.mockResolvedValue(Result.success(mockCart));
+      cacheService.set.mockResolvedValue(undefined);
+
+      const result = await repository.findByuserId(mockCart.userId);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.create).toHaveBeenCalledWith({
+        userId: mockCart.userId,
+      });
       expect(cacheService.set).toHaveBeenCalled();
     });
   });

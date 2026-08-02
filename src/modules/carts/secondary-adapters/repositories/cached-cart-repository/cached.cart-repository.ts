@@ -56,20 +56,41 @@ export class CachedCartRepository implements CartRepository {
       );
 
       if (cachedCarts.length > 0) {
-        return Result.success(CartCacheMapper.fromCache(cachedCarts[0]));
+        const cart = CartCacheMapper.fromCache(cachedCarts[0]);
+        // Refresh TTL on cache hit
+        await this.cacheService.set(
+          `${CART_REDIS.CACHE_KEY}:${cart.id}`,
+          CartCacheMapper.toCache(cart),
+          { ttl: CART_REDIS.EXPIRATION },
+        );
+        return Result.success(cart);
       }
 
       const dbResult = await this.postgresRepo.findByuserId(userId);
-      if (dbResult.isFailure) return dbResult;
-      const cart = dbResult.value;
+      if (dbResult.isSuccess) {
+        const cart = dbResult.value;
+
+        await this.cacheService.set(
+          `${CART_REDIS.CACHE_KEY}:${cart.id}`,
+          CartCacheMapper.toCache(cart),
+          { ttl: CART_REDIS.EXPIRATION },
+        );
+
+        return dbResult;
+      }
+
+      // Transparent auto-creation if cart expired/missing
+      const createResult = await this.postgresRepo.create({ userId });
+      if (createResult.isFailure) return createResult;
+      const freshCart = createResult.value;
 
       await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${cart.id}`,
-        CartCacheMapper.toCache(cart),
+        `${CART_REDIS.CACHE_KEY}:${freshCart.id}`,
+        CartCacheMapper.toCache(freshCart),
         { ttl: CART_REDIS.EXPIRATION },
       );
 
-      return dbResult;
+      return Result.success(freshCart);
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find cart by user ID',
