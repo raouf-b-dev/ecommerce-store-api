@@ -247,7 +247,95 @@ To ensure maximum type safety and prevent runtime errors:
 2. **Library Escape Hatches**: The only acceptable exception for using `any` is when a third-party library's types are dynamic, circular, or poorly defined (such as the dynamic JSON/Search modules of the Node-Redis client in `RedisService`), where strict typing would trigger cascade compiler errors across consumers.
 3. **Explicit Callbacks**: Always add explicit parameter typings (such as `(err: Error)`) to event handlers and callbacks instead of letting them fall back to implicit `any`.
 
-## 13. Canonical References
+## 13. Optimistic Locking (Version) Convention
+
+`version` is a persistence/concurrency concern, not a business concept — it must never appear on domain entities, domain interfaces, or domain props. The domain entity has zero knowledge of versioning.
+
+### 13.1 The Pattern: Version Travels as an Explicit Value, Not Entity State
+
+The repository port returns the version **alongside** the entity, not inside it:
+
+```typescript
+// core/domain/repositories/product-repository.ts (port)
+interface ProductRepository {
+  findByIdForUpdate(
+    id: number,
+  ): Promise<Result<{ entity: Product; expectedVersion: number }>>;
+  save(entity: Product, expectedVersion: number): Promise<Result<void>>;
+}
+```
+
+The use case threads `expectedVersion` through as a plain value:
+
+```typescript
+async execute(command: UpdateProductCommand) {
+  const result = await this.repo.findByIdForUpdate(command.productId);
+  if (result.isFailure) throw new NotFoundError();
+
+  const { entity, expectedVersion } = result.value;
+  entity.rename(command.newName); // pure domain method — no version involved
+
+  await this.repo.save(entity, expectedVersion);
+}
+```
+
+The infrastructure adapter is where version actually gets used:
+
+```typescript
+// secondary-adapters/repositories/postgres.product-repository.ts
+async findByIdForUpdate(id: number) {
+  const orm = await this.ormRepo.findOneBy({ id });
+  if (!orm) return ErrorFactory.RepositoryError('Not found');
+  return Result.success({ entity: ProductMapper.toDomain(orm), expectedVersion: orm.version });
+}
+
+async save(entity: Product, expectedVersion: number) {
+  const orm = ProductMapper.toEntity(entity); // never maps version
+  orm.version = expectedVersion; // set right before save, purely for TypeORM's check
+  await this.ormRepo.save(orm); // WHERE version = expectedVersion, throws on mismatch
+}
+```
+
+**Domain entity**: zero knowledge of `version`, ever.
+**Mapper**: never maps it either direction.
+**Repository adapter**: only place that touches it, only for the microsecond it hands it to TypeORM.
+
+### 13.2 Same-Request vs. Cross-Request Flows
+
+This distinction determines where `expectedVersion` comes from:
+
+**Same-request flow** (server-side load → mutate → save in one method call):
+`expectedVersion` comes from the `findByIdForUpdate` call a few lines up in the use case. Nothing special to design.
+
+**Cross-request flow** (GET loads it, user edits for a while, PUT saves it later):
+There is no in-memory value to carry across two separate HTTP requests. `expectedVersion` must be serialized to the client on load and sent back by the client on save:
+
+```typescript
+// GET /products/:id response DTO
+{ id, name, price, version: 3 }
+
+// PUT /products/:id request body
+{ name: "New Name", expectedVersion: 3 }
+```
+
+The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a command/DTO concern — perfectly fine to live there), and it flows into `repo.save(entity, command.expectedVersion)`. Nothing about the domain model changes between the two scenarios; only where the number comes from changes.
+
+### 13.3 Where Version Is Allowed
+
+| Layer                             | Allowed? | Form                                                         |
+| --------------------------------- | -------- | ------------------------------------------------------------ |
+| ORM schema (`@VersionColumn()`)   | ✅ Yes   | `version: number` with TypeORM decorator                     |
+| Repository port (domain layer)    | ✅ Yes   | As a separate parameter or return field alongside the entity |
+| Use case / application layer      | ✅ Yes   | As a plain value threaded through, never on the entity       |
+| Command / DTO (primary adapter)   | ✅ Yes   | `expectedVersion` field on update commands and response DTOs |
+| Domain entity / interface / props | ❌ Never | Not a business concept                                       |
+| Domain-to-ORM mapper              | ❌ Never | Mapper must not map version in either direction              |
+
+### 13.4 Anti-Pattern: In-Memory Version Cache
+
+Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version — so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to — either as a same-call in-memory value or as an explicit param threaded through the command — never as shared mutable state keyed only by ID.
+
+## 14. Canonical References
 
 - [../../AGENT.md](../../AGENT.md)
 - [../architecture/DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md)
