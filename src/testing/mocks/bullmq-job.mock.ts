@@ -1,6 +1,6 @@
 import { JobsOptions } from 'bullmq';
 
-export class MockJob<T = any, R = any> {
+export class MockJob<T = any> {
   id = 'job-id';
   name = 'job-name';
   data: T;

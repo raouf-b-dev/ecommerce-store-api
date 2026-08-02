@@ -6,7 +6,6 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 
 describe('ShipOrderUseCase', () => {
   let useCase: ShipOrderUseCase;

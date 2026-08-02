@@ -1,6 +1,7 @@
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import pluginSecurity from 'eslint-plugin-security';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -18,6 +19,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
+  pluginSecurity.configs.recommended,
   {
     languageOptions: {
       globals: {
@@ -69,6 +71,7 @@ export default tseslint.config(
       'no-var': 'error',
       'no-console': 'warn',
       'no-debugger': 'error',
+      'security/detect-object-injection': 'off',
     },
   },
 

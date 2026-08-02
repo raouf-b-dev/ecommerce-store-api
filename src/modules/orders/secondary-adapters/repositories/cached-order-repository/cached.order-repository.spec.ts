@@ -18,11 +18,9 @@ import {
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
 import { Order } from '../../../core/domain/entities/order';
-import { OrderDtoTestFactory } from '../../../testing/factories/order-dto.factory';
 import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderBuilder } from '../../../testing';
-import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
 import { MockLogger } from '../../../../../testing/mocks/logger.mock';
 describe('CachedOrderRepository', () => {
