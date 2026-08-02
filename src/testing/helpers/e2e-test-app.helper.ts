@@ -77,9 +77,12 @@ export class E2eTestAppHelper {
   }
 
   static async closeApp(
-    appOrContext: INestApplication | E2eAppContext,
+    appOrContext?: INestApplication | E2eAppContext,
   ): Promise<void> {
+    if (!appOrContext) return;
     const app = 'app' in appOrContext ? appOrContext.app : appOrContext;
-    await app.close();
+    if (app && typeof app.close === 'function') {
+      await app.close();
+    }
   }
 }
