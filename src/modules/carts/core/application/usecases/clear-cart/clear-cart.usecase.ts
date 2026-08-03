@@ -19,7 +19,7 @@ export interface ClearCartUseCaseInput {
 @Injectable()
 export class ClearCartUseCase extends UseCase<
   ClearCartUseCaseInput,
-  ICart,
+  void,
   UseCaseError
 > {
   constructor(
@@ -31,13 +31,13 @@ export class ClearCartUseCase extends UseCase<
 
   async execute(
     input: ClearCartUseCaseInput,
-  ): Promise<Result<ICart, UseCaseError>> {
+  ): Promise<Result<void, UseCaseError>> {
     const { cartId, callerContext } = input;
-    const cartResult = await this.cartRepository.findById(cartId);
+    const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
     if (isFailure(cartResult)) return cartResult;
 
-    const cart = cartResult.value;
+    const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
@@ -51,10 +51,10 @@ export class ClearCartUseCase extends UseCase<
 
     cart.clearItems();
 
-    const saveResult = await this.cartRepository.update(cart);
+    const saveResult = await this.cartRepository.save(cart, expectedVersion);
 
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(cart.toPrimitives());
+    return Result.success<void>(undefined);
   }
 }

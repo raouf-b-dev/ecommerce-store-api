@@ -71,10 +71,8 @@ describe('AddCartItemUseCase', () => {
       };
 
       const mockCartData = CartTestFactory.createUserCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
 
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
       mockProductGateway.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
@@ -85,7 +83,7 @@ describe('AddCartItemUseCase', () => {
           requestedQuantity: 2,
         }),
       );
-      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute({
         cartId,
@@ -104,10 +102,8 @@ describe('AddCartItemUseCase', () => {
       };
 
       const mockCartData = CartTestFactory.createUserCart(123);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
 
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
       mockProductGateway.findById.mockResolvedValue(
         Result.success(mockProduct),
       );
@@ -118,7 +114,7 @@ describe('AddCartItemUseCase', () => {
           requestedQuantity: 2,
         }),
       );
-      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute({
         cartId,
@@ -137,10 +133,8 @@ describe('AddCartItemUseCase', () => {
       };
 
       const mockCartData = CartTestFactory.createUserCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
 
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
 
       const result = await usecase.execute({
         cartId,
@@ -161,9 +155,8 @@ describe('AddCartItemUseCase', () => {
         productId: 1,
         quantity: 1,
       };
-      const error = new RepositoryError('Cart not found');
 
-      mockCartRepository.findById.mockResolvedValue(Result.failure(error));
+      mockCartRepository.mockCartNotFound(String(cartId));
 
       const result = await usecase.execute({
         cartId,

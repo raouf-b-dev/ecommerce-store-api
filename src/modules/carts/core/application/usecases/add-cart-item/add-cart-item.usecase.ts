@@ -28,7 +28,7 @@ export interface AddCartItemUseCaseInput {
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
   AddCartItemUseCaseInput,
-  ICart,
+  void,
   UseCaseError
 > {
   constructor(
@@ -44,13 +44,13 @@ export class AddCartItemUseCase extends UseCase<
 
   async execute(
     input: AddCartItemUseCaseInput,
-  ): Promise<Result<ICart, UseCaseError>> {
+  ): Promise<Result<void, UseCaseError>> {
     const { cartId, input: addInput, callerContext } = input;
-    const cartResult = await this.cartRepository.findById(cartId);
+    const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
     if (isFailure(cartResult)) return cartResult;
 
-    const cart = cartResult.value;
+    const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
@@ -101,10 +101,10 @@ export class AddCartItemUseCase extends UseCase<
 
     if (isFailure(addResult)) return addResult;
 
-    const saveResult = await this.cartRepository.update(cart);
+    const saveResult = await this.cartRepository.save(cart, expectedVersion);
 
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(cart.toPrimitives());
+    return Result.success<void>(undefined);
   }
 }

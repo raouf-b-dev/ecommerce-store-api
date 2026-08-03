@@ -58,7 +58,7 @@ describe('UpdateCartItemUseCase', () => {
         Object.defineProperty(items[0], 'id', { value: itemId });
       }
 
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
       mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: true,
@@ -66,7 +66,7 @@ describe('UpdateCartItemUseCase', () => {
           requestedQuantity: 5,
         }),
       );
-      mockCartRepository.update.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute({
         cartId,
@@ -75,8 +75,8 @@ describe('UpdateCartItemUseCase', () => {
         callerContext: customerContext,
       });
 
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockCartRepository.update).toHaveBeenCalled();
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
@@ -84,9 +84,8 @@ describe('UpdateCartItemUseCase', () => {
       const cartId = 404;
       const itemId = 1;
       const input: UpdateCartItemInput = { quantity: 2 };
-      const error = new RepositoryError('Cart not found');
 
-      mockCartRepository.findById.mockResolvedValue(Result.failure(error));
+      mockCartRepository.mockCartNotFound(String(cartId));
 
       const result = await usecase.execute({
         cartId,
@@ -95,8 +94,8 @@ describe('UpdateCartItemUseCase', () => {
         callerContext: customerContext,
       });
 
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockCartRepository.update).not.toHaveBeenCalled();
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Cart not found',
@@ -119,7 +118,7 @@ describe('UpdateCartItemUseCase', () => {
         Object.defineProperty(items[0], 'id', { value: itemId });
       }
 
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
       mockInventoryGateway.checkStock.mockResolvedValue(
         Result.success({
           isAvailable: false,
