@@ -5,6 +5,7 @@ import {
   Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  VersionColumn,
 } from 'typeorm';
 
 @Entity({ name: 'inventory' })
@@ -13,6 +14,9 @@ import {
 export class InventoryEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
+
+  @VersionColumn({ default: 1 })
+  version: number;
 
   @Column({ name: 'product_id', type: 'int' })
   productId: number;
