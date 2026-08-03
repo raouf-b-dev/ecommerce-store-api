@@ -10,6 +10,18 @@ export interface LowStockQuery {
 }
 
 export abstract class InventoryRepository {
+  abstract findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  >;
+
+  abstract findByProductIdForUpdate(
+    productId: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  >;
+
   abstract findById(id: number): Promise<Result<Inventory, RepositoryError>>;
 
   abstract findByProductId(
@@ -26,10 +38,7 @@ export abstract class InventoryRepository {
 
   abstract save(
     inventory: Inventory,
-  ): Promise<Result<Inventory, RepositoryError>>;
-
-  abstract update(
-    inventory: Inventory,
+    expectedVersion?: number,
   ): Promise<Result<Inventory, RepositoryError>>;
 
   abstract delete(id: number): Promise<Result<void, RepositoryError>>;
