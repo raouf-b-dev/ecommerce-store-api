@@ -33,11 +33,12 @@ export class UpdateUserUseCase extends UseCase<
   async execute(input: UpdateUserInput): Promise<Result<void, UseCaseError>> {
     const { id, command: dto } = input;
 
-    const userResult = await this.userRepository.findById(id);
+    const userResult = await this.userRepository.findByIdForUpdate(id);
     if (isFailure(userResult)) return userResult;
 
-    const user = userResult.value;
-    if (!user) return ErrorFactory.UseCaseError('User not found');
+    if (!userResult.value) return ErrorFactory.UseCaseError('User not found');
+
+    const { entity: user, expectedVersion } = userResult.value;
 
     const updateResult = user.updatePersonalInfo(
       dto.firstName || user.firstName,
@@ -48,7 +49,7 @@ export class UpdateUserUseCase extends UseCase<
 
     if (isFailure(updateResult)) return updateResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);

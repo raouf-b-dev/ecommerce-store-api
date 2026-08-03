@@ -3,7 +3,6 @@ import { MockUserRepository } from '../../../../../testing/mocks/user-repository
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
-import { User } from '../../../../domain/entities/user';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('CreateUserUseCase', () => {
@@ -14,14 +13,7 @@ describe('CreateUserUseCase', () => {
     mockUserRepository = new MockUserRepository();
     useCase = new CreateUserUseCase(mockUserRepository);
 
-    // Mock successful user save
-    mockUserRepository.save.mockImplementation((user) => {
-      const primitives = user.toPrimitives();
-      if (!primitives.id) {
-        primitives.id = 123;
-      }
-      return Promise.resolve(Result.success(User.fromProps(primitives)));
-    });
+    mockUserRepository.mockSuccessfulSave();
   });
 
   afterEach(() => {

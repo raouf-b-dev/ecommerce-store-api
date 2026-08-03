@@ -58,12 +58,13 @@ export class UpdateAddressUseCase extends UseCase<
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
     }
 
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (isFailure(userResult)) return userResult;
 
-    const user = userResult.value;
-    if (!user)
+    if (!userResult.value)
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+
+    const { entity: user, expectedVersion } = userResult.value;
 
     const updateResult = user.updateAddress(addressId, {
       street: dto.street ?? null,
@@ -78,7 +79,7 @@ export class UpdateAddressUseCase extends UseCase<
 
     if (isFailure(updateResult)) return updateResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);

@@ -42,17 +42,18 @@ export class SetDefaultAddressUseCase extends UseCase<
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
     }
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure) return userResult;
 
-    const user = userResult.value;
-    if (!user)
+    if (!userResult.value)
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+
+    const { entity: user, expectedVersion } = userResult.value;
 
     const setDefaultResult = user.setDefaultAddress(addressId);
     if (isFailure(setDefaultResult)) return setDefaultResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);
