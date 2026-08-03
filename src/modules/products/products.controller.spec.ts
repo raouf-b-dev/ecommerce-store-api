@@ -123,8 +123,8 @@ describe('ProductsController', () => {
   it('should call UpdateProductUseCase.execute when createProduct is called', async () => {
     await controller.update(id, updateProductDto);
     expect(updateProductUseCase.execute).toHaveBeenCalledWith({
-      id: id,
-      dto: updateProductDto,
+      id,
+      ...updateProductDto,
     });
   });
 

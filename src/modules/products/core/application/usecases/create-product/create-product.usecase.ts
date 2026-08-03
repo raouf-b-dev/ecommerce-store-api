@@ -1,6 +1,6 @@
-// src/modules/Products/application/usecases/CreateProduct/Create-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
+import { Product } from '../../../domain/entities/product';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -8,12 +8,12 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { CreateProductInput } from '../../../domain/repositories/product-repository';
+import { CreateProductCommand } from '../../commands/create-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
 
 @Injectable()
 export class CreateProductUseCase extends UseCase<
-  CreateProductInput,
+  CreateProductCommand,
   IProduct,
   UseCaseError
 > {
@@ -22,14 +22,32 @@ export class CreateProductUseCase extends UseCase<
   }
 
   async execute(
-    dto: CreateProductInput,
+    command: CreateProductCommand,
   ): Promise<Result<IProduct, UseCaseError>> {
-    const productResult = await this.productRepository.save(dto);
+    try {
+      const product = Product.create({
+        id: null,
+        name: command.name,
+        description: command.description,
+        price: command.price,
+        currency: command.currency,
+        sku: command.sku,
+        imageUrl: command.imageUrl,
+        categoryId: command.categoryId,
+      });
 
-    if (isFailure(productResult)) {
-      return ErrorFactory.UseCaseError(productResult.error.message);
+      const saveResult = await this.productRepository.save(product);
+
+      if (isFailure(saveResult)) {
+        return ErrorFactory.UseCaseError(saveResult.error.message);
+      }
+
+      return Result.success<IProduct>(product.toPrimitives());
+    } catch (error) {
+      if (error instanceof Error) {
+        return ErrorFactory.UseCaseError(error.message);
+      }
+      return ErrorFactory.UseCaseError('Failed to create product');
     }
-
-    return Result.success<IProduct>(productResult.value);
   }
 }

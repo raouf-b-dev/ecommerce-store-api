@@ -1,9 +1,9 @@
-// src/modules/Products/application/usecases/list-products/list-products.usecase.spec.ts
 import { ListProductsUseCase } from './list-products.usecase';
 import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { ProductTestFactory } from '../../../../testing/factories/product.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import { Product } from '../../../domain/entities/product';
 
 describe('ListProductsUseCase', () => {
   let useCase: ListProductsUseCase;
@@ -20,7 +20,8 @@ describe('ListProductsUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if products are found', async () => {
-      const products = ProductTestFactory.createProductList(5);
+      const mockList = ProductTestFactory.createProductList(5);
+      const products = mockList.map((p) => Product.fromPrimitives(p));
 
       mockRepository.mockSuccessfulList(products);
 
@@ -45,11 +46,12 @@ describe('ListProductsUseCase', () => {
     });
 
     it('should return mixed product types', async () => {
-      const products = [
+      const mockList = [
         ProductTestFactory.createInStockProduct(),
         ProductTestFactory.createLowStockProduct(),
         ProductTestFactory.createOutOfStockProduct(),
       ];
+      const products = mockList.map((p) => Product.fromPrimitives(p));
 
       mockRepository.mockSuccessfulList(products);
 

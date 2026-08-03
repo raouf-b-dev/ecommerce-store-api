@@ -111,8 +111,8 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
   ) {
     return await this.updateProductUseCase.execute({
-      id: id,
-      dto: updateProductDto,
+      id,
+      ...updateProductDto,
     });
   }
 

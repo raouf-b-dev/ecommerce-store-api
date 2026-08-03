@@ -6,7 +6,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DEMO_SEED_PRODUCTS } from './demo-products';
 import { IProduct } from '../../domain/interfaces/product.interface';
-import { CreateProductInput } from '../../domain/repositories/product-repository';
+import { CreateProductCommand } from '../commands/create-product.command';
 
 describe('SeedDemoCatalogUseCase', () => {
   let useCase: SeedDemoCatalogUseCase;
@@ -46,16 +46,17 @@ describe('SeedDemoCatalogUseCase', () => {
 
   it('should seed missing catalog products and return them', async () => {
     listProductsUseCase.execute.mockResolvedValue(Result.success([]));
-    createProductUseCase.execute.mockImplementation((cmd: CreateProductInput) =>
-      Promise.resolve(
-        Result.success({
-          id: 100 + (cmd.sku?.length ?? 0),
-          sku: cmd.sku ?? '',
-          name: cmd.name,
-          description: cmd.description,
-          price: cmd.price,
-        } as IProduct),
-      ),
+    createProductUseCase.execute.mockImplementation(
+      (cmd: CreateProductCommand) =>
+        Promise.resolve(
+          Result.success({
+            id: 100 + (cmd.sku?.length ?? 0),
+            sku: cmd.sku ?? '',
+            name: cmd.name,
+            description: cmd.description,
+            price: cmd.price,
+          } as IProduct),
+        ),
     );
 
     const result = await useCase.execute();
