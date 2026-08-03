@@ -25,51 +25,39 @@ export class CachedUserRepository implements UserRepository {
     return `${USER_REDIS.CACHE_KEY}:${id}`;
   }
 
-  async save(user: User): Promise<Result<User, RepositoryError>> {
-    try {
-      const dbResult = await this.postgresRepo.save(user);
-      if (dbResult.isFailure) return dbResult;
-
-      const saved = dbResult.value;
-
-      try {
-        await this.cacheService.set(
-          this.idKey(saved.id!),
-          UserCacheMapper.toCache(saved),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
-      } catch (cacheError) {
-        this.logger.warn(
-          `Failed to cache user ${saved.id} after save`,
-          cacheError,
-        );
-      }
-
-      return Result.success(saved);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save user', error);
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: User; expectedVersion: number } | null, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async update(user: User): Promise<Result<void, RepositoryError>> {
+  async save(
+    user: User,
+    expectedVersion?: number,
+  ): Promise<Result<User, RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.update(user);
-      if (dbResult.isFailure) return dbResult;
+      const saveResult = await this.postgresRepo.save(user, expectedVersion);
+      if (saveResult.isFailure) return saveResult;
 
-      try {
-        await this.cacheService.set(
-          this.idKey(user.id!),
-          UserCacheMapper.toCache(user),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
-      } catch (cacheError) {
-        this.logger.warn(
-          `Failed to cache user ${user.id} after save`,
-          cacheError,
-        );
+      const savedUser = saveResult.value;
+      if (savedUser.id) {
+        try {
+          await this.cacheService.set(
+            this.idKey(savedUser.id),
+            UserCacheMapper.toCache(savedUser),
+            { ttl: USER_REDIS.EXPIRATION },
+          );
+        } catch (cacheError) {
+          this.logger.warn(
+            `Failed to cache user ${savedUser.id} after save`,
+            cacheError,
+          );
+        }
       }
 
-      return Result.success(undefined);
+      return Result.success(savedUser);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to save user', error);
     }

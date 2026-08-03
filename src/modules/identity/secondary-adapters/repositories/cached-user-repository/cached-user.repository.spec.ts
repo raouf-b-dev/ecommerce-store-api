@@ -47,12 +47,12 @@ describe('CachedUserRepository', () => {
 
   describe('save', () => {
     it('should save user to postgres and cache', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockUser));
+      postgresRepo.mockSuccessfulSave(mockUser);
 
       const result = await repository.save(mockUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(postgresRepo.save).toHaveBeenCalledWith(mockUser);
+      expect(postgresRepo.save).toHaveBeenCalledWith(mockUser, undefined);
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringContaining(String(mockUser.id!)),
         mockUserCache,

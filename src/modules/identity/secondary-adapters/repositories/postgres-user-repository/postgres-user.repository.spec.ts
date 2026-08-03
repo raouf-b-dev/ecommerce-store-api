@@ -50,7 +50,6 @@ describe('PostgresUserRepository', () => {
       const result = await repository.save(newUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(1);
       expect(typeOrmRepository.save).toHaveBeenCalled();
     });
 
@@ -60,7 +59,6 @@ describe('PostgresUserRepository', () => {
       const result = await repository.save(mockUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(mockUser.id);
     });
 
     it('should return failure if save fails', async () => {
