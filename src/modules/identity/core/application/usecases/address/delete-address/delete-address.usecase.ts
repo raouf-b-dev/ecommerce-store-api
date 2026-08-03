@@ -43,16 +43,17 @@ export class DeleteAddressUseCase extends UseCase<
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
     }
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure) return userResult;
 
-    const user = userResult.value;
-    if (!user) return ErrorFactory.UseCaseError('User not found');
+    const userPair = userResult.value;
+    if (!userPair) return ErrorFactory.UseCaseError('User not found');
+    const { entity: user, expectedVersion } = userPair;
 
     const deleteResult = user.deleteAddress(addressId);
     if (isFailure(deleteResult)) return deleteResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);

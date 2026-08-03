@@ -430,15 +430,17 @@ describe('CachedInventoryRepository', () => {
       const newCachedInventory =
         InventoryCacheMapper.toCache(newDomainInventory);
 
-      postgresRepo.mockSuccessfulSave(newDomainInventory);
+      postgresRepo.mockSuccessfulSave();
 
       // Act
       const result = await repository.save(newDomainInventory);
 
       // Assert
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(newDomainInventory);
-      expect(postgresRepo.save).toHaveBeenCalledWith(newDomainInventory);
+      expect(postgresRepo.save).toHaveBeenCalledWith(
+        newDomainInventory,
+        undefined,
+      );
 
       expect(cacheService.set).toHaveBeenCalledWith(
         idKey(newInventory.id!),
@@ -465,56 +467,10 @@ describe('CachedInventoryRepository', () => {
 
       // Assert
       ResultAssertionHelper.assertResultFailureWithError(result, dbError);
-      expect(postgresRepo.save).toHaveBeenCalledWith(domainInventory);
-      expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled();
-    });
-  });
-
-  // --- Update Tests ---
-  describe('update', () => {
-    it('should update in postgres, cache the new result, and delete the cached flag', async () => {
-      // Arrange
-      const updatedInventory = domainInventory;
-      const updatedCachedInventory =
-        InventoryCacheMapper.toCache(updatedInventory);
-
-      postgresRepo.mockSuccessfulUpdate(updatedInventory);
-
-      // Act
-      const result = await repository.update(updatedInventory);
-
-      // Assert
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(updatedInventory);
-      expect(postgresRepo.update).toHaveBeenCalledWith(updatedInventory);
-
-      expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(updatedInventory.id!),
-        updatedCachedInventory,
-        { ttl: INVENTORY_REDIS.EXPIRATION },
+      expect(postgresRepo.save).toHaveBeenCalledWith(
+        domainInventory,
+        undefined,
       );
-      expect(cacheService.set).toHaveBeenCalledWith(
-        productKey(updatedInventory.productId),
-        updatedCachedInventory,
-        { ttl: INVENTORY_REDIS.EXPIRATION },
-      );
-      expect(cacheService.delete).toHaveBeenCalledWith(
-        INVENTORY_REDIS.IS_CACHED_FLAG,
-      );
-    });
-
-    it('should return failure if postgres update fails', async () => {
-      // Arrange
-      const dbError = new RepositoryError('Update failed');
-      postgresRepo.update.mockResolvedValue(Result.failure(dbError));
-
-      // Act
-      const result = await repository.update(domainInventory);
-
-      // Assert
-      ResultAssertionHelper.assertResultFailureWithError(result, dbError);
-      expect(postgresRepo.update).toHaveBeenCalledWith(domainInventory);
       expect(cacheService.set).not.toHaveBeenCalled();
       expect(cacheService.delete).not.toHaveBeenCalled();
     });

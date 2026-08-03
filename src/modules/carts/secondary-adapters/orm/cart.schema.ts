@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   Relation,
+  VersionColumn,
 } from 'typeorm';
 import { CartItemEntity } from './cart-item.schema';
 
@@ -16,6 +17,9 @@ import { CartItemEntity } from './cart-item.schema';
 export class CartEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
+
+  @VersionColumn({ default: 1 })
+  version: number;
 
   @Column({ name: 'user_id', type: 'int', nullable: false, unique: true })
   userId: number;

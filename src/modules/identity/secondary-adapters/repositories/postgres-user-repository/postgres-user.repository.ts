@@ -30,27 +30,46 @@ export class PostgresUserRepository implements UserRepository {
     }
   }
 
-  async save(user: User): Promise<Result<User, RepositoryError>> {
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: User; expectedVersion: number } | null, RepositoryError>
+  > {
     try {
-      const entity = UserMapper.toEntity(user);
-      // For new users (id = 0 or null), TypeORM will generate the ID
-      if (!entity.id) {
-        entity.id = 0; // Will be replaced by auto-increment
-      }
-      const savedEntity = await this.repository.save(entity);
-      return Result.success(UserMapper.toDomain(savedEntity));
+      const entity = await this.repository.findOne({
+        where: { id },
+        relations: ['addresses'],
+      });
+      if (!entity) return Result.success(null);
+      return Result.success({
+        entity: UserMapper.toDomain(entity),
+        expectedVersion: entity.version,
+      });
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save user', error);
+      return ErrorFactory.RepositoryError(
+        'Failed to find user for update',
+        error,
+      );
     }
   }
 
-  async update(user: User): Promise<Result<void, RepositoryError>> {
+  async save(
+    user: User,
+    expectedVersion?: number,
+  ): Promise<Result<User, RepositoryError>> {
     try {
       const entity = UserMapper.toEntity(user);
-      await this.repository.update(entity.id, entity);
-      return Result.success(undefined);
+      if (!entity.id) {
+        entity.id = 0;
+      }
+      if (expectedVersion !== undefined) {
+        entity.version = expectedVersion;
+      }
+      const savedEntity = await this.repository.save(entity);
+      user.setId(savedEntity.id);
+      return Result.success(user);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update user', error);
+      return ErrorFactory.RepositoryError('Failed to save user', error);
     }
   }
 

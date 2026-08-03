@@ -9,6 +9,8 @@ import { ResultAssertionHelper } from '../../../../../testing';
 import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
 import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 import { ProductEntityTestFactory } from 'src/modules/products/testing';
+import { Product } from '../../../core/domain/entities/product';
+import { ProductTestFactory } from '../../../testing/factories/product.factory';
 
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;
@@ -47,137 +49,65 @@ describe('PostgresProductRepository', () => {
     jest.clearAllMocks();
   });
 
-  describe('save', () => {
-    it('should successfully save a product', async () => {
-      const createDto = CreateProductInputFactory.createMockDto();
-      const generatedId = 1;
-
-      ormRepo.create.mockReturnValue(mockProductEntity);
-      ormRepo.save.mockResolvedValue({ ...mockProductEntity, id: generatedId });
-
-      const result = await repository.save(createDto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(generatedId);
-      expect(ormRepo.create).toHaveBeenCalledWith({
-        ...createDto,
-        createdAt: expect.any(Date),
-      });
-      expect(ormRepo.save).toHaveBeenCalledWith(mockProductEntity);
-    });
-
-    it('should save expensive product', async () => {
-      const expensiveDto =
-        CreateProductInputFactory.createExpensiveProductDto();
-      const expensiveEntity = ProductEntityTestFactory.createProductEntity({
-        price: 35000,
-        id: 2,
+  describe('findByIdForUpdate', () => {
+    it('should find product for update and return entity with expectedVersion', async () => {
+      const productId = 1;
+      ormRepo.findOne.mockResolvedValue({
+        ...mockProductEntity,
+        id: productId,
+        version: 3,
       });
 
-      ormRepo.create.mockReturnValue(expensiveEntity);
-      ormRepo.save.mockResolvedValue(expensiveEntity);
-
-      const result = await repository.save(expensiveDto);
+      const result = await repository.findByIdForUpdate(productId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.price).toBe(35000);
+      expect(result.value.entity.id).toBe(productId);
+      expect(result.value.expectedVersion).toBe(3);
     });
 
-    it('should return failure when database save fails', async () => {
-      const createDto = CreateProductInputFactory.createMockDto();
-      const error = new Error('Database save failed');
+    it('should return failure when product not found', async () => {
+      ormRepo.findOne.mockResolvedValue(null);
 
-      ormRepo.create.mockReturnValue(mockProductEntity);
-      ormRepo.save.mockRejectedValue(error);
-
-      const result = await repository.save(createDto);
+      const result = await repository.findByIdForUpdate(999);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Failed to save the product',
+        'Product with ID 999 not found',
         RepositoryError,
       );
     });
   });
 
-  describe('update', () => {
-    it('should successfully update a product', async () => {
-      const productId = 1;
-      const updateDto = UpdateProductInputFactory.createMockDto();
-      const updatedEntity = {
-        ...mockProductEntity,
-        ...updateDto,
-        updatedAt: new Date(),
-      };
-
-      ormRepo.findOne.mockResolvedValue(mockProductEntity);
-      ormRepo.merge.mockReturnValue(updatedEntity);
-      ormRepo.save.mockResolvedValue(updatedEntity);
-
-      const result = await repository.update(productId, updateDto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.name).toBe(updateDto.name);
-      expect(ormRepo.findOne).toHaveBeenCalledWith({
-        where: { id: productId },
-      });
-      expect(ormRepo.merge).toHaveBeenCalledWith(mockProductEntity, {
-        ...updateDto,
-        updatedAt: expect.any(Date),
-      });
-      expect(ormRepo.save).toHaveBeenCalledWith(updatedEntity);
-    });
-
-    it('should update only price', async () => {
-      const productId = 1;
-      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
-      const updatedEntity = {
-        ...mockProductEntity,
-        price: 200,
-        updatedAt: new Date(),
-      };
-
-      ormRepo.findOne.mockResolvedValue(mockProductEntity);
-      ormRepo.merge.mockReturnValue(updatedEntity);
-      ormRepo.save.mockResolvedValue(updatedEntity);
-
-      const result = await repository.update(productId, priceOnlyDto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.price).toBe(200);
-    });
-
-    it('should return failure when product not found', async () => {
-      const productId = 999;
-      const updateDto = UpdateProductInputFactory.createMockDto();
-
-      ormRepo.findOne.mockResolvedValue(null);
-
-      const result = await repository.update(productId, updateDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        `Product with ID ${productId} not found`,
-        RepositoryError,
+  describe('save', () => {
+    it('should successfully save a product entity with expectedVersion', async () => {
+      const domainProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({ id: 1 }),
       );
-      expect(ormRepo.merge).not.toHaveBeenCalled();
-      expect(ormRepo.save).not.toHaveBeenCalled();
+      ormRepo.save.mockResolvedValue({
+        ...mockProductEntity,
+        id: 1,
+        version: 2,
+      });
+
+      const result = await repository.save(domainProduct, 1);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(ormRepo.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should return failure when database update fails', async () => {
-      const productId = 1;
-      const updateDto = UpdateProductInputFactory.createMockDto();
-      const error = new Error('Database update failed');
+    it('should return failure when database save fails', async () => {
+      const domainProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct(),
+      );
+      const error = new Error('Database save failed');
 
-      ormRepo.findOne.mockResolvedValue(mockProductEntity);
-      ormRepo.merge.mockReturnValue(mockProductEntity);
       ormRepo.save.mockRejectedValue(error);
 
-      const result = await repository.update(productId, updateDto);
+      const result = await repository.save(domainProduct);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Failed to update the product',
+        'Failed to save the product',
         RepositoryError,
       );
     });

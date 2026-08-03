@@ -18,7 +18,7 @@ export class DeactivateUserUseCase extends UseCase<number, void, UseCaseError> {
   }
 
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure || !userResult.value) {
       return ErrorFactory.UseCaseError(
         'User not found',
@@ -27,14 +27,14 @@ export class DeactivateUserUseCase extends UseCase<number, void, UseCaseError> {
       );
     }
 
-    const user = userResult.value;
+    const { entity: user, expectedVersion } = userResult.value;
 
     const deactivateResult = user.deactivate();
     if (deactivateResult.isFailure) {
       return deactivateResult;
     }
 
-    const saveResult = await this.userRepository.save(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (saveResult.isFailure) {
       return saveResult;
     }

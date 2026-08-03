@@ -17,6 +17,7 @@ export class ProductEntityTestFactory {
       currency: 'USD',
       sku: 'TEST-001',
       isActive: true,
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };

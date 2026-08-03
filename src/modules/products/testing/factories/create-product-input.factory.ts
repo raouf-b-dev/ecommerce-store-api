@@ -1,12 +1,12 @@
 // src/modules/products/testing/factories/create-product-input.factory.ts
 
-import { CreateProductInput } from '../../core/domain/repositories/product-repository';
+import { CreateProductCommand } from '../../core/application/commands/create-product.command';
 
 export class CreateProductInputFactory {
   static createMockDto(
-    overrides?: Partial<CreateProductInput>,
-  ): CreateProductInput {
-    const baseDto: CreateProductInput = {
+    overrides?: Partial<CreateProductCommand>,
+  ): CreateProductCommand {
+    const baseDto: CreateProductCommand = {
       name: 'Test Product',
       description: 'A test product description',
       price: 100,
@@ -17,8 +17,8 @@ export class CreateProductInputFactory {
   }
 
   static createExpensiveProductDto(
-    overrides?: Partial<CreateProductInput>,
-  ): CreateProductInput {
+    overrides?: Partial<CreateProductCommand>,
+  ): CreateProductCommand {
     return this.createMockDto({
       name: 'Luxury Car',
       description: 'A fast red sports car',
@@ -29,8 +29,8 @@ export class CreateProductInputFactory {
   }
 
   static createBudgetProductDto(
-    overrides?: Partial<CreateProductInput>,
-  ): CreateProductInput {
+    overrides?: Partial<CreateProductCommand>,
+  ): CreateProductCommand {
     return this.createMockDto({
       name: 'Budget Item',
       price: 9.99,
@@ -38,14 +38,14 @@ export class CreateProductInputFactory {
     });
   }
 
-  static createMinimalDto(): CreateProductInput {
+  static createMinimalDto(): CreateProductCommand {
     return {
       name: 'Minimal Product',
       price: 50,
     };
   }
 
-  static createInvalidDto(): CreateProductInput {
+  static createInvalidDto(): CreateProductCommand {
     return {
       name: '',
       price: -10,
@@ -54,8 +54,8 @@ export class CreateProductInputFactory {
   }
 
   static createFreeProductDto(
-    overrides?: Partial<CreateProductInput>,
-  ): CreateProductInput {
+    overrides?: Partial<CreateProductCommand>,
+  ): CreateProductCommand {
     return this.createMockDto({
       name: 'Free Sample',
       price: 0,

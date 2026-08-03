@@ -4,12 +4,9 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
+import { Product } from '../../../core/domain/entities/product';
+import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
-import {
-  CreateProductInput,
-  ProductRepository,
-  UpdateProductInput,
-} from '../../../core/domain/repositories/product-repository';
 
 export class CachedProductRepository implements ProductRepository {
   constructor(
@@ -17,60 +14,46 @@ export class CachedProductRepository implements ProductRepository {
     private readonly postgresRepo: ProductRepository,
   ) {}
 
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Product; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
+  }
+
   async save(
-    createProductInput: CreateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>> {
+    product: Product,
+    expectedVersion?: number,
+  ): Promise<Result<Product, RepositoryError>> {
     try {
-      // Save to Postgres first
-      const saveResult = await this.postgresRepo.save(createProductInput);
+      const saveResult = await this.postgresRepo.save(product, expectedVersion);
       if (saveResult.isFailure) return saveResult;
 
-      const product = saveResult.value;
-      // Cache it
-      await this.cacheService.set(
-        `${PRODUCT_REDIS.CACHE_KEY}:${product.id}`,
-        product,
-        { ttl: PRODUCT_REDIS.EXPIRATION },
-      );
+      const savedProduct = saveResult.value;
+      if (savedProduct.id !== null) {
+        await this.cacheService.set(
+          `${PRODUCT_REDIS.CACHE_KEY}:${savedProduct.id}`,
+          savedProduct.toPrimitives(),
+          { ttl: PRODUCT_REDIS.EXPIRATION },
+        );
+      }
       await this.cacheService.delete(PRODUCT_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<IProduct>(product);
+      return Result.success(savedProduct);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save product`, error);
     }
   }
 
-  async update(
-    id: number,
-    updateProductDto: UpdateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>> {
-    try {
-      // Update in Postgres
-      const updateResult = await this.postgresRepo.update(id, updateProductDto);
-      if (updateResult.isFailure) return updateResult;
-
-      const product = updateResult.value;
-      // Update in cache
-      await this.cacheService.set(`${PRODUCT_REDIS.CACHE_KEY}:${id}`, product, {
-        ttl: PRODUCT_REDIS.EXPIRATION,
-      });
-      // Invalidate the list cache
-      await this.cacheService.delete(PRODUCT_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<IProduct>(product);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to update product`, error);
-    }
-  }
-
-  async findById(id: number): Promise<Result<IProduct, RepositoryError>> {
+  async findById(id: number): Promise<Result<Product, RepositoryError>> {
     try {
       // Try cache first
       const cached = await this.cacheService.get<IProduct>(
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<IProduct>(cached);
+        return Result.success<Product>(Product.fromPrimitives(cached));
       }
 
       // Fallback to Postgres
@@ -80,7 +63,7 @@ export class CachedProductRepository implements ProductRepository {
       // Cache the result
       await this.cacheService.set(
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
-        dbResult.value,
+        dbResult.value.toPrimitives(),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
 
@@ -90,17 +73,18 @@ export class CachedProductRepository implements ProductRepository {
     }
   }
 
-  async findAll(): Promise<Result<IProduct[], RepositoryError>> {
+  async findAll(): Promise<Result<Product[], RepositoryError>> {
     try {
       const isCached = await this.cacheService.get<string>(
         PRODUCT_REDIS.IS_CACHED_FLAG,
       );
 
       if (isCached) {
-        const cachedProducts = await this.cacheService.getAll<IProduct>(
+        const cachedPrimitives = await this.cacheService.getAll<IProduct>(
           PRODUCT_REDIS.INDEX,
         );
-        return Result.success(cachedProducts);
+        const products = cachedPrimitives.map((p) => Product.fromPrimitives(p));
+        return Result.success(products);
       }
 
       const dbResult = await this.postgresRepo.findAll();
@@ -112,7 +96,7 @@ export class CachedProductRepository implements ProductRepository {
 
       const cacheEntries = products.map((product) => ({
         key: `${PRODUCT_REDIS.CACHE_KEY}:${product.id}`,
-        value: product,
+        value: product.toPrimitives(),
       }));
 
       await this.cacheService.setAll(cacheEntries, {

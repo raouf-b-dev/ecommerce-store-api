@@ -27,7 +27,7 @@ export interface CreateOrderFromCartCommand {
 @Injectable()
 export class CreateOrderFromCartUseCase extends UseCase<
   CreateOrderFromCartCommand,
-  IOrder,
+  void,
   UseCaseError
 > {
   constructor(
@@ -40,7 +40,7 @@ export class CreateOrderFromCartUseCase extends UseCase<
 
   async execute(
     dto: CreateOrderFromCartCommand,
-  ): Promise<Result<IOrder, UseCaseError>> {
+  ): Promise<Result<void, UseCaseError>> {
     // 1. Get Cart
     const cartResult = await this.cartGateway.getCart(dto.cartId);
     if (isFailure(cartResult)) {
@@ -73,6 +73,6 @@ export class CreateOrderFromCartUseCase extends UseCase<
       );
     }
 
-    return Result.success(saveResult.value);
+    return Result.success(undefined);
   }
 }

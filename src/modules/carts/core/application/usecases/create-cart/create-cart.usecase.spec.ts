@@ -33,19 +33,12 @@ describe('CreateCartUseCase', () => {
 
   describe('execute', () => {
     it('should create a user cart successfully', async () => {
-      const mockCartData = CartTestFactory.createUserCart(123);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: 777 });
-
-      mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
+      mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute({ callerContext: customerContext });
 
-      expect(mockCartRepository.create).toHaveBeenCalledWith({
-        userId: 123,
-      });
+      expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.cart.userId).toBe(123);
     });
 
     it('should return the existing cart if the user already has one', async () => {
@@ -58,15 +51,14 @@ describe('CreateCartUseCase', () => {
 
       const result = await usecase.execute({ callerContext: customerContext });
 
-      expect(mockCartRepository.create).not.toHaveBeenCalled();
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.cart.userId).toBe(123);
     });
 
     it('should reject cart creation when callerContext is missing', async () => {
       const result = await usecase.execute({ callerContext: null });
 
-      expect(mockCartRepository.create).not.toHaveBeenCalled();
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Not authorized to create a customer cart',
@@ -84,7 +76,7 @@ describe('CreateCartUseCase', () => {
 
       const result = await usecase.execute({ callerContext: unscopedCustomer });
 
-      expect(mockCartRepository.create).not.toHaveBeenCalled();
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Not authorized to create a customer cart',
@@ -93,8 +85,7 @@ describe('CreateCartUseCase', () => {
     });
 
     it('should return failure when repository fails', async () => {
-      const error = new RepositoryError('Failed to create cart');
-      mockCartRepository.create.mockResolvedValue(Result.failure(error));
+      mockCartRepository.mockSaveFailure('Failed to create cart');
 
       const result = await usecase.execute({ callerContext: customerContext });
 

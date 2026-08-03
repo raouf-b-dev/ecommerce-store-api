@@ -2,7 +2,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   ListOrdersQuery,
-  OrderItemInput,
   OrderRepository,
 } from '../../../core/domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -103,119 +102,35 @@ export class CachedOrderRepository implements OrderRepository {
     }
   }
 
-  async save(order: Order): Promise<Result<Order, RepositoryError>> {
-    try {
-      const saveResult = await this.postgresRepo.save(order);
-      if (saveResult.isFailure) return saveResult;
-      const savedOrder = saveResult.value;
-
-      await this.cacheService.set(
-        `${ORDER_REDIS.CACHE_KEY}:${savedOrder.id}`,
-        OrderCacheMapper.toCache(savedOrder),
-        { ttl: ORDER_REDIS.EXPIRATION },
-      );
-      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<Order>(savedOrder);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to save order`, error);
-    }
-  }
-
-  async updateStatus(
+  async findByIdForUpdate(
     id: number,
-    status: OrderStatus,
-  ): Promise<Result<void, RepositoryError>> {
-    try {
-      const updateResult = await this.postgresRepo.updateStatus(id, status);
-      if (updateResult.isFailure) return updateResult;
-
-      const cached = await this.cacheService.get<OrderForCache>(
-        `${ORDER_REDIS.CACHE_KEY}:${id}`,
-      );
-
-      if (cached) {
-        cached.status = status;
-        cached.updatedAt = Date.now();
-        await this.cacheService.set(`${ORDER_REDIS.CACHE_KEY}:${id}`, cached, {
-          ttl: ORDER_REDIS.EXPIRATION,
-        });
-      }
-
-      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<void>(undefined);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to update order status`,
-        error,
-      );
-    }
+  ): Promise<
+    Result<{ entity: Order; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async updatePaymentId(
-    orderId: number,
-    paymentId: number,
-  ): Promise<Result<void, RepositoryError>> {
-    try {
-      const updateResult = await this.postgresRepo.updatePaymentId(
-        orderId,
-        paymentId,
-      );
-      if (updateResult.isFailure) return updateResult;
-
-      const cached = await this.cacheService.get<OrderForCache>(
-        `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
-      );
-
-      if (cached) {
-        cached.paymentId = paymentId;
-        cached.updatedAt = Date.now();
-        await this.cacheService.set(
-          `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
-          cached,
-          {
-            ttl: ORDER_REDIS.EXPIRATION,
-          },
-        );
-      }
-
-      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<void>(undefined);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to update order payment ID`,
-        error,
-      );
-    }
-  }
-
-  async updateItemsInfo(
-    id: number,
-    updateOrderItemDto: OrderItemInput[],
+  async save(
+    order: Order,
+    expectedVersion?: number,
   ): Promise<Result<Order, RepositoryError>> {
     try {
-      const updateResult = await this.postgresRepo.updateItemsInfo(
-        id,
-        updateOrderItemDto,
-      );
-      if (updateResult.isFailure) return updateResult;
+      const saveResult = await this.postgresRepo.save(order, expectedVersion);
+      if (saveResult.isFailure) return saveResult;
 
-      const order = updateResult.value;
-
-      await this.cacheService.set(
-        `${ORDER_REDIS.CACHE_KEY}:${id}`,
-        OrderCacheMapper.toCache(order),
-        {
-          ttl: ORDER_REDIS.EXPIRATION,
-        },
-      );
+      const savedOrder = saveResult.value;
+      if (savedOrder.id) {
+        await this.cacheService.set(
+          `${ORDER_REDIS.CACHE_KEY}:${savedOrder.id}`,
+          OrderCacheMapper.toCache(savedOrder),
+          { ttl: ORDER_REDIS.EXPIRATION },
+        );
+      }
       await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
 
-      return Result.success<Order>(order);
+      return Result.success(saveResult.value);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to update order`, error);
+      return ErrorFactory.RepositoryError(`Failed to save order`, error);
     }
   }
 
@@ -255,23 +170,6 @@ export class CachedOrderRepository implements OrderRepository {
       return Result.success<void>(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to delete order`, error);
-    }
-  }
-
-  async cancelOrder(
-    orderPrimitives: Order,
-  ): Promise<Result<void, RepositoryError>> {
-    try {
-      const cancelResult = await this.postgresRepo.cancelOrder(orderPrimitives);
-      if (cancelResult.isFailure) return cancelResult;
-      await this.cacheService.delete(
-        `${ORDER_REDIS.CACHE_KEY}:${orderPrimitives.id}`,
-      );
-      await this.cacheService.delete(ORDER_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<void>(undefined);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to cancel order`, error);
     }
   }
 

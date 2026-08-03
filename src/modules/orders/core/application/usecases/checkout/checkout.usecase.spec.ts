@@ -47,9 +47,9 @@ describe('CheckoutUseCase', () => {
     };
 
     const mockOrderRepository = {
-      save: jest.fn().mockResolvedValue({
-        isSuccess: true,
-        value: { id: '1001', status: 'pending_payment' },
+      save: jest.fn().mockImplementation(async (order: any) => {
+        order.id = 1001;
+        return Result.success(order);
       }),
       cancelOrder: jest.fn().mockResolvedValue(undefined),
     };
@@ -132,7 +132,7 @@ describe('CheckoutUseCase', () => {
       },
     );
     expect(domainEventPublisher.publish).toHaveBeenCalledWith('order.created', {
-      orderId: '1001',
+      orderId: 1001,
       userId: mockuserId,
     });
   });

@@ -3,7 +3,15 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { User } from '../entities/user';
 
 export abstract class UserRepository {
-  abstract save(user: User): Promise<Result<User, RepositoryError>>;
+  abstract findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: User; expectedVersion: number } | null, RepositoryError>
+  >;
+  abstract save(
+    user: User,
+    expectedVersion?: number,
+  ): Promise<Result<User, RepositoryError>>;
   abstract findByEmail(
     email: string,
   ): Promise<Result<User | null, RepositoryError>>;
@@ -15,6 +23,5 @@ export abstract class UserRepository {
   abstract existsByEmail(
     email: string,
   ): Promise<Result<boolean, RepositoryError>>;
-  abstract update(user: User): Promise<Result<void, RepositoryError>>;
   abstract delete(id: number): Promise<Result<void, RepositoryError>>;
 }

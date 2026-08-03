@@ -1,5 +1,11 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  VersionColumn,
+} from 'typeorm';
 
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
@@ -9,6 +15,9 @@ import { numericToNumber } from '../../../../infrastructure/database/number.tran
 export class ProductEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
+
+  @VersionColumn({ default: 1 })
+  version: number;
 
   @Column()
   name: string;

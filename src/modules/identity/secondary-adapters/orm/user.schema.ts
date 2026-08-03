@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  VersionColumn,
 } from 'typeorm';
 import { AddressEntity } from './address.schema';
 
@@ -12,6 +13,9 @@ import { AddressEntity } from './address.schema';
 export class UserEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
+
+  @VersionColumn({ default: 1 })
+  version: number;
 
   @Column()
   firstName: string;

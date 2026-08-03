@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
   PrimaryGeneratedColumn,
   Relation,
+  VersionColumn,
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.schema';
 import { ShippingAddressEntity } from './shipping-address.schema';
@@ -25,6 +26,9 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 export class OrderEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
+
+  @VersionColumn({ default: 1 })
+  version: number;
 
   @Column({ name: 'user_id' })
   userId: number;

@@ -224,53 +224,35 @@ export class CachedInventoryRepository implements InventoryRepository {
     }
   }
 
-  async save(
-    inventory: Inventory,
-  ): Promise<Result<Inventory, RepositoryError>> {
-    try {
-      const dbResult = await this.postgresRepo.save(inventory);
-      if (dbResult.isFailure) return dbResult;
-
-      const saved = dbResult.value;
-
-      if (saved.id) {
-        await this.cacheService.set(
-          this.idKey(saved.id),
-          InventoryCacheMapper.toCache(saved),
-          {
-            ttl: INVENTORY_REDIS.EXPIRATION,
-          },
-        );
-      }
-
-      await this.cacheService.set(
-        this.productKey(saved.productId),
-        InventoryCacheMapper.toCache(saved),
-        {
-          ttl: INVENTORY_REDIS.EXPIRATION,
-        },
-      );
-
-      await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
-      return Result.success<Inventory>(saved);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save inventory', error);
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async update(
+  async findByProductIdForUpdate(
+    productId: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByProductIdForUpdate(productId);
+  }
+
+  async save(
     inventory: Inventory,
+    expectedVersion?: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.update(inventory);
+      const dbResult = await this.postgresRepo.save(inventory, expectedVersion);
       if (dbResult.isFailure) return dbResult;
 
-      const updated = dbResult.value;
-
-      if (updated.id) {
+      const savedInventory = dbResult.value;
+      if (savedInventory.id) {
         await this.cacheService.set(
-          this.idKey(updated.id),
-          InventoryCacheMapper.toCache(updated),
+          this.idKey(savedInventory.id),
+          InventoryCacheMapper.toCache(savedInventory),
           {
             ttl: INVENTORY_REDIS.EXPIRATION,
           },
@@ -278,18 +260,17 @@ export class CachedInventoryRepository implements InventoryRepository {
       }
 
       await this.cacheService.set(
-        this.productKey(updated.productId),
-        InventoryCacheMapper.toCache(updated),
+        this.productKey(savedInventory.productId),
+        InventoryCacheMapper.toCache(savedInventory),
         {
           ttl: INVENTORY_REDIS.EXPIRATION,
         },
       );
 
       await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<Inventory>(updated);
+      return Result.success(savedInventory);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update inventory', error);
+      return ErrorFactory.RepositoryError('Failed to save inventory', error);
     }
   }
 

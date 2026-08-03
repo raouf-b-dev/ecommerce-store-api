@@ -12,6 +12,7 @@ export class InventoryEntityTestFactory {
       reservedQuantity: 10,
       totalQuantity: 110,
       lowStockThreshold: 10,
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
       lastRestockDate: new Date('2025-01-01T09:00:00Z'),

@@ -1,7 +1,6 @@
 // src/modules/orders/testing/mocks/order-repository.mock.ts
 import {
   ListOrdersQuery,
-  OrderItemInput,
   OrderRepository,
 } from '../../core/domain/repositories/order-repository';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -11,74 +10,59 @@ import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 
 export class MockOrderRepository implements OrderRepository {
-  // Jest mock functions
-  save = jest.fn<Promise<Result<Order, RepositoryError>>, [Order]>();
-  updateStatus = jest.fn<
-    Promise<Result<void, RepositoryError>>,
-    [number, OrderStatus]
+  findByIdForUpdate = jest.fn<
+    Promise<
+      Result<{ entity: Order; expectedVersion: number }, RepositoryError>
+    >,
+    [number]
   >();
-  updatePaymentId = jest.fn<
-    Promise<Result<void, RepositoryError>>,
-    [number, number]
-  >();
-  updateItemsInfo = jest.fn<
-    Promise<Result<Order, RepositoryError>>,
-    [number, OrderItemInput[]]
-  >();
+  save = jest.fn<Promise<Result<Order, RepositoryError>>, [Order, number?]>();
   findById = jest.fn<Promise<Result<Order, RepositoryError>>, [number]>();
   listOrders = jest.fn<
     Promise<Result<Order[], RepositoryError>>,
     [ListOrdersQuery]
   >();
-  cancelOrder = jest.fn<Promise<Result<void, RepositoryError>>, [Order]>();
   deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
   findByStatusBefore = jest.fn<
     Promise<Result<Order[], RepositoryError>>,
     [OrderStatus, Date]
   >();
 
-  // Helper methods for common test scenarios
   mockSuccessfulFind(orderPrimitives: IOrder): void {
     const domainOrder = Order.fromPrimitives(orderPrimitives);
     this.findById.mockResolvedValue(Result.success(domainOrder));
+  }
+
+  mockSuccessfulFindByIdForUpdate(
+    orderPrimitives: IOrder,
+    expectedVersion = 1,
+  ): void {
+    const domainOrder = Order.fromPrimitives(orderPrimitives);
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.success({ entity: domainOrder, expectedVersion }),
+    );
   }
 
   mockOrderNotFound(orderId: number): void {
     this.findById.mockResolvedValue(
       Result.failure(new RepositoryError(`Order with id ${orderId} not found`)),
     );
-  }
-
-  mockSuccessfulSave(order: Order): void {
-    this.save.mockResolvedValue(Result.success(order));
-  }
-
-  mockSuccessfulUpdateStatus(): void {
-    this.updateStatus.mockResolvedValue(Result.success(undefined));
-  }
-
-  mockUpdateStatusFailure(errorMessage: string): void {
-    this.updateStatus.mockResolvedValue(
-      Result.failure(new RepositoryError(errorMessage)),
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.failure(new RepositoryError(`Order with id ${orderId} not found`)),
     );
   }
 
-  mockSuccessfulUpdateItems(order: Order): void {
-    this.updateItemsInfo.mockResolvedValue(Result.success(order));
+  mockSuccessfulSave(idToAssign = 1001): void {
+    this.save.mockImplementation(async (order) => {
+      if (!order.id) {
+        order.setId(idToAssign);
+      }
+      return Result.success(order);
+    });
   }
 
-  mockUpdateItemsFailure(errorMessage: string): void {
-    this.updateItemsInfo.mockResolvedValue(
-      Result.failure(new RepositoryError(errorMessage)),
-    );
-  }
-
-  mockSuccessfulCancel(): void {
-    this.cancelOrder.mockResolvedValue(Result.success(undefined));
-  }
-
-  mockCancelFailure(errorMessage: string): void {
-    this.cancelOrder.mockResolvedValue(
+  mockSaveFailure(errorMessage: string): void {
+    this.save.mockResolvedValue(
       Result.failure(new RepositoryError(errorMessage)),
     );
   }
@@ -100,19 +84,14 @@ export class MockOrderRepository implements OrderRepository {
     );
   }
 
-  // Reset all mocks
   reset(): void {
     jest.clearAllMocks();
   }
 
-  // Verify no unexpected calls were made
   verifyNoUnexpectedCalls(): void {
     expect(this.save).not.toHaveBeenCalled();
-    expect(this.updateStatus).not.toHaveBeenCalled();
-    expect(this.updateItemsInfo).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.listOrders).not.toHaveBeenCalled();
-    expect(this.cancelOrder).not.toHaveBeenCalled();
     expect(this.deleteById).not.toHaveBeenCalled();
   }
 }

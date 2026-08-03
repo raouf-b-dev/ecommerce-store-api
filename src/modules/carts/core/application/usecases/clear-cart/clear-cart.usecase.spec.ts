@@ -38,37 +38,32 @@ describe('ClearCartUseCase', () => {
         id: cartId,
         userId: 123,
       });
-      const mockCart = Cart.fromPrimitives(mockCartData);
 
-      const clearedCartData = CartTestFactory.createEmptyCart({ id: cartId });
-      const clearedCart = Cart.fromPrimitives(clearedCartData);
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-      mockCartRepository.update.mockResolvedValue(Result.success(clearedCart));
+      mockCartRepository.mockSuccessfulFind(mockCartData);
+      mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute({
         cartId,
         callerContext: customerContext,
       });
 
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockCartRepository.update).toHaveBeenCalled();
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should return failure when cart not found', async () => {
       const cartId = 404;
-      const error = new RepositoryError('Cart not found');
 
-      mockCartRepository.findById.mockResolvedValue(Result.failure(error));
+      mockCartRepository.mockCartNotFound(String(cartId));
 
       const result = await usecase.execute({
         cartId,
         callerContext: customerContext,
       });
 
-      expect(mockCartRepository.findById).toHaveBeenCalledWith(cartId);
-      expect(mockCartRepository.update).not.toHaveBeenCalled();
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Cart not found',

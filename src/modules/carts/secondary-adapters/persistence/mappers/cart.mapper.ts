@@ -6,7 +6,7 @@ import { CartEntity } from '../../orm/cart.schema';
 import { CartItemEntity } from '../../orm/cart-item.schema';
 import { CartItemMapper } from './cart-item.mapper';
 
-type CartCreate = CreateFromEntity<CartEntity, 'items'>;
+type CartCreate = CreateFromEntity<CartEntity, 'items' | 'version'>;
 
 export type CartForCache = Omit<ICart, 'createdAt' | 'updatedAt'> & {
   createdAt: number;

@@ -55,12 +55,12 @@ export class AddAddressUseCase extends UseCase<
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
     }
 
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (isFailure(userResult)) return userResult;
 
-    const user = userResult.value;
+    if (!userResult.value) return ErrorFactory.UseCaseError('User not found');
 
-    if (!user) return ErrorFactory.UseCaseError('User not found');
+    const { entity: user, expectedVersion } = userResult.value;
 
     //check if address already exist
     const addResult = user.addAddress({
@@ -80,7 +80,7 @@ export class AddAddressUseCase extends UseCase<
     });
     if (isFailure(addResult)) return addResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);

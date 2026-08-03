@@ -1,9 +1,9 @@
-// src/modules/Products/application/usecases/get-product/get-product.usecase.spec.ts
 import { GetProductUseCase } from './get-product.usecase';
 import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { ProductTestFactory } from '../../../../testing/factories/product.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import { Product } from '../../../domain/entities/product';
 
 describe('GetProductUseCase', () => {
   let useCase: GetProductUseCase;
@@ -21,7 +21,9 @@ describe('GetProductUseCase', () => {
   describe('execute', () => {
     it('should return Success if product is found', async () => {
       const productId = 1;
-      const product = ProductTestFactory.createMockProduct({ id: productId });
+      const product = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({ id: productId }),
+      );
 
       mockRepository.mockSuccessfulFind(product);
 

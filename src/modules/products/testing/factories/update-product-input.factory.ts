@@ -1,15 +1,16 @@
 // src/modules/products/testing/factories/update-product-input.factory.ts
 
-import { UpdateProductInput } from '../../core/domain/repositories/product-repository';
+import { UpdateProductCommand } from '../../core/application/commands/update-product.command';
 
 export class UpdateProductInputFactory {
   /**
-   * Creates a valid UpdateProductInput for testing
+   * Creates a valid UpdateProductCommand for testing
    */
   static createMockDto(
-    overrides?: Partial<UpdateProductInput>,
-  ): UpdateProductInput {
-    const baseDto: UpdateProductInput = {
+    overrides?: Partial<UpdateProductCommand>,
+  ): UpdateProductCommand {
+    const baseDto: UpdateProductCommand = {
+      id: 1,
       name: 'Updated Product',
       description: 'Updated description',
       price: 150,
@@ -22,29 +23,29 @@ export class UpdateProductInputFactory {
   /**
    * Creates DTO updating only name
    */
-  static createNameOnlyDto(name: string): UpdateProductInput {
-    return { name };
+  static createNameOnlyDto(name: string): UpdateProductCommand {
+    return { id: 1, name };
   }
 
   /**
    * Creates DTO updating only price
    */
-  static createPriceOnlyDto(price: number): UpdateProductInput {
-    return { price };
+  static createPriceOnlyDto(price: number): UpdateProductCommand {
+    return { id: 1, price };
   }
 
   /**
    * Creates DTO updating only description
    */
-  static createDescriptionOnlyDto(description: string): UpdateProductInput {
-    return { description };
+  static createDescriptionOnlyDto(description: string): UpdateProductCommand {
+    return { id: 1, description };
   }
 
   /**
    * Creates DTO updating only SKU
    */
-  static createSkuOnlyDto(sku: string): UpdateProductInput {
-    return { sku };
+  static createSkuOnlyDto(sku: string): UpdateProductCommand {
+    return { id: 1, sku };
   }
 
   /**
@@ -53,8 +54,9 @@ export class UpdateProductInputFactory {
   static createPriceIncreaseDto(
     currentPrice: number,
     increasePercent: number,
-  ): UpdateProductInput {
+  ): UpdateProductCommand {
     return {
+      id: 1,
       price: currentPrice * (1 + increasePercent / 100),
     };
   }
@@ -65,8 +67,9 @@ export class UpdateProductInputFactory {
   static createPriceDecreaseDto(
     currentPrice: number,
     discountPercent: number,
-  ): UpdateProductInput {
+  ): UpdateProductCommand {
     return {
+      id: 1,
       price: currentPrice * (1 - discountPercent / 100),
     };
   }
@@ -74,8 +77,9 @@ export class UpdateProductInputFactory {
   /**
    * Creates invalid DTO for negative testing
    */
-  static createInvalidDto(): UpdateProductInput {
+  static createInvalidDto(): UpdateProductCommand {
     return {
+      id: 1,
       name: '', // Invalid - empty name
       price: -50, // Invalid - negative price
     };

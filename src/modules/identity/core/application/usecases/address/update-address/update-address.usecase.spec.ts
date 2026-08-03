@@ -3,9 +3,7 @@ import {
   UpdateAddressCommand,
 } from './update-address.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
-import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
 import {
   createUserCallerContext,
@@ -14,7 +12,6 @@ import {
 import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
 import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 import { AddressTestFactory } from '../../../../../testing/factories/address.entity.factory';
-import { User } from '../../../../domain/entities/user';
 import { DomainError } from 'src/shared-kernel/domain/exceptions/domain.error';
 
 const adminCallerContext = createUserCallerContext({
@@ -57,10 +54,9 @@ describe('UpdateAddressUseCase', () => {
       const mockUserData = UserTestFactory.createMockUser({
         id: userId,
       });
-      const mockUser = User.fromProps(mockUserData);
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(mockUser));
-      mockUserRepository.update.mockResolvedValue(Result.success(undefined));
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
         userId,
@@ -70,8 +66,8 @@ describe('UpdateAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(mockUserRepository.findById).toHaveBeenCalledWith(userId);
-      expect(mockUserRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.findByIdForUpdate).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should return Failure(UseCaseError) if user not found', async () => {
@@ -79,7 +75,7 @@ describe('UpdateAddressUseCase', () => {
       const addressId = 123;
       const updateDto = AddressTestFactory.createUpdateAddressCommand();
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(null));
+      mockUserRepository.mockUserNotFound();
 
       const result = await useCase.execute({
         userId,
@@ -102,9 +98,8 @@ describe('UpdateAddressUseCase', () => {
       const mockUserData = UserTestFactory.createMockUser({
         id: userId,
       });
-      const mockUser = User.fromProps(mockUserData);
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(mockUser));
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
 
       const result = await useCase.execute({
         userId,
@@ -120,19 +115,16 @@ describe('UpdateAddressUseCase', () => {
       );
     });
 
-    it('should return Failure(RepositoryError) if update fails', async () => {
+    it('should return Failure(RepositoryError) if save fails', async () => {
       const userId = 123;
       const addressId = 123;
       const updateDto = AddressTestFactory.createUpdateAddressCommand();
       const mockUserData = UserTestFactory.createMockUser({
         id: userId,
       });
-      const mockUser = User.fromProps(mockUserData);
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(mockUser));
-      mockUserRepository.update.mockResolvedValue(
-        ErrorFactory.RepositoryError('Failed to update user'),
-      );
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSaveFailure('Failed to update user');
 
       const result = await useCase.execute({
         userId,
@@ -155,10 +147,9 @@ describe('UpdateAddressUseCase', () => {
       const mockUserData = UserTestFactory.createMockUser({
         id: userId,
       });
-      const mockUser = User.fromProps(mockUserData);
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(mockUser));
-      mockUserRepository.update.mockResolvedValue(Result.success(undefined));
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
         userId,
@@ -187,7 +178,7 @@ describe('UpdateAddressUseCase', () => {
         'User with id 123 not found',
         UseCaseError,
       );
-      expect(mockUserRepository.findById).not.toHaveBeenCalled();
+      expect(mockUserRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 
     it('should allow system caller to update address', async () => {
@@ -197,10 +188,9 @@ describe('UpdateAddressUseCase', () => {
       const mockUserData = UserTestFactory.createMockUser({
         id: userId,
       });
-      const mockUser = User.fromProps(mockUserData);
 
-      mockUserRepository.findById.mockResolvedValue(Result.success(mockUser));
-      mockUserRepository.update.mockResolvedValue(Result.success(undefined));
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
         userId,

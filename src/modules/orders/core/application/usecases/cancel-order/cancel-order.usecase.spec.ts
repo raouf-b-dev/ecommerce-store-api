@@ -45,13 +45,13 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder);
-    mockRepository.mockSuccessfulCancel();
+    mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
+    mockRepository.mockSuccessfulSave();
 
     const result = await useCase.execute({ orderId });
 
-    expect(mockRepository.findById).toHaveBeenCalledWith(orderId);
-    expect(mockRepository.cancelOrder).toHaveBeenCalled();
+    expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(orderId);
+    expect(mockRepository.save).toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).toHaveBeenCalledWith(
       orderId,
     );
@@ -68,8 +68,8 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder);
-    mockRepository.mockSuccessfulCancel();
+    mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
+    mockRepository.mockSuccessfulSave();
 
     const result = await useCase.execute({ orderId, isSagaCompensation: true });
 
@@ -96,7 +96,7 @@ describe('CancelOrderUseCase', () => {
       RepositoryError,
     );
 
-    expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
+    expect(mockRepository.save).not.toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
@@ -106,7 +106,7 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(nonCancellableOrder);
+    mockRepository.mockSuccessfulFindByIdForUpdate(nonCancellableOrder);
 
     const result = await useCase.execute({ orderId });
 
@@ -116,7 +116,7 @@ describe('CancelOrderUseCase', () => {
       DomainError,
     );
 
-    expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
+    expect(mockRepository.save).not.toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
@@ -126,8 +126,8 @@ describe('CancelOrderUseCase', () => {
       id: orderId,
     });
 
-    mockRepository.mockSuccessfulFind(cancellableOrder);
-    mockRepository.mockCancelFailure('DB write failed');
+    mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
+    mockRepository.mockSaveFailure('DB write failed');
 
     const result = await useCase.execute({ orderId });
 
@@ -147,8 +147,8 @@ describe('CancelOrderUseCase', () => {
         .asCancellable()
         .build();
 
-      mockRepository.mockSuccessfulFind(orderPrimitives);
-      mockRepository.mockSuccessfulCancel();
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+      mockRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({ orderId: orderPrimitives.id! });
 
@@ -158,23 +158,20 @@ describe('CancelOrderUseCase', () => {
         expect(result.value.status).toBe(OrderStatus.CANCELLED);
         expect(result.value.id).toBe(1);
       }
-      expect(mockRepository.findById).toHaveBeenCalledWith(1);
-      expect(mockRepository.cancelOrder).toHaveBeenCalledTimes(1);
-
-      const passedPrimitives = mockRepository.cancelOrder.mock.calls[0][0];
-      expect(passedPrimitives.status).toBe(OrderStatus.CANCELLED);
+      expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(1);
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should not cancel shipped order', async () => {
       const order = new OrderBuilder().withId(1).asNonCancellable().build();
 
-      mockRepository.mockSuccessfulFind(order);
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
 
       const result = await useCase.execute({ orderId: order.id! });
 
       ResultAssertionHelper.assertResultFailure(result);
 
-      expect(mockRepository.cancelOrder).not.toHaveBeenCalled();
+      expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });
 });

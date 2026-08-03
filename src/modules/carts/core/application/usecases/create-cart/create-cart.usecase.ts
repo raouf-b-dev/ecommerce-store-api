@@ -9,6 +9,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Cart } from '../../../domain/entities/cart';
 
 export interface CreateCartUseCaseInput {
   callerContext: CallerContext | null;
@@ -21,7 +22,7 @@ export interface CreateCartResponse {
 @Injectable()
 export class CreateCartUseCase extends UseCase<
   CreateCartUseCaseInput,
-  CreateCartResponse,
+  void,
   UseCaseError
 > {
   constructor(private readonly cartRepository: CartRepository) {
@@ -30,7 +31,7 @@ export class CreateCartUseCase extends UseCase<
 
   async execute(
     input: CreateCartUseCaseInput,
-  ): Promise<Result<CreateCartResponse, UseCaseError>> {
+  ): Promise<Result<void, UseCaseError>> {
     const { callerContext } = input;
 
     if (
@@ -48,19 +49,14 @@ export class CreateCartUseCase extends UseCase<
       callerContext.userId,
     );
     if (existingResult.isSuccess) {
-      return Result.success({
-        cart: existingResult.value.toPrimitives(),
-      });
+      return Result.success<void>(undefined);
     }
 
-    const createResult = await this.cartRepository.create({
-      userId: callerContext.userId,
-    });
+    const cart = Cart.createUserCart(callerContext.userId);
+    const saveResult = await this.cartRepository.save(cart);
 
-    if (isFailure(createResult)) return createResult;
+    if (isFailure(saveResult)) return saveResult;
 
-    return Result.success({
-      cart: createResult.value.toPrimitives(),
-    });
+    return Result.success<void>(undefined);
   }
 }

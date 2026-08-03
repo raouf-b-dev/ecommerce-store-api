@@ -48,10 +48,7 @@ export class CartsController {
   })
   @ApiResponse({ status: 201, type: CartResponseDto })
   async createCart(@CallerCtx() callerContext: CallerContext | null) {
-    const result = await this.createCartUseCase.execute({ callerContext });
-    if (isFailure(result)) return result;
-
-    return Result.success(result.value.cart);
+    await this.createCartUseCase.execute({ callerContext });
   }
 
   @Get(':id')

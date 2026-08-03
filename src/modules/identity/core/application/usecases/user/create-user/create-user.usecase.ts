@@ -56,6 +56,6 @@ export class CreateUserUseCase extends UseCase<
     const saveResult = await this.userRepository.save(user);
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success<IUser>(saveResult.value.toPrimitives());
+    return Result.success<IUser>(user.toPrimitives());
   }
 }

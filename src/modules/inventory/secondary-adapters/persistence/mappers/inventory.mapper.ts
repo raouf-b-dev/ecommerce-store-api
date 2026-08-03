@@ -6,7 +6,7 @@ import {
 import { IInventory } from '../../../core/domain/interfaces/inventory.interface';
 import { InventoryEntity } from '../../orm/inventory.schema';
 
-type InventoryCreate = CreateFromEntity<InventoryEntity>;
+type InventoryCreate = CreateFromEntity<InventoryEntity, 'version'>;
 export type InventoryForCache = Omit<IInventory, 'createdAt' | 'updatedAt'> & {
   createdAt: number;
   updatedAt: number;

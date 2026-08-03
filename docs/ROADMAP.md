@@ -60,18 +60,18 @@
 
 ### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Task / Item                                                                              | Phase  | Critical Purpose                                                                         |
-| :--------------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile     | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`) | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
-| [x] Production error stack masking & PII log audit verified                              | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| Optimistic concurrency (`version` column + 409 on conflict)                              | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
-| Shopping Cart Expiration & Redis TTL enforcement                                         | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
-| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                       | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
-| Initial database baseline migration generated & verified                                 | **14** | Schema must be reproducible without relying on `synchronize: true`                       |
-| Redis graceful degradation & `trust proxy` hardening                                     | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy      |
-| Liveness, Readiness & `ProcessHealthIndicator` probes                                    | **14** | Exposes `/health/liveness` and `/health/readiness` with event loop & memory thresholds   |
-| Backup, restore, rollback runbook & smoke test runner                                    | **14** | Documented runbooks & Node.js scripts (`db-backup.js`, `db-restore.js`, `smoke-test.js`) |
+| Task / Item                                                                                                         | Phase  | Critical Purpose                                                                         |
+| :------------------------------------------------------------------------------------------------------------------ | :----- | :--------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`)                            | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
+| [x] Production error stack masking & PII log audit verified                                                         | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13) | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
+| [x] Shopping Cart Expiration & Redis TTL enforcement                                                                | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
+| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                                                  | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| Initial database baseline migration generated & verified                                                            | **14** | Schema must be reproducible without relying on `synchronize: true`                       |
+| Redis graceful degradation & `trust proxy` hardening                                                                | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy      |
+| Liveness, Readiness & `ProcessHealthIndicator` probes                                                               | **14** | Exposes `/health/liveness` and `/health/readiness` with event loop & memory thresholds   |
+| Backup, restore, rollback runbook & smoke test runner                                                               | **14** | Documented runbooks & Node.js scripts (`db-backup.js`, `db-restore.js`, `smoke-test.js`) |
 
 ---
 
@@ -103,19 +103,19 @@
 
 ---
 
-### [ ] Optimistic Concurrency Control (Version-based Locking)
+### [x] Optimistic Concurrency Control (Version-based Locking)
 
-**What**: Add version-based optimistic concurrency control (OCC) to core aggregates to prevent the classic lost update problem.
+**What**: Add version-based optimistic concurrency control (OCC) to core database schemas to prevent lost updates, maintaining pure domain model isolation per `CONVENTIONS.md` Section 13.
 
 **Scope**:
 
-- Add a `@VersionColumn()` field named `version` to core TypeORM database entities (`OrderEntity`, `CartEntity`, `CustomerEntity`, `InventoryEntity`, `ProductEntity`).
-- Propagate the `version` field from ORM entities up to Domain Entities and ensure it is returned in all read DTOs.
-- Require the entity's current `version` in all HTTP PUT/PATCH update payloads.
+- Add a `@VersionColumn()` field named `version` to core TypeORM database entities (`OrderEntity`, `CartEntity`, `UserEntity`, `InventoryEntity`, `ProductEntity`).
+- Keep domain entities, interfaces, and mappers pure — version is handled strictly as an infrastructure/persistence concern passed via repository ports and DTO parameters.
+- Require the entity's current `version` in HTTP update DTOs (e.g. `UpdateProductDto`) for long-lived cross-request interactions.
 - Map TypeORM `OptimisticLockVersionMismatchError` to a clean `409 Conflict` HTTP response via `GlobalExceptionFilter`.
 - Write dedicated unit tests simulating concurrent updates — first succeeds, second returns 409.
 
-**Location**: `src/modules/*/core/domain/entities/`, `src/modules/*/secondary-adapters/database/`
+**Location**: `src/modules/*/secondary-adapters/orm/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/primary-adapters/dto/`, `src/filters/`
 
 ---
 
@@ -129,13 +129,13 @@
 
 ---
 
-### [ ] Shopping Cart Expiration & Redis TTL Enforcement
+### [x] Shopping Cart Expiration & Redis TTL Enforcement
 
 **What**: Enforce strict Time-To-Live (TTL) on RedisJSON shopping carts to automatically evict abandoned carts and free memory.
 
 **Scope**:
 
-- Configure configurable TTL (e.g. 7 days for guest carts, 30 days for user carts) on Redis keys created by `RedisCartRepository`.
+- Configure configurable TTL (30 days for user carts) on Redis keys created by `RedisCartRepository`.
 - Refresh TTL on every cart update operation.
 - Implement graceful handling when a client attempts to access an expired cart (auto-initialize a fresh cart cleanly).
 

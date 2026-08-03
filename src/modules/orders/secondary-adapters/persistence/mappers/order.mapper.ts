@@ -8,7 +8,7 @@ import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
 
-type OrderCreate = CreateFromEntity<OrderEntity, 'items'>;
+type OrderCreate = CreateFromEntity<OrderEntity, 'items' | 'version'>;
 
 export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
   createdAt: number;

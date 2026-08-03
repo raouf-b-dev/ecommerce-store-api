@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
+import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { createMockArgumentsHost } from '../testing';
 
 class TestAppError extends AppError {
@@ -122,6 +123,26 @@ describe('GlobalExceptionFilter', () => {
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         message: 'A domain error occurred',
         code: 'TEST_ERROR',
+      }),
+    );
+  });
+
+  it('should handle OptimisticLockVersionMismatchError (409 Conflict)', () => {
+    const exception = new OptimisticLockVersionMismatchError(
+      'ProductEntity',
+      1,
+      2,
+    );
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(409);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 409,
+        message:
+          'Resource was modified by another request. Please reload and retry.',
       }),
     );
   });

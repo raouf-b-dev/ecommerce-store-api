@@ -14,22 +14,22 @@ export class ActivateUserUseCase extends UseCase<number, void, UseCaseError> {
   }
 
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure) return userResult;
 
-    const user = userResult.value;
-
-    if (!user)
+    if (!userResult.value)
       return ErrorFactory.UseCaseError(
         'User not found',
         null,
         HttpStatus.NOT_FOUND,
       );
 
+    const { entity: user, expectedVersion } = userResult.value;
+
     const activateResult = user.activate();
     if (activateResult.isFailure) return activateResult;
 
-    const saveResult = await this.userRepository.save(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to save user');
     }

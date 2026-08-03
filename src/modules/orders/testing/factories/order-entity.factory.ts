@@ -29,7 +29,7 @@ export class OrderEntityTestFactory {
       shippingCost: 0,
       totalPrice: 100,
       status: OrderStatus.PENDING_PAYMENT,
-
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };
