@@ -4,7 +4,6 @@ import { InventoryTestFactory } from '../../../testing/factories/inventory.test.
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Inventory } from '../../domain/entities/inventory';
 import { CheckStockResult } from '../../domain/interfaces/check-stock-result.interface';
 

@@ -4,16 +4,16 @@ import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/use
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { StockAdjustmentType } from '../../domain/value-objects/stock-adjustment-type';
+import { InventoryRepository } from '../../domain/repositories/inventory.repository';
+import { Inventory } from '../../domain/entities/inventory';
+import { IInventory } from '../../domain/interfaces/inventory.interface';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 
 export interface AdjustStockCommand {
   quantity: number;
   type: StockAdjustmentType;
   reason?: string;
 }
-import { InventoryRepository } from '../../domain/repositories/inventory.repository';
-import { Inventory } from '../../domain/entities/inventory';
-import { IInventory } from '../../domain/interfaces/inventory.interface';
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 
 @Injectable()
 export class AdjustStockUseCase
@@ -30,17 +30,19 @@ export class AdjustStockUseCase
     productId: number;
     command: AdjustStockCommand;
   }): Promise<Result<IInventory, UseCaseError>> {
-    const inventoryResult = await this.inventoryRepository.findByProductId(
-      input.productId,
-    );
+    const inventoryResult =
+      await this.inventoryRepository.findByProductIdForUpdate(input.productId);
     if (inventoryResult.isFailure) return inventoryResult;
 
-    const inventory: Inventory = inventoryResult.value;
+    const { entity: inventory, expectedVersion } = inventoryResult.value;
 
     const adjustmentResult = this.applyAdjustment(inventory, input.command);
     if (adjustmentResult.isFailure) return adjustmentResult;
 
-    const updateResult = await this.inventoryRepository.update(inventory);
+    const updateResult = await this.inventoryRepository.save(
+      inventory,
+      expectedVersion,
+    );
     if (updateResult.isFailure) return updateResult;
 
     return Result.success(inventory.toPrimitives());
