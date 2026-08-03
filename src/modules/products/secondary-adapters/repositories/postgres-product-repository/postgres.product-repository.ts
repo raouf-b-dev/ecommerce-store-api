@@ -2,85 +2,84 @@
 import { Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import {
-  CreateProductInput,
-  ProductRepository,
-  UpdateProductInput,
-} from '../../../core/domain/repositories/product-repository';
+import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { ProductEntity } from '../../orm/product.schema';
+import { ProductMapper } from '../../persistence/mappers/product.mapper';
+import { Product } from '../../../core/domain/entities/product';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { IProduct } from '../../../core/domain/interfaces/product.interface';
 
 export class PostgresProductRepository implements ProductRepository {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly ormRepo: Repository<ProductEntity>,
   ) {}
-  async save(
-    createProductDto: CreateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>> {
-    try {
-      const entity = this.ormRepo.create({
-        ...createProductDto,
-        createdAt: new Date(),
-      });
-      const savedEntity = await this.ormRepo.save(entity);
 
-      return Result.success<IProduct>(savedEntity);
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Product; expectedVersion: number }, RepositoryError>
+  > {
+    try {
+      const ormEntity = await this.ormRepo.findOne({
+        where: { id },
+      });
+      if (!ormEntity) {
+        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
+      }
+      return Result.success({
+        entity: ProductMapper.toDomain(ormEntity),
+        expectedVersion: ormEntity.version,
+      });
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        `Failed to find product for update`,
+        error,
+      );
+    }
+  }
+
+  async save(
+    product: Product,
+    expectedVersion?: number,
+  ): Promise<Result<Product, RepositoryError>> {
+    try {
+      const ormEntity = ProductMapper.toEntity(product);
+      if (expectedVersion !== undefined) {
+        ormEntity.version = expectedVersion;
+      }
+      const savedOrmEntity = await this.ormRepo.save(ormEntity);
+      product.setId(savedOrmEntity.id);
+      return Result.success(product);
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to save the product`, error);
     }
   }
 
-  async update(
-    id: number,
-    updateProductDto: UpdateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>> {
+  async findById(id: number): Promise<Result<Product, RepositoryError>> {
     try {
-      // Ensure the product exists first
-      const existing = await this.ormRepo.findOne({
+      const ormEntity = await this.ormRepo.findOne({
         where: { id },
       });
-      if (!existing) {
-        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
-      }
+      if (!ormEntity) return ErrorFactory.RepositoryError('Product not found');
 
-      // Merge new values into the existing entity
-      const updatedProduct = this.ormRepo.merge(existing, {
-        ...updateProductDto,
-        updatedAt: new Date(),
-      });
-
-      await this.ormRepo.save(updatedProduct);
-      return Result.success<IProduct>(updatedProduct);
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to update the product`,
-        error,
-      );
-    }
-  }
-  async findById(id: number): Promise<Result<IProduct, RepositoryError>> {
-    try {
-      const product = await this.ormRepo.findOne({
-        where: { id },
-      });
-      if (!product) return ErrorFactory.RepositoryError('Product not found');
-
-      return Result.success<IProduct>(product);
+      return Result.success<Product>(ProductMapper.toDomain(ormEntity));
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find the product`, error);
     }
   }
-  async findAll(): Promise<Result<IProduct[], RepositoryError>> {
+
+  async findAll(): Promise<Result<Product[], RepositoryError>> {
     try {
-      const products = await this.ormRepo.find();
-      return Result.success<IProduct[]>(products);
+      const ormEntities = await this.ormRepo.find();
+      return Result.success<Product[]>(
+        ProductMapper.toDomainArray(ormEntities),
+      );
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find products`, error);
     }
   }
+
   async deleteById(id: number): Promise<Result<void, RepositoryError>> {
     try {
       await this.ormRepo.delete(id);

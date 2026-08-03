@@ -19,8 +19,18 @@ export interface ProductProps {
   updatedAt?: Date;
 }
 
+export interface UpdateProductDomainProps {
+  name?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  sku?: string;
+  imageUrl?: string | null;
+  categoryId?: number | null;
+}
+
 export class Product implements IProduct {
-  private readonly _id: number | null;
+  private _id: number | null;
   private _name: string;
   private _slug: string;
   private _description?: string;
@@ -85,6 +95,9 @@ export class Product implements IProduct {
   // Getters
   get id(): number | null {
     return this._id;
+  }
+  setId(id: number): void {
+    this._id = id;
   }
 
   get name(): string {
@@ -171,15 +184,7 @@ export class Product implements IProduct {
     this._updatedAt = new Date();
   }
 
-  updateProduct(updates: {
-    name?: string;
-    description?: string;
-    price?: number;
-    currency?: string;
-    sku?: string;
-    imageUrl?: string | null;
-    categoryId?: number | null;
-  }): void {
+  updateProduct(updates: UpdateProductDomainProps): void {
     if (updates.name !== undefined) {
       this.updateName(updates.name);
     }

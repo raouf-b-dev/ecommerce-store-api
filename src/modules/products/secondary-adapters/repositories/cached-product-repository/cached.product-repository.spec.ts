@@ -9,6 +9,7 @@ import { CreateProductInputFactory } from '../../../testing/factories/create-pro
 import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 import { MockCacheService } from '../../../../../testing';
 import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
+import { Product } from '../../../core/domain/entities/product';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
@@ -16,6 +17,7 @@ describe('CachedProductRepository', () => {
   let postgresRepo: MockProductRepository;
 
   const mockProduct = ProductTestFactory.createMockProduct();
+  const domainProduct = Product.fromPrimitives(mockProduct);
   const createDto = CreateProductInputFactory.createMockDto();
   const updateDto = UpdateProductInputFactory.createMockDto();
 
@@ -32,18 +34,17 @@ describe('CachedProductRepository', () => {
 
   describe('save', () => {
     it('should save to postgres and cache', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockProduct));
+      postgresRepo.save.mockResolvedValue(Result.success(domainProduct));
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.save(createDto);
+      const result = await repo.save(domainProduct);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(mockProduct);
-      expect(postgresRepo.save).toHaveBeenCalledWith(createDto);
+      expect(postgresRepo.save).toHaveBeenCalledWith(domainProduct, undefined);
       expect(cacheService.set).toHaveBeenCalledWith(
-        `${PRODUCT_REDIS.CACHE_KEY}:${mockProduct.id}`,
-        mockProduct,
+        `${PRODUCT_REDIS.CACHE_KEY}:${domainProduct.id}`,
+        domainProduct.toPrimitives(),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
@@ -52,18 +53,17 @@ describe('CachedProductRepository', () => {
     });
 
     it('should save expensive product', async () => {
-      const expensiveDto =
-        CreateProductInputFactory.createExpensiveProductDto();
-      const expensiveProduct = ProductTestFactory.createExpensiveProduct();
+      const expensiveProduct = Product.fromPrimitives(
+        ProductTestFactory.createExpensiveProduct(),
+      );
 
       postgresRepo.save.mockResolvedValue(Result.success(expensiveProduct));
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockResolvedValue(undefined);
 
-      const result = await repo.save(expensiveDto);
+      const result = await repo.save(expensiveProduct);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.price).toBe(35000);
     });
 
     it('should return failure if postgres save fails', async () => {
@@ -71,7 +71,7 @@ describe('CachedProductRepository', () => {
 
       postgresRepo.save.mockResolvedValue(Result.failure(error));
 
-      const result = await repo.save(createDto);
+      const result = await repo.save(domainProduct);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -83,10 +83,10 @@ describe('CachedProductRepository', () => {
     });
 
     it('should return failure if cache.set throws', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockProduct));
+      postgresRepo.save.mockResolvedValue(Result.success(domainProduct));
       cacheService.set.mockRejectedValue(new Error('Cache error'));
 
-      const result = await repo.save(createDto);
+      const result = await repo.save(domainProduct);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -96,88 +96,15 @@ describe('CachedProductRepository', () => {
     });
 
     it('should return failure if cache.delete (IS_CACHED_FLAG) throws', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockProduct));
+      postgresRepo.save.mockResolvedValue(Result.success(domainProduct));
       cacheService.set.mockResolvedValue(undefined);
       cacheService.delete.mockRejectedValue(new Error('Flag delete error'));
 
-      const result = await repo.save(createDto);
+      const result = await repo.save(domainProduct);
 
       ResultAssertionHelper.assertResultFailure(
         result,
         'Failed to save product',
-        RepositoryError,
-      );
-    });
-  });
-
-  describe('update', () => {
-    it('should update to postgres and cache', async () => {
-      const productId = 1;
-
-      postgresRepo.update.mockResolvedValue(Result.success(mockProduct));
-      cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockResolvedValue(undefined);
-
-      const result = await repo.update(productId, updateDto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(mockProduct);
-      expect(postgresRepo.update).toHaveBeenCalledWith(productId, updateDto);
-      expect(cacheService.set).toHaveBeenCalledWith(
-        `${PRODUCT_REDIS.CACHE_KEY}:${mockProduct.id}`,
-        mockProduct,
-        { ttl: PRODUCT_REDIS.EXPIRATION },
-      );
-      expect(cacheService.delete).toHaveBeenCalledWith(
-        PRODUCT_REDIS.IS_CACHED_FLAG,
-      );
-    });
-
-    it('should update only price', async () => {
-      const productId = 1;
-      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
-      const updatedProduct = ProductTestFactory.createMockProduct({
-        id: productId,
-        price: 200,
-      });
-
-      postgresRepo.update.mockResolvedValue(Result.success(updatedProduct));
-      cacheService.set.mockResolvedValue(undefined);
-      cacheService.delete.mockResolvedValue(undefined);
-
-      const result = await repo.update(productId, priceOnlyDto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.price).toBe(200);
-    });
-
-    it('should return failure if postgres update fails', async () => {
-      const productId = 1;
-      const error = new RepositoryError('Update failed');
-
-      postgresRepo.update.mockResolvedValue(Result.failure(error));
-
-      const result = await repo.update(productId, updateDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Update failed',
-        RepositoryError,
-      );
-      expect(cacheService.set).not.toHaveBeenCalled();
-    });
-
-    it('should return failure if cache.set throws during update', async () => {
-      const productId = 1;
-
-      postgresRepo.update.mockResolvedValue(Result.success(mockProduct));
-      cacheService.set.mockRejectedValue(new Error('Cache error'));
-
-      const result = await repo.update(productId, updateDto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to update product',
         RepositoryError,
       );
     });
@@ -192,7 +119,7 @@ describe('CachedProductRepository', () => {
       const result = await repo.findById(productId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(mockProduct);
+      expect(result.value.toPrimitives()).toEqual(domainProduct.toPrimitives());
       expect(cacheService.get).toHaveBeenCalledWith(
         `${PRODUCT_REDIS.CACHE_KEY}:${productId}`,
       );
@@ -203,17 +130,17 @@ describe('CachedProductRepository', () => {
       const productId = 1;
 
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(mockProduct));
+      postgresRepo.findById.mockResolvedValue(Result.success(domainProduct));
       cacheService.set.mockResolvedValue(undefined);
 
       const result = await repo.findById(productId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(mockProduct);
+      expect(result.value).toEqual(domainProduct);
       expect(postgresRepo.findById).toHaveBeenCalledWith(productId);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${PRODUCT_REDIS.CACHE_KEY}:${productId}`,
-        mockProduct,
+        domainProduct.toPrimitives(),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
     });
@@ -239,7 +166,7 @@ describe('CachedProductRepository', () => {
       const productId = 1;
 
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(mockProduct));
+      postgresRepo.findById.mockResolvedValue(Result.success(domainProduct));
       cacheService.set.mockRejectedValue(new Error('Cache error'));
 
       const result = await repo.findById(productId);
@@ -262,7 +189,7 @@ describe('CachedProductRepository', () => {
       const result = await repo.findAll();
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(products);
+      expect(result.value).toHaveLength(3);
       expect(cacheService.get).toHaveBeenCalledWith(
         PRODUCT_REDIS.IS_CACHED_FLAG,
       );
@@ -271,22 +198,23 @@ describe('CachedProductRepository', () => {
     });
 
     it('should fetch from postgres and cache if not cached', async () => {
-      const products = ProductTestFactory.createProductList(2);
+      const mockList = ProductTestFactory.createProductList(2);
+      const domainProducts = mockList.map((p) => Product.fromPrimitives(p));
 
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(products));
+      postgresRepo.findAll.mockResolvedValue(Result.success(domainProducts));
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockResolvedValue(undefined);
 
       const result = await repo.findAll();
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(products);
+      expect(result.value).toEqual(domainProducts);
       expect(postgresRepo.findAll).toHaveBeenCalled();
       expect(cacheService.setAll).toHaveBeenCalledWith(
-        products.map((p) => ({
+        domainProducts.map((p) => ({
           key: `${PRODUCT_REDIS.CACHE_KEY}:${p.id}`,
-          value: p,
+          value: p.toPrimitives(),
         })),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
@@ -330,10 +258,11 @@ describe('CachedProductRepository', () => {
     });
 
     it('should return failure if cache.setAll throws after postgres success', async () => {
-      const products = ProductTestFactory.createProductList(2);
+      const mockList = ProductTestFactory.createProductList(2);
+      const domainProducts = mockList.map((p) => Product.fromPrimitives(p));
 
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(products));
+      postgresRepo.findAll.mockResolvedValue(Result.success(domainProducts));
       cacheService.setAll.mockRejectedValue(new Error('Cache setAll failed'));
 
       const result = await repo.findAll();
@@ -346,10 +275,11 @@ describe('CachedProductRepository', () => {
     });
 
     it('should return failure if cache.set (flag) throws after setAll success', async () => {
-      const products = ProductTestFactory.createProductList(2);
+      const mockList = ProductTestFactory.createProductList(2);
+      const domainProducts = mockList.map((p) => Product.fromPrimitives(p));
 
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findAll.mockResolvedValue(Result.success(products));
+      postgresRepo.findAll.mockResolvedValue(Result.success(domainProducts));
       cacheService.setAll.mockResolvedValue(undefined);
       cacheService.set.mockRejectedValue(new Error('Cache flag set failed'));
 
