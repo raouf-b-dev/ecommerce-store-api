@@ -87,8 +87,7 @@ export class CheckoutUseCase extends UseCase<
     if (isFailure(saveResult)) {
       return Result.failure(saveResult.error);
     }
-    const savedOrder = saveResult.value;
-    const orderId = savedOrder.id!;
+    const orderId = saveResult.value.id;
 
     this.domainEventPublisher.publish('order.created', { orderId, userId });
 
@@ -98,7 +97,7 @@ export class CheckoutUseCase extends UseCase<
       shippingAddress,
       paymentMethod: command.paymentMethod,
       customerNotes: command.customerNotes,
-      orderId,
+      orderId: orderId!,
       flowId: `checkout-${orderId}-${Date.now()}`,
     });
 
@@ -107,16 +106,17 @@ export class CheckoutUseCase extends UseCase<
         `Scheduling failed for order ${orderId}. Cancelling order...`,
         scheduleResult.error,
       );
-      await this.orderRepository.cancelOrder(savedOrder);
+      order.cancel();
+      await this.orderRepository.save(order);
       return Result.failure(scheduleResult.error);
     }
 
     const flowId = scheduleResult.value;
 
     const response: CheckoutResult = {
-      orderId,
+      orderId: orderId!,
       jobId: flowId,
-      status: savedOrder.status,
+      status: order.status,
       message:
         'Checkout initiated. Please check order status for payment details.',
     };

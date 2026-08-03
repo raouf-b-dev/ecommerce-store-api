@@ -22,19 +22,16 @@ describe('ProcessOrderUseCase', () => {
 
   it('should successfully process a confirmed order', async () => {
     // Arrange:
-    mockOrderRepo.mockSuccessfulFind(mockOrder);
-    mockOrderRepo.mockSuccessfulUpdateStatus();
+    mockOrderRepo.mockSuccessfulFindByIdForUpdate(mockOrder);
+    mockOrderRepo.mockSuccessfulSave();
 
     // Act:
     const result = await useCase.execute(mockOrder.id!);
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.status).toBe(OrderStatus.PROCESSING);
-    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id!);
-    expect(mockOrderRepo.updateStatus).toHaveBeenCalledWith(
-      mockOrder.id!,
-      OrderStatus.PROCESSING,
-    );
+    expect(mockOrderRepo.findByIdForUpdate).toHaveBeenCalledWith(mockOrder.id!);
+    expect(mockOrderRepo.save).toHaveBeenCalled();
   });
 
   it('should return failure if order is not found', async () => {
@@ -50,13 +47,13 @@ describe('ProcessOrderUseCase', () => {
       result,
       `Order with id ${orderId} not found`,
     );
-    expect(mockOrderRepo.updateStatus).not.toHaveBeenCalled();
+    expect(mockOrderRepo.save).not.toHaveBeenCalled();
   });
 
   it('should return failure if order is not in a processable state (e.g., PENDING)', async () => {
     // Arrange:
     const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
-    mockOrderRepo.mockSuccessfulFind(pendingOrder);
+    mockOrderRepo.mockSuccessfulFindByIdForUpdate(pendingOrder);
 
     // Act:
     const result = await useCase.execute(pendingOrder.id!);
@@ -67,13 +64,13 @@ describe('ProcessOrderUseCase', () => {
       'Order must be confirmed before processing',
       DomainError,
     );
-    expect(mockOrderRepo.updateStatus).not.toHaveBeenCalled();
+    expect(mockOrderRepo.save).not.toHaveBeenCalled();
   });
 
   it('should return failure if order is already shipped', async () => {
     // Arrange:
     const shippedOrder = OrderTestFactory.createShippedOrder();
-    mockOrderRepo.mockSuccessfulFind(shippedOrder);
+    mockOrderRepo.mockSuccessfulFindByIdForUpdate(shippedOrder);
 
     // Act:
     const result = await useCase.execute(shippedOrder.id!);
@@ -84,23 +81,20 @@ describe('ProcessOrderUseCase', () => {
       'Order must be confirmed before processing',
       DomainError,
     );
-    expect(mockOrderRepo.updateStatus).not.toHaveBeenCalled();
+    expect(mockOrderRepo.save).not.toHaveBeenCalled();
   });
 
-  it('should return failure if updating the status fails', async () => {
+  it('should return failure if saving the order fails', async () => {
     // Arrange:
-    mockOrderRepo.mockSuccessfulFind(mockOrder);
-    mockOrderRepo.mockUpdateStatusFailure('Database update error');
+    mockOrderRepo.mockSuccessfulFindByIdForUpdate(mockOrder);
+    mockOrderRepo.mockSaveFailure('Database update error');
 
     // Act:
     const result = await useCase.execute(mockOrder.id!);
 
     // Assert:
     ResultAssertionHelper.assertResultFailure(result, 'Database update error');
-    expect(mockOrderRepo.findById).toHaveBeenCalledWith(mockOrder.id!);
-    expect(mockOrderRepo.updateStatus).toHaveBeenCalledWith(
-      mockOrder.id!,
-      OrderStatus.PROCESSING,
-    );
+    expect(mockOrderRepo.findByIdForUpdate).toHaveBeenCalledWith(mockOrder.id!);
+    expect(mockOrderRepo.save).toHaveBeenCalled();
   });
 });

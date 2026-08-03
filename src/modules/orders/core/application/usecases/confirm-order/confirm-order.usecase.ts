@@ -5,7 +5,6 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { Order } from '../../../domain/entities/order';
 
 export interface ConfirmOrderCommand {
   orderId: number;
@@ -23,10 +22,11 @@ export class ConfirmOrderUseCase
     dto: ConfirmOrderCommand,
   ): Promise<Result<IOrder, UseCaseError>> {
     const { orderId } = dto;
-    const requestedOrder = await this.orderRepository.findById(orderId);
+    const requestedOrder =
+      await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) return requestedOrder;
 
-    const order: Order = requestedOrder.value;
+    const { entity: order, expectedVersion } = requestedOrder.value;
 
     if (!order.hasPayment()) {
       return ErrorFactory.DomainError(
@@ -37,9 +37,9 @@ export class ConfirmOrderUseCase
     const confirmResult = order.confirmPayment(order.paymentId!);
     if (confirmResult.isFailure) return confirmResult;
 
-    const updateResult = await this.orderRepository.updateStatus(
-      orderId,
-      order.status,
+    const updateResult = await this.orderRepository.save(
+      order,
+      expectedVersion,
     );
     if (updateResult.isFailure) return updateResult;
 

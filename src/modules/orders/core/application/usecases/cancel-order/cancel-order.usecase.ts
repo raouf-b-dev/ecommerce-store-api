@@ -7,7 +7,6 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
-import { Order } from '../../../domain/entities/order';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
@@ -30,15 +29,19 @@ export class CancelOrderUseCase
     dto: CancelOrderCommand,
   ): Promise<Result<IOrder, UseCaseError>> {
     const { orderId, isSagaCompensation } = dto;
-    const requestedOrder = await this.orderRepository.findById(orderId);
+    const requestedOrder =
+      await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) return requestedOrder;
 
-    const order: Order = requestedOrder.value;
+    const { entity: order, expectedVersion } = requestedOrder.value;
 
     const cancelResult = order.cancel();
     if (cancelResult.isFailure) return cancelResult;
 
-    const updateResult = await this.orderRepository.cancelOrder(order);
+    const updateResult = await this.orderRepository.save(
+      order,
+      expectedVersion,
+    );
     if (updateResult.isFailure) return updateResult;
 
     const scheduleResult = await this.orderScheduler.scheduleOrderStockRelease(
