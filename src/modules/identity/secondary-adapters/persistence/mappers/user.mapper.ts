@@ -4,7 +4,7 @@ import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/cr
 import { AddressMapper } from './address.mapper';
 import { IAddress } from 'src/modules/identity/core/domain/interfaces/address.interface';
 
-type UserCreate = CreateFromEntity<UserEntity, 'addresses'>;
+type UserCreate = CreateFromEntity<UserEntity, 'addresses' | 'version'>;
 
 export class UserMapper {
   static toDomain(entity: UserEntity): User {
