@@ -10,8 +10,6 @@ import { CartRepository } from '../../../core/domain/repositories/cart.repositor
 import { CartEntity } from '../../orm/cart.schema';
 import { CartMapper } from '../../persistence/mappers/cart.mapper';
 
-import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
-
 @Injectable()
 export class PostgresCartRepository implements CartRepository {
   constructor(
@@ -54,25 +52,60 @@ export class PostgresCartRepository implements CartRepository {
     }
   }
 
-  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
     try {
-      const cart = Cart.createUserCart(input.userId);
-
-      const entity = CartMapper.toEntity(cart);
-      const savedEntity = await this.repository.save(entity);
-      return Result.success(CartMapper.toDomain(savedEntity));
+      const entity = await this.repository.findOne({ where: { id } });
+      if (!entity) return ErrorFactory.RepositoryError('Cart not found');
+      return Result.success({
+        entity: CartMapper.toDomain(entity),
+        expectedVersion: entity.version,
+      });
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to create cart', error);
+      return ErrorFactory.RepositoryError(
+        'Failed to find cart for update',
+        error,
+      );
     }
   }
 
-  async update(cart: Cart): Promise<Result<Cart, RepositoryError>> {
+  async findByUserIdForUpdate(
+    userId: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
+    try {
+      const entity = await this.repository.findOne({ where: { userId } });
+      if (!entity) return ErrorFactory.RepositoryError('Cart not found');
+      return Result.success({
+        entity: CartMapper.toDomain(entity),
+        expectedVersion: entity.version,
+      });
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to find cart by user ID for update',
+        error,
+      );
+    }
+  }
+
+  async save(
+    cart: Cart,
+    expectedVersion?: number,
+  ): Promise<Result<Cart, RepositoryError>> {
     try {
       const entity = CartMapper.toEntity(cart);
+      if (expectedVersion !== undefined) {
+        entity.version = expectedVersion;
+      }
       const savedEntity = await this.repository.save(entity);
-      return Result.success(CartMapper.toDomain(savedEntity));
+      cart.setId(savedEntity.id);
+      return Result.success(cart);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', error);
     }
   }
 

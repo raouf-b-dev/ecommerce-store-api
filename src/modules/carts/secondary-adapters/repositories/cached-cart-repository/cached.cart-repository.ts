@@ -6,10 +6,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Cart } from '../../../core/domain/entities/cart';
-import {
-  CartRepository,
-  CreateCartInput,
-} from '../../../core/domain/repositories/cart.repository';
+import { CartRepository } from '../../../core/domain/repositories/cart.repository';
 import {
   CartCacheMapper,
   CartForCache,
@@ -80,9 +77,9 @@ export class CachedCartRepository implements CartRepository {
       }
 
       // Transparent auto-creation if cart expired/missing
-      const createResult = await this.postgresRepo.create({ userId });
+      const freshCart = Cart.createUserCart(userId);
+      const createResult = await this.postgresRepo.save(freshCart);
       if (createResult.isFailure) return createResult;
-      const freshCart = createResult.value;
 
       await this.cacheService.set(
         `${CART_REDIS.CACHE_KEY}:${freshCart.id}`,
@@ -99,39 +96,42 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async create(dto: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const dbResult = await this.postgresRepo.create(dto);
-      if (dbResult.isFailure) return dbResult;
-      const cart = dbResult.value;
-
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${cart.id}`,
-        CartCacheMapper.toCache(cart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(cart);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to create cart', error);
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async update(cart: Cart): Promise<Result<Cart, RepositoryError>> {
+  async findByUserIdForUpdate(
+    userId: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByUserIdForUpdate(userId);
+  }
+
+  async save(
+    cart: Cart,
+    expectedVersion?: number,
+  ): Promise<Result<Cart, RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.update(cart);
-      if (dbResult.isFailure) return dbResult;
-      const updatedCart = dbResult.value;
+      const saveResult = await this.postgresRepo.save(cart, expectedVersion);
+      if (saveResult.isFailure) return saveResult;
 
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${updatedCart.id}`,
-        CartCacheMapper.toCache(updatedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
+      const savedCart = saveResult.value;
+      if (savedCart.id) {
+        await this.cacheService.set(
+          `${CART_REDIS.CACHE_KEY}:${savedCart.id}`,
+          CartCacheMapper.toCache(savedCart),
+          { ttl: CART_REDIS.EXPIRATION },
+        );
+      }
 
-      return Result.success(updatedCart);
+      return Result.success(savedCart);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', error);
     }
   }
 

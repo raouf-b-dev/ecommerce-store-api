@@ -15,7 +15,7 @@ export interface CartProps {
 }
 
 export class Cart implements ICart {
-  private readonly _id: number | null;
+  private _id: number | null;
   private readonly _userId: number;
   private _items: CartItem[];
   private readonly _createdAt: Date;
@@ -47,6 +47,10 @@ export class Cart implements ICart {
   // Getters
   get id(): number | null {
     return this._id;
+  }
+
+  setId(id: number): void {
+    this._id = id;
   }
 
   get userId(): number {
