@@ -23,6 +23,7 @@ import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/ad
 import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
+import { SeedDemoCartUseCase } from './core/application/seed/seed-demo-cart.usecase';
 import { ProductsModule } from '../products/products.module';
 import { CartOwnershipValidator } from './core/application/services/cart-ownership.validator';
 
@@ -83,7 +84,8 @@ import { CartOwnershipValidator } from './core/application/services/cart-ownersh
     UpdateCartItemUseCase,
     RemoveCartItemUseCase,
     ClearCartUseCase,
+    SeedDemoCartUseCase,
   ],
-  exports: [GetCartUseCase, ClearCartUseCase],
+  exports: [GetCartUseCase, ClearCartUseCase, SeedDemoCartUseCase],
 })
 export class CartsModule {}

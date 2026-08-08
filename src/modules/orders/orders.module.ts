@@ -75,6 +75,7 @@ import { CreateCheckoutPaymentUseCase } from './core/application/usecases/create
 import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-checkout/finalize-checkout.usecase';
+import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.usecase';
 
 @Module({
   imports: [
@@ -187,6 +188,7 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     RefundCheckoutPaymentUseCase,
     ClearCheckoutCartUseCase,
     FinalizeCheckoutUseCase,
+    SeedDemoOrdersUseCase,
 
     // Job Handlers
     PaymentCompletedStep,
@@ -211,6 +213,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     PaymentEventsProcessor,
     OrdersProcessor,
   ],
-  exports: [OrderRepository],
+  exports: [OrderRepository, SeedDemoOrdersUseCase],
 })
 export class OrdersModule {}
