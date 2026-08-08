@@ -8,7 +8,11 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
-import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
+import {
+  LowStockQuery,
+  InventorySearchQuery,
+  InventoryBatchQuery,
+} from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class PostgresInventoryRepository implements InventoryRepository {
@@ -83,6 +87,58 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventories by product IDs',
+        error,
+      );
+    }
+  }
+
+  async findMany(
+    query?: InventorySearchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    try {
+      const {
+        page = 1,
+        limit = 100,
+        sortBy = 'id',
+        sortOrder = 'ASC',
+      } = query || {};
+      const skip = (page - 1) * limit;
+
+      const entities = await this.ormRepo.find({
+        skip,
+        take: limit,
+        order: { [sortBy]: sortOrder },
+      });
+
+      return Result.success<Inventory[]>(
+        InventoryMapper.toDomainArray(entities),
+      );
+    } catch (error) {
+      return ErrorFactory.RepositoryError('Failed to find inventories', error);
+    }
+  }
+
+  async findBatch(
+    query?: InventoryBatchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    try {
+      const { afterId, limit = 100 } = query || {};
+      const qb = this.ormRepo
+        .createQueryBuilder('inventory')
+        .orderBy('inventory.id', 'ASC')
+        .take(limit);
+
+      if (afterId !== undefined) {
+        qb.where('inventory.id > :afterId', { afterId });
+      }
+
+      const entities = await qb.getMany();
+      return Result.success<Inventory[]>(
+        InventoryMapper.toDomainArray(entities),
+      );
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to batch find inventories',
         error,
       );
     }
@@ -172,17 +228,57 @@ export class PostgresInventoryRepository implements InventoryRepository {
     expectedVersion?: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
-      const entity = InventoryMapper.toEntity(inventory);
       if (expectedVersion !== undefined) {
-        entity.version = expectedVersion;
+        return await this.updateWithOptimisticLock(inventory, expectedVersion);
       }
-      const savedEntity = await this.ormRepo.save(entity);
-      inventory.setId(savedEntity.id);
-      return Result.success(inventory);
+      return await this.saveNormally(inventory);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to save inventory', error);
     }
+  }
+
+  private async updateWithOptimisticLock(
+    inventory: Inventory,
+    expectedVersion: number,
+  ): Promise<Result<Inventory, RepositoryError>> {
+    const entity = InventoryMapper.toEntity(inventory);
+    const updateResult = await this.ormRepo
+      .createQueryBuilder()
+      .update(InventoryEntity)
+      .set({
+        availableQuantity: entity.availableQuantity,
+        reservedQuantity: entity.reservedQuantity,
+        lowStockThreshold: entity.lowStockThreshold,
+        lastRestockDate: entity.lastRestockDate,
+        version: () => 'version + 1',
+      })
+      .where('id = :id AND version = :expectedVersion', {
+        id: inventory.id,
+        expectedVersion,
+      })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      return ErrorFactory.RepositoryError(
+        `Optimistic lock failure for Inventory ${inventory.id}. Expected version ${expectedVersion}.`,
+        undefined,
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const updatedEntity = await this.ormRepo.findOneByOrFail({
+      id: inventory.id!,
+    });
+    return Result.success(InventoryMapper.toDomain(updatedEntity));
+  }
+
+  private async saveNormally(
+    inventory: Inventory,
+  ): Promise<Result<Inventory, RepositoryError>> {
+    const entity = InventoryMapper.toEntity(inventory);
+    const savedEntity = await this.ormRepo.save(entity);
+    return Result.success(InventoryMapper.toDomain(savedEntity));
   }
 
   async delete(id: number): Promise<Result<void, RepositoryError>> {

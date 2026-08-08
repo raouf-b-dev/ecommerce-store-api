@@ -43,6 +43,7 @@ describe('PostgresInventoryRepository', () => {
           provide: getRepositoryToken(InventoryEntity),
           useValue: {
             findOne: jest.fn(),
+            find: jest.fn(),
             save: jest.fn(),
             delete: jest.fn(),
             createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
@@ -214,6 +215,53 @@ describe('PostgresInventoryRepository', () => {
         RepositoryError,
         dbError,
       );
+    });
+  });
+
+  // ----------------------------------------------------------------
+  // findMany & findBatch
+  // ----------------------------------------------------------------
+  describe('findMany', () => {
+    it('should find many entities with pagination and sorting', async () => {
+      const mockEntities = [InventoryEntityTestFactory.createInventoryEntity()];
+      mockOrmRepo.find.mockResolvedValue(mockEntities);
+
+      const result = await repository.findMany({
+        page: 2,
+        limit: 10,
+        sortBy: 'productId',
+        sortOrder: 'DESC',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.find).toHaveBeenCalledWith({
+        skip: 10,
+        take: 10,
+        order: { productId: 'DESC' },
+      });
+      expect(result.value).toHaveLength(1);
+    });
+  });
+
+  describe('findBatch', () => {
+    it('should query batch with keyset cursor afterId', async () => {
+      const mockEntities = [InventoryEntityTestFactory.createInventoryEntity()];
+      mockQueryBuilder.getMany.mockResolvedValue(mockEntities);
+
+      const result = await repository.findBatch({ afterId: 50, limit: 100 });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.createQueryBuilder).toHaveBeenCalledWith('inventory');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'inventory.id',
+        'ASC',
+      );
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'inventory.id > :afterId',
+        { afterId: 50 },
+      );
+      expect(result.value).toHaveLength(1);
     });
   });
 
