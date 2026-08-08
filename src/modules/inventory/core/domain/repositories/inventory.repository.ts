@@ -1,7 +1,30 @@
-// src/modules/inventory/domain/repositories/inventory.repository.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Inventory } from '../entities/inventory';
+
+export type InventorySortField =
+  | 'id'
+  | 'productId'
+  | 'availableQuantity'
+  | 'reservedQuantity'
+  | 'createdAt';
+
+export interface InventorySearchQuery {
+  page?: number;
+  limit?: number;
+  sortBy?: InventorySortField;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+/**
+ * Keyset batch traversal contract.
+ * Always traverses deterministically by primary key (ORDER BY id ASC).
+ * Omitting `afterId` (undefined) starts the traversal from the beginning.
+ */
+export interface InventoryBatchQuery {
+  afterId?: number;
+  limit?: number;
+}
 
 export interface LowStockQuery {
   threshold?: number;
@@ -30,6 +53,14 @@ export abstract class InventoryRepository {
 
   abstract findByProductIds(
     productIds: number[],
+  ): Promise<Result<Inventory[], RepositoryError>>;
+
+  abstract findMany(
+    query?: InventorySearchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>>;
+
+  abstract findBatch(
+    query?: InventoryBatchQuery,
   ): Promise<Result<Inventory[], RepositoryError>>;
 
   abstract findLowStock(

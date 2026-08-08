@@ -31,4 +31,8 @@ export abstract class OrderScheduler {
   abstract scheduleOrderStockRelease(
     orderId: number,
   ): Promise<Result<string, InfrastructureError>>;
+
+  abstract schedulePendingOrdersExpiration(): Promise<
+    Result<string, InfrastructureError>
+  >;
 }

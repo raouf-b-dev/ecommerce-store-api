@@ -35,6 +35,20 @@ export class MockInventoryRepository implements InventoryRepository {
     [number[]]
   >();
 
+  findMany = jest.fn<
+    Promise<Result<Inventory[], RepositoryError>>,
+    [
+      import('../../core/domain/repositories/inventory.repository').InventorySearchQuery?,
+    ]
+  >();
+
+  findBatch = jest.fn<
+    Promise<Result<Inventory[], RepositoryError>>,
+    [
+      import('../../core/domain/repositories/inventory.repository').InventoryBatchQuery?,
+    ]
+  >();
+
   findLowStock = jest.fn<
     Promise<Result<Inventory[], RepositoryError>>,
     [LowStockQuery]

@@ -33,6 +33,9 @@ export class MetricsService implements OnModuleInit {
   readonly bullmqQueueDepth: Gauge;
   readonly websocketConnectionsActive: Gauge;
 
+  // Audit metrics
+  readonly inventoryDriftCount: Counter;
+
   constructor(private readonly config: EnvConfigService) {
     this.registry = new Registry();
     this.registry.setDefaultLabels({
@@ -136,6 +139,13 @@ export class MetricsService implements OnModuleInit {
     this.websocketConnectionsActive = new Gauge({
       name: 'websocket_connections_active',
       help: 'Active WebSocket connections in gateway',
+      registers: [this.registry],
+    });
+
+    this.inventoryDriftCount = new Counter({
+      name: 'inventory_drift_count',
+      help: 'Total number of detected inventory mathematical or reservation discrepancies',
+      labelNames: ['type'],
       registers: [this.registry],
     });
   }

@@ -78,23 +78,24 @@ Reference utility:
 
 1. Job names: kebab-case prefixed by action (`process-checkout`, `deliver-notification`).
 2. Process files: `[action].process.ts`.
-3. Scheduler files: `bullmq.[module]-scheduler.ts`.
+3. Scheduler files: `bullmq.[module]-scheduler.ts` or `bullmq-[feature].scheduler.ts`.
 
-### Structure
+### Structure & Architectural Placement (DIP Enforcement)
 
-1. Job handlers extend `BaseJobHandler<TData, TResult>`.
-2. Cron triggers live in scheduler implementations, not processors.
-3. Use `JobConfigService` for retry/options.
+1. **Schedulers are Secondary (Outbound) Adapters**: Schedulers enqueue or configure background/cron jobs (e.g. BullMQ repeatable jobs). They MUST live in `secondary-adapters/schedulers/` and implement an abstract scheduler contract (port) defined in `core/domain/schedulers/` or `core/application/ports/` (e.g., `InventoryScheduler`, `NotificationScheduler`).
+2. **Job Handlers are Primary (Inbound) Adapters**: Job handlers live in `primary-adapters/jobs/` and extend `BaseJobHandler<TData, TResult>`. They receive job executions from the processor/queue worker and delegate to application use cases.
+3. **Distributed Jobs Must Not Rely on In-Process Scheduling**: Do not use NestJS `@Cron()` directly for jobs that must execute once across multiple API instances. `@Cron()` is process-local, so every active instance registers its own schedule. Use BullMQ repeatable/scheduled jobs configured via secondary adapter schedulers (`secondary-adapters/schedulers/`) for distributed execution safety and centralized Redis locking. Job handlers should also remain idempotent.
+4. Cron patterns and job defaults must use `JobConfigService` for retry policies and options.
 
 ### New Scheduled Job Checklist
 
-1. Add name to `src/infrastructure/jobs/job-names.ts`.
+1. Add job name to `src/infrastructure/jobs/job-names.ts`.
 2. Add retry policy to `src/infrastructure/jobs/job-retry-policies.ts`.
-3. Add/extend scheduler port in `core/application/ports`.
-4. Add scheduler adapter in `secondary-adapters/schedulers`.
-5. Add handler in `primary-adapters/jobs`.
-6. Update processor routing.
-7. Register providers.
+3. Add abstract scheduler port class in `core/domain/schedulers/` (or `core/application/ports/`).
+4. Add secondary scheduler adapter in `secondary-adapters/schedulers/` implementing `OnModuleInit` and the scheduler port.
+5. Add primary job handler in `primary-adapters/jobs/` extending `BaseJobHandler`.
+6. Update processor routing in `[module].processor.ts`.
+7. Register abstract port -> concrete adapter and job handler providers in `[module].module.ts`.
 
 ### Boundary Rule
 
@@ -335,7 +336,27 @@ The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a c
 
 Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version — so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to — either as a same-call in-memory value or as an explicit param threaded through the command — never as shared mutable state keyed only by ID.
 
-## 14. Canonical References
+## 15. Documentation Taxonomy & Naming Standards
+
+Every documentation artifact in the repository MUST comply with the 6-layer taxonomy and naming conventions:
+
+1. **Document Classification**: Every document MUST be classified as **Reference** (timeless theory), **Applied** (project design/runbook), or **Hybrid** in its frontmatter metadata header.
+2. **Directory Placement**:
+   - `docs/architecture/` — Core architecture principles, domain architecture (`domains/`), project patterns (`project-patterns/`), and ADRs (`adr/`).
+   - `docs/database/` — Relational schema design (`DATABASE-DESIGN.md`), transaction policies (`TRANSACTIONS.md`), indexing strategies (`INDEXES.md`), and coding standards (`DATABASE-STANDARDS.md`).
+   - `docs/decision-guides/` — Cross-cutting decision frameworks helping engineers choose between patterns (`WHEN-TO-*`).
+   - `docs/data/` — Timeless computer science and software engineering theory (`concurrency/`, `consistency/`, `performance/`).
+   - `docs/infrastructure/` — Deployment, CI/CD, process lifecycles, and operational runbooks.
+3. **Filename Standards**:
+   - Use uppercase kebab-case for technical reference documents (`DATABASE-DESIGN.md`, `ENGINEERING-PRINCIPLES.md`).
+   - ADRs MUST use 4-digit zero-padded numbering: `ADR-XXXX-[short-title].md` (e.g. `ADR-0004-inventory-integrity-and-concurrency.md`).
+   - Engineering decision guides MUST begin with `WHEN-TO-*` (e.g. `WHEN-TO-DENORMALIZE-DATA.md`).
+   - Codebase implementation patterns MUST end with `-PATTERN.md` (e.g. `REPOSITORY-PATTERN.md`).
+   - Every major directory MUST include a `README.md` defining _What belongs here_, _What doesn't belong here_, and _Recommended reading order_.
+4. **Document Layout Structure**:
+   - Applied documents MUST be structured as **Timeless Policy / Enduring Rationale** (top half) followed by **Current Implementation Appendix** (bottom half).
+
+## 16. Canonical References
 
 - [../../AGENT.md](../../AGENT.md)
 - [../architecture/DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md)

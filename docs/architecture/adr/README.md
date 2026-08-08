@@ -1,0 +1,35 @@
+# Architecture Decision Records (ADRs)
+
+---
+
+Document Type: Reference & Index
+Audience: Software Engineers & System Architects
+Status: Active
+Owner: Core Architecture Team
+
+---
+
+This directory records all historical Architecture Decision Records for `ecommerce-store-api`.
+
+---
+
+## 1. What is an ADR?
+
+An Architecture Decision Record (ADR) captures a single significant architectural decision, including its context, rationale, alternatives considered, and consequences.
+
+ADRs are **immutable historical documents**. They record _why_ a decision was made at a specific point in time. If a decision is changed later, a new ADR is written superseding the previous one.
+
+---
+
+## 2. ADR Naming Standard
+
+All ADR filenames MUST follow 4-digit zero-padded numbering:
+`ADR-XXXX-[short-title].md`
+
+---
+
+## 3. ADR Index Table
+
+| ADR                                                             | Status   | Title / Summary                                                                                                                                                               | Date       | Supersedes | Superseded By | Target Scope             |
+| :-------------------------------------------------------------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | :--------- | :------------ | :----------------------- |
+| **[ADR-0004](ADR-0004-inventory-integrity-and-concurrency.md)** | Accepted | Inventory Data Integrity, Concurrency & Schema Refactoring (Removal of `totalQuantity` persistence, CQRS read ports, atomic OCC update predicates, read-only reconciliation). | 2026-08-07 | —          | —             | `src/modules/inventory/` |

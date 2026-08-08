@@ -23,6 +23,12 @@ export const JobNames = {
   // Payment Events
   PAYMENT_COMPLETED: 'payment-completed',
   PAYMENT_FAILED: 'payment-failed',
+
+  // Inventory Jobs
+  INVENTORY_RECONCILIATION: 'inventory-reconciliation',
+
+  // Order Maintenance Jobs
+  EXPIRE_PENDING_ORDERS: 'expire-pending-orders',
 } as const;
 
 export type JobName = (typeof JobNames)[keyof typeof JobNames];

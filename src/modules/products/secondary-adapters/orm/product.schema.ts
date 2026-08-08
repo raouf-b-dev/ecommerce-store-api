@@ -12,6 +12,10 @@ import { numericToNumber } from '../../../../infrastructure/database/number.tran
 @Entity({ name: 'products' })
 @Index('idx_products_slug', ['slug'], { unique: true })
 @Index('idx_products_category_id', ['categoryId'])
+@Index('idx_products_active', ['isActive'], { where: '"is_active" = true' })
+@Index('idx_products_category_active', ['categoryId', 'isActive'], {
+  where: '"is_active" = true',
+})
 export class ProductEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;

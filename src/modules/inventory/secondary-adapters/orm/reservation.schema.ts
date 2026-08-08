@@ -14,6 +14,9 @@ import { ReservationItemEntity } from './reservation-item.schema';
 @Entity({ name: 'reservations' })
 @Index('idx_reservations_order_id', ['orderId'])
 @Index('idx_reservations_status_expires_at', ['status', 'expiresAt'])
+@Index('idx_reservations_pending_status', ['status'], {
+  where: '"status" = \'PENDING\'',
+})
 export class ReservationEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;

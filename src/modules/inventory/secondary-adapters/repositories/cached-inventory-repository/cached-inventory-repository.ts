@@ -10,7 +10,11 @@ import {
   InventoryCacheMapper,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
+import {
+  LowStockQuery,
+  InventorySearchQuery,
+  InventoryBatchQuery,
+} from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class CachedInventoryRepository implements InventoryRepository {
@@ -238,6 +242,18 @@ export class CachedInventoryRepository implements InventoryRepository {
     Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
   > {
     return await this.postgresRepo.findByProductIdForUpdate(productId);
+  }
+
+  async findMany(
+    query?: InventorySearchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    return await this.postgresRepo.findMany(query);
+  }
+
+  async findBatch(
+    query?: InventoryBatchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    return await this.postgresRepo.findBatch(query);
   }
 
   async save(
