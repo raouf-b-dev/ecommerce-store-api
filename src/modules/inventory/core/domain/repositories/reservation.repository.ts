@@ -34,4 +34,8 @@ export abstract class ReservationRepository {
   abstract confirm(
     reservation: Reservation,
   ): Promise<Result<Reservation, RepositoryError>>;
+  abstract sumPendingReservedByProductIds(
+    productIds: number[],
+    asOfDate?: Date,
+  ): Promise<Result<Map<number, number>, RepositoryError>>;
 }
