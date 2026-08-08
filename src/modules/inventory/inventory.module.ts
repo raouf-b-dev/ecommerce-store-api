@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { InventoryController } from './inventory.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
+import { MetricsModule } from '../../infrastructure/metrics/metrics.module';
 import {
   POSTGRES_INVENTORY_REPOSITORY,
   CACHED_INVENTORY_REPOSITORY,
@@ -26,6 +28,11 @@ import { POSTGRES_RESERVATION_REPOSITORY } from './inventory.token';
 import { PostgresReservationRepository } from './secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository';
 import { ReservationRepository } from './core/domain/repositories/reservation.repository';
 import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inventory.usecase';
+import { ReconcileInventoryUseCase } from './core/application/reconcile-inventory/reconcile-inventory.usecase';
+import { InventoryReconciliationJob } from './primary-adapters/jobs/inventory-reconciliation.job';
+import { InventoryScheduler } from './core/domain/schedulers/inventory.scheduler';
+import { BullMqInventoryScheduler } from './secondary-adapters/schedulers/bullmq-inventory.scheduler';
+import { InventoryProcessor } from './inventory.processor';
 
 @Module({
   imports: [
@@ -34,6 +41,10 @@ import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inve
       ReservationEntity,
       ReservationItemEntity,
     ]),
+    BullModule.registerQueue({
+      name: 'inventory',
+    }),
+    MetricsModule,
     RedisModule,
   ],
   controllers: [InventoryController],
@@ -72,6 +83,12 @@ import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inve
       useExisting: POSTGRES_RESERVATION_REPOSITORY,
     },
 
+    // Schedulers (Secondary Adapter Port -> Adapter)
+    {
+      provide: InventoryScheduler,
+      useClass: BullMqInventoryScheduler,
+    },
+
     //UseCases:
     GetInventoryUseCase,
     AdjustStockUseCase,
@@ -83,6 +100,11 @@ import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inve
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
     SeedDemoInventoryUseCase,
+    ReconcileInventoryUseCase,
+
+    // Jobs & Processors:
+    InventoryReconciliationJob,
+    InventoryProcessor,
   ],
   exports: [
     CheckStockUseCase,
@@ -90,6 +112,7 @@ import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inve
     ReleaseStockUseCase,
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
+    ReconcileInventoryUseCase,
   ],
 })
 export class InventoryModule {}
