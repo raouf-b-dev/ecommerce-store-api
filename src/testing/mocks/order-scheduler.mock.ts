@@ -9,4 +9,5 @@ export class MockOrderScheduler extends OrderScheduler {
     .fn()
     .mockResolvedValue(Result.success('flow-id'));
   scheduleOrderStockRelease = jest.fn();
+  schedulePendingOrdersExpiration = jest.fn();
 }

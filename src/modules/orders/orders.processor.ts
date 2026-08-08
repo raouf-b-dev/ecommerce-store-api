@@ -13,6 +13,7 @@ import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
 import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
+import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-orders.job';
 
 @Processor('checkout')
 @Injectable()
@@ -34,6 +35,7 @@ export class OrdersProcessor
     private readonly refundPaymentStep: RefundPaymentStep,
     private readonly finalizeCheckoutStep: FinalizeCheckoutStep,
     private readonly releaseOrderStockJob: ReleaseOrderStockJob,
+    private readonly expirePendingOrdersJob: ExpirePendingOrdersJob,
   ) {
     super();
   }
@@ -61,6 +63,8 @@ export class OrdersProcessor
         return this.clearCartStep.handle(job);
       case JobNames.FINALIZE_CHECKOUT:
         return this.finalizeCheckoutStep.handle(job);
+      case JobNames.EXPIRE_PENDING_ORDERS:
+        return this.expirePendingOrdersJob.handle(job);
 
       // Compensations
       case JobNames.RELEASE_STOCK:

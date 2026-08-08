@@ -26,6 +26,7 @@ describe('CancelOrderUseCase', () => {
       schedulePostPayment: jest.fn(),
       scheduleStockRelease: jest.fn(),
       schedulePostConfirmation: jest.fn(),
+      schedulePendingOrdersExpiration: jest.fn(),
     } as jest.Mocked<OrderScheduler>;
     domainEventPublisher = { publish: jest.fn() };
     useCase = new CancelOrderUseCase(
