@@ -139,6 +139,16 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     backoffStrategy: BackoffStrategy.FIXED,
     initialDelay: 0,
   },
+  [JobNames.INVENTORY_RECONCILIATION]: {
+    maxAttempts: 1,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 0,
+  },
+  [JobNames.EXPIRE_PENDING_ORDERS]: {
+    maxAttempts: 1,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 0,
+  },
 };
 
 export function getRetryPolicy(jobName: JobName): RetryConfig {
