@@ -11,6 +11,7 @@ export interface SeededDemoProduct {
   id: number;
   sku: string;
   name: string;
+  price: number;
   initialStock: number;
   lowStockThreshold: number;
   status: 'created' | 'existing';
@@ -89,6 +90,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
           id: (existingId ?? createdId)!,
           sku: seed.sku,
           name: seed.name,
+          price: seed.price,
           initialStock: seed.initialStock,
           lowStockThreshold: seed.lowStockThreshold,
           status: existingId ? ('existing' as const) : ('created' as const),

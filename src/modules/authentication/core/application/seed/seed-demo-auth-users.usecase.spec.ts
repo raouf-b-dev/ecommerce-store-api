@@ -71,8 +71,8 @@ describe('SeedDemoAuthUsersUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
-      admin: { email: 'admin@store.local', status: 'created' },
-      customer: { email: 'customer@store.local', status: 'created' },
+      admin: { userId: 1, email: 'admin@store.local', status: 'created' },
+      customer: { userId: 2, email: 'customer@store.local', status: 'created' },
     });
     expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
       'admin@store.local',
@@ -116,8 +116,12 @@ describe('SeedDemoAuthUsersUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
-      admin: { email: 'admin@store.local', status: 'existing' },
-      customer: { email: 'customer@store.local', status: 'existing' },
+      admin: { userId: 1, email: 'admin@store.local', status: 'existing' },
+      customer: {
+        userId: 2,
+        email: 'customer@store.local',
+        status: 'existing',
+      },
     });
     expect(identityGateway.createUser).not.toHaveBeenCalled();
     expect(credentialRepository.save).not.toHaveBeenCalled();
