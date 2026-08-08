@@ -9,8 +9,8 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'inventory' })
-@Index(['productId'], { unique: true })
-@Index(['availableQuantity'])
+@Index('idx_inventory_product_id', ['productId'], { unique: true })
+@Index('idx_inventory_available_quantity', ['availableQuantity'])
 export class InventoryEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -26,9 +26,6 @@ export class InventoryEntity {
 
   @Column({ type: 'int' })
   reservedQuantity: number;
-
-  @Column({ type: 'int' })
-  totalQuantity: number;
 
   @Column({ type: 'int' })
   lowStockThreshold: number;

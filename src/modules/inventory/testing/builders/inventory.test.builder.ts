@@ -21,19 +21,16 @@ export class InventoryBuilder {
 
   withAvailableQuantity(quantity: number): this {
     this.inventory.availableQuantity = quantity;
-    this.recalculateStockStatus();
     return this;
   }
 
   withReservedQuantity(quantity: number): this {
     this.inventory.reservedQuantity = quantity;
-    this.recalculateStockStatus();
     return this;
   }
 
   withLowStockThreshold(threshold: number): this {
     this.inventory.lowStockThreshold = threshold;
-    this.recalculateStockStatus();
     return this;
   }
 
@@ -82,11 +79,6 @@ export class InventoryBuilder {
 
   withNoReservations(): this {
     return this.withReservedQuantity(0);
-  }
-
-  private recalculateStockStatus(): void {
-    this.inventory.totalQuantity =
-      this.inventory.availableQuantity + this.inventory.reservedQuantity;
   }
 
   build(): IInventory {

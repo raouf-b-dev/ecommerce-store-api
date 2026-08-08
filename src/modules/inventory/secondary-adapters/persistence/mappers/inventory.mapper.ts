@@ -35,7 +35,6 @@ export class InventoryMapper {
       productId: primitives.productId,
       availableQuantity: primitives.availableQuantity,
       reservedQuantity: primitives.reservedQuantity,
-      totalQuantity: primitives.totalQuantity,
       lowStockThreshold: primitives.lowStockThreshold,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
