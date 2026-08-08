@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import {
 import { ReservationEntity } from './reservation.schema';
 
 @Entity({ name: 'reservation_items' })
+@Index('idx_reservation_items_product_id', ['productId'])
 export class ReservationItemEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;

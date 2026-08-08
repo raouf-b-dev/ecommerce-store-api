@@ -17,6 +17,7 @@ import { PaymentStatusType } from '../../core/domain/value-objects/payment-statu
 @Index('idx_payments_user_id', ['userId'])
 @Index('idx_payments_transaction_id', ['transactionId'])
 @Index('idx_payments_gateway_intent_id', ['gatewayPaymentIntentId'])
+@Index('idx_payments_user_status', ['userId', 'status'])
 export class PaymentEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
