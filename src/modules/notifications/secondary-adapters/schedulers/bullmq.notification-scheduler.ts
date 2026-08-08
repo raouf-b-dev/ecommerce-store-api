@@ -30,7 +30,9 @@ export class BullMqNotificationScheduler
     await this.scheduleCleanupJob();
   }
 
-  private async scheduleCleanupJob() {
+  private async scheduleCleanupJob(): Promise<
+    Result<{ jobId: string }, InfrastructureError>
+  > {
     const jobName = JobNames.CLEANUP_NOTIFICATIONS;
     const cron = '0 3 * * *';
     const jobId = 'cleanup-expired-notifications-job';
@@ -45,8 +47,13 @@ export class BullMqNotificationScheduler
         },
       );
       this.logger.log('Cleanup job scheduled successfully');
+      return Result.success({ jobId });
     } catch (error) {
       this.logger.error('Failed to schedule cleanup job', error);
+      return ErrorFactory.InfrastructureError(
+        'Failed to schedule cleanup job',
+        error,
+      );
     }
   }
 
