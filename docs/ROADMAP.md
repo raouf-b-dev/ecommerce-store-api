@@ -43,7 +43,7 @@
 | Phase  | Name                             | Status | Target / Focus                                                                       |
 | :----- | :------------------------------- | :----- | :----------------------------------------------------------------------------------- |
 | **10** | Security Hardening Phase 2       | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                      |
-| **11** | Data Integrity & Concurrency     | `[/]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
+| **11** | Data Integrity & Concurrency     | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
 | **12** | CQRS Read Path                   | `[ ]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters                    |
 | **13** | Minimum Viable Test Coverage     | `[/]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E         |
 | **14** | Single-Instance Production Gate  | `[ ]`  | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
@@ -143,7 +143,7 @@
 
 ---
 
-### [ ] Inventory Reconciliation Audit Job
+### [x] Inventory Reconciliation Audit Job
 
 **What**: Implement a periodic background audit job that verifies inventory mathematical invariants (`totalQuantity == availableQuantity + reservedQuantity + soldQuantity`) and flags discrepancies.
 
@@ -157,7 +157,7 @@
 
 ---
 
-### [/] Transaction Isolation Level Audit & Query Optimization
+### [x] Transaction Isolation Level Audit & Query Optimization
 
 **What**: Review transaction isolation configurations, analyze slow queries, and provision composite and partial indexes.
 
@@ -615,7 +615,18 @@
 - Wrap `db-backup.js` with GPG asymmetric encryption.
 - Automate upload of encrypted backups to cloud object stores (AWS S3 / GCS) with retention policies.
 
-**Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
+---
+
+## 🛠️ Engineering Platform & Tooling Backlog
+
+> Long-term tooling and architectural automation tasks to complement core business feature phases.
+
+- [ ] **Automated Architecture Linting**: Extend `npm run test:arch` with automated linting rules (dependency-cruiser / custom AST checks) to enforce forbidden cross-layer imports and cyclic dependency detection.
+- [ ] **Architecture Drift Detection**: Build automated verification tasks to compare actual module exports and layer dependencies against documented domain architecture boundaries (`docs/architecture/domains/`).
+- [ ] **Living Architecture Dependency Graphs**: Integrate automated architectural graph generation (e.g. Nx graph / Structurizr / dependency-cruiser) to produce visual directional dependency maps during CI runs.
+- [ ] **Module Architecture Scorecards**: Create per-bounded-context health scorecards tracking entity purity, repository contract coverage, domain events, metrics, and test coverage.
+- [ ] **ADR Consistency & Validation in CI**: Add CI checks to verify that Pull Requests modifying core architectural policies include a valid `ADR-XXXX` record and link.
+- [ ] **Modularize CONVENTIONS.md**: Split `docs/ai/CONVENTIONS.md` into focused topic files (`layering.md`, `database.md`, `testing.md`) when content exceeds ~500–700 lines.
 
 ---
 
