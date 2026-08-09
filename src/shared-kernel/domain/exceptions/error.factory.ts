@@ -6,6 +6,7 @@ import { Result } from '../result';
 import { HttpStatus } from '@nestjs/common';
 import { ServiceError } from './service-error';
 import { InfrastructureError } from './infrastructure-error';
+import { QueryError, QueryNotFoundError } from './query.error';
 
 function isRetryableHttpStatus(status?: number): boolean {
   if (!status) return true;
@@ -65,4 +66,20 @@ export const ErrorFactory = {
         retryable ?? isRetryableHttpStatus(status),
       ),
     ),
+  QueryError: (
+    message: string,
+    cause?: unknown,
+    status?: HttpStatus,
+    retryable?: boolean,
+  ) =>
+    Result.failure(
+      new QueryError(
+        message,
+        toError(cause),
+        status,
+        retryable ?? isRetryableHttpStatus(status),
+      ),
+    ),
+  QueryNotFoundError: (message: string, cause?: unknown) =>
+    Result.failure(new QueryNotFoundError(message, toError(cause))),
 };
