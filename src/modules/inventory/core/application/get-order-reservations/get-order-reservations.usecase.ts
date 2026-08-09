@@ -7,9 +7,11 @@ import { ReservationRepository } from '../../domain/repositories/reservation.rep
 import { Reservation } from '../../domain/entities/reservation';
 
 @Injectable()
-export class GetOrderReservationsUseCase
-  implements UseCase<number, Reservation[], UseCaseError>
-{
+export class GetOrderReservationsUseCase implements UseCase<
+  number,
+  Reservation[],
+  UseCaseError
+> {
   constructor(private readonly reservationRepository: ReservationRepository) {}
 
   async execute(orderId: number): Promise<Result<Reservation[], UseCaseError>> {

@@ -4,9 +4,7 @@ import { UserRoleAssignmentRepository } from '../../core/domain/repositories/use
 import { RepositoryError } from 'src/shared-kernel/domain/exceptions/repository.error';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
-export class MockUserRoleAssignmentRepository
-  implements UserRoleAssignmentRepository
-{
+export class MockUserRoleAssignmentRepository implements UserRoleAssignmentRepository {
   save = jest.fn<
     Promise<Result<UserRoleAssignment, RepositoryError>>,
     [UserRoleAssignment]

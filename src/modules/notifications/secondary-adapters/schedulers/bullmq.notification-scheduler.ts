@@ -124,7 +124,9 @@ export class BullMqNotificationScheduler
 
       return Result.success({ jobId: flowId });
     } catch (error) {
-      this.logger.error('Failed to schedule notification', error.stack);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Failed to schedule notification: ${errorMsg}`, stack);
       return ErrorFactory.InfrastructureError(
         'Failed to schedule notification',
         error,

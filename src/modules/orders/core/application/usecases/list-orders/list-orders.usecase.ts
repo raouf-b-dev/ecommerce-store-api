@@ -17,9 +17,11 @@ export interface ListOrdersInput {
 }
 
 @Injectable()
-export class ListOrdersUsecase
-  implements UseCase<ListOrdersInput, IOrder[], UseCaseError>
-{
+export class ListOrdersUsecase implements UseCase<
+  ListOrdersInput,
+  IOrder[],
+  UseCaseError
+> {
   constructor(private orderRepository: OrderRepository) {}
 
   async execute(

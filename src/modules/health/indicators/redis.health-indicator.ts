@@ -30,7 +30,8 @@ export class RedisHealthIndicator {
         message: `Unexpected PING response: ${response}`,
       });
     } catch (error) {
-      return indicator.down({ message: error.message });
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      return indicator.down({ message: errorMsg });
     }
   }
 }

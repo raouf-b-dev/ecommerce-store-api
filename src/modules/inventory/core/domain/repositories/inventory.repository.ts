@@ -3,11 +3,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { Inventory } from '../entities/inventory';
 
 export type InventorySortField =
-  | 'id'
-  | 'productId'
-  | 'availableQuantity'
-  | 'reservedQuantity'
-  | 'createdAt';
+  'id' | 'productId' | 'availableQuantity' | 'reservedQuantity' | 'createdAt';
 
 export interface InventorySearchQuery {
   page?: number;

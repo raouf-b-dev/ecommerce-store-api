@@ -53,7 +53,7 @@ export function createMockTransactionManager(options?: {
   const defaultQueryBuilder =
     options?.mockQueryBuilder || createMockQueryBuilder();
 
-  return {
+  const manager: any = {
     find: jest
       .fn()
       .mockResolvedValue(options?.mockProduct ? [options.mockProduct] : []),
@@ -61,18 +61,16 @@ export function createMockTransactionManager(options?: {
     findOneBy: jest.fn().mockResolvedValue(null),
     save: jest.fn().mockResolvedValue(options?.mockOrder || {}),
     remove: jest.fn().mockResolvedValue({}),
-    delete: jest
-      .fn()
-      .mockResolvedValue({ raw: [], affected: 1 } as DeleteResult),
-    update: jest
-      .fn()
-      .mockResolvedValue({ raw: [], affected: 1 } as UpdateResult),
+    delete: jest.fn().mockResolvedValue({ raw: [], affected: 1 }),
+    update: jest.fn().mockResolvedValue({ raw: [], affected: 1 }),
     exists: jest.fn().mockResolvedValue(true),
     count: jest.fn().mockResolvedValue(0),
     createQueryBuilder: jest.fn().mockReturnValue(defaultQueryBuilder),
     query: jest.fn().mockResolvedValue([]),
-    transaction: jest.fn().mockImplementation((cb) => cb(this)),
+    transaction: jest.fn().mockImplementation((cb) => cb(manager)),
   };
+
+  return manager;
 }
 
 export function createMockDataSource(mockManager?: any) {

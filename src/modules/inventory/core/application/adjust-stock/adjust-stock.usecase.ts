@@ -16,14 +16,11 @@ export interface AdjustStockCommand {
 }
 
 @Injectable()
-export class AdjustStockUseCase
-  implements
-    UseCase<
-      { productId: number; command: AdjustStockCommand },
-      IInventory,
-      UseCaseError
-    >
-{
+export class AdjustStockUseCase implements UseCase<
+  { productId: number; command: AdjustStockCommand },
+  IInventory,
+  UseCaseError
+> {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(input: {

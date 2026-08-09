@@ -36,8 +36,9 @@ export class DeliverNotificationProcess extends BaseJobHandler<
       await this.deliverNotificationService.execute(notification);
       return Result.success(undefined);
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Failed to send notification via WebSocket: ${error.message}`,
+        `Failed to send notification via WebSocket: ${errorMsg}`,
       );
       return Result.success(undefined); // Don't fail the job if WS fails? Or maybe retry?
     }

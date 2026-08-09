@@ -18,10 +18,11 @@ export interface ReserveStockForCheckoutInput {
 }
 
 @Injectable()
-export class ReserveStockForCheckoutUseCase
-  implements
-    UseCase<ReserveStockForCheckoutInput, ReservationData, UseCaseError>
-{
+export class ReserveStockForCheckoutUseCase implements UseCase<
+  ReserveStockForCheckoutInput,
+  ReservationData,
+  UseCaseError
+> {
   constructor(private readonly inventoryGateway: InventoryReservationGateway) {}
 
   async execute(

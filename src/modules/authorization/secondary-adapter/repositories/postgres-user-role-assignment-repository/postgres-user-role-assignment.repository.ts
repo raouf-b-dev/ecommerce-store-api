@@ -10,9 +10,7 @@ import { UserRoleAssignmentMapper } from '../../persistence/mappers/user-role-as
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class PostgresUserRoleAssignmentRepository
-  implements UserRoleAssignmentRepository
-{
+export class PostgresUserRoleAssignmentRepository implements UserRoleAssignmentRepository {
   constructor(
     @InjectRepository(UserRoleAssignmentEntity)
     private readonly roleRepo: Repository<UserRoleAssignmentEntity>,

@@ -13,9 +13,11 @@ export interface AssignRoleCommand {
 }
 
 @Injectable()
-export class AssignRoleUseCase
-  implements UseCase<AssignRoleCommand, void, UseCaseError>
-{
+export class AssignRoleUseCase implements UseCase<
+  AssignRoleCommand,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly userRoleAssignmentRepository: UserRoleAssignmentRepository,
     private readonly roleRepository: RoleRepository,

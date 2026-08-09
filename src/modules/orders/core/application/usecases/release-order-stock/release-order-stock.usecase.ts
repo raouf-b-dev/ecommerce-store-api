@@ -11,9 +11,11 @@ import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { INVENTORY_RESERVATION_GATEWAY } from '../../../../order.token';
 
 @Injectable()
-export class ReleaseOrderStockUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class ReleaseOrderStockUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   private readonly logger = new Logger(ReleaseOrderStockUseCase.name);
 
   constructor(

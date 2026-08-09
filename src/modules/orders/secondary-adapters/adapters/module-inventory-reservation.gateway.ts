@@ -13,9 +13,7 @@ import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
-export class ModuleInventoryReservationGateway
-  implements InventoryReservationGateway
-{
+export class ModuleInventoryReservationGateway implements InventoryReservationGateway {
   constructor(
     private readonly getOrderReservationsUseCase: GetOrderReservationsUseCase,
     private readonly reserveStockUseCase: ReserveStockUseCase,

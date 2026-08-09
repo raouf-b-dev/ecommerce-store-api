@@ -13,10 +13,11 @@ import {
 } from '../../ports/payment.gateway';
 
 @Injectable()
-export class CreateCheckoutPaymentUseCase
-  implements
-    UseCase<CreatePaymentIntentInput, PaymentIntentResult, UseCaseError>
-{
+export class CreateCheckoutPaymentUseCase implements UseCase<
+  CreatePaymentIntentInput,
+  PaymentIntentResult,
+  UseCaseError
+> {
   constructor(private readonly paymentGateway: PaymentGateway) {}
 
   async execute(

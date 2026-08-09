@@ -15,7 +15,7 @@ describe('DeactivateUserUseCase', () => {
     userRepository = new MockUserRepository();
     domainEventPublisher = {
       publish: jest.fn(),
-    } as unknown as jest.Mocked<DomainEventPublisher>;
+    };
     usecase = new DeactivateUserUseCase(userRepository, domainEventPublisher);
   });
 

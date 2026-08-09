@@ -14,7 +14,7 @@ import { WsAuthService } from './services/ws-auth.service';
 export class WebsocketConnectionGateway
   implements OnGatewayConnection, OnGatewayDisconnect, BeforeApplicationShutdown
 {
-  @WebSocketServer() server: Server;
+  @WebSocketServer() server!: Server;
   private readonly logger = new Logger(WebsocketConnectionGateway.name);
 
   constructor(private readonly wsAuthService: WsAuthService) {}

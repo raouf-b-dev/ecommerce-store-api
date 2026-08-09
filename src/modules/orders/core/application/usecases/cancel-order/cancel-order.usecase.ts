@@ -16,9 +16,11 @@ export interface CancelOrderCommand {
 }
 
 @Injectable()
-export class CancelOrderUseCase
-  implements UseCase<CancelOrderCommand, IOrder, UseCaseError>
-{
+export class CancelOrderUseCase implements UseCase<
+  CancelOrderCommand,
+  IOrder,
+  UseCaseError
+> {
   constructor(
     private orderRepository: OrderRepository,
     private readonly orderScheduler: OrderScheduler,

@@ -6,14 +6,11 @@ import { InventoryRepository } from '../../domain/repositories/inventory.reposit
 import { CheckStockResult } from '../../domain/interfaces/check-stock-result.interface';
 
 @Injectable()
-export class CheckStockUseCase
-  implements
-    UseCase<
-      { productId: number; quantity?: number },
-      CheckStockResult,
-      UseCaseError
-    >
-{
+export class CheckStockUseCase implements UseCase<
+  { productId: number; quantity?: number },
+  CheckStockResult,
+  UseCaseError
+> {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(input: {

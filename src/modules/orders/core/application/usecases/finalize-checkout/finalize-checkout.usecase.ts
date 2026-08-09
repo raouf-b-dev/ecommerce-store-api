@@ -10,9 +10,11 @@ export interface FinalizeCheckoutInput {
 }
 
 @Injectable()
-export class FinalizeCheckoutUseCase
-  implements UseCase<FinalizeCheckoutInput, void, UseCaseError>
-{
+export class FinalizeCheckoutUseCase implements UseCase<
+  FinalizeCheckoutInput,
+  void,
+  UseCaseError
+> {
   private readonly logger = new Logger(FinalizeCheckoutUseCase.name);
 
   constructor(private readonly domainEventPublisher: DomainEventPublisher) {}
