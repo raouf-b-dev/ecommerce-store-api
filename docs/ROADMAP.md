@@ -62,18 +62,19 @@
 
 ### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Task / Item                                                                                                         | Phase  | Critical Purpose                                                                         |
-| :------------------------------------------------------------------------------------------------------------------ | :----- | :--------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`)                            | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
-| [x] Production error stack masking & PII log audit verified                                                         | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13) | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
-| [x] Shopping Cart Expiration & Redis TTL enforcement                                                                | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
-| CQRS read path — query ports, JOIN adapters, flat list/detail DTOs                                                  | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
-| Initial database baseline migration generated & verified                                                            | **14** | Schema must be reproducible without relying on `synchronize: true`                       |
-| Redis graceful degradation & `trust proxy` hardening                                                                | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy      |
-| Liveness, Readiness & `ProcessHealthIndicator` probes                                                               | **14** | Exposes `/health/liveness` and `/health/readiness` with event loop & memory thresholds   |
-| Backup, restore, rollback runbook & smoke test runner                                                               | **14** | Documented runbooks & Node.js scripts (`db-backup.js`, `db-restore.js`, `smoke-test.js`) |
+| Task / Item                                                                                                                                                 | Phase  | Critical Purpose                                                                         |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                                        | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`)                                                                    | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
+| [x] Production error stack masking & PII log audit verified                                                                                                 | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                         | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
+| [x] Shopping Cart Expiration & Redis TTL enforcement                                                                                                        | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
+| [/] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments done; Products, Carts, Identity, Notifications pending) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+
+| Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
+| Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
+| Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | Exposes `/health/liveness` and `/health/readiness` with event loop & memory thresholds |
+| Backup, restore, rollback runbook & smoke test runner | **14** | Documented runbooks & Node.js scripts (`db-backup.js`, `db-restore.js`, `smoke-test.js`) |
 
 ---
 
@@ -101,7 +102,7 @@
 
 ## ⚡ Phase 12 — CQRS Read Path & Presentation Projections
 
-> **Goal**: Ship list and detail endpoints that return flat, presentation-ready DTOs with resolved customer names, emails, and product SKUs — in a single SQL query per page. **Complete before Phase 14 deployment** so the frontend is not forced to N+1-resolve IDs across orders, inventory, and payments.
+> **Goal**: Ship list and detail endpoints that return flat, presentation-ready DTOs with resolved customer names, emails, and product SKUs — in a single SQL query per page. **Complete before Phase 14 deployment** so the frontend is not forced to N+1-resolve IDs across modules.
 
 ---
 
@@ -113,7 +114,9 @@
 
 - [x] Orders: Created `OrderListItemResult`, `OrderDetailResult`, `OrderItemDetailResult` in `src/modules/orders/core/application/queries/results/`.
 - [x] Orders: Created `OrderQueryService` in `src/modules/orders/core/application/ports/order-query.service.ts`.
-- [ ] Inventory & Payments: Define `InventoryListItemResult`, `PaymentListItemResult` and create `InventoryQueryService`, `PaymentQueryService`.
+- [x] Inventory: Created `InventoryListItemDTO` in `src/modules/inventory/core/application/queries/results/inventory-list-item.result.ts` and `InventoryQueryService` port.
+- [x] Payments: Created `PaymentListItemDTO`, `PaymentDetailDTO` in `src/modules/payments/core/application/queries/results/` and `PaymentQueryService` port.
+- [ ] Products, Carts, Identity & Notifications: Define presentation result DTOs and query ports (`ProductQueryService`, `CartQueryService`, `UserQueryService`, `NotificationQueryService`).
 
 **Location**: `src/modules/*/core/application/ports/`, `src/modules/*/core/application/queries/`
 
@@ -125,10 +128,10 @@
 
 **Scope**:
 
-- [x] Orders: Implemented `PostgresOrderQueryAdapter` in `secondary-adapters/query/` and `OrderQueryMapper` in `secondary-adapters/mappers/query/`.
-- [x] Orders: Defined `RawOrderListQueryRow` in `secondary-adapters/dto/`.
-- [x] Orders: JOIN orders → `users` (name, email), `products` (SKU, catalog details) in one query per list/detail request.
-- [ ] Inventory & Payments: Implement query adapters and mappers for Inventory and Payments modules.
+- [x] Orders: Implemented `PostgresOrderQueryAdapter` (`secondary-adapters/query/`), `OrderQueryMapper` (`secondary-adapters/mappers/query/`), and `RawOrderListQueryRow` (`secondary-adapters/dto/`).
+- [x] Inventory: Implemented `PostgresInventoryQueryAdapter`, `InventoryQueryMapper`, and `RawInventoryListQueryRow`.
+- [x] Payments: Implemented `PostgresPaymentQueryAdapter`, `PaymentQueryMapper`, and `RawPaymentListQueryRow`.
+- [ ] Products, Carts, Identity & Notifications: Implement query adapters and mappers.
 
 **Location**: `src/modules/*/secondary-adapters/query/`, `src/modules/*/secondary-adapters/mappers/query/`
 
@@ -141,20 +144,24 @@
 **Scope**:
 
 - [x] Orders: Refactored `ListOrdersUsecase` and `GetOrderUseCase` to inject `OrderQueryService` and enforce `OwnedResourceAccessPolicy`.
-- [ ] Inventory & Payments: Update `ListInventoryUseCase` and payment list/detail use cases similarly.
+- [x] Inventory: Refactored `GetInventoryUseCase` and `ListInventoryUseCase` to inject `InventoryQueryService`.
+- [x] Payments: Refactored `ListPaymentsUseCase`, `GetPaymentUseCase`, and `GetPaymentByOrderIdUseCase` to inject `PaymentQueryService` and enforce `OwnedResourceAccessPolicy`.
+- [ ] Products, Carts, Identity & Notifications: Refactor query use cases similarly.
 
 ---
 
-### [ ] Controller & Presentation Model Updates
+### [/] Controller & Presentation Model Updates
 
 **What**: Update controllers and Swagger schemas to expose flat read-model DTOs.
 
 **Scope**:
 
-- Update REST GET list/detail endpoints in `OrdersController`, `InventoryController`, and `PaymentsController`.
-- Create response DTOs with `customerName`, `customerEmail`, `productSku`, etc. explicitly typed in OpenAPI.
+- [x] Orders: Updated `OrdersController` to expose flat CQRS read projections.
+- [x] Inventory: Updated `InventoryController` with `GET /inventory` read endpoint.
+- [x] Payments: Updated `PaymentsController` (`GET /payments`, `GET /payments/:id`, `GET /payments/orders/:orderId`) to expose flat CQRS read projections.
+- [ ] Products, Carts, Identity & Notifications: Update controllers and Swagger schemas.
 
-**Location**: `src/modules/*/primary-adapters/controllers/`, `src/modules/*/primary-adapters/dtos/`
+**Location**: `src/modules/*/primary-adapters/controllers/`, `src/modules/*/primary-adapters/dto/`
 
 ---
 
