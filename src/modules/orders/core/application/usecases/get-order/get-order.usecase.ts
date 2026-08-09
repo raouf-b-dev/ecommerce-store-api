@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderRepository } from '../../../domain/repositories/order-repository';
+import { OrderQueryService } from '../../ports/order-query.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -7,7 +7,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { IOrder } from '../../../domain/interfaces/order.interface';
+import { OrderDetailDTO } from '../../queries/results/order-detail.result';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
@@ -22,36 +22,36 @@ export interface GetOrderInput {
 @Injectable()
 export class GetOrderUseCase extends UseCase<
   GetOrderInput,
-  IOrder,
+  OrderDetailDTO,
   UseCaseError
 > {
-  constructor(private readonly orderRepository: OrderRepository) {
+  constructor(private readonly orderQueryService: OrderQueryService) {
     super();
   }
 
-  async execute(input: GetOrderInput): Promise<Result<IOrder, UseCaseError>> {
+  async execute(
+    input: GetOrderInput,
+  ): Promise<Result<OrderDetailDTO, UseCaseError>> {
     const { orderId, callerContext } = input;
-    const orderResult = await this.orderRepository.findById(orderId);
 
-    if (isFailure(orderResult)) {
+    const scope = OwnedResourceAccessPolicy.resolveResourceScope(
+      callerContext,
+      ORDER_ACCESS_PERMISSIONS,
+    );
+
+    if (!scope.allowed) {
       return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
     }
 
-    const order = orderResult.value;
-    if (!order) {
+    const orderResult = await this.orderQueryService.getById(
+      orderId,
+      scope.authorizedUserId,
+    );
+
+    if (isFailure(orderResult) || !orderResult.value) {
       return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
     }
 
-    if (
-      !OwnedResourceAccessPolicy.canViewResource(
-        callerContext,
-        order.userId,
-        ORDER_ACCESS_PERMISSIONS,
-      )
-    ) {
-      return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
-    }
-
-    return Result.success(order.toPrimitives());
+    return Result.success(orderResult.value);
   }
 }
