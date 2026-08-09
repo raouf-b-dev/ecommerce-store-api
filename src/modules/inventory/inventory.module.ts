@@ -33,6 +33,9 @@ import { InventoryReconciliationJob } from './primary-adapters/jobs/inventory-re
 import { InventoryScheduler } from './core/domain/schedulers/inventory.scheduler';
 import { BullMqInventoryScheduler } from './secondary-adapters/schedulers/bullmq-inventory.scheduler';
 import { InventoryProcessor } from './inventory.processor';
+import { InventoryQueryService } from './core/application/ports/inventory-query.service';
+import { PostgresInventoryQueryAdapter } from './secondary-adapters/query/postgres-inventory-query.adapter';
+import { ListInventoryUseCase } from './core/application/list-inventory/list-inventory.usecase';
 
 @Module({
   imports: [
@@ -101,12 +104,21 @@ import { InventoryProcessor } from './inventory.processor';
     GetOrderReservationsUseCase,
     SeedDemoInventoryUseCase,
     ReconcileInventoryUseCase,
+    ListInventoryUseCase,
+
+    // CQRS Presentation Query Service
+
+    {
+      provide: InventoryQueryService,
+      useClass: PostgresInventoryQueryAdapter,
+    },
 
     // Jobs & Processors:
     InventoryReconciliationJob,
     InventoryProcessor,
   ],
   exports: [
+    InventoryQueryService,
     CheckStockUseCase,
     ReserveStockUseCase,
     ReleaseStockUseCase,
