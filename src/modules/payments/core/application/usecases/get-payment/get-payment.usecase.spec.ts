@@ -1,60 +1,45 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { GetPaymentUseCase } from './get-payment.usecase';
-import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
+import { MockPaymentQueryService } from '../../../../testing/mocks/payment-query-service.mock';
+import { PaymentDtoTestFactory } from '../../../../testing/factories/payment-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CallerContext,
+  createUserCallerContext,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('GetPaymentUseCase', () => {
   let useCase: GetPaymentUseCase;
-  let paymentRepository: MockPaymentRepository;
+  let mockQueryService: MockPaymentQueryService;
 
-  const adminContext: CallerContext = {
-    kind: 'user',
+  const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
     permissions: new Set(['view_all_payments']),
-  };
+  });
 
-  const customerContext: CallerContext = {
-    kind: 'user',
+  const customerContext: CallerContext = createUserCallerContext({
     userId: 2,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_payments']),
-  };
+  });
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GetPaymentUseCase,
-        {
-          provide: PaymentRepository,
-          useClass: MockPaymentRepository,
-        },
-      ],
-    }).compile();
+  const sampleDetail = PaymentDtoTestFactory.createPaymentDetailDTO({
+    id: 123,
+    userId: 2,
+  });
 
-    useCase = module.get<GetPaymentUseCase>(GetPaymentUseCase);
-    paymentRepository = module.get<PaymentRepository>(
-      PaymentRepository,
-    ) as MockPaymentRepository;
+  beforeEach(() => {
+    mockQueryService = new MockPaymentQueryService();
+    useCase = new GetPaymentUseCase(mockQueryService);
   });
 
   afterEach(() => {
-    paymentRepository.reset();
+    mockQueryService.reset();
   });
 
   it('should return a payment if found and caller is admin', async () => {
-    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 123,
-      userId: 456,
-    });
-    const payment = PaymentMapper.toDomain(paymentEntity);
-
-    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+    mockQueryService.mockSuccessfulGetById(sampleDetail);
 
     const result = await useCase.execute({
       paymentId: 123,
@@ -63,17 +48,11 @@ describe('GetPaymentUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.id).toBe(123);
-    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
+    expect(mockQueryService.getById).toHaveBeenCalledWith(123, undefined);
   });
 
-  it('should return a payment if found and caller is the owner', async () => {
-    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 123,
-      userId: 2,
-    });
-    const payment = PaymentMapper.toDomain(paymentEntity);
-
-    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+  it('should return a payment if found and belongs to caller', async () => {
+    mockQueryService.mockSuccessfulGetById(sampleDetail);
 
     const result = await useCase.execute({
       paymentId: 123,
@@ -82,41 +61,21 @@ describe('GetPaymentUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.id).toBe(123);
+    expect(mockQueryService.getById).toHaveBeenCalledWith(123, 2);
   });
 
-  it('should return 404 if payment userId does not match caller userId', async () => {
-    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
-      id: 123,
-      userId: 456,
-    });
-    const payment = PaymentMapper.toDomain(paymentEntity);
-
-    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+  it('should return failure if payment is not found for scope', async () => {
+    mockQueryService.mockSuccessfulGetById(null);
 
     const result = await useCase.execute({
-      paymentId: 123,
+      paymentId: 404,
       callerContext: customerContext,
     });
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment with id 123 not found',
+      'Payment with id 404 not found',
       UseCaseError,
     );
-  });
-
-  it('should fail if payment is not found', async () => {
-    paymentRepository.mockPaymentNotFound(123);
-
-    const result = await useCase.execute({
-      paymentId: 123,
-      callerContext: adminContext,
-    });
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Payment with id 123 not found',
-    );
-    expect(paymentRepository.findById).toHaveBeenCalledWith(123);
   });
 });
