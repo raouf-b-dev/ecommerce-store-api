@@ -1,11 +1,18 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "ignoreDeprecations": "6.0",
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
+  },
   "exclude": [
     "node_modules",
     "test",
     "dist",
     "data-source.ts",
     "scripts",
-    "**/*spec.ts"
+    "**/*spec.ts",
+    "src/**/testing/**",
+    "src/testing/**"
   ]
 }
