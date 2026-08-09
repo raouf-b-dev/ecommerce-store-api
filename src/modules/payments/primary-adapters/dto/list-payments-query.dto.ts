@@ -1,68 +1,73 @@
-// src/modules/payments/presentation/dto/list-payments-query.dto.ts
-import { IsOptional, IsEnum, IsNumber, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsIn } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
-import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
 export class ListPaymentsQueryDto {
-  @ApiPropertyOptional({
-    example: 'order-123',
-    description: 'Filter by order ID',
-  })
   @IsOptional()
-  @IsNumber()
-  orderId?: number;
-
+  @Type(() => Number)
   @ApiPropertyOptional({
-    example: 123,
-    description: 'Filter by user ID',
-  })
-  @IsOptional()
-  @IsNumber()
-  userId?: number;
-
-  @ApiPropertyOptional({
-    enum: PaymentStatusType,
-    example: PaymentStatusType.COMPLETED,
-    description: 'Filter by payment status',
-  })
-  @IsOptional()
-  @IsEnum(PaymentStatusType)
-  status?: PaymentStatusType;
-
-  @ApiPropertyOptional({
-    enum: PaymentMethodType,
-    example: PaymentMethodType.STRIPE,
-    description: 'Filter by payment method',
-  })
-  @IsOptional()
-  @IsEnum(PaymentMethodType)
-  paymentMethod?: PaymentMethodType;
-
-  @ApiPropertyOptional({
-    example: 1,
-    description: 'Page number',
+    description: 'Page number for pagination',
     minimum: 1,
     default: 1,
   })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
   page?: number = 1;
 
+  @IsOptional()
+  @Type(() => Number)
   @ApiPropertyOptional({
-    example: 20,
-    description: 'Items per page',
+    description: 'Number of items per page',
     minimum: 1,
     maximum: 100,
-    default: 20,
+    default: 10,
   })
+  limit?: number = 10;
+
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(100)
   @Type(() => Number)
-  limit?: number = 20;
+  @ApiPropertyOptional({
+    description: 'Filter payments by user ID',
+  })
+  userId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @ApiPropertyOptional({
+    description: 'Filter payments by order ID',
+  })
+  orderId?: number;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter payments by status',
+  })
+  status?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter payments by user email',
+  })
+  userEmail?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter payments by user name',
+  })
+  userName?: string;
+
+  @IsOptional()
+  @IsIn(['createdAt', 'amount', 'status', 'id'])
+  @ApiPropertyOptional({
+    enum: ['createdAt', 'amount', 'status', 'id'],
+    default: 'createdAt',
+  })
+  sortBy?: 'createdAt' | 'amount' | 'status' | 'id' = 'createdAt';
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  @Transform(({ value }) => value?.toLowerCase())
+  @ApiPropertyOptional({
+    enum: ['asc', 'desc'],
+    default: 'desc',
+  })
+  sortOrder?: 'asc' | 'desc' = 'desc';
 }
