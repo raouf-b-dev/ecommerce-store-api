@@ -12,10 +12,13 @@ import {
   CART_GATEWAY,
   INVENTORY_RESERVATION_GATEWAY,
   PAYMENT_GATEWAY,
+  ORDER_QUERY_SERVICE,
 } from './order.token';
 
 import { CachedOrderRepository } from './secondary-adapters/repositories/cached-order-repository/cached.order-repository';
 import { PostgresOrderRepository } from './secondary-adapters/repositories/postgres-order-repository/postgres.order-repository';
+import { PostgresOrderQueryAdapter } from './secondary-adapters/query/postgres-order-query.adapter';
+import { OrderQueryService } from './core/application/ports/order-query.service';
 import { ModuleUserGateway } from './secondary-adapters/adapters/module-user.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
 import { ModuleInventoryReservationGateway } from './secondary-adapters/adapters/module-inventory-reservation.gateway';
@@ -209,10 +212,20 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
     // Listeners
     CheckoutFailureListener,
 
+    // Query Port Binding
+    {
+      provide: ORDER_QUERY_SERVICE,
+      useClass: PostgresOrderQueryAdapter,
+    },
+    {
+      provide: OrderQueryService,
+      useExisting: ORDER_QUERY_SERVICE,
+    },
+
     // Processors
     PaymentEventsProcessor,
     OrdersProcessor,
   ],
-  exports: [OrderRepository, SeedDemoOrdersUseCase],
+  exports: [OrderRepository, OrderQueryService, SeedDemoOrdersUseCase],
 })
 export class OrdersModule {}
