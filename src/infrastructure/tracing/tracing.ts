@@ -28,7 +28,7 @@ if (isTracingEnabled) {
         '@opentelemetry/instrumentation-http': {
           ignoreIncomingRequestHook: (req: IncomingMessage) => {
             const path = req.url || '';
-            return path.startsWith('/health') || path.startsWith('/metrics');
+            return path.includes('/health') || path.includes('/metrics');
           },
         },
       }),
@@ -47,12 +47,12 @@ if (isTracingEnabled) {
     sdk
       .shutdown()
       .then(() => {
-        // eslint-disable-next-line no-console
-        console.log('OTel SDK shut down successfully');
+        process.stderr.write('OTel SDK shut down successfully\n');
       })
       .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('Error shutting down OTel SDK', error);
+        process.stderr.write(
+          `Error shutting down OTel SDK: ${String(error)}\n`,
+        );
       });
   };
 
