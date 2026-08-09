@@ -1,6 +1,8 @@
 export abstract class CachePort {
   abstract ttl(key: string): Promise<number>;
   abstract get<T>(key: string, path?: string): Promise<T | null>;
+  abstract getMany<T>(keys: string[], path?: string): Promise<(T | null)[]>;
+
   abstract getAll<T>(
     index: string,
     query?: string,
@@ -10,7 +12,7 @@ export abstract class CachePort {
     key: string,
     value: T,
     options?: { path?: string; ttl?: number; nx?: boolean },
-  ): Promise<void>;
+  ): Promise<boolean>;
   abstract setAll(
     entries: { key: string; value: any }[],
     options?: { path?: string; ttl?: number; nx?: boolean },

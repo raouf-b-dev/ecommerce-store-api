@@ -47,7 +47,10 @@ export class PostgresReservationRepository implements ReservationRepository {
         async (manager) => {
           // 1. Check and Update Inventory
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
 
           // Lock inventory rows for update
           const inventoryItems = await manager.find(InventoryEntity, {
@@ -195,7 +198,10 @@ export class PostgresReservationRepository implements ReservationRepository {
 
           // Restore Inventory
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
           const inventoryItems = await manager.find(InventoryEntity, {
             where: { productId: In(productIds) },
             lock: { mode: 'pessimistic_write' },
@@ -256,7 +262,10 @@ export class PostgresReservationRepository implements ReservationRepository {
           }
 
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
           const inventoryItems = await manager.find(InventoryEntity, {
             where: { productId: In(productIds) },
             lock: { mode: 'pessimistic_write' },

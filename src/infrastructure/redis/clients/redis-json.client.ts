@@ -34,6 +34,16 @@ export class RedisJsonClient {
     return await this.redisService.client.json.get(fullKey, { path });
   }
 
+  async mGet(
+    keys: string[],
+    path: string = '$',
+  ): Promise<(RedisJSON | null)[]> {
+    if (keys.length === 0) return [];
+    const fullKeys = keys.map((k) => this.redisService.getFullKey(k));
+    const results = await this.redisService.client.json.mGet(fullKeys, path);
+    return (results || []) as (RedisJSON | null)[];
+  }
+
   async del(key: string, path?: string): Promise<void> {
     const fullKey = this.redisService.getFullKey(key);
     await this.redisService.client.json.del(fullKey, path);

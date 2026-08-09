@@ -7,6 +7,7 @@ import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/red
 import { Product } from '../../../core/domain/entities/product';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
+import { ProductCacheMapper } from '../../persistence/mappers/product.mapper';
 
 export class CachedProductRepository implements ProductRepository {
   constructor(
@@ -34,7 +35,7 @@ export class CachedProductRepository implements ProductRepository {
       if (savedProduct.id !== null) {
         await this.cacheService.set(
           `${PRODUCT_REDIS.CACHE_KEY}:${savedProduct.id}`,
-          savedProduct.toPrimitives(),
+          ProductCacheMapper.toCache(savedProduct),
           { ttl: PRODUCT_REDIS.EXPIRATION },
         );
       }
@@ -53,7 +54,7 @@ export class CachedProductRepository implements ProductRepository {
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<Product>(Product.fromPrimitives(cached));
+        return Result.success<Product>(ProductCacheMapper.fromCache(cached));
       }
 
       // Fallback to Postgres
@@ -63,13 +64,70 @@ export class CachedProductRepository implements ProductRepository {
       // Cache the result
       await this.cacheService.set(
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
-        dbResult.value.toPrimitives(),
+        ProductCacheMapper.toCache(dbResult.value),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
 
       return dbResult;
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find product`, error);
+    }
+  }
+
+  async findByIds(ids: number[]): Promise<Result<Product[], RepositoryError>> {
+    try {
+      if (ids.length === 0) return Result.success([]);
+      const uniqueIds = [...new Set(ids)];
+      const cacheKeys = uniqueIds.map(
+        (id) => `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
+      );
+
+      // Perform a single Redis JSON MGET command for all keys
+      const cachedResults = await this.cacheService.getMany<
+        IProduct | IProduct[]
+      >(cacheKeys);
+
+      const foundProducts: Product[] = [];
+      const missingIds: number[] = [];
+
+      uniqueIds.forEach((id, index) => {
+        const rawCached = cachedResults[index];
+        const cached: IProduct | null = Array.isArray(rawCached)
+          ? rawCached[0] || null
+          : rawCached || null;
+
+        if (cached) {
+          foundProducts.push(ProductCacheMapper.fromCache(cached));
+        } else {
+          missingIds.push(id);
+        }
+      });
+
+      if (missingIds.length > 0) {
+        const dbResult = await this.postgresRepo.findByIds(missingIds);
+        if (dbResult.isFailure) return dbResult;
+
+        const fetchedFromDb = dbResult.value;
+        foundProducts.push(...fetchedFromDb);
+
+        const cacheEntries = fetchedFromDb.map((product) => ({
+          key: `${PRODUCT_REDIS.CACHE_KEY}:${product.id}`,
+          value: ProductCacheMapper.toCache(product),
+        }));
+
+        if (cacheEntries.length > 0) {
+          await this.cacheService.setAll(cacheEntries, {
+            ttl: PRODUCT_REDIS.EXPIRATION,
+          });
+        }
+      }
+
+      return Result.success(foundProducts);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to find products by IDs',
+        error,
+      );
     }
   }
 
@@ -83,7 +141,9 @@ export class CachedProductRepository implements ProductRepository {
         const cachedPrimitives = await this.cacheService.getAll<IProduct>(
           PRODUCT_REDIS.INDEX,
         );
-        const products = cachedPrimitives.map((p) => Product.fromPrimitives(p));
+        const products = cachedPrimitives.map((p) =>
+          ProductCacheMapper.fromCache(p),
+        );
         return Result.success(products);
       }
 
@@ -96,7 +156,7 @@ export class CachedProductRepository implements ProductRepository {
 
       const cacheEntries = products.map((product) => ({
         key: `${PRODUCT_REDIS.CACHE_KEY}:${product.id}`,
-        value: product.toPrimitives(),
+        value: ProductCacheMapper.toCache(product),
       }));
 
       await this.cacheService.setAll(cacheEntries, {

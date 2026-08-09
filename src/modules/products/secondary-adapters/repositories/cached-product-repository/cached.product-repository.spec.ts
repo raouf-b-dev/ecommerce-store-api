@@ -35,7 +35,7 @@ describe('CachedProductRepository', () => {
   describe('save', () => {
     it('should save to postgres and cache', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(domainProduct));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repo.save(domainProduct);
@@ -58,7 +58,7 @@ describe('CachedProductRepository', () => {
       );
 
       postgresRepo.save.mockResolvedValue(Result.success(expensiveProduct));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repo.save(expensiveProduct);
@@ -97,7 +97,7 @@ describe('CachedProductRepository', () => {
 
     it('should return failure if cache.delete (IS_CACHED_FLAG) throws', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(domainProduct));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockRejectedValue(new Error('Flag delete error'));
 
       const result = await repo.save(domainProduct);
@@ -131,7 +131,7 @@ describe('CachedProductRepository', () => {
 
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findById.mockResolvedValue(Result.success(domainProduct));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
 
       const result = await repo.findById(productId);
 
@@ -204,7 +204,7 @@ describe('CachedProductRepository', () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.findAll.mockResolvedValue(Result.success(domainProducts));
       cacheService.setAll.mockResolvedValue(undefined);
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
 
       const result = await repo.findAll();
 
@@ -366,6 +366,39 @@ describe('CachedProductRepository', () => {
         'Failed to delete product',
         RepositoryError,
       );
+    });
+  });
+
+  describe('findByIds', () => {
+    it('should return empty array if no ids provided', async () => {
+      const result = await repo.findByIds([]);
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual([]);
+    });
+
+    it('should return products from cache if all present using getMany', async () => {
+      cacheService.getMany.mockResolvedValue([mockProduct]);
+
+      const result = await repo.findByIds([domainProduct.id!]);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.length).toBe(1);
+      expect(cacheService.getMany).toHaveBeenCalledWith([
+        `${PRODUCT_REDIS.CACHE_KEY}:${domainProduct.id}`,
+      ]);
+      expect(postgresRepo.findByIds).not.toHaveBeenCalled();
+    });
+
+    it('should fallback to postgres for missing ids and cache them', async () => {
+      cacheService.getMany.mockResolvedValue([null]);
+      postgresRepo.findByIds.mockResolvedValue(Result.success([domainProduct]));
+      cacheService.setAll.mockResolvedValue(undefined);
+
+      const result = await repo.findByIds([domainProduct.id!]);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.findByIds).toHaveBeenCalledWith([domainProduct.id!]);
+      expect(cacheService.setAll).toHaveBeenCalled();
     });
   });
 });

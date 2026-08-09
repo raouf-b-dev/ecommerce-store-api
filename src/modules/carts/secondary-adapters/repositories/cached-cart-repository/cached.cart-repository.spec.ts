@@ -49,7 +49,7 @@ describe('CachedCartRepository', () => {
         Result.failure(new RepositoryError('Cart not found')),
       );
       postgresRepo.mockSuccessfulSave();
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
 
       const result = await repository.findByuserId(mockCart.userId);
 

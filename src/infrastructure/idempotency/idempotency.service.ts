@@ -21,6 +21,21 @@ export class IdempotencyService extends IdempotencyStore {
     const cacheKey = `${IDEMPOTENCY_REDIS.PREFIX}:${key}`;
 
     try {
+      // 1. Atomic lock attempt using SET NX
+      const isLocked = await this.cacheService.set(
+        cacheKey,
+        { status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS },
+        { ttl: ttlSeconds, nx: true },
+      );
+
+      if (isLocked) {
+        this.logger.log(
+          `Idempotency key ${key} marked as in-progress (atomic lock)`,
+        );
+        return { isNew: true };
+      }
+
+      // 2. Key already exists — retrieve status/payload
       const existing = await this.cacheService.get<{
         status: string;
         data?: T;
@@ -40,14 +55,7 @@ export class IdempotencyService extends IdempotencyStore {
         }
       }
 
-      // Mark as in-progress
-      await this.cacheService.set(
-        cacheKey,
-        { status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS },
-        { ttl: ttlSeconds },
-      );
-      this.logger.log(`Idempotency key ${key} marked as in-progress`);
-      return { isNew: true };
+      return { isNew: false };
     } catch (error) {
       this.logger.error(`Error checking idempotency key ${key}:`, error);
       // On error, allow the request to proceed (fail-open)
