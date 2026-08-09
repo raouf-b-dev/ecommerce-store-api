@@ -10,6 +10,9 @@ import {
 import { CheckoutCommand } from '../../core/application/usecases/checkout/checkout.usecase';
 import { DeliverOrderCommand } from '../../core/application/usecases/deliver-order/deliver-order.usecase';
 import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type';
+import { OrderListItemDTO } from '../../core/application/queries/results/order-list-item.result';
+import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
+import { OrderItemDetailDTO } from '../../core/application/queries/results/order-item-detail.result';
 
 export class OrderDtoTestFactory {
   static createCheckoutCommand(
@@ -97,5 +100,58 @@ export class OrderDtoTestFactory {
       items: items,
     };
     return { ...baseUser, ...overrides };
+  }
+
+  static createOrderItemDetailDTO(
+    overrides?: Partial<OrderItemDetailDTO>,
+  ): OrderItemDetailDTO {
+    const baseItem: OrderItemDetailDTO = {
+      productId: 10,
+      sku: 'SKU-10',
+      title: 'Sample Product',
+      unitPrice: 50,
+      quantity: 2,
+      subtotal: 100,
+    };
+    return { ...baseItem, ...overrides };
+  }
+
+  static createOrderDetailDTO(
+    overrides?: Partial<OrderDetailDTO>,
+  ): OrderDetailDTO {
+    const baseDetail: OrderDetailDTO = {
+      id: 1,
+      orderNumber: 'ORD-1',
+      userId: 2,
+      userName: 'John Customer',
+      userEmail: 'john@example.com',
+      status: 'PENDING_PAYMENT',
+      shippingAddress: '123 Main St',
+      items: [this.createOrderItemDetailDTO()],
+      totalAmount: 100,
+      totalPrice: 100,
+      currency: 'USD',
+      createdAt: new Date('2026-08-09T20:00:00.000Z'),
+      updatedAt: new Date('2026-08-09T20:00:00.000Z'),
+    };
+    return { ...baseDetail, ...overrides };
+  }
+
+  static createOrderListItemDTO(
+    overrides?: Partial<OrderListItemDTO>,
+  ): OrderListItemDTO {
+    const baseItem: OrderListItemDTO = {
+      id: 100,
+      orderNumber: 'ORD-100',
+      userId: 2,
+      userName: 'John Doe',
+      userEmail: 'john@example.com',
+      status: 'PENDING_PAYMENT',
+      itemCount: 2,
+      totalAmount: 150,
+      currency: 'USD',
+      createdAt: new Date('2026-08-09T20:00:00.000Z'),
+    };
+    return { ...baseItem, ...overrides };
   }
 }
