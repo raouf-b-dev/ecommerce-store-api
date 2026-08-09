@@ -20,19 +20,20 @@
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
-| Phase  | Name                         | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                         | Location                                                                                       |
-| :----- | :--------------------------- | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **0**  | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                            | `src/modules/`, `src/infrastructure/`                                                          |
-| **1**  | ACL Gateway & SAGA           | ✅ Done | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                         | `src/modules/orders/`, `src/modules/carts/`                                                    |
-| **2**  | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection · idempotency fail-open on Redis errors                                                                                                                                                                          | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                        |
-| **3**  | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                               | `src/modules/*/secondary-adapters/repositories/cached-*/`                                      |
-| **4**  | Test Suite Foundation        | ✅ Done | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                     | `src/modules/*/`, `src/testing/`, `test/architecture/`                                         |
-| **5**  | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                | `data-source.ts`, `package.json`                                                               |
-| **6**  | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                    | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                            |
-| **7**  | Security & Authentication    | ✅ Done | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                 | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                        |
-| **8**  | Observability & SaaS         | ✅ Done | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`) | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md` |
-| **9**  | Local DB Seeding             | ✅ Done | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                             | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                        |
-| **10** | Security Hardening Phase 2   | ✅ Done | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                          | `.github/`, `docs/security/`, `src/infrastructure/`                                            |
+| Phase  | Name                         | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                                                            | Location                                                                                       |
+| :----- | :--------------------------- | :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **0**  | Foundation                   | ✅ Done | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                               | `src/modules/`, `src/infrastructure/`                                                          |
+| **1**  | ACL Gateway & SAGA           | ✅ Done | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                            | `src/modules/orders/`, `src/modules/carts/`                                                    |
+| **2**  | Result Pattern & Idempotency | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis-backed store for checkout protection · idempotency fail-open on Redis errors                                                                                                                                                                                                             | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                        |
+| **3**  | Decorator-based Caching      | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                  | `src/modules/*/secondary-adapters/repositories/cached-*/`                                      |
+| **4**  | Test Suite Foundation        | ✅ Done | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                        | `src/modules/*/`, `src/testing/`, `test/architecture/`                                         |
+| **5**  | Code Quality (v0.2.0)        | ✅ Done | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                   | `data-source.ts`, `package.json`                                                               |
+| **6**  | Deployment Blockers          | ✅ Done | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                       | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                            |
+| **7**  | Security & Authentication    | ✅ Done | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                    | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                        |
+| **8**  | Observability & SaaS         | ✅ Done | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                    | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md` |
+| **9**  | Local DB Seeding             | ✅ Done | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                        |
+| **10** | Security Hardening Phase 2   | ✅ Done | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                             | `.github/`, `docs/security/`, `src/infrastructure/`                                            |
+| **11** | Data Integrity & Concurrency | ✅ Done | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · RedisJSON cart TTL (30 days) & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                 |
 
 ---
 
@@ -40,17 +41,18 @@
 
 > **Execution guide**: Pick tasks strictly in order from top to bottom. Do not deploy the first production release until **Phase 14 (Single-Instance Production Deploy Gate)** is completed. Complete **Phase 15** before scaling to multiple application instances.
 
-| Phase  | Name                             | Status | Target / Focus                                                                       |
-| :----- | :------------------------------- | :----- | :----------------------------------------------------------------------------------- |
-| **10** | Security Hardening Phase 2       | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                      |
-| **11** | Data Integrity & Concurrency     | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
-| **12** | CQRS Read Path                   | `[ ]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters                    |
-| **13** | Minimum Viable Test Coverage     | `[/]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E         |
-| **14** | Single-Instance Production Gate  | `[ ]`  | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
-| **15** | Multi-Instance & Scale Readiness | `[ ]`  | **Horizontal Scale** — Transactional Outbox, SAGA DLQ timeout, search sync, locks    |
-| **16** | Performance Engineering          | `[ ]`  | **Observability** — k6 load baselines, V8 profiling, RED/USE Grafana alert rules     |
-| **17** | Product Ecosystem & Integrations | `[ ]`  | **Features & Payments** — real email, cart recovery, webhooks, Stripe webhook dedup  |
-| **18** | Enterprise Scale & GitOps        | `[ ]`  | **Infrastructure & Enterprise** — Kafka/RabbitMQ, K8s, Canary, S3 backup encryption  |
+| Phase  | Name                         | Status | Target / Focus                                                               |
+| :----- | :--------------------------- | :----- | :--------------------------------------------------------------------------- |
+| **10** | Security Hardening Phase 2   | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits              |
+| **11** | Data Integrity & Concurrency | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL            |
+| **12** | CQRS Read Path               | `[/]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters            |
+| **13** | Minimum Viable Test Coverage | `[ ]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E |
+
+| **14** | Single-Instance Production Gate | `[ ]` | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
+| **15** | Multi-Instance & Scale Readiness | `[ ]` | **Horizontal Scale** — Transactional Outbox, SAGA DLQ timeout, search sync, locks |
+| **16** | Performance Engineering | `[ ]` | **Observability** — k6 load baselines, V8 profiling, RED/USE Grafana alert rules |
+| **17** | Product Ecosystem & Integrations | `[ ]` | **Features & Payments** — real email, cart recovery, webhooks, Stripe webhook dedup |
+| **18** | Enterprise Scale & GitOps | `[ ]` | **Infrastructure & Enterprise** — Kafka/RabbitMQ, K8s, Canary, S3 backup encryption |
 
 ---
 
@@ -97,126 +99,49 @@
 
 ---
 
-## 🛡️ Phase 11 — Data Integrity, Concurrency & Inventory Control
-
-> **Goal**: Protect the persistence layer from silent data corruption under concurrent writes — especially inventory during flash-sale checkout. **Complete before Phase 14 deployment.**
-
----
-
-### [x] Optimistic Concurrency Control (Version-based Locking)
-
-**What**: Add version-based optimistic concurrency control (OCC) to core database schemas to prevent lost updates, maintaining pure domain model isolation per `CONVENTIONS.md` Section 13.
-
-**Scope**:
-
-- Add a `@VersionColumn()` field named `version` to core TypeORM database entities (`OrderEntity`, `CartEntity`, `UserEntity`, `InventoryEntity`, `ProductEntity`).
-- Keep domain entities, interfaces, and mappers pure — version is handled strictly as an infrastructure/persistence concern passed via repository ports and DTO parameters.
-- Require the entity's current `version` in HTTP update DTOs (e.g. `UpdateProductDto`) for long-lived cross-request interactions.
-- Map TypeORM `OptimisticLockVersionMismatchError` to a clean `409 Conflict` HTTP response via `GlobalExceptionFilter`.
-- Write dedicated unit tests simulating concurrent updates — first succeeds, second returns 409.
-
-**Location**: `src/modules/*/secondary-adapters/orm/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/primary-adapters/dto/`, `src/filters/`
-
----
-
-### [x] Pessimistic Locking for Stock Reservations
-
-**What**: Row-level locking (`SELECT ... FOR UPDATE`) for inventory reservation during checkout.
-
-**Status**: **Implemented** in `PostgresReservationRepository` — inventory rows are locked with `pessimistic_write` inside a transaction before decrementing `availableQuantity`.
-
-**Location**: `src/modules/inventory/secondary-adapters/repositories/postgres-reservation-repository/`
-
----
-
-### [x] Shopping Cart Expiration & Redis TTL Enforcement
-
-**What**: Enforce strict Time-To-Live (TTL) on RedisJSON shopping carts to automatically evict abandoned carts and free memory.
-
-**Scope**:
-
-- Configure configurable TTL (30 days for user carts) on Redis keys created by `RedisCartRepository`.
-- Refresh TTL on every cart update operation.
-- Implement graceful handling when a client attempts to access an expired cart (auto-initialize a fresh cart cleanly).
-
-**Location**: `src/modules/carts/secondary-adapters/repositories/`
-
----
-
-### [x] Inventory Reconciliation Audit Job
-
-**What**: Implement a periodic background audit job that verifies inventory mathematical invariants (`totalQuantity == availableQuantity + reservedQuantity + soldQuantity`) and flags discrepancies.
-
-**Scope**:
-
-- Write a BullMQ cron job that scans inventory records and calculates reserved stock against active reservations.
-- Detect stock leaks or drift caused by unhandled system crashes.
-- Log structured warnings and emit Prometheus metrics (`inventory_drift_count`) when discrepancies are detected.
-
-**Location**: `src/modules/inventory/primary-adapters/jobs/`
-
----
-
-### [x] Transaction Isolation Level Audit & Query Optimization
-
-**What**: Review transaction isolation configurations, analyze slow queries, and provision composite and partial indexes.
-
-**Scope**:
-
-- Audit transactional boundaries for isolation overrides (e.g. `REPEATABLE READ` for complex inventory adjustments).
-- Execute `EXPLAIN ANALYZE` on primary search/filter queries under realistic mock database sizes (10k+ rows).
-- Provision composite indexes based on filter frequencies (e.g. `(userID, status)` on orders).
-- Add partial indexes on active flags where missing (e.g. active carts, non-deleted products).
-
-**Location**: `src/infrastructure/database/migrations/`, `docs/data/`
-
----
-
 ## ⚡ Phase 12 — CQRS Read Path & Presentation Projections
 
 > **Goal**: Ship list and detail endpoints that return flat, presentation-ready DTOs with resolved customer names, emails, and product SKUs — in a single SQL query per page. **Complete before Phase 14 deployment** so the frontend is not forced to N+1-resolve IDs across orders, inventory, and payments.
 
 ---
 
-### [ ] Dedicated Query Ports & Read-Model DTOs
+### [/] Dedicated Query Ports & Read-Model DTOs
 
 **What**: Create query-specific ports (separate from domain repositories) returning flat, presentation-optimized DTOs.
 
 **Scope**:
 
-- Define `OrderListItemDTO`, `OrderDetailDTO`, `InventoryListItemDTO`, `PaymentListItemDTO` with resolved names/SKUs alongside ID fields.
-- Create query port abstract classes: `OrderQueryService`, `InventoryQueryService`, `PaymentQueryService` in the application layer.
-- Port contracts are infrastructure-agnostic — no assumptions about JOINs, views, or caching.
+- [x] Orders: Created `OrderListItemResult`, `OrderDetailResult`, `OrderItemDetailResult` in `src/modules/orders/core/application/queries/results/`.
+- [x] Orders: Created `OrderQueryService` in `src/modules/orders/core/application/ports/order-query.service.ts`.
+- [ ] Inventory & Payments: Define `InventoryListItemResult`, `PaymentListItemResult` and create `InventoryQueryService`, `PaymentQueryService`.
 
-**Location**: `src/modules/*/core/application/ports/`
+**Location**: `src/modules/*/core/application/ports/`, `src/modules/*/core/application/queries/`
 
 ---
 
-### [ ] Cross-Context Query Adapters
+### [/] Cross-Context Query Adapters & Mappers
 
-**What**: TypeORM `QueryBuilder` adapters with controlled cross-context `LEFT JOIN` on the read path only.
+**What**: TypeORM `QueryBuilder` adapters with controlled cross-context `LEFT JOIN` on the read path and dedicated query mappers.
 
 **Scope**:
 
-- Implement adapters in `secondary-adapters/query/` (not `repositories/`).
-- JOIN orders → `customers` (name, email), `products` (SKU, catalog details) in one query per list/detail request.
-- Document each cross-context JOIN: owning bounded context, why read-only JOIN is acceptable.
+- [x] Orders: Implemented `PostgresOrderQueryAdapter` in `secondary-adapters/query/` and `OrderQueryMapper` in `secondary-adapters/mappers/query/`.
+- [x] Orders: Defined `RawOrderListQueryRow` in `secondary-adapters/dto/`.
+- [x] Orders: JOIN orders → `users` (name, email), `products` (SKU, catalog details) in one query per list/detail request.
+- [ ] Inventory & Payments: Implement query adapters and mappers for Inventory and Payments modules.
 
-**Location**: `src/modules/*/secondary-adapters/query/`
+**Location**: `src/modules/*/secondary-adapters/query/`, `src/modules/*/secondary-adapters/mappers/query/`
 
 ---
 
-### [ ] Query Use Case Refactoring
+### [/] Query Use Case Refactoring
 
 **What**: Refactor read-only use cases to inject query ports instead of domain repositories.
 
 **Scope**:
 
-- Update `ListOrdersUseCase` and `GetOrderUseCase` to inject `OrderQueryService`.
-- Update `ListInventoryUseCase` and payment list/detail use cases similarly.
-- Remove costly `.toPrimitives()` mapping on full domain entity arrays for list/search routes.
-
-**Location**: `src/modules/*/core/application/usecases/`
+- [x] Orders: Refactored `ListOrdersUsecase` and `GetOrderUseCase` to inject `OrderQueryService` and enforce `OwnedResourceAccessPolicy`.
+- [ ] Inventory & Payments: Update `ListInventoryUseCase` and payment list/detail use cases similarly.
 
 ---
 

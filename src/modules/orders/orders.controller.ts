@@ -93,7 +93,6 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'List of orders retrieved successfully.',
-    type: [OrderResponseDto],
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findAll(

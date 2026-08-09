@@ -74,7 +74,7 @@ export class CreateOrderStep extends BaseJobHandler<
 
     return Result.success({
       ...childData,
-      orderId: order.id!,
+      orderId: order.id,
       orderTotal: order.totalPrice,
       orderCurrency: 'USD',
     });

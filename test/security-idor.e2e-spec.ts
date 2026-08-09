@@ -182,9 +182,12 @@ describe('Security IDOR (e2e)', () => {
         .set(bearer(userA.accessToken));
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
+      const orders = Array.isArray(response.body)
+        ? response.body
+        : response.body.items;
+      expect(Array.isArray(orders)).toBe(true);
 
-      for (const order of response.body) {
+      for (const order of orders) {
         if (order.userId != null) {
           expect(order.userId).toBe(userA.userId);
         }
