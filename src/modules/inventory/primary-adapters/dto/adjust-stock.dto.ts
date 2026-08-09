@@ -10,7 +10,7 @@ export class AdjustStockDto {
   })
   @IsNumber()
   @IsInt()
-  quantity: number;
+  quantity!: number;
 
   @ApiProperty({
     enum: StockAdjustmentType,
@@ -18,7 +18,7 @@ export class AdjustStockDto {
     description: 'Type of adjustment',
   })
   @IsEnum(StockAdjustmentType)
-  type: StockAdjustmentType;
+  type!: StockAdjustmentType;
 
   @ApiPropertyOptional({
     example: 'Received new shipment',

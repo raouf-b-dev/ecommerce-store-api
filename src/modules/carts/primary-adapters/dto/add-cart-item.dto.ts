@@ -8,7 +8,7 @@ export class AddCartItemDto {
     description: 'Product ID',
   })
   @IsNumber()
-  productId: number;
+  productId!: number;
 
   @ApiProperty({
     example: 2,
@@ -17,5 +17,5 @@ export class AddCartItemDto {
   @IsNumber()
   @IsPositive()
   @Min(1)
-  quantity: number;
+  quantity!: number;
 }

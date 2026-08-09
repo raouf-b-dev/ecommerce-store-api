@@ -3,11 +3,11 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('permissions')
 export class PermissionEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  code: string;
+  code!: string;
 
-  @Column({ nullable: true })
-  description: string;
+  @Column({ type: 'varchar', nullable: true })
+  description!: string | null;
 }

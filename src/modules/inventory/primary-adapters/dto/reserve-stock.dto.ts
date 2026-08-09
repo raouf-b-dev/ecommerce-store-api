@@ -10,7 +10,7 @@ export class ReserveStockDto {
     description: 'Order ID for tracking',
   })
   @IsNumber()
-  orderId: number;
+  orderId!: number;
 
   @ApiProperty({
     type: [ReserveStockItemDto],
@@ -19,5 +19,5 @@ export class ReserveStockDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ReserveStockItemDto)
-  items: ReserveStockItemDto[];
+  items!: ReserveStockItemDto[];
 }

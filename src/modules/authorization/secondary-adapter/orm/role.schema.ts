@@ -12,26 +12,26 @@ import { RolePermissionEntity } from './role-permission.schema';
 @Entity('roles')
 export class RoleEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  code: string;
+  code!: string;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ type: 'boolean', default: false, name: 'is_system' })
-  isSystem: boolean;
+  isSystem!: boolean;
 
   @OneToMany(() => RolePermissionEntity, (rp) => rp.role, {
     eager: true,
     cascade: true,
   })
-  rolePermissions: Relation<RolePermissionEntity>[];
+  rolePermissions!: Relation<RolePermissionEntity>[];
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

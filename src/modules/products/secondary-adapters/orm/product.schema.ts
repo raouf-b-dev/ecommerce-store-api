@@ -18,16 +18,16 @@ import { numericToNumber } from '../../../../infrastructure/database/number.tran
 })
 export class ProductEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @VersionColumn({ default: 1 })
-  version: number;
+  version!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ default: '' })
-  slug: string;
+  slug!: string;
 
   @Column({ nullable: true })
   description?: string;
@@ -36,10 +36,10 @@ export class ProductEntity {
   sku?: string;
 
   @Column('decimal', { precision: 12, scale: 2, transformer: numericToNumber })
-  price: number;
+  price!: number;
 
   @Column({ default: 'USD' })
-  currency: string;
+  currency!: string;
 
   @Column({ nullable: true, name: 'image_url' })
   imageUrl?: string;
@@ -48,15 +48,15 @@ export class ProductEntity {
   categoryId?: number;
 
   @Column({ default: true, name: 'is_active' })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

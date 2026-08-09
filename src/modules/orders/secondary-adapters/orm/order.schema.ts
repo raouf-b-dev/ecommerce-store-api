@@ -25,32 +25,32 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 @Index('idx_orders_user_status', ['userId', 'status'])
 export class OrderEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @VersionColumn({ default: 1 })
-  version: number;
+  version!: number;
 
   @Column({ name: 'user_id' })
-  userId: number;
+  userId!: number;
 
   @Column({ name: 'payment_id', type: 'int', nullable: true })
-  paymentId: number | null;
+  paymentId!: number | null;
 
   @Column({
     name: 'payment_method',
     type: 'varchar',
   })
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @Column({ name: 'shipping_address_id' })
-  shippingAddressId: number;
+  shippingAddressId!: number;
 
   // Relations
   @OneToMany(() => OrderItemEntity, (item: OrderItemEntity) => item.order, {
     cascade: true,
     eager: true,
   })
-  items: Relation<OrderItemEntity>[];
+  items!: Relation<OrderItemEntity>[];
 
   @OneToOne(() => ShippingAddressEntity, {
     cascade: true,
@@ -58,10 +58,10 @@ export class OrderEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'shipping_address_id' })
-  shippingAddress: ShippingAddressEntity;
+  shippingAddress!: ShippingAddressEntity;
 
   @Column({ type: 'text', nullable: true })
-  userNotes: string | null;
+  userNotes!: string | null;
 
   @Column({
     type: 'numeric',
@@ -69,7 +69,7 @@ export class OrderEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  subtotal: number;
+  subtotal!: number;
 
   @Column({
     type: 'numeric',
@@ -77,7 +77,7 @@ export class OrderEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  shippingCost: number;
+  shippingCost!: number;
 
   @Column({
     type: 'numeric',
@@ -85,18 +85,18 @@ export class OrderEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  totalPrice: number;
+  totalPrice!: number;
 
   @Column({
     type: 'varchar',
     enum: OrderStatus,
     default: OrderStatus.PENDING_PAYMENT,
   })
-  status: OrderStatus;
+  status!: OrderStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

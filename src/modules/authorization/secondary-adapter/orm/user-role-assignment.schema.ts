@@ -15,21 +15,21 @@ import { RoleEntity } from './role.schema';
 @Unique(['userId'])
 export class UserRoleAssignmentEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'user_id', type: 'int' })
-  userId: number; // opaque reference to Identity's User.id — no FK, no relation
+  userId!: number; // opaque reference to Identity's User.id — no FK, no relation
 
   @Column({ name: 'role_id' })
-  roleId: number;
+  roleId!: number;
 
   @ManyToOne(() => RoleEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'role_id' })
-  role: Relation<RoleEntity>;
+  role!: Relation<RoleEntity>;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

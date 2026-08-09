@@ -19,7 +19,7 @@ export class CreateOrderDto {
     description: 'Customer ID placing the order',
   })
   @IsNumber()
-  userId: number;
+  userId!: number;
 
   @ApiProperty({
     type: [CreateOrderItemDto],
@@ -28,7 +28,7 @@ export class CreateOrderDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
+  items!: CreateOrderItemDto[];
 
   @ApiProperty({
     type: ShippingAddressDto,
@@ -36,7 +36,7 @@ export class CreateOrderDto {
   })
   @ValidateNested()
   @Type(() => ShippingAddressDto)
-  shippingAddress: ShippingAddressDto;
+  shippingAddress!: ShippingAddressDto;
 
   @ApiProperty({
     example: PaymentMethodType.STRIPE,
@@ -44,7 +44,7 @@ export class CreateOrderDto {
     enum: PaymentMethodType,
   })
   @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @ApiPropertyOptional({
     example: 'Please leave at the front door',

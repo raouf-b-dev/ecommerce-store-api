@@ -13,29 +13,29 @@ import {
 @Index('idx_inventory_available_quantity', ['availableQuantity'])
 export class InventoryEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @VersionColumn({ default: 1 })
-  version: number;
+  version!: number;
 
   @Column({ name: 'product_id', type: 'int' })
-  productId: number;
+  productId!: number;
 
   @Column({ type: 'int' })
-  availableQuantity: number;
+  availableQuantity!: number;
 
   @Column({ type: 'int' })
-  reservedQuantity: number;
+  reservedQuantity!: number;
 
   @Column({ type: 'int' })
-  lowStockThreshold: number;
+  lowStockThreshold!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  lastRestockDate: Date | null;
+  lastRestockDate!: Date | null;
 }

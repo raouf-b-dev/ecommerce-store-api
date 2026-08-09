@@ -9,7 +9,7 @@ export class ProcessRefundDto {
   })
   @IsNumber()
   @Min(0.01)
-  amount: number;
+  amount!: number;
 
   @ApiPropertyOptional({
     example: 'User  requested cancellation',

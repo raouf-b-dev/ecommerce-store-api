@@ -8,39 +8,39 @@ export class PaymentResponseDto {
     example: 123,
     description: 'Payment ID',
   })
-  id: number;
+  id!: number;
 
   @ApiProperty({
     example: 123,
     description: 'Order ID',
   })
-  orderId: number;
+  orderId!: number;
 
   @ApiProperty({
     example: 299.99,
     description: 'Payment amount',
   })
-  amount: number;
+  amount!: number;
 
   @ApiProperty({
     example: 'USD',
     description: 'Currency code',
   })
-  currency: string;
+  currency!: string;
 
   @ApiProperty({
     enum: PaymentMethodType,
     example: PaymentMethodType.STRIPE,
     description: 'Payment method',
   })
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @ApiProperty({
     enum: PaymentStatusType,
     example: PaymentStatusType.COMPLETED,
     description: 'Payment status',
   })
-  status: PaymentStatusType;
+  status!: PaymentStatusType;
 
   @ApiPropertyOptional({
     example: 'txn_1234567890',
@@ -76,7 +76,7 @@ export class PaymentResponseDto {
     example: '2025-10-31T10:00:00Z',
     description: 'Payment creation date',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiPropertyOptional({
     example: '2025-10-31T10:05:00Z',
@@ -88,5 +88,5 @@ export class PaymentResponseDto {
     example: '2025-10-31T12:30:00Z',
     description: 'Last update date',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }
