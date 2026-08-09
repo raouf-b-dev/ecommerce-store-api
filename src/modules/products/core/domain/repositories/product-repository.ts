@@ -13,6 +13,9 @@ export abstract class ProductRepository {
     expectedVersion?: number,
   ): Promise<Result<Product, RepositoryError>>;
   abstract findById(id: number): Promise<Result<Product, RepositoryError>>;
+  abstract findByIds(
+    ids: number[],
+  ): Promise<Result<Product[], RepositoryError>>;
   abstract findAll(): Promise<Result<Product[], RepositoryError>>;
   abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
 }

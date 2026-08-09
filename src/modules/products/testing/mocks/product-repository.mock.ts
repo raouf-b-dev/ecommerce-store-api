@@ -16,6 +16,10 @@ export class MockProductRepository implements ProductRepository {
     [Product, number?]
   >();
   findById = jest.fn<Promise<Result<Product, RepositoryError>>, [number]>();
+  findByIds = jest.fn<
+    Promise<Result<Product[], RepositoryError>>,
+    [number[]]
+  >();
   findAll = jest.fn<Promise<Result<Product[], RepositoryError>>, []>();
   deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 

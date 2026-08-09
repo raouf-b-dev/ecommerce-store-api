@@ -1,5 +1,5 @@
 // src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
@@ -66,6 +66,22 @@ export class PostgresProductRepository implements ProductRepository {
       return Result.success<Product>(ProductMapper.toDomain(ormEntity));
     } catch (error) {
       return ErrorFactory.RepositoryError(`Failed to find the product`, error);
+    }
+  }
+
+  async findByIds(ids: number[]): Promise<Result<Product[], RepositoryError>> {
+    try {
+      if (ids.length === 0) return Result.success([]);
+      const uniqueIds = [...new Set(ids)];
+      const ormEntities = await this.ormRepo.find({
+        where: { id: In(uniqueIds) },
+      });
+      return Result.success(ProductMapper.toDomainArray(ormEntities));
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to find products by IDs',
+        error,
+      );
     }
   }
 
