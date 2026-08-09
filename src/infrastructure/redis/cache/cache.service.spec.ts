@@ -191,9 +191,7 @@ describe('CacheService', () => {
         { key: 'key2', value: { data: 2 } },
       ];
 
-      keyClient.createPipeline.mockReturnValue(
-        mockPipeline as unknown as ReturnType<typeof keyClient.createPipeline>,
-      );
+      keyClient.createPipeline.mockReturnValue(mockPipeline);
 
       await service.setAll(entries);
 
@@ -216,9 +214,7 @@ describe('CacheService', () => {
 
     it('should pipeline set operations with custom options', async () => {
       const mockPipeline = new MockRedisPipeline();
-      keyClient.createPipeline.mockReturnValue(
-        mockPipeline as unknown as ReturnType<typeof keyClient.createPipeline>,
-      );
+      keyClient.createPipeline.mockReturnValue(mockPipeline);
       redisService.getFullKey.mockImplementation((key) => `prefix:${key}`);
 
       const entries = [{ key: 'key1', value: { data: 1 } }];
@@ -302,9 +298,7 @@ describe('CacheService', () => {
         expire: jest.fn(),
         exec: jest.fn().mockResolvedValue([]),
       };
-      keyClient.createPipeline.mockReturnValue(
-        mockPipeline as unknown as ReturnType<typeof keyClient.createPipeline>,
-      );
+      keyClient.createPipeline.mockReturnValue(mockPipeline);
       redisService.getFullKey.mockImplementation((key) => `prefix:${key}`);
 
       const entries = [
@@ -331,9 +325,7 @@ describe('CacheService', () => {
         expire: jest.fn(),
         exec: jest.fn().mockResolvedValue([]),
       };
-      keyClient.createPipeline.mockReturnValue(
-        mockPipeline as unknown as ReturnType<typeof keyClient.createPipeline>,
-      );
+      keyClient.createPipeline.mockReturnValue(mockPipeline);
       redisService.getFullKey.mockImplementation((key) => `prefix:${key}`);
 
       const entries = [{ key: 'key1', value: { name: 'updated1' } }];

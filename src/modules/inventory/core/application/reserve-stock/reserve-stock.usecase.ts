@@ -10,9 +10,11 @@ import { POSTGRES_RESERVATION_REPOSITORY } from '../../../inventory.token';
 import { Inject } from '@nestjs/common';
 
 @Injectable()
-export class ReserveStockUseCase
-  implements UseCase<ReservationInput, Reservation, UseCaseError>
-{
+export class ReserveStockUseCase implements UseCase<
+  ReservationInput,
+  Reservation,
+  UseCaseError
+> {
   constructor(
     @Inject(POSTGRES_RESERVATION_REPOSITORY)
     private readonly reservationRepository: ReservationRepository,

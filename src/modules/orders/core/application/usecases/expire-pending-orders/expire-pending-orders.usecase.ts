@@ -20,10 +20,11 @@ export interface ExpirePendingOrdersResult {
 }
 
 @Injectable()
-export class ExpirePendingOrdersUseCase
-  implements
-    UseCase<ExpirePendingOrdersCommand, ExpirePendingOrdersResult, UseCaseError>
-{
+export class ExpirePendingOrdersUseCase implements UseCase<
+  ExpirePendingOrdersCommand,
+  ExpirePendingOrdersResult,
+  UseCaseError
+> {
   private readonly logger = new Logger(ExpirePendingOrdersUseCase.name);
 
   constructor(

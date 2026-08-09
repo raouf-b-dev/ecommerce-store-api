@@ -11,9 +11,11 @@ export interface ConfirmOrderCommand {
 }
 
 @Injectable()
-export class ConfirmOrderUseCase
-  implements UseCase<ConfirmOrderCommand, IOrder, UseCaseError>
-{
+export class ConfirmOrderUseCase implements UseCase<
+  ConfirmOrderCommand,
+  IOrder,
+  UseCaseError
+> {
   private readonly logger = new Logger(ConfirmOrderUseCase.name);
 
   constructor(private readonly orderRepository: OrderRepository) {}

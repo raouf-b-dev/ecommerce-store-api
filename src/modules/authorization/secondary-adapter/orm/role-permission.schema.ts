@@ -14,19 +14,19 @@ import { PermissionEntity } from './permission.schema';
 @Unique(['roleId', 'permissionId'])
 export class RolePermissionEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ name: 'role_id' })
-  roleId: number;
+  roleId!: number;
 
   @Column({ name: 'permission_id' })
-  permissionId: number;
+  permissionId!: number;
 
   @ManyToOne(() => RoleEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'role_id' })
-  role: Relation<RoleEntity>;
+  role!: Relation<RoleEntity>;
 
   @ManyToOne(() => PermissionEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'permission_id' })
-  permission: PermissionEntity;
+  permission!: PermissionEntity;
 }

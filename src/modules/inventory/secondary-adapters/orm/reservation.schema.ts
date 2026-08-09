@@ -19,26 +19,26 @@ import { ReservationItemEntity } from './reservation-item.schema';
 })
 export class ReservationEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'order_id' })
-  orderId: number;
+  orderId!: number;
 
   @Column({
     type: 'varchar',
     enum: ReservationStatus,
     default: ReservationStatus.PENDING,
   })
-  status: ReservationStatus;
+  status!: ReservationStatus;
 
   @Column({ name: 'expires_at', type: 'timestamp' })
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @OneToMany(
     () => ReservationItemEntity,
@@ -48,5 +48,5 @@ export class ReservationEntity {
       eager: true,
     },
   )
-  items: Relation<ReservationItemEntity>[];
+  items!: Relation<ReservationItemEntity>[];
 }

@@ -20,41 +20,41 @@ import { PaymentStatusType } from '../../core/domain/value-objects/payment-statu
 @Index('idx_payments_user_status', ['userId', 'status'])
 export class PaymentEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'order_id', type: 'int' })
-  orderId: number;
+  orderId!: number;
 
   @Column({ name: 'user_id', type: 'int', nullable: true })
-  userId: number | null;
+  userId!: number | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'varchar', length: 3 })
-  currency: string;
+  currency!: string;
 
   @Column({ name: 'payment_method', type: 'varchar' })
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @Column({ type: 'varchar' })
-  status: PaymentStatusType;
+  status!: PaymentStatusType;
 
   @Column({ name: 'transaction_id', type: 'varchar', nullable: true })
-  transactionId: string | null;
+  transactionId!: string | null;
 
   @Column({
     name: 'gateway_payment_intent_id',
     type: 'varchar',
     nullable: true,
   })
-  gatewayPaymentIntentId: string | null;
+  gatewayPaymentIntentId!: string | null;
 
   @Column({ name: 'gateway_client_secret', type: 'varchar', nullable: true })
-  gatewayClientSecret: string | null;
+  gatewayClientSecret!: string | null;
 
   @Column({ name: 'payment_method_info', type: 'text', nullable: true })
-  paymentMethodInfo: string | null;
+  paymentMethodInfo!: string | null;
 
   @Column({
     name: 'refunded_amount',
@@ -63,23 +63,23 @@ export class PaymentEntity {
     scale: 2,
     default: 0,
   })
-  refundedAmount: number;
+  refundedAmount!: number;
 
   @Column({ name: 'failure_reason', type: 'text', nullable: true })
-  failureReason: string | null;
+  failureReason!: string | null;
 
   @OneToMany(() => RefundEntity, (refund) => refund.payment, {
     cascade: true,
     eager: true,
   })
-  refunds: Relation<RefundEntity>[];
+  refunds!: Relation<RefundEntity>[];
 
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
-  completedAt: Date | null;
+  completedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

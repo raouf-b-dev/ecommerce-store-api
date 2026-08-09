@@ -6,27 +6,27 @@ export class CheckoutResponseDto {
     example: 123,
     description: 'The ID of the order being created',
   })
-  orderId: number;
+  orderId!: number;
 
   @ApiProperty({
     example: 'job-123',
     description: 'The ID of the background checkout job',
   })
-  jobId: string;
+  jobId!: string;
 
   @ApiProperty({
     example: 'pending_payment',
     description: 'The initial status of the order',
     enum: OrderStatus,
   })
-  status: string;
+  status!: string;
 
   @ApiProperty({
     example:
       'Checkout process started. Please check order status for payment details.',
     description: 'Result message',
   })
-  message: string;
+  message!: string;
 
   @ApiProperty({
     example: 'pi_1234567890',

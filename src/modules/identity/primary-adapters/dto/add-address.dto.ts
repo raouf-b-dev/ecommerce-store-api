@@ -9,7 +9,7 @@ export class AddAddressDto {
     description: 'Street address line 1',
   })
   @IsString()
-  street: string;
+  street!: string;
 
   @ApiPropertyOptional({
     example: 'Apt 4B',
@@ -24,28 +24,28 @@ export class AddAddressDto {
     description: 'City',
   })
   @IsString()
-  city: string;
+  city!: string;
 
   @ApiProperty({
     example: 'NY',
     description: 'State/Province',
   })
   @IsString()
-  state: string;
+  state!: string;
 
   @ApiProperty({
     example: '10001',
     description: 'Postal/ZIP code',
   })
   @IsString()
-  postalCode: string;
+  postalCode!: string;
 
   @ApiProperty({
     example: 'US',
     description: 'Country code (ISO 3166-1 alpha-2)',
   })
   @IsString()
-  country: string;
+  country!: string;
 
   @ApiPropertyOptional({
     enum: AddressType,

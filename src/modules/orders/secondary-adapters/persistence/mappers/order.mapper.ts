@@ -26,9 +26,8 @@ export class OrderMapper {
       shippingAddress: ShippingAddressMapper.toDomain(
         entity.shippingAddress,
       ).toPrimitives(),
-      items: entity.items.map(
-        (itemEntity): OrderItemProps =>
-          OrderItemMapper.toDomain(itemEntity).toPrimitives(),
+      items: entity.items.map((itemEntity): OrderItemProps =>
+        OrderItemMapper.toDomain(itemEntity).toPrimitives(),
       ),
       userNotes: entity.userNotes,
       status: entity.status,

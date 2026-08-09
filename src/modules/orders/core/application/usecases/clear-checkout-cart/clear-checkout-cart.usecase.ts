@@ -9,9 +9,11 @@ import {
 import { CartGateway } from '../../ports/cart.gateway';
 
 @Injectable()
-export class ClearCheckoutCartUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class ClearCheckoutCartUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(private readonly cartGateway: CartGateway) {}
 
   async execute(cartId: number): Promise<Result<void, UseCaseError>> {

@@ -7,9 +7,11 @@ import { InventoryRepository } from '../../domain/repositories/inventory.reposit
 import { IInventory } from '../../domain/interfaces/inventory.interface';
 
 @Injectable()
-export class ListLowStockUseCase
-  implements UseCase<LowStockQuery, IInventory[], UseCaseError>
-{
+export class ListLowStockUseCase implements UseCase<
+  LowStockQuery,
+  IInventory[],
+  UseCaseError
+> {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(

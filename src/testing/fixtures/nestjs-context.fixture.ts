@@ -29,7 +29,7 @@ export function createMockArgumentsHost(
     getType: jest.fn(),
     getArgs: jest.fn(),
     getArgByIndex: jest.fn(),
-  } as unknown as jest.Mocked<ArgumentsHost>;
+  };
 }
 
 /**
@@ -85,5 +85,5 @@ export function createMockRequestWithUser(
   return createMockRequest({
     ...overrides,
     user,
-  } as unknown as Partial<Request>) as unknown as jest.Mocked<RequestWithUser>;
+  } as unknown as Partial<Request>);
 }

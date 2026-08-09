@@ -9,9 +9,11 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
-export class AssignDefaultRoleUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class AssignDefaultRoleUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly userRoleAssignmentRepository: UserRoleAssignmentRepository,
     private readonly roleRepository: RoleRepository,

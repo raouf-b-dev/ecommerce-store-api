@@ -23,8 +23,7 @@ export class InfraMetricsCollector {
     // 1. DB pool
     const driver = this.dataSource.driver as PostgresDriver;
     const pool = driver.master as
-      | { totalCount?: number; idleCount?: number }
-      | undefined;
+      { totalCount?: number; idleCount?: number } | undefined;
     const totalCount = pool?.totalCount ?? 0;
     const idleCount = pool?.idleCount ?? 0;
     this.metrics.dbPoolActiveConnections.set(totalCount - idleCount);

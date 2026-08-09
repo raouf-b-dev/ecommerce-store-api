@@ -7,13 +7,13 @@ export class AddressResponseDto {
     example: 123,
     description: 'Address ID',
   })
-  id: number;
+  id!: number;
 
   @ApiProperty({
     example: '123 Main Street',
     description: 'Street address line 1',
   })
-  street: string;
+  street!: string;
 
   @ApiPropertyOptional({
     example: 'Apt 4B',
@@ -25,38 +25,38 @@ export class AddressResponseDto {
     example: 'New York',
     description: 'City',
   })
-  city: string;
+  city!: string;
 
   @ApiProperty({
     example: 'NY',
     description: 'State/Province',
   })
-  state: string;
+  state!: string;
 
   @ApiProperty({
     example: '10001',
     description: 'Postal/ZIP code',
   })
-  postalCode: string;
+  postalCode!: string;
 
   @ApiProperty({
     example: 'US',
     description: 'Country code',
   })
-  country: string;
+  country!: string;
 
   @ApiProperty({
     enum: AddressType,
     example: AddressType.HOME,
     description: 'Address type',
   })
-  type: AddressType;
+  type!: AddressType;
 
   @ApiProperty({
     example: true,
     description: 'Whether this is the default address',
   })
-  isDefault: boolean;
+  isDefault!: boolean;
 
   @ApiPropertyOptional({
     example: 'Leave at front door',
@@ -68,11 +68,11 @@ export class AddressResponseDto {
     example: '2025-10-31T10:00:00Z',
     description: 'Address creation date',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00Z',
     description: 'Last update date',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

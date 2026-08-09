@@ -13,17 +13,17 @@ import { ReservationEntity } from './reservation.schema';
 @Index('idx_reservation_items_product_id', ['productId'])
 export class ReservationItemEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'product_id' })
-  productId: number;
+  productId!: number;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity!: number;
 
   @ManyToOne(() => ReservationEntity, (reservation) => reservation.items, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'reservation_id' })
-  reservation: Relation<ReservationEntity>;
+  reservation!: Relation<ReservationEntity>;
 }

@@ -6,9 +6,11 @@ import { ReservationRepository } from '../../domain/repositories/reservation.rep
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../inventory.token';
 
 @Injectable()
-export class ReleaseStockUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class ReleaseStockUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(
     @Inject(POSTGRES_RESERVATION_REPOSITORY)
     private readonly reservationRepository: ReservationRepository,

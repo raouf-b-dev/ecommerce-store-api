@@ -10,9 +10,11 @@ import { InventoryReservationGateway } from '../../ports/inventory-reservation.g
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
-export class ReleaseCheckoutStockUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class ReleaseCheckoutStockUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly inventoryGateway: InventoryReservationGateway,
     private readonly domainEventPublisher: DomainEventPublisher,

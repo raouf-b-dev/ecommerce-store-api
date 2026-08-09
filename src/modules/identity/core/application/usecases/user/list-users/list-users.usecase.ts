@@ -14,9 +14,11 @@ export interface ListUsersQuery {
 }
 
 @Injectable()
-export class ListUsersUseCase
-  implements UseCase<ListUsersQuery, IUser[], UseCaseError>
-{
+export class ListUsersUseCase implements UseCase<
+  ListUsersQuery,
+  IUser[],
+  UseCaseError
+> {
   constructor(private userRepository: UserRepository) {}
 
   async execute(query: ListUsersQuery): Promise<Result<IUser[], UseCaseError>> {

@@ -25,9 +25,10 @@ export class PostgresNotificationRepository implements NotificationRepository {
       await this.notificationRepo.save(entity);
       return Result.success(undefined);
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return ErrorFactory.RepositoryError(
         'Failed to save notification',
-        err.message,
+        errorMsg,
       );
     }
   }
@@ -41,9 +42,10 @@ export class PostgresNotificationRepository implements NotificationRepository {
 
       return Result.success(NotificationMapper.toDomain(entity));
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return ErrorFactory.RepositoryError(
         'Failed to fetch notification',
-        err.message,
+        errorMsg,
       );
     }
   }
@@ -84,9 +86,10 @@ export class PostgresNotificationRepository implements NotificationRepository {
         unread: unreadCount,
       });
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return ErrorFactory.RepositoryError(
         'Failed to fetch notifications by userId',
-        err.message,
+        errorMsg,
       );
     }
   }
@@ -102,9 +105,10 @@ export class PostgresNotificationRepository implements NotificationRepository {
       );
       return Result.success(undefined);
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return ErrorFactory.RepositoryError(
         'Failed to mark notification as read',
-        err.message,
+        errorMsg,
       );
     }
   }
@@ -116,9 +120,10 @@ export class PostgresNotificationRepository implements NotificationRepository {
       });
       return Result.success(undefined);
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       return ErrorFactory.RepositoryError(
         'Failed to delete expired notifications',
-        err.message,
+        errorMsg,
       );
     }
   }

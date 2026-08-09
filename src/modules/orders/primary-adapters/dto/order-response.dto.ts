@@ -4,23 +4,23 @@ import { OrderStatus } from '../../core/domain/value-objects/order-status';
 
 export class OrderResponseDto {
   @ApiProperty({ example: 'ord_123' })
-  id: string;
+  id!: string;
 
   @ApiProperty({ example: 'cust_456' })
-  userId: string;
+  userId!: string;
 
   @ApiProperty({ type: [OrderItemResponseDto] })
-  items: OrderItemResponseDto[];
+  items!: OrderItemResponseDto[];
 
   @ApiProperty({ enum: OrderStatus })
-  status: OrderStatus;
+  status!: OrderStatus;
 
   @ApiProperty({ example: 2400 })
-  totalPrice: number;
+  totalPrice!: number;
 
   @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

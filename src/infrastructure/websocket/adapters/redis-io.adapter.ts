@@ -6,10 +6,10 @@ import { INestApplicationContext, Logger } from '@nestjs/common';
 import { EnvConfigService } from 'src/config/env-config.service';
 
 export class RedisIoAdapter extends IoAdapter {
-  private adapterConstructor: ReturnType<typeof createAdapter>;
+  private adapterConstructor!: ReturnType<typeof createAdapter>;
   private readonly logger = new Logger(RedisIoAdapter.name);
-  private pubClient: ReturnType<typeof createClient>;
-  private subClient: ReturnType<typeof createClient>;
+  private pubClient!: ReturnType<typeof createClient>;
+  private subClient!: ReturnType<typeof createClient>;
 
   constructor(private app: INestApplicationContext) {
     super(app);

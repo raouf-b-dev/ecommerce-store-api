@@ -10,5 +10,5 @@ export class PaymentMethodDto {
     enum: PaymentMethodType,
   })
   @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 }

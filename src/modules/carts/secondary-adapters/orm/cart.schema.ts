@@ -16,23 +16,23 @@ import { CartItemEntity } from './cart-item.schema';
 @Index('idx_carts_user_id', ['userId'])
 export class CartEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @VersionColumn({ default: 1 })
-  version: number;
+  version!: number;
 
   @Column({ name: 'user_id', type: 'int', nullable: false, unique: true })
-  userId: number;
+  userId!: number;
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, {
     cascade: true,
     eager: true,
   })
-  items: Relation<CartItemEntity>[];
+  items!: Relation<CartItemEntity>[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

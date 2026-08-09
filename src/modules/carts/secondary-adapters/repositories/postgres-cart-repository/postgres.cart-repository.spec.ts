@@ -98,7 +98,7 @@ describe('PostgresCartRepository', () => {
       mockOrmRepo.delete.mockResolvedValue({
         raw: [],
         affected: 1,
-      } as DeleteResult);
+      });
 
       const result = await repository.delete(mockCartEntity.id);
 
@@ -109,7 +109,7 @@ describe('PostgresCartRepository', () => {
       mockOrmRepo.delete.mockResolvedValue({
         raw: [],
         affected: 0,
-      } as DeleteResult);
+      });
 
       const result = await repository.delete(0);
 

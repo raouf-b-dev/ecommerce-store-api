@@ -91,7 +91,7 @@ export abstract class BaseJobHandler<TData, TResult> {
       this.logger.error(
         `Job ${jobName} (ID: ${jobId}) failed with unexpected error: ${String(error)}`,
       );
-      throw new Error(String(error));
+      throw new Error(String(error), { cause: error });
     }
   }
 }

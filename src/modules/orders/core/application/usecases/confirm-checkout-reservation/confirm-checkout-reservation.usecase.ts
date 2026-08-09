@@ -9,9 +9,11 @@ import {
 import { InventoryReservationGateway } from '../../ports/inventory-reservation.gateway';
 
 @Injectable()
-export class ConfirmCheckoutReservationUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class ConfirmCheckoutReservationUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(private readonly inventoryGateway: InventoryReservationGateway) {}
 
   async execute(reservationId: number): Promise<Result<void, UseCaseError>> {

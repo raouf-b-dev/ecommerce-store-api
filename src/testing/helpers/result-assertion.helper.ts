@@ -5,9 +5,7 @@ import { RepositoryError } from '../../shared-kernel/domain/exceptions/repositor
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
 
 type ErrorConstructor =
-  | typeof RepositoryError
-  | typeof UseCaseError
-  | typeof DomainError;
+  typeof RepositoryError | typeof UseCaseError | typeof DomainError;
 
 export class ResultAssertionHelper {
   static assertResultSuccess<T>(

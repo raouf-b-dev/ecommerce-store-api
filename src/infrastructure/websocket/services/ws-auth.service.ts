@@ -20,8 +20,9 @@ export class WsAuthService {
       const payload = await this.jwtVerifierService.verifyAccessToken(token);
       return payload;
     } catch (err) {
-      this.logger.warn(`Invalid token from ${client.id}: ${err.message}`);
-      throw new Error('Invalid token');
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Invalid token from ${client.id}: ${errorMsg}`);
+      throw new Error('Invalid token', { cause: err });
     }
   }
 

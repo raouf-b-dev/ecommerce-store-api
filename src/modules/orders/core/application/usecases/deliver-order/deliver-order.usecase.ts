@@ -11,10 +11,11 @@ export interface DeliverOrderCommand {
 }
 
 @Injectable()
-export class DeliverOrderUseCase
-  implements
-    UseCase<{ id: number; command?: DeliverOrderCommand }, IOrder, UseCaseError>
-{
+export class DeliverOrderUseCase implements UseCase<
+  { id: number; command?: DeliverOrderCommand },
+  IOrder,
+  UseCaseError
+> {
   constructor(private readonly orderRepository: OrderRepository) {}
 
   async execute(input: {

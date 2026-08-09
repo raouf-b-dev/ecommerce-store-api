@@ -12,9 +12,11 @@ export interface RoleRecord {
 }
 
 @Injectable()
-export class FindRoleByUserIdUseCase
-  implements UseCase<number, RoleRecord, UseCaseError>
-{
+export class FindRoleByUserIdUseCase implements UseCase<
+  number,
+  RoleRecord,
+  UseCaseError
+> {
   constructor(
     private readonly userRoleAssignmentRepository: UserRoleAssignmentRepository,
     private readonly roleRepository: RoleRepository,

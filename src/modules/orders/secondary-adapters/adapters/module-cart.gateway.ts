@@ -99,14 +99,12 @@ export class ModuleCartGateway implements CartGateway {
     return {
       id: cart.id,
       userId: cart.userId,
-      items: (cart.items || []).map(
-        (item): CheckoutCartItem => ({
-          productId: item.productId,
-          productName: item.productName,
-          price: item.price,
-          quantity: item.quantity,
-        }),
-      ),
+      items: (cart.items || []).map((item): CheckoutCartItem => ({
+        productId: item.productId,
+        productName: item.productName,
+        price: item.price,
+        quantity: item.quantity,
+      })),
     };
   }
 }

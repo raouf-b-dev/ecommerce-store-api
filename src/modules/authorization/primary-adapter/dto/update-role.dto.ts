@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class UpdateRoleDto {
   @ApiProperty({ example: 'Administrador' })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: [
@@ -19,5 +19,5 @@ export class UpdateRoleDto {
   })
   @IsArray()
   @IsString({ each: true })
-  permissions: string[];
+  permissions!: string[];
 }

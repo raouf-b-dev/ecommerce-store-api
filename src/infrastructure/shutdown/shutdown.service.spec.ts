@@ -7,9 +7,11 @@ describe('ShutdownService', () => {
 
   beforeEach(async () => {
     // Mock process.exit to prevent the test suite from exiting
-    jest.spyOn(process, 'exit').mockImplementation((code?: number) => {
-      return undefined as never;
-    });
+    jest
+      .spyOn(process, 'exit')
+      .mockImplementation((_code?: string | number | null) => {
+        return undefined as never;
+      });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ShutdownService],

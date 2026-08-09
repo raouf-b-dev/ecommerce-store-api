@@ -14,47 +14,47 @@ import { UserEntity } from './user.schema';
 @Entity({ name: 'user_addresses' })
 export class AddressEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar' })
-  street: string;
+  street!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  street2: string | null;
+  street2!: string | null;
 
   @Column({ type: 'varchar' })
-  city: string;
+  city!: string;
 
   @Column({ type: 'varchar' })
-  state: string;
+  state!: string;
 
   @Column({ name: 'postal_code', type: 'varchar' })
-  postalCode: string;
+  postalCode!: string;
 
   @Column({ type: 'varchar' })
-  country: string;
+  country!: string;
 
   @Column({ type: 'enum', enum: AddressType })
-  type: AddressType;
+  type!: AddressType;
 
   @Column({ name: 'is_default', type: 'boolean', default: false })
-  isDefault: boolean;
+  isDefault!: boolean;
 
   @Column({ name: 'delivery_instructions', type: 'text', nullable: true })
-  deliveryInstructions: string | null;
+  deliveryInstructions!: string | null;
 
   @Column({ name: 'user_id', type: 'int' })
-  userId: number;
+  userId!: number;
 
   @ManyToOne(() => UserEntity, (user) => user.addresses, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })
-  user: Relation<UserEntity>;
+  user!: Relation<UserEntity>;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

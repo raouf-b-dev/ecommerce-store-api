@@ -6,9 +6,11 @@ import { InventoryRepository } from '../../domain/repositories/inventory.reposit
 import { IInventory } from '../../domain/interfaces/inventory.interface';
 
 @Injectable()
-export class GetInventoryUseCase
-  implements UseCase<number, IInventory, UseCaseError>
-{
+export class GetInventoryUseCase implements UseCase<
+  number,
+  IInventory,
+  UseCaseError
+> {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(productId: number): Promise<Result<IInventory, UseCaseError>> {

@@ -14,7 +14,7 @@ import { ShippingAddressDto } from './shipping-address.dto';
 export class CheckoutDto {
   @ApiProperty({ description: 'Cart ID to checkout' })
   @IsNumber()
-  cartId: number;
+  cartId!: number;
 
   @ApiPropertyOptional({ description: 'Shipping address for the order' })
   @IsOptional()
@@ -24,7 +24,7 @@ export class CheckoutDto {
 
   @ApiProperty({ description: 'Payment method', enum: PaymentMethodType })
   @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @ApiPropertyOptional({ description: 'Customer notes for the order' })
   @IsOptional()

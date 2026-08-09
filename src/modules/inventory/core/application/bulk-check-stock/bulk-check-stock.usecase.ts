@@ -12,9 +12,11 @@ export interface BulkCheckStockQuery {
 }
 
 @Injectable()
-export class BulkCheckStockUseCase
-  implements UseCase<BulkCheckStockQuery[], CheckStockResult[], UseCaseError>
-{
+export class BulkCheckStockUseCase implements UseCase<
+  BulkCheckStockQuery[],
+  CheckStockResult[],
+  UseCaseError
+> {
   constructor(private inventoryRepository: InventoryRepository) {}
 
   async execute(

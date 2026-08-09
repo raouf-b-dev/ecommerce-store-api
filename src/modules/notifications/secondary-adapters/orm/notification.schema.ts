@@ -13,38 +13,38 @@ import {
 @Index('IDX_notification_expiresAt', ['expiresAt'])
 export class NotificationEntity {
   @PrimaryColumn({ type: 'uuid' })
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  userId: string | null;
+  userId!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  targetRole: string | null;
+  targetRole!: string | null;
 
   @Column({ type: 'varchar' })
-  type: string;
+  type!: string;
 
   @Column({ type: 'varchar' })
-  title: string;
+  title!: string;
 
   @Column({ type: 'varchar' })
-  message: string;
+  message!: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  payload: any;
+  payload!: any;
 
   @Column({ type: 'varchar', default: 'pending' })
-  status: string;
+  status!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  failedReason: string | null;
+  failedReason!: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  deliveredAt: Date | null;
+  deliveredAt!: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  expiresAt: Date | null;
+  expiresAt!: Date | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }
