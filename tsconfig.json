@@ -22,7 +22,7 @@
     "noImplicitReturns": true,
     "noUnusedLocals": false
   },
-  "files": ["src/types/express.d.ts"],
+  "files": ["src/types/express.ts"],
   "include": ["src/**/*", "test/**/*", "scripts/**/*", "data-source.ts"],
   "exclude": ["node_modules", "dist", "coverage", ".gemini"]
 }
