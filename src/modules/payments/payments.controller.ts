@@ -26,7 +26,6 @@ import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto'
 import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
 import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
-
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
@@ -34,6 +33,7 @@ import { CapturePaymentUseCase } from './core/application/usecases/capture-payme
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
 import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('payments')
@@ -47,6 +47,7 @@ export class PaymentsController {
     private readonly processRefundUseCase: ProcessRefundUseCase,
     private readonly verifyPaymentUseCase: VerifyPaymentUseCase,
     private readonly handleStripeWebhookUseCase: HandleStripeWebhookUseCase,
+    private readonly getPaymentByOrderIdUseCase: GetPaymentByOrderIdUseCase,
   ) {}
 
   @Post('webhooks/stripe')
@@ -84,34 +85,30 @@ export class PaymentsController {
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
-  @ApiResponse({ status: 200, type: PaymentResponseDto })
+  @ApiResponse({ status: 200 })
   async getPayment(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.getPaymentUseCase.execute({
+    return await this.getPaymentUseCase.execute({
       paymentId: id,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get()
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
-  @ApiResponse({ status: 200, type: [PaymentResponseDto] })
+  @ApiResponse({ status: 200 })
   async listPayments(
     @Query() query: ListPaymentsQueryDto,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.listPaymentsUseCase.execute({
+    return await this.listPaymentsUseCase.execute({
       query,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 
   @Post(':id/capture')
@@ -162,17 +159,15 @@ export class PaymentsController {
   @Get('orders/:orderId')
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all payments for an order' })
-  @ApiResponse({ status: 200, type: [PaymentResponseDto] })
+  @ApiOperation({ summary: 'Get payment for an order' })
+  @ApiResponse({ status: 200 })
   async getOrderPayments(
     @Param('orderId', ParseIntPipe) orderId: number,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.listPaymentsUseCase.execute({
-      query: { orderId: orderId },
+    return await this.getPaymentByOrderIdUseCase.execute({
+      orderId,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 }

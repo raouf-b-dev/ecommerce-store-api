@@ -9,6 +9,7 @@ import { ListPaymentsUseCase } from './core/application/usecases/list-payments/l
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
@@ -20,6 +21,7 @@ describe('PaymentsController', () => {
   let processRefundUseCase: ProcessRefundUseCase;
   let verifyPaymentUseCase: VerifyPaymentUseCase;
   let handleStripeWebhookUseCase: HandleStripeWebhookUseCase;
+  let getPaymentByOrderIdUseCase: GetPaymentByOrderIdUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -67,6 +69,12 @@ describe('PaymentsController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
+        {
+          provide: GetPaymentByOrderIdUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
       ],
     }).compile();
 
@@ -86,9 +94,27 @@ describe('PaymentsController', () => {
     handleStripeWebhookUseCase = module.get<HandleStripeWebhookUseCase>(
       HandleStripeWebhookUseCase,
     );
+    getPaymentByOrderIdUseCase = module.get<GetPaymentByOrderIdUseCase>(
+      GetPaymentByOrderIdUseCase,
+    );
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('should call getPaymentByOrderIdUseCase on getOrderPayments', async () => {
+    const callerContext = {
+      kind: 'user',
+      userId: 1,
+      role: 'CUSTOMER',
+      permissions: new Set(['view_own_payments']),
+    } as any;
+    await controller.getOrderPayments(10, callerContext);
+
+    expect(getPaymentByOrderIdUseCase.execute).toHaveBeenCalledWith({
+      orderId: 10,
+      callerContext,
+    });
   });
 });
