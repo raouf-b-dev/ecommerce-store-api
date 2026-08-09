@@ -31,6 +31,12 @@ export class CacheService implements CachePort {
     return value as unknown as T;
   }
 
+  async getMany<T>(keys: string[], path: string = '$'): Promise<(T | null)[]> {
+    if (keys.length === 0) return [];
+    const values = await this.jsonClient.mGet(keys, path);
+    return values as unknown as (T | null)[];
+  }
+
   async getAll<T>(
     index: string,
     query: string = '*',
@@ -60,9 +66,14 @@ export class CacheService implements CachePort {
     key: string,
     value: T,
     { path = '$', ttl = 3600, nx = false }: SetOptions = {},
-  ): Promise<void> {
-    await this.jsonClient.set(key, path, value as RedisJSON, { nx });
-    await this.keyClient.expire(key, ttl);
+  ): Promise<boolean> {
+    const isSet = await this.jsonClient.set(key, path, value as RedisJSON, {
+      nx,
+    });
+    if (isSet) {
+      await this.keyClient.expire(key, ttl);
+    }
+    return isSet;
   }
 
   async setAll(

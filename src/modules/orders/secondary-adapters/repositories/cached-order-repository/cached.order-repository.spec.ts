@@ -74,7 +74,7 @@ describe('CachedOrderRepository', () => {
   describe('save', () => {
     it('should save order to postgres and cache', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(updatedOrder));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       const result = await repository.save(mockOrder);
@@ -132,8 +132,8 @@ describe('CachedOrderRepository', () => {
     it('should fetch from postgres and cache if not cached', async () => {
       const order: Order = Order.fromPrimitives(mockOrder);
       cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(order));
-      cacheService.set.mockResolvedValue(undefined);
+      postgresRepo.findById.mockResolvedValue(Result.success(mockOrder));
+      cacheService.set.mockResolvedValue(true);
 
       const result = await repository.findById(orderId);
 
@@ -210,7 +210,7 @@ describe('CachedOrderRepository', () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
       cacheService.setAll.mockResolvedValue(undefined);
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
 
       const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
@@ -237,7 +237,7 @@ describe('CachedOrderRepository', () => {
         Result.success(orders.map((order) => Order.fromPrimitives(order))),
       );
       cacheService.setAll.mockResolvedValue(undefined);
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
 
       const result = await repository.listOrders({});
 
@@ -360,7 +360,7 @@ describe('CachedOrderRepository', () => {
   describe('Cache Operations', () => {
     it('should set correct TTL when caching orders', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(updatedOrder));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       await repository.save(mockOrder);
@@ -374,7 +374,7 @@ describe('CachedOrderRepository', () => {
 
     it('should invalidate list cache when saving order', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(updatedOrder));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       await repository.save(mockOrder);
@@ -399,7 +399,7 @@ describe('CachedOrderRepository', () => {
   describe('Integration Scenarios', () => {
     it('should handle order lifecycle with caching', async () => {
       postgresRepo.save.mockResolvedValue(Result.success(updatedOrder));
-      cacheService.set.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
       cacheService.delete.mockResolvedValue(undefined);
 
       const createResult = await repository.save(mockOrder);

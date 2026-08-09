@@ -21,7 +21,7 @@ describe('CacheService', () => {
           provide: RedisJsonClient,
           useValue: {
             get: jest.fn(),
-            set: jest.fn(),
+            set: jest.fn().mockResolvedValue(true),
             merge: jest.fn(),
             del: jest.fn(),
           },
