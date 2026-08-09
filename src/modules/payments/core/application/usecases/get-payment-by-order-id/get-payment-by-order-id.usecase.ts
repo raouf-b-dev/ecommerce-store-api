@@ -14,14 +14,14 @@ import {
 import { PaymentQueryService } from '../../ports/payment-query.service';
 import { PaymentDetailDTO } from '../../queries/results/payment-detail.result';
 
-export interface GetPaymentInput {
-  paymentId: number;
+export interface GetPaymentByOrderIdInput {
+  orderId: number;
   callerContext: CallerContext;
 }
 
 @Injectable()
-export class GetPaymentUseCase extends UseCase<
-  GetPaymentInput,
+export class GetPaymentByOrderIdUseCase extends UseCase<
+  GetPaymentByOrderIdInput,
   PaymentDetailDTO,
   UseCaseError
 > {
@@ -30,9 +30,9 @@ export class GetPaymentUseCase extends UseCase<
   }
 
   async execute(
-    input: GetPaymentInput,
+    input: GetPaymentByOrderIdInput,
   ): Promise<Result<PaymentDetailDTO, UseCaseError>> {
-    const { paymentId, callerContext } = input;
+    const { orderId, callerContext } = input;
 
     const scope = OwnedResourceAccessPolicy.resolveResourceScope(
       callerContext,
@@ -41,18 +41,18 @@ export class GetPaymentUseCase extends UseCase<
 
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
+        `Payment for order ID ${orderId} not found`,
       );
     }
 
-    const result = await this.paymentQueryService.getById(
-      paymentId,
+    const result = await this.paymentQueryService.getByOrderId(
+      orderId,
       scope.authorizedUserId,
     );
 
     if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
+        `Payment for order ID ${orderId} not found`,
       );
     }
 

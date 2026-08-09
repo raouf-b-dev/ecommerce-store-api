@@ -1,68 +1,50 @@
-import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { GetInventoryUseCase } from './get-inventory.usecase';
-import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
-import { IInventory } from '../../domain/interfaces/inventory.interface';
-import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
+import { InventoryDtoTestFactory } from 'src/modules/inventory/testing/factories/inventory-dto.factory';
+import { MockInventoryQueryService } from 'src/modules/inventory/testing/mocks/inventory-query-service.mock';
 
 describe('GetInventoryUseCase', () => {
   let usecase: GetInventoryUseCase;
-  let mockInventoryRepository: MockInventoryRepository;
-  const inventoryFactory = InventoryTestFactory;
+  let mockQueryService: MockInventoryQueryService;
+
+  const sampleItem = InventoryDtoTestFactory.createInventoryListItemDTO({
+    id: 10,
+    productId: 123,
+  });
 
   beforeEach(() => {
-    mockInventoryRepository = new MockInventoryRepository();
-    usecase = new GetInventoryUseCase(mockInventoryRepository);
+    mockQueryService = new MockInventoryQueryService();
+    usecase = new GetInventoryUseCase(mockQueryService);
   });
 
   afterEach(() => {
-    mockInventoryRepository.reset();
-    jest.clearAllMocks();
+    mockQueryService.reset();
   });
 
   it('should be defined', () => {
     expect(usecase).toBeDefined();
   });
 
-  it('should return the inventory primitives on success', async () => {
-    // Arrange
+  it('should return inventory presentation DTO on success', async () => {
     const productId = 123;
-    const mockInventory: IInventory =
-      inventoryFactory.createInventoryForProduct(productId);
+    mockQueryService.mockSuccessfulGetByProductId(sampleItem);
 
-    mockInventoryRepository.mockSuccessfulFindByProductId(mockInventory);
-
-    // Act
     const result = await usecase.execute(productId);
 
-    // Assert
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value).toEqual(mockInventory);
-    expect(mockInventoryRepository.findByProductId).toHaveBeenCalledWith(
-      productId,
-    );
-    expect(mockInventoryRepository.findByProductId).toHaveBeenCalledTimes(1);
+    expect(result.value).toEqual(sampleItem);
+    expect(mockQueryService.getByProductId).toHaveBeenCalledWith(productId);
   });
 
-  it('should return a failure result if the inventory is not found', async () => {
-    // Arrange
+  it('should return failure if inventory for product is not found', async () => {
     const productId = 404;
-    const expectedMsg = `Inventory not found for product ${productId}`;
+    mockQueryService.mockSuccessfulGetByProductId(null);
 
-    mockInventoryRepository.mockInventoryNotFoundForProduct(productId);
-
-    // Act
     const result = await usecase.execute(productId);
 
-    // Assert
     ResultAssertionHelper.assertResultFailure(
       result,
-      expectedMsg,
-      RepositoryError,
-    );
-    expect(mockInventoryRepository.findByProductId).toHaveBeenCalledWith(
-      productId,
+      `Inventory for product ID ${productId} not found`,
     );
   });
 });

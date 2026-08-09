@@ -21,6 +21,8 @@ import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment
 import { HandlePaymentWebhookService } from './core/application/services/handle-payment-webhook/handle-payment-webhook.service';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
+import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
+
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
 import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
@@ -30,6 +32,8 @@ import { PaymentGatewayResolver } from './core/application/ports/payment-gateway
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
+import { PaymentQueryService } from './core/application/ports/payment-query.service';
+import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres-payment-query.adapter';
 
 @Module({
   imports: [
@@ -101,10 +105,18 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     HandlePaymentWebhookService,
     HandleStripeWebhookUseCase,
     CreatePaymentIntentUseCase,
+    GetPaymentByOrderIdUseCase,
+    // CQRS Presentation Query Service
+    {
+      provide: PaymentQueryService,
+      useClass: PostgresPaymentQueryAdapter,
+    },
   ],
   exports: [
+    PaymentQueryService,
     PaymentRepository,
     CreatePaymentUseCase,
+    GetPaymentByOrderIdUseCase,
     PaymentGatewayResolver,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,

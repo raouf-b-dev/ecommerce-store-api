@@ -11,6 +11,7 @@ import { GetInventoryUseCase } from './core/application/get-inventory/get-invent
 import { ListLowStockUseCase } from './core/application/list-low-stock/list-low-stock.usecase';
 import { ReleaseStockUseCase } from './core/application/release-stock/release-stock.usecase';
 import { ReserveStockUseCase } from './core/application/reserve-stock/reserve-stock.usecase';
+import { ListInventoryUseCase } from './core/application/list-inventory/list-inventory.usecase';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
@@ -75,6 +76,20 @@ describe('InventoryController', () => {
           provide: BulkCheckStockUseCase,
           useValue: {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
+        {
+          provide: ListInventoryUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+              }),
+            ),
           },
         },
       ],

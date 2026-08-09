@@ -1,4 +1,4 @@
-import { GetPaymentUseCase } from './get-payment.usecase';
+import { GetPaymentByOrderIdUseCase } from './get-payment-by-order-id.usecase';
 import { MockPaymentQueryService } from '../../../../testing/mocks/payment-query-service.mock';
 import { PaymentDtoTestFactory } from '../../../../testing/factories/payment-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
@@ -8,8 +8,8 @@ import {
   createUserCallerContext,
 } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
-describe('GetPaymentUseCase', () => {
-  let useCase: GetPaymentUseCase;
+describe('GetPaymentByOrderIdUseCase', () => {
+  let useCase: GetPaymentByOrderIdUseCase;
   let mockQueryService: MockPaymentQueryService;
 
   const adminContext: CallerContext = createUserCallerContext({
@@ -26,55 +26,56 @@ describe('GetPaymentUseCase', () => {
 
   const sampleDetail = PaymentDtoTestFactory.createPaymentDetailDTO({
     id: 123,
+    orderId: 10,
     userId: 2,
   });
 
   beforeEach(() => {
     mockQueryService = new MockPaymentQueryService();
-    useCase = new GetPaymentUseCase(mockQueryService);
+    useCase = new GetPaymentByOrderIdUseCase(mockQueryService);
   });
 
   afterEach(() => {
     mockQueryService.reset();
   });
 
-  it('should return a payment if found and caller is admin', async () => {
-    mockQueryService.mockSuccessfulGetById(sampleDetail);
+  it('should return payment detail for order if caller is admin', async () => {
+    mockQueryService.mockSuccessfulGetByOrderId(sampleDetail);
 
     const result = await useCase.execute({
-      paymentId: 123,
+      orderId: 10,
       callerContext: adminContext,
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.id).toBe(123);
-    expect(mockQueryService.getById).toHaveBeenCalledWith(123, undefined);
+    expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, undefined);
   });
 
-  it('should return a payment if found and belongs to caller', async () => {
-    mockQueryService.mockSuccessfulGetById(sampleDetail);
+  it('should return payment detail if order belongs to customer caller', async () => {
+    mockQueryService.mockSuccessfulGetByOrderId(sampleDetail);
 
     const result = await useCase.execute({
-      paymentId: 123,
+      orderId: 10,
       callerContext: customerContext,
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.id).toBe(123);
-    expect(mockQueryService.getById).toHaveBeenCalledWith(123, 2);
+    expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, 2);
   });
 
-  it('should return failure if payment is not found for scope', async () => {
-    mockQueryService.mockSuccessfulGetById(null);
+  it('should return failure error if payment for order is not found', async () => {
+    mockQueryService.mockSuccessfulGetByOrderId(null);
 
     const result = await useCase.execute({
-      paymentId: 404,
+      orderId: 999,
       callerContext: customerContext,
     });
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment with id 404 not found',
+      'Payment for order ID 999 not found',
       UseCaseError,
     );
   });

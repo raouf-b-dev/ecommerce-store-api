@@ -1,8 +1,8 @@
-import { IsOptional, IsIn } from 'class-validator';
+import { IsOptional, IsIn, IsBoolean } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class ListPaymentsQueryDto {
+export class ListInventoryQueryDto {
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
@@ -25,42 +25,38 @@ export class ListPaymentsQueryDto {
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Filter payments by user ID',
+    description: 'Filter inventory by product ID',
   })
-  userId?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @ApiPropertyOptional({
-    description: 'Filter payments by order ID',
-  })
-  orderId?: number;
+  productId?: number;
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: 'Filter payments by status',
+    description: 'Filter inventory by product SKU',
   })
-  status?: string;
+  sku?: string;
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: 'Filter payments by user email',
+    description: 'Filter inventory by product title',
   })
-  userEmail?: string;
+  productTitle?: string;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
   @ApiPropertyOptional({
-    description: 'Filter payments by user name',
+    description: 'Filter only low stock items',
   })
-  userName?: string;
+  lowStockOnly?: boolean;
 
   @IsOptional()
-  @IsIn(['createdAt', 'amount', 'status', 'id'])
+  @IsIn(['updatedAt', 'availableQuantity', 'totalQuantity', 'productId'])
   @ApiPropertyOptional({
-    enum: ['createdAt', 'amount', 'status', 'id'],
-    default: 'createdAt',
+    enum: ['updatedAt', 'availableQuantity', 'totalQuantity', 'productId'],
+    default: 'updatedAt',
   })
-  sortBy?: 'createdAt' | 'amount' | 'status' | 'id' = 'createdAt';
+  sortBy?: 'updatedAt' | 'availableQuantity' | 'totalQuantity' | 'productId' =
+    'updatedAt';
 
   @IsOptional()
   @IsIn(['asc', 'desc'])
