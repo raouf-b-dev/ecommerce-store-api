@@ -40,6 +40,9 @@ RUN apk add --no-cache tini
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Pre-load OpenTelemetry instrumentation before any application code.
+# tracing.ts checks OTEL_TRACING_ENABLED internally, so --require is always safe.
+ENV NODE_OPTIONS="--require ./dist/infrastructure/tracing/tracing.js"
 
 # Copy only production artifacts
 COPY --from=build /app/dist ./dist
