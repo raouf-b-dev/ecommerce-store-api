@@ -26,6 +26,8 @@ import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-c
 import { SeedDemoCartUseCase } from './core/application/seed/seed-demo-cart.usecase';
 import { ProductsModule } from '../products/products.module';
 import { CartOwnershipValidator } from './core/application/services/cart-ownership.validator';
+import { CartQueryService } from './core/application/ports/cart-query.service';
+import { PostgresCartQueryAdapter } from './secondary-adapters/query/postgres-cart-query.adapter';
 
 @Module({
   imports: [
@@ -85,7 +87,18 @@ import { CartOwnershipValidator } from './core/application/services/cart-ownersh
     RemoveCartItemUseCase,
     ClearCartUseCase,
     SeedDemoCartUseCase,
+
+    // CQRS Presentation Query Service
+    {
+      provide: CartQueryService,
+      useClass: PostgresCartQueryAdapter,
+    },
   ],
-  exports: [GetCartUseCase, ClearCartUseCase, SeedDemoCartUseCase],
+  exports: [
+    GetCartUseCase,
+    ClearCartUseCase,
+    SeedDemoCartUseCase,
+    CartQueryService,
+  ],
 })
 export class CartsModule {}
