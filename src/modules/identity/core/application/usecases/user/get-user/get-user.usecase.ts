@@ -11,8 +11,8 @@ import {
   USER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
-import { IUser } from 'src/modules/identity/core/domain/interfaces/user.interface';
-import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
+import { UserQueryService } from '../../../ports/user-query.service';
+import { UserDetailDTO } from '../../../queries/results/user-detail.result';
 
 export interface GetUserInput {
   userId: number;
@@ -20,12 +20,18 @@ export interface GetUserInput {
 }
 
 @Injectable()
-export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
-  constructor(private readonly userRepository: UserRepository) {
+export class GetUserUseCase extends UseCase<
+  GetUserInput,
+  UserDetailDTO,
+  UseCaseError
+> {
+  constructor(private readonly userQueryService: UserQueryService) {
     super();
   }
 
-  async execute(input: GetUserInput): Promise<Result<IUser, UseCaseError>> {
+  async execute(
+    input: GetUserInput,
+  ): Promise<Result<UserDetailDTO, UseCaseError>> {
     const { userId, callerContext } = input;
 
     if (
@@ -42,12 +48,9 @@ export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
       );
     }
 
-    const userResult = await this.userRepository.findById(userId);
+    const result = await this.userQueryService.getById(userId);
 
-    if (isFailure(userResult)) return userResult;
-
-    const user = userResult.value;
-    if (!user) {
+    if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(
         `User with id ${userId} not found`,
         null,
@@ -55,6 +58,6 @@ export class GetUserUseCase extends UseCase<GetUserInput, IUser, UseCaseError> {
       );
     }
 
-    return Result.success(userResult.value.toPrimitives());
+    return Result.success(result.value);
   }
 }
