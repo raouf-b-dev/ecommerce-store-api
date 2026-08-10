@@ -1,114 +1,83 @@
 import { GetCartUseCase } from './get-cart.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
-import { Result } from '../../../../../../shared-kernel/domain/result';
-import { Cart } from '../../../domain/entities/cart';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
+import { MockCartQueryService } from '../../../../testing/mocks/cart-query-service.mock';
+import { CartDtoTestFactory } from '../../../../testing/factories/cart-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CallerContext,
+  createUserCallerContext,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 describe('GetCartUseCase', () => {
   let usecase: GetCartUseCase;
-  let mockCartRepository: MockCartRepository;
-  let validator: CartOwnershipValidator;
+  let mockCartQueryService: MockCartQueryService;
 
-  const adminContext: CallerContext = {
-    kind: 'user',
+  const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
-    permissions: new Set(['manage_carts']),
-  };
+    permissions: new Set(['view_all_carts']),
+  });
 
-  const customerContext: CallerContext = {
-    kind: 'user',
+  const customerContext: CallerContext = createUserCallerContext({
     userId: 123,
     role: 'CUSTOMER',
     permissions: new Set(['manage_own_cart']),
-  };
+  });
+
+  const sampleCart = CartDtoTestFactory.createCartPresentationDTO({
+    id: 1,
+    userId: 123,
+  });
 
   beforeEach(() => {
-    mockCartRepository = new MockCartRepository();
-    validator = new CartOwnershipValidator();
-    usecase = new GetCartUseCase(mockCartRepository, validator);
+    mockCartQueryService = new MockCartQueryService();
+    usecase = new GetCartUseCase(mockCartQueryService);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    mockCartQueryService.reset();
   });
 
   describe('execute', () => {
-    it('should return cart when found and caller has admin access', async () => {
-      const cartId = 123;
-      const mockCartData = CartTestFactory.createUserCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+    it('should return cart presentation by cartId when caller owns the cart', async () => {
+      mockCartQueryService.mockSuccessfulGetById(sampleCart);
 
       const result = await usecase.execute({
-        cartId,
-        callerContext: adminContext,
-      });
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.userId).toBe(456);
-    });
-
-    it('should return cart when caller owns the user cart', async () => {
-      const cartId = 123;
-      const mockCartData = CartTestFactory.createUserCart(123);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
-
-      const result = await usecase.execute({
-        cartId,
+        cartId: 1,
         callerContext: customerContext,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.userId).toBe(123);
+      expect(result.value.id).toBe(1);
+      expect(mockCartQueryService.getById).toHaveBeenCalledWith(1, 123);
     });
 
-    it('should return 404 when customer does not own the cart', async () => {
-      const cartId = 123;
-      const mockCartData = CartTestFactory.createUserCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: cartId });
-
-      mockCartRepository.findById.mockResolvedValue(Result.success(mockCart));
+    it('should return failure if cart is not found by cartId', async () => {
+      mockCartQueryService.mockSuccessfulGetById(null);
 
       const result = await usecase.execute({
-        cartId,
+        cartId: 999,
         callerContext: customerContext,
       });
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cart with id 123 not found',
+        'Cart 999 not found',
         UseCaseError,
       );
     });
 
-    it('should return failure when cart not found in repository', async () => {
-      const cartId = 404;
-      const error = new RepositoryError('Cart not found');
-
-      mockCartRepository.findById.mockResolvedValue(Result.failure(error));
+    it('should allow admin to access cart by cartId without user constraint', async () => {
+      mockCartQueryService.mockSuccessfulGetById(sampleCart);
 
       const result = await usecase.execute({
-        cartId,
+        cartId: 1,
         callerContext: adminContext,
       });
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Cart not found',
-        RepositoryError,
-      );
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(1);
+      expect(mockCartQueryService.getById).toHaveBeenCalledWith(1, undefined);
     });
   });
 });
