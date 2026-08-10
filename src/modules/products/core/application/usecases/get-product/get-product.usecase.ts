@@ -1,6 +1,4 @@
-// src/modules/Products/application/usecases/GetProduct/get-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
-import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -8,21 +6,26 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { IProduct } from '../../../domain/interfaces/product.interface';
+import { ProductQueryService } from '../../ports/product-query.service';
+import { ProductDetailDTO } from '../../queries/results/product-detail.result';
 
 @Injectable()
-export class GetProductUseCase extends UseCase<number, IProduct, UseCaseError> {
-  constructor(private readonly productRepository: ProductRepository) {
+export class GetProductUseCase extends UseCase<
+  number,
+  ProductDetailDTO,
+  UseCaseError
+> {
+  constructor(private readonly productQueryService: ProductQueryService) {
     super();
   }
 
-  async execute(id: number): Promise<Result<IProduct, UseCaseError>> {
-    const productResult = await this.productRepository.findById(id);
+  async execute(id: number): Promise<Result<ProductDetailDTO, UseCaseError>> {
+    const result = await this.productQueryService.getById(id);
 
-    if (isFailure(productResult)) {
+    if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(`Product with id ${id} not found`);
     }
 
-    return Result.success(productResult.value);
+    return Result.success(result.value);
   }
 }

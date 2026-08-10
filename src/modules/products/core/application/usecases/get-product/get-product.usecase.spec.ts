@@ -1,50 +1,44 @@
 import { GetProductUseCase } from './get-product.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
-import { ProductTestFactory } from '../../../../testing/factories/product.factory';
+import { MockProductQueryService } from '../../../../testing/mocks/product-query-service.mock';
+import { ProductDtoTestFactory } from '../../../../testing/factories/product-dto.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { Product } from '../../../domain/entities/product';
 
 describe('GetProductUseCase', () => {
   let useCase: GetProductUseCase;
-  let mockRepository: MockProductRepository;
+  let mockQueryService: MockProductQueryService;
 
   beforeEach(() => {
-    mockRepository = new MockProductRepository();
-    useCase = new GetProductUseCase(mockRepository);
+    mockQueryService = new MockProductQueryService();
+    useCase = new GetProductUseCase(mockQueryService);
   });
 
   afterEach(() => {
-    mockRepository.reset();
+    mockQueryService.reset();
   });
 
   describe('execute', () => {
     it('should return Success if product is found', async () => {
-      const productId = 1;
-      const product = Product.fromPrimitives(
-        ProductTestFactory.createMockProduct({ id: productId }),
-      );
+      const sampleDetail = ProductDtoTestFactory.createProductDetailDTO({
+        id: 1,
+      });
+      mockQueryService.mockSuccessfulGetById(sampleDetail);
 
-      mockRepository.mockSuccessfulFind(product);
-
-      const result = await useCase.execute(productId);
+      const result = await useCase.execute(1);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.id).toBe(productId);
-      expect(mockRepository.findById).toHaveBeenCalledWith(productId);
-      expect(mockRepository.findById).toHaveBeenCalledTimes(1);
+      expect(result.value.id).toBe(1);
+      expect(mockQueryService.getById).toHaveBeenCalledWith(1);
     });
 
     it('should return Failure(UseCaseError) if product is not found', async () => {
-      const productId = 1;
+      mockQueryService.mockSuccessfulGetById(null);
 
-      mockRepository.mockProductNotFound(productId);
-
-      const result = await useCase.execute(productId);
+      const result = await useCase.execute(999);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        `Product with id ${productId} not found`,
+        'Product with id 999 not found',
         UseCaseError,
       );
     });

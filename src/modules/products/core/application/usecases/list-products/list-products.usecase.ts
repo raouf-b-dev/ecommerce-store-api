@@ -1,32 +1,28 @@
-// src/modules/Products/application/usecases/ListProduct/get-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
-import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import {
-  isFailure,
-  Result,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { IProduct } from '../../../domain/interfaces/product.interface';
+import { PaginatedQueryResult } from '../../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
+import { ProductQueryService } from '../../ports/product-query.service';
+import { ListProductsQuery } from '../../queries/list-products.query';
+import { ProductListItemDTO } from '../../queries/results/product-list-item.result';
 
 @Injectable()
-export class ListProductsUseCase extends UseCase<
-  number,
-  IProduct[],
+export class ListProductsUseCase implements UseCase<
+  ListProductsQuery | undefined,
+  PaginatedQueryResult<ProductListItemDTO>,
   UseCaseError
 > {
-  constructor(private readonly productRepository: ProductRepository) {
-    super();
-  }
+  constructor(private readonly productQueryService: ProductQueryService) {}
 
-  async execute(): Promise<Result<IProduct[], UseCaseError>> {
-    const productResult = await this.productRepository.findAll();
-
-    if (isFailure(productResult)) {
-      return ErrorFactory.UseCaseError(productResult.error.message);
+  async execute(
+    query: ListProductsQuery = {},
+  ): Promise<Result<PaginatedQueryResult<ProductListItemDTO>, UseCaseError>> {
+    const result = await this.productQueryService.list(query);
+    if (result.isFailure) {
+      return ErrorFactory.UseCaseError(result.error.message, result.error);
     }
-
-    return Result.success(productResult.value);
+    return Result.success(result.value);
   }
 }
