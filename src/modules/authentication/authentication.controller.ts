@@ -76,7 +76,7 @@ export class AuthenticationController {
     @RefreshToken() refreshToken: string,
     @Body() _dto: RefreshTokenDto,
   ) {
-    return this.refreshTokenUseCase.execute({ refreshToken });
+    return this.refreshTokenUseCase.execute(refreshToken);
   }
 
   @Post('logout')
@@ -87,7 +87,7 @@ export class AuthenticationController {
     @RefreshToken() refreshToken: string,
     @Body() _dto: RefreshTokenDto,
   ) {
-    return this.logoutUseCase.execute({ refreshToken });
+    return this.logoutUseCase.execute(refreshToken);
   }
 
   @Post('logout-all')
@@ -101,7 +101,7 @@ export class AuthenticationController {
     @RefreshToken() refreshToken: string,
     @Body() _dto: RefreshTokenDto,
   ) {
-    return this.logoutAllUseCase.execute({ refreshToken });
+    return this.logoutAllUseCase.execute(refreshToken);
   }
 
   @Get('.well-known/jwks.json')

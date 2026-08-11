@@ -11,14 +11,7 @@ import { IdentityGateway, UserRecord } from '../../ports/identity.gateway';
 import { CredentialRepository } from '../../../domain/repositories/credential.repository';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { Credential } from '../../../domain/entities/credential';
-
-export interface RegisterCommand {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-}
+import { RegisterCommand } from '../../commands/register.command';
 
 @Injectable()
 export class RegisterUserUseCase extends UseCase<

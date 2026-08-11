@@ -8,32 +8,27 @@ import { InventoryRepository } from '../../domain/repositories/inventory.reposit
 import { Inventory } from '../../domain/entities/inventory';
 import { IInventory } from '../../domain/interfaces/inventory.interface';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
-
-export interface AdjustStockCommand {
-  quantity: number;
-  type: StockAdjustmentType;
-  reason?: string;
-}
+import { AdjustStockCommand } from '../commands/adjust-stock.command';
 
 @Injectable()
 export class AdjustStockUseCase implements UseCase<
-  { productId: number; command: AdjustStockCommand },
+  AdjustStockCommand,
   IInventory,
   UseCaseError
 > {
   constructor(private inventoryRepository: InventoryRepository) {}
 
-  async execute(input: {
-    productId: number;
-    command: AdjustStockCommand;
-  }): Promise<Result<IInventory, UseCaseError>> {
+  async execute(
+    command: AdjustStockCommand,
+  ): Promise<Result<IInventory, UseCaseError>> {
+    const { productId, quantity, type } = command;
     const inventoryResult =
-      await this.inventoryRepository.findByProductIdForUpdate(input.productId);
+      await this.inventoryRepository.findByProductIdForUpdate(productId);
     if (inventoryResult.isFailure) return inventoryResult;
 
     const { entity: inventory, expectedVersion } = inventoryResult.value;
 
-    const adjustmentResult = this.applyAdjustment(inventory, input.command);
+    const adjustmentResult = this.applyAdjustment(inventory, quantity, type);
     if (adjustmentResult.isFailure) return adjustmentResult;
 
     const updateResult = await this.inventoryRepository.save(
@@ -47,15 +42,16 @@ export class AdjustStockUseCase implements UseCase<
 
   private applyAdjustment(
     inventory: Inventory,
-    dto: AdjustStockCommand,
+    quantity: number,
+    type: StockAdjustmentType,
   ): Result<void, DomainError> {
-    switch (dto.type) {
+    switch (type) {
       case StockAdjustmentType.ADD:
-        return inventory.increaseStock(dto.quantity);
+        return inventory.increaseStock(quantity);
       case StockAdjustmentType.SUBTRACT:
-        return inventory.decreaseStock(dto.quantity);
+        return inventory.decreaseStock(quantity);
       case StockAdjustmentType.SET:
-        return inventory.setStock(dto.quantity);
+        return inventory.setStock(quantity);
       default:
         return ErrorFactory.DomainError(`Invalid stock adjustment type`);
     }

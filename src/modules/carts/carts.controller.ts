@@ -74,7 +74,8 @@ export class CartsController {
   ) {
     return await this.addCartItemUseCase.execute({
       cartId: id,
-      input: dto,
+      productId: dto.productId,
+      quantity: dto.quantity,
       callerContext,
     });
   }
@@ -91,7 +92,7 @@ export class CartsController {
     return await this.updateCartItemUseCase.execute({
       cartId: id,
       itemId: itemId,
-      input: dto,
+      quantity: dto.quantity,
       callerContext,
     });
   }

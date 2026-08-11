@@ -28,7 +28,7 @@ export class MockJwtVerifierService implements JwtVerifierPort {
 
     this.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId: 'mock-session-id',
+      sid: 'mock-session-id',
       typ: 'refresh',
       iss: 'ecommerce-api',
       iat: Math.floor(Date.now() / 1000),

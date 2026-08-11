@@ -47,7 +47,7 @@ export class AddressesController {
   ) {
     return await this.addAddressUseCase.execute({
       userId: id,
-      command: dto,
+      ...dto,
       callerContext,
     });
   }
@@ -64,8 +64,8 @@ export class AddressesController {
   ) {
     return await this.updateAddressUseCase.execute({
       userId: id,
-      addressId: addressId,
-      command: dto,
+      addressId,
+      ...dto,
       callerContext,
     });
   }

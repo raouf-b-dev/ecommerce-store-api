@@ -6,13 +6,9 @@ import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
-export interface ConfirmOrderCommand {
-  orderId: number;
-}
-
 @Injectable()
 export class ConfirmOrderUseCase implements UseCase<
-  ConfirmOrderCommand,
+  number,
   IOrder,
   UseCaseError
 > {
@@ -20,10 +16,7 @@ export class ConfirmOrderUseCase implements UseCase<
 
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(
-    dto: ConfirmOrderCommand,
-  ): Promise<Result<IOrder, UseCaseError>> {
-    const { orderId } = dto;
+  async execute(orderId: number): Promise<Result<IOrder, UseCaseError>> {
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) return requestedOrder;

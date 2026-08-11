@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
@@ -10,23 +9,12 @@ import {
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { INVENTORY_GATEWAY } from '../../../../carts.token';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-
-export interface UpdateCartItemInput {
-  quantity: number;
-}
-
-export interface UpdateCartItemUseCaseInput {
-  cartId: number;
-  itemId: number;
-  input: UpdateCartItemInput;
-  callerContext: CallerContext | null;
-}
+import { UpdateCartItemCommand } from '../../commands/update-cart-item.command';
 
 @Injectable()
 export class UpdateCartItemUseCase extends UseCase<
-  UpdateCartItemUseCaseInput,
+  UpdateCartItemCommand,
   void,
   UseCaseError
 > {
@@ -40,9 +28,9 @@ export class UpdateCartItemUseCase extends UseCase<
   }
 
   async execute(
-    input: UpdateCartItemUseCaseInput,
+    command: UpdateCartItemCommand,
   ): Promise<Result<void, UseCaseError>> {
-    const { cartId, itemId, input: updateInput, callerContext } = input;
+    const { cartId, itemId, quantity, callerContext } = command;
     const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
     if (isFailure(cartResult)) return cartResult;
@@ -69,7 +57,7 @@ export class UpdateCartItemUseCase extends UseCase<
     // Check stock availability
     const stockCheckResult = await this.inventoryGateway.checkStock(
       item.productId,
-      updateInput.quantity,
+      quantity,
     );
 
     if (isFailure(stockCheckResult)) {
@@ -82,10 +70,7 @@ export class UpdateCartItemUseCase extends UseCase<
       );
     }
 
-    const updateResult = cart.updateItemQuantity(
-      item.productId,
-      updateInput.quantity,
-    );
+    const updateResult = cart.updateItemQuantity(item.productId, quantity);
 
     if (isFailure(updateResult)) return updateResult;
 

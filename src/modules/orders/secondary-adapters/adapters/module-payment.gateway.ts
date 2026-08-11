@@ -47,11 +47,9 @@ export class ModulePaymentGateway implements PaymentGateway {
     input: ProcessRefundInput,
   ): Promise<Result<void, InfrastructureError>> {
     const result = await this.processRefundUseCase.execute({
-      id: input.paymentId,
-      dto: {
-        amount: input.amount,
-        reason: input.reason,
-      },
+      paymentId: input.paymentId,
+      amount: input.amount,
+      reason: input.reason,
     });
 
     if (isFailure(result)) {

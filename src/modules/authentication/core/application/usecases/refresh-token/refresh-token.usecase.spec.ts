@@ -68,7 +68,7 @@ describe('RefreshTokenUseCase', () => {
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId: sessionId,
+      sid: sessionId,
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -93,7 +93,7 @@ describe('RefreshTokenUseCase', () => {
       expiresAt: new Date(Date.now() + 3600_000),
     });
 
-    const result = await usecase.execute({ refreshToken: rawToken });
+    const result = await usecase.execute(rawToken);
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(session.isRevoked).toBe(true);
@@ -103,11 +103,11 @@ describe('RefreshTokenUseCase', () => {
 
   it('should return failure if session is revoked', async () => {
     const rawToken = `header.e30.signature`;
-    const sessionId = 'mock-session-id';
+    const sid = 'mock-session-id';
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId,
+      sid,
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -116,11 +116,11 @@ describe('RefreshTokenUseCase', () => {
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
-    const session = SessionToken.create(1, rawToken, expiresAt, sessionId);
+    const session = SessionToken.create(1, rawToken, expiresAt, sid);
     session.revoke();
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
 
-    const result = await usecase.execute({ refreshToken: rawToken });
+    const result = await usecase.execute(rawToken);
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -132,11 +132,11 @@ describe('RefreshTokenUseCase', () => {
   it('should revoke all sessions when token reuse is detected', async () => {
     const rawToken = `header.payload.signature`;
     const differentToken = `header.different.signature`;
-    const sessionId = 'mock-session-id';
+    const sid = 'mock-session-id';
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId,
+      sid,
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -145,18 +145,13 @@ describe('RefreshTokenUseCase', () => {
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
-    const session = SessionToken.create(
-      1,
-      differentToken,
-      expiresAt,
-      sessionId,
-    );
+    const session = SessionToken.create(1, differentToken, expiresAt, sid);
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.revokeAllForUser.mockResolvedValue(
       Result.success(undefined),
     );
 
-    const result = await usecase.execute({ refreshToken: rawToken });
+    const result = await usecase.execute(rawToken);
 
     ResultAssertionHelper.assertResultFailure(
       result,

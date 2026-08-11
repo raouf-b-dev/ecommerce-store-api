@@ -7,12 +7,13 @@ import {
   CheckoutUserAddress,
   CheckoutUserInfoResult,
 } from '../../core/application/ports/user.gateway';
-import { CheckoutCommand } from '../../core/application/usecases/checkout/checkout.usecase';
+import { CheckoutCommand } from '../../core/application/commands/checkout.command';
 import { DeliverOrderCommand } from '../../core/application/usecases/deliver-order/deliver-order.usecase';
 import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type';
 import { OrderListItemDTO } from '../../core/application/queries/results/order-list-item.result';
 import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
 import { OrderItemDetailDTO } from '../../core/application/queries/results/order-item-detail.result';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 export class OrderDtoTestFactory {
   static createCheckoutCommand(
@@ -30,6 +31,8 @@ export class OrderDtoTestFactory {
         postalCode: '90001',
         country: 'US',
       },
+      callerContext: AuthPayloadFactory.createCallerContext(),
+      customerNotes: 'customerNotes',
     };
 
     return { ...baseCommand, ...overrides };

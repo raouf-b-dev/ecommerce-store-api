@@ -161,13 +161,9 @@ describe('Authentication HTTP contract (e2e)', () => {
     expect(registerUseCase.execute).toHaveBeenCalledTimes(1);
     expect(loginUseCase.execute).toHaveBeenCalledWith(loginDto);
     expect(loginUseCase.execute).toHaveBeenCalledTimes(1);
-    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'refresh-token-1',
-    });
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith('refresh-token-1');
     expect(refreshTokenUseCase.execute).toHaveBeenCalledTimes(1);
-    expect(logoutUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'refresh-token-2',
-    });
+    expect(logoutUseCase.execute).toHaveBeenCalledWith('refresh-token-2');
     expect(logoutUseCase.execute).toHaveBeenCalledTimes(1);
   });
 });

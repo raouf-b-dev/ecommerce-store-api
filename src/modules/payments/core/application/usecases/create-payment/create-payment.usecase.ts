@@ -8,40 +8,18 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
-
-export interface PaymentMethodDetailsInput {
-  token?: string;
-  cardLast4?: string;
-  cardBrand?: string;
-  walletId?: string;
-}
-
-export interface CreatePaymentCommand {
-  orderId: number;
-  amount: number;
-  paymentMethod: PaymentMethodType;
-  currency: string;
-  paymentMethodDetails?: PaymentMethodDetailsInput;
-  userId?: number;
-}
-
-export interface CreatePaymentInput {
-  command: CreatePaymentCommand;
-  callerContext: CallerContext;
-}
+import { CreatePaymentCommand } from '../../commands/create-payment.command';
 
 @Injectable()
 export class CreatePaymentUseCase extends UseCase<
-  CreatePaymentInput,
+  CreatePaymentCommand,
   IPayment,
   UseCaseError
 > {
@@ -53,29 +31,32 @@ export class CreatePaymentUseCase extends UseCase<
   }
 
   async execute(
-    input: CreatePaymentInput,
+    command: CreatePaymentCommand,
   ): Promise<Result<IPayment, UseCaseError>> {
-    const { command: dto, callerContext } = input;
+    const { callerContext } = command;
 
     if (
+      callerContext &&
       !OwnedResourceAccessPolicy.canViewResource(
         callerContext,
-        dto.userId || null,
+        command.userId || null,
         ORDER_ACCESS_PERMISSIONS,
       )
     ) {
       return ErrorFactory.UseCaseError(
-        `User ${dto.userId} is not allowed to create a payment for order ${dto.orderId}`,
+        `User ${command.userId} is not allowed to create a payment for order ${command.orderId}`,
       );
     }
 
-    const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
+    const gateway = this.paymentGatewayResolver.getGateway(
+      command.paymentMethod,
+    );
 
     const authResult = await gateway.authorize(
-      dto.amount,
-      dto.currency,
-      dto.paymentMethodDetails
-        ? JSON.stringify(dto.paymentMethodDetails)
+      command.amount,
+      command.currency,
+      command.paymentMethodDetails
+        ? JSON.stringify(command.paymentMethodDetails)
         : undefined,
     );
 
@@ -90,13 +71,13 @@ export class CreatePaymentUseCase extends UseCase<
 
     const payment = Payment.create(
       null,
-      dto.orderId,
-      dto.amount,
-      dto.currency,
-      dto.paymentMethod,
-      dto.userId,
-      dto.paymentMethodDetails
-        ? JSON.stringify(dto.paymentMethodDetails)
+      command.orderId,
+      command.amount,
+      command.currency,
+      command.paymentMethod,
+      command.userId,
+      command.paymentMethodDetails
+        ? JSON.stringify(command.paymentMethodDetails)
         : undefined,
     );
 

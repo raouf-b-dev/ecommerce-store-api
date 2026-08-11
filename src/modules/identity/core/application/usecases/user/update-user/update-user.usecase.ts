@@ -7,22 +7,11 @@ import {
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
-
-export interface UpdateUserCommand {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-}
-
-export interface UpdateUserInput {
-  id: number;
-  command: UpdateUserCommand;
-}
+import { UpdateUserCommand } from '../../../commands/update-user.command';
 
 @Injectable()
 export class UpdateUserUseCase extends UseCase<
-  UpdateUserInput,
+  UpdateUserCommand,
   void,
   UseCaseError
 > {
@@ -30,8 +19,10 @@ export class UpdateUserUseCase extends UseCase<
     super();
   }
 
-  async execute(input: UpdateUserInput): Promise<Result<void, UseCaseError>> {
-    const { id, command: dto } = input;
+  async execute(
+    command: UpdateUserCommand,
+  ): Promise<Result<void, UseCaseError>> {
+    const { id, firstName, lastName, email, phone } = command;
 
     const userResult = await this.userRepository.findByIdForUpdate(id);
     if (isFailure(userResult)) return userResult;
@@ -41,10 +32,10 @@ export class UpdateUserUseCase extends UseCase<
     const { entity: user, expectedVersion } = userResult.value;
 
     const updateResult = user.updatePersonalInfo(
-      dto.firstName || user.firstName,
-      dto.lastName || user.lastName,
-      dto.email || user.email,
-      dto.phone !== undefined ? dto.phone : user.phone,
+      firstName || user.firstName,
+      lastName || user.lastName,
+      email || user.email,
+      phone !== undefined ? phone : user.phone,
     );
 
     if (isFailure(updateResult)) return updateResult;

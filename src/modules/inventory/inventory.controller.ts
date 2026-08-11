@@ -69,8 +69,8 @@ export class InventoryController {
     @Body() dto: AdjustStockDto,
   ) {
     return await this.adjustStockUseCase.execute({
-      productId: productId,
-      command: dto,
+      productId,
+      ...dto,
     });
   }
 

@@ -79,7 +79,7 @@ export class OrdersController {
     @CallerCtx() callerContext: CallerContext | null,
   ) {
     return await this.checkoutUseCase.execute({
-      command: dto,
+      ...dto,
       callerContext,
     });
   }
@@ -137,9 +137,7 @@ export class OrdersController {
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be confirmed.' })
   async confirmOrder(@Param('id', ParseIntPipe) id: number) {
-    return await this.confirmOrderUseCase.execute({
-      orderId: id,
-    });
+    return await this.confirmOrderUseCase.execute(id);
   }
 
   @Patch(':id/process')

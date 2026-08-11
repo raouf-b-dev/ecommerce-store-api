@@ -9,11 +9,7 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-
-export interface CancelOrderCommand {
-  orderId: number;
-  isSagaCompensation?: boolean;
-}
+import { CancelOrderCommand } from '../../commands/cancel-order.command';
 
 @Injectable()
 export class CancelOrderUseCase implements UseCase<
