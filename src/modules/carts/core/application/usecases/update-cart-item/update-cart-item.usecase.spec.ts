@@ -6,7 +6,7 @@ import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { UpdateCartItemInput } from './update-cart-item.usecase';
+import { UpdateCartItemCommand } from '../../commands/update-cart-item.command';
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -44,18 +44,21 @@ describe('UpdateCartItemUseCase', () => {
 
   describe('execute', () => {
     it('should update item quantity successfully', async () => {
-      const cartId = 123;
-      const itemId = 1;
-      const input: UpdateCartItemInput = { quantity: 5 };
+      const command: UpdateCartItemCommand = {
+        cartId: 123,
+        itemId: 1,
+        quantity: 5,
+        callerContext: customerContext,
+      };
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
-        id: cartId,
+        id: 123,
         userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
       const items = mockCart.getItems();
       if (items.length > 0) {
-        Object.defineProperty(items[0], 'id', { value: itemId });
+        Object.defineProperty(items[0], 'id', { value: 1 });
       }
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
@@ -68,33 +71,26 @@ describe('UpdateCartItemUseCase', () => {
       );
       mockCartRepository.mockSuccessfulSave();
 
-      const result = await usecase.execute({
-        cartId,
-        itemId,
-        input,
-        callerContext: customerContext,
-      });
+      const result = await usecase.execute(command);
 
-      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(123);
       expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should return failure when cart not found', async () => {
-      const cartId = 404;
-      const itemId = 1;
-      const input: UpdateCartItemInput = { quantity: 2 };
-
-      mockCartRepository.mockCartNotFound(String(cartId));
-
-      const result = await usecase.execute({
-        cartId,
-        itemId,
-        input,
+      const command: UpdateCartItemCommand = {
+        cartId: 404,
+        itemId: 1,
+        quantity: 2,
         callerContext: customerContext,
-      });
+      };
 
-      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(cartId);
+      mockCartRepository.mockCartNotFound('404');
+
+      const result = await usecase.execute(command);
+
+      expect(mockCartRepository.findByIdForUpdate).toHaveBeenCalledWith(404);
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -104,18 +100,21 @@ describe('UpdateCartItemUseCase', () => {
     });
 
     it('should return failure when stock is insufficient', async () => {
-      const cartId = 123;
-      const itemId = 1;
-      const input: UpdateCartItemInput = { quantity: 20 };
+      const command: UpdateCartItemCommand = {
+        cartId: 123,
+        itemId: 1,
+        quantity: 20,
+        callerContext: customerContext,
+      };
 
       const mockCartData = CartTestFactory.createCartWithItems(2, {
-        id: cartId,
+        id: 123,
         userId: 123,
       });
       const mockCart = Cart.fromPrimitives(mockCartData);
       const items = mockCart.getItems();
       if (items.length > 0) {
-        Object.defineProperty(items[0], 'id', { value: itemId });
+        Object.defineProperty(items[0], 'id', { value: 1 });
       }
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
@@ -127,16 +126,11 @@ describe('UpdateCartItemUseCase', () => {
         }),
       );
 
-      const result = await usecase.execute({
-        cartId,
-        itemId,
-        input,
-        callerContext: customerContext,
-      });
+      const result = await usecase.execute(command);
 
       expect(mockInventoryGateway.checkStock).toHaveBeenCalledWith(
         expect.any(Number),
-        input.quantity,
+        20,
       );
       ResultAssertionHelper.assertResultFailure(
         result,
