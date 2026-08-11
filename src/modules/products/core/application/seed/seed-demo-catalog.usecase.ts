@@ -40,7 +40,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
     }
 
     const productSkuToIdMap = new Map<string, number>();
-    for (const product of existingProductsResult.value) {
+    for (const product of existingProductsResult.value.items) {
       if (product.sku && product.id) {
         productSkuToIdMap.set(product.sku, product.id);
       }

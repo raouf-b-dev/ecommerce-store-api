@@ -28,6 +28,11 @@ export const USER_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
   viewOwn: 'view_own_profile',
 };
 
+export const CART_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
+  viewAll: 'view_all_carts',
+  viewOwn: 'manage_own_cart',
+};
+
 export const USER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
   manageAll: 'manage_users',
   manageOwn: 'manage_own_addresses',

@@ -53,7 +53,7 @@ export class CartsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get cart by ID' })
-  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({ status: 200 })
   async getCart(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext | null,

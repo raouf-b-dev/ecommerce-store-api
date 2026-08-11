@@ -32,7 +32,7 @@ export class ModuleUserGateway implements UserGateway {
     const user = result.value;
 
     const userInfo: CheckoutUserInfoResult = {
-      id: user.id!,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,

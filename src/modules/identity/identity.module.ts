@@ -25,6 +25,8 @@ import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/
 import { GetUserUseCase } from './core/application/usecases/user/get-user/get-user.usecase';
 import { ListUsersUseCase } from './core/application/usecases/user/list-users/list-users.usecase';
 import { UpdateUserUseCase } from './core/application/usecases/user/update-user/update-user.usecase';
+import { UserQueryService } from './core/application/ports/user-query.service';
+import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-user-query.adapter';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity, AddressEntity]), RedisModule],
@@ -63,6 +65,12 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
     UpdateUserUseCase,
     CheckEmailExistsUseCase,
     GetUserByEmailUseCase,
+
+    // CQRS Presentation Query Service
+    {
+      provide: UserQueryService,
+      useClass: PostgresUserQueryAdapter,
+    },
   ],
   exports: [
     CreateUserUseCase,
@@ -70,6 +78,7 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
     GetUserByEmailUseCase,
     CheckEmailExistsUseCase,
     DeleteUserUseCase,
+    UserQueryService,
   ],
 })
 export class IdentityModule {}

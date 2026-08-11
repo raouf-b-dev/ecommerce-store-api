@@ -21,6 +21,8 @@ import { SaveNotificationHistoryProcess } from './primary-adapters/jobs/save-not
 import { UpdateNotificationStatusProcess } from './primary-adapters/jobs/update-notification-status.process';
 import { CleanupExpiredNotificationsProcess } from './primary-adapters/jobs/cleanup-expired-notifications.process';
 import { NotificationsProcessor } from './notifications.processor';
+import { NotificationQueryService } from './core/application/ports/notification-query.service';
+import { PostgresNotificationQueryAdapter } from './secondary-adapters/query/postgres-notification-query.adapter';
 
 @Module({
   imports: [
@@ -64,7 +66,13 @@ import { NotificationsProcessor } from './notifications.processor';
 
     // Processor
     NotificationsProcessor,
+
+    // CQRS Presentation Query Service
+    {
+      provide: NotificationQueryService,
+      useClass: PostgresNotificationQueryAdapter,
+    },
   ],
-  exports: [DeliverNotificationService],
+  exports: [DeliverNotificationService, NotificationQueryService],
 })
 export class NotificationsModule {}

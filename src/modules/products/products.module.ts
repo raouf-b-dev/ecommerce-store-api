@@ -18,6 +18,9 @@ import { ListProductsUseCase } from './core/application/usecases/list-products/l
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalog.usecase';
 
+import { ProductQueryService } from './core/application/ports/product-query.service';
+import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres-product-query.adapter';
+
 @Module({
   imports: [TypeOrmModule.forFeature([ProductEntity]), RedisModule],
 
@@ -54,7 +57,13 @@ import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalo
     ListProductsUseCase,
     UpdateProductUseCase,
     SeedDemoCatalogUseCase,
+
+    // CQRS Presentation Query Service
+    {
+      provide: ProductQueryService,
+      useClass: PostgresProductQueryAdapter,
+    },
   ],
-  exports: [ProductRepository, GetProductUseCase],
+  exports: [ProductRepository, GetProductUseCase, ProductQueryService],
 })
 export class ProductsModule {}
