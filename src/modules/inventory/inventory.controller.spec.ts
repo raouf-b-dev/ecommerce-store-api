@@ -4,14 +4,14 @@ import { IInventory } from './core/domain/interfaces/inventory.interface';
 import { InventoryTestFactory } from './testing/factories/inventory.test.factory';
 import { Result } from '../../shared-kernel/domain/result';
 
-import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
-import { BulkCheckStockUseCase } from './core/application/bulk-check-stock/bulk-check-stock.usecase';
-import { CheckStockUseCase } from './core/application/check-stock/check-stock.usecase';
-import { GetInventoryUseCase } from './core/application/get-inventory/get-inventory.usecase';
-import { ListLowStockUseCase } from './core/application/list-low-stock/list-low-stock.usecase';
-import { ReleaseStockUseCase } from './core/application/release-stock/release-stock.usecase';
-import { ReserveStockUseCase } from './core/application/reserve-stock/reserve-stock.usecase';
-import { ListInventoryUseCase } from './core/application/list-inventory/list-inventory.usecase';
+import { AdjustStockUseCase } from './core/application/usecases/adjust-stock/adjust-stock.usecase';
+import { BulkCheckStockUseCase } from './core/application/usecases/bulk-check-stock/bulk-check-stock.usecase';
+import { CheckStockUseCase } from './core/application/usecases/check-stock/check-stock.usecase';
+import { GetInventoryUseCase } from './core/application/usecases/get-inventory/get-inventory.usecase';
+import { ListLowStockUseCase } from './core/application/usecases/list-low-stock/list-low-stock.usecase';
+import { ReleaseStockUseCase } from './core/application/usecases/release-stock/release-stock.usecase';
+import { ReserveStockUseCase } from './core/application/usecases/reserve-stock/reserve-stock.usecase';
+import { ListInventoryUseCase } from './core/application/usecases/list-inventory/list-inventory.usecase';
 
 describe('InventoryController', () => {
   let controller: InventoryController;

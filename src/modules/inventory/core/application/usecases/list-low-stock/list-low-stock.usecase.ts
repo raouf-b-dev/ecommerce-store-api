@@ -1,0 +1,30 @@
+import { Injectable } from '@nestjs/common';
+import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
+import { Result } from '../../../../../../shared-kernel/domain/result';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { LowStockQuery } from '../../../domain/repositories/inventory.repository';
+import { InventoryRepository } from '../../../domain/repositories/inventory.repository';
+import { IInventory } from '../../../domain/interfaces/inventory.interface';
+import { Inventory } from '../../../domain/entities/inventory';
+
+@Injectable()
+export class ListLowStockUseCase implements UseCase<
+  LowStockQuery,
+  IInventory[],
+  UseCaseError
+> {
+  constructor(private inventoryRepository: InventoryRepository) {}
+
+  async execute(
+    query: LowStockQuery,
+  ): Promise<Result<IInventory[], UseCaseError>> {
+    const lowStockResult = await this.inventoryRepository.findLowStock(query);
+    if (lowStockResult.isFailure) return lowStockResult;
+
+    const inventories: IInventory[] = lowStockResult.value.map((i: Inventory) =>
+      i.toPrimitives(),
+    );
+
+    return Result.success(inventories);
+  }
+}
