@@ -159,11 +159,17 @@ jobs:
       - name: Run Build
         run: npm run build
 
+      - name: Verify build output
+        run: |
+          test -f dist/src/main.js
+          echo "dist/src/main.js exists"
+
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist-app
           path: dist/
+          if-no-files-found: error
           retention-days: 1
 
   integration-tests:
@@ -308,6 +314,11 @@ jobs:
           name: dist-app
           path: dist/
 
+      - name: Verify downloaded artifact
+        run: |
+          test -f dist/src/main.js
+          echo "dist/src/main.js exists"
+
       - name: Prepare test environment
         uses: ./.github/actions/prepare-test-env
         with:
@@ -324,17 +335,27 @@ jobs:
 
       - name: Run smoke test
         run: |
+          set -euo pipefail
+
           PORT=3000 npm run start:test &
           APP_PID=$!
 
+          ready=false
           for i in {1..30}; do
-            if curl -s http://localhost:3000/health/readiness | grep -q '"status":"ok"'; then
+            if curl -fsS http://localhost:3000/health/readiness | grep -q '"status":"ok"'; then
               echo "App ready at http://localhost:3000"
+              ready=true
               break
             fi
             echo "Waiting for app readiness... ($i/30)"
             sleep 1
           done
+
+          if [ "$ready" != true ]; then
+            echo "Application failed to become ready"
+            kill -SIGTERM $APP_PID 2>/dev/null || true
+            exit 1
+          fi
 
           PORT=3000 npm run smoke-test -- --base-url=http://localhost:3000
           kill -SIGTERM $APP_PID || true
