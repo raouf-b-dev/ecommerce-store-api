@@ -5,7 +5,7 @@ import { Result } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { MetricsService } from '../../../../infrastructure/metrics/metrics.service';
-import { ReconcileInventoryUseCase } from '../../core/application/reconcile-inventory/reconcile-inventory.usecase';
+import { ReconcileInventoryUseCase } from '../../core/application/usecases/reconcile-inventory/reconcile-inventory.usecase';
 
 @Injectable()
 export class InventoryReconciliationJob extends BaseJobHandler<void, void> {

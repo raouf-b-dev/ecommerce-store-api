@@ -4,10 +4,10 @@ import {
   ReservationData,
   ReserveStockInput,
 } from '../../core/application/ports/inventory-reservation.gateway';
-import { GetOrderReservationsUseCase } from '../../../inventory/core/application/get-order-reservations/get-order-reservations.usecase';
-import { ReserveStockUseCase } from '../../../inventory/core/application/reserve-stock/reserve-stock.usecase';
-import { ReleaseStockUseCase } from '../../../inventory/core/application/release-stock/release-stock.usecase';
-import { ConfirmReservationUseCase } from '../../../inventory/core/application/confirm-reservation/confirm-reservation.usecase';
+import { GetOrderReservationsUseCase } from '../../../inventory/core/application/usecases/get-order-reservations/get-order-reservations.usecase';
+import { ReserveStockUseCase } from '../../../inventory/core/application/usecases/reserve-stock/reserve-stock.usecase';
+import { ReleaseStockUseCase } from '../../../inventory/core/application/usecases/release-stock/release-stock.usecase';
+import { ConfirmReservationUseCase } from '../../../inventory/core/application/usecases/confirm-reservation/confirm-reservation.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';

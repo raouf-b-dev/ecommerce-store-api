@@ -1,5 +1,5 @@
 import { InventoryReconciliationJob } from './inventory-reconciliation.job';
-import { ReconcileInventoryUseCase } from '../../core/application/reconcile-inventory/reconcile-inventory.usecase';
+import { ReconcileInventoryUseCase } from '../../core/application/usecases/reconcile-inventory/reconcile-inventory.usecase';
 import { MetricsService } from '../../../../infrastructure/metrics/metrics.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';

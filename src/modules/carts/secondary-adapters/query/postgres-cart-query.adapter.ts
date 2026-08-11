@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { CartQueryService } from '../../core/application/ports/cart-query.service';
 import { CartPresentationDTO } from '../../core/application/queries/results/cart-presentation.result';
 import { CartEntity } from '../orm/cart.schema';
-import { CartItemEntity } from '../orm/cart-item.schema';
 import { RawCartQueryRow } from '../dto/raw-cart-query-row.interface';
 import { CartQueryMapper } from '../mappers/query/cart-query.mapper';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -25,7 +24,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
     try {
       const qb = this.cartRepo
         .createQueryBuilder('cart')
-        .leftJoin(CartItemEntity, 'item', 'item.cartId = cart.id')
+        .leftJoin('cart.items', 'item')
         .select([
           'cart.id AS "cartId"',
           'cart.userId AS "userId"',
@@ -61,7 +60,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
     try {
       const qb = this.cartRepo
         .createQueryBuilder('cart')
-        .leftJoin(CartItemEntity, 'item', 'item.cartId = cart.id')
+        .leftJoin('cart.items', 'item')
         .select([
           'cart.id AS "cartId"',
           'cart.userId AS "userId"',

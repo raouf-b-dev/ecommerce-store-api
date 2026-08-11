@@ -14,6 +14,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "src/*": ["src/*"],
+      "testing/*": ["src/testing/*"],
+      "test/*": ["test/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "isolatedModules": true,
