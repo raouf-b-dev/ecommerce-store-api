@@ -146,7 +146,7 @@
     "redis": "^5.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "sanitize-html": "^2.17.3",
+    "sanitize-html": "2.17.5",
     "socket.io": "^4.8.3",
     "typeorm": "^0.3.25",
     "winston": "^3.19.0",
@@ -191,7 +191,11 @@
   },
   "overrides": {
     "js-yaml": "5.2.3",
-    "brace-expansion": "1.1.18",
+    "@eslint/eslintrc": {
+      "minimatch": {
+        "brace-expansion": "1.1.18"
+      }
+    },
     "typeorm": {
       "redis": "npm:redis@5.8.0"
     }
