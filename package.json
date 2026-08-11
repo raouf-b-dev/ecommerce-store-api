@@ -30,9 +30,10 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development nest start",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
-    "start:built": "npm run build && cross-env NODE_ENV=development node --require ./dist/infrastructure/tracing/tracing.js dist/main.js",
-    "start:prod": "cross-env NODE_ENV=production node --require ./dist/infrastructure/tracing/tracing.js dist/main.js",
-    "start:staging": "cross-env NODE_ENV=staging node --require ./dist/infrastructure/tracing/tracing.js dist/main.js",
+    "start:built": "npm run build && cross-env NODE_ENV=development node --require ./dist/src/infrastructure/tracing/tracing.js dist/src/main.js",
+    "start:prod": "cross-env NODE_ENV=production node --require ./dist/src/infrastructure/tracing/tracing.js dist/src/main.js",
+    "start:staging": "cross-env NODE_ENV=staging node --require ./dist/src/infrastructure/tracing/tracing.js dist/src/main.js",
+    "start:test": "cross-env NODE_ENV=test node dist/src/main.js",
     "start:debug": "cross-env NODE_ENV=development DEBUG_PORT=9229 nest start --debug --watch",
     "build": "nest build",
     "build:clean": "npm run clean && nest build",
@@ -99,6 +100,9 @@
     "env:init:prod": "node scripts/generate-envs.js --envs=production",
     "env:init:staging": "node scripts/generate-envs.js --envs=staging",
     "env:init:test": "node scripts/generate-envs.js --envs=test",
+    "env:init:secrets": "node scripts/generate-envs.js --secrets-only",
+    "smoke-test": "node scripts/smoke-test.js",
+    "audit:check": "npm audit --omit=dev --audit-level=high",
     "prepare": "husky",
     "skills:sync": "node scripts/sync-agent-skills.js",
     "skills:check": "node scripts/sync-agent-skills.js --check",
@@ -121,10 +125,10 @@
     "@nestjs/typeorm": "^11.0.2",
     "@nestjs/websockets": "^11.1.27",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.77.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.79.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.219.0",
     "@opentelemetry/resources": "^2.8.0",
-    "@opentelemetry/sdk-node": "^0.219.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/bcrypt": "^6.0.0",
@@ -142,7 +146,7 @@
     "redis": "^5.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "sanitize-html": "^2.17.3",
+    "sanitize-html": "2.17.5",
     "socket.io": "^4.8.3",
     "typeorm": "^0.3.25",
     "winston": "^3.19.0",
@@ -156,7 +160,7 @@
     "@nestjs/testing": "^11.1.27",
     "@swc/cli": "^0.8.1",
     "@swc/core": "^1.15.43",
-    "@testcontainers/postgresql": "^10.18.0",
+    "@testcontainers/postgresql": "^12.1.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -186,6 +190,12 @@
     "typescript-eslint": "^8.62.0"
   },
   "overrides": {
+    "js-yaml": "5.2.3",
+    "@eslint/eslintrc": {
+      "minimatch": {
+        "brace-expansion": "1.1.18"
+      }
+    },
     "typeorm": {
       "redis": "npm:redis@5.8.0"
     }
@@ -225,5 +235,14 @@
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "allowScripts": {
+    "bcrypt": true,
+    "@swc/core@1.15.47": true,
+    "protobufjs@7.6.5": true,
+    "msgpackr-extract": true,
+    "unrs-resolver@1.12.2": true,
+    "ssh2@1.17.0": true,
+    "cpu-features@0.0.10": true
   }
 }
