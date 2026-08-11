@@ -42,7 +42,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 # Pre-load OpenTelemetry instrumentation before any application code.
 # tracing.ts checks OTEL_TRACING_ENABLED internally, so --require is always safe.
-ENV NODE_OPTIONS="--require ./dist/infrastructure/tracing/tracing.js"
+ENV NODE_OPTIONS="--require ./dist/src/infrastructure/tracing/tracing.js"
 
 # Copy only production artifacts
 COPY --from=build /app/dist ./dist
@@ -67,4 +67,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:${PORT}/health/liveness || exit 1
 
 ENTRYPOINT ["tini", "--", "/app/docker-entrypoint.sh"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
