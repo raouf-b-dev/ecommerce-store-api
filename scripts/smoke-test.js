@@ -177,7 +177,9 @@ async function executeSuite() {
 
   await runCheck('Authenticated API Probe (GET /v1/users/:id)', async () => {
     if (!accessToken) {
-      throw new Error('Skipping authenticated probe — login token missing');
+      throw new Error(
+        'Cannot run authenticated probe because login did not produce an access token',
+      );
     }
     if (!registeredUserId) {
       throw new Error(
