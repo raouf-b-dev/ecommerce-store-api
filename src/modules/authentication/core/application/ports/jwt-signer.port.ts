@@ -3,7 +3,7 @@
  * Contains the domain-level claims before JWT standard fields are added.
  */
 export interface SignAccessTokenPayload {
-  sub: number | null;
+  sub: string | null;
   email: string;
   role: string;
 }

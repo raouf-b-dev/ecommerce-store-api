@@ -20,7 +20,7 @@ export interface VerifiedAccessTokenPayload extends JWTPayload {
  */
 export interface VerifiedRefreshTokenPayload extends JWTPayload {
   sub: string;
-  sessionId: string;
+  sid: string;
   typ: string;
   iss: string;
   iat: number;
