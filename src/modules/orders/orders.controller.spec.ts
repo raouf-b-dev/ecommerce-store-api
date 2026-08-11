@@ -164,7 +164,7 @@ describe('OrdersController', () => {
   it('should call CheckoutUseCase.execute when checkout is called', async () => {
     await controller.checkout(checkoutDto, callerContext);
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
-      command: checkoutDto,
+      ...checkoutDto,
       callerContext,
     });
   });
@@ -198,9 +198,9 @@ describe('OrdersController', () => {
 
   it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
     const res = await controller.confirmOrder(confirmedOrder.id!);
-    expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
-      orderId: confirmedOrder.id!,
-    });
+    expect(confirmOrderUseCase.execute).toHaveBeenCalledWith(
+      confirmedOrder.id!,
+    );
     expect(res).toEqual(Result.success(confirmedOrder));
   });
 

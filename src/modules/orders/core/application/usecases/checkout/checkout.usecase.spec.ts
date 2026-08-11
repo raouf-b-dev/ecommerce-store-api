@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutUseCase } from './checkout.usecase';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { CheckoutCommand } from './checkout.usecase';
+import { CheckoutCommand } from '../../commands/checkout.command';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
@@ -10,16 +10,20 @@ import { OrderFactory } from '../../../domain/factories/order.factory';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { DomainEventPublisher } from 'src/shared-kernel/domain/interfaces/domain-event-publisher';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  CallerContext,
+  createUserCallerContext,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 describe('CheckoutUseCase', () => {
   let useCase: CheckoutUseCase;
   let orderScheduler: jest.Mocked<OrderScheduler>;
   let validateCheckoutUseCase: jest.Mocked<ValidateCheckoutUseCase>;
   let domainEventPublisher: DomainEventPublisher;
-
+  let callerContext: CallerContext;
   const mockuserId = 123;
   const mockCartId = 123;
 
@@ -42,6 +46,8 @@ describe('CheckoutUseCase', () => {
   });
 
   beforeEach(async () => {
+    callerContext = AuthPayloadFactory.createCallerContext();
+
     const mockOrderScheduler = {
       scheduleCheckout: jest.fn(),
     };
@@ -100,6 +106,7 @@ describe('CheckoutUseCase', () => {
     const command: CheckoutCommand = {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.STRIPE,
+      callerContext,
     };
 
     orderScheduler.scheduleCheckout.mockResolvedValue(
@@ -107,7 +114,7 @@ describe('CheckoutUseCase', () => {
     );
 
     const result = await useCase.execute({
-      command,
+      ...command,
       callerContext: customerCallerContext,
     });
 
@@ -155,6 +162,7 @@ describe('CheckoutUseCase', () => {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.STRIPE,
       shippingAddress: shippingAddressDto,
+      callerContext,
     };
 
     orderScheduler.scheduleCheckout.mockResolvedValue(
@@ -162,7 +170,7 @@ describe('CheckoutUseCase', () => {
     );
 
     const result = await useCase.execute({
-      command,
+      ...command,
       callerContext: customerCallerContext,
     });
 
@@ -182,10 +190,11 @@ describe('CheckoutUseCase', () => {
     const command: CheckoutCommand = {
       cartId: mockCartId,
       paymentMethod: PaymentMethodType.STRIPE,
+      callerContext,
     };
 
     const result = await useCase.execute({
-      command,
+      ...command,
       callerContext: customerCallerContext,
     });
 

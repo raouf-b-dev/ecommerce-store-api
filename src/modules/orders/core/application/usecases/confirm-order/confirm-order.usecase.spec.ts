@@ -1,39 +1,33 @@
-// src/modules/orders/application/usecases/confirm-order/confirm-order.usecase.spec.ts
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
 import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
 import { OrderTestFactory } from '../../../../testing/factories/order.factory';
+import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import {
-  ResultAssertionHelper,
-  LoggerTestHelper,
-} from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
 
   beforeEach(() => {
-    LoggerTestHelper.silence();
     mockOrderRepository = new MockOrderRepository();
     useCase = new ConfirmOrderUseCase(mockOrderRepository);
   });
 
   afterEach(() => {
-    mockOrderRepository.reset();
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('execute', () => {
-    it('should return Success if online payment order with completed payment is confirmed', async () => {
+    it('should confirm pending order successfully', async () => {
       const pendingOrder =
         OrderTestFactory.createOnlineOrderReadyForConfirmation();
 
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingOrder);
       mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
@@ -43,7 +37,7 @@ describe('ConfirmOrderUseCase', () => {
       const orderId = 999;
       mockOrderRepository.mockOrderNotFound(orderId);
 
-      const result = await useCase.execute({ orderId: orderId });
+      const result = await useCase.execute(orderId);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -62,7 +56,7 @@ describe('ConfirmOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(confirmedOrder);
 
-      const result = await useCase.execute({ orderId: confirmedOrder.id! });
+      const result = await useCase.execute(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -81,7 +75,7 @@ describe('ConfirmOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingOrder);
 
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -97,7 +91,7 @@ describe('ConfirmOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(deliveredOrder);
 
-      const result = await useCase.execute({ orderId: deliveredOrder.id! });
+      const result = await useCase.execute(deliveredOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -113,7 +107,7 @@ describe('ConfirmOrderUseCase', () => {
 
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
 
-      const result = await useCase.execute({ orderId: cancelledOrder.id! });
+      const result = await useCase.execute(cancelledOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -133,7 +127,7 @@ describe('ConfirmOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(stripeOrder);
       mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: stripeOrder.id! });
+      const result = await useCase.execute(stripeOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
@@ -150,7 +144,7 @@ describe('ConfirmOrderUseCase', () => {
       mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingMultiItem);
       mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: pendingMultiItem.id! });
+      const result = await useCase.execute(pendingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.items).toHaveLength(5);

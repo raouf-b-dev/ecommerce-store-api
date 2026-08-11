@@ -5,38 +5,17 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ShippingAddressInput } from '../../services/shipping-address-resolver';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-
-export interface CheckoutCommand {
-  cartId: number;
-  paymentMethod: PaymentMethodType;
-  shippingAddress?: ShippingAddressInput;
-  customerNotes?: string;
-}
-
-export interface CheckoutResult {
-  orderId: number;
-  jobId: string;
-  status: OrderStatus;
-  message: string;
-}
-
-export interface CheckoutInput {
-  command: CheckoutCommand;
-  callerContext: CallerContext | null;
-}
+import { CheckoutCommand } from '../../commands/checkout.command';
+import { CheckoutResult } from '../../queries/results/checkout.result';
 
 @Injectable()
 export class CheckoutUseCase extends UseCase<
-  CheckoutInput,
+  CheckoutCommand,
   CheckoutResult,
   UseCaseError
 > {
@@ -53,9 +32,9 @@ export class CheckoutUseCase extends UseCase<
   }
 
   async execute(
-    input: CheckoutInput,
+    command: CheckoutCommand,
   ): Promise<Result<CheckoutResult, UseCaseError>> {
-    const { command, callerContext } = input;
+    const { callerContext } = command;
 
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId: command.cartId,
