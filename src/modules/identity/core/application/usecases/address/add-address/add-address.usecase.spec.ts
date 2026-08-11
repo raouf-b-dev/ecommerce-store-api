@@ -1,4 +1,5 @@
-import { AddAddressUseCase, AddAddressCommand } from './add-address.usecase';
+import { AddAddressUseCase } from './add-address.usecase';
+import { AddAddressCommand } from '../../../commands/add-address.command';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
@@ -13,8 +14,8 @@ import { AddressTestFactory } from '../../../../../testing/factories/address.ent
 import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 
 /** Use a street distinct from the default mock address ('123 Main St') to avoid duplicate-address errors */
-const newAddressCommand = (): AddAddressCommand =>
-  AddressTestFactory.createAddAddressCommand({ street: '999 New Ave' });
+const newAddressCommand = (userId = 123): AddAddressCommand =>
+  AddressTestFactory.createAddAddressCommand({ userId, street: '999 New Ave' });
 
 const adminCallerContext = createUserCallerContext({
   userId: 1,
@@ -50,15 +51,14 @@ describe('AddAddressUseCase', () => {
   describe('execute', () => {
     it('should return Success if address is added', async () => {
       const userId = 123;
-      const command: AddAddressCommand = newAddressCommand();
+      const command = newAddressCommand(userId);
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -69,19 +69,18 @@ describe('AddAddressUseCase', () => {
 
     it('should add home address', async () => {
       const userId = 123;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand({
-          street: '999 New Ave',
-          type: AddressType.HOME,
-        });
+      const command = AddressTestFactory.createAddAddressCommand({
+        userId,
+        street: '999 New Ave',
+        type: AddressType.HOME,
+      });
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -90,19 +89,18 @@ describe('AddAddressUseCase', () => {
 
     it('should add work address', async () => {
       const userId = 123;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand({
-          street: '999 New Ave',
-          type: AddressType.WORK,
-        });
+      const command = AddressTestFactory.createAddAddressCommand({
+        userId,
+        street: '999 New Ave',
+        type: AddressType.WORK,
+      });
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -111,19 +109,18 @@ describe('AddAddressUseCase', () => {
 
     it('should add address with delivery instructions', async () => {
       const userId = 123;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand({
-          street: '999 New Ave',
-          deliveryInstructions: 'Leave at front door',
-        });
+      const command = AddressTestFactory.createAddAddressCommand({
+        userId,
+        street: '999 New Ave',
+        deliveryInstructions: 'Leave at front door',
+      });
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -132,14 +129,12 @@ describe('AddAddressUseCase', () => {
 
     it('should return Failure(UseCaseError) if user not found', async () => {
       const userId = 999;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand();
+      const command = AddressTestFactory.createAddAddressCommand({ userId });
 
       mockUserRepository.mockUserNotFound();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -152,16 +147,14 @@ describe('AddAddressUseCase', () => {
 
     it('should return Failure(RepositoryError) if repository fails', async () => {
       const userId = 123;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand();
+      const command = AddressTestFactory.createAddAddressCommand({ userId });
 
       mockUserRepository.findByIdForUpdate.mockResolvedValue(
         Result.failure(new RepositoryError('DB error')),
       );
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -174,15 +167,14 @@ describe('AddAddressUseCase', () => {
 
     it('should return Failure(RepositoryError) if save fails', async () => {
       const userId = 123;
-      const command: AddAddressCommand = newAddressCommand();
+      const command = newAddressCommand(userId);
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSaveFailure('Failed to update user');
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: adminCallerContext,
       });
 
@@ -195,15 +187,14 @@ describe('AddAddressUseCase', () => {
 
     it('should allow customer to add own address', async () => {
       const userId = 123;
-      const command: AddAddressCommand = newAddressCommand();
+      const command = newAddressCommand(userId);
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: ownCustomerContext,
       });
 
@@ -212,12 +203,10 @@ describe('AddAddressUseCase', () => {
 
     it('should deny customer trying to add address to another customer', async () => {
       const userId = 123;
-      const command: AddAddressCommand =
-        AddressTestFactory.createAddAddressCommand();
+      const command = AddressTestFactory.createAddAddressCommand({ userId });
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: otherCustomerContext,
       });
 
@@ -231,15 +220,14 @@ describe('AddAddressUseCase', () => {
 
     it('should allow system caller to add address', async () => {
       const userId = 123;
-      const command: AddAddressCommand = newAddressCommand();
+      const command = newAddressCommand(userId);
       const mockUserData = UserTestFactory.createMockUser({ id: userId });
 
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        userId,
-        command,
+        ...command,
         callerContext: SYSTEM_CALLER_CONTEXT,
       });
 

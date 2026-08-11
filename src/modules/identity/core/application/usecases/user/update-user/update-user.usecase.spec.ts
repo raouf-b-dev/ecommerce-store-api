@@ -1,4 +1,5 @@
-import { UpdateUserUseCase, UpdateUserCommand } from './update-user.usecase';
+import { UpdateUserUseCase } from './update-user.usecase';
+import { UpdateUserCommand } from '../../../commands/update-user.command';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -21,7 +22,8 @@ describe('UpdateUserUseCase', () => {
   describe('execute', () => {
     it('should return Success if user is updated', async () => {
       const userId = 123;
-      const updateDto: UpdateUserCommand = {
+      const command: UpdateUserCommand = {
+        id: userId,
         firstName: 'Jane',
         lastName: 'Smith',
       };
@@ -32,10 +34,7 @@ describe('UpdateUserUseCase', () => {
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({
-        id: userId,
-        command: updateDto,
-      });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockUserRepository.findByIdForUpdate).toHaveBeenCalledWith(userId);
@@ -44,16 +43,14 @@ describe('UpdateUserUseCase', () => {
 
     it('should return Failure(UseCaseError) if user is not found', async () => {
       const userId = 999;
-      const updateDto: UpdateUserCommand = {
+      const command: UpdateUserCommand = {
+        id: userId,
         firstName: 'Jane',
       };
 
       mockUserRepository.mockUserNotFound();
 
-      const result = await useCase.execute({
-        id: userId,
-        command: updateDto,
-      });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -66,7 +63,8 @@ describe('UpdateUserUseCase', () => {
 
     it('should return Failure(RepositoryError) if repository save fails', async () => {
       const userId = 123;
-      const updateDto: UpdateUserCommand = {
+      const command: UpdateUserCommand = {
+        id: userId,
         firstName: 'Jane',
       };
       const mockUserData = UserTestFactory.createMockUser({
@@ -76,10 +74,7 @@ describe('UpdateUserUseCase', () => {
       mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
       mockUserRepository.mockSaveFailure('Failed to update user');
 
-      const result = await useCase.execute({
-        id: userId,
-        command: updateDto,
-      });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
