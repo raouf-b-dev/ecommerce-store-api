@@ -3,16 +3,26 @@ import { OrderDtoTestFactory } from '../../modules/orders/testing/factories/orde
 import { OrderEntityTestFactory } from '../../modules/orders/testing/factories/order-entity.factory';
 import { ProductEntityTestFactory } from '../../modules/products/testing/factories/product-entity.factory';
 
+export const TEST_IDS = {
+  order: 1001,
+  user: 2001,
+  product: 3001,
+  payment: 4001,
+  shippingAddress: 5001,
+  cart: 6001,
+  job: 'job-123',
+} as const;
+
 export class TestDataHelper {
   static createRepositoryTestData(options?: {
     orderId?: number;
     productId?: number;
   }) {
-    const orderId = options?.orderId || 1;
-    const productId = options?.productId || 3;
-    const userId = 1;
-    const paymentId = 1;
-    const shippingAddressId = 1;
+    const orderId = options?.orderId || TEST_IDS.order;
+    const productId = options?.productId || TEST_IDS.product;
+    const userId = TEST_IDS.user;
+    const paymentId = TEST_IDS.payment;
+    const shippingAddressId = TEST_IDS.shippingAddress;
 
     const createOrderDto = OrderDtoTestFactory.createCheckoutCommand();
 
@@ -54,7 +64,10 @@ export class TestDataHelper {
   }
 
   static createMultiItemTestData(itemCount: number = 3) {
-    const productIds = Array.from({ length: itemCount }, (_, i) => i + 1);
+    const productIds = Array.from(
+      { length: itemCount },
+      (_, i) => TEST_IDS.product + i,
+    );
 
     return {
       productIds,
