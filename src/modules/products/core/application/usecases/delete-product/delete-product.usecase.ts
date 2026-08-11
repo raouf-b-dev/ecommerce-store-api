@@ -1,4 +1,3 @@
-// src/modules/Products/application/usecases/DeleteProduct/delete-Product.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
