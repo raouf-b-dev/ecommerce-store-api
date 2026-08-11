@@ -9,16 +9,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-
-export interface CreatePaymentIntentCommand {
-  amount: number;
-  currency: string;
-  paymentMethod: PaymentMethodType;
-  orderId: number;
-  userId: number;
-  metadata?: Record<string, any>;
-}
+import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
 
 export interface CreatePaymentIntentResult {
   paymentId: number;

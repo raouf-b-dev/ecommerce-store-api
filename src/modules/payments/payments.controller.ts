@@ -74,9 +74,10 @@ export class PaymentsController {
     @CallerCtx() callerContext: CallerContext,
   ) {
     const result = await this.createPaymentUseCase.execute({
-      command: dto,
+      ...dto,
       callerContext,
     });
+
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
@@ -132,8 +133,9 @@ export class PaymentsController {
     @Body() dto: ProcessRefundDto,
   ) {
     const result = await this.processRefundUseCase.execute({
-      id: id,
-      dto,
+      paymentId: id,
+      amount: dto.amount,
+      reason: dto.reason,
     });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));

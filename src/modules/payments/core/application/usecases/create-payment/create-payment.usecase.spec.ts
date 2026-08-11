@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentUseCase } from './create-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { CreatePaymentCommand } from './create-payment.usecase';
+import { CreatePaymentCommand } from '../../commands/create-payment.command';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
@@ -10,10 +10,16 @@ import { PaymentMapper } from '../../../../secondary-adapters/persistence/mapper
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  MockPaymentGatewayResolver,
+  MockPaymentGateway,
+} from '../../../../testing/mocks/payment-gateway.mock';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;
   let paymentRepository: MockPaymentRepository;
+  let gatewayResolver: MockPaymentGatewayResolver;
+  let defaultGateway: MockPaymentGateway;
 
   const customerContext = createUserCallerContext({
     userId: 2,
@@ -22,6 +28,10 @@ describe('CreatePaymentUseCase', () => {
   });
 
   beforeEach(async () => {
+    gatewayResolver = new MockPaymentGatewayResolver();
+    defaultGateway = gatewayResolver.getDefaultGateway();
+    defaultGateway.mockSuccessfulAuthorize('txn_123');
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePaymentUseCase,
@@ -31,9 +41,7 @@ describe('CreatePaymentUseCase', () => {
         },
         {
           provide: PaymentGatewayResolver,
-          useValue: {
-            getGateway: jest.fn(),
-          },
+          useValue: gatewayResolver,
         },
       ],
     }).compile();
@@ -42,23 +50,11 @@ describe('CreatePaymentUseCase', () => {
     paymentRepository = module.get<PaymentRepository>(
       PaymentRepository,
     ) as MockPaymentRepository;
-
-    const factory = module.get(PaymentGatewayResolver);
-    (factory.getGateway as jest.Mock).mockReturnValue({
-      authorize: jest.fn().mockResolvedValue({
-        isFailure: false,
-        isSuccess: true,
-        value: {
-          success: true,
-          transactionId: 'txn_123',
-          status: 'AUTHORIZED',
-        },
-      }),
-    });
   });
 
   afterEach(() => {
     paymentRepository.reset();
+    gatewayResolver.reset();
   });
 
   it('should create a payment successfully', async () => {
@@ -69,6 +65,7 @@ describe('CreatePaymentUseCase', () => {
       paymentMethod: PaymentMethodType.STRIPE,
       userId: 2,
       paymentMethodDetails: { cardLast4: '4242' },
+      callerContext: customerContext,
     };
 
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
@@ -82,10 +79,7 @@ describe('CreatePaymentUseCase', () => {
 
     paymentRepository.mockSuccessfulSave(payment);
 
-    const result = await useCase.execute({
-      command: dto,
-      callerContext: customerContext,
-    });
+    const result = await useCase.execute(dto);
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(paymentRepository.save).toHaveBeenCalled();
@@ -99,14 +93,12 @@ describe('CreatePaymentUseCase', () => {
       currency: 'USD',
       paymentMethod: PaymentMethodType.STRIPE,
       userId: 2,
+      callerContext: customerContext,
     };
 
     paymentRepository.mockSaveFailure('Save failed');
 
-    const result = await useCase.execute({
-      command: dto,
-      callerContext: customerContext,
-    });
+    const result = await useCase.execute(dto);
 
     ResultAssertionHelper.assertResultFailure(
       result,
