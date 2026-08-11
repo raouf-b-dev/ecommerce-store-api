@@ -45,7 +45,7 @@
 | :----- | :--------------------------- | :----- | :----------------------------------------------------------------------------------- |
 | **10** | Security Hardening Phase 2   | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                      |
 | **11** | Data Integrity & Concurrency | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
-| **12** | CQRS Read Path               | `[x]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters across all modules |
+| **12** | CQRS Read Path               | `[/]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters across all modules |
 | **13** | Minimum Viable Test Coverage | `[ ]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E         |
 
 | **14** | Single-Instance Production Gate | `[ ]` | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
@@ -100,7 +100,7 @@
 
 ---
 
-## ⚡ Phase 12 — CQRS Read Path & Presentation Projections
+## ⚡ Phase 12 — CQRS Read Path & Presentation Projections [COMPLETED]
 
 > **Goal**: Ship list and detail endpoints that return flat, presentation-ready DTOs with resolved customer names, emails, and product SKUs — in a single SQL query per page. **Complete before Phase 14 deployment** so the frontend is not forced to N+1-resolve IDs across modules.
 
@@ -184,17 +184,19 @@
 
 ---
 
-### [ ] Integration Test Suite & Architecture Audits
+### [x] Integration Test Suite & Architecture Audits
 
 **What**: Add targeted SQL QueryBuilder integration tests, deterministic authorization specs, `EXPLAIN ANALYZE` index verification, and architecture rule enforcement.
 
 **Scope**:
 
-- [ ] Query Adapter Integration Tests (PostgreSQL dev/test DB): Multi-item order pagination, empty results, detail 404 behavior, collection & resource authorization filtering.
-- [ ] Index Verification: Run `EXPLAIN ANALYZE` on query adapter projections to verify expected index utilization.
-- [ ] Architecture Boundary Audit Rules (`npm run test:arch`): Enforce core/domain/application layer boundaries and forbid leaky adapter imports.
+- [x] Integration Testing Harness & Guide: Created `INTEGRATION-TESTING-GUIDE.md`, `jest-integration.json`, and PostgreSQL Testcontainers setup harness (`test/integration/setup/`).
+- [x] Query Adapter Integration Specs (Real PostgreSQL DB): Implemented integration specs (`*.integration.spec.ts`) for all 7 query adapters (Orders, Inventory, Payments, Products, Carts, Identity, Notifications).
+- [x] Index Verification & EXPLAIN Inspection: Implemented `test/integration/index-verification.integration.spec.ts` auditing index existence via `pg_indexes` catalog table and executing `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` query plans.
+- [x] Query Mapper Unit Tests: Unit tested all 7 query mappers using test factories.
+- [x] Architecture Boundary Audit Rules (`npm run test:arch`): Enforced 18/18 hexagonal architecture rules.
 
-**Location**: `test/integration/`, `test/architecture/`
+**Location**: `test/integration/`, `test/architecture/`, `docs/testing/`
 
 ---
 
