@@ -41,12 +41,12 @@
 
 > **Execution guide**: Pick tasks strictly in order from top to bottom. Do not deploy the first production release until **Phase 14 (Single-Instance Production Deploy Gate)** is completed. Complete **Phase 15** before scaling to multiple application instances.
 
-| Phase  | Name                         | Status | Target / Focus                                                               |
-| :----- | :--------------------------- | :----- | :--------------------------------------------------------------------------- |
-| **10** | Security Hardening Phase 2   | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits              |
-| **11** | Data Integrity & Concurrency | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL            |
-| **12** | CQRS Read Path               | `[/]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters            |
-| **13** | Minimum Viable Test Coverage | `[ ]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E |
+| Phase  | Name                         | Status | Target / Focus                                                                       |
+| :----- | :--------------------------- | :----- | :----------------------------------------------------------------------------------- |
+| **10** | Security Hardening Phase 2   | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                      |
+| **11** | Data Integrity & Concurrency | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                    |
+| **12** | CQRS Read Path               | `[x]`  | **Frontend DX** — flat read DTOs, cross-context SQL JOIN adapters across all modules |
+| **13** | Minimum Viable Test Coverage | `[ ]`  | **Quality Safety Net** — domain, repo integration, concurrent checkout & E2E         |
 
 | **14** | Single-Instance Production Gate | `[ ]` | **First Production Ship** — baseline migration, Redis failover, probes, backup/smoke |
 | **15** | Multi-Instance & Scale Readiness | `[ ]` | **Horizontal Scale** — Transactional Outbox, SAGA DLQ timeout, search sync, locks |
@@ -62,14 +62,14 @@
 
 ### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Task / Item                                                                                                                                                 | Phase  | Critical Purpose                                                                         |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                                        | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`)                                                                    | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
-| [x] Production error stack masking & PII log audit verified                                                                                                 | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                         | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
-| [x] Shopping Cart Expiration & Redis TTL enforcement                                                                                                        | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
-| [/] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments done; Products, Carts, Identity, Notifications pending) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| Task / Item                                                                                                                                         | Phase  | Critical Purpose                                                                         |
+| :-------------------------------------------------------------------------------------------------------------------------------------------------- | :----- | :--------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                                | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + `npm audit`)                                                            | **10** | Prevents supply-chain vulnerabilities and documents security baseline                    |
+| [x] Production error stack masking & PII log audit verified                                                                                         | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                 | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
+| [x] Shopping Cart Expiration & Redis TTL enforcement                                                                                                | **11** | Automatically cleans up stale RedisJSON cart instances                                   |
+| [x] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
 
 | Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
 | Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
@@ -106,7 +106,7 @@
 
 ---
 
-### [/] Dedicated Query Ports & Read-Model DTOs
+### [x] Dedicated Query Ports & Read-Model DTOs
 
 **What**: Create query-specific ports (separate from domain repositories) returning flat, presentation-optimized DTOs.
 
@@ -116,13 +116,13 @@
 - [x] Orders: Created `OrderQueryService` in `src/modules/orders/core/application/ports/order-query.service.ts`.
 - [x] Inventory: Created `InventoryListItemDTO` in `src/modules/inventory/core/application/queries/results/inventory-list-item.result.ts` and `InventoryQueryService` port.
 - [x] Payments: Created `PaymentListItemDTO`, `PaymentDetailDTO` in `src/modules/payments/core/application/queries/results/` and `PaymentQueryService` port.
-- [ ] Products, Carts, Identity & Notifications: Define presentation result DTOs and query ports (`ProductQueryService`, `CartQueryService`, `UserQueryService`, `NotificationQueryService`).
+- [x] Products, Carts, Identity & Notifications: Created presentation DTOs (`ProductListItemDTO`, `ProductDetailDTO`, `CartPresentationDTO`, `UserListItemDTO`, `UserDetailDTO`, `NotificationListItemDTO`) and query ports (`ProductQueryService`, `CartQueryService`, `UserQueryService`, `NotificationQueryService`).
 
 **Location**: `src/modules/*/core/application/ports/`, `src/modules/*/core/application/queries/`
 
 ---
 
-### [/] Cross-Context Query Adapters & Mappers
+### [x] Cross-Context Query Adapters & Mappers
 
 **What**: TypeORM `QueryBuilder` adapters with controlled cross-context `LEFT JOIN` on the read path and dedicated query mappers.
 
@@ -131,13 +131,13 @@
 - [x] Orders: Implemented `PostgresOrderQueryAdapter` (`secondary-adapters/query/`), `OrderQueryMapper` (`secondary-adapters/mappers/query/`), and `RawOrderListQueryRow` (`secondary-adapters/dto/`).
 - [x] Inventory: Implemented `PostgresInventoryQueryAdapter`, `InventoryQueryMapper`, and `RawInventoryListQueryRow`.
 - [x] Payments: Implemented `PostgresPaymentQueryAdapter`, `PaymentQueryMapper`, and `RawPaymentListQueryRow`.
-- [ ] Products, Carts, Identity & Notifications: Implement query adapters and mappers.
+- [x] Products, Carts, Identity & Notifications: Implemented query adapters (`PostgresProductQueryAdapter`, `PostgresCartQueryAdapter`, `PostgresUserQueryAdapter`, `PostgresNotificationQueryAdapter`) and mappers (`ProductQueryMapper`, `CartQueryMapper`, `UserQueryMapper`, `NotificationQueryMapper`).
 
 **Location**: `src/modules/*/secondary-adapters/query/`, `src/modules/*/secondary-adapters/mappers/query/`
 
 ---
 
-### [/] Query Use Case Refactoring
+### [x] Query Use Case Refactoring
 
 **What**: Refactor read-only use cases to inject query ports instead of domain repositories.
 
@@ -146,11 +146,11 @@
 - [x] Orders: Refactored `ListOrdersUsecase` and `GetOrderUseCase` to inject `OrderQueryService` and enforce `OwnedResourceAccessPolicy`.
 - [x] Inventory: Refactored `GetInventoryUseCase` and `ListInventoryUseCase` to inject `InventoryQueryService`.
 - [x] Payments: Refactored `ListPaymentsUseCase`, `GetPaymentUseCase`, and `GetPaymentByOrderIdUseCase` to inject `PaymentQueryService` and enforce `OwnedResourceAccessPolicy`.
-- [ ] Products, Carts, Identity & Notifications: Refactor query use cases similarly.
+- [x] Products, Carts, Identity & Notifications: Refactored read-only use cases (`ListProductsUseCase`, `GetProductUseCase`, `GetCartUseCase`, `GetUserUseCase`, `ListUsersUseCase`) to inject query ports and enforce `OwnedResourceAccessPolicy`.
 
 ---
 
-### [/] Controller & Presentation Model Updates
+### [x] Controller & Presentation Model Updates
 
 **What**: Update controllers and Swagger schemas to expose flat read-model DTOs.
 
@@ -159,9 +159,42 @@
 - [x] Orders: Updated `OrdersController` to expose flat CQRS read projections.
 - [x] Inventory: Updated `InventoryController` with `GET /inventory` read endpoint.
 - [x] Payments: Updated `PaymentsController` (`GET /payments`, `GET /payments/:id`, `GET /payments/orders/:orderId`) to expose flat CQRS read projections.
-- [ ] Products, Carts, Identity & Notifications: Update controllers and Swagger schemas.
+- [x] Products, Carts, Identity & Notifications: Updated controllers (`ProductsController`, `CartsController`, `UsersController`, `NotificationsController`) to delegate query endpoints to query use cases.
 
 **Location**: `src/modules/*/primary-adapters/controllers/`, `src/modules/*/primary-adapters/dto/`
+
+---
+
+### [x] Application Command Contract Cleanup
+
+**What**: Define clean TypeScript Command interfaces in `core/application/commands/` (plain DTO interfaces — no command buses or handlers) and map HTTP request DTOs into Application Commands in controllers before calling Use Cases.
+
+**Scope**:
+
+- [x] Products: Created `create-product.command.ts`, `update-product.command.ts` under `src/modules/products/core/application/commands/` (primitive `id: number` used for `deleteProduct`).
+- [x] Inventory: Created `adjust-stock.command.ts`, `reserve-stock.command.ts`, `release-stock.command.ts` under `src/modules/inventory/core/application/commands/`.
+- [x] Payments: Created `create-payment-intent.command.ts`, `process-refund.command.ts` under `src/modules/payments/core/application/commands/`.
+- [x] Orders: Created `checkout.command.ts`, `confirm-order.command.ts`, `cancel-order.command.ts` under `src/modules/orders/core/application/commands/`.
+- [x] Carts: Created `add-cart-item.command.ts`, `update-cart-item.command.ts`, `remove-cart-item.command.ts` under `src/modules/carts/core/application/commands/`.
+- [x] Identity: Created `create-user.command.ts`, `update-user.command.ts`, `add-address.command.ts`, `update-address.command.ts` under `src/modules/identity/core/application/commands/`.
+- [x] Authentication: Created `register.command.ts`, `login.command.ts` under `src/modules/authentication/core/application/commands/`.
+- [x] Controllers & Use Cases: Applied clean Command interfaces across all command use cases and primary REST controllers.
+
+**Location**: `src/modules/*/core/application/commands/`, `src/modules/*/primary-adapters/controllers/`
+
+---
+
+### [ ] Integration Test Suite & Architecture Audits
+
+**What**: Add targeted SQL QueryBuilder integration tests, deterministic authorization specs, `EXPLAIN ANALYZE` index verification, and architecture rule enforcement.
+
+**Scope**:
+
+- [ ] Query Adapter Integration Tests (PostgreSQL dev/test DB): Multi-item order pagination, empty results, detail 404 behavior, collection & resource authorization filtering.
+- [ ] Index Verification: Run `EXPLAIN ANALYZE` on query adapter projections to verify expected index utilization.
+- [ ] Architecture Boundary Audit Rules (`npm run test:arch`): Enforce core/domain/application layer boundaries and forbid leaky adapter imports.
+
+**Location**: `test/integration/`, `test/architecture/`
 
 ---
 
