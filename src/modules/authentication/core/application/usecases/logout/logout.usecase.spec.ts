@@ -25,7 +25,7 @@ describe('LogoutUseCase', () => {
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId: sessionId,
+      sid: sessionId,
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -38,7 +38,7 @@ describe('LogoutUseCase', () => {
     sessionTokenRepository.findById.mockResolvedValue(Result.success(session));
     sessionTokenRepository.save.mockResolvedValue(Result.success(session));
 
-    const result = await usecase.execute({ refreshToken: rawToken });
+    const result = await usecase.execute(rawToken);
 
     ResultAssertionHelper.assertResultSuccess(result);
     // The session should be revoked
@@ -49,7 +49,7 @@ describe('LogoutUseCase', () => {
   it('should be idempotent if session not found', async () => {
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: '1',
-      sessionId: 'unknown',
+      sid: 'unknown',
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -57,7 +57,7 @@ describe('LogoutUseCase', () => {
     });
     sessionTokenRepository.findById.mockResolvedValue(Result.success(null));
 
-    const result = await usecase.execute({ refreshToken: 'foo' });
+    const result = await usecase.execute('foo');
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(sessionTokenRepository.save).not.toHaveBeenCalled();

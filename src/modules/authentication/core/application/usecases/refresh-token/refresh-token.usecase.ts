@@ -9,11 +9,12 @@ import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 import { IdentityGateway } from '../../ports/identity.gateway';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
+import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
-  { refreshToken: string },
-  { accessToken: string; refreshToken: string },
+  string,
+  AuthTokensResult,
   UseCaseError
 > {
   private readonly logger = new Logger(RefreshTokenUseCase.name);
@@ -28,17 +29,14 @@ export class RefreshTokenUseCase extends UseCase<
     super();
   }
 
-  async execute(input: {
-    refreshToken: string;
-  }): Promise<
-    Result<{ accessToken: string; refreshToken: string }, UseCaseError>
-  > {
+  async execute(
+    refreshToken: string,
+  ): Promise<Result<AuthTokensResult, UseCaseError>> {
     try {
       // 1. Verify token signature and expiration
-      const payload = await this.jwtVerifierService.verifyRefreshToken(
-        input.refreshToken,
-      );
-      const sessionId = payload.sessionId;
+      const payload =
+        await this.jwtVerifierService.verifyRefreshToken(refreshToken);
+      const sessionId = payload.sid;
       const userId = Number(payload.sub);
 
       // 2. Find session in DB
@@ -64,7 +62,7 @@ export class RefreshTokenUseCase extends UseCase<
 
       // 3b. Reuse detection — token hash mismatch on a valid session means
       //     a previously rotated token is being replayed (stolen token attack)
-      if (!session.isTokenMatch(input.refreshToken)) {
+      if (!session.isTokenMatch(refreshToken)) {
         this.logger.warn(
           `Refresh token reuse detected for user ${userId}. Revoking all sessions.`,
         );
@@ -106,7 +104,7 @@ export class RefreshTokenUseCase extends UseCase<
 
       // 7. Generate new tokens
       const newAccessToken = await this.jwtSignerService.signAccessToken({
-        sub: user.id,
+        sub: user.id.toString(),
         email: user.email,
         role: roleResult.value.code,
       });
@@ -129,7 +127,7 @@ export class RefreshTokenUseCase extends UseCase<
 
       await this.sessionTokenRepository.save(newSession);
 
-      return Result.success({
+      return Result.success<AuthTokensResult>({
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       });

@@ -1,6 +1,6 @@
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { RegisterCommand, RegisterUserUseCase } from './register-user.usecase';
+import { RegisterUserUseCase } from './register-user.usecase';
 import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
 import { IdentityAccessGatewayMock } from 'src/modules/authentication/testing/mocks/identity-access-gateway.mock';
 import { IdentityAccessGatewayDtoFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
@@ -10,6 +10,7 @@ import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/moc
 import { CredentialRepositoryMock } from 'src/modules/authentication/testing/mocks/credential-repository.mock';
 import { AuthenticationDtoFactory } from 'src/modules/authentication/testing/factories/authentication-dto.factory';
 import { Credential } from '../../../domain/entities/credential';
+import { RegisterCommand } from '../../commands/register.command';
 
 describe('RegisterUserUseCase', () => {
   let usecase: RegisterUserUseCase;

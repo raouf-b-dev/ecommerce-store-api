@@ -11,16 +11,13 @@ import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { IdentityGateway } from '../../ports/identity.gateway';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { CredentialRepository } from '../../../domain/repositories/credential.repository';
-
-export interface LoginCommand {
-  email: string;
-  password: string;
-}
+import { LoginCommand } from '../../commands/login.command';
+import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
 
 @Injectable()
 export class LoginUserUseCase extends UseCase<
   LoginCommand,
-  { accessToken: string; refreshToken: string },
+  AuthTokensResult,
   UseCaseError
 > {
   private readonly logger = new Logger(LoginUserUseCase.name);
@@ -39,9 +36,7 @@ export class LoginUserUseCase extends UseCase<
 
   async execute(
     command: LoginCommand,
-  ): Promise<
-    Result<{ accessToken: string; refreshToken: string }, UseCaseError>
-  > {
+  ): Promise<Result<AuthTokensResult, UseCaseError>> {
     // 1. Find User Identity
     const userResult = await this.identityGateway.findUserByEmail(
       command.email,
@@ -149,7 +144,7 @@ export class LoginUserUseCase extends UseCase<
 
     // 5. Generate Access Token
     const accessToken = await this.jwtSignerService.signAccessToken({
-      sub: user.id,
+      sub: user.id.toString(),
       email: user.email,
       role: roleResult.value.code,
     });
@@ -160,7 +155,7 @@ export class LoginUserUseCase extends UseCase<
       sessionId,
       expiresAt,
     } = await this.jwtSignerService.signRefreshTokenWithSession({
-      sub: user.id,
+      sub: user.id.toString(),
     });
 
     // 7. Save Session
@@ -181,6 +176,6 @@ export class LoginUserUseCase extends UseCase<
       userId: user.id,
     });
 
-    return Result.success({ accessToken, refreshToken });
+    return Result.success<AuthTokensResult>({ accessToken, refreshToken });
   }
 }

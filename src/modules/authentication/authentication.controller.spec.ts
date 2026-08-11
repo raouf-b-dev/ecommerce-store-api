@@ -141,9 +141,7 @@ describe('AuthController', () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
     const res = await controller.refresh('refresh-456', dto);
 
-    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'refresh-456',
-    });
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith('refresh-456');
     if (res.isSuccess) {
       expect(res.value.accessToken).toBe('new-access-123');
     }
@@ -153,27 +151,23 @@ describe('AuthController', () => {
     const dto: RefreshTokenDto = {};
     await controller.refresh('cookie-refresh-789', dto);
 
-    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'cookie-refresh-789',
-    });
+    expect(refreshTokenUseCase.execute).toHaveBeenCalledWith(
+      'cookie-refresh-789',
+    );
   });
 
   it('should execute logout', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
     await controller.logout('refresh-456', dto);
 
-    expect(logoutUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'refresh-456',
-    });
+    expect(logoutUseCase.execute).toHaveBeenCalledWith('refresh-456');
   });
 
   it('should execute logout-all', async () => {
     const dto: RefreshTokenDto = { refreshToken: 'refresh-456' };
     await controller.logoutAll('refresh-456', dto);
 
-    expect(logoutAllUseCase.execute).toHaveBeenCalledWith({
-      refreshToken: 'refresh-456',
-    });
+    expect(logoutAllUseCase.execute).toHaveBeenCalledWith('refresh-456');
   });
 
   it('should call getJwks and return keys', () => {
