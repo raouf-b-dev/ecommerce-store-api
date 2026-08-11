@@ -1,3 +1,4 @@
+import { DeepPartial } from 'typeorm';
 import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
@@ -8,6 +9,31 @@ export class PaymentEntityTestFactory {
   ): PaymentEntity {
     const defaultEntity: PaymentEntity = {
       id: 1,
+      orderId: 1,
+      userId: 1,
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.STRIPE,
+      status: PaymentStatusType.COMPLETED,
+      transactionId: 'tx_123456789',
+      gatewayPaymentIntentId: null,
+      gatewayClientSecret: null,
+      paymentMethodInfo: null,
+      refundedAmount: 0,
+      refunds: [],
+      failureReason: null,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+      completedAt: new Date('2025-01-01T10:00:00Z'),
+    };
+
+    return { ...defaultEntity, ...overrides };
+  }
+
+  static createUnsavedPaymentEntity(
+    overrides?: Partial<Omit<PaymentEntity, 'id'>>,
+  ): DeepPartial<PaymentEntity> {
+    const defaultEntity: Omit<PaymentEntity, 'id'> = {
       orderId: 1,
       userId: 1,
       amount: 100,
