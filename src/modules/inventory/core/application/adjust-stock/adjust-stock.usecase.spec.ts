@@ -43,7 +43,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockInventoryNotFoundForProduct(1);
       const command = InventoryCommandTestFactory.createAddStockCommand(50);
 
-      let result = await useCase.execute({ productId: 1, command });
+      let result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -54,7 +54,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSaveFailure('Database connection failed');
 
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -69,7 +69,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ productId: 1, command });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(150);
@@ -80,17 +80,18 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
 
       let command = InventoryCommandTestFactory.createAdjustStockCommand({
+        productId: 1,
         quantity: -10,
         type: StockAdjustmentType.ADD,
       });
-      let result = await useCase.execute({ productId: 1, command });
+      let result = await useCase.execute(command);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity cannot be negative',
       );
 
       command = InventoryCommandTestFactory.createZeroQuantityAdjustCommand();
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity to increase must be positive',
@@ -104,7 +105,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulSave();
 
       let command = InventoryCommandTestFactory.createSubtractStockCommand(30);
-      let result = await useCase.execute({ productId: 1, command });
+      let result = await useCase.execute(command);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(70); // 100 - 30
 
@@ -112,7 +113,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulSave();
       command = InventoryCommandTestFactory.createSubtractStockCommand(100);
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(0);
     });
@@ -121,14 +122,15 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
 
       let command = InventoryCommandTestFactory.createSubtractStockCommand(200);
-      let result = await useCase.execute({ productId: 1, command });
+      let result = await useCase.execute(command);
       ResultAssertionHelper.assertResultFailure(result, 'Insufficient stock');
 
       command = InventoryCommandTestFactory.createAdjustStockCommand({
+        productId: 1,
         quantity: -5,
         type: StockAdjustmentType.SUBTRACT,
       });
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
       ResultAssertionHelper.assertResultFailure(
         result,
         'Quantity cannot be negative',
@@ -142,7 +144,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulSave();
 
       let command = InventoryCommandTestFactory.createSetStockCommand(250);
-      let result = await useCase.execute({ productId: 1, command });
+      let result = await useCase.execute(command);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(250);
 
@@ -150,7 +152,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulSave();
       command = InventoryCommandTestFactory.createSetStockCommand(50);
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(50);
 
@@ -158,7 +160,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       mockRepository.mockSuccessfulSave();
       command = InventoryCommandTestFactory.createSetStockCommand(0);
-      result = await useCase.execute({ productId: 1, command });
+      result = await useCase.execute(command);
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.availableQuantity).toBe(0);
     });
@@ -166,11 +168,12 @@ describe('AdjustStockUseCase', () => {
     it('should reject negative values', async () => {
       mockRepository.mockSuccessfulFindByProductId(mockInventoryData);
       const command = InventoryCommandTestFactory.createAdjustStockCommand({
+        productId: 1,
         quantity: -50,
         type: StockAdjustmentType.SET,
       });
 
-      const result = await useCase.execute({ productId: 1, command });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(result);
     });
@@ -187,7 +190,7 @@ describe('AdjustStockUseCase', () => {
       mockRepository.mockSuccessfulSave();
 
       const command = InventoryCommandTestFactory.createAddStockCommand(50);
-      const result = await useCase.execute({ productId: 1, command });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.reservedQuantity).toBe(20);
