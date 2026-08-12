@@ -1,11 +1,5 @@
 // src/testing/mocks/typeorm.mocks.ts
-import {
-  SelectQueryBuilder,
-  DeleteResult,
-  UpdateResult,
-  ObjectLiteral,
-  Repository,
-} from 'typeorm';
+import { SelectQueryBuilder, ObjectLiteral, Repository } from 'typeorm';
 
 export function createMockQueryBuilder<T extends ObjectLiteral>(): jest.Mocked<
   SelectQueryBuilder<T>
