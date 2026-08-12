@@ -1,19 +1,19 @@
+import {
+  MockPaymentGateway,
+  MockPaymentGatewayResolver,
+  MockPaymentRepository,
+  PaymentEntityTestFactory,
+} from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentUseCase } from './create-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
 import { CreatePaymentCommand } from '../../commands/create-payment.command';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import {
-  MockPaymentGatewayResolver,
-  MockPaymentGateway,
-} from '../../../../testing/mocks/payment-gateway.mock';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;

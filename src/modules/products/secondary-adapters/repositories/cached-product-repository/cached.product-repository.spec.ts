@@ -1,14 +1,16 @@
 // src/modules/products/infrastructure/repositories/CachedProductRepository/cached.product-repository.spec.ts
+import {
+  ProductTestFactory,
+  CreateProductInputFactory,
+  UpdateProductInputFactory,
+  MockProductRepository,
+} from 'src/modules/products/testing';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedProductRepository } from './cached.product-repository';
-import { ProductTestFactory } from '../../../testing/factories/product.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
-import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
-import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 import { MockCacheService } from '../../../../../testing';
-import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
 import { Product } from '../../../core/domain/entities/product';
 
 describe('CachedProductRepository', () => {
@@ -18,8 +20,6 @@ describe('CachedProductRepository', () => {
 
   const mockProduct = ProductTestFactory.createMockProduct();
   const domainProduct = Product.fromPrimitives(mockProduct);
-  const createDto = CreateProductInputFactory.createMockDto();
-  const updateDto = UpdateProductInputFactory.createMockDto();
 
   beforeEach(() => {
     cacheService = new MockCacheService();

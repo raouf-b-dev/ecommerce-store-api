@@ -1,8 +1,8 @@
+import { InventoryTestFactory } from 'src/modules/inventory/testing';
 import { ReconcileInventoryUseCase } from './reconcile-inventory.usecase';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { InventoryTestFactory } from '../../../../testing/factories/inventory.test.factory';
 import { Inventory } from '../../../domain/entities/inventory';
 
 describe('ReconcileInventoryUseCase', () => {

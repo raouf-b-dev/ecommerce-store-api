@@ -1,5 +1,5 @@
+import { MockOrderRepository } from 'src/modules/orders/testing';
 import { SeedDemoOrdersUseCase } from './seed-demo-orders.usecase';
-import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { Order } from '../../domain/entities/order';
 import { OrderStatus } from '../../domain/value-objects/order-status';

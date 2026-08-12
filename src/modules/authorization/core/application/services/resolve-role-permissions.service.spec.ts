@@ -1,9 +1,9 @@
+import { MockRoleRepository } from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ResolveRolePermissionsService } from './resolve-role-permissions.service';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
 
 describe('ResolveRolePermissionsService', () => {
   let service: ResolveRolePermissionsService;

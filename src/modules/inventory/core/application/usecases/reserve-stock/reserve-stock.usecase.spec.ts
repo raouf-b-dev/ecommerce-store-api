@@ -1,12 +1,12 @@
+import {
+  InventoryCommandTestFactory,
+  MockReservationRepository,
+  ReservationRepositoryMockFactory,
+  ReservationTestFactory,
+} from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReserveStockUseCase } from './reserve-stock.usecase';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
-import {
-  MockReservationRepository,
-  ReservationRepositoryMockFactory,
-} from '../../../../testing/mocks/reservation-repository.mock.factory';
-import { InventoryCommandTestFactory } from '../../../../testing/factories/inventory-dto.test.factory';
-import { ReservationTestFactory } from '../../../../testing/factories/reservation.test.factory';
 
 describe('ReserveStockUseCase', () => {
   let useCase: ReserveStockUseCase;

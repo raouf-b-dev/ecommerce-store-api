@@ -1,5 +1,5 @@
+import { PaymentDtoTestFactory } from 'src/modules/payments/testing';
 import { PaymentQueryMapper } from './payment-query.mapper';
-import { PaymentDtoTestFactory } from '../../../testing/factories/payment-dto.factory';
 
 describe('PaymentQueryMapper', () => {
   it('should correctly map raw row to PaymentListItemDTO and PaymentDetailDTO', () => {

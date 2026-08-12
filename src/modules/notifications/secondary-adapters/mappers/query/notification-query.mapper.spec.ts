@@ -1,5 +1,5 @@
+import { NotificationDtoTestFactory } from 'src/modules/notifications/testing';
 import { NotificationQueryMapper } from './notification-query.mapper';
-import { NotificationDtoTestFactory } from '../../../testing/factories/notification-dto.factory';
 
 describe('NotificationQueryMapper', () => {
   it('maps complete raw notification row to NotificationListItemDTO', () => {

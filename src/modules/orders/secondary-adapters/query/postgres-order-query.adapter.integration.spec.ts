@@ -1,10 +1,10 @@
+import { OrderEntityTestFactory } from 'src/modules/orders/testing';
 import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
 import { SeededData } from 'test/integration/setup/seed-reference-data';
 import { PostgresOrderQueryAdapter } from './postgres-order-query.adapter';
 import { OrderEntity } from '../orm/order.schema';
 import { OrderItemEntity } from '../orm/order-item.schema';
 import { ShippingAddressEntity } from '../orm/shipping-address.schema';
-import { OrderEntityTestFactory } from '../../testing/factories/order-entity.factory';
 
 describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
   let queryAdapter: PostgresOrderQueryAdapter;

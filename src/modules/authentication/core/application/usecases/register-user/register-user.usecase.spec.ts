@@ -1,7 +1,7 @@
+import { MockPasswordHasher } from 'src/modules/authentication/testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { RegisterUserUseCase } from './register-user.usecase';
-import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
 import { IdentityAccessGatewayMock } from 'src/modules/authentication/testing/mocks/identity-access-gateway.mock';
 import { IdentityAccessGatewayDtoFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';

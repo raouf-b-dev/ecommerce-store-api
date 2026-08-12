@@ -1,9 +1,6 @@
-import {
-  ShippingAddressResolver,
-  ShippingAddressInput,
-} from './shipping-address-resolver';
+import { ShippingAddressResolver } from './shipping-address-resolver';
 import { CheckoutUserInfoResult } from '../ports/user.gateway';
-import { OrderDtoTestFactory } from '../../../testing/factories/order-dto.factory';
+import { OrderDtoTestFactory } from 'src/modules/orders/testing';
 
 describe('ShippingAddressResolver', () => {
   let resolver: ShippingAddressResolver;
@@ -46,7 +43,7 @@ describe('ShippingAddressResolver', () => {
 
   describe('resolveFromDto', () => {
     it('should resolve shipping address from explicit input DTO', () => {
-      const inputDto: ShippingAddressInput = {
+      const inputDto = OrderDtoTestFactory.createCheckoutShippingAddressInput({
         firstName: 'Explicit',
         lastName: 'User',
         street: '789 Explicit Rd',
@@ -55,7 +52,7 @@ describe('ShippingAddressResolver', () => {
         postalCode: '60601',
         country: 'USA',
         phone: '999-888-7777',
-      };
+      });
 
       const result = resolver.resolveFromDto(inputDto, mockUser);
 
@@ -103,13 +100,13 @@ describe('ShippingAddressResolver', () => {
 
   describe('resolve', () => {
     it('should use explicit DTO when provided', () => {
-      const inputDto: ShippingAddressInput = {
+      const inputDto = OrderDtoTestFactory.createCheckoutShippingAddressInput({
         street: '789 Explicit Rd',
         city: 'Chicago',
         state: 'IL',
         postalCode: '60601',
         country: 'USA',
-      };
+      });
 
       const result = resolver.resolve(inputDto, mockUser);
 

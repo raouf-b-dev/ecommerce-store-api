@@ -1,5 +1,5 @@
+import { UserDtoTestFactory } from 'src/modules/identity/testing';
 import { UserQueryMapper } from './user-query.mapper';
-import { UserDtoTestFactory } from '../../../testing/factories/user-dto.factory';
 
 describe('UserQueryMapper', () => {
   it('should map raw user query row to DTOs', () => {

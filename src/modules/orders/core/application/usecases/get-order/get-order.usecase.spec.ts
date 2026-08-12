@@ -1,6 +1,8 @@
+import {
+  MockOrderQueryService,
+  OrderDtoTestFactory,
+} from 'src/modules/orders/testing';
 import { GetOrderUseCase } from './get-order.usecase';
-import { MockOrderQueryService } from '../../../../testing/mocks/order-query-service.mock';
-import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import {

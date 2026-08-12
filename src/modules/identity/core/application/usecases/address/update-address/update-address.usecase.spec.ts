@@ -1,3 +1,8 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+  AddressTestFactory,
+} from 'src/modules/identity/testing';
 import { UpdateAddressUseCase } from './update-address.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../../testing';
@@ -6,9 +11,6 @@ import {
   createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { UserTestFactory } from '../../../../../testing/factories/user.factory';
-import { AddressTestFactory } from '../../../../../testing/factories/address.entity.factory';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 
 const adminCallerContext = createUserCallerContext({

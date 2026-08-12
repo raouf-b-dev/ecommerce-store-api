@@ -1,11 +1,11 @@
 // src/modules/orders/application/usecases/process-order/process-order.usecase.spec.ts
 
+import { OrderTestFactory } from 'src/modules/orders/testing';
 import { ProcessOrderUseCase } from './process-order.usecase';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { MockOrderRepository } from '../../../../testing';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 
 describe('ProcessOrderUseCase', () => {

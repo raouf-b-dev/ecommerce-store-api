@@ -1,18 +1,18 @@
+import {
+  MockPaymentGateway,
+  MockPaymentGatewayResolver,
+  MockPaymentRepository,
+  PaymentEntityTestFactory,
+} from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessRefundUseCase } from './process-refund.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { ProcessRefundCommand } from '../../commands/process-refund.command';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import {
-  MockPaymentGatewayResolver,
-  MockPaymentGateway,
-} from '../../../../testing/mocks/payment-gateway.mock';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;

@@ -1,49 +1,32 @@
 import { AddCartItemUseCase } from './add-cart-item.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
-import { Result } from '../../../../../../shared-kernel/domain/result';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { AddCartItemCommand } from '../../commands/add-cart-item.command';
-import { CartProductGateway, ProductData } from '../../ports/product.gateway';
-import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import {
+  CartGatewayDtoFactory,
+  CartTestFactory,
+  MockCartInventoryGateway,
+  MockCartProductGateway,
+  MockCartRepository,
+} from 'src/modules/carts/testing';
 
 describe('AddCartItemUseCase', () => {
   let usecase: AddCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockProductGateway: jest.Mocked<CartProductGateway>;
-  let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
+  let mockProductGateway: MockCartProductGateway;
+  let mockInventoryGateway: MockCartInventoryGateway;
   let validator: CartOwnershipValidator;
 
-  const mockProduct: ProductData = {
-    id: 1,
-    name: 'Test Product',
-    price: 29.99,
-  };
+  const mockProduct = CartGatewayDtoFactory.createProductData();
 
-  const adminContext: CallerContext = {
-    kind: 'user',
-    userId: 1,
-    role: 'ADMIN',
-    permissions: new Set(['manage_carts']),
-  };
-
-  const customerContext: CallerContext = {
-    kind: 'user',
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  };
+  const adminContext = AuthPayloadFactory.createAdminContext({ userId: 1 });
+  const customerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockProductGateway = {
-      findById: jest.fn(),
-    };
-    mockInventoryGateway = {
-      checkStock: jest.fn(),
-    };
+    mockProductGateway = new MockCartProductGateway();
+    mockInventoryGateway = new MockCartInventoryGateway();
     validator = new CartOwnershipValidator();
 
     usecase = new AddCartItemUseCase(
@@ -66,16 +49,12 @@ describe('AddCartItemUseCase', () => {
       const mockCartData = CartTestFactory.createUserCart(123);
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
-      mockProductGateway.findById.mockResolvedValue(
-        Result.success(mockProduct),
-      );
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: true,
-          availableQuantity: 10,
-          requestedQuantity: 2,
-        }),
-      );
+      mockProductGateway.mockSuccessfulFindById(mockProduct);
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: true,
+        availableQuantity: 10,
+        requestedQuantity: 2,
+      });
       mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute(command);
@@ -94,16 +73,12 @@ describe('AddCartItemUseCase', () => {
       const mockCartData = CartTestFactory.createUserCart(123);
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
-      mockProductGateway.findById.mockResolvedValue(
-        Result.success(mockProduct),
-      );
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: true,
-          availableQuantity: 10,
-          requestedQuantity: 2,
-        }),
-      );
+      mockProductGateway.mockSuccessfulFindById(mockProduct);
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: true,
+        availableQuantity: 10,
+        requestedQuantity: 2,
+      });
       mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute(command);
@@ -154,16 +129,12 @@ describe('AddCartItemUseCase', () => {
       const mockCartData = CartTestFactory.createUserCart(123);
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
-      mockProductGateway.findById.mockResolvedValue(
-        Result.success(mockProduct),
-      );
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: false,
-          availableQuantity: 5,
-          requestedQuantity: 10,
-        }),
-      );
+      mockProductGateway.mockSuccessfulFindById(mockProduct);
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: false,
+        availableQuantity: 5,
+        requestedQuantity: 10,
+      });
 
       const result = await usecase.execute(command);
 

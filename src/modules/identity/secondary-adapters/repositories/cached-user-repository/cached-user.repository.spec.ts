@@ -1,16 +1,18 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
+import { MockCacheService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachedUserRepository } from './cached-user.repository';
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
-import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
-import { UserTestFactory } from '../../../testing/factories/user.factory';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
 import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
 
 describe('CachedUserRepository', () => {

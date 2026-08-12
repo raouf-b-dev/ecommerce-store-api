@@ -1,12 +1,10 @@
-// src/modules/carts/infrastructure/repositories/postgres-cart-repository/postgres.cart-repository.spec.ts
+import { CartEntityTestFactory } from 'src/modules/carts/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, DeleteResult } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CartEntity } from '../../orm/cart.schema';
 import { PostgresCartRepository } from './postgres.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
-import { CartEntityTestFactory } from '../../../testing/factories/cart-entity.factory';
-import { CartTestFactory } from '../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('PostgresCartRepository', () => {
@@ -14,12 +12,6 @@ describe('PostgresCartRepository', () => {
   let mockOrmRepo: jest.Mocked<Repository<CartEntity>>;
 
   const mockCartEntity = CartEntityTestFactory.createCartEntityWithItems();
-  const mockCart = Cart.fromPrimitives(
-    CartTestFactory.createMockCart({
-      id: mockCartEntity.id,
-      userId: mockCartEntity.userId,
-    }),
-  );
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

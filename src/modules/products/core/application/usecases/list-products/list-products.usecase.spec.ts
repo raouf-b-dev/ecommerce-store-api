@@ -1,6 +1,8 @@
+import {
+  MockProductQueryService,
+  ProductDtoTestFactory,
+} from 'src/modules/products/testing';
 import { ListProductsUseCase } from './list-products.usecase';
-import { MockProductQueryService } from '../../../../testing/mocks/product-query-service.mock';
-import { ProductDtoTestFactory } from '../../../../testing/factories/product-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('ListProductsUseCase', () => {

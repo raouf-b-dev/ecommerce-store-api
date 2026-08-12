@@ -1,7 +1,9 @@
+import {
+  MockProductRepository,
+  ProductTestFactory,
+  UpdateProductInputFactory,
+} from 'src/modules/products/testing';
 import { UpdateProductUseCase } from './update-product.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
-import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { UpdateProductInputFactory } from '../../../../testing/factories/update-product-input.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Product } from '../../../domain/entities/product';

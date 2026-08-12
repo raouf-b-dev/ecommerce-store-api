@@ -1,34 +1,28 @@
 import { UpdateCartItemUseCase } from './update-cart-item.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
-import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UpdateCartItemCommand } from '../../commands/update-cart-item.command';
-import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import {
+  CartTestFactory,
+  MockCartInventoryGateway,
+  MockCartRepository,
+} from 'src/modules/carts/testing';
 
 describe('UpdateCartItemUseCase', () => {
   let usecase: UpdateCartItemUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockInventoryGateway: jest.Mocked<CartInventoryGateway>;
+  let mockInventoryGateway: MockCartInventoryGateway;
   let validator: CartOwnershipValidator;
 
-  const customerContext: CallerContext = {
-    kind: 'user',
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  };
+  const customerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockInventoryGateway = {
-      checkStock: jest.fn(),
-    };
+    mockInventoryGateway = new MockCartInventoryGateway();
     validator = new CartOwnershipValidator();
 
     usecase = new UpdateCartItemUseCase(
@@ -62,13 +56,11 @@ describe('UpdateCartItemUseCase', () => {
       }
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: true,
-          availableQuantity: 10,
-          requestedQuantity: 5,
-        }),
-      );
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: true,
+        availableQuantity: 10,
+        requestedQuantity: 5,
+      });
       mockCartRepository.mockSuccessfulSave();
 
       const result = await usecase.execute(command);
@@ -118,13 +110,11 @@ describe('UpdateCartItemUseCase', () => {
       }
 
       mockCartRepository.mockSuccessfulFind(mockCartData);
-      mockInventoryGateway.checkStock.mockResolvedValue(
-        Result.success({
-          isAvailable: false,
-          availableQuantity: 5,
-          requestedQuantity: 20,
-        }),
-      );
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: false,
+        availableQuantity: 5,
+        requestedQuantity: 20,
+      });
 
       const result = await usecase.execute(command);
 

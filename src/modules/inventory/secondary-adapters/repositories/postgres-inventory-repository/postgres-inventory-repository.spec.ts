@@ -1,5 +1,10 @@
 // src/modules/inventory/infrastructure/repositories/postgres-inventory.repository.spec.ts
 
+import {
+  InventoryEntityTestFactory,
+  InventoryTestFactory,
+  InventoryCommandTestFactory,
+} from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
@@ -10,17 +15,14 @@ import {
 } from 'typeorm';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import {
-  createMockTransactionManager,
   createMockQueryBuilder,
+  createMockTransactionManager,
 } from '../../../../../testing/mocks/typeorm.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
-import { InventoryEntityTestFactory } from '../../../testing/factories/inventory-entity.test.factory';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
-import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 describe('PostgresInventoryRepository', () => {

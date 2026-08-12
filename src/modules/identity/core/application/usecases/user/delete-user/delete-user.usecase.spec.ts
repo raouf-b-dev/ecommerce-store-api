@@ -1,9 +1,9 @@
+import { MockUserRepository } from 'src/modules/identity/testing';
 import { DeleteUserUseCase } from './delete-user.usecase';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
 
 describe('DeleteUserUseCase', () => {
   let useCase: DeleteUserUseCase;

@@ -1,20 +1,22 @@
-import { RefreshTokenUseCase } from './refresh-token.usecase';
-import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
-import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
-import { SessionToken } from '../../../domain/entities/session-token';
 import {
+  AuthorizationGatewayDtoFactory,
+  AuthorizationGatewayMock,
+  IdentityAccessGatewayDtoFactory,
+  IdentityAccessGatewayMock,
+  MockSessionTokenRepository,
+} from 'src/modules/authentication/testing';
+import {
+  MockJwtSignerService,
   MockJwtVerifierService,
   ResultAssertionHelper,
   LoggerTestHelper,
-} from '../../../../../../testing';
+} from 'src/testing';
+import { RefreshTokenUseCase } from './refresh-token.usecase';
+import { SessionToken } from '../../../domain/entities/session-token';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { IdentityAccessGatewayMock } from '../../../../testing/mocks/identity-access-gateway.mock';
-import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/mocks/authorization-gateway.mock';
 import { UserRecord } from '../../ports/identity.gateway';
-import { IdentityAccessGatewayDtoFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
 import { RoleRecord } from '../../ports/authorization.gateway';
-import { AuthorizationGatewayDtoFactory } from 'src/modules/authentication/testing/factories/authorization-gateway-dto.factory';
 
 describe('RefreshTokenUseCase', () => {
   let usecase: RefreshTokenUseCase;

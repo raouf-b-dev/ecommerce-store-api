@@ -1,23 +1,18 @@
 import { CreateCartUseCase } from './create-cart.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
 
 describe('CreateCartUseCase', () => {
   let usecase: CreateCartUseCase;
   let mockCartRepository: MockCartRepository;
 
-  const customerContext: CallerContext = {
-    kind: 'user',
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  };
+  const customerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
@@ -67,12 +62,11 @@ describe('CreateCartUseCase', () => {
     });
 
     it('should reject customer cart creation when manage_own_cart permission is missing', async () => {
-      const unscopedCustomer: CallerContext = {
-        kind: 'user',
+      const unscopedCustomer = createUserCallerContext({
         userId: 1,
         role: 'CUSTOMER',
         permissions: new Set(),
-      };
+      });
 
       const result = await usecase.execute({ callerContext: unscopedCustomer });
 

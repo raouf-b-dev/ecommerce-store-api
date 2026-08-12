@@ -1,5 +1,5 @@
+import { MockCartRepository } from 'src/modules/carts/testing';
 import { SeedDemoCartUseCase } from './seed-demo-cart.usecase';
-import { MockCartRepository } from '../../../testing/mocks/cart-repository.mock';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { Cart } from '../../domain/entities/cart';

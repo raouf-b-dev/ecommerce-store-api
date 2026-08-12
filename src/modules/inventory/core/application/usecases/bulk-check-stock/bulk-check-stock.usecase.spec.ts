@@ -1,6 +1,8 @@
+import {
+  MockInventoryRepository,
+  InventoryTestFactory,
+} from 'src/modules/inventory/testing';
 import { BulkCheckStockUseCase } from './bulk-check-stock.usecase';
-import { MockInventoryRepository } from '../../../../testing/mocks/inventory-repository.mock';
-import { InventoryTestFactory } from '../../../../testing/factories/inventory.test.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';

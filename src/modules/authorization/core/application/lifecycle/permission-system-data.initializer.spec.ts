@@ -1,10 +1,10 @@
+import { MockPermissionRepository } from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionSystemDataInitializer } from './permission-system-data.initializer';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Permission } from '../../domain/entities/permission';
-import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
 import { SYSTEM_PERMISSIONS } from '../../domain/reference-data/permission-definitions';
 import { LoggerTestHelper } from '../../../../../testing';
 

@@ -1,8 +1,8 @@
+import { MockInventoryRepository } from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus } from '@nestjs/common';
 import { SeedDemoInventoryUseCase } from './seed-demo-inventory.usecase';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
-import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Inventory } from '../../domain/entities/inventory';

@@ -1,10 +1,12 @@
+import {
+  InventoryTestFactory,
+  InventoryCommandTestFactory,
+  MockInventoryRepository,
+} from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdjustStockUseCase } from './adjust-stock.usecase';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';
-import { InventoryTestFactory } from '../../../../testing/factories/inventory.test.factory';
-import { InventoryCommandTestFactory } from '../../../../testing/factories/inventory-dto.test.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { MockInventoryRepository } from '../../../../testing/mocks/inventory-repository.mock';
 import { StockAdjustmentType } from '../../../domain/value-objects/stock-adjustment-type';
 
 describe('AdjustStockUseCase', () => {

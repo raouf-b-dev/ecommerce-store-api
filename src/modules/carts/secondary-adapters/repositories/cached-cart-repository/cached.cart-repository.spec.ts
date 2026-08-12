@@ -1,4 +1,6 @@
 // src/modules/carts/secondary-adapters/repositories/cached-cart-repository/cached.cart-repository.spec.ts
+import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
+import { MockCacheService, MockLogger } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -6,13 +8,9 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedCartRepository } from './cached.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
-import { CartTestFactory } from '../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Logger } from '@nestjs/common';
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
-import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
-import { MockLogger } from '../../../../../testing/mocks/logger.mock';
-import { MockCartRepository } from '../../../testing/mocks/cart-repository.mock';
 
 describe('CachedCartRepository', () => {
   let repository: CachedCartRepository;

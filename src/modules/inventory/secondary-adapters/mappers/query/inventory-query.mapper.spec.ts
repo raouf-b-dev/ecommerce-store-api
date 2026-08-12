@@ -1,5 +1,5 @@
+import { InventoryDtoTestFactory } from 'src/modules/inventory/testing';
 import { InventoryQueryMapper } from './inventory-query.mapper';
-import { InventoryDtoTestFactory } from '../../../testing/factories/inventory-dto.factory';
 
 describe('InventoryQueryMapper', () => {
   it('should correctly map a raw inventory row to InventoryListItemDTO', () => {

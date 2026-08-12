@@ -1,10 +1,12 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
 import { UpdateUserUseCase } from './update-user.usecase';
 import { UpdateUserCommand } from '../../../commands/update-user.command';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 
 describe('UpdateUserUseCase', () => {
   let useCase: UpdateUserUseCase;
