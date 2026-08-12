@@ -1,6 +1,8 @@
+import {
+  MockUserQueryService,
+  UserDtoTestFactory,
+} from 'src/modules/identity/testing';
 import { ListUsersUseCase } from './list-users.usecase';
-import { MockUserQueryService } from '../../../../../testing/mocks/user-query-service.mock';
-import { UserDtoTestFactory } from '../../../../../testing/factories/user-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 
 describe('ListUsersUseCase', () => {

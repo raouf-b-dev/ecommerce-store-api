@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfirmReservationUseCase } from './confirm-reservation.usecase';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 import {
   MockReservationRepository,
   ReservationRepositoryMockFactory,
-} from '../../../../testing/mocks/reservation-repository.mock.factory';
-import { ReservationTestFactory } from '../../../../testing/factories/reservation.test.factory';
+  ReservationTestFactory,
+} from 'src/modules/inventory/testing';
+import { Test, TestingModule } from '@nestjs/testing';
+import { ConfirmReservationUseCase } from './confirm-reservation.usecase';
+import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
 
 describe('ConfirmReservationUseCase', () => {

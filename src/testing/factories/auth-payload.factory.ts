@@ -31,6 +31,28 @@ export class AuthPayloadFactory {
       ...overrides,
     });
   }
+
+  static createAdminContext(
+    overrides: Partial<UserCallerContext> = {},
+  ): UserCallerContext {
+    return createUserCallerContext({
+      userId: TEST_IDS.user,
+      role: 'ADMIN',
+      permissions: new Set(['manage_carts']),
+      ...overrides,
+    });
+  }
+
+  static createCustomerContext(
+    overrides: Partial<UserCallerContext> = {},
+  ): UserCallerContext {
+    return createUserCallerContext({
+      userId: 123,
+      role: 'CUSTOMER',
+      permissions: new Set(['manage_own_cart']),
+      ...overrides,
+    });
+  }
   static createAccessTokenPayload(
     overrides: Partial<VerifiedAccessTokenPayload> = {},
   ): VerifiedAccessTokenPayload {

@@ -1,6 +1,8 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
 import { ActivateUserUseCase } from './activate-user.usecase';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainError } from '../../../../../../../shared-kernel/domain/exceptions/domain.error';

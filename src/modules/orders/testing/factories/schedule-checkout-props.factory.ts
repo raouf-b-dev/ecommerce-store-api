@@ -1,5 +1,6 @@
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
+import { ValidateCartResult } from '../../primary-adapters/jobs/validate-cart.job';
 
 export class ScheduleCheckoutPropsFactory {
   static createMockProps(
@@ -27,5 +28,18 @@ export class ScheduleCheckoutPropsFactory {
     };
 
     return { ...baseProps, ...overrides };
+  }
+
+  static createValidateCartResult(
+    overrides?: Partial<ValidateCartResult>,
+  ): ValidateCartResult {
+    return {
+      cartId: 1,
+      cartItems: [
+        { productId: 10, quantity: 2, price: 50 },
+        { productId: 20, quantity: 1, price: 100 },
+      ],
+      ...overrides,
+    };
   }
 }

@@ -1,23 +1,17 @@
 import { RemoveCartItemUseCase } from './remove-cart-item.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
 import { Cart } from '../../../domain/entities/cart';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
 
 describe('RemoveCartItemUseCase', () => {
   let usecase: RemoveCartItemUseCase;
   let mockCartRepository: MockCartRepository;
   let validator: CartOwnershipValidator;
 
-  const customerContext: CallerContext = {
-    kind: 'user',
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  };
+  const customerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();

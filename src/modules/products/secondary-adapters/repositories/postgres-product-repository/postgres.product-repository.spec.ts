@@ -1,4 +1,5 @@
 // src/modules/products/infrastructure/repositories/PostgresProductRepository/postgres.product-repository.spec.ts
+import { ProductTestFactory } from 'src/modules/products/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,11 +7,8 @@ import { PostgresProductRepository } from './postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
-import { CreateProductInputFactory } from '../../../testing/factories/create-product-input.factory';
-import { UpdateProductInputFactory } from '../../../testing/factories/update-product-input.factory';
 import { ProductEntityTestFactory } from 'src/modules/products/testing';
 import { Product } from '../../../core/domain/entities/product';
-import { ProductTestFactory } from '../../../testing/factories/product.factory';
 
 describe('PostgresProductRepository', () => {
   let repository: PostgresProductRepository;

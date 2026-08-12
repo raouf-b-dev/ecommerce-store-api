@@ -1,8 +1,8 @@
+import { PaymentEntityTestFactory } from 'src/modules/payments/testing';
 import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
 import { SeededData } from 'test/integration/setup/seed-reference-data';
 import { PostgresPaymentQueryAdapter } from './postgres-payment-query.adapter';
 import { PaymentEntity } from '../orm/payment.schema';
-import { PaymentEntityTestFactory } from '../../testing/factories/payment-entity.test.factory';
 
 describe('PostgresPaymentQueryAdapter (Integration - Real DB)', () => {
   let queryAdapter: PostgresPaymentQueryAdapter;

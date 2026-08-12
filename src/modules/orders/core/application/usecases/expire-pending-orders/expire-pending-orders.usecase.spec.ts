@@ -1,7 +1,9 @@
+import {
+  MockOrderRepository,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExpirePendingOrdersUseCase } from './expire-pending-orders.usecase';
-import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import {
   ResultAssertionHelper,

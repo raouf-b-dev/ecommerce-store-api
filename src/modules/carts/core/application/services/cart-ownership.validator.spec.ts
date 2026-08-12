@@ -1,9 +1,10 @@
 import { CartOwnershipValidator } from './cart-ownership.validator';
 import { Cart } from '../../domain/entities/cart';
 import {
-  CallerContext,
+  createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 describe('CartOwnershipValidator', () => {
   let validator: CartOwnershipValidator;
@@ -21,12 +22,9 @@ describe('CartOwnershipValidator', () => {
 
     it('should allow admin with manage_carts permission', async () => {
       const cart = Cart.createUserCart(123);
-      const callerContext: CallerContext = {
-        kind: 'user',
+      const callerContext = AuthPayloadFactory.createAdminContext({
         userId: 1,
-        role: 'ADMIN',
-        permissions: new Set(['manage_carts']),
-      };
+      });
 
       const result = await validator.validate(cart, callerContext);
       expect(result.isSuccess).toBe(true);
@@ -34,12 +32,7 @@ describe('CartOwnershipValidator', () => {
 
     it('should allow user owning the cart with manage_own_cart permission', async () => {
       const cart = Cart.createUserCart(123);
-      const callerContext: CallerContext = {
-        kind: 'user',
-        userId: 123,
-        role: 'CUSTOMER',
-        permissions: new Set(['manage_own_cart']),
-      };
+      const callerContext = AuthPayloadFactory.createCustomerContext();
 
       const result = await validator.validate(cart, callerContext);
       expect(result.isSuccess).toBe(true);
@@ -47,12 +40,11 @@ describe('CartOwnershipValidator', () => {
 
     it('should deny user owning the cart but missing manage_own_cart permission', async () => {
       const cart = Cart.createUserCart(123);
-      const callerContext: CallerContext = {
-        kind: 'user',
+      const callerContext = createUserCallerContext({
         userId: 123,
         role: 'CUSTOMER',
-        permissions: new Set([]), // missing permission
-      };
+        permissions: new Set([]),
+      });
 
       const result = await validator.validate(cart, callerContext);
       expect(result.isFailure).toBe(true);
@@ -60,12 +52,11 @@ describe('CartOwnershipValidator', () => {
 
     it('should deny user with mismatched userId', async () => {
       const cart = Cart.createUserCart(123);
-      const callerContext: CallerContext = {
-        kind: 'user',
+      const callerContext = createUserCallerContext({
         userId: 1,
         role: 'CUSTOMER',
         permissions: new Set(['manage_own_cart']),
-      };
+      });
 
       const result = await validator.validate(cart, callerContext);
       expect(result.isFailure).toBe(true);

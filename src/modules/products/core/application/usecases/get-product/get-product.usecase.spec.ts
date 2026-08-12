@@ -1,6 +1,8 @@
+import {
+  MockProductQueryService,
+  ProductDtoTestFactory,
+} from 'src/modules/products/testing';
 import { GetProductUseCase } from './get-product.usecase';
-import { MockProductQueryService } from '../../../../testing/mocks/product-query-service.mock';
-import { ProductDtoTestFactory } from '../../../../testing/factories/product-dto.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 

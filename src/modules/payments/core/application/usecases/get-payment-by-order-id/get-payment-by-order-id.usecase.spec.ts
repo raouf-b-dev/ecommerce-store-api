@@ -1,6 +1,8 @@
+import {
+  MockPaymentQueryService,
+  PaymentDtoTestFactory,
+} from 'src/modules/payments/testing';
 import { GetPaymentByOrderIdUseCase } from './get-payment-by-order-id.usecase';
-import { MockPaymentQueryService } from '../../../../testing/mocks/payment-query-service.mock';
-import { PaymentDtoTestFactory } from '../../../../testing/factories/payment-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import {

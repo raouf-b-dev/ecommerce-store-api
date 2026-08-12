@@ -1,11 +1,13 @@
+import {
+  MockRoleRepository,
+  AuthorizationDtoFactory,
+} from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DeleteRoleUseCase } from './delete-role.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
-import { AuthorizationDtoFactory } from '../../../../testing/factories/authorization.dto.factory';
 
 describe('DeleteRoleUseCase', () => {
   let useCase: DeleteRoleUseCase;

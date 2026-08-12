@@ -1,5 +1,5 @@
+import { ProductDtoTestFactory } from 'src/modules/products/testing';
 import { ProductQueryMapper } from './product-query.mapper';
-import { ProductDtoTestFactory } from '../../../testing/factories/product-dto.factory';
 
 describe('ProductQueryMapper', () => {
   it('should correctly map raw row to ProductListItemDTO and ProductDetailDTO', () => {

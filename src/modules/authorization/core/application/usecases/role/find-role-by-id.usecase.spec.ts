@@ -1,10 +1,12 @@
+import {
+  MockRoleRepository,
+  AuthorizationDtoFactory,
+} from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FindRoleByIdUseCase } from './find-role-by-id.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { MockRoleRepository } from '../../../../testing/mocks/role-repository.mock';
-import { AuthorizationDtoFactory } from '../../../../testing/factories/authorization.dto.factory';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('FindRoleByIdUseCase', () => {

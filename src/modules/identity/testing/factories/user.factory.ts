@@ -1,4 +1,5 @@
 import { IUser } from '../../core/domain/interfaces/user.interface';
+import { CreateUserCommand } from '../../core/application/usecases/user/create-user/create-user.usecase';
 import { AddressTestFactory } from './address.entity.factory';
 
 export class UserTestFactory {
@@ -27,5 +28,16 @@ export class UserTestFactory {
 
   static createAddAddressCommand(overrides?: any) {
     return AddressTestFactory.createAddAddressCommand(overrides);
+  }
+
+  static createCreateUserCommand(
+    overrides?: Partial<CreateUserCommand>,
+  ): CreateUserCommand {
+    return {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      ...overrides,
+    };
   }
 }

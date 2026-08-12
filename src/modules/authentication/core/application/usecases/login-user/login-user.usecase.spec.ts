@@ -1,7 +1,12 @@
-import { MockJwtSignerService } from '../../../../../../testing/mocks/jwt-signer.service.mock';
-import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
-import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
-import { IdentityAccessGatewayMock } from '../../../../testing/mocks/identity-access-gateway.mock';
+import {
+  AuthorizationGatewayMock,
+  CredentialRepositoryMock,
+  IdentityAccessGatewayDtoFactory,
+  IdentityAccessGatewayMock,
+  MockPasswordHasher,
+  MockSessionTokenRepository,
+} from 'src/modules/authentication/testing';
+import { MockJwtSignerService } from 'src/testing';
 import { LoginUserUseCase } from './login-user.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { SessionToken } from '../../../domain/entities/session-token';
@@ -9,9 +14,6 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { UserRecord } from '../../ports/identity.gateway';
-import { IdentityAccessGatewayDtoFactory } from '../../../../testing/factories/indentity-gateway-dto.factory';
-import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/mocks/authorization-gateway.mock';
-import { CredentialRepositoryMock } from 'src/modules/authentication/testing/mocks/credential-repository.mock';
 import { Credential } from '../../../domain/entities/credential';
 
 describe('LoginUserUseCase', () => {

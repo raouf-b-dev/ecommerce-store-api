@@ -1,6 +1,8 @@
+import {
+  MockOrderRepository,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
 import { ConfirmOrderUseCase } from './confirm-order.usecase';
-import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';

@@ -1,3 +1,8 @@
+import {
+  PaymentBuilder,
+  MockPaymentRepository,
+  RefundTestFactory,
+} from 'src/modules/payments/testing';
 import { Payment } from '../../../core/domain/entities/payment';
 import {
   PaymentCacheMapper,
@@ -7,10 +12,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { PaymentBuilder } from '../../../testing/builders/payment.test.builder';
-import { MockPaymentRepository } from '../../../testing/mocks/payment-repository.mock';
 import { CachedPaymentRepository } from './cached.payment-repository';
-import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import { Refund } from '../../../core/domain/entities/refund';
 import { MockCacheService, MockLogger } from '../../../../../testing';
 

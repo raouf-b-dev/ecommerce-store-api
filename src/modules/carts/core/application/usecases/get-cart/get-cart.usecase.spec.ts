@@ -1,6 +1,8 @@
+import {
+  MockCartQueryService,
+  CartDtoTestFactory,
+} from 'src/modules/carts/testing';
 import { GetCartUseCase } from './get-cart.usecase';
-import { MockCartQueryService } from '../../../../testing/mocks/cart-query-service.mock';
-import { CartDtoTestFactory } from '../../../../testing/factories/cart-dto.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import {

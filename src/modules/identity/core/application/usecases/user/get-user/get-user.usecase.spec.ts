@@ -1,3 +1,7 @@
+import {
+  MockUserQueryService,
+  UserDtoTestFactory,
+} from 'src/modules/identity/testing';
 import { GetUserUseCase } from './get-user.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../../testing';
@@ -5,8 +9,6 @@ import {
   createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { MockUserQueryService } from '../../../../../testing/mocks/user-query-service.mock';
-import { UserDtoTestFactory } from '../../../../../testing/factories/user-dto.factory';
 
 describe('GetUserUseCase', () => {
   let useCase: GetUserUseCase;

@@ -1,4 +1,10 @@
 // src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.spec.ts
+import {
+  InventoryBuilder,
+  MockInventoryRepository,
+  InventoryCommandTestFactory,
+  InventoryTestFactory,
+} from 'src/modules/inventory/testing';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
   InventoryCacheMapper,
@@ -8,11 +14,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
-import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { CachedInventoryRepository } from './cached-inventory-repository';
-import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
-import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { MockCacheService } from '../../../../../testing';
 
 describe('CachedInventoryRepository', () => {

@@ -1,9 +1,11 @@
+import {
+  InventoryTestFactory,
+  InventoryCommandTestFactory,
+  MockInventoryRepository,
+} from 'src/modules/inventory/testing';
 import { ListLowStockUseCase } from './list-low-stock.usecase';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { InventoryTestFactory } from '../../../../testing/factories/inventory.test.factory';
-import { InventoryCommandTestFactory } from '../../../../testing/factories/inventory-dto.test.factory';
-import { MockInventoryRepository } from '../../../../testing/mocks/inventory-repository.mock';
 
 describe('ListLowStockUseCase', () => {
   let usecase: ListLowStockUseCase;

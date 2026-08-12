@@ -7,9 +7,12 @@ import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/rel
 import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { ClearCheckoutCartUseCase } from '../../core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
+import { MockInventoryReservationGateway } from 'src/modules/orders/testing';
 
 describe('CheckoutFailureListener', () => {
   it('should be defined', async () => {
+    const inventoryReservationGateway = new MockInventoryReservationGateway();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutFailureListener,
@@ -19,7 +22,10 @@ describe('CheckoutFailureListener', () => {
         { provide: ReleaseCheckoutStockUseCase, useValue: {} },
         { provide: RefundCheckoutPaymentUseCase, useValue: {} },
         { provide: ClearCheckoutCartUseCase, useValue: {} },
-        { provide: InventoryReservationGateway, useValue: {} },
+        {
+          provide: InventoryReservationGateway,
+          useValue: inventoryReservationGateway,
+        },
       ],
     }).compile();
 

@@ -1,6 +1,4 @@
 import { ListOrdersUsecase } from './list-orders.usecase';
-import { MockOrderQueryService } from '../../../../testing/mocks/order-query-service.mock';
-import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
 import {
   isFailure,
   Result,
@@ -8,25 +6,27 @@ import {
 import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { ListOrdersQuery } from '../../queries/list-orders.query';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  MockOrderQueryService,
+  OrderDtoTestFactory,
+} from 'src/modules/orders/testing';
 
 describe('ListOrdersUsecase', () => {
   let usecase: ListOrdersUsecase;
   let mockQueryService: MockOrderQueryService;
 
-  const adminContext: CallerContext = {
-    kind: 'user',
+  const adminContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
     permissions: new Set(['view_all_orders']),
-  };
+  });
 
-  const customerContext: CallerContext = {
-    kind: 'user',
+  const customerContext = createUserCallerContext({
     userId: 2,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_orders']),
-  };
+  });
 
   const sampleDTO = OrderDtoTestFactory.createOrderListItemDTO({
     id: 100,

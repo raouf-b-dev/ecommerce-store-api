@@ -1,8 +1,8 @@
+import { MockJwksService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtSignerService } from './jwt-signer.service';
 import { JwksPort } from '../../../../../infrastructure/jwt/ports/jwks.port';
 import { EnvConfigService } from '../../../../../config/env-config.service';
-import { MockJwksService } from '../../../../../testing/mocks/jwks.service.mock';
 
 describe('JwtSignerService', () => {
   let service: JwtSignerService;

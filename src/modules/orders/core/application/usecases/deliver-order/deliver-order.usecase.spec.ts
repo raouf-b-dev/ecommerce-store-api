@@ -1,10 +1,12 @@
 // src/modules/orders/application/usecases/deliver-order/deliver-order.usecase.spec.ts
 import {
+  MockOrderRepository,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import {
   DeliverOrderUseCase,
   DeliverOrderCommand,
 } from './deliver-order.usecase';
-import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';

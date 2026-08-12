@@ -1,11 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { ScheduleCheckoutPropsFactory } from 'src/modules/orders/testing';
 import { ReserveStockStep } from './reserve-stock.job';
 import { ReserveStockForCheckoutUseCase } from '../../../core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 import { CorrelationService } from '../../../../../infrastructure/logging/correlation/correlation.service';
-
+import { Test, TestingModule } from '@nestjs/testing';
 import { Job } from 'bullmq';
 import { ScheduleCheckoutProps } from '../../../core/domain/schedulers/order.scheduler';
-import { ScheduleCheckoutPropsFactory } from '../../../testing/factories/schedule-checkout-props.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { MockJob } from '../../../../../testing';
 
@@ -19,13 +18,8 @@ describe('ReserveStockStep', () => {
     'job-123',
   );
 
-  const mockValidateCartResult = {
-    cartId: 1,
-    cartItems: [
-      { productId: 10, quantity: 2, price: 50 },
-      { productId: 20, quantity: 1, price: 100 },
-    ],
-  };
+  const mockValidateCartResult =
+    ScheduleCheckoutPropsFactory.createValidateCartResult();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

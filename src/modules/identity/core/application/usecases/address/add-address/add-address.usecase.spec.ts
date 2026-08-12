@@ -1,3 +1,8 @@
+import {
+  MockUserRepository,
+  AddressTestFactory,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
 import { AddAddressUseCase } from './add-address.usecase';
 import { AddAddressCommand } from '../../../commands/add-address.command';
 import { ResultAssertionHelper } from '../../../../../../../testing';
@@ -9,9 +14,6 @@ import {
   createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { AddressTestFactory } from '../../../../../testing/factories/address.entity.factory';
-import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 
 /** Use a street distinct from the default mock address ('123 Main St') to avoid duplicate-address errors */
 const newAddressCommand = (userId = 123): AddAddressCommand =>

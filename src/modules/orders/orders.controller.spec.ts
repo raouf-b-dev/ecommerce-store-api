@@ -1,8 +1,11 @@
 // src/modules/orders/orders.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { OrderTestFactory } from './testing/factories/order.factory';
-import { OrderDtoTestFactory } from './testing/factories/order-dto.factory';
+import {
+  OrderDtoTestFactory,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
@@ -54,23 +57,8 @@ describe('OrdersController', () => {
       status: OrderStatus.DELIVERED,
     });
     createDeliveredOrderDto = OrderDtoTestFactory.createDeliverOrderCommand();
-    const cmd = OrderDtoTestFactory.createCheckoutCommand();
-    checkoutDto = {
-      ...cmd,
-      shippingAddress: cmd.shippingAddress
-        ? {
-            ...cmd.shippingAddress,
-            firstName: cmd.shippingAddress.firstName || 'Test',
-            lastName: cmd.shippingAddress.lastName || 'User',
-          }
-        : undefined,
-    };
-    callerContext = {
-      kind: 'user',
-      userId: 123,
-      role: 'CUSTOMER',
-      permissions: new Set(['manage_own_cart']),
-    };
+    checkoutDto = OrderDtoTestFactory.createCheckoutDto();
+    callerContext = AuthPayloadFactory.createCustomerContext();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],

@@ -1,5 +1,5 @@
+import { CartDtoTestFactory } from 'src/modules/carts/testing';
 import { CartQueryMapper } from './cart-query.mapper';
-import { CartDtoTestFactory } from '../../../testing/factories/cart-dto.factory';
 
 describe('CartQueryMapper', () => {
   it('should map raw query rows into a CartPresentationDTO', () => {

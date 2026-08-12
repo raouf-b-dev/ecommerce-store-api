@@ -1,3 +1,9 @@
+import {
+  PaymentEntityTestFactory,
+  RefundEntityTestFactory,
+  PaymentTestFactory,
+  RefundTestFactory,
+} from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
@@ -6,10 +12,6 @@ import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundEntity } from '../../orm/refund.schema';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
-import { PaymentEntityTestFactory } from '../../../testing/factories/payment-entity.test.factory';
-import { RefundEntityTestFactory } from '../../../testing/factories/refund-entity.test.factory';
-import { PaymentTestFactory } from '../../../testing/factories/payment.test.factory';
-import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import {
   createMockQueryBuilder,
   createMockTransactionManager,

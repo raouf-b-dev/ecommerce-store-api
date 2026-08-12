@@ -1,5 +1,5 @@
+import { MockSessionTokenRepository } from 'src/modules/authentication/testing';
 import { LogoutAllUseCase } from './logout-all.usecase';
-import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import {
   MockJwtVerifierService,
   ResultAssertionHelper,

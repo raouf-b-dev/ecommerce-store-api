@@ -1,8 +1,12 @@
 // src/order/infrastructure/__tests__/redis-order.repository.spec.ts
+import {
+  MockOrderRepository,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import { MockCacheService, MockLogger } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   ListOrdersQuery,
-  OrderItemInput,
   OrderRepository,
 } from '../../../core/domain/repositories/order-repository';
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
@@ -12,16 +16,12 @@ import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { CachedOrderRepository } from './cached.order-repository';
 import { Logger } from '@nestjs/common';
-import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
 import {
   OrderForCache,
   OrderCacheMapper,
 } from '../../persistence/mappers/order.mapper';
 import { Order } from '../../../core/domain/entities/order';
-import { OrderTestFactory } from '../../../testing/factories/order.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
-import { MockOrderRepository } from '../../../testing/mocks/order-repository.mock';
-import { MockLogger } from '../../../../../testing/mocks/logger.mock';
 
 describe('CachedOrderRepository', () => {
   let repository: CachedOrderRepository;
@@ -36,14 +36,6 @@ describe('CachedOrderRepository', () => {
 
   const orderId = 1;
   const mockCachedOrder: OrderForCache = OrderCacheMapper.toCache(mockOrder);
-  const mockUpdateOrderDto: OrderItemInput[] = [
-    { productId: 1, quantity: 3, productName: 'Test', unitPrice: 100 },
-  ];
-  const cancelledOrder = Order.fromPrimitives(
-    OrderTestFactory.createCancelledOrder({
-      id: orderId,
-    }),
-  );
 
   const updatedOrder = Order.fromPrimitives(OrderTestFactory.createMockOrder());
 
