@@ -17,7 +17,6 @@ import {
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
-import { isFailure, Result } from '../../shared-kernel/domain/result';
 import { AddCartItemDto } from './primary-adapters/dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './primary-adapters/dto/update-cart-item.dto';
 import { CartResponseDto } from './primary-adapters/dto/cart-response.dto';

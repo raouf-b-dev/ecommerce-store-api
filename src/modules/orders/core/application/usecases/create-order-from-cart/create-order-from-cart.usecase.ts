@@ -9,7 +9,6 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderFactory } from '../../../domain/factories/order.factory';
-import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { CartGateway } from '../../ports/cart.gateway';
