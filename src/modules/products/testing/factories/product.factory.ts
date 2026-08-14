@@ -1,5 +1,6 @@
 // src/modules/products/testing/factories/product.factory.ts
 import { IProduct } from '../../core/domain/interfaces/product.interface';
+import { Product, ProductProps } from '../../core/domain/entities/product';
 
 export class ProductTestFactory {
   static createMockProduct(overrides?: Partial<IProduct>): IProduct {
@@ -123,5 +124,25 @@ export class ProductTestFactory {
       sku: 'FOOD-001',
       ...overrides,
     });
+  }
+
+  static createProductProps(overrides?: Partial<ProductProps>): ProductProps {
+    return {
+      id: 1,
+      name: 'Test Product',
+      slug: 'test-product',
+      description: 'A test product for testing purposes',
+      price: 100,
+      currency: 'USD',
+      sku: 'TEST-001',
+      isActive: true,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+      ...overrides,
+    };
+  }
+
+  static createDomainProduct(overrides?: Partial<ProductProps>): Product {
+    return Product.fromPrimitives(this.createProductProps(overrides));
   }
 }
