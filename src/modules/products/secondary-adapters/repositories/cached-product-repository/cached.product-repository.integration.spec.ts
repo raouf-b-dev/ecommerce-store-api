@@ -10,6 +10,7 @@ import { ResultAssertionHelper } from 'src/testing';
 
 describe('CachedProductRepository (Integration - Real DB delegate)', () => {
   let repository: CachedProductRepository;
+  let postgresRepo: PostgresProductRepository;
   let cacheService: MockCacheService;
   let seededData: SeededData;
 
@@ -18,7 +19,7 @@ describe('CachedProductRepository (Integration - Real DB delegate)', () => {
     seededData = await IntegrationTestHelper.seedReferenceData();
 
     const dataSource = IntegrationTestHelper.getDataSource();
-    const postgresRepo = new PostgresProductRepository(
+    postgresRepo = new PostgresProductRepository(
       dataSource.getRepository(ProductEntity),
     );
     cacheService = new MockCacheService();
@@ -39,20 +40,18 @@ describe('CachedProductRepository (Integration - Real DB delegate)', () => {
     );
   });
 
-  it('returns the cached product on cache hit', async () => {
-    const postgresRepo = new PostgresProductRepository(
-      IntegrationTestHelper.getDataSource().getRepository(ProductEntity),
-    );
+  it('returns the cached product on cache hit without a fresh postgres read', async () => {
     const loaded = await postgresRepo.findById(seededData.product.id);
     ResultAssertionHelper.assertResultSuccess(loaded);
-    cacheService.get.mockResolvedValue(
-      ProductCacheMapper.toCache(loaded.value),
-    );
+    cacheService.get.mockResolvedValue({
+      ...ProductCacheMapper.toCache(loaded.value),
+      sku: 'FROM-CACHE',
+    });
 
     const result = await repository.findById(seededData.product.id);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(seededData.product.id);
+    expect(result.value.sku).toBe('FROM-CACHE');
     expect(cacheService.set).not.toHaveBeenCalled();
   });
 });

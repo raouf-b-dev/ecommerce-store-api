@@ -64,15 +64,18 @@ describe('CachedPaymentRepository (Integration - Real DB delegate)', () => {
     );
   });
 
-  it('returns the cached payment on cache hit', async () => {
+  it('returns the cached payment on cache hit without a fresh postgres read', async () => {
     const saved = await persistPayment();
-    const cached: PaymentForCache = PaymentCacheMapper.toCache(saved);
+    const cached: PaymentForCache = {
+      ...PaymentCacheMapper.toCache(saved),
+      transactionId: 'from-cache-not-db',
+    };
     cacheService.get.mockResolvedValue(cached);
 
     const result = await repository.findById(saved.id!);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(saved.id);
+    expect(result.value.transactionId).toBe('from-cache-not-db');
     expect(cacheService.set).not.toHaveBeenCalled();
   });
 });
