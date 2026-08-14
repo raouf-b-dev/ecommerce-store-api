@@ -81,7 +81,7 @@ export class ShippingAddress implements IShippingAddress {
       'es',
       'dz',
     ];
-    if (!validCountries.includes(props.country.toLowerCase())) {
+    if (!validCountries.includes(props.country.trim().toLowerCase())) {
       throw new Error(`Unsupported country: ${props.country}`);
     }
 

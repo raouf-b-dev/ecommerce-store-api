@@ -113,6 +113,7 @@ Job handlers must **not** contain business logic, publish domain events, or inje
 2. Use module factories under `modules/[module]/testing/factories`.
 3. Use typed mock repositories under `modules/[module]/testing/mocks`.
 4. Every behavior change requires test impact analysis.
+5. Domain entity and value-object specs follow [DOMAIN-ENTITY-TESTING.md](../testing/DOMAIN-ENTITY-TESTING.md) (GWT/AAA, `it.each`, transition matrices, invariant checklists).
 
 ## 8. Redis Conventions
 

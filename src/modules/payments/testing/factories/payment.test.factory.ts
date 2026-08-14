@@ -1,4 +1,5 @@
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
+import { Payment, PaymentProps } from '../../core/domain/entities/payment';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
@@ -61,5 +62,32 @@ export class PaymentTestFactory {
       refundedAmount: 50,
       ...overrides,
     });
+  }
+
+  static createPaymentProps(overrides?: Partial<PaymentProps>): PaymentProps {
+    return {
+      id: 1,
+      orderId: 1,
+      userId: 1,
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.STRIPE,
+      status: PaymentStatusType.PENDING,
+      transactionId: null,
+      gatewayPaymentIntentId: null,
+      gatewayClientSecret: null,
+      paymentMethodInfo: null,
+      refundedAmount: 0,
+      refunds: [],
+      failureReason: null,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+      completedAt: null,
+      ...overrides,
+    };
+  }
+
+  static createDomainPayment(overrides?: Partial<PaymentProps>): Payment {
+    return Payment.fromPrimitives(this.createPaymentProps(overrides));
   }
 }

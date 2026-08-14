@@ -2,6 +2,7 @@
 import { IOrder } from '../interfaces/order.interface';
 import { IOrderItem } from '../interfaces/order-item.interface';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
+import { OrderWorkflow } from '../policies/order-workflow';
 import { OrderItem, OrderItemProps } from './order-items';
 import {
   ShippingAddress,
@@ -366,7 +367,7 @@ export class Order implements IOrder {
   ): Result<void, DomainError> {
     const newStatusVO = new OrderStatusVO(newStatus);
 
-    if (!this._status.canTransitionTo(newStatusVO.value)) {
+    if (!OrderWorkflow.canTransition(this._status.value, newStatusVO.value)) {
       return ErrorFactory.DomainError(
         `Cannot transition from ${this._status.value} to ${newStatusVO.value}`,
       );
