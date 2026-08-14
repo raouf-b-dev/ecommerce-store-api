@@ -252,6 +252,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
         lowStockThreshold: entity.lowStockThreshold,
         lastRestockDate: entity.lastRestockDate,
         version: () => 'version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
       })
       .where('id = :id AND version = :expectedVersion', {
         id: inventory.id,
