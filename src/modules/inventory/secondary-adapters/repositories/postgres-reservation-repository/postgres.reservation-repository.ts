@@ -183,6 +183,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
+            loadEagerRelations: false,
           });
 
           if (!currentEntity) {
@@ -251,6 +252,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
+            loadEagerRelations: false,
           });
 
           if (!currentEntity) {
