@@ -1,9 +1,11 @@
 import { User } from '../../../core/domain/entities/user';
 import { PostgresUserRepository } from './postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';
+import { AddressEntity } from '../../orm/address.schema';
 import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
 import { SeededData } from 'test/integration/setup/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
+import { AddressType } from '../../../../../shared-kernel/domain/value-objects/address-type';
 
 describe('PostgresUserRepository (Integration - Real DB)', () => {
   let repository: PostgresUserRepository;
@@ -16,6 +18,7 @@ describe('PostgresUserRepository (Integration - Real DB)', () => {
     const dataSource = IntegrationTestHelper.getDataSource();
     repository = new PostgresUserRepository(
       dataSource.getRepository(UserEntity),
+      dataSource,
     );
   });
 
@@ -65,5 +68,104 @@ describe('PostgresUserRepository (Integration - Real DB)', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value?.entity.id).toBe(seededData.customerUser.id);
     expect(result.value?.expectedVersion).toBeGreaterThanOrEqual(1);
+  });
+
+  it('save with expectedVersion persists a new address and increments version', async () => {
+    const forUpdate = await repository.findByIdForUpdate(
+      seededData.customerUser.id,
+    );
+    ResultAssertionHelper.assertResultSuccess(forUpdate);
+    const user = forUpdate.value!.entity;
+
+    ResultAssertionHelper.assertResultSuccess(
+      user.addAddress({
+        id: null,
+        userId: user.id!,
+        street: '10 Integration Way',
+        street2: null,
+        city: 'Algiers',
+        state: 'Algiers',
+        postalCode: '16000',
+        country: 'DZ',
+        type: AddressType.HOME,
+        isDefault: true,
+        deliveryInstructions: null,
+        createdAt: null,
+        updatedAt: null,
+      }),
+    );
+
+    const saveResult = await repository.save(
+      user,
+      forUpdate.value!.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const loaded = await repository.findById(seededData.customerUser.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value!.addresses).toHaveLength(1);
+    expect(loaded.value!.addresses[0].street).toBe('10 Integration Way');
+
+    const after = await repository.findByIdForUpdate(
+      seededData.customerUser.id,
+    );
+    ResultAssertionHelper.assertResultSuccess(after);
+    expect(after.value!.expectedVersion).toBeGreaterThan(
+      forUpdate.value!.expectedVersion,
+    );
+  });
+
+  it('save with stale expectedVersion does not persist a new address', async () => {
+    const forUpdate = await repository.findByIdForUpdate(
+      seededData.customerUser.id,
+    );
+    ResultAssertionHelper.assertResultSuccess(forUpdate);
+    const user = forUpdate.value!.entity;
+
+    ResultAssertionHelper.assertResultSuccess(
+      user.updatePersonalInfo('Locked', user.lastName, user.email, user.phone),
+    );
+
+    const firstSave = await repository.save(
+      user,
+      forUpdate.value!.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultSuccess(firstSave);
+
+    ResultAssertionHelper.assertResultSuccess(
+      user.addAddress({
+        id: null,
+        userId: user.id!,
+        street: 'Should Not Persist',
+        street2: null,
+        city: 'Algiers',
+        state: 'Algiers',
+        postalCode: '16000',
+        country: 'DZ',
+        type: AddressType.WORK,
+        isDefault: false,
+        deliveryInstructions: null,
+        createdAt: null,
+        updatedAt: null,
+      }),
+    );
+
+    const staleSave = await repository.save(
+      user,
+      forUpdate.value!.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultFailure(
+      staleSave,
+      'Optimistic lock failure',
+    );
+
+    const addressCount = await IntegrationTestHelper.getRepository(
+      AddressEntity,
+    ).count({ where: { userId: seededData.customerUser.id } });
+    expect(addressCount).toBe(0);
+
+    const loaded = await repository.findById(seededData.customerUser.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value!.firstName).toBe('Locked');
   });
 });

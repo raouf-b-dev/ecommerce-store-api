@@ -106,4 +106,64 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
     expect(result.value[0].userId).toBe(seededData.customerUser.id);
     expect(result.value[0].status).toBe(OrderStatus.PENDING_PAYMENT);
   });
+
+  it('save with expectedVersion persists status change and keeps items', async () => {
+    const orderEntity = await persistOrder();
+    const forUpdate = await repository.findByIdForUpdate(orderEntity.id);
+    ResultAssertionHelper.assertResultSuccess(forUpdate);
+
+    ResultAssertionHelper.assertResultSuccess(
+      forUpdate.value.entity.confirmPayment(42),
+    );
+
+    const saveResult = await repository.save(
+      forUpdate.value.entity,
+      forUpdate.value.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const loaded = await repository.findById(orderEntity.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value.status).toBe(OrderStatus.CONFIRMED);
+    expect(loaded.value.paymentId).toBe(42);
+    expect(loaded.value.getItems()).toHaveLength(1);
+
+    const after = await repository.findByIdForUpdate(orderEntity.id);
+    ResultAssertionHelper.assertResultSuccess(after);
+    expect(after.value.expectedVersion).toBeGreaterThan(
+      forUpdate.value.expectedVersion,
+    );
+  });
+
+  it('save with stale expectedVersion does not change status or items', async () => {
+    const orderEntity = await persistOrder();
+    const forUpdate = await repository.findByIdForUpdate(orderEntity.id);
+    ResultAssertionHelper.assertResultSuccess(forUpdate);
+
+    ResultAssertionHelper.assertResultSuccess(
+      forUpdate.value.entity.confirmPayment(7),
+    );
+
+    const firstSave = await repository.save(
+      forUpdate.value.entity,
+      forUpdate.value.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultSuccess(firstSave);
+
+    ResultAssertionHelper.assertResultSuccess(firstSave.value.process());
+
+    const staleSave = await repository.save(
+      firstSave.value,
+      forUpdate.value.expectedVersion,
+    );
+    ResultAssertionHelper.assertResultFailure(
+      staleSave,
+      'Optimistic lock failure',
+    );
+
+    const loaded = await repository.findById(orderEntity.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value.status).toBe(OrderStatus.CONFIRMED);
+    expect(loaded.value.getItems()).toHaveLength(1);
+  });
 });

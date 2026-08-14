@@ -1,22 +1,36 @@
 import { UserTestFactory } from 'src/modules/identity/testing';
+import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PostgresUserRepository } from './postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UserMapper } from '../../persistence/mappers/user.mapper';
+import {
+  createMockDataSource,
+  createMockQueryBuilder,
+  createMockTransactionManager,
+} from '../../../../../testing/mocks/typeorm.mocks';
 
 describe('PostgresUserRepository', () => {
   let repository: PostgresUserRepository;
   let typeOrmRepository: jest.Mocked<Repository<UserEntity>>;
+  let mockQueryBuilder: ReturnType<typeof createMockQueryBuilder<UserEntity>>;
+  let mockTransactionManager: ReturnType<typeof createMockTransactionManager>;
 
   const mockUser = User.fromProps(UserTestFactory.createMockUser());
   const mockUserEntity = UserMapper.toEntity(mockUser);
 
   beforeEach(async () => {
+    mockQueryBuilder = createMockQueryBuilder<UserEntity>();
+    mockTransactionManager = createMockTransactionManager({
+      mockQueryBuilder,
+    });
+    const mockDataSource = createMockDataSource(mockTransactionManager);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresUserRepository,
@@ -28,6 +42,7 @@ describe('PostgresUserRepository', () => {
             delete: jest.fn(),
           },
         },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -59,6 +74,52 @@ describe('PostgresUserRepository', () => {
       const result = await repository.save(mockUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(typeOrmRepository.save).toHaveBeenCalled();
+    });
+
+    it('should OCC-update with WHERE version when expectedVersion is provided', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+      mockTransactionManager.find.mockResolvedValue([]);
+      typeOrmRepository.findOne.mockResolvedValue(mockUserEntity);
+
+      const result = await repository.save(mockUser, 1);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(typeOrmRepository.save).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith(UserEntity);
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND version = :expectedVersion',
+        { id: mockUser.id, expectedVersion: 1 },
+      );
+    });
+
+    it('should return conflict when OCC update affects 0 rows and the user exists', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockTransactionManager.findOne.mockResolvedValue(mockUserEntity);
+
+      const result = await repository.save(mockUser, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Optimistic lock failure',
+        RepositoryError,
+      );
+      if (result.isFailure) {
+        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+      }
+    });
+
+    it('should return not-found when OCC update affects 0 rows and the user is missing', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockTransactionManager.findOne.mockResolvedValue(null);
+
+      const result = await repository.save(mockUser, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'User not found',
+        RepositoryError,
+      );
     });
 
     it('should return failure if save fails', async () => {
