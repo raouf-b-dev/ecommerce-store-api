@@ -94,27 +94,33 @@ async save(inventory: Inventory, expectedVersion?: number): Promise<Result<Inven
 
 ```typescript
 async save(inventory: Inventory, expectedVersion?: number): Promise<Result<Inventory, RepositoryError>> {
-  const entity = InventoryMapper.toEntity(inventory);
-  if (inventory.id && expectedVersion !== undefined) {
-    const res = await this.ormRepo.createQueryBuilder()
-      .update(InventoryEntity)
-      .set({
-        availableQuantity: entity.availableQuantity,
-        reservedQuantity: entity.reservedQuantity,
-        version: () => 'version + 1',
-      })
-      .where('id = :id AND version = :expectedVersion', { id: inventory.id, expectedVersion })
-      .execute();
-
-    if (res.affected === 0) {
-      return ErrorFactory.RepositoryError('Optimistic lock failure', undefined, HttpStatus.CONFLICT);
-    }
-    return Result.success(inventory);
+  if (expectedVersion === undefined) {
+    const saved = await this.ormRepo.save(InventoryMapper.toEntity(inventory));
+    return Result.success(InventoryMapper.toDomain(saved));
   }
-  const saved = await this.ormRepo.save(entity);
-  return Result.success(inventory);
+  const entity = InventoryMapper.toEntity(inventory);
+  const res = await this.ormRepo.createQueryBuilder()
+    .update(InventoryEntity)
+    .set({
+      availableQuantity: entity.availableQuantity,
+      reservedQuantity: entity.reservedQuantity,
+      lowStockThreshold: entity.lowStockThreshold,
+      lastRestockDate: entity.lastRestockDate,
+      version: () => 'version + 1',
+      updatedAt: () => 'CURRENT_TIMESTAMP',
+    })
+    .where('id = :id AND version = :expectedVersion', { id: inventory.id, expectedVersion })
+    .execute();
+
+  if (res.affected === 0) {
+    return ErrorFactory.RepositoryError('Optimistic lock failure', undefined, HttpStatus.CONFLICT);
+  }
+  const updated = await this.ormRepo.findOneByOrFail({ id: inventory.id! });
+  return Result.success(InventoryMapper.toDomain(updated));
 }
 ```
+
+For Product / Order / User / Cart, spread `Mapper.toUpdatePayload(entity)` into `.set()` instead of listing application-owned columns by hand. See [CONVENTIONS.md](CONVENTIONS.md) §4 and §13.
 
 ---
 
