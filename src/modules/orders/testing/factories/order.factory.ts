@@ -2,6 +2,7 @@
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { Order, OrderProps } from '../../core/domain/entities/order';
+import { ShippingAddressProps } from '../../core/domain/value-objects/shipping-address';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderTestFactory {
@@ -27,19 +28,7 @@ export class OrderTestFactory {
       ],
 
       // Shipping address
-      shippingAddress: {
-        id: 1,
-        firstName: 'John',
-        lastName: 'Doe',
-        street: '123 Main Street',
-        street2: null,
-        city: 'New York',
-        state: 'NY',
-        postalCode: '10001',
-        country: 'dz',
-        phone: '+1234567890',
-        deliveryInstructions: null,
-      },
+      shippingAddress: this.createShippingAddressProps(),
 
       // Pricing
       subtotal: 10,
@@ -164,6 +153,26 @@ export class OrderTestFactory {
     });
   }
 
+  static createShippingAddressProps(
+    overrides?: Partial<ShippingAddressProps>,
+  ): ShippingAddressProps {
+    const base: ShippingAddressProps = {
+      id: 1,
+      firstName: 'John',
+      lastName: 'Doe',
+      street: '123 Main Street',
+      street2: null,
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10001',
+      country: 'dz',
+      phone: '+1234567890',
+      deliveryInstructions: null,
+    };
+
+    return { ...base, ...overrides };
+  }
+
   static createOrderProps(overrides?: Partial<OrderProps>): OrderProps {
     const baseProps: OrderProps = {
       id: 1,
@@ -180,19 +189,7 @@ export class OrderTestFactory {
           unitPrice: 10,
         },
       ],
-      shippingAddress: {
-        id: 1,
-        firstName: 'John',
-        lastName: 'Doe',
-        street: '123 Main Street',
-        street2: null,
-        city: 'New York',
-        state: 'NY',
-        postalCode: '10001',
-        country: 'dz',
-        phone: '+1234567890',
-        deliveryInstructions: null,
-      },
+      shippingAddress: this.createShippingAddressProps(),
       status: OrderStatus.PENDING_PAYMENT,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
