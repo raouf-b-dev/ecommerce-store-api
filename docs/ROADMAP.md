@@ -84,12 +84,12 @@
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                                                 | Phase  | Critical Purpose                                                                     |
-| ------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
-| [/] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Pre-deploy verification via `supertest`; not post-deploy smoke probes                |
-| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)            | **13** | Centralized transition policy and domain specs                                       |
-| [/] Repository integration tests (Testcontainers / real DB)                                 | **13** | Integration harness exists; expand real-DB repository coverage                       |
-| [ ] Concurrent checkout integration proof (pessimistic lock verification)                   | **13** | Simultaneous transactions against last stock unit cannot violate inventory invariant |
+| Task / Item                                                                                 | Phase  | Critical Purpose                                                            |
+| ------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| [/] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
+| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)            | **13** | Centralized transition policy and domain specs                              |
+| [x] Repository integration tests (Testcontainers / real DB)                                 | **13** | All postgres write adapters + cached wrappers (except cached cart)          |
+| [x] Concurrent checkout integration proof (pessimistic lock verification)                   | **13** | Repository-level reservation proof — parallel saves against last stock unit |
 
 ---
 
@@ -156,17 +156,27 @@
 
 ---
 
-### [ ] Repository Integration Tests (Real DB) & Pessimistic Lock Proof
+### [x] Repository Integration Tests (Real DB) & Pessimistic Lock Proof
 
 **What**: Test transactional persistence boundaries against a real database (PostgreSQL Testcontainers).
 
 **Scope**:
 
-- [ ] Run postgres and cached repository specs against real PostgreSQL — **not** mocked TypeORM repositories.
-- [ ] **Concurrent Checkout Proof**: Execute simultaneous checkout operations against the last remaining stock unit and verify PostgreSQL row locking serializes reservation attempts and prevents overselling.
-- [ ] Test cached repository wrappers: cache hit/miss, invalidation on write, Redis unavailable fallback.
+- [x] Run postgres and cached repository specs against real PostgreSQL — **not** mocked TypeORM repositories.
+- [x] **Concurrent Checkout Proof**: Execute simultaneous checkout operations against the last remaining stock unit and verify PostgreSQL row locking serializes reservation attempts and prevents overselling.
+- [x] Test cached repository wrappers: cache hit/miss, invalidation on write, Redis unavailable fallback.
 
 **Location**: `src/modules/*/secondary-adapters/repositories/`
+
+---
+
+### [ ] Atomic OCC save predicates (follow-up — not blocking E2E)
+
+**What**: Align Product / Order / User / Cart `save(entity, expectedVersion)` with Inventory's atomic `UPDATE … WHERE version = :expectedVersion` so stale versions fail (HTTP 409).
+
+**Why**: Policy (`WHEN-TO-USE-OPTIMISTIC-VS-PESSIMISTIC-LOCKING.md`, CONVENTIONS.md §13) requires OCC on concurrent CRUD aggregates. Real-DB tests showed Product TypeORM `save()` on a detached entity **increments** `@VersionColumn` but **does not reject** a stale `expectedVersion`. Inventory already enforces the predicate.
+
+**Location**: `src/modules/{products,orders,identity,carts}/secondary-adapters/repositories/`
 
 ---
 
