@@ -61,7 +61,7 @@ The application is a Modular Monolith split into 10 strictly isolated **Bounded 
 - **Gateways (ACL)**: `Orders` needs user info? It calls `UserGateway` (in its `core/application/ports`), implemented by `ModuleUserGateway` (in `secondary-adapters/adapters`), calling `Identity`. System operations pass `SYSTEM_CALLER_CONTEXT`. No direct entity/repo imports across modules.
 - **IDOR & Authorization Control**: Controllers extract `@CallerCtx()` and pass `callerContext` to application use cases. Use cases query `OwnedResourceAccessPolicy` to verify ownership or call `resolveListScope()` to filter lists by owner.
 - **Result Pattern**: We never `throw` errors in domain or application layers. Use `Result<T, E>` and `ErrorFactory`. Global `ResultInterceptor` maps it to HTTP responses.
-- **Mappers**: When transforming ORM entities to Domain entities (or vice versa), use `CreateFromEntity<TEntity>` and `toPrimitives()`.
+- **Mappers**: Domain ↔ ORM uses `CreateFromEntity<TEntity>` and `toPrimitives()`. OCC QueryBuilder updates use `UpdateFromEntity` + `toUpdatePayload()`; `version` / `updatedAt` are persistence-owned and stamped in SQL.
 - **Jobs**: Kebab-case naming. Implement `BaseJobHandler`. Schedulers trigger jobs; job handlers execute them with `SYSTEM_CALLER_CONTEXT`. Primary adapters must never contain business logic directly.
 - **Domain Events**: Use cases emit domain events via `DomainEventPublisher` (injected port). Primary adapters (controllers, jobs, listeners) must never emit events directly.
 

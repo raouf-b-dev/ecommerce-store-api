@@ -17,7 +17,7 @@ Apply canonical repository conventions during code generation and refactoring wi
    - Gateway / ACL Adapter (Secondary Adapter)
    - Job Handler / Cron Scheduler
    - Repository / Cache Adapter
-   - Mapper (`CreateFromEntity<T>`)
+   - Mapper (`CreateFromEntity<T>`, and `UpdateFromEntity` / `toUpdatePayload()` for OCC updates)
 3. **IDOR & Security Authorization Standards**:
    - **Primary Adapters (Controllers)**: Annotate endpoints with `@RequirePermissions(...)` when fine-grained permissions are required. Inject execution context using `@CallerCtx() callerContext: UserCallerContext`.
    - **Use Cases**: Always receive `callerContext: CallerContext` in command/query DTOs or arguments for operations targeting owned resources.
