@@ -25,8 +25,9 @@ This document defines project-wide coding conventions for database schemas, tabl
 
 ## 3. Mandatory Audit Columns & Concurrency Fields
 
-- **Audit Timestamps**: Every relational table MUST include `created_at` (`CreateDateColumn`) and `updated_at` (`UpdateDateColumn`).
+- **Audit Timestamps**: Every relational table MUST include `created_at` (`@CreateDateColumn`) and `updated_at` (`@UpdateDateColumn`).
 - **Optimistic Concurrency Version**: Every aggregate root table supporting concurrent writes MUST include `@VersionColumn() version: number`.
+- **QueryBuilder OCC updates**: `@UpdateDateColumn()` and `@VersionColumn()` are **not** applied on QueryBuilder `UPDATE`. Adapters MUST set `updated_at = CURRENT_TIMESTAMP` and `version = version + 1` in `.set()`, and MUST include `WHERE id = :id AND version = :expectedVersion`.
 
 ---
 
