@@ -1,6 +1,7 @@
 import { AddAddressCommand } from '../../core/application/commands/add-address.command';
 import { UpdateAddressCommand } from '../../core/application/commands/update-address.command';
 import { IAddress } from '../../core/domain/interfaces/address.interface';
+import { AddressProps } from '../../core/domain/entities/address';
 import { AddressType } from '../../../../shared-kernel/domain/value-objects/address-type';
 import { AuthPayloadFactory } from '../../../../testing/factories/auth-payload.factory';
 
@@ -22,6 +23,25 @@ export class AddressTestFactory {
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };
     return { ...baseAddress, ...overrides };
+  }
+
+  static createAddressProps(overrides?: Partial<AddressProps>): AddressProps {
+    return {
+      id: 123,
+      userId: 123,
+      street: '123 Main St',
+      street2: null,
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10001',
+      country: 'USA',
+      type: AddressType.HOME,
+      isDefault: false,
+      deliveryInstructions: null,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+      ...overrides,
+    };
   }
 
   static createAddAddressCommand(

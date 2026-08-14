@@ -1,6 +1,7 @@
 import { User, UserProps } from './user';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { AddressTestFactory } from 'src/modules/identity/testing';
 
 describe('User Domain Entity', () => {
   const buildProps = (overrides: Partial<UserProps> = {}): UserProps => ({
@@ -120,6 +121,42 @@ describe('User Domain Entity', () => {
       expect(restored.email).toBe(original.email);
       expect(restored.isActive).toBe(original.isActive);
       expect(restored.id).toBe(original.id);
+    });
+  });
+
+  describe('setDefaultAddress', () => {
+    it('promotes one address and demotes others', () => {
+      const user = new User(
+        buildProps({
+          addresses: [
+            AddressTestFactory.createAddressProps({
+              id: 1,
+              street: 'First St',
+              isDefault: true,
+            }),
+            AddressTestFactory.createAddressProps({
+              id: 2,
+              street: 'Second St',
+              isDefault: false,
+            }),
+          ],
+        }),
+      );
+
+      ResultAssertionHelper.assertResultSuccess(user.setDefaultAddress(2));
+
+      expect(user.addresses.find((a) => a.id === 1)?.isDefault).toBe(false);
+      expect(user.addresses.find((a) => a.id === 2)?.isDefault).toBe(true);
+    });
+
+    it('returns failure when address id is unknown', () => {
+      const user = new User(buildProps({ addresses: [] }));
+
+      ResultAssertionHelper.assertResultFailure(
+        user.setDefaultAddress(99),
+        'Address with ID 99 not found',
+        DomainError,
+      );
     });
   });
 
