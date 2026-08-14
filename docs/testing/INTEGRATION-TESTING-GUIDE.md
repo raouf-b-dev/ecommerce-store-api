@@ -41,6 +41,7 @@ test/integration/
 │   ├── testcontainers.setup.ts              # Per-file hook — shared DataSource singleton
 │   ├── integration-test.constants.ts        # Postgres image version and DB credentials
 │   ├── seed-reference-data.ts               # Minimal deterministic FK reference data seeder
+│   ├── inventory-seed.helper.ts             # Concurrency scenario inventory overrides
 │   └── integration-test.helper.ts           # Test helper API (repositories, cleanup, seeding)
 └── index-verification.integration.spec.ts   # Index existence & EXPLAIN plan checks
 ```
@@ -160,3 +161,77 @@ it('verifies index existence for orders(user_id)', async () => {
 | **Redis Cache Service**          | **Mocked (`jest.fn()`)**   | Isolates DB transactional behavior; validates wrapper calls. |
 | **ACL Gateways / Other Modules** | **Mocked Gateway Ports**   | Maintains modular monolith boundary isolation.               |
 | **External Mail/HTTP Services**  | **Mocked Ports**           | Prevents external network side-effects during test runs.     |
+
+---
+
+## 6. Write-Side Repository Adapters
+
+Write-side repository integration tests live alongside adapters as `*.integration.spec.ts` under `secondary-adapters/repositories/`. They complement mock-based `*.spec.ts` unit tests — do **not** replace them.
+
+This guide is an **applied** testing document: it describes how this repository writes real-DB adapter specs. Progress tracking belongs in project-state files, not here.
+
+### Instantiation (no NestJS module)
+
+```typescript
+const dataSource = IntegrationTestHelper.getDataSource();
+const repository = new PostgresReservationRepository(
+  dataSource.getRepository(ReservationEntity),
+  dataSource,
+);
+```
+
+### Cached wrapper composition
+
+Use a **real** postgres delegate with **mocked** `CachePort`:
+
+```typescript
+const postgresRepo = new PostgresInventoryRepository(
+  dataSource.getRepository(InventoryEntity),
+  dataSource,
+);
+const repository = new CachedInventoryRepository(
+  new MockCacheService(),
+  postgresRepo,
+);
+```
+
+Prove cache-aside against persisted rows (miss → DB → set, hit skips a fresh DB read, write refreshes keys, cache errors fall back to postgres). One representative wrapper per distinct cache-key/invalidation pattern is enough; do not duplicate every unit-test branch.
+
+### When a postgres adapter needs an integration spec
+
+Write a real-DB spec when the adapter has **persistence behavior that mocks cannot prove**:
+
+- Multi-statement transactions or a non-default isolation level
+- Row locks (`pessimistic_write` / `SELECT … FOR UPDATE`)
+- Unique, check, or foreign-key constraints the mapper must survive
+- Optimistic updates that use `WHERE version = :expectedVersion`
+
+Skip (or keep unit-only) when the adapter is thin CRUD with no extra SQL invariants, or when PostgreSQL is not the production store for that aggregate.
+
+Each spec: a few focused scenarios. Integration tests prove **persistence, transactions, and constraints** — not every error branch already covered in unit tests.
+
+### Concurrent reservation invariant (repository-level)
+
+This proves the inventory adapter, not the HTTP checkout SAGA:
+
+> Parallel `PostgresReservationRepository.save()` calls against the last stock unit must not oversell.
+
+Document the following in the spec (or a comment above it):
+
+1. `save()` uses `dataSource.transaction('REPEATABLE READ', …)`
+2. Inventory rows use `lock: { mode: 'pessimistic_write' }`
+3. The integration `DataSource` does not pin the pool to a single connection
+4. Jest `maxWorkers: 1` serializes **files**, not in-spec `Promise.all`
+
+**Pessimistic lock + eager relations:** PostgreSQL rejects `FOR UPDATE` on the nullable side of an outer join. Locked `findOne` calls on entities with eager `OneToMany` must use `loadEagerRelations: false` (see `PostgresReservationRepository.release` / `confirm`).
+
+**Observable invariants:**
+
+```text
+BEFORE: availableQuantity = 1, reservedQuantity = 0
+AFTER:  exactly 1 success, availableQuantity = 0, reservedQuantity = 1, 1 reservation row
+```
+
+Use `seedSingleUnitInventory()` from `test/integration/setup/inventory-seed.helper.ts` for explicit absolute initial state — do not assert relative to default seed quantities.
+
+**Contention design:** Launch N concurrent `save()` calls via `Promise.all`. If overlap is uncertain, escalate to a barrier/hold or `pg_locks` inspection — do not weaken assertions to pass.
