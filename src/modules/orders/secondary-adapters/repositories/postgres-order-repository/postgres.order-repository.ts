@@ -1,7 +1,7 @@
 // src/order/infrastructure/postgres-order.repository.ts
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
 import { OrderEntity } from '../../orm/order.schema';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -11,6 +11,8 @@ import { Order } from '../../../core/domain/entities/order';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { ListOrdersQuery } from '../../../core/domain/repositories/order-repository';
+import { OrderItemEntity } from '../../orm/order-item.schema';
+import { ShippingAddressEntity } from '../../orm/shipping-address.schema';
 
 @Injectable()
 export class PostgresOrderRepository implements OrderRepository {
@@ -94,16 +96,81 @@ export class PostgresOrderRepository implements OrderRepository {
     expectedVersion?: number,
   ): Promise<Result<Order, RepositoryError>> {
     try {
-      const orderEntity = OrderMapper.toEntity(order);
       if (expectedVersion !== undefined) {
-        orderEntity.version = expectedVersion;
+        return await this.updateWithOptimisticLock(order, expectedVersion);
       }
-      const savedOrder = await this.ormRepo.save(orderEntity);
-      order.setId(savedOrder.id);
-      return Result.success<Order>(order);
-    } catch (error: any) {
+      return await this.saveNormally(order);
+    } catch (error: unknown) {
       if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError('Failed to save order', error);
+    }
+  }
+
+  private async saveNormally(
+    order: Order,
+  ): Promise<Result<Order, RepositoryError>> {
+    const orderEntity = OrderMapper.toEntity(order);
+    const savedOrder = await this.ormRepo.save(orderEntity);
+    order.setId(savedOrder.id);
+    return Result.success<Order>(order);
+  }
+
+  private async updateWithOptimisticLock(
+    order: Order,
+    expectedVersion: number,
+  ): Promise<Result<Order, RepositoryError>> {
+    const mapped = OrderMapper.toEntity(order);
+    await this.dataSource.transaction(async (manager) => {
+      const updateResult = await manager
+        .createQueryBuilder()
+        .update(OrderEntity)
+        .set({
+          ...OrderMapper.toUpdatePayload(order),
+          version: () => 'version + 1',
+          updatedAt: () => 'CURRENT_TIMESTAMP',
+        })
+        .where('id = :id AND version = :expectedVersion', {
+          id: order.id,
+          expectedVersion,
+        })
+        .execute();
+
+      if (updateResult.affected === 0) {
+        const existing = await manager.findOne(OrderEntity, {
+          where: { id: order.id! },
+        });
+        if (!existing) {
+          throw new RepositoryError('Order not found');
+        }
+        throw new RepositoryError(
+          `Optimistic lock failure for Order ${order.id}. Expected version ${expectedVersion}.`,
+          undefined,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      await this.persistChildren(manager, mapped);
+    });
+
+    const updated = await this.ormRepo.findOne({
+      where: { id: order.id! },
+      relations: ['items', 'shippingAddress'],
+    });
+    if (!updated) {
+      return ErrorFactory.RepositoryError('Order not found');
+    }
+    return Result.success(OrderMapper.toDomain(updated));
+  }
+
+  private async persistChildren(
+    manager: EntityManager,
+    mapped: OrderEntity,
+  ): Promise<void> {
+    if (mapped.shippingAddress) {
+      await manager.save(ShippingAddressEntity, mapped.shippingAddress);
+    }
+    if (mapped.items?.length) {
+      await manager.save(OrderItemEntity, mapped.items);
     }
   }
 
