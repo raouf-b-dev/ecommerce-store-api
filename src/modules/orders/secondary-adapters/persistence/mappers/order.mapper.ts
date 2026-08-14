@@ -1,5 +1,6 @@
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
+import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { Order, OrderProps } from '../../../core/domain/entities/order';
 import { OrderItemProps } from '../../../core/domain/entities/order-items';
 import { IOrder } from '../../../core/domain/interfaces/order.interface';
@@ -9,6 +10,11 @@ import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
 
 type OrderCreate = CreateFromEntity<OrderEntity, 'items' | 'version'>;
+
+export type OrderUpdate = UpdateFromEntity<
+  OrderEntity,
+  'id' | 'version' | 'createdAt' | 'updatedAt' | 'items' | 'shippingAddress'
+>; // persistence-owned + children synced after the OCC parent UPDATE
 
 export type OrderForCache = Omit<IOrder, 'createdAt' | 'updatedAt'> & {
   createdAt: number;
@@ -74,6 +80,22 @@ export class OrderMapper {
     });
 
     return orderEntity;
+  }
+
+  static toUpdatePayload(domain: Order): OrderUpdate {
+    const entity = OrderMapper.toEntity(domain);
+
+    return {
+      userId: entity.userId,
+      paymentId: entity.paymentId,
+      paymentMethod: entity.paymentMethod,
+      shippingAddressId: entity.shippingAddressId,
+      userNotes: entity.userNotes,
+      subtotal: entity.subtotal,
+      shippingCost: entity.shippingCost,
+      totalPrice: entity.totalPrice,
+      status: entity.status,
+    };
   }
 
   static toDomainArray(entities: OrderEntity[]): Order[] {

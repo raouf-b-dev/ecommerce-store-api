@@ -1,10 +1,16 @@
 import { User, UserProps } from '../../../core/domain/entities/user';
 import { UserEntity } from '../../orm/user.schema';
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
+import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { AddressMapper } from './address.mapper';
 import { IAddress } from 'src/modules/identity/core/domain/interfaces/address.interface';
 
 type UserCreate = CreateFromEntity<UserEntity, 'addresses' | 'version'>;
+
+export type UserUpdate = UpdateFromEntity<
+  UserEntity,
+  'id' | 'version' | 'createdAt' | 'updatedAt' | 'addresses'
+>; // persistence-owned + addresses synced after the OCC parent UPDATE
 
 export class UserMapper {
   static toDomain(entity: UserEntity): User {
@@ -44,6 +50,18 @@ export class UserMapper {
       AddressMapper.fromPrimitiveToEntity(address),
     );
     return userEntity;
+  }
+
+  static toUpdatePayload(domain: User): UserUpdate {
+    const entity = UserMapper.toEntity(domain);
+
+    return {
+      firstName: entity.firstName,
+      lastName: entity.lastName,
+      phone: entity.phone,
+      email: entity.email,
+      isActive: entity.isActive,
+    };
   }
 }
 export interface UserForCache {
