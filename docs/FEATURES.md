@@ -240,7 +240,7 @@ Automated pipeline: lint → build → test (with coverage) → publish. Environ
 Comprehensive test infrastructure across all layers:
 
 - **Unit Tests**: Domain logic, use cases, services, and utilities
-- **Integration Tests**: Database interactions and Redis caching
+- **Integration Tests**: PostgreSQL Testcontainers (`*.integration.spec.ts`) for query adapters and write-side repositories (transactions, unique constraints, pessimistic inventory locks, cache-aside with a real postgres delegate)
 - **E2E Tests**: Complete API endpoint testing scaffolding
 - **Coverage**: Detailed metrics via `npm run test:cov`
 
