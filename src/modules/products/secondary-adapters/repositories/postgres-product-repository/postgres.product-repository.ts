@@ -1,4 +1,5 @@
 // src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
+import { HttpStatus } from '@nestjs/common';
 import { Repository, In } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -44,16 +45,71 @@ export class PostgresProductRepository implements ProductRepository {
     expectedVersion?: number,
   ): Promise<Result<Product, RepositoryError>> {
     try {
-      const ormEntity = ProductMapper.toEntity(product);
       if (expectedVersion !== undefined) {
-        ormEntity.version = expectedVersion;
+        return await this.updateWithOptimisticLock(product, expectedVersion);
       }
-      const savedOrmEntity = await this.ormRepo.save(ormEntity);
-      product.setId(savedOrmEntity.id);
-      return Result.success(product);
+      return await this.saveNormally(product);
     } catch (error) {
+      if (error instanceof RepositoryError) return Result.failure(error);
       return ErrorFactory.RepositoryError(`Failed to save the product`, error);
     }
+  }
+
+  private async updateWithOptimisticLock(
+    product: Product,
+    expectedVersion: number,
+  ): Promise<Result<Product, RepositoryError>> {
+    const updateResult = await this.ormRepo
+      .createQueryBuilder()
+      .update(ProductEntity)
+      .set({
+        ...ProductMapper.toUpdatePayload(product),
+        version: () => 'version + 1',
+        updatedAt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('id = :id AND version = :expectedVersion', {
+        id: product.id,
+        expectedVersion,
+      })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      return this.resolveOptimisticLockMiss(
+        'Product',
+        product.id!,
+        expectedVersion,
+      );
+    }
+
+    const updatedEntity = await this.ormRepo.findOneByOrFail({
+      id: product.id!,
+    });
+    return Result.success(ProductMapper.toDomain(updatedEntity));
+  }
+
+  private async saveNormally(
+    product: Product,
+  ): Promise<Result<Product, RepositoryError>> {
+    const ormEntity = ProductMapper.toEntity(product);
+    const savedOrmEntity = await this.ormRepo.save(ormEntity);
+    product.setId(savedOrmEntity.id);
+    return Result.success(product);
+  }
+
+  private async resolveOptimisticLockMiss(
+    name: string,
+    id: number,
+    expectedVersion: number,
+  ): Promise<Result<Product, RepositoryError>> {
+    const existing = await this.ormRepo.findOne({ where: { id } });
+    if (!existing) {
+      return ErrorFactory.RepositoryError(`${name} not found`);
+    }
+    return ErrorFactory.RepositoryError(
+      `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
+      undefined,
+      HttpStatus.CONFLICT,
+    );
   }
 
   async findById(id: number): Promise<Result<Product, RepositoryError>> {

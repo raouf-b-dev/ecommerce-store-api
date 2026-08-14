@@ -60,10 +60,12 @@ For Domain <-> ORM mapping:
 2. Extract with `toPrimitives()` from domain entity.
 3. Build explicit typed payload.
 4. Create entity via `Object.assign(new Entity(), payload)`.
+5. For atomic OCC QueryBuilder updates, define `UpdateFromEntity<TEntity, ExcludeKeys>` and `toUpdatePayload()`. `ExcludeKeys` is the **ownership** list: identity (`id`), OCC (`version`), persistence-owned timestamps (`@CreateDateColumn` / `@UpdateDateColumn`), and relations persisted in a separate step. It is not a list of "fields we currently skip." QueryBuilder `UPDATE` does not run TypeORM date or version hooks; the repository stamps `version: () => 'version + 1'` and `updatedAt: () => 'CURRENT_TIMESTAMP'` in `.set()`.
 
-Reference utility:
+Reference utilities:
 
 - `src/infrastructure/mappers/utils/create-from-entity.type`
+- `src/infrastructure/mappers/utils/update-from-entity.type`
 
 ## 5. Notifications and Real-Time Rules
 
@@ -114,6 +116,7 @@ Job handlers must **not** contain business logic, publish domain events, or inje
 3. Use typed mock repositories under `modules/[module]/testing/mocks`.
 4. Every behavior change requires test impact analysis.
 5. Domain entity and value-object specs follow [DOMAIN-ENTITY-TESTING.md](../testing/DOMAIN-ENTITY-TESTING.md) (GWT/AAA, `it.each`, transition matrices, invariant checklists).
+6. Write-side postgres OCC adapters follow [INTEGRATION-TESTING-GUIDE.md](../testing/INTEGRATION-TESTING-GUIDE.md) §6: stale `expectedVersion` must fail; child rows must stay unchanged; one parity spec must persist every application-owned column from `toUpdatePayload()` through the OCC path. Unit specs cover insert (`save()` without version) vs OCC update (`WHERE version = :expectedVersion`, `affected === 0` → 409 vs not-found).
 
 ## 8. Redis Conventions
 
@@ -174,13 +177,13 @@ Applied documents describe **how this project implements** a pattern, or contain
 
 **Current applied documents**:
 
-| Folder            | Document                                          | Topic                                                  |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------ |
-| `architecture/`   | `ARCHITECTURE.md`                                 | Project system context, bounded contexts, domain flows |
-| `security/`       | `SECRETS-MANAGEMENT.md`, `ADMIN-BOOTSTRAP.md`     | Project secret handling, bootstrap                     |
-| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7) | Runbook, project shutdown hooks                        |
-| `testing/`        | `TESTING-TASK-TEMPLATE.md`                        | Project test plan template                             |
-| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`          | Project state & progress                               |
+| Folder            | Document                                                   | Topic                                                    |
+| ----------------- | ---------------------------------------------------------- | -------------------------------------------------------- |
+| `architecture/`   | `ARCHITECTURE.md`                                          | Project system context, bounded contexts, domain flows   |
+| `security/`       | `SECRETS-MANAGEMENT.md`, `ADMIN-BOOTSTRAP.md`              | Project secret handling, bootstrap                       |
+| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7)          | Runbook, project shutdown hooks                          |
+| `testing/`        | `TESTING-TASK-TEMPLATE.md`, `INTEGRATION-TESTING-GUIDE.md` | Project test plan template, write-side adapter OCC specs |
+| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`                   | Project state & progress                                 |
 
 ### 10.3 Hybrid Documents
 
@@ -253,6 +256,8 @@ To ensure maximum type safety and prevent runtime errors:
 
 `version` is a persistence/concurrency concern, not a business concept — it must never appear on domain entities, domain interfaces, or domain props. The domain entity has zero knowledge of versioning.
 
+Rationale: [ADR-0005](../architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md) (extends [ADR-0004](../architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md) Decision 3).
+
 ### 13.1 The Pattern: Version Travels as an Explicit Value, Not Entity State
 
 The repository port returns the version **alongside** the entity, not inside it:
@@ -281,26 +286,45 @@ async execute(command: UpdateProductCommand) {
 }
 ```
 
-The infrastructure adapter is where version actually gets used:
+The infrastructure adapter is where version actually gets used. `findByIdForUpdate` reads `orm.version` and returns it beside the domain entity. Do **not** stamp `orm.version` and call TypeORM `save()` on a detached mapped entity — that increment can succeed without `WHERE version = :expectedVersion`. Use an atomic QueryBuilder update:
 
 ```typescript
-// secondary-adapters/repositories/postgres.product-repository.ts
-async findByIdForUpdate(id: number) {
-  const orm = await this.ormRepo.findOneBy({ id });
-  if (!orm) return ErrorFactory.RepositoryError('Not found');
-  return Result.success({ entity: ProductMapper.toDomain(orm), expectedVersion: orm.version });
-}
+async save(entity: Product, expectedVersion?: number) {
+  if (expectedVersion === undefined) {
+    const saved = await this.ormRepo.save(ProductMapper.toEntity(entity));
+    entity.setId(saved.id);
+    return Result.success(entity);
+  }
 
-async save(entity: Product, expectedVersion: number) {
-  const orm = ProductMapper.toEntity(entity); // never maps version
-  orm.version = expectedVersion; // set right before save, purely for TypeORM's check
-  await this.ormRepo.save(orm); // WHERE version = expectedVersion, throws on mismatch
+  const res = await this.ormRepo
+    .createQueryBuilder()
+    .update(ProductEntity)
+    .set({
+      ...ProductMapper.toUpdatePayload(entity),
+      version: () => 'version + 1',
+      updatedAt: () => 'CURRENT_TIMESTAMP',
+    })
+    .where('id = :id AND version = :expectedVersion', {
+      id: entity.id,
+      expectedVersion,
+    })
+    .execute();
+
+  if (res.affected === 0) {
+    return ErrorFactory.RepositoryError(
+      'Optimistic lock failure',
+      undefined,
+      HttpStatus.CONFLICT,
+    );
+  }
+  const updated = await this.ormRepo.findOneByOrFail({ id: entity.id! });
+  return Result.success(ProductMapper.toDomain(updated));
 }
 ```
 
 **Domain entity**: zero knowledge of `version`, ever.
-**Mapper**: never maps it either direction.
-**Repository adapter**: only place that touches it, only for the microsecond it hands it to TypeORM.
+**Mapper**: never maps `version` in either direction. Application-owned columns go through `toUpdatePayload()`. Persistence-owned `version` / `updatedAt` are stamped in the QueryBuilder `.set()`, not copied from the domain.
+**Repository adapter**: only place that touches `version`, via the atomic `WHERE` predicate and `version + 1`.
 
 ### 13.2 Same-Request vs. Cross-Request Flows
 
@@ -331,7 +355,7 @@ The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a c
 | Use case / application layer      | ✅ Yes   | As a plain value threaded through, never on the entity       |
 | Command / DTO (primary adapter)   | ✅ Yes   | `expectedVersion` field on update commands and response DTOs |
 | Domain entity / interface / props | ❌ Never | Not a business concept                                       |
-| Domain-to-ORM mapper              | ❌ Never | Mapper must not map version in either direction              |
+| Domain-to-ORM mapper              | ❌ Never | `toEntity` / `toUpdatePayload` must not map `version`        |
 
 ### 13.4 Anti-Pattern: In-Memory Version Cache
 

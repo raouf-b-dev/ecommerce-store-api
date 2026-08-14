@@ -170,7 +170,7 @@
 
 ---
 
-### [ ] Atomic OCC save predicates (follow-up — not blocking E2E)
+### [x] Atomic OCC save predicates (follow-up — not blocking E2E)
 
 **What**: Align Product / Order / User / Cart `save(entity, expectedVersion)` with Inventory's atomic `UPDATE … WHERE version = :expectedVersion` so stale versions fail (HTTP 409).
 

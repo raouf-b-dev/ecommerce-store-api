@@ -19,7 +19,7 @@ Prevent architecture drift, preserve bounded-context integrity, and ensure IDOR 
    - Ensure primary HTTP controllers extract caller context via `@CallerCtx()` rather than manually parsing HTTP headers or tokens.
    - Confirm that background jobs, schedulers, and ACL gateways explicitly pass `SYSTEM_CALLER_CONTEXT`.
    - Flag any forged `CallerContext` instances or hardcoded `userId` overrides in production code.
-4. **Adapter & Mapper Compliance**: Validate mapper (`CreateFromEntity<T>`), job handler (`BaseJobHandler`), and Redis usage when touched.
+4. **Adapter & Mapper Compliance**: Validate mapper (`CreateFromEntity<T>`, OCC `UpdateFromEntity` / `toUpdatePayload()`), job handler (`BaseJobHandler`), and Redis usage when touched.
 5. **Boundary Verification**: Run `npm run typecheck`, then `npm run test:arch` when boundaries change, to verify hexagonal and cross-module boundary compliance.
 6. **Findings Summary**: Produce structured findings with exact file paths and line numbers.
 

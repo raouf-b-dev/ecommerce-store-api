@@ -13,6 +13,7 @@ import { ResultAssertionHelper } from 'src/testing';
 
 describe('CachedUserRepository (Integration - Real DB delegate)', () => {
   let repository: CachedUserRepository;
+  let postgresRepo: PostgresUserRepository;
   let cacheService: MockCacheService;
   let seededData: SeededData;
 
@@ -23,8 +24,9 @@ describe('CachedUserRepository (Integration - Real DB delegate)', () => {
     seededData = await IntegrationTestHelper.seedReferenceData();
 
     const dataSource = IntegrationTestHelper.getDataSource();
-    const postgresRepo = new PostgresUserRepository(
+    postgresRepo = new PostgresUserRepository(
       dataSource.getRepository(UserEntity),
+      dataSource,
     );
     cacheService = new MockCacheService();
     repository = new CachedUserRepository(cacheService, postgresRepo);
@@ -44,19 +46,19 @@ describe('CachedUserRepository (Integration - Real DB delegate)', () => {
     );
   });
 
-  it('returns the cached user on cache hit', async () => {
-    const postgresRepo = new PostgresUserRepository(
-      IntegrationTestHelper.getDataSource().getRepository(UserEntity),
-    );
+  it('returns the cached user on cache hit without a fresh postgres read', async () => {
     const loaded = await postgresRepo.findById(seededData.customerUser.id);
     ResultAssertionHelper.assertResultSuccess(loaded);
-    const cached: UserForCache = UserCacheMapper.toCache(loaded.value!);
+    const cached: UserForCache = {
+      ...UserCacheMapper.toCache(loaded.value!),
+      email: 'from.cache@example.com',
+    };
     cacheService.get.mockResolvedValue(cached);
 
     const result = await repository.findById(seededData.customerUser.id);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value?.email).toBe(seededData.customerUser.email);
+    expect(result.value?.email).toBe('from.cache@example.com');
     expect(cacheService.set).not.toHaveBeenCalled();
   });
 });

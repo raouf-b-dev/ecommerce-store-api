@@ -1,8 +1,14 @@
+import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { Product, ProductProps } from '../../../core/domain/entities/product';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';
 import { ProductEntity } from '../../orm/product.schema';
 
 type ProductCreate = Omit<ProductEntity, 'version'>;
+
+export type ProductUpdate = UpdateFromEntity<
+  ProductEntity,
+  'id' | 'version' | 'createdAt' | 'updatedAt'
+>; // persistence-owned: identity, OCC, @CreateDateColumn, @UpdateDateColumn
 
 export class ProductMapper {
   static toDomain(entity: ProductEntity): Product {
@@ -43,6 +49,22 @@ export class ProductMapper {
     };
 
     return Object.assign(new ProductEntity(), payload);
+  }
+
+  static toUpdatePayload(domain: Product): ProductUpdate {
+    const entity = ProductMapper.toEntity(domain);
+
+    return {
+      name: entity.name,
+      slug: entity.slug,
+      description: entity.description,
+      sku: entity.sku,
+      price: entity.price,
+      currency: entity.currency,
+      imageUrl: entity.imageUrl,
+      categoryId: entity.categoryId,
+      isActive: entity.isActive,
+    };
   }
 
   static toDomainArray(entities: ProductEntity[]): Product[] {

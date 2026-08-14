@@ -204,7 +204,8 @@ Write a real-DB spec when the adapter has **persistence behavior that mocks cann
 - Multi-statement transactions or a non-default isolation level
 - Row locks (`pessimistic_write` / `SELECT … FOR UPDATE`)
 - Unique, check, or foreign-key constraints the mapper must survive
-- Optimistic updates that use `WHERE version = :expectedVersion`
+- Optimistic updates that use `WHERE version = :expectedVersion` (stale version must fail; child rows must stay unchanged)
+- OCC column parity: one spec that writes **every application-owned column** from `toUpdatePayload()` through the atomic OCC path and asserts the persisted row (system-managed `id` / `version` / `createdAt` / `updatedAt` are excluded from that payload and stamped by SQL)
 
 Skip (or keep unit-only) when the adapter is thin CRUD with no extra SQL invariants, or when PostgreSQL is not the production store for that aggregate.
 

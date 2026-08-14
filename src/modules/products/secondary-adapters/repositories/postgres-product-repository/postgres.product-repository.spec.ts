@@ -2,11 +2,13 @@
 import { ProductTestFactory } from 'src/modules/products/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { HttpStatus } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { PostgresProductRepository } from './postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { createMockQueryBuilder } from '../../../../../testing/mocks/typeorm.mocks';
 import { ProductEntityTestFactory } from 'src/modules/products/testing';
 import { Product } from '../../../core/domain/entities/product';
 
@@ -22,9 +24,11 @@ describe('PostgresProductRepository', () => {
       create: jest.fn(),
       save: jest.fn(),
       findOne: jest.fn(),
+      findOneByOrFail: jest.fn(),
       find: jest.fn(),
       delete: jest.fn(),
       merge: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
     };
 
     const testingModule: TestingModule = await Test.createTestingModule({
@@ -77,11 +81,30 @@ describe('PostgresProductRepository', () => {
   });
 
   describe('save', () => {
-    it('should successfully save a product entity with expectedVersion', async () => {
+    it('should insert via save when expectedVersion is omitted', async () => {
+      const domainProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct(),
+      );
+      ormRepo.save.mockResolvedValue({
+        ...mockProductEntity,
+        id: 1,
+      });
+
+      const result = await repository.save(domainProduct);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(ormRepo.save).toHaveBeenCalledTimes(1);
+      expect(ormRepo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should update with WHERE version when expectedVersion is provided', async () => {
       const domainProduct = Product.fromPrimitives(
         ProductTestFactory.createMockProduct({ id: 1 }),
       );
-      ormRepo.save.mockResolvedValue({
+      const queryBuilder = createMockQueryBuilder<ProductEntity>();
+      queryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+      ormRepo.createQueryBuilder.mockReturnValue(queryBuilder);
+      ormRepo.findOneByOrFail.mockResolvedValue({
         ...mockProductEntity,
         id: 1,
         version: 2,
@@ -90,7 +113,51 @@ describe('PostgresProductRepository', () => {
       const result = await repository.save(domainProduct, 1);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(ormRepo.save).toHaveBeenCalledTimes(1);
+      expect(ormRepo.save).not.toHaveBeenCalled();
+      expect(queryBuilder.update).toHaveBeenCalledWith(ProductEntity);
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND version = :expectedVersion',
+        { id: 1, expectedVersion: 1 },
+      );
+    });
+
+    it('should return conflict when OCC update affects 0 rows and the product exists', async () => {
+      const domainProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({ id: 1 }),
+      );
+      const queryBuilder = createMockQueryBuilder<ProductEntity>();
+      queryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      ormRepo.createQueryBuilder.mockReturnValue(queryBuilder);
+      ormRepo.findOne.mockResolvedValue({ ...mockProductEntity, id: 1 });
+
+      const result = await repository.save(domainProduct, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Optimistic lock failure',
+        RepositoryError,
+      );
+      if (result.isFailure) {
+        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+      }
+    });
+
+    it('should return not-found when OCC update affects 0 rows and the product is missing', async () => {
+      const domainProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({ id: 999 }),
+      );
+      const queryBuilder = createMockQueryBuilder<ProductEntity>();
+      queryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      ormRepo.createQueryBuilder.mockReturnValue(queryBuilder);
+      ormRepo.findOne.mockResolvedValue(null);
+
+      const result = await repository.save(domainProduct, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Product not found',
+        RepositoryError,
+      );
     });
 
     it('should return failure when database save fails', async () => {

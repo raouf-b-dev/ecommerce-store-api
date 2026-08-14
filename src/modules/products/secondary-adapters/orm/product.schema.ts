@@ -1,9 +1,11 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
 
@@ -50,13 +52,9 @@ export class ProductEntity {
   @Column({ default: true, name: 'is_active' })
   isActive!: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }
