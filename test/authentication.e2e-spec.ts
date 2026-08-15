@@ -128,7 +128,7 @@ describe('Authentication HTTP contract (e2e)', () => {
       'SameSite=Strict',
     );
     expect(loginResponse.headers['set-cookie']?.[0]).toContain(
-      'Path=/authentication',
+      'Path=/v1/authentication',
     );
 
     const refreshResponse = await request(app.getHttpServer())
@@ -149,7 +149,7 @@ describe('Authentication HTTP contract (e2e)', () => {
       'SameSite=Strict',
     );
     expect(refreshResponse.headers['set-cookie']?.[0]).toContain(
-      'Path=/authentication',
+      'Path=/v1/authentication',
     );
 
     await request(app.getHttpServer())

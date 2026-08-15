@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
@@ -10,19 +9,12 @@ import {
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Cart } from '../../../domain/entities/cart';
-
-export interface CreateCartUseCaseInput {
-  callerContext: CallerContext | null;
-}
-
-export interface CreateCartResponse {
-  cart: ICart;
-}
+import { ICart } from '../../../domain/interfaces/cart.interface';
 
 @Injectable()
 export class CreateCartUseCase extends UseCase<
-  CreateCartUseCaseInput,
-  void,
+  CallerContext | null,
+  ICart,
   UseCaseError
 > {
   constructor(private readonly cartRepository: CartRepository) {
@@ -30,10 +22,8 @@ export class CreateCartUseCase extends UseCase<
   }
 
   async execute(
-    input: CreateCartUseCaseInput,
-  ): Promise<Result<void, UseCaseError>> {
-    const { callerContext } = input;
-
+    callerContext: CallerContext | null,
+  ): Promise<Result<ICart, UseCaseError>> {
     if (
       !callerContext ||
       callerContext.userId === null ||
@@ -44,19 +34,26 @@ export class CreateCartUseCase extends UseCase<
       );
     }
 
-    // Check if the user already has a cart
-    const existingResult = await this.cartRepository.findByuserId(
-      callerContext.userId,
-    );
+    const userId = callerContext.userId;
+    const existingResult = await this.cartRepository.findByuserId(userId);
     if (existingResult.isSuccess) {
-      return Result.success<void>(undefined);
+      return this.toWriteModel(existingResult.value);
     }
 
-    const cart = Cart.createUserCart(callerContext.userId);
+    const cart = Cart.createUserCart(userId);
     const saveResult = await this.cartRepository.save(cart);
-
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success<void>(undefined);
+    return this.toWriteModel(saveResult.value);
+  }
+
+  private toWriteModel(cart: Cart): Result<ICart, UseCaseError> {
+    const primitives = cart.toPrimitives();
+    if (primitives.id === null) {
+      return ErrorFactory.UseCaseError(
+        `Cart for user ${cart.userId} not found after persist`,
+      );
+    }
+    return Result.success(primitives);
   }
 }

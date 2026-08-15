@@ -87,8 +87,8 @@
 | Task / Item                                                                                         | Phase     | Critical Purpose                                                            |
 | --------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
 | [x] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes         | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
-| [ ] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
-| [ ] Checkout idempotency E2E — same key replay must not create a second checkout                    | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist           |
+| [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
+| [x] Checkout idempotency E2E — same key replay must not create a second checkout                    | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist           |
 | [ ] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2 — does not block first deploy                                   |
 | [ ] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy             |
 | [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                              |
@@ -207,7 +207,7 @@ HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase
 
 ### Remaining required
 
-### [ ] HTTP Checkout & Auth Contract Completeness (E2E follow-up)
+### [x] HTTP Checkout & Auth Contract Completeness (E2E follow-up)
 
 **What**: Close HTTP gaps that forced checkout/IDOR E2E to resolve cart, payment-intent, and inventory state via `moduleRef`. Do **not** apply DDD/Hexagonal to E2E or smoke scripts — keep those black-box HTTP.
 
@@ -217,11 +217,11 @@ HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase
 
 **Scope**:
 
-- [ ] `POST /v1/carts` returns the created cart (or the existing user cart) including `id`.
-- [ ] Payment detail / get-by-order includes `gatewayPaymentIntentId` (needed for webhook-driven checkout).
-- [ ] `RefreshTokenCookieInterceptor` matches versioned routes (`/v1/authentication/login`, `/refresh`, `/logout`, `/logout-all`) so HttpOnly refresh cookies attach in browsers.
-- [ ] After the contracts exist: remove `CartRepository`, `PaymentRepository`, and `InventoryQueryService` from `test/checkout-saga.e2e-spec.ts` and `test/security-idor.e2e-spec.ts` (HTTP-only).
-- [ ] **Checkout idempotency E2E** — encode the **existing** interceptor contract (`IdempotencyInterceptor` + Redis store), do not invent a new one:
+- [x] `POST /v1/carts` returns the created cart (or the existing user cart) including `id`.
+- [x] Payment detail / get-by-order includes `gatewayPaymentIntentId` (needed for webhook-driven checkout).
+- [x] `RefreshTokenCookieInterceptor` matches versioned routes (`/v1/authentication/login`, `/refresh`, `/logout`, `/logout-all`) so HttpOnly refresh cookies attach in browsers.
+- [x] After the contracts exist: remove `CartRepository`, `PaymentRepository`, and `InventoryQueryService` from `test/checkout-saga.e2e-spec.ts` and `test/security-idor.e2e-spec.ts` (HTTP-only).
+- [x] **Checkout idempotency E2E** — encode the **existing** interceptor contract (`IdempotencyInterceptor` + Redis store), do not invent a new one:
   - Key: `x-idempotency-key` header, else `body.idempotencyKey`. Missing key = no idempotency.
   - Protects the **HTTP checkout command** (cached response), not the whole SAGA worker chain.
   - Completed key: replay returns the **cached original response** (same `orderId` / `jobId`). Key is not bound to payload — same key + different body still replays the first result (do not assert a 409 unless the implementation is changed to fingerprint the body).

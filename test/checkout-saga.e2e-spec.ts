@@ -5,12 +5,7 @@
  */
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
-import { CartRepository } from 'src/modules/carts/core/domain/repositories/cart.repository';
-import { InventoryQueryService } from 'src/modules/inventory/core/application/ports/inventory-query.service';
-import { InventoryReservationGateway } from 'src/modules/orders/core/application/ports/inventory-reservation.gateway';
 import { OrderStatus } from 'src/modules/orders/core/domain/value-objects/order-status.enum';
-import { PaymentRepository } from 'src/modules/payments/core/domain/repositories/payment.repository';
-import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {
   AuthSession,
   AuthTestHelper,
@@ -20,6 +15,8 @@ import {
   E2eCatalogHelper,
   E2eCatalogProduct,
 } from 'src/testing/helpers/e2e-catalog.helper';
+import { E2eCheckoutHelper } from 'src/testing/helpers/e2e-checkout.helper';
+import { isHttpStatus } from 'src/testing/helpers/http-status.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
@@ -27,27 +24,11 @@ import {
 import { pollUntil } from 'src/testing/helpers/poll.helper';
 
 const STARTING_STOCK = 1;
+const INVENTORY_POLL_INTERVAL_MS = 1500;
 
 interface InventorySnapshot {
   availableQuantity: number;
   reservedQuantity: number;
-}
-
-function parseMetadata(
-  paymentMethodInfo: string | null,
-): Record<string, string> {
-  if (!paymentMethodInfo) {
-    return {};
-  }
-
-  try {
-    const parsed = JSON.parse(paymentMethodInfo) as Record<string, unknown>;
-    return Object.fromEntries(
-      Object.entries(parsed).map(([key, value]) => [key, String(value)]),
-    );
-  } catch {
-    return {};
-  }
 }
 
 describe('Checkout SAGA (e2e)', () => {
@@ -105,78 +86,33 @@ describe('Checkout SAGA (e2e)', () => {
     expected: InventorySnapshot,
     description: string,
   ): Promise<InventorySnapshot> {
-    const inventoryQuery = moduleRef.get(InventoryQueryService, {
-      strict: false,
-    });
-
     return pollUntil(
       async () => {
-        const result = await inventoryQuery.getByProductId(productId);
-        if (result.isFailure || !result.value) {
+        const response = await http.get(
+          `${E2E_API_PREFIX}/inventory/products/${productId}`,
+        );
+        if (!isHttpStatus(response.status, HttpStatus.OK)) {
           return null;
         }
-
         const snapshot = {
-          availableQuantity: result.value.availableQuantity,
-          reservedQuantity: result.value.reservedQuantity,
+          availableQuantity: Number(response.body.availableQuantity),
+          reservedQuantity: Number(response.body.reservedQuantity),
         };
         return snapshot.availableQuantity === expected.availableQuantity &&
           snapshot.reservedQuantity === expected.reservedQuantity
           ? snapshot
           : null;
       },
-      { description, timeoutMs: 90_000 },
+      {
+        description,
+        timeoutMs: 90_000,
+        intervalMs: INVENTORY_POLL_INTERVAL_MS,
+      },
     );
   }
 
-  async function createCartWithItem(productId: number): Promise<number> {
-    const createResponse = await http
-      .post(`${E2E_API_PREFIX}/carts`)
-      .set(AuthTestHelper.bearer(customer.accessToken));
-    expect([
-      HttpStatus.CREATED,
-      HttpStatus.OK,
-      HttpStatus.NO_CONTENT,
-    ]).toContain(createResponse.status);
-
-    const cartRepository = moduleRef.get(CartRepository, { strict: false });
-    const cartResult = await cartRepository.findByuserId(customer.userId);
-    if (cartResult.isFailure) {
-      throw new Error(`Cart not found: ${cartResult.error.message}`);
-    }
-    const cartId = cartResult.value.id;
-    if (!cartId) {
-      throw new Error('Expected persisted cart id');
-    }
-
-    const addResponse = await http
-      .post(`${E2E_API_PREFIX}/carts/${cartId}/items`)
-      .set(AuthTestHelper.bearer(customer.accessToken))
-      .send({ productId, quantity: 1 });
-    expect(addResponse.status).toBeLessThan(300);
-
-    return cartId;
-  }
-
   async function checkout(cartId: number): Promise<number> {
-    const response = await http
-      .post(`${E2E_API_PREFIX}/orders/checkout`)
-      .set(AuthTestHelper.bearer(customer.accessToken))
-      .send({
-        cartId,
-        paymentMethod: PaymentMethodType.STRIPE,
-        shippingAddress: {
-          firstName: customer.firstName,
-          lastName: customer.lastName,
-          street: '1 Market Street',
-          city: 'San Francisco',
-          state: 'CA',
-          postalCode: '94105',
-          country: 'US',
-          phone: '5551234567',
-        },
-      });
-
+    const response = await E2eCheckoutHelper.checkout(http, customer, cartId);
     expect(response.status).toBeLessThan(300);
     expect(response.body.orderId).toBeGreaterThan(0);
     expect(response.body.jobId).toBeDefined();
@@ -188,55 +124,29 @@ describe('Checkout SAGA (e2e)', () => {
     gatewayPaymentIntentId: string;
     reservationId: string;
   }> {
-    await pollUntil(
+    const payment = await pollUntil(
       async () => {
         const response = await http
           .get(`${E2E_API_PREFIX}/payments/orders/${orderId}`)
           .set(AuthTestHelper.bearer(customer.accessToken));
-        return response.status === 200 ? response.body : null;
-      },
-      { description: `payment for order ${orderId}`, timeoutMs: 90_000 },
-    );
-
-    const paymentRepository = moduleRef.get(PaymentRepository, {
-      strict: false,
-    });
-    const payment = await pollUntil(
-      async () => {
-        const result = await paymentRepository.findByOrderId(orderId);
-        if (result.isFailure || result.value.length === 0) {
+        if (!isHttpStatus(response.status, HttpStatus.OK)) {
           return null;
         }
-        const found = result.value[0];
-        return found.gatewayPaymentIntentId ? found : null;
+        expect(response.body).toHaveProperty('gatewayPaymentIntentId');
+        const gatewayPaymentIntentId = response.body.gatewayPaymentIntentId;
+        const reservationId = response.body.metadata?.reservationId;
+        if (!gatewayPaymentIntentId || !reservationId) {
+          return null;
+        }
+        return {
+          gatewayPaymentIntentId: String(gatewayPaymentIntentId),
+          reservationId: String(reservationId),
+        };
       },
-      {
-        description: `gateway payment intent for order ${orderId}`,
-        timeoutMs: 30_000,
-      },
+      { description: `payment intent for order ${orderId}`, timeoutMs: 90_000 },
     );
 
-    const metadata = parseMetadata(payment.paymentMethodInfo);
-    let reservationId = metadata.reservationId;
-
-    if (!reservationId) {
-      const inventoryGateway = moduleRef.get(InventoryReservationGateway, {
-        strict: false,
-      });
-      const reservations = await inventoryGateway.getOrderReservations(orderId);
-      if (reservations.isSuccess && reservations.value[0]?.id) {
-        reservationId = String(reservations.value[0].id);
-      }
-    }
-
-    if (!reservationId) {
-      throw new Error(`No reservation id found for order ${orderId}`);
-    }
-
-    return {
-      gatewayPaymentIntentId: payment.gatewayPaymentIntentId as string,
-      reservationId,
-    };
+    return payment;
   }
 
   async function postStripeWebhook(
@@ -292,7 +202,11 @@ describe('Checkout SAGA (e2e)', () => {
       reservedQuantity: 0,
     });
 
-    const cartId = await createCartWithItem(happyProduct.id);
+    const cartId = await E2eCheckoutHelper.createCartWithItem(
+      http,
+      customer.accessToken,
+      happyProduct.id,
+    );
     const orderId = await checkout(cartId);
 
     await waitForInventory(
@@ -350,7 +264,11 @@ describe('Checkout SAGA (e2e)', () => {
       reservedQuantity: 0,
     });
 
-    const cartId = await createCartWithItem(failProduct.id);
+    const cartId = await E2eCheckoutHelper.createCartWithItem(
+      http,
+      customer.accessToken,
+      failProduct.id,
+    );
     const orderId = await checkout(cartId);
 
     await waitForInventory(

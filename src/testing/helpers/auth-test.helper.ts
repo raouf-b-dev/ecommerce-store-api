@@ -1,7 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
+import { DEFAULT_API_PREFIX } from 'src/infrastructure/http/api-version';
 import { E2eHttpClient } from './e2e-test-app.helper';
 
-export const E2E_API_PREFIX = '/v1';
+export const E2E_API_PREFIX = DEFAULT_API_PREFIX;
 
 export interface LoginCredentials {
   email: string;

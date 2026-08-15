@@ -28,30 +28,52 @@ describe('CreateCartUseCase', () => {
 
   describe('execute', () => {
     it('should create a user cart successfully', async () => {
-      mockCartRepository.mockSuccessfulSave();
+      mockCartRepository.save.mockImplementation((cart: Cart) => {
+        cart.setId(42);
+        return Promise.resolve(Result.success(cart));
+      });
 
-      const result = await usecase.execute({ callerContext: customerContext });
+      const result = await usecase.execute(customerContext);
 
       expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(42);
+      expect(result.value.userId).toBe(123);
+      expect(result.value.items).toEqual([]);
+      expect(result.value.itemCount).toBe(0);
     });
 
     it('should return the existing cart if the user already has one', async () => {
-      const mockCartData = CartTestFactory.createUserCart(123);
-      const mockCart = Cart.fromPrimitives(mockCartData);
+      const mockCart = CartTestFactory.createUserCart(123, { id: 42 });
 
       mockCartRepository.findByuserId.mockResolvedValue(
         Result.success(mockCart),
       );
 
-      const result = await usecase.execute({ callerContext: customerContext });
+      const result = await usecase.execute(customerContext);
 
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(42);
+      expect(result.value.items).toEqual([]);
+    });
+
+    it('should fail closed when the persisted cart has no id', async () => {
+      mockCartRepository.save.mockImplementation((cart: Cart) =>
+        Promise.resolve(Result.success(cart)),
+      );
+
+      const result = await usecase.execute(customerContext);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart for user 123 not found after persist',
+        UseCaseError,
+      );
     });
 
     it('should reject cart creation when callerContext is missing', async () => {
-      const result = await usecase.execute({ callerContext: null });
+      const result = await usecase.execute(null);
 
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
@@ -68,7 +90,7 @@ describe('CreateCartUseCase', () => {
         permissions: new Set(),
       });
 
-      const result = await usecase.execute({ callerContext: unscopedCustomer });
+      const result = await usecase.execute(unscopedCustomer);
 
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
@@ -81,7 +103,7 @@ describe('CreateCartUseCase', () => {
     it('should return failure when repository fails', async () => {
       mockCartRepository.mockSaveFailure('Failed to create cart');
 
-      const result = await usecase.execute({ callerContext: customerContext });
+      const result = await usecase.execute(customerContext);
 
       ResultAssertionHelper.assertResultFailure(
         result,

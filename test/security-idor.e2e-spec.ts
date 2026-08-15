@@ -4,13 +4,12 @@
  * Prerequisites: PostgreSQL + Redis running (`npm run d:up:dev`) and migrations applied.
  */
 import { INestApplication } from '@nestjs/common';
-import { TestingModule } from '@nestjs/testing';
-import { CartRepository } from 'src/modules/carts/core/domain/repositories/cart.repository';
 import {
   AuthSession,
   AuthTestHelper,
   E2E_API_PREFIX,
 } from 'src/testing/helpers/auth-test.helper';
+import { E2eCheckoutHelper } from 'src/testing/helpers/e2e-checkout.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
@@ -18,7 +17,6 @@ import {
 
 describe('Security IDOR (e2e)', () => {
   let app: INestApplication;
-  let moduleRef: TestingModule;
   let http: E2eHttpClient;
   let userA: AuthSession;
   let userB: AuthSession;
@@ -26,7 +24,6 @@ describe('Security IDOR (e2e)', () => {
   beforeAll(async () => {
     const context = await E2eTestAppHelper.createApp();
     app = context.app;
-    moduleRef = context.moduleRef;
     http = E2eTestAppHelper.getHttp(app);
 
     userA = await AuthTestHelper.registerAndLogin(http, {
@@ -44,17 +41,8 @@ describe('Security IDOR (e2e)', () => {
   });
 
   async function cartIdFor(user: AuthSession): Promise<number> {
-    const createResponse = await http
-      .post(`${E2E_API_PREFIX}/carts`)
-      .set(AuthTestHelper.bearer(user.accessToken));
-    expect(createResponse.status).toBeLessThan(300);
-
-    const cartRepository = moduleRef.get(CartRepository, { strict: false });
-    const cartResult = await cartRepository.findByuserId(user.userId);
-    if (cartResult.isFailure || !cartResult.value.id) {
-      throw new Error('Expected cart id after create');
-    }
-    return cartResult.value.id;
+    const cart = await E2eCheckoutHelper.createCart(http, user.accessToken);
+    return cart.id;
   }
 
   describe('users', () => {
@@ -95,6 +83,16 @@ describe('Security IDOR (e2e)', () => {
   });
 
   describe('carts', () => {
+    it('returns the same cart id when creating twice', async () => {
+      const first = await E2eCheckoutHelper.createCart(http, userA.accessToken);
+      const second = await E2eCheckoutHelper.createCart(
+        http,
+        userA.accessToken,
+      );
+      expect(second.id).toBe(first.id);
+      expect(second.items).toEqual(expect.any(Array));
+    });
+
     it('denies access to another users cart without ownership', async () => {
       const cartId = await cartIdFor(userB);
 

@@ -10,13 +10,14 @@ import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
+import { DEFAULT_API_VERSION } from './infrastructure/http/api-version';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
   app.enableVersioning({
     type: VersioningType.URI,
-    defaultVersion: '1',
+    defaultVersion: DEFAULT_API_VERSION,
   });
 
   // Replace default NestJS logger with Winston

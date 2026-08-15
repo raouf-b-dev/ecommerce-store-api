@@ -189,15 +189,15 @@ Key rotation is the process of introducing a new signing key and retiring the ol
 
 Modern authentication systems use two distinct tokens:
 
-| Property       | Access Token                             | Refresh Token                                                  |
-| :------------- | :--------------------------------------- | :------------------------------------------------------------- |
-| **Purpose**    | Authorize API requests                   | Obtain new access tokens without re-authentication             |
-| **Lifetime**   | Short (5–15 minutes)                     | Long (hours to days)                                           |
-| **Storage**    | Application memory (JavaScript variable) | HttpOnly + Secure + SameSite cookie                            |
-| **Sent via**   | `Authorization: Bearer <token>` header   | Automatically via cookie on `/authentication/refresh` requests |
-| **Payload**    | User identity, role, permissions         | Minimal — user ID + session ID                                 |
-| **Stateless?** | Yes — verified via signature only        | No — validated against server-side session store               |
-| **Revocable?** | Not immediately (expires naturally)      | Yes — server revokes the session record                        |
+| Property       | Access Token                             | Refresh Token                                                     |
+| :------------- | :--------------------------------------- | :---------------------------------------------------------------- |
+| **Purpose**    | Authorize API requests                   | Obtain new access tokens without re-authentication                |
+| **Lifetime**   | Short (5–15 minutes)                     | Long (hours to days)                                              |
+| **Storage**    | Application memory (JavaScript variable) | HttpOnly + Secure + SameSite cookie                               |
+| **Sent via**   | `Authorization: Bearer <token>` header   | Automatically via cookie on `/v1/authentication/refresh` requests |
+| **Payload**    | User identity, role, permissions         | Minimal — user ID + session ID                                    |
+| **Stateless?** | Yes — verified via signature only        | No — validated against server-side session store                  |
+| **Revocable?** | Not immediately (expires naturally)      | Yes — server revokes the session record                           |
 
 ### 4.2 Why Two Tokens?
 
@@ -252,13 +252,13 @@ sequenceDiagram
     participant Authentication as Authentication Server
     participant DB as Database
 
-    Client->>Authentication: POST /authentication/login {email, pass}
+    Client->>Authentication: POST /v1/authentication/login {email, pass}
     Authentication->>DB: Verify credentials
     DB-->>Authentication: Credentials OK
     Note over Authentication: 3. Sign access token (RS256)<br/>4. Sign refresh token (RS256)
     Authentication->>DB: 5. Store session (SHA-256 hash)
     DB-->>Authentication: Session stored
-    Authentication-->>Client: 6. Response:<br/>Body: { access_token }<br/>Cookie: refresh_token (HttpOnly)
+    Authentication-->>Client: 6. Response:<br/>Body: { access_token }<br/>Cookie: refresh_token (HttpOnly; Path=/v1/authentication)
 
     Client->>Authentication: 7. GET /api/resource<br/>Authorization: Bearer <access_token>
     Note over Authentication: 8. Verify signature (public key)<br/>(No DB lookup needed!)
@@ -266,7 +266,7 @@ sequenceDiagram
 
     Note over Client, Authentication: — access token expires —
 
-    Client->>Authentication: 10. POST /authentication/refresh<br/>Cookie: refresh_token (auto)
+    Client->>Authentication: 10. POST /v1/authentication/refresh<br/>Cookie: refresh_token (auto)
     Note over Authentication: 11. Verify refresh JWT
     Authentication->>DB: 12. Check session in DB
     DB-->>Authentication: Session valid
