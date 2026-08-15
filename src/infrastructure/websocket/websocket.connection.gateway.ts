@@ -45,7 +45,7 @@ export class WebsocketConnectionGateway
       client['user'] = payload;
 
       this.logger.log(`User ${userId} connected and joined room ${roomName}`);
-    } catch (err) {
+    } catch (_err) {
       client.disconnect();
     }
   }
