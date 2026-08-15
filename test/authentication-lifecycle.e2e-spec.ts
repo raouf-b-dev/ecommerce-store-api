@@ -14,6 +14,19 @@ import {
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
 
+function setCookieHeaders(response: {
+  headers: Record<string, unknown>;
+}): string[] {
+  const raw = response.headers['set-cookie'];
+  if (Array.isArray(raw)) {
+    return raw.map(String);
+  }
+  if (typeof raw === 'string') {
+    return [raw];
+  }
+  return [];
+}
+
 describe('Authentication lifecycle (e2e)', () => {
   let app: INestApplication;
   let http: E2eHttpClient;
@@ -41,6 +54,36 @@ describe('Authentication lifecycle (e2e)', () => {
     expect(response.status).toBe(HttpStatus.OK);
     expect(response.body.id).toBe(session.userId);
     expect(response.body.email).toBe(session.email);
+  });
+
+  it('sets HttpOnly refresh cookie on the versioned authentication path', async () => {
+    const cookieHttp = E2eTestAppHelper.getHttp(app);
+    const cookieUser = await AuthTestHelper.registerAndLogin(cookieHttp, {
+      firstName: 'Cookie',
+      lastName: 'Path',
+    });
+    const loginResponse = await cookieHttp
+      .post(`${E2E_API_PREFIX}/authentication/login`)
+      .send({ email: cookieUser.email, password: cookieUser.password });
+
+    expect(loginResponse.status).toBe(HttpStatus.OK);
+    const refreshCookie = setCookieHeaders(loginResponse).find((cookie) =>
+      cookie.startsWith('refresh_token='),
+    );
+    expect(refreshCookie).toBeDefined();
+    expect(refreshCookie).toMatch(/Path=\/v1\/authentication/i);
+    expect(refreshCookie).toMatch(/HttpOnly/i);
+
+    const cookiePair = refreshCookie!.split(';')[0];
+    const refreshResponse = await cookieHttp
+      .post(`${E2E_API_PREFIX}/authentication/refresh`)
+      .set('Cookie', cookiePair)
+      .send({});
+
+    expect(refreshResponse.status).toBe(HttpStatus.OK);
+    expect(
+      refreshResponse.body.accessToken ?? refreshResponse.body.access_token,
+    ).toBeDefined();
   });
 
   it('rotates refresh tokens and rejects the previous refresh token', async () => {
