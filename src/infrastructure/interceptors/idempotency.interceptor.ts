@@ -5,19 +5,19 @@ import {
   CallHandler,
   ConflictException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Observable, from, throwError, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
+import { extractIdempotencyKey } from '../../shared-kernel/infra/http/request.helpers';
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
   constructor(private readonly idempotencyStore: IdempotencyStore) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    // Check header first, then body
-    const key =
-      request.headers['x-idempotency-key'] || request.body?.idempotencyKey;
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<Request>();
+    const key = extractIdempotencyKey(request);
 
     if (!key) {
       return next.handle();

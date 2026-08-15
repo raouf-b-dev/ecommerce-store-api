@@ -6,10 +6,11 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import ms, { StringValue } from 'ms';
 import { EnvConfigService } from '../../../../config/env-config.service';
 import { DEFAULT_API_PREFIX } from '../../../../infrastructure/http/api-version';
+import { getUnversionedRoutePath } from '../../../../shared-kernel/infra/http/request.helpers';
 
 export const REFRESH_COOKIE_NAME = 'refresh_token';
 export const REFRESH_COOKIE_PATH = `${DEFAULT_API_PREFIX}/authentication`;
@@ -30,13 +31,6 @@ const COOKIE_OPTIONS = {
   path: REFRESH_COOKIE_PATH,
 };
 
-function normalizeAuthRoute(path: string | undefined): string {
-  if (!path) {
-    return '';
-  }
-  return path.replace(/^\/v\d+/, '');
-}
-
 @Injectable()
 export class RefreshTokenCookieInterceptor implements NestInterceptor {
   private readonly cookieMaxAge: number;
@@ -47,11 +41,11 @@ export class RefreshTokenCookieInterceptor implements NestInterceptor {
     );
   }
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const ctx = context.switchToHttp();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
-    const path = normalizeAuthRoute(request.route?.path || request.path);
+    const path = getUnversionedRoutePath(request);
 
     return next.handle().pipe(
       map((result) => {
