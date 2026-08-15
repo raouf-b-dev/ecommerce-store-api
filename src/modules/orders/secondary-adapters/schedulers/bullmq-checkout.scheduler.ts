@@ -4,6 +4,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import {
   OrderScheduler,
   ScheduleCheckoutProps,
+  SchedulePostPaymentProps,
 } from '../../core/domain/schedulers/order.scheduler';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -99,7 +100,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
       const correlationId = this.correlation.getId();
-      const props = {
+      const props: SchedulePostPaymentProps & { correlationId?: string } = {
         orderId,
         reservationId,
         cartId,
@@ -138,7 +139,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
         ],
       };
 
-      const flow = await this.flowProducerService.add(flowDefinition);
+      await this.flowProducerService.add(flowDefinition);
       return Result.success(flowId);
     } catch (error) {
       return ErrorFactory.InfrastructureError(

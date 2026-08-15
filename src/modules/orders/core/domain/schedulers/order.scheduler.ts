@@ -13,6 +13,12 @@ export interface ScheduleCheckoutProps {
   flowId: string;
 }
 
+export interface SchedulePostPaymentProps {
+  orderId: number;
+  reservationId: number;
+  cartId: number;
+}
+
 export abstract class OrderScheduler {
   abstract scheduleCheckout(
     props: ScheduleCheckoutProps,
