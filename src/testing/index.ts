@@ -7,6 +7,7 @@ export * from './helpers/e2e-checkout.helper';
 export * from './helpers/e2e-test-app.helper';
 export * from './helpers/poll.helper';
 export * from './helpers/http-error-assertion.helper';
+export * from './helpers/http-status.helper';
 export * from './helpers/result-assertion.helper';
 export * from './helpers/test-data.helper';
 export * from './helpers/logger-test.helper';
