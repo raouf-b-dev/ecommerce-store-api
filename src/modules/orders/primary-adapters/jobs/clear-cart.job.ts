@@ -4,9 +4,14 @@ import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler
 import { ClearCheckoutCartUseCase } from '../../core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
-import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
+import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-import { ConfirmReservationResult } from './confirm-reservation.job';
+import {
+  ConfirmReservationResult,
+  isConfirmReservationResult,
+} from './confirm-reservation.job';
+import { firstChildValue } from '../../../../infrastructure/jobs/job-child-values';
+import { PostPaymentJobData } from './post-payment-job.data';
 
 export interface ClearCartResult extends ConfirmReservationResult {
   cartCleared: boolean;
@@ -14,7 +19,7 @@ export interface ClearCartResult extends ConfirmReservationResult {
 
 @Injectable()
 export class ClearCartStep extends BaseJobHandler<
-  ScheduleCheckoutProps,
+  PostPaymentJobData,
   ClearCartResult
 > {
   protected readonly logger = new Logger(ClearCartStep.name);
@@ -31,14 +36,17 @@ export class ClearCartStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<ScheduleCheckoutProps>,
+    job: Job<PostPaymentJobData>,
   ): Promise<Result<ClearCartResult, AppError>> {
     const { cartId } = job.data;
+    const childrenValues = await job.getChildrenValues<unknown>();
+    const childData = firstChildValue(childrenValues);
 
-    const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(
-      childrenValues,
-    )[0] as ConfirmReservationResult;
+    if (!isConfirmReservationResult(childData)) {
+      return ErrorFactory.ServiceError(
+        'Missing reservation data from previous step',
+      );
+    }
 
     this.logger.log(`Clearing cart ${cartId}...`);
 
