@@ -9,6 +9,18 @@ import {
   JWK,
 } from 'jose';
 
+const RSA_PRIVATE_JWK_FIELDS = ['d', 'p', 'q', 'dp', 'dq', 'qi'] as const;
+
+function toPublicRsaJwk(jwk: JWK): JWK {
+  const publicJwk: JWK = { ...jwk };
+
+  for (const field of RSA_PRIVATE_JWK_FIELDS) {
+    delete publicJwk[field];
+  }
+
+  return publicJwk;
+}
+
 @Injectable()
 export class JwksService implements OnModuleInit, JwksPort {
   private readonly logger = new Logger(JwksService.name);
@@ -30,7 +42,7 @@ export class JwksService implements OnModuleInit, JwksPort {
 
       // Export the full JWK and strip private parameters to derive the public key
       const fullJwk = await exportJWK(privateKey);
-      const { d, p, q, dp, dq, qi, ...publicJwk } = fullJwk;
+      const publicJwk = toPublicRsaJwk(fullJwk);
 
       // Compute RFC 7638 thumbprint as the kid
       // This creates a deterministic, collision-resistant key identifier
