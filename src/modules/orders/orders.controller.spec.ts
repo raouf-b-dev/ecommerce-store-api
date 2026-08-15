@@ -211,4 +211,9 @@ describe('OrdersController', () => {
     });
     expect(res).toEqual(Result.success(deliveredOrder));
   });
+
+  it('should call ShipOrderUseCase.execute when shipOrder is called', async () => {
+    await controller.shipOrder(processingOrder.id!);
+    expect(shipOrderUseCase.execute).toHaveBeenCalledWith(processingOrder.id!);
+  });
 });
