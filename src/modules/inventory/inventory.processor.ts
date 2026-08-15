@@ -22,7 +22,7 @@ export class InventoryProcessor
     await this.worker.close();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job): Promise<unknown> {
     switch (job.name) {
       case JobNames.INVENTORY_RECONCILIATION:
         return this.inventoryReconciliationJob.handle(job);

@@ -28,7 +28,9 @@ export class ExpirePendingOrdersJob extends BaseJobHandler<
   protected async onExecute(
     job: Job<void>,
   ): Promise<Result<{ cancelledCount: number }, AppError>> {
-    this.logger.log('Executing pending orders expiration check...');
+    this.logger.log(
+      `Executing pending orders expiration check for job ${job.id ?? 'unknown'}...`,
+    );
 
     const result = await this.expirePendingOrdersUseCase.execute({
       expirationMinutes: this.EXPIRATION_MINUTES,

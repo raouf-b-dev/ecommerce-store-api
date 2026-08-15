@@ -27,6 +27,9 @@ export class CleanupExpiredNotificationsProcess extends BaseJobHandler<
   }
 
   protected async onExecute(job: Job<void>): Promise<Result<void, AppError>> {
+    this.logger.log(
+      `Cleaning expired notifications for job ${job.id ?? 'unknown'}...`,
+    );
     return this.cleanupService.execute();
   }
 }

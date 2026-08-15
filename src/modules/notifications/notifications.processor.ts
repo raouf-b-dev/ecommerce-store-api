@@ -28,7 +28,7 @@ export class NotificationsProcessor
     await this.worker.close();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job): Promise<unknown> {
     switch (job.name) {
       case JobNames.SEND_NOTIFICATION:
         return this.deliverNotificationProcess.handle(job);
