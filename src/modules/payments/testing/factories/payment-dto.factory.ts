@@ -1,8 +1,46 @@
 import { PaymentListItemDTO } from '../../core/application/queries/results/payment-list-item.result';
 import { PaymentDetailDTO } from '../../core/application/queries/results/payment-detail.result';
 import { RawPaymentListQueryRow } from '../../secondary-adapters/dto/raw-payment-list-query-row.interface';
+import { CreatePaymentDto } from '../../primary-adapters/dto/create-payment.dto';
+import { ProcessRefundDto } from '../../primary-adapters/dto/process-refund.dto';
+import { ListPaymentsQueryDto } from '../../primary-adapters/dto/list-payments-query.dto';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class PaymentDtoTestFactory {
+  static createCreatePaymentDto(
+    overrides?: Partial<CreatePaymentDto>,
+  ): CreatePaymentDto {
+    return {
+      orderId: 100,
+      amount: 99.99,
+      paymentMethod: PaymentMethodType.STRIPE,
+      currency: 'USD',
+      ...overrides,
+    };
+  }
+
+  static createProcessRefundDto(
+    overrides?: Partial<ProcessRefundDto>,
+  ): ProcessRefundDto {
+    return {
+      amount: 49.99,
+      reason: 'Customer requested cancellation',
+      ...overrides,
+    };
+  }
+
+  static createListPaymentsQueryDto(
+    overrides?: Partial<ListPaymentsQueryDto>,
+  ): ListPaymentsQueryDto {
+    return {
+      page: 1,
+      limit: 10,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      ...overrides,
+    };
+  }
+
   static createRawPaymentListQueryRow(
     overrides?: Partial<RawPaymentListQueryRow>,
   ): RawPaymentListQueryRow {
