@@ -12,7 +12,7 @@ describe('CheckStockUseCase', () => {
   let usecase: CheckStockUseCase;
   let mockRepo: MockInventoryRepository;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockRepo = new MockInventoryRepository();
     usecase = new CheckStockUseCase(mockRepo);
   });

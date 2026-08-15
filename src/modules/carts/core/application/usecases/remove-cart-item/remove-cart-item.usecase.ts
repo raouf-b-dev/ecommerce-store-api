@@ -42,7 +42,7 @@ export class RemoveCartItemUseCase extends UseCase<
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
 
-    const ownershipResult = await this.cartOwnershipValidator.validate(
+    const ownershipResult = this.cartOwnershipValidator.validate(
       cart,
       callerContext,
     );

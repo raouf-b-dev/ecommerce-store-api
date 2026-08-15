@@ -58,7 +58,7 @@ describe('ClearCartUseCase', () => {
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cart not found',
+        `Cart with id ${cartId} not found`,
         RepositoryError,
       );
     });

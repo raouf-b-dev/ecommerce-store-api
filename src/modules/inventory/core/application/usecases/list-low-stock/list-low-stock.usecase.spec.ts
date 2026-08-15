@@ -11,7 +11,7 @@ describe('ListLowStockUseCase', () => {
   let usecase: ListLowStockUseCase;
   let mockRepo: MockInventoryRepository;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockRepo = new MockInventoryRepository();
     usecase = new ListLowStockUseCase(mockRepo);
   });

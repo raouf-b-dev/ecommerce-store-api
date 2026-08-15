@@ -60,7 +60,9 @@ export class MockProductRepository implements ProductRepository {
     if (product) {
       this.save.mockResolvedValue(Result.success(product));
     } else {
-      this.save.mockImplementation(async (p: Product) => Result.success(p));
+      this.save.mockImplementation((p: Product) =>
+        Promise.resolve(Result.success(p)),
+      );
     }
   }
 

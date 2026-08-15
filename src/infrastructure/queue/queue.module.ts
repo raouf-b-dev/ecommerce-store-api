@@ -11,7 +11,7 @@ import { QueueEventsService } from './queue-events.service';
     EnvConfigModule,
     BullModule.forRootAsync({
       imports: [EnvConfigModule],
-      useFactory: async (envConfigService: EnvConfigService) => ({
+      useFactory: (envConfigService: EnvConfigService) => ({
         connection: {
           host: envConfigService.redis.host,
           port: envConfigService.redis.port,

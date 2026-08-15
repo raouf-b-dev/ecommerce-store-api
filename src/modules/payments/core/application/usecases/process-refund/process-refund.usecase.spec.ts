@@ -64,7 +64,9 @@ describe('ProcessRefundUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
-    paymentRepository.update.mockImplementation(async (p) => Result.success(p));
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
 
     const command: ProcessRefundCommand = {
       paymentId: 123,

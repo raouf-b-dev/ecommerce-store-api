@@ -86,7 +86,7 @@ describe('UpdateCartItemUseCase', () => {
       expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Cart not found',
+        'Cart with id 404 not found',
         RepositoryError,
       );
     });

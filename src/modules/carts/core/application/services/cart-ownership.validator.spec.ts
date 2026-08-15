@@ -14,31 +14,31 @@ describe('CartOwnershipValidator', () => {
   });
 
   describe('validate', () => {
-    it('should allow system caller', async () => {
+    it('should allow system caller', () => {
       const cart = Cart.createUserCart(123);
-      const result = await validator.validate(cart, SYSTEM_CALLER_CONTEXT);
+      const result = validator.validate(cart, SYSTEM_CALLER_CONTEXT);
       expect(result.isSuccess).toBe(true);
     });
 
-    it('should allow admin with manage_carts permission', async () => {
+    it('should allow admin with manage_carts permission', () => {
       const cart = Cart.createUserCart(123);
       const callerContext = AuthPayloadFactory.createAdminContext({
         userId: 1,
       });
 
-      const result = await validator.validate(cart, callerContext);
+      const result = validator.validate(cart, callerContext);
       expect(result.isSuccess).toBe(true);
     });
 
-    it('should allow user owning the cart with manage_own_cart permission', async () => {
+    it('should allow user owning the cart with manage_own_cart permission', () => {
       const cart = Cart.createUserCart(123);
       const callerContext = AuthPayloadFactory.createCustomerContext();
 
-      const result = await validator.validate(cart, callerContext);
+      const result = validator.validate(cart, callerContext);
       expect(result.isSuccess).toBe(true);
     });
 
-    it('should deny user owning the cart but missing manage_own_cart permission', async () => {
+    it('should deny user owning the cart but missing manage_own_cart permission', () => {
       const cart = Cart.createUserCart(123);
       const callerContext = createUserCallerContext({
         userId: 123,
@@ -46,11 +46,11 @@ describe('CartOwnershipValidator', () => {
         permissions: new Set([]),
       });
 
-      const result = await validator.validate(cart, callerContext);
+      const result = validator.validate(cart, callerContext);
       expect(result.isFailure).toBe(true);
     });
 
-    it('should deny user with mismatched userId', async () => {
+    it('should deny user with mismatched userId', () => {
       const cart = Cart.createUserCart(123);
       const callerContext = createUserCallerContext({
         userId: 1,
@@ -58,13 +58,13 @@ describe('CartOwnershipValidator', () => {
         permissions: new Set(['manage_own_cart']),
       });
 
-      const result = await validator.validate(cart, callerContext);
+      const result = validator.validate(cart, callerContext);
       expect(result.isFailure).toBe(true);
     });
 
-    it('should deny user cart access when caller context is null', async () => {
+    it('should deny user cart access when caller context is null', () => {
       const cart = Cart.createUserCart(123);
-      const result = await validator.validate(cart, null);
+      const result = validator.validate(cart, null);
       expect(result.isFailure).toBe(true);
     });
   });

@@ -20,8 +20,8 @@ export class AssignDefaultRoleUseCase implements UseCase<
   ) {}
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
     const [existingUserRoleResult, defaultRoleResult] = await Promise.all([
-      await this.userRoleAssignmentRepository.findByUserId(userId),
-      await this.roleRepository.findByCode(DEFAULT_ROLE_CODE),
+      this.userRoleAssignmentRepository.findByUserId(userId),
+      this.roleRepository.findByCode(DEFAULT_ROLE_CODE),
     ]);
 
     if (existingUserRoleResult.isFailure) return existingUserRoleResult;
