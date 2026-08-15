@@ -15,8 +15,7 @@ import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
 import { IUser } from '../identity/core/domain/interfaces/user.interface';
-import { Request } from 'express';
-import { createMockRequest, MockEnvConfigService } from 'src/testing';
+import { MockEnvConfigService } from 'src/testing';
 import { AuthenticationDtoFactory } from 'src/modules/authentication/testing';
 
 describe('AuthController', () => {
@@ -31,16 +30,11 @@ describe('AuthController', () => {
   let mockUser: IUser;
   let registerDto: RegisterDto;
   let loginDto: LoginDto;
-  let mockReq: jest.Mocked<Request>;
 
   beforeEach(async () => {
     mockUser = UserTestFactory.createMockUser();
     registerDto = AuthenticationDtoFactory.createRegisterCommand();
     loginDto = AuthenticationDtoFactory.createLoginCommand();
-
-    mockReq = createMockRequest({
-      cookies: {},
-    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthenticationController],
