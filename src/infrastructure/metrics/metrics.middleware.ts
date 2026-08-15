@@ -18,7 +18,11 @@ export class MetricsMiddleware implements NestMiddleware {
       const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
 
       // Fallback to UNKNOWN_ROUTE to prevent cardinality explosion if route is unmatched (e.g. 404)
-      const route = req.route?.path || req.baseUrl || 'UNKNOWN_ROUTE';
+      const routePath = req.route?.path;
+      const route =
+        (typeof routePath === 'string' ? routePath : undefined) ||
+        req.baseUrl ||
+        'UNKNOWN_ROUTE';
       const normalizedRoute = this.normalizeRoute(route);
 
       const labels = {
