@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import {
@@ -17,6 +17,8 @@ export class CancelOrderUseCase implements UseCase<
   IOrder,
   UseCaseError
 > {
+  private readonly logger = new Logger(CancelOrderUseCase.name);
+
   constructor(
     private orderRepository: OrderRepository,
     private readonly orderScheduler: OrderScheduler,
@@ -47,7 +49,7 @@ export class CancelOrderUseCase implements UseCase<
     );
 
     if (isFailure(scheduleResult)) {
-      console.error(
+      this.logger.error(
         `Failed to schedule stock release for order ${order.id}: ${scheduleResult.error.message}`,
       );
     }
