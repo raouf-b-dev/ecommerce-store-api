@@ -9,6 +9,7 @@ import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { AppModule } from 'src/app.module';
+import { DEFAULT_API_VERSION } from 'src/infrastructure/http/api-version';
 import { GlobalExceptionFilter } from 'src/filters/global-exception.filter';
 import { ResultInterceptor } from 'src/interceptors/result.interceptor';
 import { SanitizeInterceptor } from 'src/interceptors/sanitize.interceptor';
@@ -47,7 +48,7 @@ export class E2eTestAppHelper {
 
     app.enableVersioning({
       type: VersioningType.URI,
-      defaultVersion: '1',
+      defaultVersion: DEFAULT_API_VERSION,
     });
     app.use(cookieParser());
 

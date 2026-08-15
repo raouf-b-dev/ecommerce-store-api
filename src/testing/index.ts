@@ -3,6 +3,7 @@ export * from './helpers/auth-test.helper';
 export * from './helpers/clock-test.helper';
 export * from './helpers/database-test.helper';
 export * from './helpers/e2e-catalog.helper';
+export * from './helpers/e2e-checkout.helper';
 export * from './helpers/e2e-test-app.helper';
 export * from './helpers/poll.helper';
 export * from './helpers/http-error-assertion.helper';
