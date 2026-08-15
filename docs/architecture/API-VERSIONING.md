@@ -36,10 +36,13 @@ POST /v1/authentication/login
 ### 1.2 Implementation (NestJS)
 
 ```typescript
+// src/infrastructure/http/api-version.ts — single source of truth for URI default version
+export const DEFAULT_API_VERSION = '1';
+
 // main.ts — enables versioning globally with a default
 app.enableVersioning({
   type: VersioningType.URI,
-  defaultVersion: '1', // All controllers inherit v1 unless overridden
+  defaultVersion: DEFAULT_API_VERSION, // All controllers inherit v1 unless overridden
 });
 ```
 
