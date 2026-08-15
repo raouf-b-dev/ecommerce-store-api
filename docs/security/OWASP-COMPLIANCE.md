@@ -302,4 +302,4 @@ The security controls detailed in this specification are subject to continuous a
 1. **Static Analysis & Linting:** `npm run lint:check` (validates code rules and `eslint-plugin-security` static analysis).
 2. **Domain & Unit Testing:** `npm run test` (validates domain logic, security filter masking, and exception handling).
 3. **Architecture Boundary Tests:** `npm run test:arch` (enforces module encapsulation and hexagonal boundary rules).
-4. **Integration & E2E Security Tests:** `npm run test:e2e` (runs `test/security-idor.e2e-spec.ts` verifying RBAC and ownership isolation against real PostgreSQL and Redis containers).
+4. **Integration & E2E Security Tests:** `npm run test:e2e` (runs `test/security-idor.e2e-spec.ts` for RBAC/ownership isolation, plus `test/authentication-lifecycle.e2e-spec.ts` and `test/checkout-saga.e2e-spec.ts`, against real PostgreSQL and Redis).

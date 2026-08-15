@@ -1,8 +1,8 @@
 # 🛒 E-commerce Store API
 
-<p align="center"> <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> <img src="https://img.shields.io/badge/Coverage-High-brightgreen.svg" alt="Coverage"> </p>
+<p align="center"> <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> </p>
 
-> An enterprise-grade NestJS API for an e-commerce store built with **Domain-Driven Design**, **Hexagonal Architecture**, and modern best practices.
+> A NestJS modular-monolith e-commerce API using **Domain-Driven Design** and **Hexagonal Architecture**.
 
 ## 📋 Table of Contents
 
@@ -11,8 +11,7 @@
 - [🚀 Quick Start](#quick-start)
 - [Architecture at a Glance](#architecture-at-a-glance)
 - [⭐ Feature Catalog](#feature-catalog)
-- [📖 Documentation Index](#documentation-index)
-- [🚧 Roadmap](#roadmap)
+- [📖 Documentation](#documentation)
 - [🧪 Testing](#testing)
 - [🏗️ Project Structure](#project-structure)
 - [📄 License](#license)
@@ -23,9 +22,11 @@
 
 ## What Is This?
 
-A production-grade e-commerce API built as a **modular monolith** with NestJS and TypeScript. The codebase implements Domain-Driven Design (both Strategic and Tactical), Hexagonal Architecture, and the distributed systems patterns that most tutorials skip — SAGA orchestration with compensation, strict bounded context isolation via ACL Gateways, Redis-backed idempotency, structured observability, and a full RSA-based auth stack with refresh token rotation and RBAC.
+A **modular monolith** for an e-commerce store: ten bounded contexts under `src/modules/`, talking only through ACL gateways and domain events. NestJS + TypeScript, PostgreSQL, Redis Stack, and BullMQ.
 
-Designed as a reference for how to build enterprise backend systems that are testable, maintainable, and production-ready from day one.
+It is a **reference implementation** of backend patterns that tutorials often skip — checkout SAGA with compensation, Redis-backed HTTP idempotency, RSA JWT with refresh rotation and reuse detection, RBAC, and structured observability (logs, metrics, traces).
+
+It is **not** a hosted storefront product and **not** a claim that the API is finished for public ecommerce. Current work and sequencing live in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
@@ -33,19 +34,17 @@ Designed as a reference for how to build enterprise backend systems that are tes
 
 ## How to Review This Project in 5 Minutes
 
-Start with the areas that demonstrate the most critical patterns:
+| What to inspect                  | Why it matters                                        | Where to look                                                                   |
+| :------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------------------ |
+| Checkout orchestration           | Multi-step purchase flow                              | `src/modules/orders/core/application/usecases/checkout/`                        |
+| SAGA compensation                | Stock release / refund / cancel after payment failure | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`    |
+| Auth, RBAC, and refresh sessions | JWT, rotation, reuse detection, permissions           | `src/modules/authentication/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
+| HTTP idempotency                 | Retry-safe checkout command (not the whole SAGA)      | `src/infrastructure/idempotency/`                                               |
+| Hexagonal boundaries             | Domain/application isolated from adapters             | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/`   |
+| Observability                    | Logs, metrics, traces, dashboards                     | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`         |
+| Tests                            | Unit, integration, architecture rules, E2E            | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                    |
 
-| What to inspect                  | Why it matters                                            | Where to look                                                                   |
-| :------------------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| Checkout orchestration           | Shows multi-step business workflow and failure handling   | `src/modules/orders/core/application/usecases/checkout/`                        |
-| SAGA compensation                | Shows stock release/refund/cancel behavior after failures | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`    |
-| Auth, RBAC, and refresh sessions | Shows production-style security decisions                 | `src/modules/authentication/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
-| Redis idempotency                | Shows retry-safe critical API behavior                    | `src/infrastructure/idempotency/`                                               |
-| Hexagonal boundaries             | Shows domain/application isolation from adapters          | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/`   |
-| Observability                    | Shows logs, metrics, traces, and dashboards               | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`         |
-| Tests and factories              | Shows maintainability and behavior coverage               | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                    |
-
-The shortest walkthrough is: **Auth/RBAC → Checkout use case → SAGA compensation → Redis idempotency → tests**.
+Shortest path: **Auth/RBAC → checkout use case → SAGA compensation → idempotency → tests**.
 
 ---
 
@@ -68,28 +67,28 @@ npm install
 # 2. Generate environment files
 npm run env:init
 
-# 3. Update .env.* files with your secrets (DB, Redis, JWT keys)
+# 3. Fill .env.* with local secrets (DB, Redis, JWT keys)
 
-# 4. Start infrastructure & run migrations
+# 4. Start PostgreSQL + Redis and run migrations
 npm run d:up:dev
 npm run migration:run:dev
 
-# 5. Start the API
+# 5. Start the API, then seed local data (roles must exist from first boot)
 npm run start:dev
+npm run db:seed
 ```
 
-The API will be available at `http://localhost:3000` 🎉
+- API: `http://localhost:3000`
+- Swagger: `http://localhost:3000/api`
+- Seeded accounts: [SEEDING.md](docs/development/SEEDING.md)
 
-📡 **API Documentation** — full endpoint specs, schemas, and auth requirements via Swagger UI: **`http://localhost:3000/api`**
-
-#### Optional: Start the Full Monitoring Stack
+#### Optional: monitoring stack
 
 ```bash
-# Start API + PostgreSQL + Redis + Prometheus + Loki + Tempo + Grafana
 npm run d:up:full:prod
 ```
 
-Grafana dashboards will be available at `http://localhost:3000` (Grafana port) with pre-provisioned datasources and dashboards.
+Grafana is published on **`http://localhost:3001`** (not 3000 — that is the API).
 
 ---
 
@@ -99,52 +98,48 @@ Grafana dashboards will be available at `http://localhost:3000` (Grafana port) w
 
 ```mermaid
 graph TD
-    Client["📱 Client App (Web/Mobile)"] -->|HTTP/REST| API["🛡️ NestJS API Gateway"]
-    Client -->|WebSocket| WS["🔌 WebSocket Gateway"]
+    Client["Client (Web/Mobile)"] -->|HTTP/REST| API["NestJS API"]
+    Client -->|WebSocket| WS["WebSocket Gateway"]
 
-    subgraph "Application Core (Modular Monolith)"
-        API --> Auth["🔐 Auth Module"]
-        API --> Orders["📦 Orders Module"]
-        API --> Products["🏷️ Products Module"]
-        API --> Carts["🛒 Carts Module"]
-        API --> Payments["💳 Payments Module"]
-        API --> Inventory["🏭 Inventory Module"]
-        API --> Customers["👥 Customers Module"]
-
-        WS --> Notifications["🔔 Notifications Module"]
-
-        Orders -->|SAGA Orchestration| Inventory
-        Orders -->|SAGA Orchestration| Payments
-        Orders -->|Event| Notifications
+    subgraph Monolith["Modular monolith"]
+        API --> Auth["Authentication"]
+        API --> Identity["Identity"]
+        API --> Orders["Orders"]
+        API --> Products["Products"]
+        API --> Carts["Carts"]
+        API --> Payments["Payments"]
+        API --> Inventory["Inventory"]
+        WS --> Notifications["Notifications"]
+        Orders -->|"ACL + jobs (SAGA)"| Inventory
+        Orders -->|"ACL + jobs (SAGA)"| Payments
+        Orders -->|Domain events| Notifications
     end
 
-    subgraph "Infrastructure Layer"
-        Auth -->|Persist| PG["🐘 PostgreSQL"]
-        Orders -->|Persist| PG
-        Products -->|Persist| PG
-
-        Carts -->|Cache/Persist| Redis["⚡ Redis Stack"]
-        Products -->|Search| Redis
-
-        Orders -->|Async Jobs| BullMQ["🐂 BullMQ Job Queue"]
-        Notifications -->|Async Jobs| BullMQ
+    subgraph Infra["Infrastructure"]
+        Auth --> PG["PostgreSQL"]
+        Orders --> PG
+        Products --> PG
+        Carts --> Redis["Redis Stack"]
+        Products --> Redis
+        Orders --> BullMQ["BullMQ"]
+        Notifications --> BullMQ
     end
 
-    subgraph "Observability Layer"
-        API -->|Structured Logs| Loki["📋 Loki"]
-        API -->|Metrics /metrics| Prometheus["📊 Prometheus"]
-        API -->|Traces OTLP| Tempo["🔍 Tempo"]
-        Loki --> Grafana["📈 Grafana"]
+    subgraph Observability["Observability"]
+        API --> Loki["Loki"]
+        API --> Prometheus["Prometheus"]
+        API --> Tempo["Tempo"]
+        Loki --> Grafana["Grafana"]
         Prometheus --> Grafana
         Tempo --> Grafana
     end
 
-    subgraph "External Services"
-        Payments <-->|Verify| Stripe["💳 Payment Gateway"]
+    subgraph External["External"]
+        Payments -->|"Gateway port (Stripe stub today)"| Stripe["Payment gateway"]
     end
 ```
 
-See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE.md) for C4, sequence, and class diagrams.
+C4, sequence, and class diagrams: [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md).
 
 ---
 
@@ -152,110 +147,90 @@ See the full [**System Architecture & Diagrams**](docs/architecture/ARCHITECTURE
 
 ## ⭐ Feature Catalog
 
-> Every feature links to detailed documentation in [`docs/FEATURES.md`](docs/FEATURES.md) and/or the relevant source code.
+Canonical write-ups: [`docs/FEATURES.md`](docs/FEATURES.md).
 
 ### 🏗️ Architecture
 
-| Feature                | Description                                               | Location                                                            |
-| :--------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------ |
-| Strategic DDD          | Subdomains, Bounded Contexts, Context Mapping             | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
-| Tactical DDD           | Entities, Value Objects, Aggregates, Domain Services      | `src/modules/*/core/domain/`                                        |
-| Hexagonal Architecture | Ports & Adapters — infrastructure-agnostic domain core    | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
-| ACL Gateway Pattern    | 8 gateway ports decoupling 10 bounded contexts            | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
-| Modular Monolith       | 10 isolated modules, microservice-extraction ready        | `src/modules/`                                                      |
-| Result Pattern         | Functional `Result<T, E>` replacing exception-driven flow | `src/shared-kernel/domain/`                                         |
+| Feature                | Description                                              | Location                                                            |
+| :--------------------- | :------------------------------------------------------- | :------------------------------------------------------------------ |
+| Strategic DDD          | Subdomains, bounded contexts, context mapping            | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
+| Tactical DDD           | Entities, value objects, aggregates, domain services     | `src/modules/*/core/domain/`                                        |
+| Hexagonal Architecture | Ports and adapters — infrastructure-agnostic domain core | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
+| ACL Gateway Pattern    | Gateway ports decoupling bounded contexts                | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
+| Modular Monolith       | Isolated modules under `src/modules/`                    | `src/modules/`                                                      |
+| Result Pattern         | `Result<T, E>` instead of throwing from use cases        | `src/shared-kernel/domain/`                                         |
 
-### 🔄 Distributed Systems
+### 🔄 Workflows & jobs
 
-| Feature                | Description                                                   | Location                                    |
-| :--------------------- | :------------------------------------------------------------ | :------------------------------------------ |
-| SAGA Orchestration     | Multi-step checkout with automatic compensation on failure    | `src/modules/orders/primary-adapters/jobs/` |
-| Idempotency            | Redis-backed `@Idempotent()` decorator — execute-exactly-once | `src/infrastructure/idempotency/`           |
-| BullMQ Nested Flows    | Composed background job pipelines for notifications           | `src/modules/notifications/`                |
-| Stripe Payment Gateway | Production Stripe checkout intent and webhook event handling  | `src/modules/payments/`                     |
+| Feature             | Description                                                                | Location                                    |
+| :------------------ | :------------------------------------------------------------------------- | :------------------------------------------ |
+| SAGA orchestration  | Multi-step checkout with compensation on failure                           | `src/modules/orders/primary-adapters/jobs/` |
+| HTTP idempotency    | Redis `SET NX` + `@Idempotent()` on checkout — retry-safe **HTTP command** | `src/infrastructure/idempotency/`           |
+| BullMQ nested flows | Background job pipelines (e.g. notifications)                              | `src/modules/notifications/`                |
+| Payment gateway     | Gateway port; Stripe adapter is a **stub** until real integration lands    | `src/modules/payments/`                     |
 
-### ⚡ Data & Performance
+### ⚡ Data & performance
 
-| Feature               | Description                                                 | Location                                                  |
-| :-------------------- | :---------------------------------------------------------- | :-------------------------------------------------------- |
-| RedisJSON             | Cart storage as native JSON documents — no SQL joins        | `src/modules/carts/secondary-adapters/`                   |
-| RedisSearch           | Full-text search and filtering from Redis                   | `src/modules/products/secondary-adapters/`                |
-| Cache-Aside Decorator | Transparent `CachedRepository` wrapping Postgres with Redis | `src/modules/*/secondary-adapters/repositories/cached-*/` |
+| Feature               | Description                                     | Location                                                  |
+| :-------------------- | :---------------------------------------------- | :-------------------------------------------------------- |
+| RedisJSON             | Cart storage as JSON documents                  | `src/modules/carts/secondary-adapters/`                   |
+| RedisSearch           | Catalog search/filter from Redis                | `src/modules/products/secondary-adapters/`                |
+| Cache-aside decorator | `CachedRepository` wrapping Postgres with Redis | `src/modules/*/secondary-adapters/repositories/cached-*/` |
 
 ### 🔐 Security
 
-| Feature                | Description                                                  | Location                                         |
-| :--------------------- | :----------------------------------------------------------- | :----------------------------------------------- |
-| RSA JWT (RS256 + JWKS) | Production-grade auth with public key distribution endpoint  | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
-| Refresh Token Rotation | Session-based tokens with SHA-256 hashing + HttpOnly cookies | `src/modules/authentication/`                    |
-| RBAC System            | Database-backed Roles & Permissions with `PermissionsGuard`  | `src/modules/authorization/`                     |
-| API Rate Limiting      | Redis-backed throttling via `@nestjs/throttler`              | `src/infrastructure/throttler/`                  |
-| Helmet Headers         | Standard security headers (HSTS, X-Frame-Options, etc.)      | `src/main.ts`                                    |
-| CORS Whitelist         | Environment-based origin restriction — no wildcards in prod  | `src/config/`                                    |
-| XSS Sanitization       | Global `sanitize-html` interceptor on all request bodies     | `src/interceptors/`                              |
-| Pagination Safety      | `@Max(100)` on all query DTOs to prevent resource exhaustion | `src/modules/*/primary-adapters/dtos/`           |
+| Feature                | Description                                           | Location                                         |
+| :--------------------- | :---------------------------------------------------- | :----------------------------------------------- |
+| RSA JWT (RS256 + JWKS) | Access tokens with JWKS public-key distribution       | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
+| Refresh token rotation | Session tokens, SHA-256 hashing, reuse detection      | `src/modules/authentication/`                    |
+| RBAC                   | Database-backed roles and permissions                 | `src/modules/authorization/`                     |
+| Rate limiting          | Redis-backed `@nestjs/throttler`                      | `src/infrastructure/throttler/`                  |
+| Helmet / CORS / XSS    | Security headers, origin whitelist, body sanitization | `src/main.ts`, `src/interceptors/`               |
+| Pagination caps        | `@Max(100)` on list query DTOs                        | `src/modules/*/primary-adapters/dtos/`           |
 
 ### 📦 Infrastructure
 
-| Feature            | Description                                                   | Location                                                         |
-| :----------------- | :------------------------------------------------------------ | :--------------------------------------------------------------- |
-| Multi-Stage Docker | 4-stage build, Node.js 24 Alpine, tini PID 1, non-root user   | `Dockerfile`                                                     |
-| Graceful Shutdown  | Signal handling, connection draining, worker cleanup          | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
-| Health Checks      | `GET /health` via @nestjs/terminus (Postgres + Redis + WS)    | `src/modules/health/`                                            |
-| API Versioning     | URI-based versioning (`/v1/`) for all API endpoints           | `src/modules/*/`                                                 |
-| Admin Seeder       | Bootstrap admin user and role/permission data on first deploy | [ADMIN-BOOTSTRAP.md](docs/security/ADMIN-BOOTSTRAP.md)           |
-| Multi-Env Config   | 4 profiles with type-safe validation + secrets separation     | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
+| Feature            | Description                                         | Location                                                         |
+| :----------------- | :-------------------------------------------------- | :--------------------------------------------------------------- |
+| Multi-stage Docker | Node 24 Alpine, tini, non-root                      | `Dockerfile`                                                     |
+| Graceful shutdown  | Drain HTTP, close pools, stop workers               | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
+| Health probes      | Liveness (process) and readiness (Postgres + Redis) | `src/modules/health/`                                            |
+| API versioning     | URI versioning (`/v1/`)                             | `src/modules/*/`                                                 |
+| Local seeding      | Admin/customer accounts and catalog                 | [SEEDING.md](docs/development/SEEDING.md)                        |
+| Multi-env config   | Typed env validation and secrets separation         | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
 
 ### 🔭 Observability
 
-| Feature              | Description                                                             | Location                                                                  |
-| :------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| Structured Logging   | Winston JSON logging shipped to Loki via Promtail                       | `src/infrastructure/logging/`                                             |
-| Correlation IDs      | `X-Request-Id` propagated through HTTP + all 18 BullMQ jobs             | `src/infrastructure/logging/`                                             |
-| Prometheus Metrics   | RED method metrics + business telemetry via `prom-client`               | `src/infrastructure/metrics/`                                             |
-| Distributed Tracing  | OpenTelemetry auto-instrumentation exporting to Tempo via OTLP gRPC     | `src/infrastructure/tracing/`                                             |
-| Grafana Stack        | Pre-provisioned dashboards with Loki, Prometheus, and Tempo datasources | [MONITORING-STACK-GUIDE.md](docs/observability/MONITORING-STACK-GUIDE.md) |
-| Domain Event Metrics | Business events (login, order, payment) published and tracked           | `src/infrastructure/metrics/listeners/`                                   |
-| CI/CD Pipeline       | GitHub Actions: lint → build → test → publish                           | `.github/workflows/`                                                      |
-
-### 🧪 Testing
-
-| Feature                  | Description                                         | Location                 |
-| :----------------------- | :-------------------------------------------------- | :----------------------- |
-| Unit + Integration Suite | Domain logic, use cases, repositories, controllers  | `src/modules/*/`         |
-| Test Factories           | Scenario-specific domain object builders per module | `src/modules/*/testing/` |
-| Typed Mock Repos         | Interface-compliant mocks with test helper methods  | `src/modules/*/testing/` |
+| Feature            | Description                                                   | Location                                                                  |
+| :----------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------ |
+| Structured logging | Winston JSON → Loki via Promtail                              | `src/infrastructure/logging/`                                             |
+| Correlation IDs    | `X-Request-Id` on HTTP and BullMQ jobs                        | `src/infrastructure/logging/`                                             |
+| Prometheus metrics | RED + domain counters                                         | `src/infrastructure/metrics/`                                             |
+| Tracing            | OpenTelemetry → Tempo (OTLP gRPC)                             | `src/infrastructure/tracing/`                                             |
+| Grafana stack      | Pre-provisioned Loki / Prometheus / Tempo                     | [MONITORING-STACK-GUIDE.md](docs/observability/MONITORING-STACK-GUIDE.md) |
+| CI                 | GitHub Actions: lint, typecheck, unit, arch, integration, E2E | `.github/workflows/`                                                      |
 
 ---
 
-<a id="documentation-index"></a>
+<a id="documentation"></a>
 
-## 📖 Documentation Index
+## 📖 Documentation
 
-| Document                                                                      | Description                                               |
-| :---------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| [**FEATURES.md**](docs/FEATURES.md)                                           | Detailed feature documentation with code locations        |
-| [**docs/README.md**](docs/README.md)                                          | Unified technical documentation index                     |
-| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                      | C4 system context, domain flows, sequence diagrams        |
-| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)                    | Canonical DDD & Hexagonal Architecture rules              |
-| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md)       | ACL Gateway, SAGA, Domain Events, Outbox                  |
-| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                          | RSA JWT implementation and JWKS endpoint details          |
-| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)              | Configuration taxonomy and key rotation                   |
-| [**ADMIN-BOOTSTRAP.md**](docs/security/ADMIN-BOOTSTRAP.md)                    | Admin seeding, role/permission initialization             |
-| [**MONITORING-STACK-GUIDE.md**](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo setup and usage          |
-| [**Observability Architecture**](docs/observability/ARCHITECTURE.md)          | Signal pipeline diagram (logs, metrics, traces → Grafana) |
-| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)          | PIDs, signals, and graceful shutdown deep-dive            |
-| [**ROADMAP.md**](docs/ROADMAP.md)                                             | Production readiness checklist with prioritized tasks     |
-| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)              | Common issues and solutions                               |
-| [**AGENT.md**](AGENT.md)                                                      | Coding guidelines and conventions                         |
-
----
-
-<a id="roadmap"></a>
-
-## 🚧 Roadmap
-
-This project is continuously evolving. See the full [**ROADMAP.md**](docs/ROADMAP.md) for completed phases, current work, and upcoming features.
+| Document                                                                      | Description                                   |
+| :---------------------------------------------------------------------------- | :-------------------------------------------- |
+| [**docs/README.md**](docs/README.md)                                          | Full documentation index                      |
+| [**FEATURES.md**](docs/FEATURES.md)                                           | Feature catalog with code locations           |
+| [**ROADMAP.md**](docs/ROADMAP.md)                                             | What is done, what is next, and in what order |
+| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                      | C4, domain flows, sequence diagrams           |
+| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)                    | DDD and hexagonal rules                       |
+| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md)       | ACL, SAGA, domain events                      |
+| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                          | RSA JWT and JWKS                              |
+| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)              | Config taxonomy and secrets                   |
+| [**SEEDING.md**](docs/development/SEEDING.md)                                 | Local seed accounts and catalog               |
+| [**MONITORING-STACK-GUIDE.md**](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana / Prometheus / Loki / Tempo           |
+| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)          | Signals and graceful shutdown                 |
+| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)              | Common local issues                           |
+| [**AGENT.md**](AGENT.md)                                                      | Contributor / agent conventions               |
 
 ---
 
@@ -264,10 +239,11 @@ This project is continuously evolving. See the full [**ROADMAP.md**](docs/ROADMA
 ## 🧪 Testing
 
 ```bash
-npm test              # Run all unit tests
-npm run test:cov      # Generate coverage report
-npm run test:e2e      # End-to-end tests
-npm run test:ci       # CI mode (GitHub Actions)
+npm test                 # Unit tests
+npm run test:integration # Testcontainers / real DB
+npm run test:e2e         # Full-app HTTP flows
+npm run test:arch        # Hexagonal / module boundary rules
+npm run test:cov         # Coverage
 ```
 
 ---
@@ -278,21 +254,21 @@ npm run test:ci       # CI mode (GitHub Actions)
 
 ```
 src/
-├── shared-kernel/           # Pure domain building blocks (Result, Value Objects, base UseCase)
-├── infrastructure/          # Global secondary adapters (DB, Redis, BullMQ, JWT, logging, WebSocket)
-├── interceptors/            # Global Result Interceptor
-├── modules/                 # Feature Modules (Bounded Contexts)
+├── shared-kernel/            # Result, value objects, policies, ports
+├── infrastructure/           # DB, Redis, BullMQ, JWT, logging, WebSocket
+├── interceptors/             # Global HTTP interceptors
+├── modules/                  # Bounded contexts
 │   └── [module]/
-│       ├── core/domain/     # Entities, Value Objects, Repository Ports
-│       ├── core/application/# Use Cases & Application Services
-│       ├── primary-adapters/# DTOs, Controllers, Job Handlers, Listeners
-│       ├── secondary-adapters/# Repositories, Gateways, Schedulers
-│       └── testing/         # Module-specific mocks & factories
-├── config/                  # Environment validation & configuration
-└── main.ts                  # Application bootstrap
+│       ├── core/domain/
+│       ├── core/application/
+│       ├── primary-adapters/
+│       ├── secondary-adapters/
+│       └── testing/
+├── config/
+└── main.ts
 ```
 
-> For strict DDD and Hexagonal Architecture definitions, see [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md).
+Layer rules: [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md).
 
 ---
 

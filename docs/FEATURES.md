@@ -241,7 +241,7 @@ Comprehensive test infrastructure across all layers:
 
 - **Unit Tests**: Domain logic, use cases, services, and utilities
 - **Integration Tests**: PostgreSQL Testcontainers (`*.integration.spec.ts`) for query adapters and write-side repositories (transactions, unique constraints, pessimistic inventory locks, cache-aside with a real postgres delegate)
-- **E2E Tests**: Complete API endpoint testing scaffolding
+- **E2E Tests**: Full-app `supertest` suites for auth lifecycle, IDOR denial, checkout SAGA (happy path + payment-failure compensation), and CQRS order read shapes (`userName`, item `sku`)
 - **Coverage**: Detailed metrics via `npm run test:cov`
 
 ### Test Factories & Typed Mocks

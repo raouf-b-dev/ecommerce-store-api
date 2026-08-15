@@ -102,14 +102,14 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
 Verify that query adapters execute SQL QueryBuilders that perform controlled `LEFT JOIN` operations across context boundaries in a single query:
 
 ```typescript
-it('returns order list item projection with customer name and item count', async () => {
+it('returns order list item projection with user name and item count', async () => {
   const result = await queryAdapter.list({ page: 1, limit: 10 });
 
   expect(result.isSuccess).toBe(true);
   if (!result.isSuccess) return;
 
   expect(result.value.total).toBe(1);
-  expect(result.value.items[0].customerName).toBe('Customer One');
+  expect(result.value.items[0].userName).toBe('Customer One');
 });
 ```
 

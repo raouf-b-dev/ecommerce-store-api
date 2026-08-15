@@ -4,65 +4,21 @@
  * Prerequisites: PostgreSQL + Redis running (`npm run d:up:dev`) and migrations applied.
  */
 import { INestApplication } from '@nestjs/common';
-import { decodeJwt } from 'jose';
+import { TestingModule } from '@nestjs/testing';
+import { CartRepository } from 'src/modules/carts/core/domain/repositories/cart.repository';
+import {
+  AuthSession,
+  AuthTestHelper,
+  E2E_API_PREFIX,
+} from 'src/testing/helpers/auth-test.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
 
-const API = '/v1';
-
-interface AuthSession {
-  email: string;
-  accessToken: string;
-  userId: number;
-}
-
-async function registerUser(
-  http: E2eHttpClient,
-  label: string,
-): Promise<AuthSession> {
-  const email = `idor-${label}-${Date.now()}@example.com`;
-  const password = 'Password123!';
-
-  const registerResponse = await http
-    .post(`${API}/authentication/register`)
-    .send({
-      email,
-      password,
-      firstName: label,
-      lastName: 'Tester',
-    });
-
-  expect(registerResponse.status).toBe(201);
-  const registeredUserId = registerResponse.body.id as number;
-  expect(registeredUserId).toBeGreaterThan(0);
-
-  const loginResponse = await http.post(`${API}/authentication/login`).send({
-    email,
-    password,
-  });
-
-  expect(loginResponse.status).toBe(200);
-  expect(loginResponse.body.accessToken).toBeDefined();
-
-  const claims = decodeJwt(loginResponse.body.accessToken as string);
-  const userId = Number(claims.sub);
-  expect(userId).toBe(registeredUserId);
-
-  return {
-    email,
-    accessToken: loginResponse.body.accessToken as string,
-    userId,
-  };
-}
-
-function bearer(token: string): { Authorization: string } {
-  return { Authorization: `Bearer ${token}` };
-}
-
 describe('Security IDOR (e2e)', () => {
   let app: INestApplication;
+  let moduleRef: TestingModule;
   let http: E2eHttpClient;
   let userA: AuthSession;
   let userB: AuthSession;
@@ -70,21 +26,42 @@ describe('Security IDOR (e2e)', () => {
   beforeAll(async () => {
     const context = await E2eTestAppHelper.createApp();
     app = context.app;
+    moduleRef = context.moduleRef;
     http = E2eTestAppHelper.getHttp(app);
 
-    userA = await registerUser(http, 'user-a');
-    userB = await registerUser(http, 'user-b');
+    userA = await AuthTestHelper.registerAndLogin(http, {
+      firstName: 'user-a',
+      lastName: 'Tester',
+    });
+    userB = await AuthTestHelper.registerAndLogin(http, {
+      firstName: 'user-b',
+      lastName: 'Tester',
+    });
   }, 120_000);
 
   afterAll(async () => {
     await E2eTestAppHelper.closeApp(app);
   });
 
+  async function cartIdFor(user: AuthSession): Promise<number> {
+    const createResponse = await http
+      .post(`${E2E_API_PREFIX}/carts`)
+      .set(AuthTestHelper.bearer(user.accessToken));
+    expect(createResponse.status).toBeLessThan(300);
+
+    const cartRepository = moduleRef.get(CartRepository, { strict: false });
+    const cartResult = await cartRepository.findByuserId(user.userId);
+    if (cartResult.isFailure || !cartResult.value.id) {
+      throw new Error('Expected cart id after create');
+    }
+    return cartResult.value.id;
+  }
+
   describe('users', () => {
     it('allows user to read own profile', async () => {
       const response = await http
-        .get(`${API}/users/${userA.userId}`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/users/${userA.userId}`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(response.status).toBe(200);
       expect(response.body.id).toBe(userA.userId);
@@ -92,8 +69,8 @@ describe('Security IDOR (e2e)', () => {
 
     it('denies user reading another user profile', async () => {
       const response = await http
-        .get(`${API}/users/${userB.userId}`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/users/${userB.userId}`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.status).toBeLessThan(500);
@@ -101,8 +78,8 @@ describe('Security IDOR (e2e)', () => {
 
     it('denies user mutating another user address', async () => {
       const response = await http
-        .post(`${API}/users/${userB.userId}/addresses`)
-        .set(bearer(userA.accessToken))
+        .post(`${E2E_API_PREFIX}/users/${userB.userId}/addresses`)
+        .set(AuthTestHelper.bearer(userA.accessToken))
         .send({
           street: '999 Hacker Lane',
           city: 'Denial',
@@ -119,16 +96,11 @@ describe('Security IDOR (e2e)', () => {
 
   describe('carts', () => {
     it('denies access to another users cart without ownership', async () => {
-      const createResponse = await http
-        .post(`${API}/carts`)
-        .set(bearer(userB.accessToken));
-
-      expect(createResponse.status).toBe(201);
-      const cartId = createResponse.body.id as number;
+      const cartId = await cartIdFor(userB);
 
       const crossRead = await http
-        .get(`${API}/carts/${cartId}`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/carts/${cartId}`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(crossRead.status).toBeGreaterThanOrEqual(400);
       expect(crossRead.status).toBeLessThan(500);
@@ -137,16 +109,11 @@ describe('Security IDOR (e2e)', () => {
 
   describe('checkout', () => {
     it('denies checkout with another users cart', async () => {
-      const createResponse = await http
-        .post(`${API}/carts`)
-        .set(bearer(userB.accessToken));
-
-      expect(createResponse.status).toBe(201);
-      const cartId = createResponse.body.id as number;
+      const cartId = await cartIdFor(userB);
 
       const checkoutResponse = await http
-        .post(`${API}/orders/checkout`)
-        .set(bearer(userA.accessToken))
+        .post(`${E2E_API_PREFIX}/orders/checkout`)
+        .set(AuthTestHelper.bearer(userA.accessToken))
         .send({
           cartId,
           paymentMethod: 'STRIPE',
@@ -160,8 +127,8 @@ describe('Security IDOR (e2e)', () => {
   describe('orders and payments', () => {
     it('denies user reading a non-owned order id', async () => {
       const response = await http
-        .get(`${API}/orders/999999`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/orders/999999`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.status).toBeLessThan(500);
@@ -169,8 +136,8 @@ describe('Security IDOR (e2e)', () => {
 
     it('returns not found when listing payments for another users order', async () => {
       const response = await http
-        .get(`${API}/payments/orders/999999`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/payments/orders/999999`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.status).toBeLessThan(500);
@@ -178,8 +145,8 @@ describe('Security IDOR (e2e)', () => {
 
     it('scopes order list to the authenticated user', async () => {
       const response = await http
-        .get(`${API}/orders`)
-        .set(bearer(userA.accessToken));
+        .get(`${E2E_API_PREFIX}/orders`)
+        .set(AuthTestHelper.bearer(userA.accessToken));
 
       expect(response.status).toBe(200);
       const orders = Array.isArray(response.body)

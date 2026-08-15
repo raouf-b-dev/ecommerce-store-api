@@ -77,19 +77,23 @@
 | [ ] Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
 | [ ] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL + Redis) |
-| [/] Backup, restore, rollback runbook & smoke test runner | **14** | Smoke runner in CI done; backup/restore scripts and runbook pending |
+| [/] Backup, restore, rollback runbook & smoke test runner | **14** | Smoke runner in CI done; script cleanup + backup/restore runbook pending |
 | [ ] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
 
 ---
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                                                 | Phase  | Critical Purpose                                                            |
-| ------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------- |
-| [/] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
-| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)            | **13** | Centralized transition policy and domain specs                              |
-| [x] Repository integration tests (Testcontainers / real DB)                                 | **13** | All postgres write adapters + cached wrappers (except cached cart)          |
-| [x] Concurrent checkout integration proof (pessimistic lock verification)                   | **13** | Repository-level reservation proof — parallel saves against last stock unit |
+| Task / Item                                                                                         | Phase     | Critical Purpose                                                            |
+| --------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
+| [x] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes         | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
+| [ ] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
+| [ ] Checkout idempotency E2E — same key replay must not create a second checkout                    | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist           |
+| [ ] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2 — does not block first deploy                                   |
+| [ ] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy             |
+| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                              |
+| [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)          |
+| [x] Concurrent checkout integration proof (pessimistic lock verification)                           | **13**    | Repository-level reservation proof — parallel saves against last stock unit |
 
 ---
 
@@ -107,7 +111,13 @@
 
 ## 🧪 Phase 13 — Production Confidence & Integration Testing
 
-> **Goal**: Prove correctness and integration behavior before production — real DB persistence, transactional concurrency correctness, and E2E core flow verification. Post-deploy smoke probes belong in Phase 14.
+> **Goal**: Prove the application **behaves correctly** (real DB, concurrency, E2E core flows). Operating a live instance is Phase 14.
+
+**Required to leave Phase 13** (this order): HTTP checkout/auth contracts → HTTP-only E2E → checkout idempotency E2E.
+
+**Optional (do not block Phase 14):** E2E suite quality, extra business specs, domain test polish.
+
+HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase 13 task.
 
 ---
 
@@ -180,16 +190,67 @@
 
 ---
 
-### [ ] E2E Core Flow Tests
+### [x] E2E Core Flow Tests
 
 **What**: Pre-deploy end-to-end HTTP verification of core flows, security IDOR denial, and CQRS read shapes via `supertest`.
 
 **Scope**:
 
-- [ ] Auth: register → login → get token → use token → refresh (with rotation) → logout
+- [x] Auth: register → login → get token → use token → refresh (with rotation) → logout
 - [x] Security: Customer A blocked from reading/updating Customer B's carts, orders, and payments (IDOR prevention)
-- [ ] Checkout SAGA: full purchase happy path + compensation flow on simulated payment failure
-- [ ] CQRS projections: verify order list endpoint returns resolved `customerName` and `productSku` fields
+- [x] Checkout SAGA: full purchase happy path + compensation flow on simulated payment failure
+- [x] CQRS projections: order list returns resolved `userName`; order detail items return `sku`
+
+**Location**: `test/` (`authentication-lifecycle.e2e-spec.ts`, `security-idor.e2e-spec.ts`, `checkout-saga.e2e-spec.ts`)
+
+---
+
+### Remaining required
+
+### [ ] HTTP Checkout & Auth Contract Completeness (E2E follow-up)
+
+**What**: Close HTTP gaps that forced checkout/IDOR E2E to resolve cart, payment-intent, and inventory state via `moduleRef`. Do **not** apply DDD/Hexagonal to E2E or smoke scripts — keep those black-box HTTP.
+
+**Why**: `POST /carts` does not return a cart id; payment read DTOs omit `gatewayPaymentIntentId`; refresh cookies are set for path `/authentication` while the API is URI-versioned (`/v1/authentication/...`). Storefront clients and HTTP-only E2E need the same contracts.
+
+**Order**: Fix these production contracts first → make E2E HTTP-only → **checkout idempotency E2E** (existing interceptor contract) → **stop polishing E2E** → Phase 14 ship gate. Remaining optional specs and idempotency hardening must not delay the first deploy.
+
+**Scope**:
+
+- [ ] `POST /v1/carts` returns the created cart (or the existing user cart) including `id`.
+- [ ] Payment detail / get-by-order includes `gatewayPaymentIntentId` (needed for webhook-driven checkout).
+- [ ] `RefreshTokenCookieInterceptor` matches versioned routes (`/v1/authentication/login`, `/refresh`, `/logout`, `/logout-all`) so HttpOnly refresh cookies attach in browsers.
+- [ ] After the contracts exist: remove `CartRepository`, `PaymentRepository`, and `InventoryQueryService` from `test/checkout-saga.e2e-spec.ts` and `test/security-idor.e2e-spec.ts` (HTTP-only).
+- [ ] **Checkout idempotency E2E** — encode the **existing** interceptor contract (`IdempotencyInterceptor` + Redis store), do not invent a new one:
+  - Key: `x-idempotency-key` header, else `body.idempotencyKey`. Missing key = no idempotency.
+  - Protects the **HTTP checkout command** (cached response), not the whole SAGA worker chain.
+  - Completed key: replay returns the **cached original response** (same `orderId` / `jobId`). Key is not bound to payload — same key + different body still replays the first result (do not assert a 409 unless the implementation is changed to fingerprint the body).
+  - In-progress key: HTTP **409** `A request with this idempotency key is already in progress`.
+  - Failed first request: key is **released** so a retry may proceed.
+  - TTL: 24 hours (`IDEMPOTENCY_REDIS.EXPIRATION`). Fail-open if Redis errors.
+  - Assert: one order, not two; replay does not create a second reservation/payment as a consequence of a second checkout HTTP success.
+
+**Location**: `src/modules/carts/`, `src/modules/payments/`, `src/modules/authentication/primary-adapters/interceptors/`, `test/`
+
+---
+
+### Optional (does not block Phase 14)
+
+### [ ] E2E Suite Quality (Optional — P2)
+
+**What**: Improve readability and flake resistance of existing E2E without adding hexagonal layers to tests. Does **not** block Phase 14.
+
+**Scope**:
+
+- [ ] Rename or move `test/authentication.e2e-spec.ts` so it is clearly a **mocked controller contract** test, not a full-app E2E.
+- [ ] Assert HTTP error **payload** shape (status + `message`/`error`) on failure paths, not status ranges alone.
+- [ ] Do not tight-loop `GET /v1/inventory/products/:id` (public throttler → 429). Wait via slower polls or one HTTP assert after the SAGA settles.
+
+**Optional extra full-app specs** (priority order — only after HTTP-only checkout + idempotency E2E exist; do not turn into a mini-project):
+
+1. [ ] Empty cart / insufficient stock HTTP contracts (no payment intent / no confirmed order).
+2. [ ] Admin ship/cancel after confirm.
+3. [ ] Ignored Stripe webhook event type (lowest value for first deploy).
 
 **Location**: `test/`
 
@@ -214,9 +275,11 @@
 
 ## 🚀 Phase 14 — Single-Instance Production Deploy Gate
 
-> **Goal**: Complete core infrastructure and operational requirements for a safe, non-destructive first production deployment on a single application instance.
+> **Goal**: Prove you can **operate** a single application instance without being reckless (migrations, Redis/proxy, backup/restore, secrets, smoke). This is the **first private production deployment gate**, not a claim that the API is a production-grade ecommerce platform. Phases 15–17 still contain major capabilities.
 >
-> **Complete all tasks in this phase to deploy your first production release.**
+> **Required for the ship gate:** baseline migration, Redis/proxy behavior, backup/restore/rollback, secret rotation, smoke.
+>
+> **Optional (do not block first deploy):** HTTP idempotency hardening; staging environment.
 
 ---
 
@@ -244,10 +307,10 @@
 
 **Scope**:
 
-- [ ] Configure `app.set('trust proxy', 1)` in NestJS bootstrap (`src/main.ts`) so Express correctly reads real client IPs from `X-Forwarded-For` when deployed behind reverse proxies.
+- [ ] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop — verify client-IP and rate-limit behavior; do not assume `1` is always right.
 - [ ] Harden central Redis client configuration with connection retry strategies and drop event handlers.
 - [ ] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
-- [ ] Ensure rate-limiting (throttler), idempotency, and session stores catch Redis disconnects and degrade gracefully with logged warnings instead of 5xx HTTP drops.
+- [ ] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → documented fail-open tradeoff; session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops.
 
 **Location**: `src/main.ts`, `src/infrastructure/redis/`, `src/infrastructure/idempotency/`
 
@@ -278,6 +341,9 @@
 - [ ] Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
 - [x] Build a post-deploy smoke test runner (`smoke-test.js`) targeting liveness/readiness, `/metrics`, register/login, and authenticated profile access.
 - [x] Wire smoke runner into GitHub Actions CI (Postgres + Redis services, `dist` artifact, migrations).
+- [ ] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/` — **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
+- [ ] Keep smoke as process-alive probes only (no checkout SAGA, queues, or Stripe). That remains `npm run test:e2e`.
+- [ ] Soften the success log so it does not claim “production deployment verified”; it verifies probes answered.
 - [ ] Document comprehensive release, rollback, disaster recovery procedures in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
 - [ ] **Restore drill (definition of done)**: backup → destroy/clean disposable DB → restore → migrate if needed → app starts → smoke tests pass.
 
@@ -297,6 +363,26 @@
 - [ ] Cross-reference [`SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) where procedures already exist.
 
 **Location**: `docs/security/SECRET-ROTATION.md`
+
+---
+
+### [ ] HTTP Idempotency Hardening (Optional — P2)
+
+> **Does not block the Phase 14 ship gate.** Do this **after** checkout idempotency E2E exists. Do **not** open a design/plan workstream. Current `@Idempotent()` + Redis `SET NX` is good enough to ship; this is a short implementation pass.
+
+**What**: Tighten HTTP command idempotency without changing SAGA/outbox semantics.
+
+**Scope**:
+
+- [ ] Namespace Redis keys with authenticated `userId` + HTTP method + route (stop cross-user / cross-route key collisions).
+- [ ] Accept `Idempotency-Key` as well as `x-idempotency-key` (body `idempotencyKey` remains fallback).
+- [ ] If `SET NX` fails and `GET` misses (TTL race), retry as a new lock — do not 409.
+- [ ] If `complete()` cannot persist the cached body, fail the request (logged error); do not succeed HTTP and then allow a retry to create a second checkout.
+- [ ] Optional: `Retry-After` on in-progress **409**.
+- [ ] Align docs with the store: Redis `SET NX` (not Redlock); fail-open on Redis errors is not exactly-once; interceptor covers the HTTP checkout command, not the worker chain (`FEATURES.md`, `OWASP-COMPLIANCE.md`, README).
+- [ ] Update checkout idempotency E2E to the hardened contract (dual headers, namespaced keys). Do **not** add payload fingerprinting, Redlock, or SAGA-wide idempotency here (Phase 15/17).
+
+**Location**: `src/infrastructure/idempotency/`, `src/infrastructure/interceptors/idempotency.interceptor.ts`, `test/`
 
 ---
 
@@ -434,6 +520,22 @@
 ## 📦 Phase 17 — Product Ecosystem, Webhooks & Real Integrations
 
 > **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, and production Stripe payments with webhook deduplication.
+
+---
+
+### [ ] Customer Catalog Read Path (Storefront API)
+
+**What**: Let a `CUSTOMER` (or public shopper) list and get products for shopping without admin catalog permissions.
+
+**Why**: `GET /v1/products` currently requires `view_all_products` / create requires `manage_products`. A storefront cannot browse the catalog with the default customer role. This is a store API gap, not a SAGA design gap.
+
+**Scope**:
+
+- [ ] Introduce customer-scoped (or `@Public()` read) product list/detail permissions distinct from admin `manage_products`.
+- [ ] Keep mutations (`POST`/`PATCH`/`DELETE` products) admin-only.
+- [ ] E2E or API contract: registered customer can list a product created by admin and add it to a cart without `manage_products`.
+
+**Location**: `src/modules/products/`, `src/modules/authorization/core/domain/reference-data/`
 
 ---
 

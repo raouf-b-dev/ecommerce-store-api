@@ -65,7 +65,7 @@ export class JwtSignerService implements JwtSignerPort {
 
     const token = await this.signRefreshToken({
       ...payload,
-      sessionId,
+      sid: sessionId,
     });
 
     const decoded = decodeJwt(token);

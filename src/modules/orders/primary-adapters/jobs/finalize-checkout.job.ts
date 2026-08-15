@@ -3,22 +3,25 @@ import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
-import { ClearCartResult } from './clear-cart.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { FinalizeCheckoutUseCase } from '../../core/application/usecases/finalize-checkout/finalize-checkout.usecase';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
+import {
+  firstChildValue,
+  readNumberProperty,
+} from '../../../../infrastructure/jobs/job-child-values';
+import { PostPaymentJobData } from './post-payment-job.data';
 
 export interface FinalizeCheckoutResult {
   success: boolean;
   orderId: number;
-  paymentId: number;
-  reservationId: number;
+  paymentId?: number;
+  reservationId?: number;
 }
 
 @Injectable()
 export class FinalizeCheckoutStep extends BaseJobHandler<
-  ScheduleCheckoutProps,
+  PostPaymentJobData,
   FinalizeCheckoutResult
 > {
   protected readonly logger = new Logger(FinalizeCheckoutStep.name);
@@ -35,19 +38,15 @@ export class FinalizeCheckoutStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<ScheduleCheckoutProps>,
+    job: Job<PostPaymentJobData>,
   ): Promise<Result<FinalizeCheckoutResult, AppError>> {
-    const { flowId } = job.data;
+    const { flowId, orderId, reservationId } = job.data;
+    const childrenValues = await job.getChildrenValues<unknown>();
+    const childData = firstChildValue(childrenValues);
+    const paymentId = readNumberProperty(childData, 'paymentId');
 
-    const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(childrenValues)[0] as ClearCartResult;
-
-    const { orderId, paymentId, reservationId } = childData || {};
-
-    if (!orderId || !paymentId || !reservationId) {
-      this.logger.error(
-        `Missing required IDs for finalize checkout. Order: ${orderId}, Payment: ${paymentId}, Reservation: ${reservationId}`,
-      );
+    if (!orderId) {
+      this.logger.error('Missing orderId for finalize checkout.');
       return ErrorFactory.ServiceError(
         'Missing required IDs for finalize checkout.',
       );
