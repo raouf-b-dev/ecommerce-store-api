@@ -9,13 +9,15 @@ import { map } from 'rxjs/operators';
 import { Response } from 'express';
 import ms, { StringValue } from 'ms';
 import { EnvConfigService } from '../../../../config/env-config.service';
+import { DEFAULT_API_PREFIX } from '../../../../infrastructure/http/api-version';
 
 export const REFRESH_COOKIE_NAME = 'refresh_token';
+export const REFRESH_COOKIE_PATH = `${DEFAULT_API_PREFIX}/authentication`;
 
-/** Routes where the refresh token cookie should be set on success. */
+/** Unversioned routes where the refresh token cookie should be set on success. */
 const SET_COOKIE_ROUTES = ['/authentication/login', '/authentication/refresh'];
 
-/** Routes where the refresh token cookie should be cleared on success. */
+/** Unversioned routes where the refresh token cookie should be cleared on success. */
 const CLEAR_COOKIE_ROUTES = [
   '/authentication/logout',
   '/authentication/logout-all',
@@ -25,8 +27,15 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite: 'strict' as const,
-  path: '/authentication',
+  path: REFRESH_COOKIE_PATH,
 };
+
+function normalizeAuthRoute(path: string | undefined): string {
+  if (!path) {
+    return '';
+  }
+  return path.replace(/^\/v\d+/, '');
+}
 
 @Injectable()
 export class RefreshTokenCookieInterceptor implements NestInterceptor {
@@ -42,7 +51,7 @@ export class RefreshTokenCookieInterceptor implements NestInterceptor {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest();
     const response = ctx.getResponse<Response>();
-    const path = request.route?.path || request.path;
+    const path = normalizeAuthRoute(request.route?.path || request.path);
 
     return next.handle().pipe(
       map((result) => {
