@@ -9,6 +9,7 @@ export interface RawPaymentListQueryRow {
   status: string;
   paymentMethod: string;
   transactionId: string | null;
+  gatewayPaymentIntentId?: string | null;
   failureReason?: string | null;
   metadata?: string | Record<string, any> | null;
   createdAt: Date | string;

@@ -17,6 +17,7 @@ export class PaymentDtoTestFactory {
       status: 'COMPLETED',
       paymentMethod: 'CREDIT_CARD',
       transactionId: 'txn_123',
+      gatewayPaymentIntentId: 'pi_123',
       failureReason: null,
       metadata: '{"provider":"stripe"}',
       createdAt: new Date('2024-01-01T00:00:00.000Z'),
@@ -50,6 +51,7 @@ export class PaymentDtoTestFactory {
     const base = this.createPaymentListItemDTO(overrides);
     return {
       ...base,
+      gatewayPaymentIntentId: 'pi_123',
       failureReason: null,
       metadata: { provider: 'stripe' },
       updatedAt: base.createdAt,

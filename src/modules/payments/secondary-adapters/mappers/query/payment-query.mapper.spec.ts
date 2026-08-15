@@ -21,12 +21,25 @@ describe('PaymentQueryMapper', () => {
       transactionId: 'txn_123',
       createdAt: '2024-01-01T00:00:00.000Z',
     });
+    expect(listItem).not.toHaveProperty('gatewayPaymentIntentId');
 
     expect(detail).toEqual({
       ...listItem,
+      gatewayPaymentIntentId: 'pi_123',
       failureReason: null,
       metadata: { provider: 'stripe' },
       updatedAt: '2024-01-01T00:00:00.000Z',
     });
+    expect(Object.keys(detail)).toContain('gatewayPaymentIntentId');
+  });
+
+  it('should always include gatewayPaymentIntentId as null when absent', () => {
+    const rawRow = PaymentDtoTestFactory.createRawPaymentListQueryRow({
+      gatewayPaymentIntentId: null,
+    });
+
+    const detail = PaymentQueryMapper.toDetailDto(rawRow);
+
+    expect(detail).toHaveProperty('gatewayPaymentIntentId', null);
   });
 });

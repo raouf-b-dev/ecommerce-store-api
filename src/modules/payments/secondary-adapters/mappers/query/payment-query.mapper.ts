@@ -40,6 +40,9 @@ export class PaymentQueryMapper {
 
     return {
       ...base,
+      gatewayPaymentIntentId: row.gatewayPaymentIntentId
+        ? String(row.gatewayPaymentIntentId)
+        : null,
       failureReason: row.failureReason || null,
       metadata: parsedMetadata,
       updatedAt: row.updatedAt

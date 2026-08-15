@@ -49,6 +49,13 @@ export class PaymentResponseDto {
   transactionId?: string;
 
   @ApiPropertyOptional({
+    example: 'pi_1234567890',
+    description: 'Gateway payment intent ID',
+    nullable: true,
+  })
+  gatewayPaymentIntentId?: string | null;
+
+  @ApiPropertyOptional({
     example: 123,
     description: 'User ID',
   })

@@ -75,5 +75,6 @@ describe('PostgresPaymentQueryAdapter (Integration - Real DB)', () => {
     expect(result.value).not.toBeNull();
     expect(result.value?.id).toBe(payment.id);
     expect(result.value?.orderId).toBe(505);
+    expect(result.value).toHaveProperty('gatewayPaymentIntentId', null);
   });
 });
