@@ -5,7 +5,7 @@ import { PostgresRoleRepository } from './postgres-role.repository';
 import { PermissionEntity } from '../../orm/permission.schema';
 import { RoleEntity } from '../../orm/role.schema';
 import { RolePermissionEntity } from '../../orm/role-permission.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresRoleRepository (Integration - Real DB)', () => {

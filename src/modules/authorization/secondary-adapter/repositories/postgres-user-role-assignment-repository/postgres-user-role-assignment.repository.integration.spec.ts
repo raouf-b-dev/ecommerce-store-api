@@ -6,8 +6,8 @@ import { PermissionEntity } from '../../orm/permission.schema';
 import { RoleEntity } from '../../orm/role.schema';
 import { RolePermissionEntity } from '../../orm/role-permission.schema';
 import { UserRoleAssignmentEntity } from '../../orm/user-role-assignment.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresUserRoleAssignmentRepository (Integration - Real DB)', () => {

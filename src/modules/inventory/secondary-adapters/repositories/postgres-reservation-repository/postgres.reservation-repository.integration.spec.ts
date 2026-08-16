@@ -2,9 +2,9 @@ import { InventoryCommandTestFactory } from 'src/modules/inventory/testing';
 import { PostgresReservationRepository } from './postgres.reservation-repository';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { seedSingleUnitInventory } from 'test/integration/setup/inventory-seed.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { seedSingleUnitInventory } from 'test/integration/harness/inventory-seed.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 
 /**

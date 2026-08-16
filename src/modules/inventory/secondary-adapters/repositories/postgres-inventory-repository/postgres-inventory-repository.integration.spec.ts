@@ -2,8 +2,8 @@ import { InventoryBuilder } from 'src/modules/inventory/testing';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { InventoryCommandTestFactory } from 'src/modules/inventory/testing';
 import { ResultAssertionHelper } from 'src/testing';
 
