@@ -18,7 +18,7 @@ import { Result } from 'src/shared-kernel/domain/result';
 import { MockEnvConfigService } from 'src/testing/mocks/env-config.service.mock';
 import { MockJwksService } from 'src/testing/mocks/jwks.service.mock';
 
-describe('Authentication HTTP contract (e2e)', () => {
+describe('Authentication controller HTTP contract', () => {
   let app: INestApplication;
   let moduleRef: TestingModule;
   const mockUser = UserTestFactory.createMockUser({
