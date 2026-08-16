@@ -16,20 +16,15 @@ import {
   E2eCatalogProduct,
 } from 'src/testing/helpers/e2e-catalog.helper';
 import { E2eCheckoutHelper } from 'src/testing/helpers/e2e-checkout.helper';
-import { isHttpStatus } from 'src/testing/helpers/http-status.helper';
+import { E2eInventoryHelper } from 'src/testing/helpers/e2e-inventory.helper';
+import { E2eOrderHelper } from 'src/testing/helpers/e2e-order.helper';
+import { E2eStripeWebhookHelper } from 'src/testing/helpers/e2e-stripe-webhook.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
-import { pollUntil } from 'src/testing/helpers/poll.helper';
 
 const STARTING_STOCK = 1;
-const INVENTORY_POLL_INTERVAL_MS = 1500;
-
-interface InventorySnapshot {
-  availableQuantity: number;
-  reservedQuantity: number;
-}
 
 describe('Checkout SAGA (e2e)', () => {
   let app: INestApplication;
@@ -70,47 +65,6 @@ describe('Checkout SAGA (e2e)', () => {
     await E2eTestAppHelper.closeApp(app);
   });
 
-  async function getInventory(productId: number): Promise<InventorySnapshot> {
-    const response = await http.get(
-      `${E2E_API_PREFIX}/inventory/products/${productId}`,
-    );
-    expect(response.status).toBe(HttpStatus.OK);
-    return {
-      availableQuantity: Number(response.body.availableQuantity),
-      reservedQuantity: Number(response.body.reservedQuantity),
-    };
-  }
-
-  async function waitForInventory(
-    productId: number,
-    expected: InventorySnapshot,
-    description: string,
-  ): Promise<InventorySnapshot> {
-    return pollUntil(
-      async () => {
-        const response = await http.get(
-          `${E2E_API_PREFIX}/inventory/products/${productId}`,
-        );
-        if (!isHttpStatus(response.status, HttpStatus.OK)) {
-          return null;
-        }
-        const snapshot = {
-          availableQuantity: Number(response.body.availableQuantity),
-          reservedQuantity: Number(response.body.reservedQuantity),
-        };
-        return snapshot.availableQuantity === expected.availableQuantity &&
-          snapshot.reservedQuantity === expected.reservedQuantity
-          ? snapshot
-          : null;
-      },
-      {
-        description,
-        timeoutMs: 90_000,
-        intervalMs: INVENTORY_POLL_INTERVAL_MS,
-      },
-    );
-  }
-
   async function checkout(cartId: number): Promise<number> {
     const response = await E2eCheckoutHelper.checkout(http, customer, cartId);
     expect(response.status).toBeLessThan(300);
@@ -120,83 +74,11 @@ describe('Checkout SAGA (e2e)', () => {
     return Number(response.body.orderId);
   }
 
-  async function waitForPaymentIntent(orderId: number): Promise<{
-    gatewayPaymentIntentId: string;
-    reservationId: string;
-  }> {
-    const payment = await pollUntil(
-      async () => {
-        const response = await http
-          .get(`${E2E_API_PREFIX}/payments/orders/${orderId}`)
-          .set(AuthTestHelper.bearer(customer.accessToken));
-        if (!isHttpStatus(response.status, HttpStatus.OK)) {
-          return null;
-        }
-        expect(response.body).toHaveProperty('gatewayPaymentIntentId');
-        const gatewayPaymentIntentId = response.body.gatewayPaymentIntentId;
-        const reservationId = response.body.metadata?.reservationId;
-        if (!gatewayPaymentIntentId || !reservationId) {
-          return null;
-        }
-        return {
-          gatewayPaymentIntentId: String(gatewayPaymentIntentId),
-          reservationId: String(reservationId),
-        };
-      },
-      { description: `payment intent for order ${orderId}`, timeoutMs: 90_000 },
-    );
-
-    return payment;
-  }
-
-  async function postStripeWebhook(
-    paymentIntentId: string,
-    eventType: 'payment_intent.succeeded' | 'payment_intent.payment_failed',
-    metadata: Record<string, string>,
-  ): Promise<void> {
-    const response = await http
-      .post(`${E2E_API_PREFIX}/payments/webhooks/stripe`)
-      .set('stripe-signature', 'e2e-test')
-      .send({
-        type: eventType,
-        data: {
-          object: {
-            id: paymentIntentId,
-            metadata,
-            last_payment_error:
-              eventType === 'payment_intent.payment_failed'
-                ? { message: 'Card declined' }
-                : undefined,
-          },
-        },
-      });
-
-    expect(response.status).toBe(HttpStatus.OK);
-  }
-
-  async function waitForOrderStatus(
-    orderId: number,
-    status: OrderStatus,
-  ): Promise<Record<string, unknown>> {
-    return pollUntil(
-      async () => {
-        const response = await http
-          .get(`${E2E_API_PREFIX}/orders/${orderId}`)
-          .set(AuthTestHelper.bearer(customer.accessToken));
-        if (response.status !== 200) {
-          return null;
-        }
-        return response.body.status === status ? response.body : null;
-      },
-      {
-        description: `order ${orderId} status ${status}`,
-        timeoutMs: 90_000,
-      },
-    );
-  }
-
   it('completes purchase, confirms stock, and returns CQRS userName plus sku', async () => {
-    const before = await getInventory(happyProduct.id);
+    const before = await E2eInventoryHelper.getProductStock(
+      http,
+      happyProduct.id,
+    );
     expect(before).toEqual({
       availableQuantity: STARTING_STOCK,
       reservedQuantity: 0,
@@ -209,23 +91,33 @@ describe('Checkout SAGA (e2e)', () => {
     );
     const orderId = await checkout(cartId);
 
-    await waitForInventory(
-      happyProduct.id,
-      { availableQuantity: 0, reservedQuantity: STARTING_STOCK },
-      'stock reserved after checkout intent',
+    const payment = await E2eOrderHelper.waitForPaymentIntent(
+      http,
+      customer,
+      orderId,
     );
+    expect(
+      await E2eInventoryHelper.getProductStock(http, happyProduct.id),
+    ).toEqual({
+      availableQuantity: 0,
+      reservedQuantity: STARTING_STOCK,
+    });
 
-    const payment = await waitForPaymentIntent(orderId);
-    await postStripeWebhook(
-      payment.gatewayPaymentIntentId,
-      'payment_intent.succeeded',
-      {
+    await E2eStripeWebhookHelper.postAndExpectOk(http, {
+      paymentIntentId: payment.gatewayPaymentIntentId,
+      eventType: 'payment_intent.succeeded',
+      metadata: {
         reservationId: payment.reservationId,
         cartId: String(cartId),
       },
-    );
+    });
 
-    const order = await waitForOrderStatus(orderId, OrderStatus.CONFIRMED);
+    const order = await E2eOrderHelper.waitForOrderStatus(
+      http,
+      customer,
+      orderId,
+      OrderStatus.CONFIRMED,
+    );
     expect(order.userName).toBe(`${customer.firstName} ${customer.lastName}`);
     expect(order.userEmail).toBe(customer.email);
     const items = order.items as Array<{ sku: string }>;
@@ -246,19 +138,19 @@ describe('Checkout SAGA (e2e)', () => {
       `${customer.firstName} ${customer.lastName}`,
     );
 
-    await waitForInventory(
+    await E2eInventoryHelper.waitForProductStock(
+      http,
       happyProduct.id,
       { availableQuantity: 0, reservedQuantity: 0 },
       'reservation confirmed after payment success',
     );
-    expect(await getInventory(happyProduct.id)).toEqual({
-      availableQuantity: 0,
-      reservedQuantity: 0,
-    });
   }, 180_000);
 
   it('marks the order payment_failed and restores available stock', async () => {
-    const before = await getInventory(failProduct.id);
+    const before = await E2eInventoryHelper.getProductStock(
+      http,
+      failProduct.id,
+    );
     expect(before).toEqual({
       availableQuantity: STARTING_STOCK,
       reservedQuantity: 0,
@@ -271,33 +163,40 @@ describe('Checkout SAGA (e2e)', () => {
     );
     const orderId = await checkout(cartId);
 
-    await waitForInventory(
-      failProduct.id,
-      { availableQuantity: 0, reservedQuantity: STARTING_STOCK },
-      'stock reserved before payment failure',
+    const payment = await E2eOrderHelper.waitForPaymentIntent(
+      http,
+      customer,
+      orderId,
     );
+    expect(
+      await E2eInventoryHelper.getProductStock(http, failProduct.id),
+    ).toEqual({
+      availableQuantity: 0,
+      reservedQuantity: STARTING_STOCK,
+    });
 
-    const payment = await waitForPaymentIntent(orderId);
-    await postStripeWebhook(
-      payment.gatewayPaymentIntentId,
-      'payment_intent.payment_failed',
-      {
+    await E2eStripeWebhookHelper.postAndExpectOk(http, {
+      paymentIntentId: payment.gatewayPaymentIntentId,
+      eventType: 'payment_intent.payment_failed',
+      metadata: {
         reservationId: payment.reservationId,
         cartId: String(cartId),
       },
-    );
+    });
 
-    const order = await waitForOrderStatus(orderId, OrderStatus.PAYMENT_FAILED);
+    const order = await E2eOrderHelper.waitForOrderStatus(
+      http,
+      customer,
+      orderId,
+      OrderStatus.PAYMENT_FAILED,
+    );
     expect(order.status).toBe(OrderStatus.PAYMENT_FAILED);
 
-    await waitForInventory(
+    await E2eInventoryHelper.waitForProductStock(
+      http,
       failProduct.id,
       { availableQuantity: STARTING_STOCK, reservedQuantity: 0 },
       'stock released after payment failure',
     );
-    expect(await getInventory(failProduct.id)).toEqual({
-      availableQuantity: STARTING_STOCK,
-      reservedQuantity: 0,
-    });
   }, 180_000);
 });
