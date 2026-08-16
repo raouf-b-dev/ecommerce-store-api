@@ -4,6 +4,7 @@ import { RedisModule } from 'src/infrastructure/redis/redis.module';
 import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { UsersController } from './users.controller';
+import { AddressesController } from './addresses.controller';
 import { CachePort } from 'src/infrastructure/redis/cache/cache.port';
 import {
   POSTGRES_USER_REPOSITORY,
@@ -30,7 +31,7 @@ import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-us
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity, AddressEntity]), RedisModule],
-  controllers: [UsersController],
+  controllers: [UsersController, AddressesController],
   providers: [
     {
       provide: POSTGRES_USER_REPOSITORY,
