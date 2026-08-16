@@ -2,8 +2,8 @@ import { Notification } from '../../core/domain/entities/notification';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
 import { PostgresNotificationRepository } from './postgres.notification.repository';
 import { NotificationEntity } from '../orm/notification.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresNotificationRepository (Integration - Real DB)', () => {

@@ -3,10 +3,10 @@
   "rootDir": "../../",
   "testEnvironment": "node",
   "testRegex": ".*\\.integration\\.spec\\.ts$",
-  "globalSetup": "<rootDir>/test/integration/setup/testcontainers.global-setup.ts",
-  "globalTeardown": "<rootDir>/test/integration/setup/testcontainers.global-teardown.ts",
+  "globalSetup": "<rootDir>/test/integration/harness/testcontainers.global-setup.ts",
+  "globalTeardown": "<rootDir>/test/integration/harness/testcontainers.global-teardown.ts",
   "setupFilesAfterEnv": [
-    "<rootDir>/test/integration/setup/testcontainers.setup.ts"
+    "<rootDir>/test/integration/harness/testcontainers.setup.ts"
   ],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"

@@ -54,7 +54,8 @@ The application is a Modular Monolith split into 10 strictly isolated **Bounded 
 - **Metrics**: Prometheus metrics via `prom-client` (`GET /metrics`) — HTTP auto-instrumentation, domain counters, infrastructure gauges.
 - **Tracing**: OpenTelemetry auto-instrumentation with OTLP gRPC export to Tempo.
 - **Events**: `DomainEventPublisher` interface (shared-kernel) backed by `EventEmitter2DomainEventPublisher` adapter.
-- **Testing Helpers**: `src/testing/helpers/` (`auth-payload.factory.ts`, `database-test.helper.ts`, `e2e-test-app.ts`, `result-assertion.helper.ts`).
+- **Testing Helpers**: `src/testing/helpers/` (`auth-test.helper.ts`, `e2e-test-app.helper.ts`, `e2e-checkout.helper.ts`, `http-error-assertion.helper.ts`, …).
+- **Test suites**: `test/e2e/` (full-app HTTP), `test/integration/` (harness + DB verification; adapter specs stay co-located under `src/modules/**`), `test/architecture/` (boundary rules).
 
 ## Key Implementation Patterns
 

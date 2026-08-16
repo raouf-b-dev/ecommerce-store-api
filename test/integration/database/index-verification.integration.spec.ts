@@ -1,5 +1,5 @@
-import { IntegrationTestHelper } from './setup/integration-test.helper';
-import { SeededData } from './setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 
 describe('Database Index Existence & Query Plan Verification (Integration)', () => {
   let seededData: SeededData;

@@ -1,8 +1,8 @@
 import { Credential } from '../../../core/domain/entities/credential';
 import { PostgresCredentialRepository } from './postgres-credential.repository';
 import { CredentialEntity } from '../../orm/credential.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresCredentialRepository (Integration - Real DB)', () => {

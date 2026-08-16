@@ -13,6 +13,7 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 
 function setCookieHeaders(response: {
   headers: Record<string, unknown>;
@@ -96,8 +97,11 @@ describe('Authentication lifecycle (e2e)', () => {
       .post(`${E2E_API_PREFIX}/authentication/refresh`)
       .send({ refreshToken: session.refreshToken });
 
-    expect(replay.status).toBeGreaterThanOrEqual(400);
-    expect(replay.status).toBeLessThan(500);
+    expect(replay.status).toBe(HttpStatus.UNAUTHORIZED);
+    HttpErrorAssertionHelper.assertErrorContract(replay, {
+      statusCode: HttpStatus.UNAUTHORIZED,
+      messageContains: 'Invalid or expired session',
+    });
 
     const profile = await http
       .get(`${E2E_API_PREFIX}/users/${session.userId}`)
@@ -118,7 +122,10 @@ describe('Authentication lifecycle (e2e)', () => {
       .post(`${E2E_API_PREFIX}/authentication/refresh`)
       .send({ refreshToken: session.refreshToken });
 
-    expect(refreshAfterLogout.status).toBeGreaterThanOrEqual(400);
-    expect(refreshAfterLogout.status).toBeLessThan(500);
+    expect(refreshAfterLogout.status).toBe(HttpStatus.UNAUTHORIZED);
+    HttpErrorAssertionHelper.assertErrorContract(refreshAfterLogout, {
+      statusCode: HttpStatus.UNAUTHORIZED,
+      messageContains: 'Invalid or expired session',
+    });
   });
 });

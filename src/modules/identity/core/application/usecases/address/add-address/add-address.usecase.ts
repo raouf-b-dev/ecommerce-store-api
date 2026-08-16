@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -47,13 +47,23 @@ export class AddAddressUseCase extends UseCase<
         USER_MUTATION_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+      return ErrorFactory.UseCaseError(
+        `User with id ${userId} not found`,
+        null,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (isFailure(userResult)) return userResult;
 
-    if (!userResult.value) return ErrorFactory.UseCaseError('User not found');
+    if (!userResult.value) {
+      return ErrorFactory.UseCaseError(
+        'User not found',
+        null,
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     const { entity: user, expectedVersion } = userResult.value;
 

@@ -70,7 +70,7 @@ All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with
 CI GHA service containers use **`postgres:18.4`**, aligned with:
 
 - Local/docker-compose target (`postgres:18` in `docker-compose.yaml`)
-- Integration Testcontainers image (`postgres:18.4-alpine` in `test/integration/setup/integration-test.constants.ts`)
+- Integration Testcontainers image (`postgres:18.4-alpine` in `test/integration/harness/integration-test.constants.ts`)
 
 ---
 

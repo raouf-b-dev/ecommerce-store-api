@@ -20,6 +20,8 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
+import { Response } from 'supertest';
 
 function uniqueKey(label: string): string {
   return `e2e-checkout-${label}-${Date.now()}-${Math.random()
@@ -138,7 +140,13 @@ describe('Checkout idempotency (e2e)', () => {
     expect(orderIds.size).toBe(1);
 
     if (conflicts.length > 0) {
-      expect(JSON.stringify(conflicts[0].body)).toMatch(/already in progress/i);
+      HttpErrorAssertionHelper.assertErrorContract(
+        { body: conflicts[0].body } as Response,
+        {
+          statusCode: HttpStatus.CONFLICT,
+          messageContains: 'already in progress',
+        },
+      );
     }
 
     const afterCount = await E2eCheckoutHelper.listOrderCount(
@@ -159,8 +167,15 @@ describe('Checkout idempotency (e2e)', () => {
       headers: { 'x-idempotency-key': key },
       body: { cartId: 'not-a-number' },
     });
-    expect(failed.status).toBeGreaterThanOrEqual(400);
-    expect(failed.status).toBeLessThan(500);
+    expect(failed.status).toBe(HttpStatus.BAD_REQUEST);
+    HttpErrorAssertionHelper.assertErrorContract(
+      { body: failed.body } as Response,
+      {
+        statusCode: HttpStatus.BAD_REQUEST,
+        messageContains: 'Validation failed',
+        hasValidationErrors: true,
+      },
+    );
 
     const cartId = await E2eCheckoutHelper.createCartWithItem(
       http,

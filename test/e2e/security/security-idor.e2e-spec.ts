@@ -3,7 +3,7 @@
  *
  * Prerequisites: PostgreSQL + Redis running (`npm run d:up:dev`) and migrations applied.
  */
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   AuthSession,
   AuthTestHelper,
@@ -14,6 +14,7 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 
 describe('Security IDOR (e2e)', () => {
   let app: INestApplication;
@@ -60,8 +61,11 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/users/${userB.userId}`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(response.status).toBeLessThan(500);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.NOT_FOUND,
+        messageContains: `User with id ${userB.userId} not found`,
+      });
     });
 
     it('denies user mutating another user address', async () => {
@@ -74,11 +78,13 @@ describe('Security IDOR (e2e)', () => {
           state: 'CA',
           postalCode: '90001',
           country: 'US',
-          phone: '1234567890',
         });
 
-      expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(response.status).toBeLessThan(500);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.NOT_FOUND,
+        messageContains: `User with id ${userB.userId} not found`,
+      });
     });
   });
 
@@ -100,8 +106,11 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/carts/${cartId}`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(crossRead.status).toBeGreaterThanOrEqual(400);
-      expect(crossRead.status).toBeLessThan(500);
+      expect(crossRead.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(crossRead, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: 'not found',
+      });
     });
   });
 
@@ -117,8 +126,11 @@ describe('Security IDOR (e2e)', () => {
           paymentMethod: 'STRIPE',
         });
 
-      expect(checkoutResponse.status).toBeGreaterThanOrEqual(400);
-      expect(checkoutResponse.status).toBeLessThan(500);
+      expect(checkoutResponse.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(checkoutResponse, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: 'not found',
+      });
     });
   });
 
@@ -128,8 +140,11 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/orders/999999`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(response.status).toBeLessThan(500);
+      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: 'Order with id 999999 not found',
+      });
     });
 
     it('returns not found when listing payments for another users order', async () => {
@@ -137,8 +152,11 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/payments/orders/999999`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(response.status).toBeGreaterThanOrEqual(400);
-      expect(response.status).toBeLessThan(500);
+      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: 'Payment for order ID 999999 not found',
+      });
     });
 
     it('scopes order list to the authenticated user', async () => {

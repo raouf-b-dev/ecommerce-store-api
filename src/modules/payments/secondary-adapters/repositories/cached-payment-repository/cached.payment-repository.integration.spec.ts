@@ -7,8 +7,8 @@ import {
   PaymentCacheMapper,
   PaymentForCache,
 } from '../../persistence/mappers/payment.mapper';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { MockCacheService, MockLogger } from 'src/testing';
 import { PAYMENT_REDIS } from 'src/infrastructure/redis/constants/redis.constants';
 import { ResultAssertionHelper } from 'src/testing';

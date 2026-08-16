@@ -2,8 +2,8 @@ import { User } from '../../../core/domain/entities/user';
 import { PostgresUserRepository } from './postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';
 import { AddressEntity } from '../../orm/address.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 import { AddressType } from '../../../../../shared-kernel/domain/value-objects/address-type';
 

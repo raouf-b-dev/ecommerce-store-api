@@ -50,7 +50,7 @@
     "test:debug": "cross-env NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:prod": "cross-env NODE_ENV=production jest",
     "test:staging": "cross-env NODE_ENV=staging jest",
-    "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json",
+    "test:e2e": "cross-env NODE_ENV=test jest --config ./test/e2e/jest-e2e.json",
     "test:integration": "cross-env NODE_ENV=test jest --config ./test/integration/jest-integration.json",
     "d:up:dev": "docker compose --env-file .env.development up -d",
     "d:down:dev": "docker compose --env-file .env.development down",

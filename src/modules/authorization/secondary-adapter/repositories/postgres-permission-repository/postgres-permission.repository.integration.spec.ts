@@ -1,7 +1,7 @@
 import { Permission } from '../../../core/domain/entities/permission';
 import { PostgresPermissionRepository } from './postgres-permission.repository';
 import { PermissionEntity } from '../../orm/permission.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresPermissionRepository (Integration - Real DB)', () => {

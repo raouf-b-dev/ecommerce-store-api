@@ -1,8 +1,8 @@
 import { SessionToken } from '../../../core/domain/entities/session-token';
 import { PostgresSessionTokenRepository } from './postgres-session-token.repository';
 import { SessionTokenEntity } from '../../orm/session-token.schema';
-import { IntegrationTestHelper } from 'test/integration/setup/integration-test.helper';
-import { SeededData } from 'test/integration/setup/seed-reference-data';
+import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
+import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
