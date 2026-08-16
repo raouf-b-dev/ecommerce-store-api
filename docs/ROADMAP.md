@@ -89,7 +89,7 @@
 | [x] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes         | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
 | [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
 | [x] Checkout idempotency E2E — same key replay must not create a second checkout                    | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist           |
-| [ ] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2 — does not block first deploy                                   |
+| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2 — does not block first deploy                                   |
 | [ ] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy             |
 | [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                              |
 | [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)          |
@@ -201,7 +201,7 @@ HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase
 - [x] Checkout SAGA: full purchase happy path + compensation flow on simulated payment failure
 - [x] CQRS projections: order list returns resolved `userName`; order detail items return `sku`
 
-**Location**: `test/` (`authentication-lifecycle.e2e-spec.ts`, `security-idor.e2e-spec.ts`, `checkout-saga.e2e-spec.ts`)
+**Location**: `test/e2e/` (`auth/authentication-lifecycle.e2e-spec.ts`, `security/security-idor.e2e-spec.ts`, `checkout/checkout-saga.e2e-spec.ts`)
 
 ---
 
@@ -220,7 +220,7 @@ HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase
 - [x] `POST /v1/carts` returns the created cart (or the existing user cart) including `id`.
 - [x] Payment detail / get-by-order includes `gatewayPaymentIntentId` (needed for webhook-driven checkout).
 - [x] `RefreshTokenCookieInterceptor` matches versioned routes (`/v1/authentication/login`, `/refresh`, `/logout`, `/logout-all`) so HttpOnly refresh cookies attach in browsers.
-- [x] After the contracts exist: remove `CartRepository`, `PaymentRepository`, and `InventoryQueryService` from `test/checkout-saga.e2e-spec.ts` and `test/security-idor.e2e-spec.ts` (HTTP-only).
+- [x] After the contracts exist: remove `CartRepository`, `PaymentRepository`, and `InventoryQueryService` from `test/e2e/checkout/checkout-saga.e2e-spec.ts` and `test/e2e/security/security-idor.e2e-spec.ts` (HTTP-only).
 - [x] **Checkout idempotency E2E** — encode the **existing** interceptor contract (`IdempotencyInterceptor` + Redis store), do not invent a new one:
   - Key: `x-idempotency-key` header, else `body.idempotencyKey`. Missing key = no idempotency.
   - Protects the **HTTP checkout command** (cached response), not the whole SAGA worker chain.
@@ -236,23 +236,23 @@ HTTP idempotency **hardening** is Phase 14 optional P2 — not a remaining Phase
 
 ### Optional (does not block Phase 14)
 
-### [ ] E2E Suite Quality (Optional — P2)
+### [x] E2E Suite Quality (Optional — P2)
 
 **What**: Improve readability and flake resistance of existing E2E without adding hexagonal layers to tests. Does **not** block Phase 14.
 
 **Scope**:
 
-- [ ] Rename or move `test/authentication.e2e-spec.ts` so it is clearly a **mocked controller contract** test, not a full-app E2E.
-- [ ] Assert HTTP error **payload** shape (status + `message`/`error`) on failure paths, not status ranges alone.
-- [ ] Do not tight-loop `GET /v1/inventory/products/:id` (public throttler → 429). Wait via slower polls or one HTTP assert after the SAGA settles.
+- [x] Rename or move `test/authentication.e2e-spec.ts` so it is clearly a **mocked controller contract** test, not a full-app E2E.
+- [x] Assert HTTP error **payload** shape (status + `message`/`error`) on failure paths, not status ranges alone.
+- [x] Do not tight-loop `GET /v1/inventory/products/:id` (public throttler → 429). Wait via slower polls or one HTTP assert after the SAGA settles.
 
 **Optional extra full-app specs** (priority order — only after HTTP-only checkout + idempotency E2E exist; do not turn into a mini-project):
 
-1. [ ] Empty cart / insufficient stock HTTP contracts (no payment intent / no confirmed order).
-2. [ ] Admin ship/cancel after confirm.
-3. [ ] Ignored Stripe webhook event type (lowest value for first deploy).
+1. [x] Empty cart / insufficient stock HTTP contracts (no payment intent / no confirmed order).
+2. [x] Admin ship/cancel after confirm.
+3. [x] Ignored Stripe webhook event type (lowest value for first deploy).
 
-**Location**: `test/`
+**Location**: `test/e2e/`
 
 ---
 
