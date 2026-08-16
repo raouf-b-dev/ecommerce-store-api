@@ -1,7 +1,7 @@
-import { existsSync } from 'fs';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
+import { resolveEnvFilePath } from './config/resolve-env-file-path';
 import { EnvConfigModule } from './config/config.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -21,9 +21,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
 import { AuthGuard } from './guards/auth.guard';
 
-const env = process.env.NODE_ENV || 'development';
-const envFilePath = `.env.${env}`;
-const loadEnvFile = existsSync(envFilePath) ? envFilePath : undefined;
+const loadEnvFile = resolveEnvFilePath();
 
 @Module({
   imports: [

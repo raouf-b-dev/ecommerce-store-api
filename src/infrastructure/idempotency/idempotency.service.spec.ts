@@ -62,15 +62,15 @@ describe('IdempotencyService', () => {
       let isLocked = false;
 
       // Simulate atomic SET NX: first request gets true, subsequent get false
-      cacheService.set.mockImplementation(async (_key, _val, options) => {
+      cacheService.set.mockImplementation((_key, _val, options) => {
         if (options?.nx) {
           if (!isLocked) {
             isLocked = true;
-            return true;
+            return Promise.resolve(true);
           }
-          return false;
+          return Promise.resolve(false);
         }
-        return true;
+        return Promise.resolve(true);
       });
 
       cacheService.get.mockResolvedValue({

@@ -24,7 +24,9 @@ export class InventoryReconciliationJob extends BaseJobHandler<void, void> {
   }
 
   protected async onExecute(job: Job<void>): Promise<Result<void, AppError>> {
-    this.logger.log('Executing inventory reconciliation job...');
+    this.logger.log(
+      `Executing inventory reconciliation job ${job.id ?? 'unknown'}...`,
+    );
     const result = await this.reconcileInventoryUseCase.execute();
 
     if (result.isFailure) {

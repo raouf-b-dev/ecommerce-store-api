@@ -56,7 +56,9 @@ describe('CapturePaymentUseCase', () => {
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
     // The use case calls payment.capture() which mutates the payment, then passes it to update()
     // So the mock should return the same payment instance that was passed to it (after mutation)
-    paymentRepository.update.mockImplementation(async (p) => Result.success(p));
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
 
     const result = await useCase.execute(123);
 

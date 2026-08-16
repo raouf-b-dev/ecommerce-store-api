@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Result } from 'src/shared-kernel/domain/result';
 import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from 'src/infrastructure/logging/correlation/correlation.service';
+import { readJobCorrelationId } from './job-correlation';
 
 export abstract class BaseJobHandler<TData, TResult> {
   protected abstract readonly logger: Logger;
@@ -20,16 +21,13 @@ export abstract class BaseJobHandler<TData, TResult> {
     job: Job<TData>,
   ): Promise<Result<TResult, AppError>>;
 
-  async handle(job: Job<TData>): Promise<TResult> {
+  async handle(job: Job): Promise<TResult> {
     const jobName = job.name || this.constructor.name;
     const jobId = job.id || 'unknown';
     const attemptsMade = job.attemptsMade || 0;
     const maxAttempts = job.opts?.attempts || 1;
-
-    // Restore correlation context from job data if available.
+    const correlationId = readJobCorrelationId(job.data);
     const correlationService = this.getCorrelationService();
-    const correlationId = (job.data as Record<string, unknown>)
-      ?.correlationId as string | undefined;
 
     if (correlationService && correlationId) {
       return correlationService.run(correlationId, () =>
@@ -47,7 +45,7 @@ export abstract class BaseJobHandler<TData, TResult> {
   }
 
   private async executeWithLogging(
-    job: Job<TData>,
+    job: Job,
     jobName: string,
     jobId: string,
     attemptsMade: number,
@@ -63,7 +61,8 @@ export abstract class BaseJobHandler<TData, TResult> {
     }
 
     try {
-      const result = await this.onExecute(job);
+      // BullMQ workers deliver Job<unknown>; each handler knows its payload shape.
+      const result = await this.onExecute(this.toTypedJob(job));
 
       if (result.isFailure) {
         const willRetry =
@@ -93,5 +92,9 @@ export abstract class BaseJobHandler<TData, TResult> {
       );
       throw new Error(String(error), { cause: error });
     }
+  }
+
+  private toTypedJob(job: Job): Job<TData> {
+    return job as Job<TData>;
   }
 }

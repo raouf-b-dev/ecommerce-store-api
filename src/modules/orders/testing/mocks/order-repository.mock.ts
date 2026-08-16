@@ -53,11 +53,11 @@ export class MockOrderRepository implements OrderRepository {
   }
 
   mockSuccessfulSave(idToAssign = 1001): void {
-    this.save.mockImplementation(async (order) => {
+    this.save.mockImplementation((order) => {
       if (!order.id) {
         order.setId(idToAssign);
       }
-      return Result.success(order);
+      return Promise.resolve(Result.success(order));
     });
   }
 

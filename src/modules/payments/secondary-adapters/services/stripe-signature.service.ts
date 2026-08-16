@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 export class StripeSignatureService {
   constructor(private readonly configService: ConfigService) {}
 
-  verify(payload: Record<string, unknown>, signature: string): boolean {
+  verify(_payload: Record<string, unknown>, _signature: string): boolean {
     // TODO: Implement actual Stripe signature verification using 'stripe' package
     // const secret = this.configService.get('STRIPE_WEBHOOK_SECRET');
     // For now, return true to allow testing without actual Stripe events

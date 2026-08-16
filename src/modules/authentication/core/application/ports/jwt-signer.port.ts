@@ -8,6 +8,11 @@ export interface SignAccessTokenPayload {
   role: string;
 }
 
+export interface SignRefreshTokenPayload {
+  sub: string | number;
+  sid?: string;
+}
+
 /**
  * Result of signing a refresh token with session metadata.
  */
@@ -23,9 +28,9 @@ export interface RefreshTokenResult {
  */
 export abstract class JwtSignerPort {
   abstract signAccessToken(payload: SignAccessTokenPayload): Promise<string>;
-  abstract signRefreshToken(payload: Record<string, unknown>): Promise<string>;
+  abstract signRefreshToken(payload: SignRefreshTokenPayload): Promise<string>;
   abstract signRefreshTokenWithSession(
-    payload: Record<string, unknown>,
+    payload: Pick<SignRefreshTokenPayload, 'sub'>,
   ): Promise<RefreshTokenResult>;
   abstract signCartSessionToken(cartId: number): Promise<string>;
 }

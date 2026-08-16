@@ -1,5 +1,4 @@
 import { validateEnv } from './validate-env';
-import { StringValue } from 'ms';
 
 export interface IAppConfig {
   node: {

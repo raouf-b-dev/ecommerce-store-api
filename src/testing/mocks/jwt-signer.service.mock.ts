@@ -2,6 +2,7 @@ import {
   JwtSignerPort,
   RefreshTokenResult,
   SignAccessTokenPayload,
+  SignRefreshTokenPayload,
 } from '../../modules/authentication/core/application/ports/jwt-signer.port';
 
 const dummyPayload = Buffer.from(
@@ -14,10 +15,10 @@ export class MockJwtSignerService implements JwtSignerPort {
     .fn<Promise<string>, [SignAccessTokenPayload]>()
     .mockResolvedValue(dummyToken);
   signRefreshToken = jest
-    .fn<Promise<string>, [Record<string, unknown>]>()
+    .fn<Promise<string>, [SignRefreshTokenPayload]>()
     .mockResolvedValue(dummyToken);
   signRefreshTokenWithSession = jest
-    .fn<Promise<RefreshTokenResult>, [Record<string, unknown>]>()
+    .fn<Promise<RefreshTokenResult>, [Pick<SignRefreshTokenPayload, 'sub'>]>()
     .mockResolvedValue({
       token: dummyToken,
       sessionId: 'mock-session-id',

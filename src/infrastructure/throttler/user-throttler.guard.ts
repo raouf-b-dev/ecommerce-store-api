@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { Request } from 'express';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Injectable()
 export class UserThrottlerGuard extends ThrottlerGuard {
-  protected async getTracker(req: Record<string, any>): Promise<string> {
-    const user = req.user;
-    if (user && (user.sub || user.userId || user.id)) {
-      const identifier = user.sub || user.userId || user.id;
-      return `user_${identifier}`;
+  protected getTracker(req: Request): Promise<string> {
+    const userId = req.user?.userId;
+    if (userId != null) {
+      return Promise.resolve(`user_${userId}`);
     }
-    return req.ip || req.connection?.remoteAddress || 'unknown_ip';
+
+    return Promise.resolve(req.ip ?? 'unknown_ip');
   }
 }

@@ -35,21 +35,22 @@ export default tseslint.config(
   },
   {
     rules: {
-      '@typescript-eslint/require-await': 'warn',
+      '@typescript-eslint/require-await': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
 
       '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/prefer-readonly': 'off',
 
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
 
@@ -65,16 +66,31 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/await-thenable': 'warn',
+      '@typescript-eslint/await-thenable': 'error',
 
       'prefer-const': 'error',
       'no-var': 'error',
-      'no-console': 'warn',
+      'no-console': 'error',
       'no-debugger': 'error',
       'security/detect-object-injection': 'off',
     },
   },
 
+  {
+    files: ['**/*.controller.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          // @Body() usage is not tracked reliably with emitDecoratorMetadata (typescript-eslint false positive).
+          varsIgnorePattern: '^_|^Body$',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
   {
     files: [
       '**/*.spec.ts',
@@ -83,7 +99,6 @@ export default tseslint.config(
       '**/*.e2e-spec.ts',
     ],
     rules: {
-      '@typescript-eslint/require-await': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',

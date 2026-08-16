@@ -25,7 +25,7 @@ export class PaymentEventsProcessor
     await this.worker.close();
   }
 
-  async process(job: Job): Promise<any> {
+  async process(job: Job): Promise<unknown> {
     this.logger.log(`Processing job ${job.name} (ID: ${job.id})...`);
 
     switch (job.name) {

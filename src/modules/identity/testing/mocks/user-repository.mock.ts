@@ -2,6 +2,7 @@ import { UserRepository } from '../../core/domain/repositories/user.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { User } from '../../core/domain/entities/user';
+import { IUser } from '../../core/domain/interfaces/user.interface';
 import { UserTestFactory } from '../factories/user.factory';
 
 export class MockUserRepository implements UserRepository {
@@ -31,7 +32,9 @@ export class MockUserRepository implements UserRepository {
     if (user) {
       this.save.mockResolvedValue(Result.success(user));
     } else {
-      this.save.mockImplementation(async (u: User) => Result.success(u));
+      this.save.mockImplementation((u: User) =>
+        Promise.resolve(Result.success(u)),
+      );
     }
   }
 
@@ -41,8 +44,11 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFindByIdForUpdate(userData: any, expectedVersion = 1): void {
-    const user = User.fromProps(userData);
+  mockSuccessfulFindByIdForUpdate(
+    overrides?: Partial<IUser>,
+    expectedVersion = 1,
+  ): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
     this.findByIdForUpdate.mockResolvedValue(
       Result.success({ entity: user, expectedVersion }),
     );
@@ -67,7 +73,7 @@ export class MockUserRepository implements UserRepository {
   }
 
   mockSuccessfulFindAll(): void {
-    const users = [User.fromProps(UserTestFactory.createMockUser())];
+    const users = [User.fromProps(UserTestFactory.createUserProps())];
     this.findAll.mockResolvedValue(Result.success(users));
   }
 
@@ -78,8 +84,8 @@ export class MockUserRepository implements UserRepository {
   }
 
   mockSuccessfulFindById(id: number): void {
-    const user = User.fromProps(UserTestFactory.createMockUser());
-    this.findById.mockResolvedValue(Result.success(user || null));
+    const user = User.fromProps(UserTestFactory.createUserProps({ id }));
+    this.findById.mockResolvedValue(Result.success(user));
   }
 
   mockFindByIdFailure(errorMessage: string): void {
@@ -88,8 +94,8 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFindByEmail(userData: any): void {
-    const user = User.fromProps(userData);
+  mockSuccessfulFindByEmail(overrides?: Partial<IUser>): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
     this.findByEmail.mockResolvedValue(Result.success(user));
   }
 
@@ -103,8 +109,8 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFind(userData: any): void {
-    const user = User.fromProps(userData);
+  mockSuccessfulFind(overrides?: Partial<IUser>): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
     this.findById.mockResolvedValue(Result.success(user));
     this.findByIdForUpdate.mockResolvedValue(
       Result.success({ entity: user, expectedVersion: 1 }),

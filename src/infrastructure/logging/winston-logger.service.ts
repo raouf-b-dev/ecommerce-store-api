@@ -8,6 +8,7 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 import { CorrelationService } from './correlation/correlation.service';
 import { EnvConfigService } from '../../config/env-config.service';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
 import { trace, context } from '@opentelemetry/api';
 
 @Injectable()
@@ -193,7 +194,10 @@ export class WinstonLoggerService
 const SENSITIVE_KEYS_REGEX =
   /^(password|token|secret|authorization|cookie|cardNumber|cvv|pan|ssn|creditCard)$/i;
 
-function redactInPlace(target: any, visited = new WeakSet()): any {
+function redactInPlace(
+  target: unknown,
+  visited = new WeakSet<object>(),
+): unknown {
   if (target === null || target === undefined || typeof target !== 'object') {
     return target;
   }
@@ -208,6 +212,10 @@ function redactInPlace(target: any, visited = new WeakSet()): any {
         target[i] = redactInPlace(target[i], visited);
       }
     }
+    return target;
+  }
+
+  if (!isRecord(target)) {
     return target;
   }
 

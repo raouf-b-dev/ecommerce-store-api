@@ -43,12 +43,10 @@ describe('CheckoutUseCase', () => {
   beforeEach(async () => {
     orderScheduler = new MockOrderScheduler();
     const orderRepository = new MockOrderRepository();
-    orderRepository.save.mockImplementation(
-      async (order: { id?: number | null }) => {
-        order.id = 1001;
-        return Result.success(order as never);
-      },
-    );
+    orderRepository.save.mockImplementation((order: { id?: number | null }) => {
+      order.id = 1001;
+      return Promise.resolve(Result.success(order as never));
+    });
 
     const mockOrderFactory = {
       createFromCart: jest.fn().mockReturnValue({

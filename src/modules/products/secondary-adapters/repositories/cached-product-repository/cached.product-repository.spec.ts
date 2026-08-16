@@ -1,8 +1,6 @@
 // src/modules/products/infrastructure/repositories/CachedProductRepository/cached.product-repository.spec.ts
 import {
   ProductTestFactory,
-  CreateProductInputFactory,
-  UpdateProductInputFactory,
   MockProductRepository,
 } from 'src/modules/products/testing';
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';

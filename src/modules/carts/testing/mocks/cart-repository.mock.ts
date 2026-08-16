@@ -32,7 +32,7 @@ export class MockCartRepository implements CartRepository {
   }
 
   mockCartNotFound(id: string): void {
-    const error = new RepositoryError(`Cart not found`);
+    const error = new RepositoryError(`Cart with id ${id} not found`);
     this.findByuserId.mockResolvedValue(Result.failure(error));
     this.findById.mockResolvedValue(Result.failure(error));
     this.findByIdForUpdate.mockResolvedValue(Result.failure(error));
@@ -43,7 +43,9 @@ export class MockCartRepository implements CartRepository {
     if (cart) {
       this.save.mockResolvedValue(Result.success(cart));
     } else {
-      this.save.mockImplementation(async (c: Cart) => Result.success(c));
+      this.save.mockImplementation((c: Cart) =>
+        Promise.resolve(Result.success(c)),
+      );
     }
   }
 

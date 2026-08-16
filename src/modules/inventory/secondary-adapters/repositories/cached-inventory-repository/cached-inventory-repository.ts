@@ -189,8 +189,6 @@ export class CachedInventoryRepository implements InventoryRepository {
     query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
-      const { threshold = 10, page = 1, limit = 20 } = query;
-
       const dbResult = await this.postgresRepo.findLowStock(query);
       if (dbResult.isFailure) return dbResult;
 

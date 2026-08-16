@@ -10,20 +10,18 @@ import {
 
 @Injectable()
 export class CartOwnershipValidator {
-  async validate(
+  validate(
     cart: Cart,
     callerContext: CallerContext | null,
-  ): Promise<Result<void, UseCaseError>> {
+  ): Result<void, UseCaseError> {
     if (isSystemCaller(callerContext)) {
       return Result.success(undefined);
     }
 
-    // Admin bypass: allow if the caller has manage_carts permission
     if (callerContext?.permissions.has('manage_carts')) {
       return Result.success(undefined);
     }
 
-    // User cart -> match userId and verify caller has manage_own_cart permission
     if (
       !callerContext ||
       !callerContext.permissions.has('manage_own_cart') ||

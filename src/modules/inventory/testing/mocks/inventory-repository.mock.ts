@@ -119,7 +119,9 @@ export class MockInventoryRepository implements InventoryRepository {
     if (inventory) {
       this.save.mockResolvedValue(Result.success(inventory));
     } else {
-      this.save.mockImplementation(async (i: Inventory) => Result.success(i));
+      this.save.mockImplementation((i: Inventory) =>
+        Promise.resolve(Result.success(i)),
+      );
     }
   }
 

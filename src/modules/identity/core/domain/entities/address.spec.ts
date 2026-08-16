@@ -1,6 +1,5 @@
 import { Address } from './address';
 import { AddressTestFactory } from 'src/modules/identity/testing';
-import { AddressType } from '../../../../../shared-kernel/domain/value-objects/address-type';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 

@@ -2,15 +2,8 @@ import { EnvConfigService } from '../../config/env-config.service';
 import { IAppConfig, AppConfigKey } from '../../config/configuration';
 import { Injectable } from '@nestjs/common';
 
-@Injectable()
-export class MockEnvConfigService extends EnvConfigService {
-  constructor() {
-    super({
-      get: jest.fn((key: string) => (this as any).mockConfig[key]),
-    } as any);
-  }
-
-  private mockConfig: IAppConfig = {
+function createDefaultMockConfig(): IAppConfig {
+  return {
     jwt: {
       refreshTokenTtl: '7d',
       accessTokenTtl: '1h',
@@ -53,9 +46,22 @@ export class MockEnvConfigService extends EnvConfigService {
       exporterEndpoint: 'http://localhost:4317',
     },
   };
+}
+
+@Injectable()
+export class MockEnvConfigService extends EnvConfigService {
+  private readonly configState: IAppConfig;
+
+  constructor() {
+    const configState = createDefaultMockConfig();
+    super({
+      get: (key) => configState[key],
+    });
+    this.configState = configState;
+  }
 
   override get<T extends AppConfigKey>(key: T): IAppConfig[T] {
-    const value = this.mockConfig[key];
+    const value = this.configState[key];
     if (value === undefined || value === null) {
       throw new Error(`${key} is not defined in mock config`);
     }
@@ -63,50 +69,50 @@ export class MockEnvConfigService extends EnvConfigService {
   }
 
   override get jwt() {
-    return this.mockConfig.jwt;
+    return this.configState.jwt;
   }
 
   override get node() {
-    return this.mockConfig.node;
+    return this.configState.node;
   }
 
   override get redis() {
-    return this.mockConfig.redis;
+    return this.configState.redis;
   }
 
   override get postgres() {
-    return this.mockConfig.postgres;
+    return this.configState.postgres;
   }
 
   override get logLevel() {
-    return this.mockConfig.logging.level;
+    return this.configState.logging.level;
   }
 
   override get logDir() {
-    return this.mockConfig.logging.dir;
+    return this.configState.logging.dir;
   }
 
   override get logTransport() {
-    return this.mockConfig.logging.transport;
+    return this.configState.logging.transport;
   }
 
   override get cors() {
-    return this.mockConfig.cors;
+    return this.configState.cors;
   }
 
   override get throttle() {
-    return this.mockConfig.throttle;
+    return this.configState.throttle;
   }
 
   override get metricsApiKey() {
-    return this.mockConfig.metricsApiKey;
+    return this.configState.metricsApiKey;
   }
 
   override get otel() {
-    return this.mockConfig.otel;
+    return this.configState.otel;
   }
 
   setMockConfig(config: Partial<IAppConfig>) {
-    this.mockConfig = { ...this.mockConfig, ...config };
+    Object.assign(this.configState, config);
   }
 }

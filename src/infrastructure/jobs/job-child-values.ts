@@ -1,11 +1,9 @@
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+
 export function firstChildValue(
   childrenValues: Record<string, unknown>,
 ): unknown {
   return Object.values(childrenValues)[0];
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 export function readNumberProperty(

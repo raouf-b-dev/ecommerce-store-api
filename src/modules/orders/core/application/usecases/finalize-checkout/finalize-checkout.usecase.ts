@@ -19,9 +19,7 @@ export class FinalizeCheckoutUseCase implements UseCase<
 
   constructor(private readonly domainEventPublisher: DomainEventPublisher) {}
 
-  async execute(
-    input: FinalizeCheckoutInput,
-  ): Promise<Result<void, UseCaseError>> {
+  execute(input: FinalizeCheckoutInput): Promise<Result<void, UseCaseError>> {
     const { flowId, orderId } = input;
 
     this.logger.log(`Checkout flow ${flowId} completed. Order: ${orderId}`);
@@ -31,6 +29,6 @@ export class FinalizeCheckoutUseCase implements UseCase<
       orderId,
     });
 
-    return Result.success(undefined);
+    return Promise.resolve(Result.success(undefined));
   }
 }
