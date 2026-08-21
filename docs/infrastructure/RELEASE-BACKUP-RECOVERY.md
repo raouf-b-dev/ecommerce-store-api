@@ -2,7 +2,7 @@
 
 Operational runbook for single-instance production of the E-Commerce Store API: backups, releases, rollback, smoke probes, and restore drills.
 
-Companion docs: [REDIS.md](REDIS.md) (readiness vs Redis), [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md) (CI smoke), [DEPLOYMENT-STRATEGIES.md](cicd/deployment/DEPLOYMENT-STRATEGIES.md) (blue-green/canary theory).
+Companion docs: [REDIS.md](REDIS.md) (readiness vs Redis), [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md) (CI smoke), [DEPLOYMENT-STRATEGIES.md](cicd/deployment/DEPLOYMENT-STRATEGIES.md) (blue-green/canary theory), [SECRET-ROTATION.md](../security/SECRET-ROTATION.md) (credential rotation; re-run smoke after rotating).
 
 ---
 

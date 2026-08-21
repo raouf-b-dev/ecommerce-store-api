@@ -115,7 +115,8 @@ Canonical technical reference documents, organised by layer and category.
 
 ### Security
 
-- [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md) — Secrets lifecycle, rotation, and environment variable management.
+- [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md) — Secrets lifecycle, injection patterns, and environment variable management.
+- [SECRET-ROTATION.md](security/SECRET-ROTATION.md) — Production secret rotation runbook (JWT, DB, Redis, metrics, third-party).
 - [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md) — Technical reference for JSON Web Tokens, RSA cryptography, and JWKS.
 - [ADMIN-BOOTSTRAP.md](security/ADMIN-BOOTSTRAP.md) — Secure super-admin bootstrap strategy with forced credential rotation.
 
