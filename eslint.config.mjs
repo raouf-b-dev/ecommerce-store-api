@@ -109,6 +109,7 @@ export default tseslint.config(
       '@typescript-eslint/prefer-readonly': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
     },
   },
   {
