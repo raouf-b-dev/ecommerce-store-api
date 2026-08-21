@@ -56,8 +56,8 @@ This ADR records **why**. Operational detail lives in [REDIS.md](../../infrastru
 
 ### Decision 5: Slim Redis layering + shared connection options
 
-- **Decision**: `RedisService` owns connection lifecycle and typed client ops; `CachePort` lives in shared-kernel as the driven port; `CacheService` implements it. Availability is `CachePort.isAvailable()` (not raw `RedisService` injected into callers such as idempotency). Remove thin pass-through JSON/Key/Search clients. Centralize host/port/password/db/reconnect in `redis-connection.options.ts`. Separate TCP clients may remain (library constraints) but must share that factory. Prefer atomic JSON write + TTL via `MULTI` where the typed client lacks `JSON.SET EX`.
-- **Rationale**: Fewer wrappers, one fail-open boundary, hexagonal dependency rule (adapters depend on ports, not Redis connection details), one place to change connection policy.
+- **Decision**: `RedisService` owns connection lifecycle and typed client ops; `CachePort` (KV + RediSearch `search`) lives in shared-kernel; `CacheService` implements it and must not be merged into `RedisService`. Availability is `CachePort.isAvailable()`. Callers read with a type parameter (`get<T>` / `search<T>`); `*CacheMapper` maps `*ForCache` wire DTOs (epoch-ms dates) to domain entities (`fromCache` returns `null` on invalid payloads → miss → Postgres). Remove thin pass-through JSON/Key/Search clients. Centralize host/port/password/db/reconnect in `redis-connection.options.ts`. Separate TCP clients may remain (library constraints) but must share that factory — see the client inventory in [REDIS.md](../../infrastructure/REDIS.md). BullMQ callers inject `BULLMQ_CONNECTION_OPTIONS`. Prefer atomic JSON write + TTL via `MULTI` where the typed client lacks `JSON.SET EX`.
+- **Rationale**: Fewer wrappers, one fail-open boundary, hexagonal dependency rule (adapters depend on ports, not Redis connection details), one place to change connection policy. Multiple sockets are an ops surface, not unfinished work (Alternative 5).
 
 ---
 
@@ -98,5 +98,6 @@ This ADR records **why**. Operational detail lives in [REDIS.md](../../infrastru
 
 ### Follow-through (not part of the decision)
 
-- Implementation: `src/infrastructure/redis/`, idempotency interceptor, module DI bindings, [REDIS.md](../../infrastructure/REDIS.md), Phase 14 checklist in [ROADMAP.md](../../ROADMAP.md).
+- Implementation: `src/infrastructure/redis/`, `CachePort` in shared-kernel, mapper codecs, idempotency interceptor, `BULLMQ_CONNECTION_OPTIONS`, module DI bindings, [REDIS.md](../../infrastructure/REDIS.md), Redis polish checklist in [ROADMAP.md](../../ROADMAP.md).
+- Chaos proof: `npm run test:redis:chaos` (Redis Stack Testcontainers restart under load).
 - Out of scope: Redis Cluster/Sentinel, merging client libraries onto one socket, Phase 15 search reconciliation.

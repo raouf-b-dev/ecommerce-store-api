@@ -17,6 +17,19 @@ How this API uses Redis across concerns, how keys are namespaced, and what happe
 
 PostgreSQL is the source of truth for domain aggregates. Redis is optional for readiness: `/health/readiness` requires Postgres only; Redis status is reported on `/health` and metrics.
 
+## Client inventory
+
+Separate TCP sockets are **intentional** (ADR-0006 Decision 5 / Alternative 5). Libraries and modes cannot share one connection safely.
+
+| Role                                                 | Library                         | Typical sockets                           | Why separate                                                                                            |
+| ---------------------------------------------------- | ------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Cache / RedisJSON / RediSearch / idempotency         | `node-redis` via `RedisService` | 1                                         | Command client; owns generation + typed JSON/FT ops                                                     |
+| Socket.IO adapter                                    | `node-redis`                    | 2 (pub + dedicated sub via `duplicate()`) | Subscriber mode cannot share the cache command client                                                   |
+| Rate limiting                                        | `ioredis`                       | 1                                         | Fail-fast retries (`enableOfflineQueue: false`); conflicts with BullMQ worker settings                  |
+| BullMQ queues / workers / FlowProducer / QueueEvents | BullMQ → `ioredis`              | N (one per Queue/Worker/Events/Flow)      | Blocking ops + `maxRetriesPerRequest: null` for workers; options shared via `BULLMQ_CONNECTION_OPTIONS` |
+
+All paths build host/port/password/db/reconnect from [`redis-connection.options.ts`](../../src/infrastructure/redis/redis-connection.options.ts).
+
 ## Architecture
 
 ```
@@ -26,11 +39,11 @@ IdempotencyService ──────────────────┘
                                RedisService (connection + typed client)
 ```
 
-- **`CachePort` lives in shared-kernel** (driven port). `CacheService` is the Redis adapter; readiness is exposed as `CachePort.isAvailable()` so adapters like idempotency never inject `RedisService`.
+- **`CachePort` lives in shared-kernel** (driven port for KV + RediSearch). Methods: `get`/`getMany`/`set`/`setAll`/`delete`/`search`. Callers pass a type parameter (`get<ProductForCache>`, `search<OrderForCache>`); `*CacheMapper.fromCache` maps the wire DTO to the domain entity (corrupt / invalid payload → `null` → treat as miss → Postgres). Wire dates are epoch milliseconds. `CacheService` is the Redis adapter; readiness is `CachePort.isAvailable()` so adapters like idempotency never inject `RedisService`. Do **not** merge `CacheService` into `RedisService` — that would put the port implementation inside the vendor client.
 - **One fail-open boundary for cache**: `CacheService` / `RedisService` command helpers return null/false/[] on outage. Cached repositories treat that as a miss and use Postgres.
 - **Idempotency is fail-closed**: if the cache is unavailable (`!isAvailable()` / set fails) or cannot persist the completed body, checkout returns **503** so clients retry safely.
 - **No health-aware DI Proxy**: modules bind `*Repository` to the cached implementation directly.
-- **Shared connection options**: [`redis-connection.options.ts`](../../src/infrastructure/redis/redis-connection.options.ts) builds host/port/password/db/reconnect for `node-redis` and `ioredis`. Separate TCP clients remain (library constraints); settings are not duplicated ad hoc.
+- **Shared connection options**: factory above; separate TCP clients remain (see client inventory).
 
 ## Cache generation invalidation
 
@@ -58,7 +71,17 @@ Versioned namespaces (domain `*_cache`, `*_index`, `*_list:isCached`) are stored
 
 ## Atomic JSON + TTL
 
-`jsonSet` / `jsonMerge` with a TTL use a Redis `MULTI` so set/merge and `EXPIRE` commit together. Typed `JSON.SET` in node-redis does not expose `EX`, so MULTI is the atomic path.
+`jsonSet` with a TTL uses a Redis `MULTI` so set and `EXPIRE` commit together. Typed `JSON.SET` in node-redis does not expose `EX`, so MULTI is the atomic path.
+
+## Chaos / reconnect proof
+
+Redis Stack Testcontainers suite (separate from Postgres integration):
+
+```bash
+npm run test:redis:chaos
+```
+
+Requires Docker. Harness: `test/integration/redis/`. Spec kills Redis clients under `CachePort` traffic (`CLIENT KILL`) to force reconnect, asserts fail-open during the outage, then checks generation bump, list-flag clear, and stable idempotency keys.
 
 ## Related docs
 
