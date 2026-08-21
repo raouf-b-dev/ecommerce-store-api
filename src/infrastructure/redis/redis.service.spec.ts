@@ -61,6 +61,10 @@ describe('RedisService', () => {
       );
       expect(mockClient.on).toHaveBeenCalledWith('error', expect.any(Function));
       expect(mockClient.on).toHaveBeenCalledWith('ready', expect.any(Function));
+      expect(mockClient.on).toHaveBeenCalledWith(
+        'reconnecting',
+        expect.any(Function),
+      );
       expect(mockClient.on).toHaveBeenCalledWith('end', expect.any(Function));
       expect(mockClient.connect).toHaveBeenCalled();
       expect(mockClient.incr).toHaveBeenCalledWith(
