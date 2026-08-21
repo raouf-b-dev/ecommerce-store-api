@@ -1,9 +1,10 @@
-// src/core/infrastructure/redis/redis.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
+import { createClient } from 'redis';
 import { RedisService } from './redis.service';
 import { EnvConfigService } from '../../config/env-config.service';
-import { createClient } from 'redis';
-import { Logger } from '@nestjs/common';
+import { MockEnvConfigService, MockLogger } from '../../testing';
+import { MockRedisNodeClient, RedisIndexTestFactory } from './testing';
 
 jest.mock('redis', () => ({
   createClient: jest.fn(),
@@ -11,51 +12,33 @@ jest.mock('redis', () => ({
 
 describe('RedisService', () => {
   let service: RedisService;
-  let mockClient: any;
-  let mockEnvConfig: any;
-  let logger: jest.Mocked<Logger>;
+  let mockClient: MockRedisNodeClient;
+  let envConfig: MockEnvConfigService;
+  let logger: MockLogger;
 
   beforeEach(async () => {
-    const mockLogger = {
-      log: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn(),
-      verbose: jest.fn(),
-    };
-
-    mockClient = {
-      connect: jest.fn().mockResolvedValue(undefined),
-      quit: jest.fn(),
-      on: jest.fn(),
-      isReady: true,
-      json: {
-        get: jest.fn(),
-      },
-    };
-
+    mockClient = new MockRedisNodeClient();
     (createClient as jest.Mock).mockReturnValue(mockClient);
 
-    mockEnvConfig = {
+    envConfig = new MockEnvConfigService();
+    envConfig.setMockConfig({
       redis: {
-        host: 'localhost',
-        port: 6379,
+        ...envConfig.redis,
         password: 'testpass',
-        db: 0,
-        key_prefix: 'test:',
       },
-    };
+    });
+
+    logger = new MockLogger();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisService,
-        { provide: EnvConfigService, useValue: mockEnvConfig },
-        { provide: Logger, useValue: mockLogger },
+        { provide: EnvConfigService, useValue: envConfig },
+        { provide: Logger, useValue: logger },
       ],
     }).compile();
 
-    service = module.get<RedisService>(RedisService);
-    logger = module.get(Logger);
+    service = module.get(RedisService);
   });
 
   afterEach(() => {
@@ -81,7 +64,7 @@ describe('RedisService', () => {
     });
 
     it('should continue boot when connect fails', async () => {
-      mockClient.connect.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+      mockClient.mockConnectFailure();
 
       await service.onModuleInit();
 
@@ -99,6 +82,47 @@ describe('RedisService', () => {
       (service as any).connected = false;
 
       await expect(service.jsonGet('key')).resolves.toBeNull();
+    });
+  });
+
+  describe('createIndex', () => {
+    const schema = RedisIndexTestFactory.createMinimalTextSchema();
+
+    beforeEach(async () => {
+      await service.onModuleInit();
+    });
+
+    it('skips create when index already exists', async () => {
+      mockClient.ft.mockIndexExists();
+
+      await expect(
+        service.createIndex('order_index', schema, 'order:'),
+      ).resolves.toBe(false);
+
+      expect(mockClient.ft.create).not.toHaveBeenCalled();
+    });
+
+    it('creates index when missing', async () => {
+      mockClient.ft.mockIndexMissing();
+
+      await expect(
+        service.createIndex('order_index', schema, 'order:'),
+      ).resolves.toBe(true);
+
+      expect(mockClient.ft.create).toHaveBeenCalledWith(
+        'test:order_index',
+        schema,
+        { ON: 'JSON', PREFIX: ['test:order:'] },
+      );
+    });
+
+    it('returns false on concurrent already-exists race', async () => {
+      mockClient.ft.mockIndexMissing();
+      mockClient.ft.mockCreateAlreadyExists();
+
+      await expect(
+        service.createIndex('order_index', schema, 'order:'),
+      ).resolves.toBe(false);
     });
   });
 

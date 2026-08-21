@@ -1,31 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisSearchClient } from './redis-search.client';
 import { RedisService } from '../redis.service';
+import { MockRedisService } from '../testing';
 
 describe('RedisSearchClient', () => {
   let service: RedisSearchClient;
-  let redisService: jest.Mocked<RedisService>;
+  let redisService: MockRedisService;
 
   beforeEach(async () => {
+    redisService = new MockRedisService();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisSearchClient,
-        {
-          provide: RedisService,
-          useValue: {
-            search: jest.fn(),
-            createIndex: jest.fn(),
-          },
-        },
+        { provide: RedisService, useValue: redisService },
       ],
     }).compile();
 
     service = module.get(RedisSearchClient);
-    redisService = module.get(RedisService);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    redisService.reset();
   });
 
   it('search delegates to redisService.search', async () => {
@@ -41,7 +37,11 @@ describe('RedisSearchClient', () => {
 
   it('createIndex delegates to redisService.createIndex', async () => {
     const schema = { name: { type: 'TEXT' } };
-    await service.createIndex('myIndex', schema, 'myPrefix:');
+    redisService.mockCreateIndexCreated();
+
+    await expect(
+      service.createIndex('myIndex', schema, 'myPrefix:'),
+    ).resolves.toBe(true);
     expect(redisService.createIndex).toHaveBeenCalledWith(
       'myIndex',
       schema,

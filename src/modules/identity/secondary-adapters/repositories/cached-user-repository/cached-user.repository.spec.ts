@@ -13,7 +13,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 
 describe('CachedUserRepository', () => {
   let repository: CachedUserRepository;
@@ -91,20 +91,20 @@ describe('CachedUserRepository', () => {
       expect(postgresRepo.findByEmail).not.toHaveBeenCalled();
       expect(cacheService.getAll).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:{${escapeRedisSearchTextValue(mockUser.email)}}`,
+        tagEquals('email', mockUser.email),
       );
     });
 
-    it('should escape email with special characters', async () => {
+    it('should escape email TAG punctuation including hyphens', async () => {
       cacheService.getAll.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
 
-      const specialEmail = 'test"admin\\special@example.com';
+      const specialEmail = 'e2e-admin"special\\user@example.com';
       await repository.findByEmail(specialEmail);
 
       expect(cacheService.getAll).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:{test\\"admin\\\\special@example.com}`,
+        tagEquals('email', specialEmail),
       );
     });
 
