@@ -5,16 +5,35 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { RedisJSON } from '@redis/json/dist/lib/commands';
-import { createClient, FtSearchOptions } from 'redis';
+import {
+  createClient,
+  FtSearchOptions,
+  RedisClientType,
+  RedisDefaultModules,
+  RedisFunctions,
+  RedisScripts,
+} from 'redis';
 import { EnvConfigService } from '../../config/env-config.service';
 import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
+import {
+  CACHE_GENERATION_META_KEY,
+  isVersionedCacheKey,
+} from './cache-key-space';
+import { buildNodeRedisClientOptions } from './redis-connection.options';
 import { logRedisError } from './redis-error.utils';
+
+export type AppRedisClient = RedisClientType<
+  RedisDefaultModules,
+  RedisFunctions,
+  RedisScripts
+>;
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnApplicationShutdown {
-  public client: any;
+  public client: AppRedisClient | null = null;
   private connected = false;
   private wasConnected = false;
+  private cacheGeneration = 0;
   private reconnectListeners: Array<() => void | Promise<void>> = [];
 
   constructor(
@@ -23,14 +42,9 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   ) {}
 
   async onModuleInit() {
-    this.client = createClient({
-      url: `redis://${this.envConfigService.redis.host}:${this.envConfigService.redis.port}`,
-      password: this.envConfigService.redis.password,
-      database: this.envConfigService.redis.db,
-      socket: {
-        reconnectStrategy: (retries) => Math.min(retries * 500, 10_000),
-      },
-    });
+    this.client = createClient(
+      buildNodeRedisClientOptions(this.envConfigService.redis),
+    ) as AppRedisClient;
 
     this.client.on('error', (err: unknown) =>
       logRedisError(this.logger, 'Redis client', err),
@@ -58,6 +72,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       await this.client.connect();
       this.connected = true;
       this.wasConnected = true;
+      await this.bumpCacheGeneration();
     } catch (err) {
       this.logger.warn(
         `Redis unavailable at startup — app continues without cache: ${toErrorMessage(err)}`,
@@ -84,7 +99,36 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   public isReady(): boolean {
-    return this.connected && this.client?.isReady;
+    return this.connected && !!this.client?.isReady;
+  }
+
+  public getCacheGeneration(): number {
+    return this.cacheGeneration;
+  }
+
+  /**
+   * Bumps the Redis-persisted cache generation so versioned keys move to a new
+   * namespace. Old keys expire via TTL. Used on startup and reconnect recovery.
+   */
+  async bumpCacheGeneration(): Promise<number> {
+    if (!this.isReady() || !this.client) {
+      this.cacheGeneration += 1;
+      this.logger.log(
+        `Cache generation bumped locally to ${this.cacheGeneration} (Redis not ready)`,
+      );
+      return this.cacheGeneration;
+    }
+
+    try {
+      const metaKey = this.getStableFullKey(CACHE_GENERATION_META_KEY);
+      this.cacheGeneration = await this.client.incr(metaKey);
+      this.logger.log(`Cache generation bumped to ${this.cacheGeneration}`);
+      return this.cacheGeneration;
+    } catch (error) {
+      logRedisError(this.logger, 'RedisService.bumpCacheGeneration', error);
+      this.cacheGeneration += 1;
+      return this.cacheGeneration;
+    }
   }
 
   public onReconnect(listener: () => void | Promise<void>): void {
@@ -111,7 +155,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async del(key: string): Promise<void> {
-    if (!this.isReady()) return;
+    if (!this.isReady() || !this.client) return;
     try {
       await this.client.del(this.getFullKey(key));
     } catch (error) {
@@ -120,7 +164,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async ttl(key: string): Promise<number> {
-    if (!this.isReady()) return -1;
+    if (!this.isReady() || !this.client) return -1;
     try {
       return await this.client.ttl(this.getFullKey(key));
     } catch (error) {
@@ -130,7 +174,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async expire(key: string, ttl: number): Promise<number> {
-    if (!this.isReady()) return 0;
+    if (!this.isReady() || !this.client) return 0;
     try {
       return await this.client.expire(this.getFullKey(key), ttl);
     } catch (error) {
@@ -140,7 +184,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async exists(key: string): Promise<number> {
-    if (!this.isReady()) return 0;
+    if (!this.isReady() || !this.client) return 0;
     try {
       return await this.client.exists(this.getFullKey(key));
     } catch (error) {
@@ -149,21 +193,29 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
+  /**
+   * Sets a JSON document. When ttl is set, uses MULTI so set + expire commit atomically.
+   */
   async jsonSet(
     key: string,
     path: string,
     value: RedisJSON,
-    options: { nx?: boolean } = {},
+    options: { nx?: boolean; ttl?: number } = {},
   ): Promise<boolean> {
-    if (!this.isReady()) return false;
+    if (!this.isReady() || !this.client) return false;
     try {
       const fullKey = this.getFullKey(key);
-      const res = await this.client.json.set(
-        fullKey,
-        path,
-        value,
-        options.nx ? { NX: true } : {},
-      );
+      const setOpts = options.nx ? { NX: true as const } : {};
+
+      if (options.ttl && options.ttl > 0) {
+        const multi = this.client.multi();
+        multi.json.set(fullKey, path, value, setOpts);
+        multi.expire(fullKey, options.ttl);
+        const results = await multi.exec();
+        return (results?.[0] as unknown) === 'OK';
+      }
+
+      const res = await this.client.json.set(fullKey, path, value, setOpts);
       return res === 'OK';
     } catch (error) {
       logRedisError(this.logger, `RedisService.jsonSet("${key}")`, error);
@@ -175,19 +227,30 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     key: string,
     path: string,
     partial: RedisJSON,
+    options: { ttl?: number } = {},
   ): Promise<void> {
-    if (!this.isReady()) return;
+    if (!this.isReady() || !this.client) return;
     try {
-      await this.client.json.merge(this.getFullKey(key), path, partial);
+      const fullKey = this.getFullKey(key);
+      if (options.ttl && options.ttl > 0) {
+        const multi = this.client.multi();
+        multi.json.merge(fullKey, path, partial);
+        multi.expire(fullKey, options.ttl);
+        await multi.exec();
+        return;
+      }
+      await this.client.json.merge(fullKey, path, partial);
     } catch (error) {
       logRedisError(this.logger, `RedisService.jsonMerge("${key}")`, error);
     }
   }
 
   async jsonGet(key: string, path?: string): Promise<RedisJSON | null> {
-    if (!this.isReady()) return null;
+    if (!this.isReady() || !this.client) return null;
     try {
-      const res = await this.client.json.get(this.getFullKey(key), { path });
+      const res = await this.client.json.get(this.getFullKey(key), {
+        path,
+      });
       return res ?? null;
     } catch (error) {
       logRedisError(this.logger, `RedisService.jsonGet("${key}")`, error);
@@ -200,11 +263,11 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     path: string = '$',
   ): Promise<(RedisJSON | null)[]> {
     if (keys.length === 0) return [];
-    if (!this.isReady()) return keys.map(() => null);
+    if (!this.isReady() || !this.client) return keys.map(() => null);
     try {
       const fullKeys = keys.map((k) => this.getFullKey(k));
       const results = await this.client.json.mGet(fullKeys, path);
-      return (results || []) as (RedisJSON | null)[];
+      return results || [];
     } catch (error) {
       logRedisError(this.logger, 'RedisService.jsonMGet', error);
       return keys.map(() => null);
@@ -212,9 +275,12 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async jsonDel(key: string, path?: string): Promise<void> {
-    if (!this.isReady()) return;
+    if (!this.isReady() || !this.client) return;
     try {
-      await this.client.json.del(this.getFullKey(key), path);
+      await this.client.json.del(
+        this.getFullKey(key),
+        path !== undefined ? { path } : undefined,
+      );
     } catch (error) {
       logRedisError(this.logger, `RedisService.jsonDel("${key}")`, error);
     }
@@ -224,8 +290,8 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     index: string,
     query: string,
     options?: FtSearchOptions,
-  ): Promise<{ total: number; documents: any[] }> {
-    if (!this.isReady()) return { total: 0, documents: [] };
+  ): Promise<{ total: number; documents: unknown[] }> {
+    if (!this.isReady() || !this.client) return { total: 0, documents: [] };
     try {
       const fullIndex = this.getFullKey(index);
       return await this.client.ft.search(fullIndex, query, options);
@@ -243,21 +309,20 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   }
 
   async scanKeys(pattern: string, count = 100): Promise<string[]> {
-    if (!this.isReady()) return [];
+    if (!this.isReady() || !this.client) return [];
     try {
       const fullPattern = this.getFullKey(pattern);
       const found: string[] = [];
-      let cursor: string = '0';
+      let cursor = '0';
 
       do {
-        const result = await this.client.scan(cursor.toString(), {
+        const result = await this.client.scan(cursor, {
           MATCH: fullPattern,
           COUNT: count,
         });
 
-        const cursorResult = result as { cursor: string; keys: string[] };
-        const keys = cursorResult.keys.map((key) => this.removePrefix(key));
-        cursor = cursorResult.cursor;
+        const keys = result.keys.map((key) => this.removePrefix(key));
+        cursor = result.cursor;
         found.push(...keys);
       } while (cursor !== '0');
 
@@ -273,7 +338,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
    * Unknown-index replies are treated as absence; other errors are logged and rethrown.
    */
   async indexExists(index: string): Promise<boolean> {
-    if (!this.isReady()) return false;
+    if (!this.isReady() || !this.client) return false;
     try {
       await this.client.ft.info(this.getFullKey(index));
       return true;
@@ -293,10 +358,11 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
    */
   async createIndex(
     index: string,
-    schema: any,
+    // Schemas are defined with string `type` literals in redis.schemas.ts
+    schema: Record<string, unknown>,
     prefix: string,
   ): Promise<boolean> {
-    if (!this.isReady()) return false;
+    if (!this.isReady() || !this.client) return false;
 
     if (await this.indexExists(index)) {
       return false;
@@ -305,13 +371,16 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     try {
       const fullIndex = this.getFullKey(index);
       const fullPrefix = this.getFullKey(prefix);
-      await this.client.ft.create(fullIndex, schema, {
-        ON: 'JSON',
-        PREFIX: [fullPrefix],
-      });
+      await this.client.ft.create(
+        fullIndex,
+        schema as Parameters<AppRedisClient['ft']['create']>[1],
+        {
+          ON: 'JSON',
+          PREFIX: [fullPrefix],
+        },
+      );
       return true;
     } catch (error) {
-      // Concurrent create race — treat as already present.
       if (toErrorMessage(error).includes('Index already exists')) {
         return false;
       }
@@ -324,13 +393,28 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     return this.isReady() && this.client ? this.client.multi() : null;
   }
 
+  /** Env key prefix only — used for meta keys that must not rotate with cache generation. */
+  public getStableFullKey(key: string): string {
+    return `${this.envConfigService.redis.key_prefix}${key}`;
+  }
+
   public getFullKey(key: string): string {
-    const prefix = this.envConfigService.redis.key_prefix;
-    return `${prefix}${key}`;
+    const envPrefix = this.envConfigService.redis.key_prefix;
+    if (isVersionedCacheKey(key)) {
+      return `${envPrefix}c${this.cacheGeneration}:${key}`;
+    }
+    return `${envPrefix}${key}`;
   }
 
   public removePrefix(fullKey: string): string {
-    const prefix = this.envConfigService.redis.key_prefix;
-    return fullKey.startsWith(prefix) ? fullKey.slice(prefix.length) : fullKey;
+    const envPrefix = this.envConfigService.redis.key_prefix;
+    let rest = fullKey.startsWith(envPrefix)
+      ? fullKey.slice(envPrefix.length)
+      : fullKey;
+    const generationMatch = /^c\d+:/.exec(rest);
+    if (generationMatch) {
+      rest = rest.slice(generationMatch[0].length);
+    }
+    return rest;
   }
 }
