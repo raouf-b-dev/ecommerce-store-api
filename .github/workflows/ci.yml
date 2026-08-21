@@ -393,6 +393,243 @@ jobs:
         if: always()
         run: rm -f .env.test || true
 
+  restore-drill:
+    name: Restore Drill
+    runs-on: ubuntu-latest
+    needs: [typecheck, unit-tests]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    services:
+      postgres:
+        image: postgres:18.4
+        ports: ['5432:5432']
+        env:
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+        options: >-
+          --health-cmd="pg_isready -q"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USERNAME: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+      DB_DATABASE: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          set -euo pipefail
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U "$DB_USERNAME" -d "$DB_DATABASE"; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL never became ready"
+          exit 1
+
+      - name: Write .env.test for TypeORM CLI
+        env:
+          CI_JWT_PRIVATE_KEY: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            let jwt = process.env.CI_JWT_PRIVATE_KEY || "";
+            if (!jwt) {
+              console.error("CI_JWT_PRIVATE_KEY is required for schema:sync via data-source.ts");
+              process.exit(1);
+            }
+            if (!jwt.includes("BEGIN PRIVATE KEY") && !jwt.includes("BEGIN RSA PRIVATE KEY")) {
+              jwt = Buffer.from(jwt, "base64").toString("utf8");
+            }
+            const jwtEscaped = `"${jwt.replace(/\r?\n/g, "\\n")}"`;
+            const lines = [
+              "NODE_ENV=test",
+              "PORT=3000",
+              `DB_HOST=${JSON.stringify(process.env.DB_HOST || "localhost")}`,
+              `DB_PORT=${JSON.stringify(process.env.DB_PORT || "5432")}`,
+              `DB_USERNAME=${JSON.stringify(process.env.DB_USERNAME)}`,
+              `DB_PASSWORD=${JSON.stringify(process.env.DB_PASSWORD)}`,
+              `DB_DATABASE=${JSON.stringify(process.env.DB_DATABASE)}`,
+              `REDIS_HOST=${JSON.stringify("localhost")}`,
+              `REDIS_PORT=${JSON.stringify("6379")}`,
+              `REDIS_PASSWORD=${JSON.stringify("")}`,
+              `REDIS_KEYPREFIX=${JSON.stringify("ecom:restore-drill:")}`,
+              `REDIS_DB=${JSON.stringify("0")}`,
+              `JWT_PRIVATE_KEY=${jwtEscaped}`,
+              `JWT_ACCESS_TOKEN_TTL=${JSON.stringify("15m")}`,
+              `JWT_REFRESH_TOKEN_TTL=${JSON.stringify("7d")}`,
+              `METRICS_API_KEY=${JSON.stringify("restore-drill-ci")}`,
+            ];
+            fs.writeFileSync(".env.test", lines.join("\n") + "\n");
+            console.log(".env.test written for restore-drill");
+          '
+
+      - name: Run DB migrations (test)
+        run: npm run migration:run:test
+
+      - name: Sync schema from entities (temporary until baseline migration)
+        run: npm run typeorm -- -d ./data-source.ts schema:sync
+
+      - name: Run restore drill
+        run: npm run db:restore:drill
+
+      - name: Cleanup .env.test
+        if: always()
+        run: rm -f .env.test || true
+
+  restore-drill-smoke:
+    name: Restore Drill Smoke
+    runs-on: ubuntu-latest
+    needs: [typecheck, unit-tests, build]
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master'
+
+    services:
+      postgres:
+        image: postgres:18.4
+        ports: ['5432:5432']
+        env:
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+        options: >-
+          --health-cmd="pg_isready -q"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis/redis-stack:7.2.0-v18
+        ports: ['6379:6379', '8001:8001']
+        env:
+          REDIS_ARGS: ${{ secrets.CI_REDIS_PASSWORD && format('--requirepass {0}', secrets.CI_REDIS_PASSWORD) || '' }}
+
+    env:
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-app
+          path: dist/
+
+      - name: Verify downloaded artifact
+        run: |
+          test -f dist/src/main.js
+          echo "dist/src/main.js exists"
+
+      - name: Prepare test environment
+        uses: ./.github/actions/prepare-test-env
+        with:
+          db-username: ${{ secrets.CI_DB_USERNAME }}
+          db-password: ${{ secrets.CI_DB_PASSWORD }}
+          db-database: ${{ secrets.CI_DB_DATABASE }}
+          redis-password: ${{ secrets.CI_REDIS_PASSWORD }}
+          redis-keyprefix: ${{ secrets.CI_REDIS_KEYPREFIX }}
+          jwt-private-key: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+          metrics-api-key: ${{ secrets.CI_METRICS_API_KEY }}
+
+      - name: Run DB migrations (test)
+        run: npm run migration:run:test
+
+      - name: Sync schema from entities (temporary until baseline migration)
+        run: npm run typeorm -- -d ./data-source.ts schema:sync
+
+      - name: Run restore drill (keep dump)
+        run: node scripts/db-restore-drill.js --yes --keep-dump
+
+      - name: Point app at restored drill database
+        run: |
+          set -euo pipefail
+          if grep -q '^DB_DATABASE=' .env.test; then
+            sed -i 's/^DB_DATABASE=.*/DB_DATABASE="ecommerce_restore_drill"/' .env.test
+          else
+            echo 'DB_DATABASE="ecommerce_restore_drill"' >> .env.test
+          fi
+          echo "DB_DATABASE for smoke:"
+          grep '^DB_DATABASE=' .env.test
+
+      - name: Start app and run smoke against restored DB
+        run: |
+          set -euo pipefail
+
+          PORT=3000 npm run start:test &
+          APP_PID=$!
+
+          ready=false
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/health/readiness | grep -q '"status":"ok"'; then
+              echo "App ready at http://localhost:3000"
+              ready=true
+              break
+            fi
+            echo "Waiting for app readiness... ($i/30)"
+            sleep 1
+          done
+
+          if [ "$ready" != true ]; then
+            echo "Application failed to become ready against restored DB"
+            kill -SIGTERM $APP_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          PORT=3000 npm run smoke-test -- --base-url=http://localhost:3000
+          kill -SIGTERM $APP_PID || true
+        env:
+          METRICS_API_KEY: ${{ secrets.CI_METRICS_API_KEY }}
+          DB_DATABASE: ecommerce_restore_drill
+
+      - name: Cleanup .env.test and drill dump
+        if: always()
+        run: |
+          rm -f .env.test || true
+          rm -f backups/restore-drill_*.dump || true
+
   ci:
     name: CI Status Check
     runs-on: ubuntu-latest
@@ -407,6 +644,8 @@ jobs:
         integration-tests,
         e2e-tests,
         smoke-test,
+        restore-drill,
+        restore-drill-smoke,
       ]
     if: always()
     steps:
@@ -421,6 +660,8 @@ jobs:
           integration_status="${{ needs.integration-tests.result }}"
           e2e_status="${{ needs.e2e-tests.result }}"
           smoke_status="${{ needs.smoke-test.result }}"
+          restore_drill_status="${{ needs.restore-drill.result }}"
+          restore_drill_smoke_status="${{ needs.restore-drill-smoke.result }}"
 
           echo "lint: $lint_status"
           echo "typecheck: $typecheck_status"
@@ -431,6 +672,8 @@ jobs:
           echo "integration-tests: $integration_status"
           echo "e2e-tests: $e2e_status"
           echo "smoke-test: $smoke_status"
+          echo "restore-drill: $restore_drill_status"
+          echo "restore-drill-smoke: $restore_drill_smoke_status"
 
           for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$audit_status" "$build_status"; do
             if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
@@ -439,12 +682,18 @@ jobs:
             fi
           done
 
-          for status in "$integration_status" "$e2e_status" "$smoke_status"; do
+          for status in "$integration_status" "$e2e_status" "$smoke_status" "$restore_drill_status"; do
             if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
               echo "One of the test jobs failed or was cancelled."
               exit 1
             fi
           done
+
+          # master-only job: skipped on PRs/tags is OK
+          if [ "$restore_drill_smoke_status" = "failure" ] || [ "$restore_drill_smoke_status" = "cancelled" ]; then
+            echo "restore-drill-smoke failed or was cancelled."
+            exit 1
+          fi
 
           echo "All checks passed successfully!"
 
