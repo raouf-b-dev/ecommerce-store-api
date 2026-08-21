@@ -46,10 +46,6 @@ export class MockRedisService {
       (key: string, generation: number) => `test:c${generation}:${key}`,
     );
 
-  scanKeys = jest
-    .fn<Promise<string[]>, [string, number?]>()
-    .mockResolvedValue([]);
-
   createPipeline = jest.fn().mockReturnValue(null);
 
   getFullKey = jest
@@ -79,19 +75,11 @@ export class MockRedisService {
     >()
     .mockResolvedValue(true);
 
-  jsonMerge = jest.fn().mockResolvedValue(undefined);
-
   jsonMGet = jest.fn().mockResolvedValue([]);
 
   jsonDel = jest.fn().mockResolvedValue(undefined);
 
   del = jest.fn<Promise<void>, [string]>().mockResolvedValue(undefined);
-
-  ttl = jest.fn().mockResolvedValue(-1);
-
-  expire = jest.fn().mockResolvedValue(0);
-
-  exists = jest.fn().mockResolvedValue(0);
 
   mockReady(): void {
     this.waitUntilReady.mockResolvedValue(true);
@@ -129,7 +117,6 @@ export class MockRedisService {
     this.mockIndexMissing();
     this.mockCreateIndexCreated();
     this.search.mockResolvedValue({ total: 0, documents: [] });
-    this.scanKeys.mockResolvedValue([]);
     this.createPipeline.mockReturnValue(null);
     this.jsonGet.mockResolvedValue(null);
     this.jsonSet.mockResolvedValue(true);
