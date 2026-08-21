@@ -105,6 +105,8 @@ runs:
             DB_USERNAME: process.env.CI_DB_USERNAME,
             DB_PASSWORD: process.env.CI_DB_PASSWORD,
             DB_DATABASE: process.env.CI_DB_DATABASE,
+            POSTGRES_CONTAINER_NAME: process.env.POSTGRES_CONTAINER_NAME || "postgres-db",
+            POSTGRES_IMAGE: process.env.POSTGRES_IMAGE,
             REDIS_HOST: process.env.REDIS_HOST_DETECTED || "localhost",
             REDIS_PORT: "6379",
             REDIS_PASSWORD: process.env.CI_REDIS_PASSWORD || "",
@@ -142,11 +144,3 @@ runs:
           fs.writeFileSync(".env.test", lines.join("\n") + "\n");
           console.log(".env.test created successfully with strict secret verification.");
         '
-
-        echo "Contents of .env.test (secrets masked):"
-        sed -E 's/(PASSWORD|JWT_PRIVATE_KEY|METRICS_API_KEY)=.*/\1=***/g' .env.test
-
-        echo "DETECTED_DB_HOST=${PG_HOST}" >> "$GITHUB_ENV"
-        echo "DETECTED_REDIS_HOST=${REDIS_HOST_DETECTED}" >> "$GITHUB_ENV"
-        echo "DETECTED_DB_USER=${DB_USER}" >> "$GITHUB_ENV"
-        echo "DETECTED_DB_NAME=${DB_NAME}" >> "$GITHUB_ENV"

@@ -100,7 +100,11 @@ runs:
             jwt = Buffer.from(jwt, "base64").toString("utf8");
           }
           const jwtEscaped = `"${jwt.replace(/\r?\n/g, "\\n")}"`;
-          const lines = [
+            if (!process.env.POSTGRES_IMAGE) {
+              console.error("POSTGRES_IMAGE is required (workflow env / .env.example)");
+              process.exit(1);
+            }
+            const lines = [
             "NODE_ENV=test",
             "PORT=3000",
             `DB_HOST=${JSON.stringify(process.env.CI_DB_HOST || "localhost")}`,
@@ -108,6 +112,8 @@ runs:
             `DB_USERNAME=${JSON.stringify(process.env.CI_DB_USERNAME)}`,
             `DB_PASSWORD=${JSON.stringify(process.env.CI_DB_PASSWORD)}`,
             `DB_DATABASE=${JSON.stringify(process.env.CI_DB_DATABASE)}`,
+            `POSTGRES_CONTAINER_NAME=${JSON.stringify(process.env.POSTGRES_CONTAINER_NAME || "postgres-db")}`,
+            `POSTGRES_IMAGE=${JSON.stringify(process.env.POSTGRES_IMAGE)}`,
             `REDIS_HOST=${JSON.stringify(process.env.CI_REDIS_HOST || "localhost")}`,
             `REDIS_PORT=${JSON.stringify("6379")}`,
             `REDIS_PASSWORD=${JSON.stringify(process.env.CI_REDIS_PASSWORD || "")}`,

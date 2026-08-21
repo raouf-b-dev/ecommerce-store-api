@@ -205,13 +205,15 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### PostgreSQL
 
-| Variable      | Type     | Required | Default | Tier      | Description              |
-| :------------ | :------- | :------- | :------ | :-------- | :----------------------- |
-| `DB_HOST`     | `string` | ✅       | —       | T2        | Database server hostname |
-| `DB_PORT`     | `number` | ✅       | `5432`  | T2        | Database port            |
-| `DB_USERNAME` | `string` | ✅       | —       | T2        | Database role name       |
-| `DB_PASSWORD` | `string` | ✅       | —       | **T1** 🔑 | Database role password   |
-| `DB_DATABASE` | `string` | ✅       | —       | T3        | Database name            |
+| Variable                  | Type     | Required | Default | Tier      | Description                                        |
+| :------------------------ | :------- | :------- | :------ | :-------- | :------------------------------------------------- |
+| `DB_HOST`                 | `string` | ✅       | —       | T2        | Database server hostname                           |
+| `DB_PORT`                 | `number` | ✅       | `5432`  | T2        | Database port                                      |
+| `DB_USERNAME`             | `string` | ✅       | —       | T2        | Database role name                                 |
+| `DB_PASSWORD`             | `string` | ✅       | —       | **T1** 🔑 | Database role password                             |
+| `DB_DATABASE`             | `string` | ✅       | —       | T3        | Database name                                      |
+| `POSTGRES_CONTAINER_NAME` | `string` | ✅       | —       | T3        | Compose / `docker exec` container name             |
+| `POSTGRES_IMAGE`          | `string` | ✅       | —       | T3        | Postgres image tag (Compose + dump/restore client) |
 
 ### Redis
 

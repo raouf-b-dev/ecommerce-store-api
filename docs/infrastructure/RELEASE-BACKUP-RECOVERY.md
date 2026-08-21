@@ -23,16 +23,18 @@ Scripts:
 | [`scripts/db-restore.js`](../../scripts/db-restore.js)             | `db:restore`       | Restore `--from=` or latest dump (`--yes` to skip prompt)                                         |
 | [`scripts/db-restore-drill.js`](../../scripts/db-restore-drill.js) | `db:restore:drill` | Disposable-DB verification (definition of done)                                                   |
 
-Env contract (`DB_*`, not CRM `POSTGRES_*`):
+Env contract (`DB_*`, not CRM `POSTGRES_*` for credentials):
 
 - `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`
-- Optional: `POSTGRES_CONTAINER_NAME` (default `postgres-db` from Compose)
+- `POSTGRES_CONTAINER_NAME`, `POSTGRES_IMAGE` (from `.env.example`; CI resolves these via a `resolve-env` job into service images)
 
 Scripts pick client tools in this order:
 
-1. `docker exec` into container `postgres-db` (local Compose)
-2. `docker run --network host` with image `POSTGRES_IMAGE` (default `postgres:18.4`, same as GHA service) — keeps client major in lockstep with the server
+1. `docker exec` into `POSTGRES_CONTAINER_NAME` when that container is running
+2. `docker run --network host` with `POSTGRES_IMAGE`
 3. Host-installed `pg_dump` / `pg_restore` / `psql` (last resort)
+
+`pg_restore` uses `--exit-on-error` and requires exit code 0 (no soft-fail on exit 1).
 
 Passwords are passed via process env (`PGPASSWORD`), never interpolated into shell command strings. CI readiness checks may use a thin Ubuntu `postgresql-client` for `pg_isready` only.
 
