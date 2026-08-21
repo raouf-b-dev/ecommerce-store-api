@@ -35,17 +35,9 @@ runs:
     - name: Install network and DB clients
       shell: bash
       run: |
-        # postgresql-client-18 must match GHA postgres:18.x (pg_dump rejects major skew).
-        set -euo pipefail
+        # Host postgresql-client is for readiness probes only; dump/restore use docker.
         sudo apt-get update -y
-        sudo apt-get install -y curl ca-certificates gnupg lsb-release netcat-openbsd redis-tools
-        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-          | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-          | sudo tee /etc/apt/sources.list.d/pgdg.list
-        sudo apt-get update -y
-        sudo apt-get install -y postgresql-client-18
-        pg_dump --version
+        sudo apt-get install -y netcat-openbsd redis-tools postgresql-client
 
     - name: Wait for services and create .env.test
       shell: bash
