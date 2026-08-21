@@ -4,11 +4,12 @@ import { MockCacheService } from '../../testing';
 
 describe('IdempotencyService', () => {
   let service: IdempotencyService;
-  let cacheService: MockCacheService;
+  let cache: MockCacheService;
 
   beforeEach(() => {
-    cacheService = new MockCacheService();
-    service = new IdempotencyService(cacheService);
+    cache = new MockCacheService();
+    cache.mockAvailable();
+    service = new IdempotencyService(cache);
   });
 
   afterEach(() => {
@@ -17,12 +18,12 @@ describe('IdempotencyService', () => {
 
   describe('checkAndLock', () => {
     it('should acquire lock atomically when key is new (SET NX succeeds)', async () => {
-      cacheService.set.mockResolvedValue(true);
+      cache.set.mockResolvedValue(true);
 
       const result = await service.checkAndLock('test-key-1');
 
       expect(result).toEqual({ isNew: true });
-      expect(cacheService.set).toHaveBeenCalledWith(
+      expect(cache.set).toHaveBeenCalledWith(
         `${IDEMPOTENCY_REDIS.PREFIX}:test-key-1`,
         { status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS },
         { ttl: IDEMPOTENCY_REDIS.EXPIRATION, nx: true },
@@ -30,23 +31,23 @@ describe('IdempotencyService', () => {
     });
 
     it('should return isNew: false when key already exists and is in-progress', async () => {
-      cacheService.set.mockResolvedValue(false);
-      cacheService.get.mockResolvedValue({
+      cache.set.mockResolvedValue(false);
+      cache.get.mockResolvedValue({
         status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS,
       });
 
       const result = await service.checkAndLock('test-key-2');
 
       expect(result).toEqual({ isNew: false });
-      expect(cacheService.get).toHaveBeenCalledWith(
+      expect(cache.get).toHaveBeenCalledWith(
         `${IDEMPOTENCY_REDIS.PREFIX}:test-key-2`,
       );
     });
 
     it('should return completed data when key already completed', async () => {
       const payload = { orderId: 123, status: 'PAID' };
-      cacheService.set.mockResolvedValue(false);
-      cacheService.get.mockResolvedValue({
+      cache.set.mockResolvedValue(false);
+      cache.get.mockResolvedValue({
         status: IDEMPOTENCY_REDIS.STATUS.COMPLETED,
         data: payload,
       });
@@ -58,11 +59,36 @@ describe('IdempotencyService', () => {
       expect(result).toEqual({ isNew: false, data: payload });
     });
 
+    it('should fail closed when cache is unavailable', async () => {
+      cache.mockUnavailable();
+
+      const result = await service.checkAndLock('cache-down');
+
+      expect(result).toEqual({ isNew: false, unavailable: true });
+      expect(cache.set).not.toHaveBeenCalled();
+    });
+
+    it('should fail closed when cache errors during lock', async () => {
+      cache.set.mockRejectedValue(new Error('ECONNRESET'));
+
+      const result = await service.checkAndLock('cache-error');
+
+      expect(result).toEqual({ isNew: false, unavailable: true });
+    });
+
+    it('should treat SET NX miss + GET miss as new when cache is available (TTL race)', async () => {
+      cache.set.mockResolvedValue(false);
+      cache.get.mockResolvedValue(null);
+
+      const result = await service.checkAndLock('ttl-race');
+
+      expect(result).toEqual({ isNew: true });
+    });
+
     it('should handle concurrent Promise.all calls so exactly one request acquires the lock', async () => {
       let isLocked = false;
 
-      // Simulate atomic SET NX: first request gets true, subsequent get false
-      cacheService.set.mockImplementation((_key, _val, options) => {
+      cache.set.mockImplementation((_key, _val, options) => {
         if (options?.nx) {
           if (!isLocked) {
             isLocked = true;
@@ -73,7 +99,7 @@ describe('IdempotencyService', () => {
         return Promise.resolve(true);
       });
 
-      cacheService.get.mockResolvedValue({
+      cache.get.mockResolvedValue({
         status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS,
       });
 
@@ -94,26 +120,34 @@ describe('IdempotencyService', () => {
 
   describe('complete', () => {
     it('should update key status to COMPLETED with payload', async () => {
-      cacheService.set.mockResolvedValue(true);
+      cache.set.mockResolvedValue(true);
       const data = { id: 10 };
 
       await service.complete('test-key-4', data, 1800);
 
-      expect(cacheService.set).toHaveBeenCalledWith(
+      expect(cache.set).toHaveBeenCalledWith(
         `${IDEMPOTENCY_REDIS.PREFIX}:test-key-4`,
         { status: IDEMPOTENCY_REDIS.STATUS.COMPLETED, data },
         { ttl: 1800 },
+      );
+    });
+
+    it('should throw when cache is unavailable so callers fail closed', async () => {
+      cache.mockUnavailable();
+
+      await expect(service.complete('test-key-4', { id: 1 })).rejects.toThrow(
+        /cache unavailable/,
       );
     });
   });
 
   describe('release', () => {
     it('should delete the idempotency key', async () => {
-      cacheService.delete.mockResolvedValue(undefined);
+      cache.delete.mockResolvedValue(undefined);
 
       await service.release('test-key-5');
 
-      expect(cacheService.delete).toHaveBeenCalledWith(
+      expect(cache.delete).toHaveBeenCalledWith(
         `${IDEMPOTENCY_REDIS.PREFIX}:test-key-5`,
       );
     });

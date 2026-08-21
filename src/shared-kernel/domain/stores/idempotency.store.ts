@@ -2,6 +2,12 @@
 export interface IdempotencyResult<T> {
   isNew: boolean;
   data?: T;
+  /**
+   * True when the idempotency store could not acquire or read a lock
+   * (e.g. Redis unavailable). Callers must fail closed — do not execute
+   * the side-effecting handler.
+   */
+  unavailable?: boolean;
 }
 
 export abstract class IdempotencyStore {
