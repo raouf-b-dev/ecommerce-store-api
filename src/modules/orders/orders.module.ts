@@ -29,7 +29,7 @@ import { InventoryReservationGateway } from './core/application/ports/inventory-
 import { PaymentGateway } from './core/application/ports/payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
 import { OrderItemEntity } from './secondary-adapters/orm/order-item.schema';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderFactory } from './core/domain/factories/order.factory';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';

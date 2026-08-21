@@ -9,7 +9,7 @@ import {
 } from './inventory.token';
 import { PostgresInventoryRepository } from './secondary-adapters/repositories/postgres-inventory-repository/postgres-inventory-repository';
 import { CachedInventoryRepository } from './secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { InventoryRepository } from './core/domain/repositories/inventory.repository';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { InventoryEntity } from './secondary-adapters/orm/inventory.schema';

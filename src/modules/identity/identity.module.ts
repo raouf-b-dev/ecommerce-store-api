@@ -5,7 +5,7 @@ import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { UsersController } from './users.controller';
 import { AddressesController } from './addresses.controller';
-import { CachePort } from 'src/infrastructure/redis/cache/cache.port';
+import { CachePort } from 'src/shared-kernel/domain/interfaces/cache.port';
 import {
   POSTGRES_USER_REPOSITORY,
   CACHED_USER_REPOSITORY,

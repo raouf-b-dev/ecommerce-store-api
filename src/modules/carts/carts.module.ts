@@ -14,7 +14,7 @@ import { PostgresCartRepository } from './secondary-adapters/repositories/postgr
 import { CachedCartRepository } from './secondary-adapters/repositories/cached-cart-repository/cached.cart-repository';
 import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
 import { ModuleProductGateway } from './secondary-adapters/adapters/module-product.gateway';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { CartRepository } from './core/domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
 import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';

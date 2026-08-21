@@ -7,7 +7,7 @@ import {
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../../infrastructure/redis/redis.module';

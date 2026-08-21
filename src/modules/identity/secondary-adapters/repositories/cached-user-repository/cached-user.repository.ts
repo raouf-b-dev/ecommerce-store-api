@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';

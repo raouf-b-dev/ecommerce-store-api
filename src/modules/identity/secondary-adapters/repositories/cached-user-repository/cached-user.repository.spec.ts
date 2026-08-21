@@ -5,7 +5,7 @@ import {
 import { MockCacheService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachedUserRepository } from './cached-user.repository';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';

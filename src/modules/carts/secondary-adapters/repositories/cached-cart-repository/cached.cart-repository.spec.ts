@@ -10,7 +10,7 @@ import { CachedCartRepository } from './cached.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Logger } from '@nestjs/common';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 
 describe('CachedCartRepository', () => {
   let repository: CachedCartRepository;
