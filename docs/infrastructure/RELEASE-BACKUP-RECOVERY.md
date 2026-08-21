@@ -30,6 +30,8 @@ Env contract (`DB_*`, not CRM `POSTGRES_*`):
 
 Scripts prefer `docker exec` when container `postgres-db` is running; otherwise local `pg_dump` / `pg_restore`. Passwords are passed via process env (`PGPASSWORD`), never interpolated into shell command strings.
 
+**Client version:** `pg_dump` / `pg_restore` major version must match the server (CI uses Postgres 18 + `postgresql-client-18`). A 16 client against an 18 server fails with `server version mismatch`.
+
 ---
 
 ## 2. Backup security
