@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { FtSearchOptions, RedisJSON } from 'redis';
-import { RedisJsonClient } from '../clients/redis-json.client';
-import { RedisKeyClient } from '../clients/redis-key.client';
-import { RedisSearchClient } from '../clients/redis-search.client';
+import {
+  CachePort,
+  CacheSearchOptions,
+} from '../../../shared-kernel/domain/interfaces/cache.port';
+import { MetricsService } from '../../metrics/metrics.service';
 import { RedisService } from '../redis.service';
-import { SearchOptions } from '../types';
-import { CachePort } from './cache.port';
+import { toRedisJson } from './cache-json';
 
 interface SetOptions {
   path?: string;
@@ -13,53 +14,101 @@ interface SetOptions {
   nx?: boolean;
 }
 
+type SearchDocument = {
+  id: string;
+  value: RedisJSON;
+};
+
+function isSearchDocument(doc: unknown): doc is SearchDocument {
+  if (typeof doc !== 'object' || doc === null) {
+    return false;
+  }
+  if (!('value' in doc)) {
+    return false;
+  }
+  return doc.value !== undefined;
+}
+
+function toFtSearchOptions(searchOptions: CacheSearchOptions): FtSearchOptions {
+  const { page = 1, limit = 10, sortBy, sortOrder = 'asc' } = searchOptions;
+
+  const options: FtSearchOptions = {
+    LIMIT: {
+      from: (page - 1) * limit,
+      size: limit,
+    },
+  };
+
+  if (sortBy) {
+    options.SORTBY = {
+      BY: sortBy,
+      DIRECTION: sortOrder === 'desc' ? 'DESC' : 'ASC',
+    };
+  }
+
+  return options;
+}
+
+/**
+ * Fail-open cache adapter. Redis outages return empty/false/null — callers
+ * (cache-aside repositories) fall back to PostgreSQL.
+ */
 @Injectable()
 export class CacheService implements CachePort {
   constructor(
-    private readonly jsonClient: RedisJsonClient,
-    private readonly keyClient: RedisKeyClient,
-    private readonly searchClient: RedisSearchClient,
     private readonly redisService: RedisService,
+    @Optional() private readonly metrics?: MetricsService,
   ) {}
 
+  isAvailable(): boolean {
+    return this.redisService.isReady();
+  }
+
   async ttl(key: string): Promise<number> {
-    return this.keyClient.ttl(key);
+    return this.redisService.ttl(key);
   }
 
   async get<T>(key: string, path?: string): Promise<T | null> {
-    const value = await this.jsonClient.get(key, path);
-    return value as unknown as T;
+    const value = await this.redisService.jsonGet(key, path);
+    if (value === null) {
+      this.metrics?.redisCacheMissesTotal.inc();
+      return null;
+    }
+    this.metrics?.redisCacheHitsTotal.inc();
+    return value as T;
   }
 
   async getMany<T>(keys: string[], path: string = '$'): Promise<(T | null)[]> {
     if (keys.length === 0) return [];
-    const values = await this.jsonClient.mGet(keys, path);
-    return values as unknown as (T | null)[];
+    const values = await this.redisService.jsonMGet(keys, path);
+    let hits = 0;
+    let misses = 0;
+    const mapped = values.map((value) => {
+      if (value === null) {
+        misses += 1;
+        return null;
+      }
+      hits += 1;
+      return value as T;
+    });
+    if (hits > 0) this.metrics?.redisCacheHitsTotal.inc(hits);
+    if (misses > 0) this.metrics?.redisCacheMissesTotal.inc(misses);
+    return mapped;
   }
 
   async getAll<T>(
     index: string,
     query: string = '*',
-    searchOptions: SearchOptions = {},
+    searchOptions: CacheSearchOptions = {},
   ): Promise<T[]> {
-    const { page = 1, limit = 10, sortBy, sortOrder = 'asc' } = searchOptions;
-
-    const options: FtSearchOptions = {
-      LIMIT: {
-        from: (page - 1) * limit,
-        size: limit,
-      },
-    };
-
-    if (sortBy) {
-      options.SORTBY = {
-        BY: sortBy,
-        DIRECTION: sortOrder.toUpperCase() as 'ASC' | 'DESC',
-      };
-    }
-
-    const values = await this.searchClient.search(index, query, options);
-    return values.documents.map((doc: any) => doc.value as T);
+    const values = await this.redisService.search(
+      index,
+      query,
+      toFtSearchOptions(searchOptions),
+    );
+    return values.documents.flatMap((doc) =>
+      isSearchDocument(doc) ? [doc.value as T] : [],
+    );
   }
 
   async set<T>(
@@ -67,17 +116,14 @@ export class CacheService implements CachePort {
     value: T,
     { path = '$', ttl = 3600, nx = false }: SetOptions = {},
   ): Promise<boolean> {
-    const isSet = await this.jsonClient.set(key, path, value as RedisJSON, {
+    return this.redisService.jsonSet(key, path, toRedisJson(value), {
       nx,
+      ttl: ttl || undefined,
     });
-    if (isSet && ttl) {
-      await this.keyClient.expire(key, ttl);
-    }
-    return isSet;
   }
 
   async setAll(
-    entries: { key: string; value: any }[],
+    entries: ReadonlyArray<{ key: string; value: unknown }>,
     {
       path = '$',
       ttl = 3600,
@@ -85,49 +131,13 @@ export class CacheService implements CachePort {
     }: { path?: string; ttl?: number; nx?: boolean } = {},
   ): Promise<void> {
     if (!entries || entries.length === 0) return;
-    const pipeline = this.keyClient.createPipeline();
+    const pipeline = this.redisService.createPipeline();
     if (!pipeline) return;
 
     for (const { key, value } of entries) {
       const fullKey = this.redisService.getFullKey(key);
-
-      const args: any[] = [fullKey, path, value];
-      if (ttl) args.push('EX', ttl);
-      if (nx) args.push('NX');
-
-      pipeline.json.set(...args);
-    }
-
-    try {
-      await pipeline.exec();
-    } catch {
-      // Redis pipeline failure handled gracefully
-    }
-  }
-
-  async merge<T>(
-    key: string,
-    partial: Partial<T>,
-    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
-  ): Promise<T | null> {
-    await this.jsonClient.merge(key, path, partial as RedisJSON);
-    if (ttl) {
-      await this.keyClient.expire(key, ttl);
-    }
-    return this.get<T>(key);
-  }
-
-  async mergeAll(
-    entries: { key: string; value: any }[],
-    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
-  ): Promise<void> {
-    if (!entries || entries.length === 0) return;
-    const pipeline = this.keyClient.createPipeline();
-    if (!pipeline) return;
-
-    for (const { key, value } of entries) {
-      const fullKey = this.redisService.getFullKey(key);
-      pipeline.json.merge(fullKey, path, value);
+      const setOpts = nx ? { NX: true as const } : {};
+      pipeline.json.set(fullKey, path, toRedisJson(value), setOpts);
       if (ttl) {
         pipeline.expire(fullKey, ttl);
       }
@@ -136,19 +146,53 @@ export class CacheService implements CachePort {
     try {
       await pipeline.exec();
     } catch {
-      // Redis pipeline failure handled gracefully
+      // Fail-open: pipeline failure is swallowed
+    }
+  }
+
+  async merge<T>(
+    key: string,
+    partial: Partial<T>,
+    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
+  ): Promise<T | null> {
+    await this.redisService.jsonMerge(key, path, toRedisJson(partial), {
+      ttl: ttl || undefined,
+    });
+    return this.get<T>(key);
+  }
+
+  async mergeAll(
+    entries: ReadonlyArray<{ key: string; value: unknown }>,
+    { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
+  ): Promise<void> {
+    if (!entries || entries.length === 0) return;
+    const pipeline = this.redisService.createPipeline();
+    if (!pipeline) return;
+
+    for (const { key, value } of entries) {
+      const fullKey = this.redisService.getFullKey(key);
+      pipeline.json.merge(fullKey, path, toRedisJson(value));
+      if (ttl) {
+        pipeline.expire(fullKey, ttl);
+      }
+    }
+
+    try {
+      await pipeline.exec();
+    } catch {
+      // Fail-open: pipeline failure is swallowed
     }
   }
 
   async delete(key: string): Promise<void> {
-    await this.jsonClient.del(key);
+    await this.redisService.jsonDel(key);
   }
 
   async deletePattern(pattern: string): Promise<void> {
     const keys = await this.scanKeys(pattern);
     if (keys.length === 0) return;
 
-    const pipeline = this.keyClient.createPipeline();
+    const pipeline = this.redisService.createPipeline();
     if (!pipeline) return;
 
     keys.forEach((key) => pipeline.del(this.redisService.getFullKey(key)));
@@ -156,24 +200,30 @@ export class CacheService implements CachePort {
     try {
       await pipeline.exec();
     } catch {
-      // Redis pipeline failure handled gracefully
+      // Fail-open: pipeline failure is swallowed
     }
   }
 
   async exists(key: string): Promise<boolean> {
-    return (await this.keyClient.exists(key)) === 1;
+    return (await this.redisService.exists(key)) === 1;
   }
 
   async search<T>(
     index: string,
     query: string,
-    options?: FtSearchOptions,
+    options?: CacheSearchOptions,
   ): Promise<T[]> {
-    const result = await this.searchClient.search(index, query, options);
-    return result.documents.map((doc: any) => doc.value as T);
+    const result = await this.redisService.search(
+      index,
+      query,
+      options ? toFtSearchOptions(options) : undefined,
+    );
+    return result.documents.flatMap((doc) =>
+      isSearchDocument(doc) ? [doc.value as T] : [],
+    );
   }
 
   async scanKeys(pattern: string, count = 100): Promise<string[]> {
-    return this.keyClient.scanKeys(pattern, count);
+    return this.redisService.scanKeys(pattern, count);
   }
 }

@@ -9,7 +9,7 @@ import {
   ListOrdersQuery,
   OrderRepository,
 } from '../../../core/domain/repositories/order-repository';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';

@@ -5,9 +5,7 @@ import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { UsersController } from './users.controller';
 import { AddressesController } from './addresses.controller';
-import { CachePort } from 'src/infrastructure/redis/cache/cache.port';
-import { RedisService } from 'src/infrastructure/redis/redis.service';
-import { createHealthAwareProxy } from 'src/infrastructure/resilience/health-aware-proxy';
+import { CachePort } from 'src/shared-kernel/domain/interfaces/cache.port';
 import {
   POSTGRES_USER_REPOSITORY,
   CACHED_USER_REPOSITORY,
@@ -51,13 +49,7 @@ import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-us
     },
     {
       provide: UserRepository,
-      useFactory: (
-        cachedRepo: UserRepository,
-        postgresRepo: UserRepository,
-        redis: RedisService,
-      ) =>
-        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
-      inject: [CACHED_USER_REPOSITORY, POSTGRES_USER_REPOSITORY, RedisService],
+      useExisting: CACHED_USER_REPOSITORY,
     },
 
     //usecases

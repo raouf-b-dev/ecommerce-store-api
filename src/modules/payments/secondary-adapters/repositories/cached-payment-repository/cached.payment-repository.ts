@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';

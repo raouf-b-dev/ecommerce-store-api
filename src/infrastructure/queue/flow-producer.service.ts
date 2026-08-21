@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationShutdown, Logger } from '@nestjs/common';
 import { FlowProducer, FlowJob, FlowOpts } from 'bullmq';
 import { EnvConfigService } from 'src/config/env-config.service';
+import { buildIoRedisConnection } from '../redis/redis-connection.options';
 
 @Injectable()
 export class FlowProducerService implements OnApplicationShutdown {
@@ -9,12 +10,7 @@ export class FlowProducerService implements OnApplicationShutdown {
 
   constructor(private readonly envConfigService: EnvConfigService) {
     this.flowProducer = new FlowProducer({
-      connection: {
-        host: envConfigService.redis.host,
-        port: envConfigService.redis.port,
-        password: envConfigService.redis.password,
-        db: envConfigService.redis.db,
-      },
+      connection: buildIoRedisConnection(envConfigService.redis),
       prefix: envConfigService.redis.key_prefix,
     });
   }

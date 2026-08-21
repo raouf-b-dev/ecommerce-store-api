@@ -31,6 +31,9 @@ export class InfraMetricsCollector {
 
     // 2. Redis
     this.metrics.redisHealthStatus.set(this.redisService.isReady() ? 1 : 0);
+    this.metrics.redisCacheGeneration.set(
+      this.redisService.getCacheGeneration(),
+    );
 
     // 3. BullMQ
     try {

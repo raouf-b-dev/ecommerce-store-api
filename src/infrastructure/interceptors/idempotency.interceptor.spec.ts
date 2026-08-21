@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IdempotencyInterceptor } from './idempotency.interceptor';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
-import { CallHandler, ConflictException } from '@nestjs/common';
+import {
+  CallHandler,
+  ConflictException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { createMockExecutionContext, createMockRequest } from '../../testing';
 
@@ -87,6 +91,27 @@ describe('IdempotencyInterceptor', () => {
     });
   });
 
+  it('should throw ServiceUnavailableException when store is unavailable', (done) => {
+    const key = 'test-key';
+    const context = createMockExecutionContext({
+      headers: { 'x-idempotency-key': key },
+    });
+    const next = createMockCallHandler(of('response'));
+
+    idempotencyStore.checkAndLock.mockResolvedValue({
+      isNew: false,
+      unavailable: true,
+    });
+
+    interceptor.intercept(context, next).subscribe({
+      error: (err) => {
+        expect(err).toBeInstanceOf(ServiceUnavailableException);
+        expect(next.handle).not.toHaveBeenCalled();
+        done();
+      },
+    });
+  });
+
   it('should proceed and complete if key is new', (done) => {
     const key = 'test-key';
     const response = { status: 'created' };
@@ -102,6 +127,27 @@ describe('IdempotencyInterceptor', () => {
       next: (result) => {
         expect(result).toBe(response);
         expect(idempotencyStore.complete).toHaveBeenCalledWith(key, response);
+        done();
+      },
+    });
+  });
+
+  it('should fail closed with 503 when complete cannot persist', (done) => {
+    const key = 'test-key';
+    const response = { status: 'created' };
+    const context = createMockExecutionContext({
+      headers: { 'x-idempotency-key': key },
+    });
+    const next = createMockCallHandler(of(response));
+
+    idempotencyStore.checkAndLock.mockResolvedValue({ isNew: true });
+    idempotencyStore.complete.mockRejectedValue(new Error('Redis down'));
+    idempotencyStore.release.mockResolvedValue(undefined);
+
+    interceptor.intercept(context, next).subscribe({
+      error: (err) => {
+        expect(err).toBeInstanceOf(ServiceUnavailableException);
+        expect(idempotencyStore.release).toHaveBeenCalledWith(key);
         done();
       },
     });
@@ -128,7 +174,7 @@ describe('IdempotencyInterceptor', () => {
   });
 });
 
-function createMockCallHandler(observable: any): CallHandler {
+function createMockCallHandler(observable: unknown): CallHandler {
   return {
     handle: jest.fn().mockReturnValue(observable),
   };

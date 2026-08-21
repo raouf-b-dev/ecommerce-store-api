@@ -6,7 +6,7 @@ import {
 } from '../../../core/domain/repositories/order-repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {

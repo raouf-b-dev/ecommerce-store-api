@@ -4,13 +4,17 @@ import {
   IdempotencyStore,
   IdempotencyResult,
 } from '../../shared-kernel/domain/stores/idempotency.store';
-import { CachePort } from '../redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 
+/**
+ * Redis-backed idempotency adapter. Depends only on {@link CachePort}
+ * (hexagonal driven port) — not on Redis connection details.
+ */
 @Injectable()
 export class IdempotencyService extends IdempotencyStore {
   private readonly logger = new Logger(IdempotencyService.name);
 
-  constructor(private readonly cacheService: CachePort) {
+  constructor(private readonly cache: CachePort) {
     super();
   }
 
@@ -20,9 +24,15 @@ export class IdempotencyService extends IdempotencyStore {
   ): Promise<IdempotencyResult<T>> {
     const cacheKey = `${IDEMPOTENCY_REDIS.PREFIX}:${key}`;
 
+    if (!this.cache.isAvailable()) {
+      this.logger.warn(
+        `Idempotency store unavailable for key ${key} — failing closed`,
+      );
+      return { isNew: false, unavailable: true };
+    }
+
     try {
-      // 1. Atomic lock attempt using SET NX
-      const isLocked = await this.cacheService.set(
+      const isLocked = await this.cache.set(
         cacheKey,
         { status: IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS },
         { ttl: ttlSeconds, nx: true },
@@ -35,8 +45,7 @@ export class IdempotencyService extends IdempotencyStore {
         return { isNew: true };
       }
 
-      // 2. Key already exists — retrieve status/payload
-      const existing = await this.cacheService.get<{
+      const existing = await this.cache.get<{
         status: string;
         data?: T;
       }>(cacheKey);
@@ -55,19 +64,27 @@ export class IdempotencyService extends IdempotencyStore {
         }
       }
 
-      return { isNew: false };
-    } catch (error) {
+      // SET NX failed and GET missed: backend blip mid-call, or TTL race.
+      if (!this.cache.isAvailable()) {
+        this.logger.warn(
+          `Idempotency store unavailable after lock miss for key ${key} — failing closed`,
+        );
+        return { isNew: false, unavailable: true };
+      }
+
       this.logger.warn(
-        `Idempotency fail-open for key ${key} (degraded: true, concern: idempotency)`,
-        error,
+        `Idempotency TTL/race miss for key ${key} — treating as new`,
       );
       return { isNew: true };
+    } catch (error) {
+      this.logger.warn(
+        `Idempotency store error for key ${key} — failing closed`,
+        error,
+      );
+      return { isNew: false, unavailable: true };
     }
   }
 
-  /**
-   * Store the completed result for an idempotency key.
-   */
   async complete<T>(
     key: string,
     data: T,
@@ -75,26 +92,35 @@ export class IdempotencyService extends IdempotencyStore {
   ): Promise<void> {
     const cacheKey = `${IDEMPOTENCY_REDIS.PREFIX}:${key}`;
 
+    if (!this.cache.isAvailable()) {
+      throw new Error(
+        `Idempotency complete failed for key ${key}: cache unavailable`,
+      );
+    }
+
     try {
-      await this.cacheService.set(
+      const saved = await this.cache.set(
         cacheKey,
         { status: IDEMPOTENCY_REDIS.STATUS.COMPLETED, data },
         { ttl: ttlSeconds },
       );
+      if (!saved) {
+        throw new Error(
+          `Idempotency complete failed for key ${key}: cache set returned false`,
+        );
+      }
       this.logger.log(`Idempotency key ${key} marked as completed`);
     } catch (error) {
       this.logger.error(`Error completing idempotency key ${key}:`, error);
+      throw error;
     }
   }
 
-  /**
-   * Remove an idempotency key (e.g., on failure to allow retry).
-   */
   async release(key: string): Promise<void> {
     const cacheKey = `${IDEMPOTENCY_REDIS.PREFIX}:${key}`;
 
     try {
-      await this.cacheService.delete(cacheKey);
+      await this.cache.delete(cacheKey);
       this.logger.log(`Idempotency key ${key} released`);
     } catch (error) {
       this.logger.error(`Error releasing idempotency key ${key}:`, error);

@@ -7,9 +7,7 @@ import {
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
-import { RedisService } from '../../infrastructure/redis/redis.service';
-import { createHealthAwareProxy } from '../../infrastructure/resilience/health-aware-proxy';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -46,20 +44,10 @@ import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres
       inject: [CachePort, POSTGRES_PRODUCT_REPOSITORY],
     },
 
-    // Default Repository Binding
+    // Default Repository Binding — cache-aside fails open via CachePort
     {
       provide: ProductRepository,
-      useFactory: (
-        cachedRepo: ProductRepository,
-        postgresRepo: ProductRepository,
-        redis: RedisService,
-      ) =>
-        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
-      inject: [
-        CACHED_PRODUCT_REPOSITORY,
-        POSTGRES_PRODUCT_REPOSITORY,
-        RedisService,
-      ],
+      useExisting: CACHED_PRODUCT_REPOSITORY,
     },
 
     // Usecases

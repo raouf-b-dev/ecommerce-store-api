@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   CallHandler,
   ConflictException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Observable, from, throwError, of } from 'rxjs';
@@ -25,6 +26,12 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
     return from(this.idempotencyStore.checkAndLock(key)).pipe(
       switchMap((result) => {
+        if (result.unavailable) {
+          throw new ServiceUnavailableException(
+            'Idempotency store unavailable — retry the request later',
+          );
+        }
+
         if (!result.isNew) {
           if (result.data) {
             return of(result.data);
@@ -36,8 +43,15 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
         return next.handle().pipe(
           switchMap(async (response) => {
-            await this.idempotencyStore.complete(key, response);
-            return response;
+            try {
+              await this.idempotencyStore.complete(key, response);
+              return response;
+            } catch {
+              await this.idempotencyStore.release(key);
+              throw new ServiceUnavailableException(
+                'Idempotency result could not be persisted — retry the request later',
+              );
+            }
           }),
           catchError((err) => {
             return from(this.idempotencyStore.release(key)).pipe(
