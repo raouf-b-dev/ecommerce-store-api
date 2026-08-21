@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   OnApplicationShutdown,
   OnModuleInit,
@@ -6,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { QueueEvents } from 'bullmq';
 import { EnvConfigService } from '../../config/env-config.service';
-import { buildIoRedisConnection } from '../redis/redis-connection.options';
+import {
+  BULLMQ_CONNECTION_OPTIONS,
+  BullMqConnectionOptions,
+} from './bullmq-connection.token';
 
 export type QueueEventHandler = (args: {
   jobId: string;
@@ -23,7 +27,11 @@ export class QueueEventsService implements OnModuleInit, OnApplicationShutdown {
     Map<string, QueueEventHandler[]>
   >();
 
-  constructor(private readonly envConfigService: EnvConfigService) {}
+  constructor(
+    @Inject(BULLMQ_CONNECTION_OPTIONS)
+    private readonly connection: BullMqConnectionOptions,
+    private readonly envConfigService: EnvConfigService,
+  ) {}
 
   onModuleInit() {
     this.logger.log('QueueEventsService initialized');
@@ -41,7 +49,7 @@ export class QueueEventsService implements OnModuleInit, OnApplicationShutdown {
   private getOrCreateQueueEvents(queueName: string): QueueEvents {
     if (!this.queueEventsMap.has(queueName)) {
       const queueEvents = new QueueEvents(queueName, {
-        connection: buildIoRedisConnection(this.envConfigService.redis),
+        connection: this.connection,
         prefix: this.envConfigService.redis.key_prefix,
       });
       this.queueEventsMap.set(queueName, queueEvents);

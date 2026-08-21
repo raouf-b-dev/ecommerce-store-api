@@ -1,16 +1,28 @@
-import { Injectable, OnApplicationShutdown, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  OnApplicationShutdown,
+  Logger,
+} from '@nestjs/common';
 import { FlowProducer, FlowJob, FlowOpts } from 'bullmq';
 import { EnvConfigService } from 'src/config/env-config.service';
-import { buildIoRedisConnection } from '../redis/redis-connection.options';
+import {
+  BULLMQ_CONNECTION_OPTIONS,
+  BullMqConnectionOptions,
+} from './bullmq-connection.token';
 
 @Injectable()
 export class FlowProducerService implements OnApplicationShutdown {
   private readonly flowProducer: FlowProducer;
   private readonly logger = new Logger(FlowProducerService.name);
 
-  constructor(private readonly envConfigService: EnvConfigService) {
+  constructor(
+    @Inject(BULLMQ_CONNECTION_OPTIONS)
+    connection: BullMqConnectionOptions,
+    envConfigService: EnvConfigService,
+  ) {
     this.flowProducer = new FlowProducer({
-      connection: buildIoRedisConnection(envConfigService.redis),
+      connection,
       prefix: envConfigService.redis.key_prefix,
     });
   }
