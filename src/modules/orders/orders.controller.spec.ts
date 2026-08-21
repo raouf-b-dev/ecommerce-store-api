@@ -6,6 +6,7 @@ import {
   OrderTestFactory,
 } from 'src/modules/orders/testing';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { MockIdempotencyStore } from 'src/testing/mocks/idempotency-store.mock';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
@@ -65,11 +66,7 @@ describe('OrdersController', () => {
       providers: [
         {
           provide: IdempotencyStore,
-          useValue: {
-            checkAndLock: jest.fn(),
-            complete: jest.fn(),
-            release: jest.fn(),
-          },
+          useValue: new MockIdempotencyStore(),
         },
         {
           provide: CheckoutUseCase,
