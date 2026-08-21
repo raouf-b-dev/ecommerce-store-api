@@ -186,7 +186,7 @@ describe('CachedOrderRepository', () => {
   describe('listOrders', () => {
     it('should return cached orders if no filters and cache exists', async () => {
       cacheService.get.mockResolvedValue('true');
-      cacheService.getAll.mockResolvedValue([mockCachedOrder]);
+      cacheService.search.mockResolvedValue([mockCachedOrder]);
 
       const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
@@ -281,7 +281,7 @@ describe('CachedOrderRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(postgresRepo.listOrders).toHaveBeenCalledWith(dto);
-      expect(cacheService.getAll).not.toHaveBeenCalled();
+      expect(cacheService.search).not.toHaveBeenCalled();
     });
 
     it('should handle pagination parameters', async () => {

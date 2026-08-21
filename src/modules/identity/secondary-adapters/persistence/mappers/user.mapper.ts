@@ -1,9 +1,11 @@
 import { User, UserProps } from '../../../core/domain/entities/user';
+import { Address } from '../../../core/domain/entities/address';
 import { UserEntity } from '../../orm/user.schema';
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { AddressMapper } from './address.mapper';
 import { IAddress } from 'src/modules/identity/core/domain/interfaces/address.interface';
+import { IUser } from '../../../core/domain/interfaces/user.interface';
 
 type UserCreate = CreateFromEntity<UserEntity, 'addresses' | 'version'>;
 
@@ -64,17 +66,21 @@ export class UserMapper {
     };
   }
 }
-export interface UserForCache {
+
+export type UserForCache = Omit<
+  IUser,
+  'createdAt' | 'updatedAt' | 'id' | 'addresses'
+> & {
   id: number;
-  firstName: string;
-  lastName: string;
-  phone: string | null;
-  email: string;
-  addresses: IAddress[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+  createdAt: number;
+  updatedAt: number;
+  addresses: Array<
+    Omit<IAddress, 'createdAt' | 'updatedAt'> & {
+      createdAt: number;
+      updatedAt: number;
+    }
+  >;
+};
 
 export class UserCacheMapper {
   static toCache(domain: User): UserForCache {
@@ -85,24 +91,35 @@ export class UserCacheMapper {
       lastName: primitives.lastName,
       phone: primitives.phone ?? null,
       email: primitives.email,
-      addresses: primitives.addresses,
+      addresses: primitives.addresses.map((address) => {
+        const props =
+          address instanceof Address ? address.toPrimitives() : address;
+        return {
+          ...props,
+          createdAt: props.createdAt.getTime(),
+          updatedAt: props.updatedAt.getTime(),
+        };
+      }),
       isActive: primitives.isActive,
-      createdAt: primitives.createdAt.toISOString(),
-      updatedAt: primitives.updatedAt.toISOString(),
+      createdAt: primitives.createdAt.getTime(),
+      updatedAt: primitives.updatedAt.getTime(),
     };
   }
 
-  static fromCache(cache: UserForCache): User {
-    return User.fromProps({
-      id: cache.id,
-      firstName: cache.firstName,
-      lastName: cache.lastName,
-      phone: cache.phone,
-      email: cache.email,
-      addresses: cache.addresses,
-      isActive: cache.isActive,
-      createdAt: new Date(cache.createdAt),
-      updatedAt: new Date(cache.updatedAt),
-    });
+  static fromCache(cached: UserForCache): User | null {
+    try {
+      return User.fromProps({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+        addresses: cached.addresses.map((address) => ({
+          ...address,
+          createdAt: new Date(address.createdAt),
+          updatedAt: new Date(address.updatedAt),
+        })),
+      });
+    } catch {
+      return null;
+    }
   }
 }

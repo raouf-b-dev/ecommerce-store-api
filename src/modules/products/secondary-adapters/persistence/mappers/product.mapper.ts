@@ -72,22 +72,30 @@ export class ProductMapper {
   }
 }
 
+export type ProductForCache = Omit<IProduct, 'createdAt' | 'updatedAt'> & {
+  createdAt: number;
+  updatedAt: number;
+};
+
 export class ProductCacheMapper {
-  static toCache(product: Product): IProduct {
-    return product.toPrimitives();
+  static toCache(product: Product): ProductForCache {
+    const primitives = product.toPrimitives();
+    return {
+      ...primitives,
+      createdAt: primitives.createdAt.getTime(),
+      updatedAt: primitives.updatedAt.getTime(),
+    };
   }
 
-  static fromCache(cached: IProduct): Product {
-    return Product.fromPrimitives({
-      ...cached,
-      createdAt: cached.createdAt ? new Date(cached.createdAt) : undefined,
-      updatedAt: cached.updatedAt ? new Date(cached.updatedAt) : undefined,
-    });
-  }
-
-  static fromCacheArray(cachedArray: (IProduct | null)[]): Product[] {
-    return cachedArray
-      .filter((item): item is IProduct => Boolean(item))
-      .map((item) => ProductCacheMapper.fromCache(item));
+  static fromCache(cached: ProductForCache): Product | null {
+    try {
+      return Product.fromPrimitives({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+      });
+    } catch {
+      return null;
+    }
   }
 }

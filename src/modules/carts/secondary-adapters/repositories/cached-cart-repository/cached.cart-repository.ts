@@ -26,7 +26,8 @@ export class CachedCartRepository implements CartRepository {
         `${CART_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success(CartCacheMapper.fromCache(cached));
+        const cart = CartCacheMapper.fromCache(cached);
+        if (cart) return Result.success(cart);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -47,20 +48,20 @@ export class CachedCartRepository implements CartRepository {
 
   async findByuserId(userId: number): Promise<Result<Cart, RepositoryError>> {
     try {
-      const cachedCarts = await this.cacheService.search<CartForCache>(
+      const [cached] = await this.cacheService.search<CartForCache>(
         CART_REDIS.INDEX,
         `@userId:${userId}`,
       );
-
-      if (cachedCarts.length > 0) {
-        const cart = CartCacheMapper.fromCache(cachedCarts[0]);
-        // Refresh TTL on cache hit
-        await this.cacheService.set(
-          `${CART_REDIS.CACHE_KEY}:${cart.id}`,
-          CartCacheMapper.toCache(cart),
-          { ttl: CART_REDIS.EXPIRATION },
-        );
-        return Result.success(cart);
+      if (cached) {
+        const cart = CartCacheMapper.fromCache(cached);
+        if (cart) {
+          await this.cacheService.set(
+            `${CART_REDIS.CACHE_KEY}:${cart.id}`,
+            CartCacheMapper.toCache(cart),
+            { ttl: CART_REDIS.EXPIRATION },
+          );
+          return Result.success(cart);
+        }
       }
 
       const dbResult = await this.postgresRepo.findByuserId(userId);

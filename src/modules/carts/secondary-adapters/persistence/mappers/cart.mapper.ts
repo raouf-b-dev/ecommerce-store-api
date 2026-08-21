@@ -75,11 +75,15 @@ export class CartCacheMapper {
     };
   }
 
-  static fromCache(cached: CartForCache): Cart {
-    return Cart.fromPrimitives({
-      ...cached,
-      createdAt: new Date(cached.createdAt),
-      updatedAt: new Date(cached.updatedAt),
-    });
+  static fromCache(cached: CartForCache): Cart | null {
+    try {
+      return Cart.fromPrimitives({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+      });
+    } catch {
+      return null;
+    }
   }
 }

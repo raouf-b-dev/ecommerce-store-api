@@ -117,12 +117,15 @@ export class OrderCacheMapper {
     };
   }
 
-  public static fromCache(cachedOrder: OrderForCache): Order {
-    const orderDomain = Order.fromPrimitives({
-      ...cachedOrder,
-      createdAt: new Date(cachedOrder.createdAt),
-      updatedAt: new Date(cachedOrder.updatedAt),
-    });
-    return orderDomain;
+  public static fromCache(cached: OrderForCache): Order | null {
+    try {
+      return Order.fromPrimitives({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+      });
+    } catch {
+      return null;
+    }
   }
 }
