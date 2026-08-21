@@ -10,14 +10,17 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ResultAssertionHelper } from '../../../../../testing';
 import { MockCacheService } from '../../../../../testing';
 import { Product } from '../../../core/domain/entities/product';
+import { ProductCacheMapper } from '../../persistence/mappers/product.mapper';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
   let cacheService: MockCacheService;
   let postgresRepo: MockProductRepository;
 
-  const mockProduct = ProductTestFactory.createMockProduct();
-  const domainProduct = Product.fromPrimitives(mockProduct);
+  const domainProduct = Product.fromPrimitives(
+    ProductTestFactory.createMockProduct(),
+  );
+  const mockProduct = ProductCacheMapper.toCache(domainProduct);
 
   beforeEach(() => {
     cacheService = new MockCacheService();
@@ -42,7 +45,7 @@ describe('CachedProductRepository', () => {
       expect(postgresRepo.save).toHaveBeenCalledWith(domainProduct, undefined);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${PRODUCT_REDIS.CACHE_KEY}:${domainProduct.id}`,
-        domainProduct.toPrimitives(),
+        ProductCacheMapper.toCache(domainProduct),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
       expect(cacheService.delete).toHaveBeenCalledWith(
@@ -124,6 +127,20 @@ describe('CachedProductRepository', () => {
       expect(postgresRepo.findById).not.toHaveBeenCalled();
     });
 
+    it('treats a corrupt cache payload as a miss and loads from postgres', async () => {
+      const productId = 1;
+
+      cacheService.get.mockResolvedValue({ garbage: true });
+      postgresRepo.findById.mockResolvedValue(Result.success(domainProduct));
+      cacheService.set.mockResolvedValue(true);
+
+      const result = await repo.findById(productId);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.findById).toHaveBeenCalledWith(productId);
+      expect(result.value).toEqual(domainProduct);
+    });
+
     it('should fetch from postgres if not cached and then cache it', async () => {
       const productId = 1;
 
@@ -138,7 +155,7 @@ describe('CachedProductRepository', () => {
       expect(postgresRepo.findById).toHaveBeenCalledWith(productId);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${PRODUCT_REDIS.CACHE_KEY}:${productId}`,
-        domainProduct.toPrimitives(),
+        ProductCacheMapper.toCache(domainProduct),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
     });
@@ -182,7 +199,7 @@ describe('CachedProductRepository', () => {
       const products = ProductTestFactory.createProductList(3);
 
       cacheService.get.mockResolvedValue('true');
-      cacheService.getAll.mockResolvedValue(products);
+      cacheService.search.mockResolvedValue(products);
 
       const result = await repo.findAll();
 
@@ -191,7 +208,7 @@ describe('CachedProductRepository', () => {
       expect(cacheService.get).toHaveBeenCalledWith(
         PRODUCT_REDIS.IS_CACHED_FLAG,
       );
-      expect(cacheService.getAll).toHaveBeenCalledWith(PRODUCT_REDIS.INDEX);
+      expect(cacheService.search).toHaveBeenCalledWith(PRODUCT_REDIS.INDEX);
       expect(postgresRepo.findAll).not.toHaveBeenCalled();
     });
 
@@ -212,7 +229,7 @@ describe('CachedProductRepository', () => {
       expect(cacheService.setAll).toHaveBeenCalledWith(
         domainProducts.map((p) => ({
           key: `${PRODUCT_REDIS.CACHE_KEY}:${p.id}`,
-          value: p.toPrimitives(),
+          value: ProductCacheMapper.toCache(p),
         })),
         { ttl: PRODUCT_REDIS.EXPIRATION },
       );
@@ -231,7 +248,7 @@ describe('CachedProductRepository', () => {
       ];
 
       cacheService.get.mockResolvedValue('true');
-      cacheService.getAll.mockResolvedValue(products);
+      cacheService.search.mockResolvedValue(products);
 
       const result = await repo.findAll();
 

@@ -26,7 +26,8 @@ export class CachedPaymentRepository implements PaymentRepository {
         `${PAYMENT_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success(PaymentCacheMapper.fromCache(cached));
+        const payment = PaymentCacheMapper.fromCache(cached);
+        if (payment) return Result.success(payment);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -49,22 +50,21 @@ export class CachedPaymentRepository implements PaymentRepository {
     orderId: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     try {
-      const cachedPayments = await this.cacheService.search<PaymentForCache>(
+      const cached = await this.cacheService.search<PaymentForCache>(
         PAYMENT_REDIS.INDEX,
         `@orderId:${orderId}`,
       );
-
+      const cachedPayments = cached
+        .map(PaymentCacheMapper.fromCache)
+        .filter((payment) => payment !== null);
       if (cachedPayments.length > 0) {
-        return Result.success(
-          cachedPayments.map((p) => PaymentCacheMapper.fromCache(p)),
-        );
+        return Result.success(cachedPayments);
       }
 
       const dbResult = await this.postgresRepo.findByOrderId(orderId);
       if (dbResult.isFailure) return dbResult;
       const payments = dbResult.value;
 
-      // Cache individual items
       for (const payment of payments) {
         await this.cacheService.set(
           `${PAYMENT_REDIS.CACHE_KEY}:${payment.id}`,
@@ -86,13 +86,13 @@ export class CachedPaymentRepository implements PaymentRepository {
     transactionId: string,
   ): Promise<Result<Payment, RepositoryError>> {
     try {
-      const cachedPayments = await this.cacheService.search<PaymentForCache>(
+      const [cached] = await this.cacheService.search<PaymentForCache>(
         PAYMENT_REDIS.INDEX,
         `@transactionId:${transactionId}`,
       );
-
-      if (cachedPayments.length > 0) {
-        return Result.success(PaymentCacheMapper.fromCache(cachedPayments[0]));
+      if (cached) {
+        const payment = PaymentCacheMapper.fromCache(cached);
+        if (payment) return Result.success(payment);
       }
 
       const dbResult =
@@ -126,7 +126,6 @@ export class CachedPaymentRepository implements PaymentRepository {
   async findByGatewayPaymentIntentId(
     paymentIntentId: string,
   ): Promise<Result<Payment, RepositoryError>> {
-    // Delegate to postgres - intent ID lookups are webhook-driven and rare
     return this.postgresRepo.findByGatewayPaymentIntentId(paymentIntentId);
   }
 
