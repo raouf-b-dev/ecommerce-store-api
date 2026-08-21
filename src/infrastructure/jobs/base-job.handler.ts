@@ -4,6 +4,7 @@ import { Result } from 'src/shared-kernel/domain/result';
 import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from 'src/infrastructure/logging/correlation/correlation.service';
 import { readJobCorrelationId } from './job-correlation';
+import { toError } from 'src/shared-kernel/infra/lang/error.utils';
 
 export abstract class BaseJobHandler<TData, TResult> {
   protected abstract readonly logger: Logger;
@@ -87,10 +88,11 @@ export abstract class BaseJobHandler<TData, TResult> {
       if (error instanceof UnrecoverableError || error instanceof Error) {
         throw error;
       }
+      const err = toError(error);
       this.logger.error(
-        `Job ${jobName} (ID: ${jobId}) failed with unexpected error: ${String(error)}`,
+        `Job ${jobName} (ID: ${jobId}) failed with unexpected error: ${err.message}`,
       );
-      throw new Error(String(error), { cause: error });
+      throw err;
     }
   }
 

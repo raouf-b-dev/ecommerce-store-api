@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { JwksPort } from '../ports/jwks.port';
 import { EnvConfigService } from '../../../config/env-config.service';
+import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 import {
   importPKCS8,
   importJWK,
@@ -68,10 +69,10 @@ export class JwksService implements OnModuleInit, JwksPort {
         `RSA JWT keys imported and JWKS generated successfully. kid=${this.kid}`,
       );
     } catch (error: unknown) {
-      const stack = error instanceof Error ? error.stack : undefined;
+      const err = toError(error);
       this.logger.error(
         'Failed to initialize JWT keys. Ensure JWT_PRIVATE_KEY is a valid RSA PEM string.',
-        stack,
+        err.stack,
       );
       throw error;
     }

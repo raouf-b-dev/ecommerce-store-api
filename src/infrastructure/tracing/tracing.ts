@@ -7,6 +7,7 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
+import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
 
 const isTracingEnabled = process.env.OTEL_TRACING_ENABLED !== 'false';
 
@@ -51,7 +52,7 @@ if (isTracingEnabled) {
       })
       .catch((error) => {
         process.stderr.write(
-          `Error shutting down OTel SDK: ${String(error)}\n`,
+          `Error shutting down OTel SDK: ${toErrorMessage(error)}\n`,
         );
       });
   };
