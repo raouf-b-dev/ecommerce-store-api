@@ -43,9 +43,9 @@ export class HealthController {
   @Get('readiness')
   @HealthCheck()
   readiness(): Promise<HealthCheckResult> {
+    // PostgreSQL is required for traffic; Redis degradation is reported via /health and metrics.
     return this.health.check([
       () => this.db.pingCheck('postgres', { timeout: 3000 }),
-      () => this.redis.isHealthy('redis'),
     ]);
   }
 }
