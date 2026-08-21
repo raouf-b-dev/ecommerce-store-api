@@ -1,0 +1,208 @@
+name: Nightly Restore Drill
+
+# Thin recovery verification only (not full CI fan-out).
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-restore-drill
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-app
+          path: dist/
+          retention-days: 1
+
+  restore-drill:
+    name: Restore Drill
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    services:
+      postgres:
+        image: postgres:18.4
+        ports: ['5432:5432']
+        env:
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+        options: >-
+          --health-cmd="pg_isready -q"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      DB_USERNAME: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+      DB_DATABASE: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare DB environment
+        uses: ./.github/actions/prepare-db-env
+        with:
+          db-username: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          db-password: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          db-database: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+          jwt-private-key: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+          metrics-api-key: ${{ secrets.CI_METRICS_API_KEY || 'restore-drill-ci' }}
+
+      - name: Run DB migrations (test)
+        run: npm run migration:run:test
+
+      - name: Run restore drill
+        run: npm run db:restore:drill
+
+      - name: Cleanup .env.test
+        if: always()
+        run: rm -f .env.test || true
+
+  restore-drill-smoke:
+    name: Restore Drill Smoke
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    services:
+      postgres:
+        image: postgres:18.4
+        ports: ['5432:5432']
+        env:
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+        options: >-
+          --health-cmd="pg_isready -q"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis/redis-stack:7.2.0-v18
+        ports: ['6379:6379', '8001:8001']
+        env:
+          REDIS_ARGS: ${{ secrets.CI_REDIS_PASSWORD && format('--requirepass {0}', secrets.CI_REDIS_PASSWORD) || '' }}
+
+    env:
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-app
+          path: dist/
+
+      - name: Prepare test environment
+        uses: ./.github/actions/prepare-test-env
+        with:
+          db-username: ${{ secrets.CI_DB_USERNAME }}
+          db-password: ${{ secrets.CI_DB_PASSWORD }}
+          db-database: ${{ secrets.CI_DB_DATABASE }}
+          redis-password: ${{ secrets.CI_REDIS_PASSWORD }}
+          redis-keyprefix: ${{ secrets.CI_REDIS_KEYPREFIX }}
+          jwt-private-key: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+          metrics-api-key: ${{ secrets.CI_METRICS_API_KEY }}
+
+      - name: Run DB migrations (test)
+        run: npm run migration:run:test
+
+      - name: Run restore drill (keep dump)
+        run: node scripts/db-restore-drill.js --yes --keep-dump
+
+      - name: Point app at restored drill database
+        run: |
+          set -euo pipefail
+          if grep -q '^DB_DATABASE=' .env.test; then
+            sed -i 's/^DB_DATABASE=.*/DB_DATABASE="ecommerce_restore_drill"/' .env.test
+          else
+            echo 'DB_DATABASE="ecommerce_restore_drill"' >> .env.test
+          fi
+
+      - name: Start app and run smoke against restored DB
+        run: |
+          set -euo pipefail
+          PORT=3000 npm run start:test &
+          APP_PID=$!
+          ready=false
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/health/readiness | grep -q '"status":"ok"'; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            kill -SIGTERM $APP_PID 2>/dev/null || true
+            exit 1
+          fi
+          PORT=3000 npm run smoke-test -- --base-url=http://localhost:3000
+          kill -SIGTERM $APP_PID || true
+        env:
+          METRICS_API_KEY: ${{ secrets.CI_METRICS_API_KEY }}
+          DB_DATABASE: ecommerce_restore_drill
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f .env.test || true
+          rm -f backups/restore-drill_*.dump || true
