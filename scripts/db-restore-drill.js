@@ -83,6 +83,18 @@ try {
   );
   console.log(`   information_schema.tables (public):\n${tableCheck.trim()}`);
 
+  const countLine = tableCheck
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => /^\d+$/.test(line));
+  const tableCount = countLine ? parseInt(countLine, 10) : NaN;
+  if (!Number.isFinite(tableCount) || tableCount <= 0) {
+    throw new Error(
+      `Restore produced empty schema (public table count=${Number.isFinite(tableCount) ? tableCount : 'unknown'}). Bootstrap migrations or schema:sync before the drill.`,
+    );
+  }
+  console.log(`   Asserted public table count > 0 (${tableCount})`);
+
   console.log(
     '5/5 Cleanup drill dump artifact (optional keep via --keep-dump)...',
   );
