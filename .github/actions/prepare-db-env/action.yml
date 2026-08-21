@@ -1,0 +1,122 @@
+name: Prepare DB environment
+description: Install PostgreSQL client, wait for Postgres, and write a TypeORM-compatible .env.test (DB + Redis stubs + JWT).
+
+inputs:
+  db-username:
+    description: PostgreSQL username
+    required: false
+    default: postgres
+  db-password:
+    description: PostgreSQL password
+    required: false
+    default: postgres
+  db-database:
+    description: PostgreSQL database name
+    required: false
+    default: test_db
+  db-host:
+    description: PostgreSQL host
+    required: false
+    default: localhost
+  db-port:
+    description: PostgreSQL port
+    required: false
+    default: '5432'
+  redis-host:
+    description: Redis host stub for validateEnv (Redis need not be running)
+    required: false
+    default: localhost
+  redis-password:
+    description: Redis password stub
+    required: false
+    default: ''
+  redis-keyprefix:
+    description: Redis key prefix stub
+    required: false
+    default: 'ecom:restore-drill:'
+  jwt-private-key:
+    description: Base64-encoded or PEM JWT private key (required for TypeORM data-source validateEnv)
+    required: true
+  metrics-api-key:
+    description: Metrics API key stub written to .env.test
+    required: false
+    default: 'restore-drill-ci'
+
+runs:
+  using: composite
+  steps:
+    - name: Install PostgreSQL client
+      shell: bash
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y postgresql-client
+
+    - name: Wait for PostgreSQL and write .env.test
+      shell: bash
+      env:
+        CI_DB_HOST: ${{ inputs.db-host }}
+        CI_DB_PORT: ${{ inputs.db-port }}
+        CI_DB_USERNAME: ${{ inputs.db-username }}
+        CI_DB_PASSWORD: ${{ inputs.db-password }}
+        CI_DB_DATABASE: ${{ inputs.db-database }}
+        CI_REDIS_HOST: ${{ inputs.redis-host }}
+        CI_REDIS_PASSWORD: ${{ inputs.redis-password }}
+        CI_REDIS_KEYPREFIX: ${{ inputs.redis-keyprefix }}
+        CI_JWT_PRIVATE_KEY: ${{ inputs.jwt-private-key }}
+        CI_METRICS_API_KEY: ${{ inputs.metrics-api-key }}
+      run: |
+        set -euo pipefail
+
+        DB_USER="${CI_DB_USERNAME:-postgres}"
+        DB_NAME="${CI_DB_DATABASE:-test_db}"
+        DB_HOST="${CI_DB_HOST:-localhost}"
+        DB_PORT="${CI_DB_PORT:-5432}"
+
+        echo "Testing PostgreSQL connection..."
+        pg_ready=false
+        for i in {1..30}; do
+          if pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}"; then
+            echo "PostgreSQL is ready at ${DB_HOST}:${DB_PORT}"
+            pg_ready=true
+            break
+          fi
+          echo "Waiting for PostgreSQL... ($i/30)"
+          sleep 2
+        done
+        if [ "$pg_ready" != true ]; then
+          echo "PostgreSQL never became ready"
+          exit 1
+        fi
+
+        node -e '
+          const fs = require("fs");
+          let jwt = process.env.CI_JWT_PRIVATE_KEY || "";
+          if (!jwt) {
+            console.error("jwt-private-key is required for TypeORM data-source validateEnv");
+            process.exit(1);
+          }
+          if (!jwt.includes("BEGIN PRIVATE KEY") && !jwt.includes("BEGIN RSA PRIVATE KEY")) {
+            jwt = Buffer.from(jwt, "base64").toString("utf8");
+          }
+          const jwtEscaped = `"${jwt.replace(/\r?\n/g, "\\n")}"`;
+          const lines = [
+            "NODE_ENV=test",
+            "PORT=3000",
+            `DB_HOST=${JSON.stringify(process.env.CI_DB_HOST || "localhost")}`,
+            `DB_PORT=${JSON.stringify(process.env.CI_DB_PORT || "5432")}`,
+            `DB_USERNAME=${JSON.stringify(process.env.CI_DB_USERNAME)}`,
+            `DB_PASSWORD=${JSON.stringify(process.env.CI_DB_PASSWORD)}`,
+            `DB_DATABASE=${JSON.stringify(process.env.CI_DB_DATABASE)}`,
+            `REDIS_HOST=${JSON.stringify(process.env.CI_REDIS_HOST || "localhost")}`,
+            `REDIS_PORT=${JSON.stringify("6379")}`,
+            `REDIS_PASSWORD=${JSON.stringify(process.env.CI_REDIS_PASSWORD || "")}`,
+            `REDIS_KEYPREFIX=${JSON.stringify(process.env.CI_REDIS_KEYPREFIX || "ecom:restore-drill:")}`,
+            `REDIS_DB=${JSON.stringify("0")}`,
+            `JWT_PRIVATE_KEY=${jwtEscaped}`,
+            `JWT_ACCESS_TOKEN_TTL=${JSON.stringify("15m")}`,
+            `JWT_REFRESH_TOKEN_TTL=${JSON.stringify("7d")}`,
+            `METRICS_API_KEY=${JSON.stringify(process.env.CI_METRICS_API_KEY || "restore-drill-ci")}`,
+          ];
+          fs.writeFileSync(".env.test", lines.join("\n") + "\n");
+          console.log(".env.test written by prepare-db-env");
+        '
