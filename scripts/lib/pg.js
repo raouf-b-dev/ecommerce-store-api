@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CONTAINER_NAME = 'postgres-db';
+/** Keep in sync with GHA `services.postgres.image` / Compose Postgres image. */
+const DEFAULT_PG_IMAGE = 'postgres:18.4';
 const DUMP_PREFIX = 'ecommerce-store-api_';
 
 /**
@@ -22,6 +24,10 @@ function getDbConfig(overrides = {}) {
       process.env.POSTGRES_CONTAINER_NAME ||
       DEFAULT_CONTAINER_NAME,
   };
+}
+
+function getPgImage() {
+  return process.env.POSTGRES_IMAGE || DEFAULT_PG_IMAGE;
 }
 
 function pgEnv(config) {
@@ -50,6 +56,37 @@ function detectDockerContainer(containerName) {
   }
 }
 
+function dockerCliAvailable() {
+  try {
+    const result = spawnSync(
+      'docker',
+      ['version', '--format', '{{.Server.Version}}'],
+      {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
+    return result.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Prefer named-container exec, else ephemeral client container (version-matched
+ * image), else host-installed tools.
+ */
+function resolveToolMode(config) {
+  const container = detectDockerContainer(config.containerName);
+  if (container) {
+    return { mode: 'exec', container };
+  }
+  if (dockerCliAvailable()) {
+    return { mode: 'run', image: getPgImage() };
+  }
+  return { mode: 'local' };
+}
+
 function assertOk(result, label) {
   if (result.error) {
     throw new Error(`${label}: ${result.error.message}`);
@@ -62,22 +99,70 @@ function assertOk(result, label) {
   }
 }
 
+function assertRestoreOk(result, label) {
+  if (result.error) {
+    throw result.error;
+  }
+  // pg_restore may exit 1 with non-fatal warnings when --clean hits missing objects
+  if (result.status !== 0 && result.status !== 1) {
+    throw new Error(`${label} failed (exit ${result.status})`);
+  }
+}
+
+function hostConnArgs(config, database) {
+  return [
+    '-h',
+    config.host,
+    '-p',
+    config.port,
+    '-U',
+    config.username,
+    '-d',
+    database,
+  ];
+}
+
+/**
+ * Run a client binary from an ephemeral Postgres image (matches server major).
+ * Uses host networking so localhost reaches GHA service containers.
+ */
+function spawnDockerRun(config, image, toolArgs, spawnOpts, volumeMounts = []) {
+  const args = ['run', '--rm', '--network', 'host', '-e', 'PGPASSWORD'];
+  for (const [hostPath, containerPath, mode] of volumeMounts) {
+    const spec =
+      mode === 'ro'
+        ? `${hostPath}:${containerPath}:ro`
+        : `${hostPath}:${containerPath}`;
+    args.push('-v', spec);
+  }
+  args.push(image, ...toolArgs);
+  return spawnSync('docker', args, {
+    env: pgEnv(config),
+    ...spawnOpts,
+  });
+}
+
 /**
  * Run pg_dump (-Fc) and return a Buffer of the custom-format dump.
- * Prefers docker exec when the Postgres container is running.
+ * Prefers docker exec → docker run (POSTGRES_IMAGE) → local pg_dump.
  */
 function runPgDump(config = getDbConfig()) {
-  const container = detectDockerContainer(config.containerName);
+  const mode = resolveToolMode(config);
   const env = pgEnv(config);
+  const binaryOpts = {
+    encoding: null,
+    maxBuffer: 500 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  };
 
-  if (container) {
+  if (mode.mode === 'exec') {
     const result = spawnSync(
       'docker',
       [
         'exec',
         '-e',
         'PGPASSWORD',
-        container,
+        mode.container,
         'pg_dump',
         '-U',
         config.username,
@@ -85,36 +170,27 @@ function runPgDump(config = getDbConfig()) {
         config.database,
         '-Fc',
       ],
-      {
-        env,
-        encoding: null,
-        maxBuffer: 500 * 1024 * 1024,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
+      { env, ...binaryOpts },
     );
-    assertOk(result, 'pg_dump (docker)');
-    return { buffer: result.stdout, via: `docker:${container}` };
+    assertOk(result, 'pg_dump (docker exec)');
+    return { buffer: result.stdout, via: `docker-exec:${mode.container}` };
+  }
+
+  if (mode.mode === 'run') {
+    const result = spawnDockerRun(
+      config,
+      mode.image,
+      ['pg_dump', ...hostConnArgs(config, config.database), '-Fc'],
+      binaryOpts,
+    );
+    assertOk(result, `pg_dump (docker run ${mode.image})`);
+    return { buffer: result.stdout, via: `docker-run:${mode.image}` };
   }
 
   const result = spawnSync(
     'pg_dump',
-    [
-      '-h',
-      config.host,
-      '-p',
-      config.port,
-      '-U',
-      config.username,
-      '-d',
-      config.database,
-      '-Fc',
-    ],
-    {
-      env,
-      encoding: null,
-      maxBuffer: 500 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
+    [...hostConnArgs(config, config.database), '-Fc'],
+    { env, ...binaryOpts },
   );
   assertOk(result, 'pg_dump (local)');
   return { buffer: result.stdout, via: 'local' };
@@ -124,16 +200,20 @@ function runPgDump(config = getDbConfig()) {
  * List custom-format dump contents (sanity check). Returns stdout text.
  */
 function listDump(dumpPath, config = getDbConfig()) {
-  const container = detectDockerContainer(config.containerName);
+  const mode = resolveToolMode(config);
   const env = pgEnv(config);
   const absPath = path.resolve(dumpPath);
+  const textOpts = {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  };
 
-  if (container) {
+  if (mode.mode === 'exec') {
     const containerDumpPath = `/tmp/${path.basename(absPath)}.list-check`;
     execFileSync('docker', [
       'cp',
       absPath,
-      `${container}:${containerDumpPath}`,
+      `${mode.container}:${containerDumpPath}`,
     ]);
     try {
       const result = spawnSync(
@@ -142,26 +222,40 @@ function listDump(dumpPath, config = getDbConfig()) {
           'exec',
           '-e',
           'PGPASSWORD',
-          container,
+          mode.container,
           'pg_restore',
           '--list',
           containerDumpPath,
         ],
-        { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+        { env, ...textOpts },
       );
-      assertOk(result, 'pg_restore --list (docker)');
+      assertOk(result, 'pg_restore --list (docker exec)');
       return result.stdout;
     } finally {
-      spawnSync('docker', ['exec', container, 'rm', '-f', containerDumpPath], {
-        stdio: 'ignore',
-      });
+      spawnSync(
+        'docker',
+        ['exec', mode.container, 'rm', '-f', containerDumpPath],
+        { stdio: 'ignore' },
+      );
     }
+  }
+
+  if (mode.mode === 'run') {
+    const containerDumpPath = '/tmp/ecom-list.dump';
+    const result = spawnDockerRun(
+      config,
+      mode.image,
+      ['pg_restore', '--list', containerDumpPath],
+      textOpts,
+      [[absPath, containerDumpPath, 'ro']],
+    );
+    assertOk(result, `pg_restore --list (docker run ${mode.image})`);
+    return result.stdout;
   }
 
   const result = spawnSync('pg_restore', ['--list', absPath], {
     env,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    ...textOpts,
   });
   assertOk(result, 'pg_restore --list (local)');
   return result.stdout;
@@ -171,20 +265,24 @@ function listDump(dumpPath, config = getDbConfig()) {
  * Restore a custom-format dump into the configured database.
  */
 function runPgRestore(dumpPath, config = getDbConfig()) {
-  const container = detectDockerContainer(config.containerName);
+  const mode = resolveToolMode(config);
   const env = pgEnv(config);
   const absPath = path.resolve(dumpPath);
+  const inheritOpts = {
+    encoding: 'utf8',
+    stdio: ['ignore', 'inherit', 'inherit'],
+  };
 
   if (!fs.existsSync(absPath)) {
     throw new Error(`Dump file does not exist: ${absPath}`);
   }
 
-  if (container) {
+  if (mode.mode === 'exec') {
     const containerDumpPath = `/tmp/${path.basename(absPath)}`;
     execFileSync('docker', [
       'cp',
       absPath,
-      `${container}:${containerDumpPath}`,
+      `${mode.container}:${containerDumpPath}`,
     ]);
     try {
       const result = spawnSync(
@@ -193,7 +291,7 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
           'exec',
           '-e',
           'PGPASSWORD',
-          container,
+          mode.container,
           'pg_restore',
           '-U',
           config.username,
@@ -204,47 +302,51 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
           '--no-owner',
           containerDumpPath,
         ],
-        { env, encoding: 'utf8', stdio: ['ignore', 'inherit', 'inherit'] },
+        { env, ...inheritOpts },
       );
-      // pg_restore may exit 1 with non-fatal warnings when --clean hits missing objects
-      if (result.error) {
-        throw result.error;
-      }
-      if (result.status !== 0 && result.status !== 1) {
-        throw new Error(`pg_restore (docker) failed (exit ${result.status})`);
-      }
-      return { via: `docker:${container}` };
+      assertRestoreOk(result, 'pg_restore (docker exec)');
+      return { via: `docker-exec:${mode.container}` };
     } finally {
-      spawnSync('docker', ['exec', container, 'rm', '-f', containerDumpPath], {
-        stdio: 'ignore',
-      });
+      spawnSync(
+        'docker',
+        ['exec', mode.container, 'rm', '-f', containerDumpPath],
+        { stdio: 'ignore' },
+      );
     }
+  }
+
+  if (mode.mode === 'run') {
+    const containerDumpPath = '/tmp/ecom-restore.dump';
+    const result = spawnDockerRun(
+      config,
+      mode.image,
+      [
+        'pg_restore',
+        ...hostConnArgs(config, config.database),
+        '--clean',
+        '--if-exists',
+        '--no-owner',
+        containerDumpPath,
+      ],
+      inheritOpts,
+      [[absPath, containerDumpPath, 'ro']],
+    );
+    assertRestoreOk(result, `pg_restore (docker run ${mode.image})`);
+    return { via: `docker-run:${mode.image}` };
   }
 
   const result = spawnSync(
     'pg_restore',
     [
-      '-h',
-      config.host,
-      '-p',
-      config.port,
-      '-U',
-      config.username,
-      '-d',
-      config.database,
+      ...hostConnArgs(config, config.database),
       '--clean',
       '--if-exists',
       '--no-owner',
       absPath,
     ],
-    { env, encoding: 'utf8', stdio: ['ignore', 'inherit', 'inherit'] },
+    { env, ...inheritOpts },
   );
-  if (result.error) {
-    throw result.error;
-  }
-  if (result.status !== 0 && result.status !== 1) {
-    throw new Error(`pg_restore (local) failed (exit ${result.status})`);
-  }
+  assertRestoreOk(result, 'pg_restore (local)');
   return { via: 'local' };
 }
 
@@ -258,13 +360,17 @@ function runPsql(
   { database, tuplesOnly = false } = {},
 ) {
   const targetDb = database || config.database;
-  const container = detectDockerContainer(config.containerName);
+  const mode = resolveToolMode(config);
   const env = pgEnv(config);
   const psqlTail = tuplesOnly
     ? ['-v', 'ON_ERROR_STOP=1', '-tAc', sql]
     : ['-v', 'ON_ERROR_STOP=1', '-c', sql];
+  const textOpts = {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  };
 
-  if (container) {
+  if (mode.mode === 'exec') {
     const result = spawnSync(
       'docker',
       [
@@ -272,7 +378,7 @@ function runPsql(
         '-e',
         'PGPASSWORD',
         '-i',
-        container,
+        mode.container,
         'psql',
         '-U',
         config.username,
@@ -280,26 +386,27 @@ function runPsql(
         targetDb,
         ...psqlTail,
       ],
-      { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      { env, ...textOpts },
     );
-    assertOk(result, 'psql (docker)');
+    assertOk(result, 'psql (docker exec)');
+    return result.stdout;
+  }
+
+  if (mode.mode === 'run') {
+    const result = spawnDockerRun(
+      config,
+      mode.image,
+      ['psql', ...hostConnArgs(config, targetDb), ...psqlTail],
+      textOpts,
+    );
+    assertOk(result, `psql (docker run ${mode.image})`);
     return result.stdout;
   }
 
   const result = spawnSync(
     'psql',
-    [
-      '-h',
-      config.host,
-      '-p',
-      config.port,
-      '-U',
-      config.username,
-      '-d',
-      targetDb,
-      ...psqlTail,
-    ],
-    { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    [...hostConnArgs(config, targetDb), ...psqlTail],
+    { env, ...textOpts },
   );
   assertOk(result, 'psql (local)');
   return result.stdout;
@@ -479,7 +586,9 @@ function parsePsqlInt(output) {
 module.exports = {
   DUMP_PREFIX,
   DEFAULT_CONTAINER_NAME,
+  DEFAULT_PG_IMAGE,
   getDbConfig,
+  getPgImage,
   detectDockerContainer,
   runPgDump,
   runPgRestore,
