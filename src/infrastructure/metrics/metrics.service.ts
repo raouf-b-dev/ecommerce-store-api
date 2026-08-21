@@ -30,6 +30,7 @@ export class MetricsService implements OnModuleInit {
   // Infrastructure gauges
   readonly dbPoolActiveConnections: Gauge;
   readonly redisHealthStatus: Gauge;
+  readonly throttlerStorageDegraded: Gauge;
   readonly bullmqQueueDepth: Gauge;
   readonly websocketConnectionsActive: Gauge;
 
@@ -126,6 +127,12 @@ export class MetricsService implements OnModuleInit {
     this.redisHealthStatus = new Gauge({
       name: 'redis_health_status',
       help: 'Status of Redis connection (1=up, 0=down)',
+      registers: [this.registry],
+    });
+
+    this.throttlerStorageDegraded = new Gauge({
+      name: 'throttler_storage_degraded',
+      help: 'Whether throttler is using in-memory fallback (1=degraded, 0=redis)',
       registers: [this.registry],
     });
 
