@@ -1,6 +1,8 @@
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 
 export class MockCacheService implements CachePort {
+  isAvailable = jest.fn<boolean, []>().mockReturnValue(true);
+
   ttl = jest.fn<Promise<number>, [string]>();
   get = jest.fn<Promise<any>, [string, string?]>().mockResolvedValue(null);
   getMany = jest
@@ -24,4 +26,12 @@ export class MockCacheService implements CachePort {
     .fn<Promise<any[]>, [string, string, any?]>()
     .mockResolvedValue([]);
   scanKeys = jest.fn<Promise<string[]>, [string, number?]>();
+
+  mockUnavailable(): void {
+    this.isAvailable.mockReturnValue(false);
+  }
+
+  mockAvailable(): void {
+    this.isAvailable.mockReturnValue(true);
+  }
 }

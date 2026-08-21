@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { FtSearchOptions, RedisJSON } from 'redis';
+import {
+  CachePort,
+  CacheSearchOptions,
+} from '../../../shared-kernel/domain/interfaces/cache.port';
+import { MetricsService } from '../../metrics/metrics.service';
 import { RedisService } from '../redis.service';
-import { SearchOptions } from '../types';
 import { toRedisJson } from './cache-json';
-import { CachePort } from './cache.port';
 
 interface SetOptions {
   path?: string;
@@ -26,13 +29,40 @@ function isSearchDocument(doc: unknown): doc is SearchDocument {
   return doc.value !== undefined;
 }
 
+function toFtSearchOptions(searchOptions: CacheSearchOptions): FtSearchOptions {
+  const { page = 1, limit = 10, sortBy, sortOrder = 'asc' } = searchOptions;
+
+  const options: FtSearchOptions = {
+    LIMIT: {
+      from: (page - 1) * limit,
+      size: limit,
+    },
+  };
+
+  if (sortBy) {
+    options.SORTBY = {
+      BY: sortBy,
+      DIRECTION: sortOrder === 'desc' ? 'DESC' : 'ASC',
+    };
+  }
+
+  return options;
+}
+
 /**
  * Fail-open cache adapter. Redis outages return empty/false/null — callers
  * (cache-aside repositories) fall back to PostgreSQL.
  */
 @Injectable()
 export class CacheService implements CachePort {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    @Optional() private readonly metrics?: MetricsService,
+  ) {}
+
+  isAvailable(): boolean {
+    return this.redisService.isReady();
+  }
 
   async ttl(key: string): Promise<number> {
     return this.redisService.ttl(key);
@@ -41,39 +71,41 @@ export class CacheService implements CachePort {
   async get<T>(key: string, path?: string): Promise<T | null> {
     const value = await this.redisService.jsonGet(key, path);
     if (value === null) {
+      this.metrics?.redisCacheMissesTotal.inc();
       return null;
     }
+    this.metrics?.redisCacheHitsTotal.inc();
     return value as T;
   }
 
   async getMany<T>(keys: string[], path: string = '$'): Promise<(T | null)[]> {
     if (keys.length === 0) return [];
     const values = await this.redisService.jsonMGet(keys, path);
-    return values.map((value) => (value === null ? null : (value as T)));
+    let hits = 0;
+    let misses = 0;
+    const mapped = values.map((value) => {
+      if (value === null) {
+        misses += 1;
+        return null;
+      }
+      hits += 1;
+      return value as T;
+    });
+    if (hits > 0) this.metrics?.redisCacheHitsTotal.inc(hits);
+    if (misses > 0) this.metrics?.redisCacheMissesTotal.inc(misses);
+    return mapped;
   }
 
   async getAll<T>(
     index: string,
     query: string = '*',
-    searchOptions: SearchOptions = {},
+    searchOptions: CacheSearchOptions = {},
   ): Promise<T[]> {
-    const { page = 1, limit = 10, sortBy, sortOrder = 'asc' } = searchOptions;
-
-    const options: FtSearchOptions = {
-      LIMIT: {
-        from: (page - 1) * limit,
-        size: limit,
-      },
-    };
-
-    if (sortBy) {
-      options.SORTBY = {
-        BY: sortBy,
-        DIRECTION: sortOrder === 'desc' ? 'DESC' : 'ASC',
-      };
-    }
-
-    const values = await this.redisService.search(index, query, options);
+    const values = await this.redisService.search(
+      index,
+      query,
+      toFtSearchOptions(searchOptions),
+    );
     return values.documents.flatMap((doc) =>
       isSearchDocument(doc) ? [doc.value as T] : [],
     );
@@ -179,9 +211,13 @@ export class CacheService implements CachePort {
   async search<T>(
     index: string,
     query: string,
-    options?: FtSearchOptions,
+    options?: CacheSearchOptions,
   ): Promise<T[]> {
-    const result = await this.redisService.search(index, query, options);
+    const result = await this.redisService.search(
+      index,
+      query,
+      options ? toFtSearchOptions(options) : undefined,
+    );
     return result.documents.flatMap((doc) =>
       isSearchDocument(doc) ? [doc.value as T] : [],
     );
