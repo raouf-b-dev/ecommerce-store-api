@@ -83,16 +83,7 @@ export class CachedUserRepository implements UserRepository {
     limit?: number,
   ): Promise<Result<User[], RepositoryError>> {
     try {
-      const cachedUsers = await this.cacheService.getAll<UserForCache>(
-        USER_REDIS.INDEX,
-      );
-
-      if (cachedUsers.length > 0) {
-        return Result.success(
-          cachedUsers.map((c) => UserCacheMapper.fromCache(c)),
-        );
-      }
-
+      // Paginated lists are not a complete RediSearch result set — always query Postgres.
       const dbResult = await this.postgresRepo.findAll(page, limit);
       if (dbResult.isFailure) return dbResult;
 
@@ -127,13 +118,13 @@ export class CachedUserRepository implements UserRepository {
     email: string,
   ): Promise<Result<User | null, RepositoryError>> {
     try {
-      const cachedUsers = await this.cacheService.getAll<UserForCache>(
+      const [cached] = await this.cacheService.search<UserForCache>(
         USER_REDIS.INDEX,
         tagEquals('email', email),
       );
-
-      if (cachedUsers.length > 0) {
-        return Result.success(UserCacheMapper.fromCache(cachedUsers[0]));
+      if (cached) {
+        const user = UserCacheMapper.fromCache(cached);
+        if (user) return Result.success(user);
       }
     } catch (error) {
       this.logger.warn(`Cache lookup failed for email: ${email}`, error);
@@ -172,7 +163,8 @@ export class CachedUserRepository implements UserRepository {
     try {
       const cached = await this.cacheService.get<UserForCache>(this.idKey(id));
       if (cached) {
-        return Result.success(UserCacheMapper.fromCache(cached));
+        const user = UserCacheMapper.fromCache(cached);
+        if (user) return Result.success(user);
       }
     } catch (error) {
       this.logger.warn(`Cache lookup failed for ID: ${id}`, error);

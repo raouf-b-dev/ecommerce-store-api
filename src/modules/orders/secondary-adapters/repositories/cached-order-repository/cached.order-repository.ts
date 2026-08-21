@@ -10,8 +10,8 @@ import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ORDER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
-  OrderForCache,
   OrderCacheMapper,
+  OrderForCache,
 } from '../../persistence/mappers/order.mapper';
 import { Order } from '../../../core/domain/entities/order';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
@@ -48,21 +48,38 @@ export class CachedOrderRepository implements OrderRepository {
 
       if (shouldUseCache) {
         try {
-          const isCached = await this.cacheService.get<string>(
+          const isCachedFlag = await this.cacheService.get(
             ORDER_REDIS.IS_CACHED_FLAG,
           );
+          const isCached = isCachedFlag === true || isCachedFlag === 'true';
 
           if (isCached) {
-            const rawCachedOrders =
-              await this.cacheService.getAll<OrderForCache>(
-                ORDER_REDIS.INDEX,
-                '*',
-                { page, limit, sortBy, sortOrder },
-              );
-            const orders: Order[] = rawCachedOrders.map((order) =>
-              OrderCacheMapper.fromCache(order),
+            const cached = await this.cacheService.search<OrderForCache>(
+              ORDER_REDIS.INDEX,
+              '*',
+              {
+                page,
+                limit,
+                sortBy,
+                sortOrder,
+              },
             );
-            return Result.success<Order[]>(orders);
+            const orders: Order[] = [];
+            let hasUnreadable = false;
+            for (const entry of cached) {
+              const order = OrderCacheMapper.fromCache(entry);
+              if (!order) {
+                hasUnreadable = true;
+                break;
+              }
+              orders.push(order);
+            }
+            if (!hasUnreadable) {
+              return Result.success(orders);
+            }
+            this.logger.warn(
+              'Order list cache payload had unreadable entries — falling back to Postgres',
+            );
           }
         } catch (cacheError) {
           this.logger.warn(
@@ -140,7 +157,8 @@ export class CachedOrderRepository implements OrderRepository {
         `${ORDER_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<Order>(OrderCacheMapper.fromCache(cached));
+        const order = OrderCacheMapper.fromCache(cached);
+        if (order) return Result.success(order);
       }
 
       const dbResult = await this.postgresRepo.findById(id);

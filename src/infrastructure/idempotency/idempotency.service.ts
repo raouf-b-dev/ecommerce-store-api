@@ -5,6 +5,27 @@ import {
   IdempotencyResult,
 } from '../../shared-kernel/domain/stores/idempotency.store';
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+
+type IdempotencyStatus = typeof IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS;
+
+type IdempotencyRecord = {
+  status: IdempotencyStatus;
+  data?: unknown;
+};
+
+function parseIdempotencyRecord(raw: unknown): IdempotencyRecord | null {
+  if (!isRecord(raw) || typeof raw.status !== 'string') {
+    return null;
+  }
+  if (
+    raw.status !== IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS &&
+    raw.status !== IDEMPOTENCY_REDIS.STATUS.COMPLETED
+  ) {
+    return null;
+  }
+  return { status: raw.status, data: raw.data };
+}
 
 /**
  * Redis-backed idempotency adapter. Depends only on {@link CachePort}
@@ -45,23 +66,34 @@ export class IdempotencyService extends IdempotencyStore {
         return { isNew: true };
       }
 
-      const existing = await this.cache.get<{
-        status: string;
-        data?: T;
-      }>(cacheKey);
+      const raw = await this.cache.get(cacheKey);
+      const existing = parseIdempotencyRecord(raw);
 
       if (existing) {
         if (
           existing.status === IDEMPOTENCY_REDIS.STATUS.COMPLETED &&
-          existing.data
+          existing.data !== undefined
         ) {
           this.logger.log(`Idempotency key ${key} found with completed result`);
-          return { isNew: false, data: existing.data };
+          return { isNew: false, data: existing.data as T };
         }
         if (existing.status === IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS) {
           this.logger.log(`Idempotency key ${key} is in-progress`);
           return { isNew: false };
         }
+
+        this.logger.warn(
+          `Idempotency key ${key} has unusable status ${existing.status} — failing closed`,
+        );
+        return { isNew: false, unavailable: true };
+      }
+
+      // SET NX lost and a non-null payload failed to parse (or unknown status).
+      if (raw != null) {
+        this.logger.warn(
+          `Idempotency key ${key} occupied with malformed record — failing closed`,
+        );
+        return { isNew: false, unavailable: true };
       }
 
       // SET NX failed and GET missed: backend blip mid-call, or TTL race.

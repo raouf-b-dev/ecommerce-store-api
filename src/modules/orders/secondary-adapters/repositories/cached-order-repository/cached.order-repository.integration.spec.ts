@@ -102,14 +102,14 @@ describe('CachedOrderRepository (Integration - Real DB delegate)', () => {
       if (key === ORDER_REDIS.IS_CACHED_FLAG) return Promise.resolve('true');
       return Promise.resolve(null);
     });
-    cacheService.getAll.mockResolvedValue([cachedOrder]);
+    cacheService.search.mockResolvedValue([cachedOrder]);
 
     const result = await repository.listOrders({ page: 1, limit: 10 });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toHaveLength(1);
     expect(result.value[0].id).toBe(orderEntity.id);
-    expect(cacheService.getAll).toHaveBeenCalled();
+    expect(cacheService.search).toHaveBeenCalled();
   });
 
   it('listOrders falls back to postgres when cache lookup throws', async () => {

@@ -186,7 +186,7 @@ describe('CachedOrderRepository', () => {
   describe('listOrders', () => {
     it('should return cached orders if no filters and cache exists', async () => {
       cacheService.get.mockResolvedValue('true');
-      cacheService.getAll.mockResolvedValue([mockCachedOrder]);
+      cacheService.search.mockResolvedValue([mockCachedOrder]);
 
       const dto: ListOrdersQuery = {};
       const result = await repository.listOrders(dto);
@@ -196,6 +196,28 @@ describe('CachedOrderRepository', () => {
         const expected = [OrderCacheMapper.fromCache(mockCachedOrder)];
         expect(result.value).toEqual(expected);
       }
+    });
+
+    it('should fall back to postgres when cached list has an invalid entry', async () => {
+      const cached = OrderCacheMapper.toCache(mockOrder);
+      const unreadable: OrderForCache = {
+        ...cached,
+        items: cached.items.map((item) => ({ ...item, productName: '' })),
+      };
+      cacheService.get.mockResolvedValue('true');
+      cacheService.search.mockResolvedValue([mockCachedOrder, unreadable]);
+      postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
+      cacheService.setAll.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
+
+      const result = await repository.listOrders({});
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
+      expect(postgresRepo.listOrders).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Order list cache payload had unreadable entries — falling back to Postgres',
+      );
     });
 
     it('should fetch from postgres and cache if no cache', async () => {
@@ -281,7 +303,7 @@ describe('CachedOrderRepository', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(postgresRepo.listOrders).toHaveBeenCalledWith(dto);
-      expect(cacheService.getAll).not.toHaveBeenCalled();
+      expect(cacheService.search).not.toHaveBeenCalled();
     });
 
     it('should handle pagination parameters', async () => {

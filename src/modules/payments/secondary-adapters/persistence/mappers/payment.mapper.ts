@@ -8,11 +8,17 @@ type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 
 export type PaymentForCache = Omit<
   IPayment,
-  'createdAt' | 'updatedAt' | 'completedAt'
+  'createdAt' | 'updatedAt' | 'completedAt' | 'refunds'
 > & {
   createdAt: number;
   updatedAt: number;
   completedAt: number | null;
+  refunds: Array<
+    Omit<IPayment['refunds'][number], 'createdAt' | 'updatedAt'> & {
+      createdAt: number;
+      updatedAt: number;
+    }
+  >;
 };
 
 export class PaymentMapper {
@@ -85,18 +91,30 @@ export class PaymentCacheMapper {
       completedAt: primitives.completedAt
         ? primitives.completedAt.getTime()
         : null,
+      refunds: primitives.refunds.map((refund) => ({
+        ...refund,
+        createdAt: refund.createdAt.getTime(),
+        updatedAt: refund.updatedAt.getTime(),
+      })),
     };
   }
 
-  static fromCache(cached: PaymentForCache): Payment {
-    return Payment.fromPrimitives({
-      ...cached,
-      paymentMethod: cached.paymentMethod,
-      status: cached.status,
-      refunds: cached.refunds || [],
-      createdAt: new Date(cached.createdAt),
-      updatedAt: new Date(cached.updatedAt),
-      completedAt: cached.completedAt ? new Date(cached.completedAt) : null,
-    });
+  static fromCache(cached: PaymentForCache): Payment | null {
+    try {
+      return Payment.fromPrimitives({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+        completedAt:
+          cached.completedAt == null ? null : new Date(cached.completedAt),
+        refunds: cached.refunds.map((refund) => ({
+          ...refund,
+          createdAt: new Date(refund.createdAt),
+          updatedAt: new Date(refund.updatedAt),
+        })),
+      });
+    } catch {
+      return null;
+    }
   }
 }

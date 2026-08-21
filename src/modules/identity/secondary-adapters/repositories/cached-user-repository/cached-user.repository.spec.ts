@@ -81,7 +81,7 @@ describe('CachedUserRepository', () => {
 
   describe('findByEmail', () => {
     it('should return user from cache if available', async () => {
-      cacheService.getAll.mockResolvedValue([mockUserCache]);
+      cacheService.search.mockResolvedValue([mockUserCache]);
 
       const result = await repository.findByEmail(mockUser.email);
 
@@ -89,27 +89,27 @@ describe('CachedUserRepository', () => {
       expect(result.value).toBeDefined();
       expect(result.value!.email).toBe(mockUser.email);
       expect(postgresRepo.findByEmail).not.toHaveBeenCalled();
-      expect(cacheService.getAll).toHaveBeenCalledWith(
+      expect(cacheService.search).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
         tagEquals('email', mockUser.email),
       );
     });
 
     it('should escape email TAG punctuation including hyphens', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
 
       const specialEmail = 'e2e-admin"special\\user@example.com';
       await repository.findByEmail(specialEmail);
 
-      expect(cacheService.getAll).toHaveBeenCalledWith(
+      expect(cacheService.search).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
         tagEquals('email', specialEmail),
       );
     });
 
     it('should return user from postgres if not in cache', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(mockUser));
 
       const result = await repository.findByEmail(mockUser.email);
@@ -125,7 +125,7 @@ describe('CachedUserRepository', () => {
     });
 
     it('should return null if not found in postgres', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
 
       const result = await repository.findByEmail('notfound@example.com');

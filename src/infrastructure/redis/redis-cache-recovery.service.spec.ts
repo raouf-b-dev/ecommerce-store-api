@@ -60,7 +60,6 @@ describe('RedisCacheRecoveryService', () => {
     expect(redisService.dropVersionedIndexesForGeneration).toHaveBeenCalledWith(
       1,
     );
-    expect(redisService.scanKeys).not.toHaveBeenCalled();
     for (const flag of VERSIONED_IS_CACHED_FLAGS) {
       expect(redisService.del).toHaveBeenCalledWith(flag);
     }

@@ -1,4 +1,5 @@
 // src\modules\products\infrastructure\repositories\CachedProductRepository\cached.product-repository.ts
+import { Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -6,10 +7,14 @@ import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.
 import { PRODUCT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Product } from '../../../core/domain/entities/product';
 import { ProductRepository } from '../../../core/domain/repositories/product-repository';
-import { IProduct } from '../../../core/domain/interfaces/product.interface';
-import { ProductCacheMapper } from '../../persistence/mappers/product.mapper';
+import {
+  ProductCacheMapper,
+  ProductForCache,
+} from '../../persistence/mappers/product.mapper';
 
 export class CachedProductRepository implements ProductRepository {
+  private readonly logger = new Logger(CachedProductRepository.name);
+
   constructor(
     private readonly cacheService: CachePort,
     private readonly postgresRepo: ProductRepository,
@@ -49,19 +54,17 @@ export class CachedProductRepository implements ProductRepository {
 
   async findById(id: number): Promise<Result<Product, RepositoryError>> {
     try {
-      // Try cache first
-      const cached = await this.cacheService.get<IProduct>(
+      const cached = await this.cacheService.get<ProductForCache>(
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success<Product>(ProductCacheMapper.fromCache(cached));
+        const product = ProductCacheMapper.fromCache(cached);
+        if (product) return Result.success(product);
       }
 
-      // Fallback to Postgres
       const dbResult = await this.postgresRepo.findById(id);
       if (dbResult.isFailure) return dbResult;
 
-      // Cache the result
       await this.cacheService.set(
         `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
         ProductCacheMapper.toCache(dbResult.value),
@@ -82,22 +85,17 @@ export class CachedProductRepository implements ProductRepository {
         (id) => `${PRODUCT_REDIS.CACHE_KEY}:${id}`,
       );
 
-      // Perform a single Redis JSON MGET command for all keys
-      const cachedResults = await this.cacheService.getMany<
-        IProduct | IProduct[]
-      >(cacheKeys);
+      const cachedResults =
+        await this.cacheService.getMany<ProductForCache>(cacheKeys);
 
       const foundProducts: Product[] = [];
       const missingIds: number[] = [];
 
       uniqueIds.forEach((id, index) => {
-        const rawCached = cachedResults[index];
-        const cached: IProduct | null = Array.isArray(rawCached)
-          ? rawCached[0] || null
-          : rawCached || null;
-
-        if (cached) {
-          foundProducts.push(ProductCacheMapper.fromCache(cached));
+        const data = cachedResults[index];
+        const product = data ? ProductCacheMapper.fromCache(data) : null;
+        if (product) {
+          foundProducts.push(product);
         } else {
           missingIds.push(id);
         }
@@ -133,18 +131,31 @@ export class CachedProductRepository implements ProductRepository {
 
   async findAll(): Promise<Result<Product[], RepositoryError>> {
     try {
-      const isCached = await this.cacheService.get<string>(
+      const isCachedFlag = await this.cacheService.get(
         PRODUCT_REDIS.IS_CACHED_FLAG,
       );
+      const isCached = isCachedFlag === true || isCachedFlag === 'true';
 
       if (isCached) {
-        const cachedPrimitives = await this.cacheService.getAll<IProduct>(
+        const cached = await this.cacheService.search<ProductForCache>(
           PRODUCT_REDIS.INDEX,
         );
-        const products = cachedPrimitives.map((p) =>
-          ProductCacheMapper.fromCache(p),
+        const products: Product[] = [];
+        let hasUnreadable = false;
+        for (const entry of cached) {
+          const product = ProductCacheMapper.fromCache(entry);
+          if (!product) {
+            hasUnreadable = true;
+            break;
+          }
+          products.push(product);
+        }
+        if (!hasUnreadable) {
+          return Result.success(products);
+        }
+        this.logger.warn(
+          'Product list cache payload had unreadable entries — falling back to Postgres',
         );
-        return Result.success(products);
       }
 
       const dbResult = await this.postgresRepo.findAll();

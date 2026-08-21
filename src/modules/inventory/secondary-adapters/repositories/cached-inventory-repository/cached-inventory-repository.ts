@@ -6,8 +6,8 @@ import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
-  InventoryForCache,
   InventoryCacheMapper,
+  InventoryForCache,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
@@ -36,11 +36,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
       );
-
       if (cached) {
-        return Result.success<Inventory>(
-          InventoryCacheMapper.fromCache(cached),
-        );
+        const inventory = InventoryCacheMapper.fromCache(cached);
+        if (inventory) return Result.success(inventory);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -79,11 +77,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.productKey(productId),
       );
-
       if (cached) {
-        return Result.success<Inventory>(
-          InventoryCacheMapper.fromCache(cached),
-        );
+        const inventory = InventoryCacheMapper.fromCache(cached);
+        if (inventory) return Result.success(inventory);
       }
 
       const dbResult = await this.postgresRepo.findByProductId(productId);
@@ -132,9 +128,12 @@ export class CachedInventoryRepository implements InventoryRepository {
           const cached = await this.cacheService.get<InventoryForCache>(
             this.productKey(productId),
           );
+          const inventory = cached
+            ? InventoryCacheMapper.fromCache(cached)
+            : null;
 
-          if (cached) {
-            foundMap.set(productId, InventoryCacheMapper.fromCache(cached));
+          if (inventory) {
+            foundMap.set(productId, inventory);
           } else {
             misses.push(productId);
           }
@@ -293,8 +292,8 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
       );
-
-      if (cached) {
+      // Invalidate the product key even when the ID document fails full mapping.
+      if (cached && typeof cached.productId === 'number') {
         await this.cacheService.delete(this.productKey(cached.productId));
       }
 

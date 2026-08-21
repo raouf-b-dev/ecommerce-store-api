@@ -58,3 +58,33 @@ export const VERSIONED_SEARCH_INDEXES = [
   ORDER_REDIS.INDEX,
   PAYMENT_REDIS.INDEX,
 ] as const;
+
+/** Env prefix only — meta / idempotency keys must not rotate with cache generation. */
+export function buildStableFullKey(envPrefix: string, key: string): string {
+  return `${envPrefix}${key}`;
+}
+
+/** Versioned or stable full key for a given cache generation. */
+export function buildFullKey(
+  envPrefix: string,
+  generation: number,
+  key: string,
+): string {
+  if (isVersionedCacheKey(key)) {
+    return `${envPrefix}c${generation}:${key}`;
+  }
+  return `${envPrefix}${key}`;
+}
+
+/** Strip env prefix and optional `c{n}:` generation segment from a Redis key. */
+export function stripKeyPrefix(envPrefix: string, fullKey: string): string {
+  if (!fullKey.startsWith(envPrefix)) {
+    return fullKey;
+  }
+  let rest = fullKey.slice(envPrefix.length);
+  const generationMatch = /^c\d+:/.exec(rest);
+  if (generationMatch) {
+    rest = rest.slice(generationMatch[0].length);
+  }
+  return rest;
+}

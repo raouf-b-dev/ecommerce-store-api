@@ -16,8 +16,10 @@ import {
 import { EnvConfigService } from '../../config/env-config.service';
 import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
 import {
+  buildFullKey,
+  buildStableFullKey,
   CACHE_GENERATION_META_KEY,
-  isVersionedCacheKey,
+  stripKeyPrefix,
   VERSIONED_SEARCH_INDEXES,
 } from './cache-key-space';
 import { buildNodeRedisClientOptions } from './redis-connection.options';
@@ -42,6 +44,10 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     private readonly logger: Logger,
   ) {}
 
+  private get envPrefix(): string {
+    return this.envConfigService.redis.key_prefix;
+  }
+
   async onModuleInit() {
     this.client = createClient(
       buildNodeRedisClientOptions(this.envConfigService.redis),
@@ -62,6 +68,11 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       } else {
         this.logger.log('Redis connected');
       }
+    });
+
+    this.client.on('reconnecting', () => {
+      this.connected = false;
+      this.logger.warn('Redis reconnecting');
     });
 
     this.client.on('end', () => {
@@ -108,10 +119,6 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     return this.cacheGeneration;
   }
 
-  /**
-   * Bumps the Redis-persisted cache generation so versioned keys move to a new
-   * namespace. Old keys expire via TTL. Used on startup and reconnect recovery.
-   */
   async bumpCacheGeneration(): Promise<{
     previousGeneration: number;
     generation: number;
@@ -138,20 +145,10 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  /**
-   * Builds a versioned full key for an explicit generation (used to drop prior indexes).
-   */
   public getFullKeyForGeneration(key: string, generation: number): string {
-    const envPrefix = this.envConfigService.redis.key_prefix;
-    if (!isVersionedCacheKey(key)) {
-      return `${envPrefix}${key}`;
-    }
-    return `${envPrefix}c${generation}:${key}`;
+    return buildFullKey(this.envPrefix, generation, key);
   }
 
-  /**
-   * Drops a RediSearch index for a specific generation. Missing indexes are ignored.
-   */
   async dropIndexForGeneration(
     index: string,
     generation: number,
@@ -220,39 +217,6 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  async ttl(key: string): Promise<number> {
-    if (!this.isReady() || !this.client) return -1;
-    try {
-      return await this.client.ttl(this.getFullKey(key));
-    } catch (error) {
-      logRedisError(this.logger, `RedisService.ttl("${key}")`, error);
-      return -1;
-    }
-  }
-
-  async expire(key: string, ttl: number): Promise<number> {
-    if (!this.isReady() || !this.client) return 0;
-    try {
-      return await this.client.expire(this.getFullKey(key), ttl);
-    } catch (error) {
-      logRedisError(this.logger, `RedisService.expire("${key}")`, error);
-      return 0;
-    }
-  }
-
-  async exists(key: string): Promise<number> {
-    if (!this.isReady() || !this.client) return 0;
-    try {
-      return await this.client.exists(this.getFullKey(key));
-    } catch (error) {
-      logRedisError(this.logger, `RedisService.exists("${key}")`, error);
-      return 0;
-    }
-  }
-
-  /**
-   * Sets a JSON document. When ttl is set, uses MULTI so set + expire commit atomically.
-   */
   async jsonSet(
     key: string,
     path: string,
@@ -280,34 +244,10 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  async jsonMerge(
-    key: string,
-    path: string,
-    partial: RedisJSON,
-    options: { ttl?: number } = {},
-  ): Promise<void> {
-    if (!this.isReady() || !this.client) return;
-    try {
-      const fullKey = this.getFullKey(key);
-      if (options.ttl && options.ttl > 0) {
-        const multi = this.client.multi();
-        multi.json.merge(fullKey, path, partial);
-        multi.expire(fullKey, options.ttl);
-        await multi.exec();
-        return;
-      }
-      await this.client.json.merge(fullKey, path, partial);
-    } catch (error) {
-      logRedisError(this.logger, `RedisService.jsonMerge("${key}")`, error);
-    }
-  }
-
   async jsonGet(key: string, path?: string): Promise<RedisJSON | null> {
     if (!this.isReady() || !this.client) return null;
     try {
-      const res = await this.client.json.get(this.getFullKey(key), {
-        path,
-      });
+      const res = await this.client.json.get(this.getFullKey(key), { path });
       return res ?? null;
     } catch (error) {
       logRedisError(this.logger, `RedisService.jsonGet("${key}")`, error);
@@ -323,8 +263,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     if (!this.isReady() || !this.client) return keys.map(() => null);
     try {
       const fullKeys = keys.map((k) => this.getFullKey(k));
-      const results = await this.client.json.mGet(fullKeys, path);
-      return results || [];
+      return (await this.client.json.mGet(fullKeys, path)) || [];
     } catch (error) {
       logRedisError(this.logger, 'RedisService.jsonMGet', error);
       return keys.map(() => null);
@@ -350,8 +289,11 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   ): Promise<{ total: number; documents: unknown[] }> {
     if (!this.isReady() || !this.client) return { total: 0, documents: [] };
     try {
-      const fullIndex = this.getFullKey(index);
-      return await this.client.ft.search(fullIndex, query, options);
+      return await this.client.ft.search(
+        this.getFullKey(index),
+        query,
+        options,
+      );
     } catch (error) {
       const msg = toErrorMessage(error).toLowerCase();
       if (msg.includes('no such index') || msg.includes('unknown index')) {
@@ -365,35 +307,6 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  async scanKeys(pattern: string, count = 100): Promise<string[]> {
-    if (!this.isReady() || !this.client) return [];
-    try {
-      const fullPattern = this.getFullKey(pattern);
-      const found: string[] = [];
-      let cursor = '0';
-
-      do {
-        const result = await this.client.scan(cursor, {
-          MATCH: fullPattern,
-          COUNT: count,
-        });
-
-        const keys = result.keys.map((key) => this.removePrefix(key));
-        cursor = result.cursor;
-        found.push(...keys);
-      } while (cursor !== '0');
-
-      return found;
-    } catch (error) {
-      logRedisError(this.logger, `RedisService.scanKeys("${pattern}")`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Returns true when the RediSearch index exists.
-   * Unknown-index replies are treated as absence; other errors are logged and rethrown.
-   */
   async indexExists(index: string): Promise<boolean> {
     if (!this.isReady() || !this.client) return false;
     try {
@@ -409,31 +322,21 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  /**
-   * Creates a RediSearch index when missing.
-   * @returns true if created now; false if it already existed or Redis is not ready.
-   */
   async createIndex(
     index: string,
-    // Schemas are defined with string `type` literals in redis.schemas.ts
     schema: Record<string, unknown>,
     prefix: string,
   ): Promise<boolean> {
     if (!this.isReady() || !this.client) return false;
-
-    if (await this.indexExists(index)) {
-      return false;
-    }
+    if (await this.indexExists(index)) return false;
 
     try {
-      const fullIndex = this.getFullKey(index);
-      const fullPrefix = this.getFullKey(prefix);
       await this.client.ft.create(
-        fullIndex,
+        this.getFullKey(index),
         schema as Parameters<AppRedisClient['ft']['create']>[1],
         {
           ON: 'JSON',
-          PREFIX: [fullPrefix],
+          PREFIX: [this.getFullKey(prefix)],
         },
       );
       return true;
@@ -450,28 +353,15 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     return this.isReady() && this.client ? this.client.multi() : null;
   }
 
-  /** Env key prefix only — used for meta keys that must not rotate with cache generation. */
   public getStableFullKey(key: string): string {
-    return `${this.envConfigService.redis.key_prefix}${key}`;
+    return buildStableFullKey(this.envPrefix, key);
   }
 
   public getFullKey(key: string): string {
-    const envPrefix = this.envConfigService.redis.key_prefix;
-    if (isVersionedCacheKey(key)) {
-      return `${envPrefix}c${this.cacheGeneration}:${key}`;
-    }
-    return `${envPrefix}${key}`;
+    return buildFullKey(this.envPrefix, this.cacheGeneration, key);
   }
 
   public removePrefix(fullKey: string): string {
-    const envPrefix = this.envConfigService.redis.key_prefix;
-    let rest = fullKey.startsWith(envPrefix)
-      ? fullKey.slice(envPrefix.length)
-      : fullKey;
-    const generationMatch = /^c\d+:/.exec(rest);
-    if (generationMatch) {
-      rest = rest.slice(generationMatch[0].length);
-    }
-    return rest;
+    return stripKeyPrefix(this.envPrefix, fullKey);
   }
 }

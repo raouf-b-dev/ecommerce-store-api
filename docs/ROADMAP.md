@@ -117,7 +117,7 @@
 >
 > **Required for the ship gate:** baseline migration, Redis/proxy behavior, Redis infrastructure cleanup, backup/restore/rollback, secret rotation, smoke.
 >
-> **Optional (do not block first deploy):** HTTP idempotency hardening; staging environment.
+> **Optional (do not block first deploy):** Redis polish (post–ship gate); HTTP idempotency hardening; staging environment.
 
 ---
 
@@ -173,6 +173,24 @@
 - [x] Update unit/integration specs and module factories after the DI simplification; keep existing per-concern degradation contracts (cache → DB, throttler → memory, idempotency → fail-closed).
 
 **Location**: `src/infrastructure/redis/`, `src/infrastructure/resilience/`, `src/modules/*/…module.ts`, `docs/infrastructure/REDIS.md`
+
+---
+
+### [x] Redis Polish (Post–Ship Gate)
+
+**What**: Close remaining Redis polish gaps after Infrastructure Cleanup — options/DI consistency, slimmer hexagonal ports, typed cache reads, keep `CacheService` as the port adapter (do not merge into `RedisService`), split oversized `RedisService` into helpers, and prove reconnect under load with Redis Stack Testcontainers.
+
+> **Does not block the Phase 14 ship gate.** Do this **after** [Redis Infrastructure Cleanup (Ship Gate)](#x-redis-infrastructure-cleanup-ship-gate). Separate TCP clients remain (library constraints); polish the shared options contract and docs, not a single-socket merge.
+
+**Scope**:
+
+- [x] Share BullMQ connection options via one DI token / provider (`queue.module`, `FlowProducer`, `QueueEvents`); document a **client inventory** in [`REDIS.md`](infrastructure/REDIS.md) (role → library → why separate sockets).
+- [x] Slim `CachePort` to KV + RediSearch (`isAvailable`, `get`/`getMany`, `set`/`setAll`, `delete`, `search`); drop unused Redis-shaped APIs (`path`, `scanKeys`, `deletePattern`, `merge`/`mergeAll`, `getAll`, unused `exists`/`ttl`).
+- [x] Port reads use typed `get<T>` / `search<T>`; `*CacheMapper.fromCache` maps `*ForCache` wire DTOs (epoch-ms dates) to domain (bad payload → `null` → miss → Postgres). Idempotency narrows locally after `get`.
+- [x] **Keep `CacheService`** as the `CachePort` adapter. Keep `RedisService` as one Nest injectable (key builders live in `cache-key-space.ts`). Prune methods that only served removed port passthroughs.
+- [x] Redis Stack Testcontainers chaos suite: restart under concurrent get/set; assert fail-open during outage, generation bump + flag clears after recovery, stable idempotency keys. Script `test:redis:chaos` + short note in the integration testing guide.
+
+**Location**: `src/shared-kernel/domain/interfaces/cache.port.ts`, `src/infrastructure/redis/`, `src/infrastructure/queue/`, `src/modules/*/secondary-adapters/`, `test/integration/redis/`, `docs/infrastructure/REDIS.md`, ADR-0006
 
 ---
 
@@ -536,6 +554,9 @@
 - [ ] **Living architecture dependency graphs** — auto-generate directional dependency maps in CI.
 - [ ] **Module architecture scorecards** — per-bounded-context health metrics (entities, repos, events, tests).
 - [ ] **ADR validation in CI** — require linked ADR when core architectural policies change.
+- [ ] **Pin GitHub Actions to full commit SHAs** — replace mutable `@vN` tags in `.github/workflows/ci.yml` (and composite actions) with verified full-length SHAs + release-version comments. Dedicated hardening PR across all jobs — do not mix into feature work.
+- [ ] **Bounded CI job timeouts** — add `timeout-minutes` to long-running jobs (especially `redis-chaos-tests`, integration, e2e) so hung runners fail closed instead of burning minutes.
+- [ ] **Redis chaos: drop Jest `forceExit`** — after open-handle cleanup is proven (`detectOpenHandles`, quit/disconnect Testcontainers clients), remove `forceExit` from `test/integration/redis/jest-redis-chaos.json` so leaked Redis handles surface again.
 - [ ] **Modularize CONVENTIONS.md** — split when file exceeds ~500–700 lines.
 - [ ] **Property-based domain testing** — evaluate `fast-check` for value-object validation.
 - [ ] **Mutation testing** — evaluate Stryker on domain layer.

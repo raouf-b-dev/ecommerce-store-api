@@ -24,6 +24,9 @@ npm run test:integration
 
 # Target a specific integration spec file
 npm run test:integration -- postgres-order-query.adapter
+
+# Redis reconnect chaos (Redis Stack Testcontainers; requires Docker)
+npm run test:redis:chaos
 ```
 
 ---
@@ -43,6 +46,10 @@ test/integration/
 │   ├── seed-reference-data.ts               # Minimal deterministic FK reference data seeder
 │   ├── inventory-seed.helper.ts             # Concurrency scenario inventory overrides
 │   └── integration-test.helper.ts           # Test helper API (repositories, cleanup, seeding)
+├── redis/
+│   ├── jest-redis-chaos.json                # Redis Stack chaos suite
+│   ├── redis-chaos.global-setup.ts          # Starts redis/redis-stack
+│   └── redis-reconnect.chaos.integration.spec.ts
 └── database/
     └── index-verification.integration.spec.ts   # Index existence & EXPLAIN plan checks
 ```
