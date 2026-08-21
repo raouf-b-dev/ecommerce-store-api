@@ -7,6 +7,9 @@ import {
 } from './auth-test.helper';
 import { E2eHttpClient } from './e2e-test-app.helper';
 
+/** Matches Superagent `Response['headers']` — string values only. */
+export type E2eResponseHeaders = { readonly [name: string]: string };
+
 export interface CheckoutHttpResult {
   status: number;
   body: {
@@ -15,6 +18,9 @@ export interface CheckoutHttpResult {
     status?: string;
     message?: string;
   };
+  headers: E2eResponseHeaders;
+  /** Case-insensitive lookup via Superagent `Response#get`. */
+  getHeader(name: string): string | undefined;
 }
 
 export class E2eCheckoutHelper {
@@ -99,7 +105,12 @@ export class E2eCheckoutHelper {
 
     const response = await request.send(payload);
 
-    return { status: response.status, body: response.body };
+    return {
+      status: response.status,
+      body: response.body,
+      headers: response.headers,
+      getHeader: (name) => response.get(name),
+    };
   }
 
   static async listOrderCount(
