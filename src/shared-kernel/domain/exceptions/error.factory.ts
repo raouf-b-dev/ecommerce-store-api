@@ -7,37 +7,20 @@ import { HttpStatus } from '@nestjs/common';
 import { ServiceError } from './service-error';
 import { InfrastructureError } from './infrastructure-error';
 import { QueryError, QueryNotFoundError } from './query.error';
+import { toOptionalError } from '../../infra/lang/error.utils';
 
 function isRetryableHttpStatus(status?: number): boolean {
   if (!status) return true;
   return status >= 500;
 }
 
-function toError(error: unknown): Error | undefined {
-  if (!error) return undefined;
-
-  if (error instanceof Error) {
-    return error;
-  }
-
-  if (typeof error === 'string') {
-    return new Error(error);
-  }
-
-  if (error && typeof error === 'object' && 'message' in error) {
-    return new Error(String(error.message));
-  }
-
-  return new Error('Unknown error occurred');
-}
-
 export const ErrorFactory = {
   DomainError: (message: string, cause?: unknown, status?: HttpStatus) =>
-    Result.failure(new DomainError(message, toError(cause), status)),
+    Result.failure(new DomainError(message, toOptionalError(cause), status)),
   UseCaseError: (message: string, cause?: unknown, status?: HttpStatus) =>
-    Result.failure(new UseCaseError(message, toError(cause), status)),
+    Result.failure(new UseCaseError(message, toOptionalError(cause), status)),
   ServiceError: (message: string, cause?: unknown, status?: HttpStatus) =>
-    Result.failure(new ServiceError(message, toError(cause), status)),
+    Result.failure(new ServiceError(message, toOptionalError(cause), status)),
   RepositoryError: (
     message: string,
     cause?: unknown,
@@ -47,7 +30,7 @@ export const ErrorFactory = {
     Result.failure(
       new RepositoryError(
         message,
-        toError(cause),
+        toOptionalError(cause),
         status,
         retryable ?? isRetryableHttpStatus(status),
       ),
@@ -61,7 +44,7 @@ export const ErrorFactory = {
     Result.failure(
       new InfrastructureError(
         message,
-        toError(cause),
+        toOptionalError(cause),
         status,
         retryable ?? isRetryableHttpStatus(status),
       ),
@@ -75,11 +58,11 @@ export const ErrorFactory = {
     Result.failure(
       new QueryError(
         message,
-        toError(cause),
+        toOptionalError(cause),
         status,
         retryable ?? isRetryableHttpStatus(status),
       ),
     ),
   QueryNotFoundError: (message: string, cause?: unknown) =>
-    Result.failure(new QueryNotFoundError(message, toError(cause))),
+    Result.failure(new QueryNotFoundError(message, toOptionalError(cause))),
 };

@@ -33,6 +33,9 @@ export interface IAppConfig {
     globalLimit: number;
     strictLimit: number;
   };
+  http: {
+    trustProxy: string;
+  };
   metricsApiKey: string;
   otel: {
     tracingEnabled: boolean;
@@ -82,6 +85,9 @@ export default (): IAppConfig => {
     throttle: {
       globalLimit: env.THROTTLE_GLOBAL_LIMIT,
       strictLimit: env.THROTTLE_STRICT_LIMIT,
+    },
+    http: {
+      trustProxy: env.TRUST_PROXY,
     },
     metricsApiKey: env.METRICS_API_KEY,
     otel: {

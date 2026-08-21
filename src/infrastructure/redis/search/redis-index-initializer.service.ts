@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisSearchClient } from '../clients/redis-search.client';
+import { RedisService } from '../redis.service';
 import {
   OrderIndexSchema,
   InventoryIndexSchema,
@@ -16,14 +17,26 @@ import {
   PAYMENT_REDIS,
   USER_REDIS,
 } from '../constants/redis.constants';
+import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class RedisIndexInitializerService implements OnModuleInit {
   private readonly logger = new Logger(RedisIndexInitializerService.name);
 
-  constructor(private readonly redisSearch: RedisSearchClient) {}
+  constructor(
+    private readonly redisSearch: RedisSearchClient,
+    private readonly redisService: RedisService,
+  ) {}
 
   async onModuleInit() {
+    const isReady = await this.redisService.waitUntilReady();
+    if (!isReady) {
+      this.logger.warn(
+        'Redis unavailable — skipping RediSearch index initialization',
+      );
+      return;
+    }
+
     await Promise.all([
       this.ensureIndex(
         ORDER_REDIS.INDEX,
@@ -52,14 +65,19 @@ export class RedisIndexInitializerService implements OnModuleInit {
 
   private async ensureIndex(index: string, schema: any, prefix: string) {
     try {
-      await this.redisSearch.createIndex(index, schema, `${prefix}:`);
-      this.logger.log(`Redis index '${index}' created/ensured`);
-    } catch (error: any) {
-      if (error?.message?.includes('Index already exists')) {
-        this.logger.log(`Redis index '${index}' already exists`);
-      } else {
-        this.logger.error(`Failed to create index '${index}'`, error);
-      }
+      const created = await this.redisSearch.createIndex(
+        index,
+        schema,
+        `${prefix}:`,
+      );
+      this.logger.log(
+        created
+          ? `Redis index '${index}' created`
+          : `Redis index '${index}' already exists`,
+      );
+    } catch (error) {
+      const err = toError(error);
+      this.logger.error(`Failed to create index '${index}'`, err.stack);
     }
   }
 }

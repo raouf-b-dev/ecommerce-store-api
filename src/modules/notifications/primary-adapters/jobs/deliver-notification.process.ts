@@ -7,6 +7,7 @@ import { INotification } from '../../core/domain/interfaces/notification.interfa
 import { Notification } from '../../core/domain/entities/notification';
 import { Job } from 'bullmq';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class DeliverNotificationProcess extends BaseJobHandler<
@@ -36,7 +37,7 @@ export class DeliverNotificationProcess extends BaseJobHandler<
       await this.deliverNotificationService.execute(notification);
       return Result.success(undefined);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const errorMsg = toErrorMessage(error);
       this.logger.error(
         `Failed to send notification via WebSocket: ${errorMsg}`,
       );

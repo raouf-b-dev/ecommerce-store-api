@@ -1,74 +1,51 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisSearchClient } from './redis-search.client';
 import { RedisService } from '../redis.service';
+import { MockRedisService } from '../testing';
 
 describe('RedisSearchClient', () => {
   let service: RedisSearchClient;
-  let redisService: jest.Mocked<RedisService>;
+  let redisService: MockRedisService;
 
   beforeEach(async () => {
+    redisService = new MockRedisService();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisSearchClient,
-        {
-          provide: RedisService,
-          useValue: {
-            getFullKey: jest.fn(),
-            client: {
-              ft: {
-                search: jest.fn(),
-                create: jest.fn(),
-              },
-            },
-          },
-        },
+        { provide: RedisService, useValue: redisService },
       ],
     }).compile();
 
     service = module.get(RedisSearchClient);
-    redisService = module.get(RedisService);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    redisService.reset();
   });
 
-  it('search should call getFullKey and client.ft.search', async () => {
-    redisService.getFullKey.mockReturnValue('prefix:index');
-    (redisService.client.ft.search as jest.Mock).mockResolvedValue({
-      documents: [],
-    });
-
+  it('search delegates to redisService.search', async () => {
     const options = { LIMIT: { from: 0, size: 10 } };
-    const result = await service.search('index', '*', options);
+    const response = { total: 0, documents: [] };
+    redisService.search.mockResolvedValue(response);
 
-    expect(redisService.getFullKey).toHaveBeenCalledWith('index');
-    expect(redisService.client.ft.search).toHaveBeenCalledWith(
-      'prefix:index',
-      '*',
-      options,
+    await expect(service.search('index', '*', options)).resolves.toEqual(
+      response,
     );
-    expect(result).toEqual({ documents: [] });
+    expect(redisService.search).toHaveBeenCalledWith('index', '*', options);
   });
 
-  it('createIndex should call getFullKey for index and prefix and then client.ft.create', async () => {
-    redisService.getFullKey
-      .mockImplementationOnce((key) => `prefix:${key}`) // index
-      .mockImplementationOnce((key) => `prefix:${key}`); // prefix
-
+  it('createIndex delegates to redisService.createIndex', async () => {
     const schema = { name: { type: 'TEXT' } };
+    redisService.mockCreateIndexCreated();
 
-    await service.createIndex('myIndex', schema, 'myPrefix');
-
-    expect(redisService.getFullKey).toHaveBeenNthCalledWith(1, 'myIndex');
-    expect(redisService.getFullKey).toHaveBeenNthCalledWith(2, 'myPrefix');
-    expect(redisService.client.ft.create).toHaveBeenCalledWith(
-      'prefix:myIndex',
+    await expect(
+      service.createIndex('myIndex', schema, 'myPrefix:'),
+    ).resolves.toBe(true);
+    expect(redisService.createIndex).toHaveBeenCalledWith(
+      'myIndex',
       schema,
-      {
-        ON: 'JSON',
-        PREFIX: ['prefix:myPrefix'],
-      },
+      'myPrefix:',
     );
   });
 });

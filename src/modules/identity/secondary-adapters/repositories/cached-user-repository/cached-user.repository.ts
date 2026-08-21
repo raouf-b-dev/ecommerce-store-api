@@ -5,7 +5,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 import { User } from '../../../core/domain/entities/user';
 import {
   UserCacheMapper,
@@ -129,7 +129,7 @@ export class CachedUserRepository implements UserRepository {
     try {
       const cachedUsers = await this.cacheService.getAll<UserForCache>(
         USER_REDIS.INDEX,
-        `@email:{${escapeRedisSearchTextValue(email)}}`,
+        tagEquals('email', email),
       );
 
       if (cachedUsers.length > 0) {

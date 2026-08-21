@@ -57,8 +57,10 @@ export class IdempotencyService extends IdempotencyStore {
 
       return { isNew: false };
     } catch (error) {
-      this.logger.error(`Error checking idempotency key ${key}:`, error);
-      // On error, allow the request to proceed (fail-open)
+      this.logger.warn(
+        `Idempotency fail-open for key ${key} (degraded: true, concern: idempotency)`,
+        error,
+      );
       return { isNew: true };
     }
   }

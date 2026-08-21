@@ -59,6 +59,10 @@ export class EnvConfigService {
     return this.get('throttle');
   }
 
+  get http() {
+    return this.get('http');
+  }
+
   get metricsApiKey(): string {
     return this.get('metricsApiKey');
   }

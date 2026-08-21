@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DomainEventPublisher } from '../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { toError } from '../../shared-kernel/infra/lang/error.utils';
 
 /**
  * Infrastructure adapter — wraps @nestjs/event-emitter for
@@ -18,9 +19,10 @@ export class EventEmitter2DomainEventPublisher implements DomainEventPublisher {
   publish<T = unknown>(eventName: string, payload: T): void {
     // Fire-and-forget semantics: don't let a bad listener crash the use case
     this.eventEmitter.emitAsync(eventName, payload).catch((error) => {
+      const err = toError(error);
       this.logger.error(
-        `Failed to process domain event [${eventName}]: ${error instanceof Error ? error.message : error}`,
-        error instanceof Error ? error.stack : undefined,
+        `Failed to process domain event [${eventName}]: ${err.message}`,
+        err.stack,
       );
     });
   }

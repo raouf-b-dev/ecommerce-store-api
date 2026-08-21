@@ -12,40 +12,25 @@ export class RedisJsonClient {
     value: RedisJSON,
     options: { nx?: boolean } = {},
   ): Promise<boolean> {
-    const fullKey = this.redisService.getFullKey(key);
-
-    const res = await this.redisService.client.json.set(
-      fullKey,
-      path,
-      value,
-      options.nx ? { NX: true } : {},
-    );
-
-    return res === 'OK';
+    return this.redisService.jsonSet(key, path, value, options);
   }
 
   async merge(key: string, path: string, partial: RedisJSON): Promise<void> {
-    const fullKey = this.redisService.getFullKey(key);
-    await this.redisService.client.json.merge(fullKey, path, partial);
+    await this.redisService.jsonMerge(key, path, partial);
   }
 
   async get(key: string, path?: string): Promise<RedisJSON | null> {
-    const fullKey = this.redisService.getFullKey(key);
-    return await this.redisService.client.json.get(fullKey, { path });
+    return this.redisService.jsonGet(key, path);
   }
 
   async mGet(
     keys: string[],
     path: string = '$',
   ): Promise<(RedisJSON | null)[]> {
-    if (keys.length === 0) return [];
-    const fullKeys = keys.map((k) => this.redisService.getFullKey(k));
-    const results = await this.redisService.client.json.mGet(fullKeys, path);
-    return (results || []) as (RedisJSON | null)[];
+    return this.redisService.jsonMGet(keys, path);
   }
 
   async del(key: string, path?: string): Promise<void> {
-    const fullKey = this.redisService.getFullKey(key);
-    await this.redisService.client.json.del(fullKey, path);
+    await this.redisService.jsonDel(key, path);
   }
 }

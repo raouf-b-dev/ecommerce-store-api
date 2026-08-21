@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
@@ -11,16 +12,18 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 import { DEFAULT_API_VERSION } from './infrastructure/http/api-version';
+import { parseTrustProxy } from './infrastructure/http/parse-trust-proxy';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: DEFAULT_API_VERSION,
   });
 
-  // Replace default NestJS logger with Winston
   const winstonLogger = app.get(WinstonLoggerService);
   app.useLogger(winstonLogger);
 
@@ -38,14 +41,16 @@ async function bootstrap() {
     }),
   );
 
-  const redisIoAdapter = new RedisIoAdapter(app);
-  await redisIoAdapter.connectToRedis();
-  app.useWebSocketAdapter(redisIoAdapter);
-
   app.enableShutdownHooks();
 
   const configService = app.get(EnvConfigService);
   const nodeEnv = configService.node.env;
+
+  app.set('trust proxy', parseTrustProxy(configService.http.trustProxy));
+
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   app.enableCors({
     origin: configService.cors.allowedOrigins,
@@ -92,6 +97,24 @@ async function bootstrap() {
       process.exit(1);
     }
     throw error;
+  }
+
+  const SHUTDOWN_TIMEOUT_MS = 15_000;
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.on(signal, () => {
+      Logger.log(
+        `Received ${signal} — starting graceful shutdown (${SHUTDOWN_TIMEOUT_MS / 1000}s timeout)`,
+        'Bootstrap',
+      );
+      setTimeout(() => {
+        Logger.error(
+          `Graceful shutdown timed out after ${SHUTDOWN_TIMEOUT_MS / 1000}s — forcing exit`,
+          undefined,
+          'Bootstrap',
+        );
+        process.exit(1);
+      }, SHUTDOWN_TIMEOUT_MS).unref();
+    });
   }
 }
 void bootstrap();

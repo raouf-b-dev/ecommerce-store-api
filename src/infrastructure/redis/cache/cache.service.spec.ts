@@ -108,6 +108,7 @@ describe('CacheService', () => {
   describe('getAll', () => {
     it('should call searchClient.search with default parameters and map values', async () => {
       const mockSearchResult = {
+        total: 2,
         documents: [
           { value: { id: 1, name: 'item1' } },
           { value: { id: 2, name: 'item2' } },
@@ -130,6 +131,7 @@ describe('CacheService', () => {
 
     it('should handle custom search options with sorting', async () => {
       const mockSearchResult = {
+        total: 2,
         documents: [{ value: { id: 1 } }],
       };
       searchClient.search.mockResolvedValue(mockSearchResult);
@@ -230,6 +232,14 @@ describe('CacheService', () => {
         'NX',
       );
       expect(mockPipeline.exec).toHaveBeenCalled();
+    });
+
+    it('should not throw when pipeline is unavailable', async () => {
+      keyClient.createPipeline.mockReturnValue(null);
+
+      await expect(
+        service.setAll([{ key: 'key1', value: { data: 1 } }]),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -358,9 +368,9 @@ describe('CacheService', () => {
       await service.deletePattern('test:*');
 
       expect(keyClient.scanKeys).toHaveBeenCalledWith('test:*', 100);
-      expect(mockPipeline.del).toHaveBeenCalledWith('key1');
-      expect(mockPipeline.del).toHaveBeenCalledWith('key2');
-      expect(mockPipeline.del).toHaveBeenCalledWith('key3');
+      expect(mockPipeline.del).toHaveBeenCalledWith('prefix:key1');
+      expect(mockPipeline.del).toHaveBeenCalledWith('prefix:key2');
+      expect(mockPipeline.del).toHaveBeenCalledWith('prefix:key3');
       expect(mockPipeline.exec).toHaveBeenCalled();
     });
 
@@ -397,6 +407,7 @@ describe('CacheService', () => {
   describe('search', () => {
     it('should call searchClient.search and map values', async () => {
       const mockSearchResult = {
+        total: 2,
         documents: [
           { value: { id: 1, name: 'item1' } },
           { value: { id: 2, name: 'item2' } },
@@ -421,7 +432,7 @@ describe('CacheService', () => {
     });
 
     it('should pass custom options to searchClient', async () => {
-      const mockSearchResult = { documents: [] };
+      const mockSearchResult = { total: 0, documents: [] };
       const customOptions = { LIMIT: { from: 0, size: 5 } };
 
       searchClient.search.mockResolvedValue(mockSearchResult);

@@ -8,6 +8,8 @@ import {
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
 import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { createHealthAwareProxy } from '../../infrastructure/resilience/health-aware-proxy';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -47,7 +49,17 @@ import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres
     // Default Repository Binding
     {
       provide: ProductRepository,
-      useExisting: CACHED_PRODUCT_REPOSITORY,
+      useFactory: (
+        cachedRepo: ProductRepository,
+        postgresRepo: ProductRepository,
+        redis: RedisService,
+      ) =>
+        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
+      inject: [
+        CACHED_PRODUCT_REPOSITORY,
+        POSTGRES_PRODUCT_REPOSITORY,
+        RedisService,
+      ],
     },
 
     // Usecases

@@ -11,6 +11,7 @@ import { Notification } from '../../core/domain/entities/notification';
 import { NotificationScheduler } from '../../core/domain/schedulers/notification.scheduler';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { toError } from '../../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class BullMqNotificationScheduler
@@ -124,9 +125,11 @@ export class BullMqNotificationScheduler
 
       return Result.success({ jobId: flowId });
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      const stack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(`Failed to schedule notification: ${errorMsg}`, stack);
+      const err = toError(error);
+      this.logger.error(
+        `Failed to schedule notification: ${err.message}`,
+        err.stack,
+      );
       return ErrorFactory.InfrastructureError(
         'Failed to schedule notification',
         error,

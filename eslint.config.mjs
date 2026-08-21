@@ -109,6 +109,32 @@ export default tseslint.config(
       '@typescript-eslint/prefer-readonly': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    ignores: [
+      'src/shared-kernel/infra/lang/error.utils.ts',
+      '**/*.spec.ts',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'NewExpression[callee.name="Error"] > CallExpression[callee.name="String"]',
+          message:
+            'Use toError() from src/shared-kernel/infra/lang/error.utils instead of new Error(String(...)).',
+        },
+        {
+          selector:
+            'ConditionalExpression > BinaryExpression[operator="instanceof"][right.name="Error"]',
+          message:
+            'Use toErrorMessage(), toError(), or toOptionalError() from src/shared-kernel/infra/lang/error.utils instead of instanceof Error ternaries.',
+        },
+      ],
     },
   },
 );

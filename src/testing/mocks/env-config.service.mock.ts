@@ -40,6 +40,9 @@ function createDefaultMockConfig(): IAppConfig {
       globalLimit: 10,
       strictLimit: 5,
     },
+    http: {
+      trustProxy: 'false',
+    },
     metricsApiKey: 'test-key',
     otel: {
       tracingEnabled: false,
@@ -102,6 +105,10 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get throttle() {
     return this.configState.throttle;
+  }
+
+  override get http() {
+    return this.configState.http;
   }
 
   override get metricsApiKey() {
