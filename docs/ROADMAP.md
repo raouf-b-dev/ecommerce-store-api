@@ -75,7 +75,7 @@
 | [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                    | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
 | [x] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
 
-| [ ] Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
+| [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
 | [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance — not a later refactor |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL required; Redis via `/health`) |
@@ -121,21 +121,23 @@
 
 ---
 
-### [ ] Initial Database Baseline Migration
+### [x] Initial Database Baseline Migration
 
 **What**: Generate the initial database schema baseline migration from the current TypeORM entities to enable safe production schema updates.
 
 **Scope**:
 
-- [ ] Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
-- [ ] Run forward migrations on a **clean** PostgreSQL database (schema from scratch).
-- [ ] Run forward migrations against an **existing** database (upgrade path).
-- [ ] Verify migration **rollback** scripts function properly.
-- [ ] Document and verify **migration failure** behavior (startup abort, no partial corrupt state).
-- [ ] Confirm **`synchronize: true` is never enabled in production**.
-- [ ] Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
+- [x] Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
+- [x] Run forward migrations on a **clean** PostgreSQL database (schema from scratch).
+- [x] Run forward migrations against an **existing** database (upgrade path).
+- [x] Verify migration **rollback** scripts function properly.
+- [x] Document and verify **migration failure** behavior (startup abort, no partial corrupt state).
+- [x] Confirm **`synchronize: true` is never enabled in production**.
+- [x] Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
 
-**Location**: `src/infrastructure/database/migrations/`, `scripts/docker-migrate.js`
+**Location**: `src/migrations/`, `scripts/docker-migrate.js`
+
+> **Existing local DBs** that already have tables from Nest `synchronize` (non-production): either reset the volume, or stamp the baseline as applied (`INSERT INTO typeorm_migrations ...`) after verifying the schema matches — do not re-run `InitialBaseline` against a populated synchronized schema.
 
 ---
 
