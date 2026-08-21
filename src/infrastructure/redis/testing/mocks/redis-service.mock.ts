@@ -26,9 +26,25 @@ export class MockRedisService {
 
   onReconnect = jest.fn();
 
-  bumpCacheGeneration = jest.fn<Promise<number>, []>().mockResolvedValue(1);
+  bumpCacheGeneration = jest
+    .fn<Promise<{ previousGeneration: number; generation: number }>, []>()
+    .mockResolvedValue({ previousGeneration: 0, generation: 1 });
 
   getCacheGeneration = jest.fn<number, []>().mockReturnValue(1);
+
+  dropIndexForGeneration = jest
+    .fn<Promise<boolean>, [string, number]>()
+    .mockResolvedValue(false);
+
+  dropVersionedIndexesForGeneration = jest
+    .fn<Promise<void>, [number]>()
+    .mockResolvedValue(undefined);
+
+  getFullKeyForGeneration = jest
+    .fn<string, [string, number]>()
+    .mockImplementation(
+      (key: string, generation: number) => `test:c${generation}:${key}`,
+    );
 
   scanKeys = jest
     .fn<Promise<string[]>, [string, number?]>()
@@ -118,7 +134,12 @@ export class MockRedisService {
     this.jsonGet.mockResolvedValue(null);
     this.jsonSet.mockResolvedValue(true);
     this.del.mockResolvedValue(undefined);
-    this.bumpCacheGeneration.mockResolvedValue(1);
+    this.bumpCacheGeneration.mockResolvedValue({
+      previousGeneration: 0,
+      generation: 1,
+    });
     this.getCacheGeneration.mockReturnValue(1);
+    this.dropIndexForGeneration.mockResolvedValue(false);
+    this.dropVersionedIndexesForGeneration.mockResolvedValue(undefined);
   }
 }

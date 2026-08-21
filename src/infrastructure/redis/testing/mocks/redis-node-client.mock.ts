@@ -5,6 +5,7 @@ export class MockRedisFtClient {
   info = jest.fn().mockResolvedValue({});
   create = jest.fn().mockResolvedValue('OK');
   search = jest.fn().mockResolvedValue({ total: 0, documents: [] });
+  dropIndex = jest.fn().mockResolvedValue('OK');
 
   mockIndexExists(): void {
     this.info.mockResolvedValue({});
@@ -22,10 +23,15 @@ export class MockRedisFtClient {
     this.create.mockRejectedValue(new Error('Index already exists'));
   }
 
+  mockDropMissing(message = 'Unknown Index name'): void {
+    this.dropIndex.mockRejectedValue(new Error(message));
+  }
+
   reset(): void {
     jest.clearAllMocks();
     this.mockIndexExists();
     this.mockCreateSuccess();
+    this.dropIndex.mockResolvedValue('OK');
     this.search.mockResolvedValue({ total: 0, documents: [] });
   }
 }
