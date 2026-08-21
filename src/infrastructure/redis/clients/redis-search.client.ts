@@ -10,7 +10,11 @@ export class RedisSearchClient {
     return this.redisService.search(index, query, options);
   }
 
-  async createIndex(index: string, schema: any, prefix: string): Promise<void> {
-    await this.redisService.createIndex(index, schema, prefix);
+  async createIndex(
+    index: string,
+    schema: any,
+    prefix: string,
+  ): Promise<boolean> {
+    return this.redisService.createIndex(index, schema, prefix);
   }
 }

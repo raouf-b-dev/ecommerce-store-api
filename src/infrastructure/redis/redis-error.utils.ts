@@ -44,7 +44,13 @@ export function logRedisError(
 
   if (isKnownRedisConnectionError(error)) {
     logger.warn(`${source}: ${extractCleanErrorMessage(error)}`);
+    return;
+  }
+
+  const message = `${source}: ${error.message}`;
+  if (error.stack) {
+    logger.error(message, error.stack);
   } else {
-    logger.error(`${source}: ${error.message}`, error.stack);
+    logger.error(message);
   }
 }

@@ -17,6 +17,7 @@ import {
   PAYMENT_REDIS,
   USER_REDIS,
 } from '../constants/redis.constants';
+import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class RedisIndexInitializerService implements OnModuleInit {
@@ -64,14 +65,19 @@ export class RedisIndexInitializerService implements OnModuleInit {
 
   private async ensureIndex(index: string, schema: any, prefix: string) {
     try {
-      await this.redisSearch.createIndex(index, schema, `${prefix}:`);
-      this.logger.log(`Redis index '${index}' created/ensured`);
-    } catch (error: any) {
-      if (error?.message?.includes('Index already exists')) {
-        this.logger.log(`Redis index '${index}' already exists`);
-      } else {
-        this.logger.error(`Failed to create index '${index}'`, error);
-      }
+      const created = await this.redisSearch.createIndex(
+        index,
+        schema,
+        `${prefix}:`,
+      );
+      this.logger.log(
+        created
+          ? `Redis index '${index}' created`
+          : `Redis index '${index}' already exists`,
+      );
+    } catch (error) {
+      const err = toError(error);
+      this.logger.error(`Failed to create index '${index}'`, err.stack);
     }
   }
 }

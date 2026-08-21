@@ -268,8 +268,40 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
-  async createIndex(index: string, schema: any, prefix: string): Promise<void> {
-    if (!this.isReady()) return;
+  /**
+   * Returns true when the RediSearch index exists.
+   * Unknown-index replies are treated as absence; other errors are logged and rethrown.
+   */
+  async indexExists(index: string): Promise<boolean> {
+    if (!this.isReady()) return false;
+    try {
+      await this.client.ft.info(this.getFullKey(index));
+      return true;
+    } catch (error) {
+      const msg = toErrorMessage(error).toLowerCase();
+      if (msg.includes('no such index') || msg.includes('unknown index')) {
+        return false;
+      }
+      logRedisError(this.logger, `RedisService.indexExists("${index}")`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a RediSearch index when missing.
+   * @returns true if created now; false if it already existed or Redis is not ready.
+   */
+  async createIndex(
+    index: string,
+    schema: any,
+    prefix: string,
+  ): Promise<boolean> {
+    if (!this.isReady()) return false;
+
+    if (await this.indexExists(index)) {
+      return false;
+    }
+
     try {
       const fullIndex = this.getFullKey(index);
       const fullPrefix = this.getFullKey(prefix);
@@ -277,7 +309,12 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
         ON: 'JSON',
         PREFIX: [fullPrefix],
       });
+      return true;
     } catch (error) {
+      // Concurrent create race — treat as already present.
+      if (toErrorMessage(error).includes('Index already exists')) {
+        return false;
+      }
       logRedisError(this.logger, `RedisService.createIndex("${index}")`, error);
       throw error;
     }
