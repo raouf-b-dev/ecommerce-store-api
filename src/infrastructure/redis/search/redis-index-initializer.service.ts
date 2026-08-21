@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { RedisSearchClient } from '../clients/redis-search.client';
 import { RedisService } from '../redis.service';
 import {
   OrderIndexSchema,
@@ -23,10 +22,7 @@ import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 export class RedisIndexInitializerService implements OnModuleInit {
   private readonly logger = new Logger(RedisIndexInitializerService.name);
 
-  constructor(
-    private readonly redisSearch: RedisSearchClient,
-    private readonly redisService: RedisService,
-  ) {}
+  constructor(private readonly redisService: RedisService) {}
 
   async onModuleInit() {
     const isReady = await this.redisService.waitUntilReady();
@@ -63,9 +59,13 @@ export class RedisIndexInitializerService implements OnModuleInit {
     ]);
   }
 
-  private async ensureIndex(index: string, schema: any, prefix: string) {
+  private async ensureIndex(
+    index: string,
+    schema: Record<string, unknown>,
+    prefix: string,
+  ) {
     try {
-      const created = await this.redisSearch.createIndex(
+      const created = await this.redisService.createIndex(
         index,
         schema,
         `${prefix}:`,

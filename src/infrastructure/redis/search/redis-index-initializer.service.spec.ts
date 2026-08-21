@@ -1,18 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { RedisIndexInitializerService } from './redis-index-initializer.service';
-import { RedisSearchClient } from '../clients/redis-search.client';
 import { RedisService } from '../redis.service';
 import { ORDER_REDIS } from '../constants/redis.constants';
-import {
-  MockRedisSearchClient,
-  MockRedisService,
-  RedisIndexTestFactory,
-} from '../testing';
+import { MockRedisService, RedisIndexTestFactory } from '../testing';
 
 describe('RedisIndexInitializerService', () => {
   let service: RedisIndexInitializerService;
-  let redisSearch: MockRedisSearchClient;
   let redisService: MockRedisService;
   let loggerLogSpy: jest.SpyInstance;
   let loggerWarnSpy: jest.SpyInstance;
@@ -21,7 +15,6 @@ describe('RedisIndexInitializerService', () => {
   const indexes = RedisIndexTestFactory.createDefinitions();
 
   beforeEach(async () => {
-    redisSearch = new MockRedisSearchClient();
     redisService = new MockRedisService();
 
     loggerLogSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -31,7 +24,6 @@ describe('RedisIndexInitializerService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisIndexInitializerService,
-        { provide: RedisSearchClient, useValue: redisSearch },
         { provide: RedisService, useValue: redisService },
       ],
     }).compile();
@@ -46,9 +38,9 @@ describe('RedisIndexInitializerService', () => {
   it('should create all module indexes on init', async () => {
     await service.onModuleInit();
 
-    expect(redisSearch.createIndex).toHaveBeenCalledTimes(indexes.length);
+    expect(redisService.createIndex).toHaveBeenCalledTimes(indexes.length);
     for (const { index, schema, prefix } of indexes) {
-      expect(redisSearch.createIndex).toHaveBeenCalledWith(
+      expect(redisService.createIndex).toHaveBeenCalledWith(
         index,
         schema,
         prefix,
@@ -60,7 +52,7 @@ describe('RedisIndexInitializerService', () => {
   });
 
   it('should log already exists when createIndex returns false', async () => {
-    redisSearch.mockCreateIndexAlreadyExists();
+    redisService.mockCreateIndexAlreadyExists();
 
     await service.onModuleInit();
 
@@ -73,7 +65,7 @@ describe('RedisIndexInitializerService', () => {
 
   it('should log an error when createIndex throws', async () => {
     const error = new Error('Unexpected order error');
-    redisSearch.createIndex
+    redisService.createIndex
       .mockRejectedValueOnce(error)
       .mockResolvedValue(true);
 
@@ -90,7 +82,7 @@ describe('RedisIndexInitializerService', () => {
 
     await service.onModuleInit();
 
-    expect(redisSearch.createIndex).not.toHaveBeenCalled();
+    expect(redisService.createIndex).not.toHaveBeenCalled();
     expect(loggerWarnSpy).toHaveBeenCalledWith(
       'Redis unavailable — skipping RediSearch index initialization',
     );
