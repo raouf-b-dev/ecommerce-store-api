@@ -85,6 +85,24 @@ describe('IdempotencyService', () => {
       expect(result).toEqual({ isNew: true });
     });
 
+    it('should fail closed when SET NX misses and cached status is unknown', async () => {
+      cache.set.mockResolvedValue(false);
+      cache.get.mockResolvedValue({ status: 'weird' });
+
+      const result = await service.checkAndLock('bad-status');
+
+      expect(result).toEqual({ isNew: false, unavailable: true });
+    });
+
+    it('should fail closed when SET NX misses and cached payload is malformed', async () => {
+      cache.set.mockResolvedValue(false);
+      cache.get.mockResolvedValue('not-a-record');
+
+      const result = await service.checkAndLock('bad-payload');
+
+      expect(result).toEqual({ isNew: false, unavailable: true });
+    });
+
     it('should handle concurrent Promise.all calls so exactly one request acquires the lock', async () => {
       let isLocked = false;
 
