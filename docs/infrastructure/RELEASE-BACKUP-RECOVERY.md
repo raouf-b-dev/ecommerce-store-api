@@ -60,18 +60,24 @@ npm run db:restore:drill
 
 > **npm CLI note (Windows / npm 12+)**: flags after a single `--` may be rejected as unknown npm config. Prefer `node scripts/<file>.js --flag=value`, or `npm run <script> -- -- --flag=value`. The `db:restore:drill` script already includes `--yes`.
 
-This recreates `ecommerce_restore_drill` (never the primary `DB_DATABASE`), restores into it, and asserts `information_schema` public table count is greater than zero. Empty restores fail the drill.
+The drill:
+
+1. Inserts a disposable marker row into source `products`
+2. Dumps → recreates `ecommerce_restore_drill` → restores
+3. Asserts public table count > 0
+4. Asserts required tables exist: `users`, `products`, `orders`, `payments`, `reservations`
+5. Asserts the marker row is present in the restored DB
+6. Deletes the marker from the **source** DB (always, in `finally`)
 
 ### 3.2 CI automation
 
-GitHub Actions runs the same drill automatically (see [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md)):
+| Job                       | When                                                                                                                      | What                                                                          |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------- |
+| **restore-drill**         | Every PR / push (same-repo) in `ci.yml`                                                                                   | `prepare-db-env` → `migration:run:test` → `npm run db:restore:drill`          |
+| **restore-drill-smoke**   | `master` push in `ci.yml`                                                                                                 | prepare-test-env → migrate → drill `--keep-dump` → app on restored DB → smoke |
+| **Nightly Restore Drill** | `0 3 * * *` UTC + `workflow_dispatch` in [`nightly-restore-drill.yml`](../../.github/workflows/nightly-restore-drill.yml) | Thin workflow: build + restore-drill + restore-drill-smoke only (not full CI) |
 
-| Job                     | When                        | What                                                                                                              |
-| :---------------------- | :-------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| **restore-drill**       | Every PR / push (same-repo) | Postgres → migrate → temporary `schema:sync` → `npm run db:restore:drill`                                         |
-| **restore-drill-smoke** | `master` push only          | Full prepare-test-env → drill with `--keep-dump` → start app on `ecommerce_restore_drill` → existing smoke probes |
-
-Until the Phase 14 baseline migration exists, CI runs TypeORM `schema:sync` after `migration:run:test` so the source database has entity tables to dump. Remove the `schema:sync` step once `migration:run:test` alone creates the schema.
+Schema comes from the baseline TypeORM migration ([`src/migrations/*InitialBaseline*`](../../src/migrations/)). Do not use `schema:sync` in CI.
 
 ---
 
