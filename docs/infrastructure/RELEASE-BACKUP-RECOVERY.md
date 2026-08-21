@@ -49,6 +49,8 @@ A dump that has never been restored is not a backup.
 Backup source DB → recreate disposable DB → pg_restore → TOC / table check → (optional) smoke against that DB
 ```
 
+### 3.1 Local drill
+
 ```bash
 npm run db:restore:drill
 # Direct invocation (required when calling the script file without npm):
@@ -58,7 +60,18 @@ npm run db:restore:drill
 
 > **npm CLI note (Windows / npm 12+)**: flags after a single `--` may be rejected as unknown npm config. Prefer `node scripts/<file>.js --flag=value`, or `npm run <script> -- -- --flag=value`. The `db:restore:drill` script already includes `--yes`.
 
-This recreates `ecommerce_restore_drill` (never the primary `DB_DATABASE`), restores into it, and checks `information_schema`. Optional follow-up: point the app at the drill database, start it, run `npm run smoke-test`.
+This recreates `ecommerce_restore_drill` (never the primary `DB_DATABASE`), restores into it, and asserts `information_schema` public table count is greater than zero. Empty restores fail the drill.
+
+### 3.2 CI automation
+
+GitHub Actions runs the same drill automatically (see [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md)):
+
+| Job                     | When                        | What                                                                                                              |
+| :---------------------- | :-------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **restore-drill**       | Every PR / push (same-repo) | Postgres → migrate → temporary `schema:sync` → `npm run db:restore:drill`                                         |
+| **restore-drill-smoke** | `master` push only          | Full prepare-test-env → drill with `--keep-dump` → start app on `ecommerce_restore_drill` → existing smoke probes |
+
+Until the Phase 14 baseline migration exists, CI runs TypeORM `schema:sync` after `migration:run:test` so the source database has entity tables to dump. Remove the `schema:sync` step once `migration:run:test` alone creates the schema.
 
 ---
 
@@ -66,7 +79,7 @@ This recreates `ecommerce_restore_drill` (never the primary `DB_DATABASE`), rest
 
 ### 4.1 Pre-flight checklist
 
-- [ ] CI Status Check green on the release commit (lint, typecheck, unit, arch, audit, build, integration, e2e, smoke).
+- [ ] CI Status Check green on the release commit (lint, typecheck, unit, arch, audit, build, integration, e2e, smoke, restore-drill).
 - [ ] Secrets present in `.env.production` (`npm run env:init:prod` / ops secret store).
 - [ ] Pending TypeORM migrations reviewed (`npm run migration:show:prod`).
 - [ ] Pre-release backup: `npm run db:backup`.
