@@ -5,8 +5,6 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CONTAINER_NAME = 'postgres-db';
-/** Keep in sync with GHA `services.postgres.image` / Compose Postgres image. */
-const DEFAULT_PG_IMAGE = 'postgres:18.4';
 const DUMP_PREFIX = 'ecommerce-store-api_';
 
 /**
@@ -26,8 +24,18 @@ function getDbConfig(overrides = {}) {
   };
 }
 
+/**
+ * Docker image for ephemeral pg_dump / pg_restore / psql clients.
+ * Must be set via env (`.env.*` from `.env.example`, or CI `POSTGRES_IMAGE`).
+ */
 function getPgImage() {
-  return process.env.POSTGRES_IMAGE || DEFAULT_PG_IMAGE;
+  const image = process.env.POSTGRES_IMAGE;
+  if (!image) {
+    throw new Error(
+      'POSTGRES_IMAGE is required when using docker-run client tools (set in .env or CI)',
+    );
+  }
+  return image;
 }
 
 function pgEnv(config) {
@@ -103,11 +111,21 @@ function assertRestoreOk(result, label) {
   if (result.error) {
     throw result.error;
   }
-  // pg_restore may exit 1 with non-fatal warnings when --clean hits missing objects
-  if (result.status !== 0 && result.status !== 1) {
-    throw new Error(`${label} failed (exit ${result.status})`);
+  if (result.status === 0) {
+    return;
   }
+  const stderr = (result.stderr || '').toString().trim();
+  throw new Error(
+    `${label} failed (exit ${result.status})${stderr ? `: ${stderr}` : ''}`,
+  );
 }
+
+const PG_RESTORE_STRICT_FLAGS = [
+  '--clean',
+  '--if-exists',
+  '--no-owner',
+  '--exit-on-error',
+];
 
 function hostConnArgs(config, database) {
   return [
@@ -268,9 +286,10 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
   const mode = resolveToolMode(config);
   const env = pgEnv(config);
   const absPath = path.resolve(dumpPath);
-  const inheritOpts = {
+  // stdout progress to console; stderr captured for hard-fail messages
+  const restoreOpts = {
     encoding: 'utf8',
-    stdio: ['ignore', 'inherit', 'inherit'],
+    stdio: ['ignore', 'inherit', 'pipe'],
   };
 
   if (!fs.existsSync(absPath)) {
@@ -297,12 +316,10 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
           config.username,
           '-d',
           config.database,
-          '--clean',
-          '--if-exists',
-          '--no-owner',
+          ...PG_RESTORE_STRICT_FLAGS,
           containerDumpPath,
         ],
-        { env, ...inheritOpts },
+        { env, ...restoreOpts },
       );
       assertRestoreOk(result, 'pg_restore (docker exec)');
       return { via: `docker-exec:${mode.container}` };
@@ -323,12 +340,10 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
       [
         'pg_restore',
         ...hostConnArgs(config, config.database),
-        '--clean',
-        '--if-exists',
-        '--no-owner',
+        ...PG_RESTORE_STRICT_FLAGS,
         containerDumpPath,
       ],
-      inheritOpts,
+      restoreOpts,
       [[absPath, containerDumpPath, 'ro']],
     );
     assertRestoreOk(result, `pg_restore (docker run ${mode.image})`);
@@ -339,12 +354,10 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
     'pg_restore',
     [
       ...hostConnArgs(config, config.database),
-      '--clean',
-      '--if-exists',
-      '--no-owner',
+      ...PG_RESTORE_STRICT_FLAGS,
       absPath,
     ],
-    { env, ...inheritOpts },
+    { env, ...restoreOpts },
   );
   assertRestoreOk(result, 'pg_restore (local)');
   return { via: 'local' };
@@ -586,7 +599,6 @@ function parsePsqlInt(output) {
 module.exports = {
   DUMP_PREFIX,
   DEFAULT_CONTAINER_NAME,
-  DEFAULT_PG_IMAGE,
   getDbConfig,
   getPgImage,
   detectDockerContainer,
