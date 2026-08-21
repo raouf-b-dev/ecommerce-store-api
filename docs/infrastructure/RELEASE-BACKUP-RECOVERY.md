@@ -28,9 +28,13 @@ Env contract (`DB_*`, not CRM `POSTGRES_*`):
 - `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`
 - Optional: `POSTGRES_CONTAINER_NAME` (default `postgres-db` from Compose)
 
-Scripts prefer `docker exec` when container `postgres-db` is running; otherwise local `pg_dump` / `pg_restore`. Passwords are passed via process env (`PGPASSWORD`), never interpolated into shell command strings.
+Scripts pick client tools in this order:
 
-**Client version:** `pg_dump` / `pg_restore` major version must match the server (CI uses Postgres 18 + `postgresql-client-18`). A 16 client against an 18 server fails with `server version mismatch`.
+1. `docker exec` into container `postgres-db` (local Compose)
+2. `docker run --network host` with image `POSTGRES_IMAGE` (default `postgres:18.4`, same as GHA service) — keeps client major in lockstep with the server
+3. Host-installed `pg_dump` / `pg_restore` / `psql` (last resort)
+
+Passwords are passed via process env (`PGPASSWORD`), never interpolated into shell command strings. CI readiness checks may use a thin Ubuntu `postgresql-client` for `pg_isready` only.
 
 ---
 
