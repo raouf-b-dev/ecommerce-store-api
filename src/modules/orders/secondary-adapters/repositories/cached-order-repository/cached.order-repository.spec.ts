@@ -198,6 +198,28 @@ describe('CachedOrderRepository', () => {
       }
     });
 
+    it('should fall back to postgres when cached list has an invalid entry', async () => {
+      const cached = OrderCacheMapper.toCache(mockOrder);
+      const unreadable: OrderForCache = {
+        ...cached,
+        items: cached.items.map((item) => ({ ...item, productName: '' })),
+      };
+      cacheService.get.mockResolvedValue('true');
+      cacheService.search.mockResolvedValue([mockCachedOrder, unreadable]);
+      postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));
+      cacheService.setAll.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
+
+      const result = await repository.listOrders({});
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
+      expect(postgresRepo.listOrders).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Order list cache payload had unreadable entries — falling back to Postgres',
+      );
+    });
+
     it('should fetch from postgres and cache if no cache', async () => {
       cacheService.get.mockResolvedValue(null);
       postgresRepo.listOrders.mockResolvedValue(Result.success([mockOrder]));

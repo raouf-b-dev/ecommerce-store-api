@@ -292,11 +292,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
       );
-      if (cached) {
-        const inventory = InventoryCacheMapper.fromCache(cached);
-        if (inventory) {
-          await this.cacheService.delete(this.productKey(inventory.productId));
-        }
+      // Invalidate the product key even when the ID document fails full mapping.
+      if (cached && typeof cached.productId === 'number') {
+        await this.cacheService.delete(this.productKey(cached.productId));
       }
 
       const dbResult = await this.postgresRepo.delete(id);

@@ -522,6 +522,21 @@ describe('CachedInventoryRepository', () => {
       postgresRepo.verifyDeleteCalledWith(inventoryId);
     });
 
+    it('should delete product key even when the ID cache document is invalid', async () => {
+      const unreadable: InventoryForCache = {
+        ...InventoryCacheMapper.toCache(domainInventory),
+        availableQuantity: -1,
+      };
+      cacheService.get.mockResolvedValueOnce(unreadable);
+      postgresRepo.mockSuccessfulDelete();
+
+      const result = await repository.delete(inventoryId);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(cacheService.delete).toHaveBeenCalledWith(productKey(productId));
+      expect(cacheService.delete).toHaveBeenCalledWith(idKey(inventoryId));
+    });
+
     it('should return failure if postgres delete fails', async () => {
       // Arrange
       cacheService.get.mockResolvedValueOnce(cachedInventory);

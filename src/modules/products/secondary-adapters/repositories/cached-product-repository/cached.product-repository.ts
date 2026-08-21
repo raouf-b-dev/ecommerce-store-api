@@ -137,16 +137,24 @@ export class CachedProductRepository implements ProductRepository {
       const isCached = isCachedFlag === true || isCachedFlag === 'true';
 
       if (isCached) {
-        const products = (
-          await this.cacheService.search<ProductForCache>(PRODUCT_REDIS.INDEX)
-        )
-          .map(ProductCacheMapper.fromCache)
-          .filter((product) => product !== null);
-        if (products.length > 0) {
+        const cached = await this.cacheService.search<ProductForCache>(
+          PRODUCT_REDIS.INDEX,
+        );
+        const products: Product[] = [];
+        let hasUnreadable = false;
+        for (const entry of cached) {
+          const product = ProductCacheMapper.fromCache(entry);
+          if (!product) {
+            hasUnreadable = true;
+            break;
+          }
+          products.push(product);
+        }
+        if (!hasUnreadable) {
           return Result.success(products);
         }
         this.logger.warn(
-          'Product list cache payload was unreadable — falling back to Postgres',
+          'Product list cache payload had unreadable entries — falling back to Postgres',
         );
       }
 

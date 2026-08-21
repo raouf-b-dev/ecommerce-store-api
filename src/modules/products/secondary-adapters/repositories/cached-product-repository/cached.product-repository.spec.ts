@@ -10,7 +10,10 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { ResultAssertionHelper } from '../../../../../testing';
 import { MockCacheService } from '../../../../../testing';
 import { Product } from '../../../core/domain/entities/product';
-import { ProductCacheMapper } from '../../persistence/mappers/product.mapper';
+import {
+  ProductCacheMapper,
+  ProductForCache,
+} from '../../persistence/mappers/product.mapper';
 
 describe('CachedProductRepository', () => {
   let repo: CachedProductRepository;
@@ -209,6 +212,44 @@ describe('CachedProductRepository', () => {
         PRODUCT_REDIS.IS_CACHED_FLAG,
       );
       expect(cacheService.search).toHaveBeenCalledWith(PRODUCT_REDIS.INDEX);
+      expect(postgresRepo.findAll).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to postgres when cached list has an invalid entry', async () => {
+      const valid = ProductCacheMapper.toCache(
+        Product.fromPrimitives(ProductTestFactory.createInStockProduct()),
+      );
+      const unreadable: ProductForCache = {
+        ...ProductCacheMapper.toCache(
+          Product.fromPrimitives(ProductTestFactory.createInStockProduct()),
+        ),
+        name: '',
+      };
+      const domainProducts = [
+        Product.fromPrimitives(ProductTestFactory.createInStockProduct()),
+      ];
+
+      cacheService.get.mockResolvedValue('true');
+      cacheService.search.mockResolvedValue([valid, unreadable]);
+      postgresRepo.findAll.mockResolvedValue(Result.success(domainProducts));
+      cacheService.setAll.mockResolvedValue(undefined);
+      cacheService.set.mockResolvedValue(true);
+
+      const result = await repo.findAll();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual(domainProducts);
+      expect(postgresRepo.findAll).toHaveBeenCalled();
+    });
+
+    it('should return an empty list when the list cache is complete and empty', async () => {
+      cacheService.get.mockResolvedValue('true');
+      cacheService.search.mockResolvedValue([]);
+
+      const result = await repo.findAll();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual([]);
       expect(postgresRepo.findAll).not.toHaveBeenCalled();
     });
 

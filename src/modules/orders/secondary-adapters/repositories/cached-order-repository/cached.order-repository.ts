@@ -54,23 +54,32 @@ export class CachedOrderRepository implements OrderRepository {
           const isCached = isCachedFlag === true || isCachedFlag === 'true';
 
           if (isCached) {
-            const orders = (
-              await this.cacheService.search<OrderForCache>(
-                ORDER_REDIS.INDEX,
-                '*',
-                {
-                  page,
-                  limit,
-                  sortBy,
-                  sortOrder,
-                },
-              )
-            )
-              .map(OrderCacheMapper.fromCache)
-              .filter((order) => order !== null);
-            if (orders.length > 0) {
+            const cached = await this.cacheService.search<OrderForCache>(
+              ORDER_REDIS.INDEX,
+              '*',
+              {
+                page,
+                limit,
+                sortBy,
+                sortOrder,
+              },
+            );
+            const orders: Order[] = [];
+            let hasUnreadable = false;
+            for (const entry of cached) {
+              const order = OrderCacheMapper.fromCache(entry);
+              if (!order) {
+                hasUnreadable = true;
+                break;
+              }
+              orders.push(order);
+            }
+            if (!hasUnreadable) {
               return Result.success(orders);
             }
+            this.logger.warn(
+              'Order list cache payload had unreadable entries — falling back to Postgres',
+            );
           }
         } catch (cacheError) {
           this.logger.warn(

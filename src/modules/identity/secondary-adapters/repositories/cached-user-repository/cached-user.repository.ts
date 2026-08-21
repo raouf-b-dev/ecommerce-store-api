@@ -83,16 +83,7 @@ export class CachedUserRepository implements UserRepository {
     limit?: number,
   ): Promise<Result<User[], RepositoryError>> {
     try {
-      const cachedUsers = (
-        await this.cacheService.search<UserForCache>(USER_REDIS.INDEX)
-      )
-        .map(UserCacheMapper.fromCache)
-        .filter((user) => user !== null);
-
-      if (cachedUsers.length > 0) {
-        return Result.success(cachedUsers);
-      }
-
+      // Paginated lists are not a complete RediSearch result set — always query Postgres.
       const dbResult = await this.postgresRepo.findAll(page, limit);
       if (dbResult.isFailure) return dbResult;
 

@@ -4,6 +4,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
 import { PaymentRepository } from '../../../core/domain/repositories/payment.repository';
@@ -50,17 +51,7 @@ export class CachedPaymentRepository implements PaymentRepository {
     orderId: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     try {
-      const cached = await this.cacheService.search<PaymentForCache>(
-        PAYMENT_REDIS.INDEX,
-        `@orderId:${orderId}`,
-      );
-      const cachedPayments = cached
-        .map(PaymentCacheMapper.fromCache)
-        .filter((payment) => payment !== null);
-      if (cachedPayments.length > 0) {
-        return Result.success(cachedPayments);
-      }
-
+      // Collection-by-order cannot be proven complete from RediSearch hits alone.
       const dbResult = await this.postgresRepo.findByOrderId(orderId);
       if (dbResult.isFailure) return dbResult;
       const payments = dbResult.value;
@@ -88,7 +79,7 @@ export class CachedPaymentRepository implements PaymentRepository {
     try {
       const [cached] = await this.cacheService.search<PaymentForCache>(
         PAYMENT_REDIS.INDEX,
-        `@transactionId:${transactionId}`,
+        tagEquals('transactionId', transactionId),
       );
       if (cached) {
         const payment = PaymentCacheMapper.fromCache(cached);
