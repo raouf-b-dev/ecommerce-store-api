@@ -250,11 +250,19 @@ function runPgRestore(dumpPath, config = getDbConfig()) {
 
 /**
  * Execute a SQL statement via psql (docker or local).
+ * Pass `{ tuplesOnly: true }` for `-tAc` (scalar / machine-readable) output.
  */
-function runPsql(sql, config = getDbConfig(), { database } = {}) {
+function runPsql(
+  sql,
+  config = getDbConfig(),
+  { database, tuplesOnly = false } = {},
+) {
   const targetDb = database || config.database;
   const container = detectDockerContainer(config.containerName);
   const env = pgEnv(config);
+  const psqlTail = tuplesOnly
+    ? ['-v', 'ON_ERROR_STOP=1', '-tAc', sql]
+    : ['-v', 'ON_ERROR_STOP=1', '-c', sql];
 
   if (container) {
     const result = spawnSync(
@@ -270,10 +278,7 @@ function runPsql(sql, config = getDbConfig(), { database } = {}) {
         config.username,
         '-d',
         targetDb,
-        '-v',
-        'ON_ERROR_STOP=1',
-        '-c',
-        sql,
+        ...psqlTail,
       ],
       { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     );
@@ -292,15 +297,51 @@ function runPsql(sql, config = getDbConfig(), { database } = {}) {
       config.username,
       '-d',
       targetDb,
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-c',
-      sql,
+      ...psqlTail,
     ],
     { env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
   assertOk(result, 'psql (local)');
   return result.stdout;
+}
+
+/**
+ * Run SQL and parse a single integer (uses psql -tAc).
+ */
+function queryScalarInt(sql, config = getDbConfig(), options = {}) {
+  const raw = runPsql(sql, config, { ...options, tuplesOnly: true }).trim();
+  const value = parseInt(raw, 10);
+  return Number.isFinite(value) ? value : NaN;
+}
+
+/**
+ * Assert required public tables exist; throws with a missing-list.
+ */
+function assertRequiredTables(
+  requiredTables,
+  config = getDbConfig(),
+  options = {},
+) {
+  const list = requiredTables.map((t) => `'${t}'`).join(', ');
+  const raw = runPsql(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name IN (${list})
+     ORDER BY 1`,
+    config,
+    { ...options, tuplesOnly: true },
+  );
+  const present = new Set(
+    raw
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  );
+  const missing = requiredTables.filter((t) => !present.has(t));
+  if (missing.length > 0) {
+    throw new Error(`Restore missing required tables: ${missing.join(', ')}`);
+  }
+  return [...present];
 }
 
 /**
@@ -424,6 +465,17 @@ function writeAndValidateDump(buffer, outputPath, config = getDbConfig()) {
   return fs.statSync(outputPath);
 }
 
+/**
+ * Parse a single integer from typical `psql` aligned output (header + value).
+ */
+function parsePsqlInt(output) {
+  const countLine = String(output || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => /^\d+$/.test(line));
+  return countLine ? parseInt(countLine, 10) : NaN;
+}
+
 module.exports = {
   DUMP_PREFIX,
   DEFAULT_CONTAINER_NAME,
@@ -439,4 +491,7 @@ module.exports = {
   findLatestDump,
   applyRetention,
   writeAndValidateDump,
+  parsePsqlInt,
+  queryScalarInt,
+  assertRequiredTables,
 };

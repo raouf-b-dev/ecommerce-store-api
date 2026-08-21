@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 'use strict';
 
-// Disposable-database restore drill (definition of done for Phase 14).
-//
-// Flow: backup source DB → drop/create disposable DB → restore dump → verify TOC.
-// Does NOT touch the primary application database.
+// Disposable-database restore drill.
+// Flow: insert marker → backup → recreate disposable DB → restore →
+//       assert known tables + marker → cleanup source marker.
 //
 // Usage:
 //   node scripts/db-restore-drill.js --yes
-//   node scripts/db-restore-drill.js --yes --database=ecommerce_restore_drill
+//   node scripts/db-restore-drill.js --yes --database=ecommerce_restore_drill --keep-dump
 
 const path = require('path');
 const fs = require('fs');
@@ -22,17 +21,27 @@ const {
   ensureBackupsDir,
   writeAndValidateDump,
   runPsql,
+  queryScalarInt,
+  assertRequiredTables,
 } = require('./lib/pg');
+
+const REQUIRED_TABLES = [
+  'users',
+  'products',
+  'orders',
+  'payments',
+  'reservations',
+];
 
 loadEnv();
 const args = parseArgs();
 
 if (!args.yes && !args.y) {
   console.error(
-    '❌ [db-restore-drill] Refusing to run without --yes (destructive to disposable DB only).',
+    '[db-restore-drill] Refusing to run without --yes (destructive to disposable DB only).',
   );
-  console.error('   Usage: npm run db:restore:drill');
-  console.error('          node scripts/db-restore-drill.js --yes');
+  console.error('  Usage: npm run db:restore:drill');
+  console.error('         node scripts/db-restore-drill.js --yes');
   process.exit(1);
 }
 
@@ -44,7 +53,7 @@ const drillDbName =
 
 if (drillDbName === sourceConfig.database) {
   console.error(
-    `❌ [db-restore-drill] Drill database must differ from primary '${sourceConfig.database}'.`,
+    `[db-restore-drill] Drill database must differ from primary '${sourceConfig.database}'.`,
   );
   process.exit(1);
 }
@@ -52,65 +61,97 @@ if (drillDbName === sourceConfig.database) {
 const drillConfig = getDbConfig({ database: drillDbName });
 const backupsDir = ensureBackupsDir();
 const drillDumpPath = path.join(backupsDir, `restore-drill_${Date.now()}.dump`);
+const markerSlug = `restore-drill-marker-${Date.now()}`.replace(
+  /[^a-zA-Z0-9_-]/g,
+  '',
+);
+const markerSku = `RDM-${Date.now()}`;
 
-console.log(`\n▶ [db-restore-drill] Starting restore drill`);
-console.log(`   Source DB: ${sourceConfig.database}`);
-console.log(`   Drill DB:  ${drillDbName}`);
-console.log(`   Dump:      ${drillDumpPath}\n`);
+function cleanupSourceMarker() {
+  try {
+    runPsql(`DELETE FROM products WHERE slug = '${markerSlug}';`, sourceConfig);
+    console.log(`[db-restore-drill] Cleaned source marker slug=${markerSlug}`);
+  } catch (err) {
+    console.warn(
+      `[db-restore-drill] Failed to clean source marker: ${err.message}`,
+    );
+  }
+}
+
+console.log('[db-restore-drill] Starting');
+console.log(`  source=${sourceConfig.database} drill=${drillDbName}`);
+console.log(`  dump=${drillDumpPath} marker=${markerSlug}`);
 
 try {
-  console.log('1/5 Backup source database...');
-  const { buffer, via } = runPgDump(sourceConfig);
-  console.log(`   Dump via ${via}`);
-  const stats = writeAndValidateDump(buffer, drillDumpPath, sourceConfig);
-  console.log(
-    `   Wrote ${(stats.size / (1024 * 1024)).toFixed(2)} MB → ${drillDumpPath}`,
+  console.log('[db-restore-drill] 1/6 Insert marker');
+  runPsql(
+    `INSERT INTO products (name, slug, sku, price, currency, is_active, version)
+     VALUES (
+       'Restore Drill Marker',
+       '${markerSlug}',
+       '${markerSku}',
+       0.01,
+       'USD',
+       true,
+       1
+     );`,
+    sourceConfig,
   );
 
-  console.log('2/5 Recreate disposable drill database...');
+  console.log('[db-restore-drill] 2/6 Backup source');
+  const { buffer, via } = runPgDump(sourceConfig);
+  const stats = writeAndValidateDump(buffer, drillDumpPath, sourceConfig);
+  console.log(
+    `  via=${via} size_mb=${(stats.size / (1024 * 1024)).toFixed(2)}`,
+  );
+
+  console.log('[db-restore-drill] 3/6 Recreate drill database');
   recreateDatabase(drillDbName, sourceConfig);
 
-  console.log('3/5 Restore dump into drill database...');
+  console.log('[db-restore-drill] 4/6 Restore dump');
   listDump(drillDumpPath, drillConfig);
   const restore = runPgRestore(drillDumpPath, drillConfig);
-  console.log(`   Restore via ${restore.via}`);
+  console.log(`  via=${restore.via}`);
 
-  console.log('4/5 Verify restored schema (migrations / public tables)...');
-  const tableCheck = runPsql(
-    `SELECT COUNT(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public';`,
+  console.log('[db-restore-drill] 5/6 Assert schema + marker');
+  const tableCount = queryScalarInt(
+    `SELECT COUNT(*)::int FROM information_schema.tables WHERE table_schema = 'public'`,
     drillConfig,
     { database: drillDbName },
   );
-  console.log(`   information_schema.tables (public):\n${tableCheck.trim()}`);
-
-  const countLine = tableCheck
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find((line) => /^\d+$/.test(line));
-  const tableCount = countLine ? parseInt(countLine, 10) : NaN;
   if (!Number.isFinite(tableCount) || tableCount <= 0) {
     throw new Error(
-      `Restore produced empty schema (public table count=${Number.isFinite(tableCount) ? tableCount : 'unknown'}). Bootstrap migrations or schema:sync before the drill.`,
+      `Empty schema after restore (public table count=${Number.isFinite(tableCount) ? tableCount : 'unknown'}). Run migrations before the drill.`,
     );
   }
-  console.log(`   Asserted public table count > 0 (${tableCount})`);
-
-  console.log(
-    '5/5 Cleanup drill dump artifact (optional keep via --keep-dump)...',
+  assertRequiredTables(REQUIRED_TABLES, drillConfig, {
+    database: drillDbName,
+  });
+  const markerCount = queryScalarInt(
+    `SELECT COUNT(*)::int FROM products WHERE slug = '${markerSlug}'`,
+    drillConfig,
+    { database: drillDbName },
   );
+  if (markerCount !== 1) {
+    throw new Error(
+      `Marker not restored (expected 1 row slug=${markerSlug}, got ${Number.isFinite(markerCount) ? markerCount : 'unknown'})`,
+    );
+  }
+  console.log(
+    `  tables=${tableCount} required_ok marker_ok slug=${markerSlug}`,
+  );
+
+  console.log('[db-restore-drill] 6/6 Cleanup dump');
   if (!args['keep-dump']) {
     fs.unlinkSync(drillDumpPath);
-    console.log(`   Removed ${path.basename(drillDumpPath)}`);
+    console.log(`  removed ${path.basename(drillDumpPath)}`);
   } else {
-    console.log(`   Kept ${drillDumpPath}`);
+    console.log(`  kept ${drillDumpPath}`);
   }
 
-  console.log(`\n✅ [db-restore-drill] Restore drill passed.`);
-  console.log(
-    `   Optional follow-up: point the app at '${drillDbName}', start it, run npm run smoke-test.\n`,
-  );
+  console.log('[db-restore-drill] Passed');
 } catch (err) {
-  console.error(`\n❌ [db-restore-drill] Drill failed:`, err.message);
+  console.error(`[db-restore-drill] Failed: ${err.message}`);
   if (fs.existsSync(drillDumpPath) && !args['keep-dump']) {
     try {
       fs.unlinkSync(drillDumpPath);
@@ -118,5 +159,10 @@ try {
       /* ignore */
     }
   }
-  process.exit(1);
+  process.exitCode = 1;
+} finally {
+  cleanupSourceMarker();
+  if (process.exitCode === 1) {
+    process.exit(1);
+  }
 }
