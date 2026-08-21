@@ -14,6 +14,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  resolve-env:
+    name: Resolve env (.env.example)
+    runs-on: ubuntu-latest
+    outputs:
+      postgres_image: ${{ steps.resolve.outputs.postgres_image }}
+      postgres_container_name: ${{ steps.resolve.outputs.postgres_container_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Resolve from .env.example
+        id: resolve
+        uses: ./.github/actions/resolve-env-example
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -45,11 +60,11 @@ jobs:
   restore-drill:
     name: Restore Drill
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [resolve-env, build]
 
     services:
       postgres:
-        image: postgres:18.4
+        image: ${{ needs.resolve-env.outputs.postgres_image }}
         ports: ['5432:5432']
         env:
           POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
@@ -68,6 +83,8 @@ jobs:
       DB_USERNAME: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
       DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
       DB_DATABASE: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+      POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
+      POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
 
     steps:
       - name: Checkout
@@ -106,11 +123,11 @@ jobs:
   restore-drill-smoke:
     name: Restore Drill Smoke
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [resolve-env, build]
 
     services:
       postgres:
-        image: postgres:18.4
+        image: ${{ needs.resolve-env.outputs.postgres_image }}
         ports: ['5432:5432']
         env:
           POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
@@ -130,6 +147,8 @@ jobs:
 
     env:
       NODE_ENV: test
+      POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
+      POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
 
     steps:
       - name: Checkout

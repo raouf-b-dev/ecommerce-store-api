@@ -78,10 +78,11 @@ All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with
 
 ## 3. Postgres version policy
 
-CI GHA service containers use **`postgres:18.4`**, aligned with:
+`POSTGRES_IMAGE` and `POSTGRES_CONTAINER_NAME` are defined once in **`.env.example`** (validated by Nest, used by Compose and dump/restore scripts).
 
-- Local/docker-compose target (`postgres:18` in `docker-compose.yaml`)
-- Integration Testcontainers image (`postgres:18.4-alpine` in `test/integration/harness/integration-test.constants.ts`)
+CI cannot load `.env` before GHA service containers start, so a `resolve-env` job reads those keys from `.env.example` and passes them via job outputs into service `image:` and job env. Bump the image only in `.env.example`.
+
+Integration Testcontainers keep a separate alpine tag in `test/integration/harness/integration-test.constants.ts`.
 
 ---
 
