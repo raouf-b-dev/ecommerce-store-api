@@ -70,7 +70,7 @@ export class CacheService implements CachePort {
     const isSet = await this.jsonClient.set(key, path, value as RedisJSON, {
       nx,
     });
-    if (isSet) {
+    if (isSet && ttl) {
       await this.keyClient.expire(key, ttl);
     }
     return isSet;
@@ -84,7 +84,9 @@ export class CacheService implements CachePort {
       nx = false,
     }: { path?: string; ttl?: number; nx?: boolean } = {},
   ): Promise<void> {
+    if (!entries || entries.length === 0) return;
     const pipeline = this.keyClient.createPipeline();
+    if (!pipeline) return;
 
     for (const { key, value } of entries) {
       const fullKey = this.redisService.getFullKey(key);
@@ -96,7 +98,11 @@ export class CacheService implements CachePort {
       pipeline.json.set(...args);
     }
 
-    await pipeline.exec();
+    try {
+      await pipeline.exec();
+    } catch {
+      // Redis pipeline failure handled gracefully
+    }
   }
 
   async merge<T>(
@@ -115,7 +121,9 @@ export class CacheService implements CachePort {
     entries: { key: string; value: any }[],
     { path = '$', ttl = 3600 }: { path?: string; ttl?: number } = {},
   ): Promise<void> {
+    if (!entries || entries.length === 0) return;
     const pipeline = this.keyClient.createPipeline();
+    if (!pipeline) return;
 
     for (const { key, value } of entries) {
       const fullKey = this.redisService.getFullKey(key);
@@ -125,7 +133,11 @@ export class CacheService implements CachePort {
       }
     }
 
-    await pipeline.exec();
+    try {
+      await pipeline.exec();
+    } catch {
+      // Redis pipeline failure handled gracefully
+    }
   }
 
   async delete(key: string): Promise<void> {
@@ -134,10 +146,17 @@ export class CacheService implements CachePort {
 
   async deletePattern(pattern: string): Promise<void> {
     const keys = await this.scanKeys(pattern);
-    if (keys.length > 0) {
-      const pipeline = this.keyClient.createPipeline();
-      keys.forEach((key) => pipeline.del(key));
+    if (keys.length === 0) return;
+
+    const pipeline = this.keyClient.createPipeline();
+    if (!pipeline) return;
+
+    keys.forEach((key) => pipeline.del(this.redisService.getFullKey(key)));
+
+    try {
       await pipeline.exec();
+    } catch {
+      // Redis pipeline failure handled gracefully
     }
   }
 

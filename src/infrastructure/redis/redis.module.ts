@@ -6,6 +6,7 @@ import { CacheService } from './cache/cache.service';
 import { RedisIndexInitializerService } from './search/redis-index-initializer.service';
 import { RedisJsonClient } from './clients/redis-json.client';
 import { CachePort } from './cache/cache.port';
+import { RedisCacheRecoveryService } from './redis-cache-recovery.service';
 
 @Module({
   providers: [
@@ -19,6 +20,7 @@ import { CachePort } from './cache/cache.port';
     },
     CacheService,
     RedisIndexInitializerService,
+    RedisCacheRecoveryService,
     Logger,
   ],
   exports: [

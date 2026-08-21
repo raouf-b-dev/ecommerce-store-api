@@ -25,9 +25,13 @@ describe('RedisService', () => {
     };
 
     mockClient = {
-      connect: jest.fn(),
+      connect: jest.fn().mockResolvedValue(undefined),
       quit: jest.fn(),
       on: jest.fn(),
+      isReady: true,
+      json: {
+        get: jest.fn(),
+      },
     };
 
     (createClient as jest.Mock).mockReturnValue(mockClient);
@@ -62,29 +66,39 @@ describe('RedisService', () => {
     it('should create client and connect', async () => {
       await service.onModuleInit();
 
-      expect(createClient).toHaveBeenCalledWith({
-        url: 'redis://localhost:6379',
-        password: 'testpass',
-        database: 0,
-      });
+      expect(createClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'redis://localhost:6379',
+          password: 'testpass',
+          database: 0,
+        }),
+      );
       expect(mockClient.on).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(mockClient.on).toHaveBeenCalledWith('ready', expect.any(Function));
+      expect(mockClient.on).toHaveBeenCalledWith('end', expect.any(Function));
       expect(mockClient.connect).toHaveBeenCalled();
+      expect(service.isReady()).toBe(true);
     });
 
-    it('should log error when redis emits error event', async () => {
+    it('should continue boot when connect fails', async () => {
+      mockClient.connect.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
       await service.onModuleInit();
 
-      const errorHandler = mockClient.on.mock.calls.find(
-        (call: [string, (err: Error) => void]) => call[0] === 'error',
-      )[1];
-
-      const testError = new Error('Redis failed');
-      errorHandler(testError);
-
-      expect(logger.error).toHaveBeenCalledWith(
-        'Redis Client Error',
-        testError,
+      expect(service.isReady()).toBe(false);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Redis unavailable at startup'),
       );
+    });
+  });
+
+  describe('guarded operations', () => {
+    it('jsonGet returns null when not ready', async () => {
+      await service.onModuleInit();
+      mockClient.isReady = false;
+      (service as any).connected = false;
+
+      await expect(service.jsonGet('key')).resolves.toBeNull();
     });
   });
 

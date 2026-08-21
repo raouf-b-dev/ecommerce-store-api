@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { RedisIndexInitializerService } from './redis-index-initializer.service';
 import { RedisSearchClient } from '../clients/redis-search.client';
+import { RedisService } from '../redis.service';
 import {
   OrderIndexSchema,
   InventoryIndexSchema,
@@ -33,6 +34,12 @@ describe('RedisIndexInitializerService', () => {
           provide: RedisSearchClient,
           useValue: {
             createIndex: jest.fn(),
+          },
+        },
+        {
+          provide: RedisService,
+          useValue: {
+            waitUntilReady: jest.fn().mockResolvedValue(true),
           },
         },
       ],

@@ -7,16 +7,10 @@ export class RedisSearchClient {
   constructor(private readonly redisService: RedisService) {}
 
   async search(index: string, query: string, options?: FtSearchOptions) {
-    const fullIndex = this.redisService.getFullKey(index);
-    return await this.redisService.client.ft.search(fullIndex, query, options);
+    return this.redisService.search(index, query, options);
   }
 
   async createIndex(index: string, schema: any, prefix: string): Promise<void> {
-    const fullIndex = this.redisService.getFullKey(index);
-    const fullPrefix = this.redisService.getFullKey(prefix);
-    await this.redisService.client.ft.create(fullIndex, schema, {
-      ON: 'JSON',
-      PREFIX: [fullPrefix],
-    });
+    await this.redisService.createIndex(index, schema, prefix);
   }
 }

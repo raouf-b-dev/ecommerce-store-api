@@ -13,15 +13,11 @@ describe('RedisJsonClient', () => {
         {
           provide: RedisService,
           useValue: {
-            getFullKey: jest.fn(),
-            client: {
-              json: {
-                set: jest.fn(),
-                merge: jest.fn(),
-                get: jest.fn(),
-                del: jest.fn(),
-              },
-            },
+            jsonSet: jest.fn(),
+            jsonMerge: jest.fn(),
+            jsonGet: jest.fn(),
+            jsonMGet: jest.fn(),
+            jsonDel: jest.fn(),
           },
         },
       ],
@@ -35,132 +31,41 @@ describe('RedisJsonClient', () => {
     jest.clearAllMocks();
   });
 
-  describe('set', () => {
-    it('should call json.set with full key and default options', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.set as jest.Mock).mockResolvedValue('OK');
+  it('set delegates to redisService.jsonSet', async () => {
+    redisService.jsonSet.mockResolvedValue(true);
 
-      const result = await service.set('key', '$', { foo: 'bar' });
+    const result = await service.set('key', '$', { foo: 'bar' }, { nx: true });
 
-      expect(redisService.getFullKey).toHaveBeenCalledWith('key');
-      expect(redisService.client.json.set).toHaveBeenCalledWith(
-        'prefix:key',
-        '$',
-        { foo: 'bar' },
-        {},
-      );
-      expect(result).toBe(true);
-    });
-
-    it('should call json.set with NX option when nx is true', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.set as jest.Mock).mockResolvedValue('OK');
-
-      const result = await service.set(
-        'key',
-        '$',
-        { foo: 'bar' },
-        {
-          nx: true,
-        },
-      );
-
-      expect(redisService.client.json.set).toHaveBeenCalledWith(
-        'prefix:key',
-        '$',
-        { foo: 'bar' },
-        { NX: true },
-      );
-      expect(result).toBe(true);
-    });
-
-    it('should return false when set operation is not successful', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.set as jest.Mock).mockResolvedValue(null);
-
-      const result = await service.set('key', '$', { foo: 'bar' });
-
-      expect(result).toBe(false);
-    });
+    expect(redisService.jsonSet).toHaveBeenCalledWith(
+      'key',
+      '$',
+      { foo: 'bar' },
+      { nx: true },
+    );
+    expect(result).toBe(true);
   });
 
-  describe('merge', () => {
-    it('should call json.merge with full key', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-
-      await service.merge('key', '$', { a: 1 });
-
-      expect(redisService.getFullKey).toHaveBeenCalledWith('key');
-      expect(redisService.client.json.merge).toHaveBeenCalledWith(
-        'prefix:key',
-        '$',
-        { a: 1 },
-      );
-    });
+  it('merge delegates to redisService.jsonMerge', async () => {
+    await service.merge('key', '$', { a: 1 });
+    expect(redisService.jsonMerge).toHaveBeenCalledWith('key', '$', { a: 1 });
   });
 
-  describe('get', () => {
-    it('should call json.get with full key and path', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.get as jest.Mock).mockResolvedValue({
-        foo: 'bar',
-      });
-
-      const result = await service.get('key', '$');
-
-      expect(redisService.getFullKey).toHaveBeenCalledWith('key');
-      expect(redisService.client.json.get).toHaveBeenCalledWith('prefix:key', {
-        path: '$',
-      });
-      expect(result).toEqual({ foo: 'bar' });
-    });
-
-    it('should call json.get with undefined path when path is not provided', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.get as jest.Mock).mockResolvedValue({
-        foo: 'bar',
-      });
-
-      const result = await service.get('key');
-
-      expect(redisService.client.json.get).toHaveBeenCalledWith('prefix:key', {
-        path: undefined,
-      });
-      expect(result).toEqual({ foo: 'bar' });
-    });
-
-    it('should return null when key does not exist', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-      (redisService.client.json.get as jest.Mock).mockResolvedValue(null);
-
-      const result = await service.get('key', '$');
-
-      expect(result).toBeNull();
-    });
+  it('get delegates to redisService.jsonGet', async () => {
+    redisService.jsonGet.mockResolvedValue({ foo: 'bar' });
+    const result = await service.get('key', '$');
+    expect(redisService.jsonGet).toHaveBeenCalledWith('key', '$');
+    expect(result).toEqual({ foo: 'bar' });
   });
 
-  describe('del', () => {
-    it('should call json.del with full key and path', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
+  it('mGet delegates to redisService.jsonMGet', async () => {
+    redisService.jsonMGet.mockResolvedValue([{ foo: 'bar' }]);
+    const result = await service.mGet(['key1'], '$');
+    expect(redisService.jsonMGet).toHaveBeenCalledWith(['key1'], '$');
+    expect(result).toEqual([{ foo: 'bar' }]);
+  });
 
-      await service.del('key', '$');
-
-      expect(redisService.getFullKey).toHaveBeenCalledWith('key');
-      expect(redisService.client.json.del).toHaveBeenCalledWith(
-        'prefix:key',
-        '$',
-      );
-    });
-
-    it('should call json.del with undefined path when path is not provided', async () => {
-      redisService.getFullKey.mockReturnValue('prefix:key');
-
-      await service.del('key');
-
-      expect(redisService.client.json.del).toHaveBeenCalledWith(
-        'prefix:key',
-        undefined,
-      );
-    });
+  it('del delegates to redisService.jsonDel', async () => {
+    await service.del('key', '$');
+    expect(redisService.jsonDel).toHaveBeenCalledWith('key', '$');
   });
 });

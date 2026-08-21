@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisSearchClient } from '../clients/redis-search.client';
+import { RedisService } from '../redis.service';
 import {
   OrderIndexSchema,
   InventoryIndexSchema,
@@ -21,9 +22,20 @@ import {
 export class RedisIndexInitializerService implements OnModuleInit {
   private readonly logger = new Logger(RedisIndexInitializerService.name);
 
-  constructor(private readonly redisSearch: RedisSearchClient) {}
+  constructor(
+    private readonly redisSearch: RedisSearchClient,
+    private readonly redisService: RedisService,
+  ) {}
 
   async onModuleInit() {
+    const isReady = await this.redisService.waitUntilReady();
+    if (!isReady) {
+      this.logger.warn(
+        'Redis unavailable — skipping RediSearch index initialization',
+      );
+      return;
+    }
+
     await Promise.all([
       this.ensureIndex(
         ORDER_REDIS.INDEX,

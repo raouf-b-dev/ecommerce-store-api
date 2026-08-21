@@ -13,13 +13,8 @@ describe('RedisSearchClient', () => {
         {
           provide: RedisService,
           useValue: {
-            getFullKey: jest.fn(),
-            client: {
-              ft: {
-                search: jest.fn(),
-                create: jest.fn(),
-              },
-            },
+            search: jest.fn(),
+            createIndex: jest.fn(),
           },
         },
       ],
@@ -33,42 +28,24 @@ describe('RedisSearchClient', () => {
     jest.clearAllMocks();
   });
 
-  it('search should call getFullKey and client.ft.search', async () => {
-    redisService.getFullKey.mockReturnValue('prefix:index');
-    (redisService.client.ft.search as jest.Mock).mockResolvedValue({
-      documents: [],
-    });
-
+  it('search delegates to redisService.search', async () => {
     const options = { LIMIT: { from: 0, size: 10 } };
-    const result = await service.search('index', '*', options);
+    const response = { total: 0, documents: [] };
+    redisService.search.mockResolvedValue(response);
 
-    expect(redisService.getFullKey).toHaveBeenCalledWith('index');
-    expect(redisService.client.ft.search).toHaveBeenCalledWith(
-      'prefix:index',
-      '*',
-      options,
+    await expect(service.search('index', '*', options)).resolves.toEqual(
+      response,
     );
-    expect(result).toEqual({ documents: [] });
+    expect(redisService.search).toHaveBeenCalledWith('index', '*', options);
   });
 
-  it('createIndex should call getFullKey for index and prefix and then client.ft.create', async () => {
-    redisService.getFullKey
-      .mockImplementationOnce((key) => `prefix:${key}`) // index
-      .mockImplementationOnce((key) => `prefix:${key}`); // prefix
-
+  it('createIndex delegates to redisService.createIndex', async () => {
     const schema = { name: { type: 'TEXT' } };
-
-    await service.createIndex('myIndex', schema, 'myPrefix');
-
-    expect(redisService.getFullKey).toHaveBeenNthCalledWith(1, 'myIndex');
-    expect(redisService.getFullKey).toHaveBeenNthCalledWith(2, 'myPrefix');
-    expect(redisService.client.ft.create).toHaveBeenCalledWith(
-      'prefix:myIndex',
+    await service.createIndex('myIndex', schema, 'myPrefix:');
+    expect(redisService.createIndex).toHaveBeenCalledWith(
+      'myIndex',
       schema,
-      {
-        ON: 'JSON',
-        PREFIX: ['prefix:myPrefix'],
-      },
+      'myPrefix:',
     );
   });
 });
