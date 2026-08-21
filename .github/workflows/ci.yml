@@ -436,68 +436,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y postgresql-client
-
-      - name: Wait for PostgreSQL
-        run: |
-          set -euo pipefail
-          for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U "$DB_USERNAME" -d "$DB_DATABASE"; then
-              echo "PostgreSQL is ready"
-              exit 0
-            fi
-            echo "Waiting for PostgreSQL... ($i/30)"
-            sleep 2
-          done
-          echo "PostgreSQL never became ready"
-          exit 1
-
-      - name: Write .env.test for TypeORM CLI
-        env:
-          CI_JWT_PRIVATE_KEY: ${{ secrets.CI_JWT_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          node -e '
-            const fs = require("fs");
-            let jwt = process.env.CI_JWT_PRIVATE_KEY || "";
-            if (!jwt) {
-              console.error("CI_JWT_PRIVATE_KEY is required for schema:sync via data-source.ts");
-              process.exit(1);
-            }
-            if (!jwt.includes("BEGIN PRIVATE KEY") && !jwt.includes("BEGIN RSA PRIVATE KEY")) {
-              jwt = Buffer.from(jwt, "base64").toString("utf8");
-            }
-            const jwtEscaped = `"${jwt.replace(/\r?\n/g, "\\n")}"`;
-            const lines = [
-              "NODE_ENV=test",
-              "PORT=3000",
-              `DB_HOST=${JSON.stringify(process.env.DB_HOST || "localhost")}`,
-              `DB_PORT=${JSON.stringify(process.env.DB_PORT || "5432")}`,
-              `DB_USERNAME=${JSON.stringify(process.env.DB_USERNAME)}`,
-              `DB_PASSWORD=${JSON.stringify(process.env.DB_PASSWORD)}`,
-              `DB_DATABASE=${JSON.stringify(process.env.DB_DATABASE)}`,
-              `REDIS_HOST=${JSON.stringify("localhost")}`,
-              `REDIS_PORT=${JSON.stringify("6379")}`,
-              `REDIS_PASSWORD=${JSON.stringify("")}`,
-              `REDIS_KEYPREFIX=${JSON.stringify("ecom:restore-drill:")}`,
-              `REDIS_DB=${JSON.stringify("0")}`,
-              `JWT_PRIVATE_KEY=${jwtEscaped}`,
-              `JWT_ACCESS_TOKEN_TTL=${JSON.stringify("15m")}`,
-              `JWT_REFRESH_TOKEN_TTL=${JSON.stringify("7d")}`,
-              `METRICS_API_KEY=${JSON.stringify("restore-drill-ci")}`,
-            ];
-            fs.writeFileSync(".env.test", lines.join("\n") + "\n");
-            console.log(".env.test written for restore-drill");
-          '
+      - name: Prepare DB environment
+        uses: ./.github/actions/prepare-db-env
+        with:
+          db-username: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          db-password: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          db-database: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+          jwt-private-key: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+          metrics-api-key: ${{ secrets.CI_METRICS_API_KEY || 'restore-drill-ci' }}
 
       - name: Run DB migrations (test)
         run: npm run migration:run:test
-
-      - name: Sync schema from entities (temporary until baseline migration)
-        run: npm run typeorm -- -d ./data-source.ts schema:sync
 
       - name: Run restore drill
         run: npm run db:restore:drill
@@ -576,9 +525,6 @@ jobs:
 
       - name: Run DB migrations (test)
         run: npm run migration:run:test
-
-      - name: Sync schema from entities (temporary until baseline migration)
-        run: npm run typeorm -- -d ./data-source.ts schema:sync
 
       - name: Run restore drill (keep dump)
         run: node scripts/db-restore-drill.js --yes --keep-dump
