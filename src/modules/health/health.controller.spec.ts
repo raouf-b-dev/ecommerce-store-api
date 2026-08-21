@@ -87,13 +87,13 @@ describe('HealthController', () => {
   });
 
   describe('readiness', () => {
-    it('should execute readiness probe checking postgres and redis', async () => {
+    it('should execute readiness probe checking postgres only', async () => {
       const result: HealthCheckResult = await controller.readiness();
       expect(healthCheckService.check).toHaveBeenCalled();
       expect(dbIndicator.pingCheck).toHaveBeenCalledWith('postgres', {
         timeout: 3000,
       });
-      expect(redisIndicator.isHealthy).toHaveBeenCalledWith('redis');
+      expect(redisIndicator.isHealthy).not.toHaveBeenCalled();
       expect(result.status).toBe('ok');
     });
 
