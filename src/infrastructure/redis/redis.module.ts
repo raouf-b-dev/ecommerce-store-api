@@ -1,16 +1,17 @@
 import { Logger, Module } from '@nestjs/common';
-import { RedisService } from './redis.service';
-import { CacheService } from './cache/cache.service';
-import { RedisIndexInitializerService } from './search/redis-index-initializer.service';
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
+import { CacheService } from './cache/cache.service';
 import { RedisCacheRecoveryService } from './redis-cache-recovery.service';
+import { RedisService } from './redis.service';
+import { RedisIndexInitializerService } from './search/redis-index-initializer.service';
 
 @Module({
   providers: [
     RedisService,
+    CacheService,
     {
       provide: CachePort,
-      useClass: CacheService,
+      useExisting: CacheService,
     },
     RedisIndexInitializerService,
     RedisCacheRecoveryService,
