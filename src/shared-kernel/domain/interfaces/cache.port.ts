@@ -1,6 +1,6 @@
 /**
- * Pagination / sort options for cache list and search queries.
- * Kept free of Redis client types so the driven port stays tech-agnostic.
+ * Pagination / sort options for cache search queries.
+ * Kept free of Redis client types so driven ports stay tech-agnostic.
  */
 export interface CacheSearchOptions {
   page?: number;
@@ -10,54 +10,33 @@ export interface CacheSearchOptions {
 }
 
 /**
- * Driven port for cache-aside and related key/value + search ops.
+ * Driven port for document KV cache-aside, RediSearch, and idempotency locks.
  * Implemented by {@link CacheService} in infrastructure (Redis).
  */
 export abstract class CachePort {
   /** True when the underlying cache backend can accept commands. */
   abstract isAvailable(): boolean;
 
-  abstract ttl(key: string): Promise<number>;
-  abstract get<T>(key: string, path?: string): Promise<T | null>;
-  abstract getMany<T>(keys: string[], path?: string): Promise<(T | null)[]>;
+  abstract get<T>(key: string): Promise<T | null>;
+  abstract getMany<T>(keys: string[]): Promise<(T | null)[]>;
 
-  abstract getAll<T>(
-    index: string,
-    query?: string,
-    options?: CacheSearchOptions,
-  ): Promise<T[]>;
-
-  abstract set<T>(
+  abstract set(
     key: string,
-    value: T,
-    options?: { path?: string; ttl?: number; nx?: boolean },
+    value: unknown,
+    options?: { ttl?: number; nx?: boolean },
   ): Promise<boolean>;
 
   abstract setAll(
     entries: ReadonlyArray<{ key: string; value: unknown }>,
-    options?: { path?: string; ttl?: number; nx?: boolean },
-  ): Promise<void>;
-
-  abstract merge<T>(
-    key: string,
-    partial: Partial<T>,
-    options?: { path?: string; ttl?: number },
-  ): Promise<T | null>;
-
-  abstract mergeAll(
-    entries: ReadonlyArray<{ key: string; value: unknown }>,
-    options?: { path?: string; ttl?: number },
+    options?: { ttl?: number; nx?: boolean },
   ): Promise<void>;
 
   abstract delete(key: string): Promise<void>;
-  abstract deletePattern(pattern: string): Promise<void>;
-  abstract exists(key: string): Promise<boolean>;
 
+  /** Secondary-index / search reads (e.g. RediSearch). Query strings are adapter-owned. */
   abstract search<T>(
     index: string,
-    query: string,
+    query?: string,
     options?: CacheSearchOptions,
   ): Promise<T[]>;
-
-  abstract scanKeys(pattern: string, count?: number): Promise<string[]>;
 }

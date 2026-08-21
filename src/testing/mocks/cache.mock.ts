@@ -1,31 +1,35 @@
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 
+/**
+ * In-memory mock for {@link CachePort}.
+ */
 export class MockCacheService implements CachePort {
   isAvailable = jest.fn<boolean, []>().mockReturnValue(true);
 
-  ttl = jest.fn<Promise<number>, [string]>();
-  get = jest.fn<Promise<any>, [string, string?]>().mockResolvedValue(null);
-  getMany = jest
-    .fn<Promise<any[]>, [string[], string?]>()
-    .mockResolvedValue([]);
-
-  getAll = jest
-    .fn<Promise<any[]>, [string, string?, any?]>()
-    .mockResolvedValue([]);
+  get = jest.fn().mockResolvedValue(null) as jest.MockedFunction<
+    CachePort['get']
+  >;
+  getMany = jest.fn().mockResolvedValue([]) as jest.MockedFunction<
+    CachePort['getMany']
+  >;
   set = jest
-    .fn<Promise<boolean>, [string, any, any?]>()
+    .fn<Promise<boolean>, [string, unknown, { ttl?: number; nx?: boolean }?]>()
     .mockResolvedValue(true);
-
-  setAll = jest.fn<Promise<void>, [any[], any?]>().mockResolvedValue(undefined);
-  merge = jest.fn<Promise<any>, [string, any, any?]>();
-  mergeAll = jest.fn<Promise<void>, [any[], any?]>();
-  delete = jest.fn<Promise<void>, [string]>().mockResolvedValue(undefined);
-  deletePattern = jest.fn<Promise<void>, [string]>();
-  exists = jest.fn<Promise<boolean>, [string]>();
-  search = jest
-    .fn<Promise<any[]>, [string, string, any?]>()
-    .mockResolvedValue([]);
-  scanKeys = jest.fn<Promise<string[]>, [string, number?]>();
+  setAll = jest
+    .fn<
+      Promise<void>,
+      [
+        ReadonlyArray<{ key: string; value: unknown }>,
+        { ttl?: number; nx?: boolean }?,
+      ]
+    >()
+    .mockResolvedValue(undefined);
+  delete = jest.fn().mockResolvedValue(undefined) as jest.MockedFunction<
+    CachePort['delete']
+  >;
+  search = jest.fn().mockResolvedValue([]) as jest.MockedFunction<
+    CachePort['search']
+  >;
 
   mockUnavailable(): void {
     this.isAvailable.mockReturnValue(false);
