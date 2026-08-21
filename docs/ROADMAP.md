@@ -80,7 +80,7 @@
 | [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance — not a later refactor |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL required; Redis via `/health`) |
 | [x] Backup, restore, rollback runbook & smoke test runner | **14** | `db:backup` / `db:restore` / `db:restore:drill` · `scripts/smoke/` · [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md) |
-| [ ] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
+| [x] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
 
 ---
 
@@ -231,16 +231,16 @@
 
 ---
 
-### [ ] Production Secret Rotation Procedures
+### [x] Production Secret Rotation Procedures
 
 **What**: Document how to rotate production secrets without breaking running sessions or deployments.
 
 **Scope**:
 
-- [ ] Document rotation procedure for JWT signing keys (consider active session impact).
-- [ ] Document rotation for database and Redis credentials.
-- [ ] Document rotation for metrics/API keys and third-party secrets (Stripe, webhooks, email providers).
-- [ ] Cross-reference [`SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) where procedures already exist.
+- [x] Document rotation procedure for JWT signing keys (consider active session impact).
+- [x] Document rotation for database and Redis credentials.
+- [x] Document rotation for metrics/API keys and third-party secrets (Stripe, webhooks, email providers).
+- [x] Cross-reference [`SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) where procedures already exist.
 
 **Location**: `docs/security/SECRET-ROTATION.md`
 

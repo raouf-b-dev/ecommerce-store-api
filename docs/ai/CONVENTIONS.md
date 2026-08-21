@@ -177,13 +177,13 @@ Applied documents describe **how this project implements** a pattern, or contain
 
 **Current applied documents**:
 
-| Folder            | Document                                                   | Topic                                                    |
-| ----------------- | ---------------------------------------------------------- | -------------------------------------------------------- |
-| `architecture/`   | `ARCHITECTURE.md`                                          | Project system context, bounded contexts, domain flows   |
-| `security/`       | `SECRETS-MANAGEMENT.md`, `ADMIN-BOOTSTRAP.md`              | Project secret handling, bootstrap                       |
-| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7)          | Runbook, project shutdown hooks                          |
-| `testing/`        | `TESTING-TASK-TEMPLATE.md`, `INTEGRATION-TESTING-GUIDE.md` | Project test plan template, write-side adapter OCC specs |
-| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`                   | Project state & progress                                 |
+| Folder            | Document                                                            | Topic                                                    |
+| ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `architecture/`   | `ARCHITECTURE.md`                                                   | Project system context, bounded contexts, domain flows   |
+| `security/`       | `SECRETS-MANAGEMENT.md`, `SECRET-ROTATION.md`, `ADMIN-BOOTSTRAP.md` | Project secret handling, rotation, bootstrap             |
+| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7)                   | Runbook, project shutdown hooks                          |
+| `testing/`        | `TESTING-TASK-TEMPLATE.md`, `INTEGRATION-TESTING-GUIDE.md`          | Project test plan template, write-side adapter OCC specs |
+| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`                            | Project state & progress                                 |
 
 ### 10.3 Hybrid Documents
 
