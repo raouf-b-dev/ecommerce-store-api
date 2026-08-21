@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { QueueEvents } from 'bullmq';
 import { EnvConfigService } from '../../config/env-config.service';
+import { buildIoRedisConnection } from '../redis/redis-connection.options';
 
 export type QueueEventHandler = (args: {
   jobId: string;
@@ -40,12 +41,7 @@ export class QueueEventsService implements OnModuleInit, OnApplicationShutdown {
   private getOrCreateQueueEvents(queueName: string): QueueEvents {
     if (!this.queueEventsMap.has(queueName)) {
       const queueEvents = new QueueEvents(queueName, {
-        connection: {
-          host: this.envConfigService.redis.host,
-          port: this.envConfigService.redis.port,
-          password: this.envConfigService.redis.password,
-          db: this.envConfigService.redis.db,
-        },
+        connection: buildIoRedisConnection(this.envConfigService.redis),
         prefix: this.envConfigService.redis.key_prefix,
       });
       this.queueEventsMap.set(queueName, queueEvents);

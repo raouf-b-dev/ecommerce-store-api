@@ -5,6 +5,7 @@ import { createClient } from 'redis';
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { EnvConfigService } from 'src/config/env-config.service';
 import { toErrorMessage } from 'src/shared-kernel/infra/lang/error.utils';
+import { buildNodeRedisClientOptions } from '../../redis/redis-connection.options';
 
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor?: ReturnType<typeof createAdapter>;
@@ -19,17 +20,11 @@ export class RedisIoAdapter extends IoAdapter {
 
   async connectToRedis(): Promise<void> {
     const configService = this.app.get(EnvConfigService);
-    const redisConfig = configService.redis;
 
     try {
-      this.pubClient = createClient({
-        url: `redis://${redisConfig.host}:${redisConfig.port}`,
-        password: redisConfig.password,
-        database: redisConfig.db,
-        socket: {
-          reconnectStrategy: (retries) => Math.min(retries * 500, 10_000),
-        },
-      });
+      this.pubClient = createClient(
+        buildNodeRedisClientOptions(configService.redis),
+      );
 
       this.subClient = this.pubClient.duplicate();
 

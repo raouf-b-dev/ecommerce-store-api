@@ -7,6 +7,7 @@ import { EnvConfigService } from '../../config/env-config.service';
 import { ResilientThrottlerStorage } from './resilient-throttler.storage';
 import { MetricsService } from '../metrics/metrics.service';
 import { logRedisError } from '../redis/redis-error.utils';
+import { buildThrottlerIoRedisOptions } from '../redis/redis-connection.options';
 import Redis from 'ioredis';
 
 const THROTTLER_REDIS_CLIENT = 'THROTTLER_REDIS_CLIENT';
@@ -18,15 +19,7 @@ const throttlerLogger = new Logger('ThrottlerRedis');
       provide: THROTTLER_REDIS_CLIENT,
       inject: [EnvConfigService],
       useFactory: (config: EnvConfigService) => {
-        const client = new Redis({
-          host: config.redis.host,
-          port: config.redis.port,
-          password: config.redis.password || undefined,
-          db: config.redis.db,
-          enableOfflineQueue: false,
-          maxRetriesPerRequest: 1,
-          retryStrategy: (times) => Math.min(times * 500, 10_000),
-        });
+        const client = new Redis(buildThrottlerIoRedisOptions(config.redis));
         client.on('error', (err: unknown) => {
           logRedisError(throttlerLogger, 'Throttler Redis Client', err);
         });
