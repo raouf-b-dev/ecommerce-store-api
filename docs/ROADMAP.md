@@ -76,7 +76,7 @@
 | [x] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
 
 | [ ] Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
-| [ ] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
+| [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL + Redis) |
 | [/] Backup, restore, rollback runbook & smoke test runner | **14** | Smoke runner in CI done; script cleanup + backup/restore runbook pending |
 | [ ] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
@@ -138,16 +138,16 @@
 
 ---
 
-### [ ] Graceful Degradation & Reverse Proxy Hardening (`trust proxy` & Redis)
+### [x] Graceful Degradation & Reverse Proxy Hardening (`trust proxy` & Redis)
 
 **What**: Configure reverse proxy compatibility and ensure caching, rate limiting, and session layers degrade gracefully if Redis goes offline.
 
 **Scope**:
 
-- [ ] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop — verify client-IP and rate-limit behavior; do not assume `1` is always right.
-- [ ] Harden central Redis client configuration with connection retry strategies and drop event handlers.
-- [ ] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
-- [ ] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → documented fail-open tradeoff; session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops.
+- [x] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop — verify client-IP and rate-limit behavior; do not assume `1` is always right.
+- [x] Harden central Redis client configuration with connection retry strategies and drop event handlers.
+- [x] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
+- [x] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → documented fail-open tradeoff; session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops.
 
 **Location**: `src/main.ts`, `src/infrastructure/redis/`, `src/infrastructure/idempotency/`
 
