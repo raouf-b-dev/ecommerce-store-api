@@ -1,13 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisService } from './redis.service';
-import {
-  CART_REDIS,
-  INVENTORY_REDIS,
-  ORDER_REDIS,
-  PAYMENT_REDIS,
-  PRODUCT_REDIS,
-  USER_REDIS,
-} from './constants/redis.constants';
+import { VERSIONED_IS_CACHED_FLAGS } from './cache-key-space';
 import { RedisIndexInitializerService } from './search/redis-index-initializer.service';
 import {
   toError,
@@ -15,11 +8,12 @@ import {
 } from '../../shared-kernel/infra/lang/error.utils';
 
 /**
- * Listens for Redis reconnection events and invalidates stale cache data.
+ * Listens for Redis reconnection events and invalidates stale cache-aside data.
  *
  * When Redis goes down, writes bypass cache and go directly to PostgreSQL.
- * When Redis comes back, cached data may be stale. This service flushes
- * domain caches on reconnection and reinitializes RediSearch indexes.
+ * When Redis comes back, cached data may be stale. This service bumps the cache
+ * generation (versioned keys move to a new namespace; old keys expire via TTL),
+ * clears list-cache flags, and reinitializes RediSearch indexes.
  */
 @Injectable()
 export class RedisCacheRecoveryService implements OnModuleInit {
@@ -35,15 +29,15 @@ export class RedisCacheRecoveryService implements OnModuleInit {
   }
 
   private async handleReconnection(): Promise<void> {
-    this.logger.log('Redis reconnected — flushing stale domain caches...');
+    this.logger.log('Redis reconnected — bumping cache generation...');
 
     try {
-      await this.flushDomainCaches();
+      await this.redisService.bumpCacheGeneration();
       await this.clearCacheFlags();
       await this.indexInitializer.onModuleInit();
 
       this.logger.log(
-        'Cache recovery complete — cache-aside will repopulate on demand',
+        `Cache recovery complete — generation=${this.redisService.getCacheGeneration()}; cache-aside will repopulate on demand`,
       );
     } catch (error) {
       const err = toError(error);
@@ -51,49 +45,15 @@ export class RedisCacheRecoveryService implements OnModuleInit {
     }
   }
 
-  private async flushDomainCaches(): Promise<void> {
-    const patterns = [
-      `${USER_REDIS.CACHE_KEY}:*`,
-      `${PRODUCT_REDIS.CACHE_KEY}:*`,
-      `${INVENTORY_REDIS.CACHE_KEY}:*`,
-      `${CART_REDIS.CACHE_KEY}:*`,
-      `${ORDER_REDIS.CACHE_KEY}:*`,
-      `${PAYMENT_REDIS.CACHE_KEY}:*`,
-    ];
-
-    for (const pattern of patterns) {
+  private async clearCacheFlags(): Promise<void> {
+    for (const flag of VERSIONED_IS_CACHED_FLAGS) {
       try {
-        const keys = await this.redisService.scanKeys(pattern);
-        if (keys.length === 0) continue;
-
-        const pipeline = this.redisService.createPipeline();
-        if (!pipeline) continue;
-
-        for (const key of keys) {
-          pipeline.json.del(this.redisService.getFullKey(key));
-        }
-        await pipeline.exec();
-        this.logger.log(`Flushed ${keys.length} keys matching "${pattern}"`);
+        await this.redisService.del(flag);
       } catch (error) {
         this.logger.warn(
-          `Failed to flush cache for pattern "${pattern}": ${toErrorMessage(error)}`,
+          `Failed to clear cache flag "${flag}": ${toErrorMessage(error)}`,
         );
       }
-    }
-  }
-
-  private async clearCacheFlags(): Promise<void> {
-    const flags = [
-      USER_REDIS.IS_CACHED_FLAG,
-      PRODUCT_REDIS.IS_CACHED_FLAG,
-      INVENTORY_REDIS.IS_CACHED_FLAG,
-      CART_REDIS.IS_CACHED_FLAG,
-      ORDER_REDIS.IS_CACHED_FLAG,
-      PAYMENT_REDIS.IS_CACHED_FLAG,
-    ];
-
-    for (const flag of flags) {
-      await this.redisService.del(flag);
     }
   }
 }
