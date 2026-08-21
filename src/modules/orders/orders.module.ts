@@ -114,11 +114,14 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
       useFactory: (
         cacheService: CachePort,
         postgresRepo: PostgresOrderRepository,
-        logger: Logger,
       ) => {
-        return new CachedOrderRepository(cacheService, postgresRepo, logger);
+        return new CachedOrderRepository(
+          cacheService,
+          postgresRepo,
+          new Logger(CachedOrderRepository.name),
+        );
       },
-      inject: [CachePort, POSTGRES_ORDER_REPOSITORY, Logger],
+      inject: [CachePort, POSTGRES_ORDER_REPOSITORY],
     },
 
     // Gateways
