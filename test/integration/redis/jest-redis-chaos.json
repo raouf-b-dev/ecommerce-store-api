@@ -1,0 +1,20 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../../../",
+  "testEnvironment": "node",
+  "testRegex": ".*\\.chaos\\.integration\\.spec\\.ts$",
+  "globalSetup": "<rootDir>/test/integration/redis/redis-chaos.global-setup.ts",
+  "globalTeardown": "<rootDir>/test/integration/redis/redis-chaos.global-teardown.ts",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": ["node_modules/(?!jose/.*)"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^test/(.*)$": "<rootDir>/test/$1",
+    "^testing/(.*)$": "<rootDir>/src/testing/$1"
+  },
+  "maxWorkers": 1,
+  "testTimeout": 120000,
+  "forceExit": true
+}
