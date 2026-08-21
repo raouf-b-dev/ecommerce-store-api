@@ -16,7 +16,7 @@ This directory contains technical reference documents for data modeling, transac
 ## 2. What Does Not Belong Here
 
 - **Application & Domain Architecture**: Domain aggregate boundaries, use case interfaces, and hexagonal layering rules live in `docs/architecture/`.
-- **Infrastructure & Deployment Scripts**: TypeORM migration configuration files, database backup scripts, and Docker compose files live in `src/infrastructure/` and `scripts/`.
+- **Infrastructure & Deployment Scripts**: TypeORM migration configuration and Docker compose live in `src/infrastructure/` and the repo root. Database backup/restore scripts and the release runbook live in `scripts/` and [RELEASE-BACKUP-RECOVERY.md](../infrastructure/RELEASE-BACKUP-RECOVERY.md).
 - **Database CS Theory**: Academic deep dives into B-Tree node split algorithms or MVCC page visibility live in `docs/data/`.
 
 ---
