@@ -97,6 +97,8 @@ export default tseslint.config(
       '**/*.test.ts',
       '**/test/**/*.ts',
       '**/*.e2e-spec.ts',
+      'data-source.ts',
+      'scripts/**/*.{js,ts}',
     ],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
