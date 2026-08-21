@@ -50,6 +50,8 @@ export const USER_REDIS: IRedisContstant = {
 export const IDEMPOTENCY_REDIS = {
   PREFIX: 'idempotency',
   EXPIRATION: 3600 * 24, // 24 hours
+  /** Hint for clients when a key is still in-progress (HTTP 409). */
+  RETRY_AFTER_SECONDS: 2,
   STATUS: {
     IN_PROGRESS: 'in-progress',
     COMPLETED: 'completed',

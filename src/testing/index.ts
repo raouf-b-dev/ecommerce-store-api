@@ -23,6 +23,8 @@ export * from './mocks/jwks.service.mock';
 export * from './mocks/jwt-signer.service.mock';
 export * from '../infrastructure/jwt/testing/jwt-verifier.mock';
 export * from './mocks/cache.mock';
+export * from './mocks/idempotency-store.mock';
+export * from './factories/idempotency.factory';
 export * from './mocks/correlation-service.mock';
 export * from './mocks/reflector.mock';
 export * from './mocks/order-scheduler.mock';

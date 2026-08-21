@@ -13,6 +13,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiBearerAuth,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
@@ -23,6 +24,7 @@ import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 import { DeliverOrderDto } from './primary-adapters/dto/deliver-order.dto';
 import { Idempotent } from '../../infrastructure/decorators/idempotent.decorator';
+import { IDEMPOTENCY_REDIS } from '../../infrastructure/redis/constants/redis.constants';
 
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
@@ -70,8 +72,18 @@ export class OrdersController {
   })
   @ApiResponse({
     status: 409,
+    description: `Conflict — a request with this idempotency key is already in progress. Response includes Retry-After: ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}.`,
+  })
+  @ApiHeader({
+    name: 'Idempotency-Key',
     description:
-      'Conflict - A request with this idempotency key is already in progress.',
+      'Preferred client idempotency key (also accepted as x-idempotency-key or body idempotencyKey).',
+    required: false,
+  })
+  @ApiHeader({
+    name: 'x-idempotency-key',
+    description: 'Legacy alias for Idempotency-Key.',
+    required: false,
   })
   @Idempotent()
   async checkout(
