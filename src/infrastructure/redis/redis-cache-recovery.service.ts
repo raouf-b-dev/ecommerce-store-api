@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { VERSIONED_IS_CACHED_FLAGS } from './cache-key-space';
 import { RedisIndexInitializerService } from './search/redis-index-initializer.service';
@@ -6,6 +6,7 @@ import {
   toError,
   toErrorMessage,
 } from '../../shared-kernel/infra/lang/error.utils';
+import { MetricsService } from '../metrics/metrics.service';
 
 /**
  * Listens for Redis reconnection events and invalidates stale cache-aside data.
@@ -13,7 +14,8 @@ import {
  * When Redis goes down, writes bypass cache and go directly to PostgreSQL.
  * When Redis comes back, cached data may be stale. This service bumps the cache
  * generation (versioned keys move to a new namespace; old keys expire via TTL),
- * clears list-cache flags, and reinitializes RediSearch indexes.
+ * drops prior-generation RediSearch indexes, clears list-cache flags, and
+ * reinitializes indexes for the new generation.
  */
 @Injectable()
 export class RedisCacheRecoveryService implements OnModuleInit {
@@ -22,6 +24,7 @@ export class RedisCacheRecoveryService implements OnModuleInit {
   constructor(
     private readonly redisService: RedisService,
     private readonly indexInitializer: RedisIndexInitializerService,
+    @Optional() private readonly metrics?: MetricsService,
   ) {}
 
   onModuleInit() {
@@ -32,15 +35,20 @@ export class RedisCacheRecoveryService implements OnModuleInit {
     this.logger.log('Redis reconnected — bumping cache generation...');
 
     try {
-      await this.redisService.bumpCacheGeneration();
+      const { previousGeneration, generation } =
+        await this.redisService.bumpCacheGeneration();
+      await this.redisService.dropVersionedIndexesForGeneration(
+        previousGeneration,
+      );
       await this.clearCacheFlags();
       await this.indexInitializer.onModuleInit();
 
       this.logger.log(
-        `Cache recovery complete — generation=${this.redisService.getCacheGeneration()}; cache-aside will repopulate on demand`,
+        `Cache recovery complete — generation=${generation} (was ${previousGeneration}); cache-aside will repopulate on demand`,
       );
     } catch (error) {
       const err = toError(error);
+      this.metrics?.redisCacheRecoveryFailuresTotal.inc();
       this.logger.error(`Cache recovery failed: ${err.message}`, err.stack);
     }
   }
