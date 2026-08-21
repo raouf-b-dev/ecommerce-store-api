@@ -4,12 +4,14 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { EnvConfigService } from 'src/config/env-config.service';
+import { toErrorMessage } from 'src/shared-kernel/infra/lang/error.utils';
 
 export class RedisIoAdapter extends IoAdapter {
-  private adapterConstructor!: ReturnType<typeof createAdapter>;
+  private adapterConstructor?: ReturnType<typeof createAdapter>;
   private readonly logger = new Logger(RedisIoAdapter.name);
-  private pubClient!: ReturnType<typeof createClient>;
-  private subClient!: ReturnType<typeof createClient>;
+  private pubClient?: ReturnType<typeof createClient>;
+  private subClient?: ReturnType<typeof createClient>;
+  private useRedis = false;
 
   constructor(private app: INestApplicationContext) {
     super(app);
@@ -19,23 +21,36 @@ export class RedisIoAdapter extends IoAdapter {
     const configService = this.app.get(EnvConfigService);
     const redisConfig = configService.redis;
 
-    this.pubClient = createClient({
-      url: `redis://${redisConfig.host}:${redisConfig.port}`,
-      password: redisConfig.password,
-      database: redisConfig.db,
-    });
+    try {
+      this.pubClient = createClient({
+        url: `redis://${redisConfig.host}:${redisConfig.port}`,
+        password: redisConfig.password,
+        database: redisConfig.db,
+        socket: {
+          reconnectStrategy: (retries) => Math.min(retries * 500, 10_000),
+        },
+      });
 
-    this.subClient = this.pubClient.duplicate();
+      this.subClient = this.pubClient.duplicate();
 
-    await Promise.all([this.pubClient.connect(), this.subClient.connect()]);
+      await Promise.all([this.pubClient.connect(), this.subClient.connect()]);
 
-    this.adapterConstructor = createAdapter(this.pubClient, this.subClient);
-    this.logger.log('RedisIoAdapter connected to Redis');
+      this.adapterConstructor = createAdapter(this.pubClient, this.subClient);
+      this.useRedis = true;
+      this.logger.log('RedisIoAdapter connected to Redis');
+    } catch (err) {
+      this.logger.warn(
+        `Redis unavailable for WebSocket adapter — using in-memory adapter: ${toErrorMessage(err)}`,
+      );
+      this.useRedis = false;
+    }
   }
 
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options);
-    server.adapter(this.adapterConstructor);
+    if (this.useRedis && this.adapterConstructor) {
+      server.adapter(this.adapterConstructor);
+    }
     return server;
   }
 
@@ -46,10 +61,10 @@ export class RedisIoAdapter extends IoAdapter {
   async close(): Promise<void> {
     await Promise.all([
       this.pubClient?.quit().catch((err: unknown) => {
-        this.logger.debug(`pubClient already closed: ${String(err)}`);
+        this.logger.debug(`pubClient already closed: ${toErrorMessage(err)}`);
       }),
       this.subClient?.quit().catch((err: unknown) => {
-        this.logger.debug(`subClient already closed: ${String(err)}`);
+        this.logger.debug(`subClient already closed: ${toErrorMessage(err)}`);
       }),
     ]);
     this.logger.log('RedisIoAdapter connections closed');
