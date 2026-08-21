@@ -10,6 +10,8 @@ import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { MockCacheService } from 'src/testing';
 import { USER_REDIS } from 'src/infrastructure/redis/constants/redis.constants';
 import { ResultAssertionHelper } from 'src/testing';
+import { createHealthAwareProxy } from 'src/infrastructure/resilience/health-aware-proxy';
+import { UserRepository } from '../../../core/domain/repositories/user.repository';
 
 describe('CachedUserRepository (Integration - Real DB delegate)', () => {
   let repository: CachedUserRepository;
@@ -60,5 +62,20 @@ describe('CachedUserRepository (Integration - Real DB delegate)', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value?.email).toBe('from.cache@example.com');
     expect(cacheService.set).not.toHaveBeenCalled();
+  });
+
+  it('loads from postgres via health-aware proxy when redis is down', async () => {
+    cacheService.get.mockRejectedValue(new Error('Redis connection down'));
+    const cachedRepo = new CachedUserRepository(cacheService, postgresRepo);
+    const proxied = createHealthAwareProxy<UserRepository>(
+      cachedRepo,
+      postgresRepo,
+      () => false,
+    );
+
+    const result = await proxied.findById(seededData.customerUser.id);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value?.id).toBe(seededData.customerUser.id);
   });
 });

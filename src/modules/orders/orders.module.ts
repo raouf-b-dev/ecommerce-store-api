@@ -30,6 +30,8 @@ import { PaymentGateway } from './core/application/ports/payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
 import { OrderItemEntity } from './secondary-adapters/orm/order-item.schema';
 import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { createHealthAwareProxy } from '../../infrastructure/resilience/health-aware-proxy';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderFactory } from './core/domain/factories/order.factory';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
@@ -116,7 +118,7 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
       ) => {
         return new CachedOrderRepository(cacheService, postgresRepo, logger);
       },
-      inject: [CachePort, POSTGRES_ORDER_REPOSITORY],
+      inject: [CachePort, POSTGRES_ORDER_REPOSITORY, Logger],
     },
 
     // Gateways
@@ -156,7 +158,17 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
     // Default Repository Binding
     {
       provide: OrderRepository,
-      useExisting: CACHED_ORDER_REPOSITORY,
+      useFactory: (
+        cachedRepo: OrderRepository,
+        postgresRepo: OrderRepository,
+        redis: RedisService,
+      ) =>
+        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
+      inject: [
+        CACHED_ORDER_REPOSITORY,
+        POSTGRES_ORDER_REPOSITORY,
+        RedisService,
+      ],
     },
 
     // Schedulers

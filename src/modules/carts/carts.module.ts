@@ -15,6 +15,8 @@ import { CachedCartRepository } from './secondary-adapters/repositories/cached-c
 import { ModuleInventoryGateway } from './secondary-adapters/adapters/module-inventory.gateway';
 import { ModuleProductGateway } from './secondary-adapters/adapters/module-product.gateway';
 import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { RedisService } from '../../infrastructure/redis/redis.service';
+import { createHealthAwareProxy } from '../../infrastructure/resilience/health-aware-proxy';
 import { CartRepository } from './core/domain/repositories/cart.repository';
 import { InventoryModule } from '../inventory/inventory.module';
 import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
@@ -73,7 +75,13 @@ import { PostgresCartQueryAdapter } from './secondary-adapters/query/postgres-ca
     // Default Repository Binding
     {
       provide: CartRepository,
-      useExisting: CACHED_CART_REPOSITORY,
+      useFactory: (
+        cachedRepo: CartRepository,
+        postgresRepo: CartRepository,
+        redis: RedisService,
+      ) =>
+        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
+      inject: [CACHED_CART_REPOSITORY, POSTGRES_CART_REPOSITORY, RedisService],
     },
 
     // Helpers
