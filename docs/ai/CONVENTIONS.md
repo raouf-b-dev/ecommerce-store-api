@@ -361,6 +361,34 @@ The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a c
 
 Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version — so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to — either as a same-call in-memory value or as an explicit param threaded through the command — never as shared mutable state keyed only by ID.
 
+## 14. Unknown Error Normalization
+
+When handling `catch (err: unknown)` or rejected promises, never stringify or wrap errors manually. Use the shared helpers in `src/shared-kernel/infra/lang/error.utils.ts`:
+
+| Helper                 | Use when                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toErrorMessage(err)`  | You need a safe log/response string from an unknown value                                                                                                            |
+| `toError(err)`         | You need an `Error` for logging, rethrowing, or passing to factories — preserves existing `Error` instances and sets `{ cause: err }` when wrapping non-Error values |
+| `toOptionalError(err)` | A cause is optional (e.g. `ErrorFactory` with `undefined` allowed for falsy inputs)                                                                                  |
+
+For Redis-specific logging, use `logRedisError(logger, source, err)` from `src/infrastructure/redis/redis-error.utils.ts`.
+
+**Banned patterns** (enforced by ESLint and `test/architecture/error-handling.spec.ts`):
+
+```typescript
+// ❌ Do not use
+err instanceof Error ? err.message : String(err);
+new Error(String(err));
+error instanceof Error ? error.stack : undefined;
+
+// ✅ Use instead
+toErrorMessage(err);
+toError(err);
+toOptionalError(err)?.stack;
+```
+
+`if (err instanceof Error)` checks and `instanceof` used for control flow (not ternaries) remain valid — e.g. rethrowing known error types in job handlers.
+
 ## 15. Documentation Taxonomy & Naming Standards
 
 Every documentation artifact in the repository MUST comply with the 6-layer taxonomy and naming conventions:
