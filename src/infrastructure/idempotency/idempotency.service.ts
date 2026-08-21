@@ -5,6 +5,19 @@ import {
   IdempotencyResult,
 } from '../../shared-kernel/domain/stores/idempotency.store';
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+
+type IdempotencyRecord = {
+  status: string;
+  data?: unknown;
+};
+
+function parseIdempotencyRecord(raw: unknown): IdempotencyRecord | null {
+  if (!isRecord(raw) || typeof raw.status !== 'string') {
+    return null;
+  }
+  return { status: raw.status, data: raw.data };
+}
 
 /**
  * Redis-backed idempotency adapter. Depends only on {@link CachePort}
@@ -45,18 +58,15 @@ export class IdempotencyService extends IdempotencyStore {
         return { isNew: true };
       }
 
-      const existing = await this.cache.get<{
-        status: string;
-        data?: T;
-      }>(cacheKey);
+      const existing = parseIdempotencyRecord(await this.cache.get(cacheKey));
 
       if (existing) {
         if (
           existing.status === IDEMPOTENCY_REDIS.STATUS.COMPLETED &&
-          existing.data
+          existing.data !== undefined
         ) {
           this.logger.log(`Idempotency key ${key} found with completed result`);
-          return { isNew: false, data: existing.data };
+          return { isNew: false, data: existing.data as T };
         }
         if (existing.status === IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS) {
           this.logger.log(`Idempotency key ${key} is in-progress`);
