@@ -38,7 +38,7 @@
 | **12b** | CI/CD Pipeline (GitHub Actions)             | ✅ Done | Fan-out/fan-in CI (`lint`, `typecheck`, `unit`, `arch`, `audit`, `build`, `integration`, `e2e`, `smoke`) · **CI Status Check** aggregator · `prepare-test-env` composite action · blocking `npm audit --omit=dev --audit-level=high` · PR dependency review · Docker validate (PR) · GHCR publish (`master` + semver tags) · `scripts/smoke-test.js` · `start:test` · liveness/readiness probes · Bitbucket Pipelines removed · `PROJECT-PIPELINE.md` updated                                                  | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
 | **13**  | Production Confidence & Integration Testing | ✅ Done | Typed gateway/repo mocks & testing barrels · Domain entity GWT specs + `OrderWorkflow` / shipping-address · Real-DB repository integration + concurrent checkout lock proof · Atomic OCC `save` predicates (Product/Order/User/Cart) · E2E auth lifecycle, IDOR, checkout SAGA, CQRS shapes · HTTP cart/payment/refresh-cookie contracts · HTTP-only E2E · Checkout idempotency E2E · E2E suite quality + optional business specs · Domain test polish (dead VO removal, `order-items`/`payment-status` specs) | `src/modules/*/core/domain/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/testing/`, `src/testing/`, `test/e2e/`, `docs/testing/` |
 
-> **Note**: Health probes and smoke runner shipped with CI; backup/restore scripts and runbook remain for Phase 14.
+> **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14.
 
 ---
 
@@ -75,11 +75,11 @@
 | [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                    | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
 | [x] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
 
-| [ ] Initial database baseline migration generated & verified | **14** | Schema must be reproducible without relying on `synchronize: true` |
+| [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
 | [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance — not a later refactor |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL required; Redis via `/health`) |
-| [/] Backup, restore, rollback runbook & smoke test runner | **14** | Smoke runner in CI done; script cleanup + backup/restore runbook pending |
+| [x] Backup, restore, rollback runbook & smoke test runner | **14** | `db:backup` / `db:restore` / `db:restore:drill` · `scripts/smoke/` · [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md) |
 | [ ] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
 
 ---
@@ -121,21 +121,23 @@
 
 ---
 
-### [ ] Initial Database Baseline Migration
+### [x] Initial Database Baseline Migration
 
 **What**: Generate the initial database schema baseline migration from the current TypeORM entities to enable safe production schema updates.
 
 **Scope**:
 
-- [ ] Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
-- [ ] Run forward migrations on a **clean** PostgreSQL database (schema from scratch).
-- [ ] Run forward migrations against an **existing** database (upgrade path).
-- [ ] Verify migration **rollback** scripts function properly.
-- [ ] Document and verify **migration failure** behavior (startup abort, no partial corrupt state).
-- [ ] Confirm **`synchronize: true` is never enabled in production**.
-- [ ] Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
+- [x] Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
+- [x] Run forward migrations on a **clean** PostgreSQL database (schema from scratch).
+- [x] Run forward migrations against an **existing** database (upgrade path).
+- [x] Verify migration **rollback** scripts function properly.
+- [x] Document and verify **migration failure** behavior (startup abort, no partial corrupt state).
+- [x] Confirm **`synchronize: true` is never enabled in production**.
+- [x] Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
 
-**Location**: `src/infrastructure/database/migrations/`, `scripts/docker-migrate.js`
+**Location**: `src/migrations/`, `scripts/docker-migrate.js`
+
+> **Existing local DBs** that already have tables from Nest `synchronize` (non-production): either reset the volume, or stamp the baseline as applied (`INSERT INTO typeorm_migrations ...`) after verifying the schema matches — do not re-run `InitialBaseline` against a populated synchronized schema.
 
 ---
 
@@ -210,20 +212,20 @@
 
 ---
 
-### [/] Release, Rollback, Backup Procedures & Smoke Test Runner
+### [x] Release, Rollback, Backup Procedures & Smoke Test Runner
 
 **What**: Build deployment pipeline smoke tests, database backup scripts, and disaster recovery runbooks.
 
 **Scope**:
 
-- [ ] Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
+- [x] Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
 - [x] Build a post-deploy smoke test runner (`smoke-test.js`) targeting liveness/readiness, `/metrics`, register/login, and authenticated profile access.
 - [x] Wire smoke runner into GitHub Actions CI (Postgres + Redis services, `dist` artifact, migrations).
-- [ ] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/` — **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
-- [ ] Keep smoke as process-alive probes only (no checkout SAGA, queues, or Stripe). That remains `npm run test:e2e`.
-- [ ] Soften the success log so it does not claim “production deployment verified”; it verifies probes answered.
-- [ ] Document comprehensive release, rollback, disaster recovery procedures in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
-- [ ] **Restore drill (definition of done)**: backup → destroy/clean disposable DB → restore → migrate if needed → app starts → smoke tests pass.
+- [x] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/` — **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
+- [x] Keep smoke as process-alive probes only (no checkout SAGA, queues, or Stripe). That remains `npm run test:e2e`.
+- [x] Soften the success log so it does not claim “production deployment verified”; it verifies probes answered.
+- [x] Document comprehensive release, rollback, disaster recovery procedures in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
+- [x] **Restore drill (definition of done)**: backup → destroy/clean disposable DB → restore → migrate if needed → app starts → smoke tests pass.
 
 **Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
 

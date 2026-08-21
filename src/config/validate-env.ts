@@ -18,6 +18,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DB_USERNAME: str(),
     DB_PASSWORD: str(),
     DB_DATABASE: str(),
+    POSTGRES_CONTAINER_NAME: str(),
+    POSTGRES_IMAGE: str(),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),

@@ -18,6 +18,8 @@ export interface IAppConfig {
     username?: string;
     password?: string;
     database?: string;
+    containerName: string;
+    image: string;
   };
   jwt: {
     privateKey: string;
@@ -66,6 +68,8 @@ export default (): IAppConfig => {
       username: env.DB_USERNAME,
       password: env.DB_PASSWORD,
       database: env.DB_DATABASE,
+      containerName: env.POSTGRES_CONTAINER_NAME,
+      image: env.POSTGRES_IMAGE,
     },
     jwt: {
       privateKey: env.JWT_PRIVATE_KEY,

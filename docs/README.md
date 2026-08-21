@@ -58,6 +58,7 @@ Canonical technical reference documents, organised by layer and category.
 
 - [PROCESS-LIFECYCLE.md](infrastructure/PROCESS-LIFECYCLE.md) — Process Lifecycle Guide — PIDs, Signals & Graceful Shutdown.
 - [REDIS.md](infrastructure/REDIS.md) — Redis roles, fail-open degradation, key-space generation, and shared connection options (see also [ADR-0006](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md)).
+- [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md) — Release checklist, rollback matrix, `db:backup` / `db:restore`, smoke probes, restore drill.
 - [TROUBLESHOOTING.md](infrastructure/TROUBLESHOOTING.md) — Common issues and solutions for the API.
 
 ### CI/CD & Deployment

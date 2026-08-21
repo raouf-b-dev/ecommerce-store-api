@@ -27,6 +27,8 @@ function createDefaultMockConfig(): IAppConfig {
       username: 'user',
       password: 'password',
       database: 'test-db',
+      containerName: 'postgres-db',
+      image: 'postgres:18.4',
     },
     logging: {
       level: 'info',

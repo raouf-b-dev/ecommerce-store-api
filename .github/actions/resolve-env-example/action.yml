@@ -1,0 +1,44 @@
+name: Resolve env example
+description: >
+  Read non-secret POSTGRES_* keys from .env.example into step/job outputs.
+  Never add secrets here — job outputs are visible in public Actions logs/UI and are not masked.
+
+outputs:
+  postgres_image:
+    description: POSTGRES_IMAGE from .env.example
+    value: ${{ steps.parse.outputs.postgres_image }}
+  postgres_container_name:
+    description: POSTGRES_CONTAINER_NAME from .env.example
+    value: ${{ steps.parse.outputs.postgres_container_name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Parse .env.example
+      id: parse
+      shell: bash
+      run: |
+        set -euo pipefail
+        get_kv() {
+          local key="$1"
+          local line val
+          line="$(grep -E "^${key}=" .env.example | head -1 || true)"
+          if [ -z "$line" ]; then
+            echo "Missing ${key} in .env.example" >&2
+            exit 1
+          fi
+          val="${line#*=}"
+          val="${val%\"}"
+          val="${val#\"}"
+          if [ -z "$val" ]; then
+            echo "Empty ${key} in .env.example" >&2
+            exit 1
+          fi
+          printf '%s' "$val"
+        }
+        image="$(get_kv POSTGRES_IMAGE)"
+        name="$(get_kv POSTGRES_CONTAINER_NAME)"
+        echo "postgres_image=${image}" >> "$GITHUB_OUTPUT"
+        echo "postgres_container_name=${name}" >> "$GITHUB_OUTPUT"
+        echo "Resolved POSTGRES_IMAGE=${image}"
+        echo "Resolved POSTGRES_CONTAINER_NAME=${name}"

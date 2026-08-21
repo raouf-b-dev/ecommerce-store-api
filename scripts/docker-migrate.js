@@ -17,7 +17,7 @@ const ds = new DataSource({
   database: process.env.DB_DATABASE,
   synchronize: false,
   logging: ['error'],
-  migrations: [join(__dirname, '..', 'dist', '**', 'migrations', '*.js')],
+  migrations: [join(__dirname, '..', 'dist', 'migrations', '*.js')],
   migrationsTableName: 'typeorm_migrations',
 });
 
