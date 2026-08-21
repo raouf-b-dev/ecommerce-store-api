@@ -554,6 +554,9 @@
 - [ ] **Living architecture dependency graphs** — auto-generate directional dependency maps in CI.
 - [ ] **Module architecture scorecards** — per-bounded-context health metrics (entities, repos, events, tests).
 - [ ] **ADR validation in CI** — require linked ADR when core architectural policies change.
+- [ ] **Pin GitHub Actions to full commit SHAs** — replace mutable `@vN` tags in `.github/workflows/ci.yml` (and composite actions) with verified full-length SHAs + release-version comments. Dedicated hardening PR across all jobs — do not mix into feature work.
+- [ ] **Bounded CI job timeouts** — add `timeout-minutes` to long-running jobs (especially `redis-chaos-tests`, integration, e2e) so hung runners fail closed instead of burning minutes.
+- [ ] **Redis chaos: drop Jest `forceExit`** — after open-handle cleanup is proven (`detectOpenHandles`, quit/disconnect Testcontainers clients), remove `forceExit` from `test/integration/redis/jest-redis-chaos.json` so leaked Redis handles surface again.
 - [ ] **Modularize CONVENTIONS.md** — split when file exceeds ~500–700 lines.
 - [ ] **Property-based domain testing** — evaluate `fast-check` for value-object validation.
 - [ ] **Mutation testing** — evaluate Stryker on domain layer.
