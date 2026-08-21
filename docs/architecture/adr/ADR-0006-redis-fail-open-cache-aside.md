@@ -42,22 +42,22 @@ This ADR records **why**. Operational detail lives in [REDIS.md](../../infrastru
 
 - **Decision**: Redis-down is handled per role:
   - Cache-aside / cart RedisJSON → Postgres (Decision 1)
-  - Idempotency → fail-open (treat as new request; documented tradeoff)
+  - Idempotency → **fail-closed** (HTTP 503; do not run the side-effecting handler; do not treat lock failure as a new request)
   - Throttler → in-memory per-instance limits
   - BullMQ → jobs pause until Redis returns
   - Socket.IO → in-memory adapter fallback
   - `/health/readiness` → Postgres only; Redis reported on `/health` and metrics
-- **Rationale**: Treating Redis as a single hard dependency would take the app out of rotation for an optional accelerator and incorrectly couple rate limits, queues, and cache.
+- **Rationale**: Cache can degrade safely. Idempotent checkout cannot — fail-open under Redis loss risks duplicate side effects. Rate limits and queues have different operational tradeoffs.
 
 ### Decision 4: Invalidate cache via generation bump, not SCAN flush
 
-- **Decision**: Versioned cache keys use `{REDIS_KEYPREFIX}c{generation}:{logicalKey}` for domain `*_cache`, `*_index`, and `*_list:isCached`. Generation is an `INCR` on stable `meta:cache_generation`, bumped on successful connect and on reconnect recovery. Old keys expire via TTL. Idempotency and meta keys are **not** versioned. Recovery clears list flags and re-inits RediSearch indexes for the new generation.
-- **Rationale**: SCAN+DEL on reconnect is O(keyspace), races with writers, and is unnecessary when a generation segment orphans the old namespace cheaply.
+- **Decision**: Versioned cache keys use `{REDIS_KEYPREFIX}c{generation}:{logicalKey}` for domain `*_cache`, `*_index`, and `*_list:isCached`. Generation is an `INCR` on stable `meta:cache_generation`, bumped on successful connect and on reconnect recovery. Old document keys expire via TTL. Prior-generation RediSearch indexes are **dropped** (`FT.DROPINDEX`); new indexes are created for the current generation. Idempotency and meta keys are **not** versioned. Recovery clears list flags.
+- **Rationale**: SCAN+DEL on reconnect is O(keyspace). Generation orphans documents cheaply; dropping old indexes prevents RediSearch metadata buildup across restarts.
 
 ### Decision 5: Slim Redis layering + shared connection options
 
-- **Decision**: `RedisService` owns connection lifecycle and typed client ops; `CacheService` implements `CachePort` as the application cache API. Remove thin pass-through JSON/Key/Search clients. Centralize host/port/password/db/reconnect in `redis-connection.options.ts`. Separate TCP clients may remain (library constraints) but must share that factory. Prefer atomic JSON write + TTL via `MULTI` where the typed client lacks `JSON.SET EX`.
-- **Rationale**: Fewer wrappers, one fail-open boundary, one place to change connection policy.
+- **Decision**: `RedisService` owns connection lifecycle and typed client ops; `CachePort` lives in shared-kernel as the driven port; `CacheService` implements it. Availability is `CachePort.isAvailable()` (not raw `RedisService` injected into callers such as idempotency). Remove thin pass-through JSON/Key/Search clients. Centralize host/port/password/db/reconnect in `redis-connection.options.ts`. Separate TCP clients may remain (library constraints) but must share that factory. Prefer atomic JSON write + TTL via `MULTI` where the typed client lacks `JSON.SET EX`.
+- **Rationale**: Fewer wrappers, one fail-open boundary, hexagonal dependency rule (adapters depend on ports, not Redis connection details), one place to change connection policy.
 
 ---
 
@@ -65,13 +65,15 @@ This ADR records **why**. Operational detail lives in [REDIS.md](../../infrastru
 
 1. **Keep `createHealthAwareProxy`**:  
    _Rejected_ — redundant with fail-open cache-aside; hides the real contract (cached repo always DB-backed); unusual vs industry cache-aside.
-2. **Fail closed (5xx when Redis down)**:  
-   _Rejected_ — Redis is not required for correct domain reads/writes; would violate Phase 14 ship-gate degradation goals.
-3. **Reconnect `SCAN` + delete all domain keys**:  
-   _Rejected_ — cost and operational risk; generation bump achieves stale-data avoidance with TTL cleanup.
-4. **Single shared Redis TCP connection for all libraries**:  
+2. **Fail closed for all Redis roles (5xx when Redis down)**:  
+   _Rejected_ — would take the app out of rotation for an optional cache; readiness correctly requires Postgres only.
+3. **Fail-open idempotency (treat Redis errors as new requests)**:  
+   _Rejected_ — risks duplicate checkout side effects; fail-closed (503) is the correct tradeoff for `@Idempotent()` commands.
+4. **Reconnect `SCAN` + delete all domain keys**:  
+   _Rejected_ — cost and operational risk; generation bump achieves stale-data avoidance with TTL cleanup; prior indexes are dropped explicitly.
+5. **Single shared Redis TCP connection for all libraries**:  
    _Rejected for now_ — BullMQ/throttler/Socket.IO client libraries expect their own connections; sharing options is enough for Phase 14. Unifying sockets is out of scope.
-5. **Version every Redis key including idempotency**:  
+6. **Version every Redis key including idempotency**:  
    _Rejected_ — bumping generation must not invalidate in-flight idempotency locks; those stay on a stable prefix.
 
 ---
@@ -82,17 +84,19 @@ This ADR records **why**. Operational detail lives in [REDIS.md](../../infrastru
 
 - Redis outage does not take the API out of readiness or turn cache misses into 5xx for domain CRUD.
 - One degradation story for cache: miss → Postgres.
-- Reconnect recovery is O(1) generation bump + flag clears + index ensure, not full keyspace SCAN.
+- Idempotent commands fail closed (503) when Redis cannot lock or persist results — safer than duplicate checkouts.
+- Reconnect recovery is generation bump + prior index drop + flag clears + index ensure, not full keyspace SCAN.
+- Prometheus exposes Redis health, generation, cache hit/miss, and recovery failures.
 - Connection settings are consistent across clients; docs name Redis roles and failure modes explicitly.
 
 ### Negative
 
-- Fail-open idempotency is not exactly-once under Redis loss (accepted Phase 14 tradeoff; optional HTTP hardening remains P2).
+- Checkout and other `@Idempotent()` routes require Redis (503 until Redis returns) — intentional correctness over availability for those commands.
 - Throttler memory fallback is per-instance (weaker under multi-instance until Redis returns).
-- Generation bumps leave orphaned keys until TTL; acceptable for single-instance, monitor memory if TTLs are long.
+- Generation bumps leave orphaned JSON keys until TTL; indexes are dropped. Monitor memory if TTLs are long.
 - Multiple Redis TCP clients remain (ops surface).
 
 ### Follow-through (not part of the decision)
 
-- Implementation: `src/infrastructure/redis/`, module DI bindings, [REDIS.md](../../infrastructure/REDIS.md), Phase 14 checklist in [ROADMAP.md](../../ROADMAP.md).
-- Out of scope: Redis Cluster/Sentinel, merging client libraries onto one socket, changing idempotency to fail-closed, Phase 15 search reconciliation.
+- Implementation: `src/infrastructure/redis/`, idempotency interceptor, module DI bindings, [REDIS.md](../../infrastructure/REDIS.md), Phase 14 checklist in [ROADMAP.md](../../ROADMAP.md).
+- Out of scope: Redis Cluster/Sentinel, merging client libraries onto one socket, Phase 15 search reconciliation.

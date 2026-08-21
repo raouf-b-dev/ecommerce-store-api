@@ -31,7 +31,7 @@ Canonical technical reference documents, organised by layer and category.
 
 - [adr/ADR-0004-inventory-integrity-and-concurrency.md](architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md) — Rationale for removing persisted `totalQuantity`, CQRS read ports, enforcing atomic OCC, and read-only reconciliation.
 - [adr/ADR-0005-typed-atomic-occ-update-contract.md](architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md) — Why every versioned aggregate uses QueryBuilder OCC, `UpdateFromEntity` payloads, and persistence-owned `version` / `updatedAt` stamps.
-- [adr/ADR-0006-redis-fail-open-cache-aside.md](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md) — Why Redis cache-aside fails open without a health Proxy, per-concern degradation, and generation-based invalidation.
+- [adr/ADR-0006-redis-fail-open-cache-aside.md](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md) — Why Redis cache-aside fails open, idempotency fails closed, and generation-based invalidation drops prior indexes.
 
 ---
 

@@ -148,7 +148,7 @@
 - [x] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop — verify client-IP and rate-limit behavior; do not assume `1` is always right.
 - [x] Harden central Redis client configuration with connection retry strategies and drop event handlers.
 - [x] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
-- [x] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → documented fail-open tradeoff; session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops.
+- [x] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → **fail-closed** (HTTP 503); session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops for cache paths.
 
 **Location**: `src/main.ts`, `src/infrastructure/redis/`, `src/infrastructure/idempotency/`
 
@@ -170,7 +170,7 @@
 - [x] Prefer **atomic JSON write + TTL** where the client API allows (avoid `json.set` then separate `expire` races).
 - [x] Type the Redis client (drop `client: any`).
 - [x] Centralize shared Redis connection options (host/port/password/db/reconnect). Separate library clients (`ioredis` throttler, BullMQ, Socket.IO) may remain, but must share config — do not invent a fourth ad-hoc connection setup.
-- [x] Update unit/integration specs and module factories after the DI simplification; keep existing per-concern degradation contracts (cache → DB, throttler → memory, idempotency → fail-open).
+- [x] Update unit/integration specs and module factories after the DI simplification; keep existing per-concern degradation contracts (cache → DB, throttler → memory, idempotency → fail-closed).
 
 **Location**: `src/infrastructure/redis/`, `src/infrastructure/resilience/`, `src/modules/*/…module.ts`, `docs/infrastructure/REDIS.md`
 
@@ -239,7 +239,7 @@
 - [ ] If `SET NX` fails and `GET` misses (TTL race), retry as a new lock — do not 409.
 - [ ] If `complete()` cannot persist the cached body, fail the request (logged error); do not succeed HTTP and then allow a retry to create a second checkout.
 - [ ] Optional: `Retry-After` on in-progress **409**.
-- [ ] Align docs with the store: Redis `SET NX` (not Redlock); fail-open on Redis errors is not exactly-once; interceptor covers the HTTP checkout command, not the worker chain (`FEATURES.md`, `OWASP-COMPLIANCE.md`, README).
+- [ ] Align docs with the store: Redis `SET NX` (not Redlock); **fail-closed** on Redis errors (HTTP 503); interceptor covers the HTTP checkout command, not the worker chain (`FEATURES.md`, `OWASP-COMPLIANCE.md`, README).
 - [ ] Update checkout idempotency E2E to the hardened contract (dual headers, namespaced keys). Do **not** add payload fingerprinting, Redlock, or SAGA-wide idempotency here (Phase 15/17).
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/interceptors/idempotency.interceptor.ts`, `test/`
