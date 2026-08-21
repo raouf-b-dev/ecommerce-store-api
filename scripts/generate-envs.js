@@ -80,6 +80,12 @@ function buildLinesForEnv(lines, envName) {
     if (key === 'APP_VERSION') return `APP_VERSION=${pkgVersion}`;
     if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
 
+    if (key === 'TRUST_PROXY') {
+      if (envName === 'production' || envName === 'staging')
+        return 'TRUST_PROXY=1';
+      return 'TRUST_PROXY=false';
+    }
+
     if (key === 'IS_DB_SYNCHRONIZE') {
       return isProdLike ? 'IS_DB_SYNCHRONIZE=false' : 'IS_DB_SYNCHRONIZE=true';
     }
