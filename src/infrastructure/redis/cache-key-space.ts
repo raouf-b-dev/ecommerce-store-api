@@ -78,9 +78,10 @@ export function buildFullKey(
 
 /** Strip env prefix and optional `c{n}:` generation segment from a Redis key. */
 export function stripKeyPrefix(envPrefix: string, fullKey: string): string {
-  let rest = fullKey.startsWith(envPrefix)
-    ? fullKey.slice(envPrefix.length)
-    : fullKey;
+  if (!fullKey.startsWith(envPrefix)) {
+    return fullKey;
+  }
+  let rest = fullKey.slice(envPrefix.length);
   const generationMatch = /^c\d+:/.exec(rest);
   if (generationMatch) {
     rest = rest.slice(generationMatch[0].length);

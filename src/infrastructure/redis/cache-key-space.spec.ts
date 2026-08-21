@@ -51,5 +51,6 @@ describe('cache-key-space', () => {
     );
     expect(stripKeyPrefix(prefix, 'test:idempotency:x')).toBe('idempotency:x');
     expect(stripKeyPrefix(prefix, 'xyz')).toBe('xyz');
+    expect(stripKeyPrefix(prefix, 'c1:unrelated')).toBe('c1:unrelated');
   });
 });
