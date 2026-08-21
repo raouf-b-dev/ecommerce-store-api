@@ -48,3 +48,13 @@ export const VERSIONED_IS_CACHED_FLAGS = [
   ORDER_REDIS.IS_CACHED_FLAG,
   PAYMENT_REDIS.IS_CACHED_FLAG,
 ] as const;
+
+/** RediSearch logical index names that participate in generation versioning. */
+export const VERSIONED_SEARCH_INDEXES = [
+  USER_REDIS.INDEX,
+  PRODUCT_REDIS.INDEX,
+  INVENTORY_REDIS.INDEX,
+  CART_REDIS.INDEX,
+  ORDER_REDIS.INDEX,
+  PAYMENT_REDIS.INDEX,
+] as const;

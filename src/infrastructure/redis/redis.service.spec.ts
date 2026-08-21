@@ -68,6 +68,7 @@ describe('RedisService', () => {
       );
       expect(service.isReady()).toBe(true);
       expect(service.getCacheGeneration()).toBe(1);
+      expect(mockClient.ft.dropIndex).toHaveBeenCalled();
     });
 
     it('should continue boot when connect fails', async () => {
@@ -177,6 +178,16 @@ describe('RedisService', () => {
       expect(service.getFullKey('user_cache:9')).toBe('test:c2:user_cache:9');
       expect(service.getFullKey('idempotency:abc')).toBe(
         'test:idempotency:abc',
+      );
+    });
+
+    it('dropIndexForGeneration targets prior generation full key', async () => {
+      mockClient.ft.dropIndex.mockResolvedValue('OK');
+      await expect(
+        service.dropIndexForGeneration('product_index', 1),
+      ).resolves.toBe(true);
+      expect(mockClient.ft.dropIndex).toHaveBeenCalledWith(
+        'test:c1:product_index',
       );
     });
   });

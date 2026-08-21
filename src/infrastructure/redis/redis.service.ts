@@ -18,6 +18,7 @@ import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
 import {
   CACHE_GENERATION_META_KEY,
   isVersionedCacheKey,
+  VERSIONED_SEARCH_INDEXES,
 } from './cache-key-space';
 import { buildNodeRedisClientOptions } from './redis-connection.options';
 import { logRedisError } from './redis-error.utils';
@@ -72,7 +73,8 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       await this.client.connect();
       this.connected = true;
       this.wasConnected = true;
-      await this.bumpCacheGeneration();
+      const { previousGeneration } = await this.bumpCacheGeneration();
+      await this.dropVersionedIndexesForGeneration(previousGeneration);
     } catch (err) {
       this.logger.warn(
         `Redis unavailable at startup — app continues without cache: ${toErrorMessage(err)}`,
@@ -110,24 +112,79 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
    * Bumps the Redis-persisted cache generation so versioned keys move to a new
    * namespace. Old keys expire via TTL. Used on startup and reconnect recovery.
    */
-  async bumpCacheGeneration(): Promise<number> {
+  async bumpCacheGeneration(): Promise<{
+    previousGeneration: number;
+    generation: number;
+  }> {
+    const previousGeneration = this.cacheGeneration;
+
     if (!this.isReady() || !this.client) {
       this.cacheGeneration += 1;
       this.logger.log(
         `Cache generation bumped locally to ${this.cacheGeneration} (Redis not ready)`,
       );
-      return this.cacheGeneration;
+      return { previousGeneration, generation: this.cacheGeneration };
     }
 
     try {
       const metaKey = this.getStableFullKey(CACHE_GENERATION_META_KEY);
       this.cacheGeneration = await this.client.incr(metaKey);
       this.logger.log(`Cache generation bumped to ${this.cacheGeneration}`);
-      return this.cacheGeneration;
+      return { previousGeneration, generation: this.cacheGeneration };
     } catch (error) {
       logRedisError(this.logger, 'RedisService.bumpCacheGeneration', error);
       this.cacheGeneration += 1;
-      return this.cacheGeneration;
+      return { previousGeneration, generation: this.cacheGeneration };
+    }
+  }
+
+  /**
+   * Builds a versioned full key for an explicit generation (used to drop prior indexes).
+   */
+  public getFullKeyForGeneration(key: string, generation: number): string {
+    const envPrefix = this.envConfigService.redis.key_prefix;
+    if (!isVersionedCacheKey(key)) {
+      return `${envPrefix}${key}`;
+    }
+    return `${envPrefix}c${generation}:${key}`;
+  }
+
+  /**
+   * Drops a RediSearch index for a specific generation. Missing indexes are ignored.
+   */
+  async dropIndexForGeneration(
+    index: string,
+    generation: number,
+  ): Promise<boolean> {
+    if (!this.isReady() || !this.client || generation < 0) {
+      return false;
+    }
+
+    const fullIndex = this.getFullKeyForGeneration(index, generation);
+    try {
+      await this.client.ft.dropIndex(fullIndex);
+      this.logger.log(
+        `Dropped RediSearch index '${index}' for generation ${generation}`,
+      );
+      return true;
+    } catch (error) {
+      const msg = toErrorMessage(error).toLowerCase();
+      if (msg.includes('no such index') || msg.includes('unknown index')) {
+        return false;
+      }
+      logRedisError(
+        this.logger,
+        `RedisService.dropIndexForGeneration("${index}", ${generation})`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  async dropVersionedIndexesForGeneration(generation: number): Promise<void> {
+    if (generation < 0) return;
+    for (const index of VERSIONED_SEARCH_INDEXES) {
+      await this.dropIndexForGeneration(index, generation);
     }
   }
 
