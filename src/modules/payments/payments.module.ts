@@ -10,8 +10,6 @@ import {
 } from './payment.token';
 import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
 import { CachePort } from '../../infrastructure/redis/cache/cache.port';
-import { RedisService } from '../../infrastructure/redis/redis.service';
-import { createHealthAwareProxy } from '../../infrastructure/resilience/health-aware-proxy';
 import { CachedPaymentRepository } from './secondary-adapters/repositories/cached-payment-repository/cached.payment-repository';
 import { PaymentRepository } from './core/domain/repositories/payment.repository';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
@@ -91,20 +89,10 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
       inject: [CachePort, POSTGRES_PAYMENT_REPOSITORY],
     },
 
-    // Default Repository Binding
+    // Default Repository Binding — cache-aside fails open via CachePort
     {
       provide: PaymentRepository,
-      useFactory: (
-        cachedRepo: PaymentRepository,
-        postgresRepo: PaymentRepository,
-        redis: RedisService,
-      ) =>
-        createHealthAwareProxy(cachedRepo, postgresRepo, () => redis.isReady()),
-      inject: [
-        CACHED_PAYMENT_REPOSITORY,
-        POSTGRES_PAYMENT_REPOSITORY,
-        RedisService,
-      ],
+      useExisting: CACHED_PAYMENT_REPOSITORY,
     },
 
     // Use Cases
