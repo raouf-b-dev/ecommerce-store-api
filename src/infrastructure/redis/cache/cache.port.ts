@@ -1,3 +1,6 @@
+import { FtSearchOptions } from 'redis';
+import { SearchOptions } from '../types';
+
 export abstract class CachePort {
   abstract ttl(key: string): Promise<number>;
   abstract get<T>(key: string, path?: string): Promise<T | null>;
@@ -6,29 +9,40 @@ export abstract class CachePort {
   abstract getAll<T>(
     index: string,
     query?: string,
-    options?: any,
+    options?: SearchOptions,
   ): Promise<T[]>;
+
   abstract set<T>(
     key: string,
     value: T,
     options?: { path?: string; ttl?: number; nx?: boolean },
   ): Promise<boolean>;
+
   abstract setAll(
-    entries: { key: string; value: any }[],
+    entries: ReadonlyArray<{ key: string; value: unknown }>,
     options?: { path?: string; ttl?: number; nx?: boolean },
   ): Promise<void>;
+
   abstract merge<T>(
     key: string,
     partial: Partial<T>,
     options?: { path?: string; ttl?: number },
   ): Promise<T | null>;
+
   abstract mergeAll(
-    entries: { key: string; value: any }[],
+    entries: ReadonlyArray<{ key: string; value: unknown }>,
     options?: { path?: string; ttl?: number },
   ): Promise<void>;
+
   abstract delete(key: string): Promise<void>;
   abstract deletePattern(pattern: string): Promise<void>;
   abstract exists(key: string): Promise<boolean>;
-  abstract search<T>(index: string, query: string, options?: any): Promise<T[]>;
+
+  abstract search<T>(
+    index: string,
+    query: string,
+    options?: FtSearchOptions,
+  ): Promise<T[]>;
+
   abstract scanKeys(pattern: string, count?: number): Promise<string[]>;
 }
