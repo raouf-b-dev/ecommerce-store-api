@@ -169,7 +169,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.2.0",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.0",
     "archunit": "^2.3.0",
