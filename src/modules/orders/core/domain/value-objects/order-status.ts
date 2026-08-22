@@ -1,22 +1,7 @@
-// src/modules/orders/domain/value-objects/order-status.ts
-export enum OrderStatus {
-  // Payment Phase (online payments only)
-  PENDING_PAYMENT = 'pending_payment',
-  PAYMENT_FAILED = 'payment_failed',
+import { OrderWorkflow } from '../policies/order-workflow';
+import { OrderStatus } from './order-status.enum';
 
-  // Confirmation Phase
-  PENDING_CONFIRMATION = 'pending_confirmation',
-  CONFIRMED = 'confirmed',
-
-  // Fulfillment Phase
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-
-  // Terminal States
-  CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
-}
+export { OrderStatus } from './order-status.enum';
 
 export class OrderStatusVO {
   private readonly _status: OrderStatus;
@@ -41,16 +26,11 @@ export class OrderStatusVO {
     return this._status === OrderStatus.PAYMENT_FAILED;
   }
 
-  // Confirmation phase checks
-  isPendingConfirmation(): boolean {
-    return this._status === OrderStatus.PENDING_CONFIRMATION;
-  }
-
+  // Fulfillment phase checks
   isConfirmed(): boolean {
     return this._status === OrderStatus.CONFIRMED;
   }
 
-  // Fulfillment phase checks
   isProcessing(): boolean {
     return this._status === OrderStatus.PROCESSING;
   }
@@ -74,11 +54,7 @@ export class OrderStatusVO {
 
   // Composite checks
   isTerminal(): boolean {
-    return [
-      OrderStatus.DELIVERED,
-      OrderStatus.CANCELLED,
-      OrderStatus.REFUNDED,
-    ].includes(this._status);
+    return OrderWorkflow.isTerminal(this._status);
   }
 
   isAwaitingPayment(): boolean {
@@ -88,45 +64,7 @@ export class OrderStatusVO {
   }
 
   canTransitionTo(newStatus: OrderStatus): boolean {
-    const transitions: Record<OrderStatus, OrderStatus[]> = {
-      // Payment phase transitions
-      [OrderStatus.PENDING_PAYMENT]: [
-        OrderStatus.CONFIRMED, // Payment success
-        OrderStatus.PAYMENT_FAILED, // Payment failed
-        OrderStatus.CANCELLED, // Timeout or user cancel
-      ],
-      [OrderStatus.PAYMENT_FAILED]: [
-        OrderStatus.PENDING_PAYMENT, // Retry payment
-        OrderStatus.CANCELLED, // Abandon
-      ],
-
-      // Confirmation phase transitions
-      [OrderStatus.PENDING_CONFIRMATION]: [
-        OrderStatus.CONFIRMED,
-        OrderStatus.CANCELLED,
-      ],
-      [OrderStatus.CONFIRMED]: [
-        OrderStatus.PROCESSING,
-        OrderStatus.CANCELLED, // Cancel before processing
-      ],
-      [OrderStatus.PROCESSING]: [
-        OrderStatus.SHIPPED,
-        OrderStatus.CANCELLED, // Cancel during processing (with refund if paid)
-      ],
-      [OrderStatus.SHIPPED]: [
-        OrderStatus.DELIVERED,
-        OrderStatus.CANCELLED, // Failed delivery / return
-      ],
-      [OrderStatus.DELIVERED]: [
-        OrderStatus.REFUNDED, // Return and refund
-      ],
-
-      // Terminal states - no transitions allowed
-      [OrderStatus.CANCELLED]: [],
-      [OrderStatus.REFUNDED]: [],
-    };
-
-    return transitions[this._status].includes(newStatus);
+    return OrderWorkflow.canTransition(this._status, newStatus);
   }
 
   equals(other: OrderStatusVO): boolean {
@@ -144,10 +82,6 @@ export class OrderStatusVO {
 
   static paymentFailed(): OrderStatusVO {
     return new OrderStatusVO(OrderStatus.PAYMENT_FAILED);
-  }
-
-  static pendingConfirmation(): OrderStatusVO {
-    return new OrderStatusVO(OrderStatus.PENDING_CONFIRMATION);
   }
 
   static confirmed(): OrderStatusVO {

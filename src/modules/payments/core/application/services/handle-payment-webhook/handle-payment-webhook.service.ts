@@ -102,7 +102,7 @@ export class HandlePaymentWebhookService {
     }
 
     // Save payment
-    const savePaymentResult = await this.paymentRepository.save(payment);
+    const savePaymentResult = await this.paymentRepository.update(payment);
     if (isFailure(savePaymentResult)) {
       return savePaymentResult;
     }
@@ -142,7 +142,7 @@ export class HandlePaymentWebhookService {
     }
 
     // Save payment
-    const savePaymentResult = await this.paymentRepository.save(payment);
+    const savePaymentResult = await this.paymentRepository.update(payment);
     if (isFailure(savePaymentResult)) {
       return savePaymentResult;
     }

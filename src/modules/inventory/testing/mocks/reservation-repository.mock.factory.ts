@@ -36,6 +36,10 @@ export class MockReservationRepository implements ReservationRepository {
     Promise<Result<Reservation, RepositoryError>>,
     [Reservation]
   >();
+  sumPendingReservedByProductIds = jest.fn<
+    Promise<Result<Map<number, number>, RepositoryError>>,
+    [number[]]
+  >();
 
   mockSuccessfulSave(reservation: Reservation): void {
     this.save.mockResolvedValue(Result.success(reservation));

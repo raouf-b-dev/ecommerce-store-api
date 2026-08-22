@@ -8,7 +8,7 @@ export class RecordCodPaymentDto {
     description: 'Order ID',
   })
   @IsNumber()
-  orderId: number;
+  orderId!: number;
 
   @ApiProperty({
     example: 299.99,
@@ -16,14 +16,14 @@ export class RecordCodPaymentDto {
   })
   @IsNumber()
   @Min(0.01)
-  amountCollected: number;
+  amountCollected!: number;
 
   @ApiProperty({
     example: 'USD',
     description: 'Currency code',
   })
   @IsString()
-  currency: string;
+  currency!: string;
 
   @ApiPropertyOptional({
     example: 'driver-456',

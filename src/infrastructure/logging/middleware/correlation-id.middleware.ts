@@ -25,7 +25,7 @@ export class CorrelationIdMiddleware implements NestMiddleware {
 
     // Expose the correlation ID to downstream code via Express request
     // (useful for guards/interceptors that don't inject CorrelationService).
-    req['correlationId'] = correlationId;
+    req.correlationId = correlationId;
 
     // Return the ID to the client for support/debugging references.
     res.setHeader(CorrelationIdMiddleware.HEADER, correlationId);

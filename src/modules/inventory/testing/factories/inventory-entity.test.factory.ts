@@ -10,8 +10,8 @@ export class InventoryEntityTestFactory {
       productId: 1,
       availableQuantity: 100,
       reservedQuantity: 10,
-      totalQuantity: 110,
       lowStockThreshold: 10,
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
       lastRestockDate: new Date('2025-01-01T09:00:00Z'),
@@ -26,7 +26,6 @@ export class InventoryEntityTestFactory {
     return this.createInventoryEntity({
       availableQuantity: 150,
       reservedQuantity: 5,
-      totalQuantity: 155,
       ...overrides,
     });
   }
@@ -37,7 +36,6 @@ export class InventoryEntityTestFactory {
     return this.createInventoryEntity({
       availableQuantity: 8,
       reservedQuantity: 2,
-      totalQuantity: 10,
       lowStockThreshold: 10,
       ...overrides,
     });
@@ -49,7 +47,6 @@ export class InventoryEntityTestFactory {
     return this.createInventoryEntity({
       availableQuantity: 0,
       reservedQuantity: 3,
-      totalQuantity: 3,
       ...overrides,
     });
   }
@@ -60,7 +57,6 @@ export class InventoryEntityTestFactory {
     return this.createInventoryEntity({
       availableQuantity: 0,
       reservedQuantity: 0,
-      totalQuantity: 0,
       lastRestockDate: null,
       ...overrides,
     });
@@ -72,7 +68,6 @@ export class InventoryEntityTestFactory {
     return this.createInventoryEntity({
       availableQuantity: 60,
       reservedQuantity: 40,
-      totalQuantity: 100,
       ...overrides,
     });
   }
@@ -85,7 +80,6 @@ export class InventoryEntityTestFactory {
       productId,
       availableQuantity: quantity,
       reservedQuantity: 0,
-      totalQuantity: quantity,
     });
   }
 
@@ -96,7 +90,6 @@ export class InventoryEntityTestFactory {
         productId: i + 1,
         availableQuantity: (i + 1) * 20,
         reservedQuantity: i * 2,
-        totalQuantity: (i + 1) * 20 + i * 2,
       }),
     );
   }
@@ -121,7 +114,6 @@ export class InventoryEntityTestFactory {
       availableQuantity: quantity,
       lowStockThreshold: threshold,
       reservedQuantity: 0,
-      totalQuantity: quantity,
     });
   }
 

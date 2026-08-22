@@ -13,13 +13,19 @@ import { numericToNumber } from '../../../../infrastructure/database/number.tran
 @Entity({ name: 'order_items' })
 export class OrderItemEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'product_id', type: 'int' })
-  productId: number;
+  productId!: number;
+
+  @Column({ type: 'varchar', name: 'product_name', default: '' })
+  productName!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  productName: string | null;
+  sku!: string | null;
+
+  @Column({ type: 'varchar', nullable: true, name: 'image_url' })
+  imageUrl!: string | null;
 
   @Column({
     type: 'numeric',
@@ -27,10 +33,10 @@ export class OrderItemEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  unitPrice: number;
+  unitPrice!: number;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity!: number;
 
   @Column({
     type: 'numeric',
@@ -38,11 +44,11 @@ export class OrderItemEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  lineTotal: number;
+  lineTotal!: number;
 
   @ManyToOne(() => OrderEntity, (order: OrderEntity) => order.items, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'order_id' })
-  order: Relation<OrderEntity>;
+  order!: Relation<OrderEntity>;
 }

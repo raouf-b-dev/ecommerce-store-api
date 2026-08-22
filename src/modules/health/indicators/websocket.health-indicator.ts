@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 import { WebsocketConnectionGateway } from '../../../infrastructure/websocket/websocket.connection.gateway';
+import { toErrorMessage } from '../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class WebSocketHealthIndicator {
@@ -30,7 +31,7 @@ export class WebSocketHealthIndicator {
       const sockets = await Promise.race([fetchPromise, timeoutPromise]);
       return indicator.up({ connectedClients: sockets.length });
     } catch (error) {
-      return indicator.down({ message: error.message });
+      return indicator.down({ message: toErrorMessage(error) });
     }
   }
 }

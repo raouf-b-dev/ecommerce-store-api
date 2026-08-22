@@ -1,13 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppConfigKey, IAppConfig } from './configuration';
+import { AppConfigReader } from './app-config.reader';
 
 @Injectable()
 export class EnvConfigService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configReader: AppConfigReader) {}
+
+  static fromConfigService(configService: ConfigService): EnvConfigService {
+    return new EnvConfigService({
+      get: (key) => configService.get<IAppConfig[typeof key]>(key),
+    });
+  }
 
   get<T extends AppConfigKey>(key: T): IAppConfig[T] {
-    const value = this.configService.get<IAppConfig[T]>(key);
+    const value = this.configReader.get(key);
     if (value === undefined || value === null) {
       throw new Error(`${key} is not defined or invalid`);
     }
@@ -50,6 +57,10 @@ export class EnvConfigService {
 
   get throttle() {
     return this.get('throttle');
+  }
+
+  get http() {
+    return this.get('http');
   }
 
   get metricsApiKey(): string {

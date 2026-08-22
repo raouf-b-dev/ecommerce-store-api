@@ -41,7 +41,7 @@ The core domain has zero dependency on infrastructure. All external concerns (da
 
 ### ACL Gateway Pattern
 
-8 bounded contexts communicate through **7 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
+10 bounded contexts communicate through **8 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
 
 **Location**: `src/modules/orders/secondary-adapters/gateways/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
 
@@ -71,7 +71,7 @@ The checkout flow is a multi-step SAGA: **Validate → Reserve Stock → Process
 
 ### Idempotency (Redis-Backed)
 
-A custom `@Idempotent()` decorator with a Redis-backed distributed lock ensures critical operations (like checkout) execute **exactly once**, even under network retries. The interceptor stores results and replays them for duplicate requests.
+A custom `@Idempotent()` decorator with a Redis `SET NX` store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route; clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable or a result cannot be persisted. It does **not** cover the BullMQ worker / SAGA compensation chain.
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/decorators/`, `src/infrastructure/interceptors/`
 
@@ -81,12 +81,12 @@ Background job processing using BullMQ with nested flow orchestration. The Notif
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Hybrid Payment Orchestration (COD + Online)
+### Unified Stripe Payment Strategy
 
-A unified **Strategy Pattern** handles both payment types through the same checkout flow:
+A streamlined, deterministic **Strategy Pattern** handles online payment processing through Stripe via SAGA orchestration:
 
-- **Online**: Full SAGA (Validate → Reserve → Pay → Confirm)
-- **COD**: Async Pause (Validate → Reserve → **Stop & Wait** → Manual Confirm)
+- **Flow**: Full SAGA (Validate Cart → Reserve Stock → Process Stripe Payment → Confirm Order)
+- **Webhooks**: Async payment confirmation and automated status synchronization via Stripe webhooks.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -219,7 +219,7 @@ Production-grade structured logging with Winston. JSON output format for log agg
 
 ### Correlation ID Propagation
 
-A middleware injects/reads `X-Request-Id` headers and propagates the correlation ID through the entire request lifecycle — including all 18 BullMQ job handlers and schedulers. Enables end-to-end request tracing across synchronous and asynchronous flows.
+A middleware injects/reads `X-Request-Id` headers and propagates the correlation ID through the entire request lifecycle — including all 19 BullMQ job handlers and schedulers. Enables end-to-end request tracing across synchronous and asynchronous flows.
 
 **Location**: `src/infrastructure/logging/`, `src/infrastructure/jobs/`
 
@@ -240,8 +240,8 @@ Automated pipeline: lint → build → test (with coverage) → publish. Environ
 Comprehensive test infrastructure across all layers:
 
 - **Unit Tests**: Domain logic, use cases, services, and utilities
-- **Integration Tests**: Database interactions and Redis caching
-- **E2E Tests**: Complete API endpoint testing scaffolding
+- **Integration Tests**: PostgreSQL Testcontainers (`*.integration.spec.ts`) for query adapters and write-side repositories (transactions, unique constraints, pessimistic inventory locks, cache-aside with a real postgres delegate)
+- **E2E Tests**: Full-app `supertest` suites for auth lifecycle, IDOR denial, checkout SAGA (happy path + payment-failure compensation), and CQRS order read shapes (`userName`, item `sku`)
 - **Coverage**: Detailed metrics via `npm run test:cov`
 
 ### Test Factories & Typed Mocks

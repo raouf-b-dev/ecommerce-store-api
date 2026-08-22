@@ -6,6 +6,7 @@ import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/re
 import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
+import { parseCheckoutCompensationJobData } from './checkout-compensation-job-data';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -20,7 +21,7 @@ export class CheckoutFailureListener implements OnModuleInit {
     private readonly inventoryGateway: InventoryReservationGateway,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit(): void {
     this.queueEventsService.onFailed(
       'checkout',
       async ({ jobId, failedReason }) => {
@@ -35,8 +36,9 @@ export class CheckoutFailureListener implements OnModuleInit {
             return;
           }
 
-          let { reservationId } = job.data;
-          const { orderId, paymentId, orderTotal } = job.data;
+          const jobData = parseCheckoutCompensationJobData(job.data);
+          let { reservationId } = jobData;
+          const { orderId, paymentId, orderTotal } = jobData;
 
           if (!reservationId && orderId) {
             const reservationResult =
@@ -70,7 +72,10 @@ export class CheckoutFailureListener implements OnModuleInit {
 
           if (orderId) {
             this.logger.log(`Cancelling order ${orderId}...`);
-            const cancelResult = await this.cancelOrderUseCase.execute(orderId);
+            const cancelResult = await this.cancelOrderUseCase.execute({
+              orderId,
+              isSagaCompensation: true,
+            });
             if (cancelResult.isFailure) {
               this.logger.error(
                 `Failed to cancel order ${orderId}: ${cancelResult.error.message}`,

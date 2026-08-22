@@ -18,6 +18,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DB_USERNAME: str(),
     DB_PASSWORD: str(),
     DB_DATABASE: str(),
+    POSTGRES_CONTAINER_NAME: str(),
+    POSTGRES_IMAGE: str(),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
@@ -41,6 +43,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     THROTTLE_GLOBAL_LIMIT: num({ default: 100 }),
     THROTTLE_STRICT_LIMIT: num({ default: 10 }),
+
+    TRUST_PROXY: str({ default: 'false' }),
 
     METRICS_API_KEY: str({ default: '' }),
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),

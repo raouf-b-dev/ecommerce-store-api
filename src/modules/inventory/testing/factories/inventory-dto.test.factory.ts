@@ -1,4 +1,4 @@
-import { AdjustStockCommand } from '../../core/application/adjust-stock/adjust-stock.usecase';
+import { AdjustStockCommand } from '../../core/application/commands/adjust-stock.command';
 import { ReservationInput } from '../../core/domain/repositories/reservation.repository';
 import { LowStockQuery } from '../../core/domain/repositories/inventory.repository';
 import { StockAdjustmentType } from '../../core/domain/value-objects/stock-adjustment-type';
@@ -8,6 +8,7 @@ export class InventoryCommandTestFactory {
     overrides?: Partial<AdjustStockCommand>,
   ): AdjustStockCommand {
     const baseCommand: AdjustStockCommand = {
+      productId: 1,
       quantity: 50,
       type: StockAdjustmentType.ADD,
       reason: 'New shipment received',
@@ -64,9 +65,7 @@ export class InventoryCommandTestFactory {
       quantity: i + 1,
     }));
 
-    return this.createReservationInput({
-      items,
-    });
+    return this.createReservationInput({ items });
   }
 
   static createReservationForOrder(
@@ -102,6 +101,7 @@ export class InventoryCommandTestFactory {
 
   static createInvalidAdjustStockCommand(): AdjustStockCommand {
     return {
+      productId: 1,
       quantity: -10,
       type: 'INVALID_TYPE' as unknown as StockAdjustmentType,
       reason: '',

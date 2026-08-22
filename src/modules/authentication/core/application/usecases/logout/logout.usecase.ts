@@ -6,11 +6,7 @@ import { SessionTokenRepository } from '../../../domain/repositories/session-tok
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 
 @Injectable()
-export class LogoutUseCase extends UseCase<
-  { refreshToken: string },
-  void,
-  UseCaseError
-> {
+export class LogoutUseCase extends UseCase<string, void, UseCaseError> {
   private readonly logger = new Logger(LogoutUseCase.name);
 
   constructor(
@@ -20,14 +16,11 @@ export class LogoutUseCase extends UseCase<
     super();
   }
 
-  async execute(input: {
-    refreshToken: string;
-  }): Promise<Result<void, UseCaseError>> {
+  async execute(refreshToken: string): Promise<Result<void, UseCaseError>> {
     try {
-      const payload = await this.jwtVerifierService.verifyRefreshToken(
-        input.refreshToken,
-      );
-      const sessionId = payload.sessionId;
+      const payload =
+        await this.jwtVerifierService.verifyRefreshToken(refreshToken);
+      const sessionId = payload.sid;
       const userId = Number(payload.sub);
 
       const sessionResult =
@@ -37,7 +30,7 @@ export class LogoutUseCase extends UseCase<
       }
 
       const session = sessionResult.value;
-      if (session.isValid && session.isTokenMatch(input.refreshToken)) {
+      if (session.isValid && session.isTokenMatch(refreshToken)) {
         session.revoke();
         await this.sessionTokenRepository.save(session);
 

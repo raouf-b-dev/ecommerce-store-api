@@ -14,7 +14,7 @@ import { WsAuthService } from './services/ws-auth.service';
 export class WebsocketConnectionGateway
   implements OnGatewayConnection, OnGatewayDisconnect, BeforeApplicationShutdown
 {
-  @WebSocketServer() server: Server;
+  @WebSocketServer() server!: Server;
   private readonly logger = new Logger(WebsocketConnectionGateway.name);
 
   constructor(private readonly wsAuthService: WsAuthService) {}
@@ -45,7 +45,7 @@ export class WebsocketConnectionGateway
       client['user'] = payload;
 
       this.logger.log(`User ${userId} connected and joined room ${roomName}`);
-    } catch (err) {
+    } catch (_err) {
       client.disconnect();
     }
   }

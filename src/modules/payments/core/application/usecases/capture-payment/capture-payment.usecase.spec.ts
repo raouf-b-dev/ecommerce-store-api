@@ -1,8 +1,10 @@
+import {
+  MockPaymentRepository,
+  PaymentEntityTestFactory,
+} from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CapturePaymentUseCase } from './capture-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
@@ -54,7 +56,9 @@ describe('CapturePaymentUseCase', () => {
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
     // The use case calls payment.capture() which mutates the payment, then passes it to update()
     // So the mock should return the same payment instance that was passed to it (after mutation)
-    paymentRepository.update.mockImplementation(async (p) => Result.success(p));
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
 
     const result = await useCase.execute(123);
 

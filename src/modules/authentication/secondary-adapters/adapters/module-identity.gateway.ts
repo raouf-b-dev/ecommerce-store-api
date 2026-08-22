@@ -54,7 +54,7 @@ export class ModuleIdentityGateway implements IdentityGateway {
     }
 
     const userRecord: UserRecord = {
-      id: user.id!,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,

@@ -3,9 +3,14 @@
  * Contains the domain-level claims before JWT standard fields are added.
  */
 export interface SignAccessTokenPayload {
-  sub: number | null;
+  sub: string | null;
   email: string;
   role: string;
+}
+
+export interface SignRefreshTokenPayload {
+  sub: string | number;
+  sid?: string;
 }
 
 /**
@@ -23,9 +28,9 @@ export interface RefreshTokenResult {
  */
 export abstract class JwtSignerPort {
   abstract signAccessToken(payload: SignAccessTokenPayload): Promise<string>;
-  abstract signRefreshToken(payload: Record<string, unknown>): Promise<string>;
+  abstract signRefreshToken(payload: SignRefreshTokenPayload): Promise<string>;
   abstract signRefreshTokenWithSession(
-    payload: Record<string, unknown>,
+    payload: Pick<SignRefreshTokenPayload, 'sub'>,
   ): Promise<RefreshTokenResult>;
   abstract signCartSessionToken(cartId: number): Promise<string>;
 }

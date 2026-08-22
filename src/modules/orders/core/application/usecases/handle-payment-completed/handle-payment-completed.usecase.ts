@@ -45,7 +45,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     this.logger.log(`Handling payment completion for order ${orderId}`);
 
     // 1. Find order
-    const orderResult = await this.orderRepository.findById(orderId);
+    const orderResult = await this.orderRepository.findByIdForUpdate(orderId);
     if (isFailure(orderResult)) {
       return ErrorFactory.UseCaseError(
         `Order not found: ${orderId}`,
@@ -53,7 +53,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
       );
     }
 
-    const order = orderResult.value;
+    const { entity: order, expectedVersion } = orderResult.value;
 
     // 2. Idempotency check - skip if already confirmed
     if (order.status === OrderStatus.CONFIRMED) {
@@ -73,7 +73,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
       );
     }
 
-    await this.orderRepository.updateStatus(orderId, order.status);
+    await this.orderRepository.save(order, expectedVersion);
     this.logger.log(`Order ${orderId} confirmed after payment`);
 
     // 4. Schedule post-payment flow as a SEPARATE job (atomic, retriable independently)

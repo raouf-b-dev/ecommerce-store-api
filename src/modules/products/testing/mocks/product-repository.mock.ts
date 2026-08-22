@@ -1,30 +1,46 @@
 // src/modules/products/testing/mocks/product-repository.mock.ts
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
-import { IProduct } from '../../core/domain/interfaces/product.interface';
-import {
-  CreateProductInput,
-  ProductRepository,
-  UpdateProductInput,
-} from '../../core/domain/repositories/product-repository';
+import { Product } from '../../core/domain/entities/product';
+import { ProductRepository } from '../../core/domain/repositories/product-repository';
 
 export class MockProductRepository implements ProductRepository {
-  // Jest mock functions matching the actual repository interface
+  findByIdForUpdate = jest.fn<
+    Promise<
+      Result<{ entity: Product; expectedVersion: number }, RepositoryError>
+    >,
+    [number]
+  >();
   save = jest.fn<
-    Promise<Result<IProduct, RepositoryError>>,
-    [CreateProductInput]
+    Promise<Result<Product, RepositoryError>>,
+    [Product, number?]
   >();
-  update = jest.fn<
-    Promise<Result<IProduct, RepositoryError>>,
-    [number, UpdateProductInput]
+  findById = jest.fn<Promise<Result<Product, RepositoryError>>, [number]>();
+  findByIds = jest.fn<
+    Promise<Result<Product[], RepositoryError>>,
+    [number[]]
   >();
-  findById = jest.fn<Promise<Result<IProduct, RepositoryError>>, [number]>();
-  findAll = jest.fn<Promise<Result<IProduct[], RepositoryError>>, []>();
+  findAll = jest.fn<Promise<Result<Product[], RepositoryError>>, []>();
   deleteById = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
   // Helper methods for common test scenarios
-  mockSuccessfulFind(product: IProduct): void {
+  mockSuccessfulFind(product: Product): void {
     this.findById.mockResolvedValue(Result.success(product));
+  }
+
+  mockSuccessfulFindByIdForUpdate(
+    product: Product,
+    expectedVersion: number = 1,
+  ): void {
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.success({ entity: product, expectedVersion }),
+    );
+  }
+
+  mockFindByIdForUpdateFailure(errorMessage: string): void {
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.failure(new RepositoryError(errorMessage)),
+    );
   }
 
   mockProductNotFound(productId: number): void {
@@ -33,10 +49,21 @@ export class MockProductRepository implements ProductRepository {
         new RepositoryError(`Product with id ${productId} not found`),
       ),
     );
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.failure(
+        new RepositoryError(`Product with id ${productId} not found`),
+      ),
+    );
   }
 
-  mockSuccessfulSave(product: IProduct): void {
-    this.save.mockResolvedValue(Result.success(product));
+  mockSuccessfulSave(product?: Product): void {
+    if (product) {
+      this.save.mockResolvedValue(Result.success(product));
+    } else {
+      this.save.mockImplementation((p: Product) =>
+        Promise.resolve(Result.success(p)),
+      );
+    }
   }
 
   mockSaveFailure(errorMessage: string): void {
@@ -45,17 +72,7 @@ export class MockProductRepository implements ProductRepository {
     );
   }
 
-  mockSuccessfulUpdate(product: IProduct): void {
-    this.update.mockResolvedValue(Result.success(product));
-  }
-
-  mockUpdateFailure(errorMessage: string): void {
-    this.update.mockResolvedValue(
-      Result.failure(new RepositoryError(errorMessage)),
-    );
-  }
-
-  mockSuccessfulList(products: IProduct[]): void {
+  mockSuccessfulList(products: Product[]): void {
     this.findAll.mockResolvedValue(Result.success(products));
   }
 
@@ -83,7 +100,7 @@ export class MockProductRepository implements ProductRepository {
   // Verify no unexpected calls were made
   verifyNoUnexpectedCalls(): void {
     expect(this.save).not.toHaveBeenCalled();
-    expect(this.update).not.toHaveBeenCalled();
+    expect(this.findByIdForUpdate).not.toHaveBeenCalled();
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.findAll).not.toHaveBeenCalled();
     expect(this.deleteById).not.toHaveBeenCalled();

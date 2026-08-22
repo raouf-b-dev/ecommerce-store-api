@@ -5,35 +5,39 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  VersionColumn,
 } from 'typeorm';
 import { AddressEntity } from './address.schema';
 
 @Entity('users')
 export class UserEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
 
   @Column()
-  firstName: string;
+  firstName!: string;
 
   @Column()
-  lastName: string;
+  lastName!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  phone: string | null;
+  phone!: string | null;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'boolean', default: true, name: 'is_active' })
-  isActive: boolean;
+  isActive!: boolean;
 
   @OneToMany(() => AddressEntity, (address) => address.user, { cascade: true })
-  addresses: AddressEntity[];
+  addresses!: AddressEntity[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

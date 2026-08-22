@@ -3,63 +3,43 @@ import { CreateOrderFromCartUseCase } from './create-order-from-cart.usecase';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
 import { CART_GATEWAY } from '../../../../order.token';
-import { CartGateway } from '../../ports/cart.gateway';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { OrderDtoTestFactory } from '../../../../testing/factories/order-dto.factory';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-import { ShippingAddressProps } from '../../../domain/value-objects/shipping-address';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
+import {
+  MockCartGateway,
+  MockOrderRepository,
+  OrderDtoTestFactory,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
 
 describe('CreateOrderFromCartUseCase', () => {
   let useCase: CreateOrderFromCartUseCase;
-  let orderRepository: jest.Mocked<OrderRepository>;
+  let orderRepository: MockOrderRepository;
   let orderFactory: jest.Mocked<OrderFactory>;
-  let cartGateway: jest.Mocked<CartGateway>;
-
-  const mockShippingAddress: ShippingAddressProps = {
-    id: 1,
-    firstName: 'John',
-    lastName: 'Doe',
-    street: '123 Main St',
-    street2: 'Apt 4B',
-    city: 'New York',
-    state: 'NY',
-    postalCode: '10001',
-    country: 'USA',
-    phone: '555-1234',
-    deliveryInstructions: 'Leave at front desk',
-  };
+  let cartGateway: MockCartGateway;
 
   beforeEach(async () => {
-    const mockOrderRepository = {
-      save: jest.fn(),
-    };
+    orderRepository = new MockOrderRepository();
+    cartGateway = new MockCartGateway();
 
     const mockOrderFactory = {
       createFromCart: jest.fn(),
     };
 
-    const mockCartGateway = {
-      getCart: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderFromCartUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: OrderRepository, useValue: orderRepository },
         { provide: OrderFactory, useValue: mockOrderFactory },
-        { provide: CART_GATEWAY, useValue: mockCartGateway },
+        { provide: CART_GATEWAY, useValue: cartGateway },
       ],
     }).compile();
 
     useCase = module.get<CreateOrderFromCartUseCase>(
       CreateOrderFromCartUseCase,
     );
-    orderRepository = module.get(OrderRepository);
     orderFactory = module.get(OrderFactory);
-    cartGateway = module.get(CART_GATEWAY);
   });
 
   it('should be defined', () => {
@@ -67,7 +47,6 @@ describe('CreateOrderFromCartUseCase', () => {
   });
 
   it('should create an order successfully', async () => {
-    // Arrange
     const cartId = 1;
     const userId = 1;
     const cartInfo = OrderDtoTestFactory.createCheckoutCartInfo({
@@ -82,23 +61,19 @@ describe('CreateOrderFromCartUseCase', () => {
         }),
       ],
     });
-    const order = OrderTestFactory.createOrderEntity({ id: 1 });
+    const order = OrderTestFactory.createDomainOrder({ id: 1 });
 
     cartGateway.getCart.mockResolvedValue(Result.success(cartInfo));
     orderFactory.createFromCart.mockReturnValue(order);
     orderRepository.save.mockResolvedValue(Result.success(order));
 
-    const dto = {
+    const dto = OrderDtoTestFactory.createCreateOrderFromCartInput({
       cartId,
       userId,
-      shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
-    };
+    });
 
-    // Act
     const result = await useCase.execute(dto);
 
-    // Assert
     expect(cartGateway.getCart).toHaveBeenCalledWith(cartId);
     expect(orderFactory.createFromCart).toHaveBeenCalled();
     expect(orderRepository.save).toHaveBeenCalledWith(order);
@@ -106,22 +81,17 @@ describe('CreateOrderFromCartUseCase', () => {
   });
 
   it('should fail if cart fetch fails', async () => {
-    // Arrange
     const cartId = 1;
     const error = new UseCaseError('Cart fetch failed');
     cartGateway.getCart.mockResolvedValue(Result.failure(error));
 
-    const dto = {
+    const dto = OrderDtoTestFactory.createCreateOrderFromCartInput({
       cartId,
       userId: 1,
-      shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
-    };
+    });
 
-    // Act
     const result = await useCase.execute(dto);
 
-    // Assert
     ResultAssertionHelper.assertResultFailure(
       result,
       'Failed to fetch cart',
@@ -130,7 +100,6 @@ describe('CreateOrderFromCartUseCase', () => {
   });
 
   it('should fail if cart is empty', async () => {
-    // Arrange
     const cartId = 1;
     const emptyCartInfo = OrderDtoTestFactory.createCheckoutCartInfo({
       id: cartId,
@@ -140,17 +109,13 @@ describe('CreateOrderFromCartUseCase', () => {
 
     cartGateway.getCart.mockResolvedValue(Result.success(emptyCartInfo));
 
-    const dto = {
+    const dto = OrderDtoTestFactory.createCreateOrderFromCartInput({
       cartId,
       userId: 1,
-      shippingAddress: mockShippingAddress,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
-    };
+    });
 
-    // Act
     const result = await useCase.execute(dto);
 
-    // Assert
     ResultAssertionHelper.assertResultFailure(
       result,
       'Cannot create order from empty cart',

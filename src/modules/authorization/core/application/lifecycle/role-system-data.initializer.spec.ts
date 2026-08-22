@@ -1,3 +1,7 @@
+import {
+  MockPermissionRepository,
+  MockRoleRepository,
+} from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoleSystemDataInitializer } from './role-system-data.initializer';
 import { RoleRepository } from '../../domain/repositories/role.repository';
@@ -5,8 +9,6 @@ import { PermissionRepository } from '../../domain/repositories/permission.repos
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Role } from '../../domain/entities/role';
-import { MockPermissionRepository } from '../../../testing/mocks/permission-repository.mock';
-import { MockRoleRepository } from '../../../testing/mocks/role-repository.mock';
 import { LoggerTestHelper } from '../../../../../testing';
 import { AuthorizationDtoFactory } from 'src/modules/authorization/testing/factories/authorization.dto.factory';
 

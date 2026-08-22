@@ -12,18 +12,23 @@ export class OrderItemMapper {
     const orderItemProps: OrderItemProps = {
       id: entity.id,
       productId: entity.productId,
-      productName: entity.productName,
+      productName: entity.productName || 'Unknown Product',
+      sku: entity.sku || null,
+      imageUrl: entity.imageUrl || null,
       unitPrice: entity.unitPrice,
       quantity: entity.quantity,
     };
     return new OrderItem(orderItemProps);
   }
+
   static toEntity(domain: OrderItem): OrderItemEntity {
     const primitives = domain.toPrimitives();
     const itemPayload: OrderItemCreate = {
       id: primitives.id || 0,
       productId: primitives.productId,
       productName: primitives.productName,
+      sku: primitives.sku || null,
+      imageUrl: primitives.imageUrl || null,
       unitPrice: primitives.unitPrice,
       quantity: primitives.quantity,
       lineTotal: primitives.lineTotal,

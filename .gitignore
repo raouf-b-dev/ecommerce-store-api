@@ -30,6 +30,9 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
+# Cursor
+.cursor/plans/
+
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json
@@ -62,3 +65,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .env.*
 !.env.example
 .secrets
+
+# Database dumps (may contain PII / password hashes)
+/backups/

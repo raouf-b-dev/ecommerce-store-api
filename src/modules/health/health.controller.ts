@@ -1,12 +1,13 @@
 import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import {
   HealthCheck,
+  HealthCheckResult,
   HealthCheckService,
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 import { RedisHealthIndicator } from './indicators/redis.health-indicator';
 import { WebSocketHealthIndicator } from './indicators/websocket.health-indicator';
-import { ServiceUnavailableException } from '@nestjs/common';
+import { ProcessHealthIndicator } from './indicators/process.health-indicator';
 import { SkipThrottle } from '@nestjs/throttler';
 
 import { Public } from '../../guards/decorators/public.decorator';
@@ -20,22 +21,31 @@ export class HealthController {
     private readonly db: TypeOrmHealthIndicator,
     private readonly redis: RedisHealthIndicator,
     private readonly websocket: WebSocketHealthIndicator,
+    private readonly process: ProcessHealthIndicator,
   ) {}
 
   @Get()
   @HealthCheck()
-  async check() {
-    try {
-      return await this.health.check([
-        () => this.db.pingCheck('postgres', { timeout: 3000 }),
-        () => this.redis.isHealthy('redis'),
-        () => this.websocket.isHealthy('websocket'),
-      ]);
-    } catch (error) {
-      if (error instanceof ServiceUnavailableException) {
-        return error.getResponse();
-      }
-      throw error;
-    }
+  check(): Promise<HealthCheckResult> {
+    return this.health.check([
+      () => this.db.pingCheck('postgres', { timeout: 3000 }),
+      () => this.redis.isHealthy('redis'),
+      () => this.websocket.isHealthy('websocket'),
+    ]);
+  }
+
+  @Get('liveness')
+  @HealthCheck()
+  liveness(): Promise<HealthCheckResult> {
+    return this.health.check([() => this.process.isHealthy('process')]);
+  }
+
+  @Get('readiness')
+  @HealthCheck()
+  readiness(): Promise<HealthCheckResult> {
+    // PostgreSQL is required for traffic; Redis degradation is reported via /health and metrics.
+    return this.health.check([
+      () => this.db.pingCheck('postgres', { timeout: 3000 }),
+    ]);
   }
 }

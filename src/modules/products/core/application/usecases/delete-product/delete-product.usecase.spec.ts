@@ -1,6 +1,6 @@
 // src/modules/Products/application/usecases/delete-product/delete-product.usecase.spec.ts
+import { MockProductRepository } from 'src/modules/products/testing';
 import { DeleteProductUseCase } from './delete-product.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 

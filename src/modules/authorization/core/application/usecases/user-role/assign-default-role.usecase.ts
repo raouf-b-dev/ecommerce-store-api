@@ -9,17 +9,19 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 @Injectable()
-export class AssignDefaultRoleUseCase
-  implements UseCase<number, void, UseCaseError>
-{
+export class AssignDefaultRoleUseCase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly userRoleAssignmentRepository: UserRoleAssignmentRepository,
     private readonly roleRepository: RoleRepository,
   ) {}
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
     const [existingUserRoleResult, defaultRoleResult] = await Promise.all([
-      await this.userRoleAssignmentRepository.findByUserId(userId),
-      await this.roleRepository.findByCode(DEFAULT_ROLE_CODE),
+      this.userRoleAssignmentRepository.findByUserId(userId),
+      this.roleRepository.findByCode(DEFAULT_ROLE_CODE),
     ]);
 
     if (existingUserRoleResult.isFailure) return existingUserRoleResult;

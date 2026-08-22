@@ -24,26 +24,19 @@ export interface ListOrdersQuery {
 }
 
 export abstract class OrderRepository {
-  abstract save(order: Order): Promise<Result<Order, RepositoryError>>;
-  abstract updateStatus(
+  abstract findByIdForUpdate(
     id: number,
-    status: OrderStatus,
-  ): Promise<Result<void, RepositoryError>>;
-  abstract updatePaymentId(
-    orderId: number,
-    paymentId: number,
-  ): Promise<Result<void, RepositoryError>>;
-  abstract updateItemsInfo(
-    id: number,
-    updateOrderItemDto: OrderItemInput[],
+  ): Promise<
+    Result<{ entity: Order; expectedVersion: number }, RepositoryError>
+  >;
+  abstract save(
+    order: Order,
+    expectedVersion?: number,
   ): Promise<Result<Order, RepositoryError>>;
   abstract findById(id: number): Promise<Result<Order, RepositoryError>>;
   abstract listOrders(
     query: ListOrdersQuery,
   ): Promise<Result<Order[], RepositoryError>>;
-  abstract cancelOrder(
-    orderPrimitives: Order,
-  ): Promise<Result<void, RepositoryError>>;
   abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
   abstract findByStatusBefore(
     status: OrderStatus,

@@ -43,10 +43,14 @@ export class PostgresReservationRepository implements ReservationRepository {
       const reservation = reservationResult.value;
 
       const savedReservation = await this.dataSource.transaction(
+        'REPEATABLE READ',
         async (manager) => {
           // 1. Check and Update Inventory
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
 
           // Lock inventory rows for update
           const inventoryItems = await manager.find(InventoryEntity, {
@@ -170,6 +174,7 @@ export class PostgresReservationRepository implements ReservationRepository {
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
       const savedReservation = await this.dataSource.transaction(
+        'REPEATABLE READ',
         async (manager) => {
           // Check current status in DB
           if (!reservation.id) {
@@ -178,6 +183,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
+            loadEagerRelations: false,
           });
 
           if (!currentEntity) {
@@ -193,7 +199,10 @@ export class PostgresReservationRepository implements ReservationRepository {
 
           // Restore Inventory
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
           const inventoryItems = await manager.find(InventoryEntity, {
             where: { productId: In(productIds) },
             lock: { mode: 'pessimistic_write' },
@@ -235,6 +244,7 @@ export class PostgresReservationRepository implements ReservationRepository {
   ): Promise<Result<Reservation, RepositoryError>> {
     try {
       const savedReservation = await this.dataSource.transaction(
+        'REPEATABLE READ',
         async (manager) => {
           if (!reservation.id) {
             throw new RepositoryError('Reservation ID is required');
@@ -242,6 +252,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           const currentEntity = await manager.findOne(ReservationEntity, {
             where: { id: reservation.id },
             lock: { mode: 'pessimistic_write' },
+            loadEagerRelations: false,
           });
 
           if (!currentEntity) {
@@ -253,7 +264,10 @@ export class PostgresReservationRepository implements ReservationRepository {
           }
 
           const items = reservation.items;
-          const productIds = items.map((i) => i.productId);
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
           const inventoryItems = await manager.find(InventoryEntity, {
             where: { productId: In(productIds) },
             lock: { mode: 'pessimistic_write' },
@@ -281,6 +295,42 @@ export class PostgresReservationRepository implements ReservationRepository {
       }
       return ErrorFactory.RepositoryError(
         'Failed to confirm reservation',
+        error,
+      );
+    }
+  }
+
+  async sumPendingReservedByProductIds(
+    productIds: number[],
+    asOfDate: Date = new Date(),
+  ): Promise<Result<Map<number, number>, RepositoryError>> {
+    try {
+      if (productIds.length === 0) {
+        return Result.success(new Map<number, number>());
+      }
+
+      const rows: { productId: number; totalQuantity: string }[] =
+        await this.dataSource
+          .createQueryBuilder()
+          .select('ri.product_id', 'productId')
+          .addSelect('SUM(ri.quantity)', 'totalQuantity')
+          .from('reservation_items', 'ri')
+          .innerJoin('reservations', 'r', 'ri.reservation_id = r.id')
+          .where('r.status = :status', { status: ReservationStatus.PENDING })
+          .andWhere('r.expires_at > :asOfDate', { asOfDate })
+          .andWhere('ri.product_id IN (:...productIds)', { productIds })
+          .groupBy('ri.product_id')
+          .getRawMany();
+
+      const resultMap = new Map<number, number>();
+      for (const row of rows) {
+        resultMap.set(Number(row.productId), Number(row.totalQuantity) || 0);
+      }
+
+      return Result.success(resultMap);
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to aggregate pending reservation quantities',
         error,
       );
     }

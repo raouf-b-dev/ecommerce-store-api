@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 // Creates .env.development/.env.production/.env.staging/.env.test from .env.example
-// Also creates .secrets from .secrets.example
+// Also creates .secrets from .secrets.example with local/CI-ready dev defaults
 //
 // Usage:
 //   node scripts/generate-envs.js
 //   node scripts/generate-envs.js --envs=development,staging
+//   node scripts/generate-envs.js --secrets-only
 //   node scripts/generate-envs.js --from=.env.example --fromSecrets=.secrets.example --overwrite
 //   npm run env:init -- --overwrite
 
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
-const { generateKeyPairSync } = require('crypto');
+const crypto = require('crypto');
+const { generateKeyPairSync } = crypto;
 
 const args = process.argv.slice(2).reduce((acc, a) => {
   const [k, v] = a.startsWith('--') ? a.slice(2).split('=') : [a, true];
@@ -27,17 +29,28 @@ const ENV_LIST = (args.envs || 'development,production,staging,test')
 const ENV_TEMPLATE = args.from || '.env.example';
 const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
 const FORCE = Boolean(args.overwrite || args.force);
+const SECRETS_ONLY = Boolean(args.secretsOnly || args['secrets-only']);
 
-// Helpers
-function generateRSAPrivateKey() {
+const RSA_MODULUS_LENGTH = 4096;
+
+function generatePEM() {
   const { privateKey } = generateKeyPairSync('rsa', {
-    modulusLength: 2048,
+    modulusLength: RSA_MODULUS_LENGTH,
     privateKeyEncoding: {
       type: 'pkcs8',
       format: 'pem',
     },
   });
-  return `"${privateKey.replace(/\r?\n/g, '\\n')}"`;
+  return privateKey;
+}
+
+function toDotenvEscaped(pem) {
+  return `"${pem.replace(/\r?\n/g, '\\n')}"`;
+}
+
+// Base64 of raw PEM — paste verbatim into GitHub Secrets; CI decodes before writing .env.test
+function toPortableSecret(pem) {
+  return Buffer.from(pem, 'utf8').toString('base64');
 }
 
 async function readTemplate(file) {
@@ -63,12 +76,16 @@ function buildLinesForEnv(lines, envName) {
     if (!isKV(line)) return line;
     const key = keyOf(line);
 
-    // Global Overrides
     if (key === 'NODE_ENV') return `NODE_ENV=${envName}`;
     if (key === 'APP_VERSION') return `APP_VERSION=${pkgVersion}`;
     if (key === 'REDIS_KEYPREFIX') return `REDIS_KEYPREFIX=ecom:${envName}:`;
 
-    // Security/Safety Overrides
+    if (key === 'TRUST_PROXY') {
+      if (envName === 'production' || envName === 'staging')
+        return 'TRUST_PROXY=1';
+      return 'TRUST_PROXY=false';
+    }
+
     if (key === 'IS_DB_SYNCHRONIZE') {
       return isProdLike ? 'IS_DB_SYNCHRONIZE=false' : 'IS_DB_SYNCHRONIZE=true';
     }
@@ -79,20 +96,40 @@ function buildLinesForEnv(lines, envName) {
     }
 
     if (key === 'JWT_PRIVATE_KEY') {
-      return `JWT_PRIVATE_KEY=${generateRSAPrivateKey()}`;
+      return `JWT_PRIVATE_KEY=${toDotenvEscaped(generatePEM())}`;
     }
 
     if (key === 'METRICS_API_KEY') {
-      const crypto = require('crypto');
       return `METRICS_API_KEY=${crypto.randomBytes(32).toString('hex')}`;
     }
 
     if (key === 'GRAFANA_ADMIN_PASSWORD') {
-      const crypto = require('crypto');
       return `GRAFANA_ADMIN_PASSWORD=${crypto.randomBytes(16).toString('hex')}`;
     }
 
-    // Default: keep the dummy variables/defaults from .env.example
+    return line;
+  });
+}
+
+function buildLinesForSecrets(lines) {
+  return lines.map((line) => {
+    if (!isKV(line)) return line;
+    const key = keyOf(line);
+
+    if (key === 'CI_DB_USERNAME') return 'CI_DB_USERNAME=postgres';
+    if (key === 'CI_DB_PASSWORD') return 'CI_DB_PASSWORD=postgres';
+    if (key === 'CI_DB_DATABASE') return 'CI_DB_DATABASE=test_db';
+    if (key === 'CI_REDIS_PASSWORD') return 'CI_REDIS_PASSWORD=secret';
+    if (key === 'CI_REDIS_KEYPREFIX') return 'CI_REDIS_KEYPREFIX=ecom:test:';
+
+    if (key === 'CI_JWT_PRIVATE_KEY') {
+      return `CI_JWT_PRIVATE_KEY=${toPortableSecret(generatePEM())}`;
+    }
+
+    if (key === 'CI_METRICS_API_KEY') {
+      return `CI_METRICS_API_KEY=${crypto.randomBytes(32).toString('hex')}`;
+    }
+
     return line;
   });
 }
@@ -104,35 +141,34 @@ async function writeFile(targetPath, contentLines) {
   });
 }
 
-// MAIN
 (async () => {
-  // ENV files
-  const envTemplatePath = path.resolve(process.cwd(), ENV_TEMPLATE);
-  const envTemplateLines = await readTemplate(envTemplatePath);
+  if (!SECRETS_ONLY) {
+    const envTemplatePath = path.resolve(process.cwd(), ENV_TEMPLATE);
+    const envTemplateLines = await readTemplate(envTemplatePath);
 
-  if (envTemplateLines.length === 0) {
-    console.error(`⚠️  Env template not found or empty: ${ENV_TEMPLATE}`);
-  } else {
-    for (const env of ENV_LIST) {
-      const outName = `.env.${env}`;
-      const outPath = path.resolve(process.cwd(), outName);
+    if (envTemplateLines.length === 0) {
+      console.error(`⚠️  Env template not found or empty: ${ENV_TEMPLATE}`);
+    } else {
+      for (const env of ENV_LIST) {
+        const outName = `.env.${env}`;
+        const outPath = path.resolve(process.cwd(), outName);
 
-      const exists = fs.existsSync(outPath);
-      if (exists && !FORCE) {
-        console.log(
-          `⏭️  Skipping ${outName} (exists). Use --overwrite to overwrite.`,
-        );
-        continue;
+        const exists = fs.existsSync(outPath);
+        if (exists && !FORCE) {
+          console.log(
+            `⏭️  Skipping ${outName} (exists). Use --overwrite to overwrite.`,
+          );
+          continue;
+        }
+
+        const lines = buildLinesForEnv(envTemplateLines, env);
+        await writeFile(outPath, lines);
+
+        console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
       }
-
-      const lines = buildLinesForEnv(envTemplateLines, env);
-      await writeFile(outPath, lines);
-
-      console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
     }
   }
 
-  // SECRETS file
   const secretsTemplatePath = path.resolve(process.cwd(), SECRETS_TEMPLATE);
   const secretsTemplateLines = await readTemplate(secretsTemplatePath);
 
@@ -147,16 +183,16 @@ async function writeFile(targetPath, contentLines) {
     const exists = fs.existsSync(outSecretsPath);
     if (exists && !FORCE) {
       console.log(
-        `⏭️  Skipping ${outSecrets} (exists). Use --force to overwrite.`,
+        `⏭️  Skipping ${outSecrets} (exists). Use --overwrite to overwrite.`,
       );
     } else {
-      // Keep keys from template, blank values to force filling
-      const lines = secretsTemplateLines.map((line) =>
-        isKV(line) ? `${keyOf(line)}=` : line,
-      );
+      const lines = buildLinesForSecrets(secretsTemplateLines);
 
       await writeFile(outSecretsPath, lines);
       console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outSecrets}`);
+      console.log(
+        `   → Copy CI_JWT_PRIVATE_KEY and CI_METRICS_API_KEY into GitHub Secrets as-is.`,
+      );
     }
   }
 })();

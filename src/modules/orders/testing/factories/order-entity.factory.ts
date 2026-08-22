@@ -1,4 +1,4 @@
-// src/modules/orders/testing/factories/order-entity.test.factory.ts
+import { DeepPartial } from 'typeorm';
 import { OrderEntity } from '../../secondary-adapters/orm/order.schema';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { OrderItemEntity } from '../../secondary-adapters/orm/order-item.schema';
@@ -18,7 +18,7 @@ export class OrderEntityTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddressId: 1,
 
       shippingAddress: this.createShippingAddressEntity(),
@@ -29,10 +29,32 @@ export class OrderEntityTestFactory {
       shippingCost: 0,
       totalPrice: 100,
       status: OrderStatus.PENDING_PAYMENT,
-
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };
+
+    return { ...defaultEntity, ...overrides };
+  }
+
+  static createUnsavedOrderEntity(
+    overrides?: Partial<Omit<OrderEntity, 'id' | 'items' | 'shippingAddress'>>,
+  ): DeepPartial<OrderEntity> {
+    const defaultEntity: Omit<OrderEntity, 'id' | 'items' | 'shippingAddress'> =
+      {
+        userId: 1,
+        paymentId: null,
+        paymentMethod: PaymentMethodType.STRIPE,
+        shippingAddressId: 1,
+        userNotes: 'Test order notes',
+        subtotal: 100,
+        shippingCost: 0,
+        totalPrice: 100,
+        status: OrderStatus.PENDING_PAYMENT,
+        version: 1,
+        createdAt: new Date('2025-01-01T10:00:00Z'),
+        updatedAt: new Date('2025-01-01T10:00:00Z'),
+      };
 
     return { ...defaultEntity, ...overrides };
   }
@@ -70,6 +92,25 @@ export class OrderEntityTestFactory {
       id: 1,
       productId: 3,
       productName: 'Test Product',
+      sku: 'SKU-001',
+      imageUrl: null,
+      unitPrice: 100,
+      quantity: 1,
+      lineTotal: 100,
+      order: null as unknown as OrderEntity,
+    };
+
+    return { ...defaultEntity, ...overrides };
+  }
+
+  static createUnsavedOrderItemEntity(
+    overrides?: Partial<Omit<OrderItemEntity, 'id'>>,
+  ): DeepPartial<OrderItemEntity> {
+    const defaultEntity: Omit<OrderItemEntity, 'id'> = {
+      productId: 3,
+      productName: 'Test Product',
+      sku: 'SKU-001',
+      imageUrl: null,
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
@@ -88,22 +129,12 @@ export class OrderEntityTestFactory {
         id: i + 1,
         productId: i + 1,
         productName: `Product ${i + 1}`,
+        sku: `SKU-${i + 1}`,
         quantity: i + 1,
         unitPrice: 10 * (i + 1),
         lineTotal: 10 * (i + 1) * (i + 1),
       }),
     );
-  }
-
-  /**
-   * Creates COD OrderEntity
-   */
-  static createCODOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
-    return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      paymentId: null,
-      ...overrides,
-    });
   }
 
   /**
@@ -157,7 +188,7 @@ export class OrderEntityTestFactory {
    */
   static createOrderEntityWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
+    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
     return this.createOrderEntity({
@@ -175,19 +206,6 @@ export class OrderEntityTestFactory {
   ): OrderEntity {
     return this.createOrderEntity({
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 1,
-      ...overrides,
-    });
-  }
-
-  /**
-   * Creates PayPal OrderEntity
-   */
-  static createPayPalOrderEntity(
-    overrides?: Partial<OrderEntity>,
-  ): OrderEntity {
-    return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.PAYPAL,
       paymentId: 1,
       ...overrides,
     });

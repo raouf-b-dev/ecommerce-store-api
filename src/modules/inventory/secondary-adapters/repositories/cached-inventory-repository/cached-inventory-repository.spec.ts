@@ -1,4 +1,10 @@
 // src/modules/inventory/secondary-adapters/repositories/cached-inventory-repository/cached-inventory-repository.spec.ts
+import {
+  InventoryBuilder,
+  MockInventoryRepository,
+  InventoryCommandTestFactory,
+  InventoryTestFactory,
+} from 'src/modules/inventory/testing';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import {
   InventoryCacheMapper,
@@ -8,11 +14,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { InventoryBuilder } from '../../../testing/builders/inventory.test.builder';
-import { MockInventoryRepository } from '../../../testing/mocks/inventory-repository.mock';
 import { CachedInventoryRepository } from './cached-inventory-repository';
-import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
-import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { MockCacheService } from '../../../../../testing';
 
 describe('CachedInventoryRepository', () => {
@@ -430,15 +432,17 @@ describe('CachedInventoryRepository', () => {
       const newCachedInventory =
         InventoryCacheMapper.toCache(newDomainInventory);
 
-      postgresRepo.mockSuccessfulSave(newDomainInventory);
+      postgresRepo.mockSuccessfulSave();
 
       // Act
       const result = await repository.save(newDomainInventory);
 
       // Assert
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(newDomainInventory);
-      expect(postgresRepo.save).toHaveBeenCalledWith(newDomainInventory);
+      expect(postgresRepo.save).toHaveBeenCalledWith(
+        newDomainInventory,
+        undefined,
+      );
 
       expect(cacheService.set).toHaveBeenCalledWith(
         idKey(newInventory.id!),
@@ -465,56 +469,10 @@ describe('CachedInventoryRepository', () => {
 
       // Assert
       ResultAssertionHelper.assertResultFailureWithError(result, dbError);
-      expect(postgresRepo.save).toHaveBeenCalledWith(domainInventory);
-      expect(cacheService.set).not.toHaveBeenCalled();
-      expect(cacheService.delete).not.toHaveBeenCalled();
-    });
-  });
-
-  // --- Update Tests ---
-  describe('update', () => {
-    it('should update in postgres, cache the new result, and delete the cached flag', async () => {
-      // Arrange
-      const updatedInventory = domainInventory;
-      const updatedCachedInventory =
-        InventoryCacheMapper.toCache(updatedInventory);
-
-      postgresRepo.mockSuccessfulUpdate(updatedInventory);
-
-      // Act
-      const result = await repository.update(updatedInventory);
-
-      // Assert
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual(updatedInventory);
-      expect(postgresRepo.update).toHaveBeenCalledWith(updatedInventory);
-
-      expect(cacheService.set).toHaveBeenCalledWith(
-        idKey(updatedInventory.id!),
-        updatedCachedInventory,
-        { ttl: INVENTORY_REDIS.EXPIRATION },
+      expect(postgresRepo.save).toHaveBeenCalledWith(
+        domainInventory,
+        undefined,
       );
-      expect(cacheService.set).toHaveBeenCalledWith(
-        productKey(updatedInventory.productId),
-        updatedCachedInventory,
-        { ttl: INVENTORY_REDIS.EXPIRATION },
-      );
-      expect(cacheService.delete).toHaveBeenCalledWith(
-        INVENTORY_REDIS.IS_CACHED_FLAG,
-      );
-    });
-
-    it('should return failure if postgres update fails', async () => {
-      // Arrange
-      const dbError = new RepositoryError('Update failed');
-      postgresRepo.update.mockResolvedValue(Result.failure(dbError));
-
-      // Act
-      const result = await repository.update(domainInventory);
-
-      // Assert
-      ResultAssertionHelper.assertResultFailureWithError(result, dbError);
-      expect(postgresRepo.update).toHaveBeenCalledWith(domainInventory);
       expect(cacheService.set).not.toHaveBeenCalled();
       expect(cacheService.delete).not.toHaveBeenCalled();
     });
@@ -562,6 +520,21 @@ describe('CachedInventoryRepository', () => {
         productKey(productId),
       );
       postgresRepo.verifyDeleteCalledWith(inventoryId);
+    });
+
+    it('should delete product key even when the ID cache document is invalid', async () => {
+      const unreadable: InventoryForCache = {
+        ...InventoryCacheMapper.toCache(domainInventory),
+        availableQuantity: -1,
+      };
+      cacheService.get.mockResolvedValueOnce(unreadable);
+      postgresRepo.mockSuccessfulDelete();
+
+      const result = await repository.delete(inventoryId);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(cacheService.delete).toHaveBeenCalledWith(productKey(productId));
+      expect(cacheService.delete).toHaveBeenCalledWith(idKey(inventoryId));
     });
 
     it('should return failure if postgres delete fails', async () => {

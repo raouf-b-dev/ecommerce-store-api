@@ -12,8 +12,8 @@ import { ReleaseStockStep } from './primary-adapters/jobs/release-stock.job';
 import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
 import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
-import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
+import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-orders.job';
 
 @Processor('checkout')
 @Injectable()
@@ -34,8 +34,8 @@ export class OrdersProcessor
     private readonly cancelOrderStep: CancelOrderStep,
     private readonly refundPaymentStep: RefundPaymentStep,
     private readonly finalizeCheckoutStep: FinalizeCheckoutStep,
-    private readonly confirmOrderStep: ConfirmOrderStep,
     private readonly releaseOrderStockJob: ReleaseOrderStockJob,
+    private readonly expirePendingOrdersJob: ExpirePendingOrdersJob,
   ) {
     super();
   }
@@ -45,7 +45,7 @@ export class OrdersProcessor
     await this.worker.close();
   }
 
-  async process(job: Job): Promise<any> {
+  async process(job: Job): Promise<unknown> {
     this.logger.log(`Processing job ${job.name} (ID: ${job.id})...`);
 
     switch (job.name) {
@@ -63,8 +63,8 @@ export class OrdersProcessor
         return this.clearCartStep.handle(job);
       case JobNames.FINALIZE_CHECKOUT:
         return this.finalizeCheckoutStep.handle(job);
-      case JobNames.CONFIRM_ORDER:
-        return this.confirmOrderStep.handle(job);
+      case JobNames.EXPIRE_PENDING_ORDERS:
+        return this.expirePendingOrdersJob.handle(job);
 
       // Compensations
       case JobNames.RELEASE_STOCK:

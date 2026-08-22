@@ -1,27 +1,35 @@
-// src/modules/carts/infrastructure/repositories/postgres-cart-repository/postgres.cart-repository.spec.ts
+import { CartEntityTestFactory } from 'src/modules/carts/testing';
+import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, DeleteResult } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CartEntity } from '../../orm/cart.schema';
 import { PostgresCartRepository } from './postgres.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
-import { CartEntityTestFactory } from '../../../testing/factories/cart-entity.factory';
-import { CartTestFactory } from '../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { CartMapper } from '../../persistence/mappers/cart.mapper';
+import {
+  createMockDataSource,
+  createMockQueryBuilder,
+  createMockTransactionManager,
+} from '../../../../../testing/mocks/typeorm.mocks';
 
 describe('PostgresCartRepository', () => {
   let repository: PostgresCartRepository;
   let mockOrmRepo: jest.Mocked<Repository<CartEntity>>;
+  let mockQueryBuilder: ReturnType<typeof createMockQueryBuilder<CartEntity>>;
+  let mockTransactionManager: ReturnType<typeof createMockTransactionManager>;
 
   const mockCartEntity = CartEntityTestFactory.createCartEntityWithItems();
-  const mockCart = Cart.fromPrimitives(
-    CartTestFactory.createMockCart({
-      id: mockCartEntity.id,
-      userId: mockCartEntity.userId,
-    }),
-  );
 
   beforeEach(async () => {
+    mockQueryBuilder = createMockQueryBuilder<CartEntity>();
+    mockTransactionManager = createMockTransactionManager({
+      mockQueryBuilder,
+    });
+    const mockDataSource = createMockDataSource(mockTransactionManager);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostgresCartRepository,
@@ -33,6 +41,7 @@ describe('PostgresCartRepository', () => {
             delete: jest.fn(),
           },
         },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -41,30 +50,6 @@ describe('PostgresCartRepository', () => {
   });
 
   afterEach(() => jest.clearAllMocks());
-
-  describe('create', () => {
-    it('should create cart successfully', async () => {
-      const dto = { userId: 123 };
-      mockOrmRepo.save.mockResolvedValue(mockCartEntity);
-
-      const result = await repository.create(dto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(mockOrmRepo.save).toHaveBeenCalled();
-    });
-
-    it('should return error on DB failure', async () => {
-      const dto = { userId: 123 };
-      mockOrmRepo.save.mockRejectedValue(new Error('DB Error'));
-
-      const result = await repository.create(dto);
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to create cart',
-      );
-    });
-  });
 
   describe('findById', () => {
     it('should find cart by id successfully', async () => {
@@ -100,7 +85,7 @@ describe('PostgresCartRepository', () => {
     it('should find cart by userId successfully', async () => {
       mockOrmRepo.findOne.mockResolvedValue(mockCartEntity);
 
-      const result = await repository.findByuserId(mockCartEntity.userId!);
+      const result = await repository.findByuserId(mockCartEntity.userId);
 
       ResultAssertionHelper.assertResultSuccess(result);
       if (result.isSuccess) {
@@ -117,28 +102,63 @@ describe('PostgresCartRepository', () => {
     });
   });
 
-  describe('findBySessionId', () => {
-    it('should find cart by sessionId successfully', async () => {
-      const sessionCartEntity = CartEntityTestFactory.createCartEntity({
-        sessionId: 123,
-        userId: null,
-      });
-      mockOrmRepo.findOne.mockResolvedValue(sessionCartEntity);
+  describe('save', () => {
+    it('should insert via save when expectedVersion is omitted', async () => {
+      mockOrmRepo.save.mockResolvedValue(mockCartEntity);
+      const cart = CartMapper.toDomain(mockCartEntity);
 
-      const result = await repository.findBySessionId(123);
+      const result = await repository.save(cart);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.sessionId).toBe(123);
+      expect(mockOrmRepo.save).toHaveBeenCalled();
+    });
+
+    it('should OCC-update with WHERE version when expectedVersion is provided', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 1 });
+      mockTransactionManager.find.mockResolvedValue(mockCartEntity.items);
+      mockOrmRepo.findOne.mockResolvedValue(mockCartEntity);
+      const cart = CartMapper.toDomain(mockCartEntity);
+
+      const result = await repository.save(cart, 1);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.save).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.update).toHaveBeenCalledWith(CartEntity);
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'id = :id AND version = :expectedVersion',
+        { id: cart.id, expectedVersion: 1 },
+      );
+    });
+
+    it('should return conflict when OCC update affects 0 rows and the cart exists', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockTransactionManager.findOne.mockResolvedValue(mockCartEntity);
+      const cart = CartMapper.toDomain(mockCartEntity);
+
+      const result = await repository.save(cart, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Optimistic lock failure',
+        RepositoryError,
+      );
+      if (result.isFailure) {
+        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
       }
     });
 
-    it('should return error if cart not found', async () => {
-      mockOrmRepo.findOne.mockResolvedValue(null);
+    it('should return not-found when OCC update affects 0 rows and the cart is missing', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ raw: [], affected: 0 });
+      mockTransactionManager.findOne.mockResolvedValue(null);
+      const cart = CartMapper.toDomain(mockCartEntity);
 
-      const result = await repository.findBySessionId(0);
+      const result = await repository.save(cart, 1);
 
-      ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart not found',
+        RepositoryError,
+      );
     });
   });
 
@@ -147,7 +167,7 @@ describe('PostgresCartRepository', () => {
       mockOrmRepo.delete.mockResolvedValue({
         raw: [],
         affected: 1,
-      } as DeleteResult);
+      });
 
       const result = await repository.delete(mockCartEntity.id);
 
@@ -158,7 +178,7 @@ describe('PostgresCartRepository', () => {
       mockOrmRepo.delete.mockResolvedValue({
         raw: [],
         affected: 0,
-      } as DeleteResult);
+      });
 
       const result = await repository.delete(0);
 

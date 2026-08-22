@@ -21,7 +21,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health/readiness']
       interval: 30s
       timeout: 5s
       start_period: 45s

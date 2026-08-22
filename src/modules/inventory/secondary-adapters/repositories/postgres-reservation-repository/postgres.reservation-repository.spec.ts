@@ -1,11 +1,13 @@
+import {
+  InventoryCommandTestFactory,
+  ReservationTestFactory,
+} from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository, EntityManager } from 'typeorm';
 import { PostgresReservationRepository } from './postgres.reservation-repository';
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
-import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
-import { ReservationTestFactory } from '../../../testing/factories/reservation.test.factory';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
 
 describe('PostgresReservationRepository', () => {

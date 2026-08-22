@@ -2,6 +2,7 @@
 import { IOrder } from '../../core/domain/interfaces/order.interface';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { Order, OrderProps } from '../../core/domain/entities/order';
+import { ShippingAddressProps } from '../../core/domain/value-objects/shipping-address';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderTestFactory {
@@ -11,7 +12,7 @@ export class OrderTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddressId: 1,
       currency: 'USD',
       // Order items
@@ -27,19 +28,7 @@ export class OrderTestFactory {
       ],
 
       // Shipping address
-      shippingAddress: {
-        id: 1,
-        firstName: 'John',
-        lastName: 'Doe',
-        street: '123 Main Street',
-        street2: null,
-        city: 'New York',
-        state: 'NY',
-        postalCode: '10001',
-        country: 'dz',
-        phone: '+1234567890',
-        deliveryInstructions: null,
-      },
+      shippingAddress: this.createShippingAddressProps(),
 
       // Pricing
       subtotal: 10,
@@ -107,39 +96,17 @@ export class OrderTestFactory {
   static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.CANCELLED,
-      userNotes: 'Order cancelled by user',
       ...overrides,
     });
   }
 
-  static createCancellableOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createPendingPaymentOrder(overrides);
-  }
-
-  static createNonCancellableOrder(overrides?: Partial<IOrder>): IOrder {
+  static createCompletedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createDeliveredOrder(overrides);
-  }
-
-  static createCashOnDeliveryOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      paymentId: null, // No payment until delivery
-      status: OrderStatus.PENDING_CONFIRMATION, // COD orders start as pending confirmation
-      ...overrides,
-    });
   }
 
   static createStripeOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 1,
-      ...overrides,
-    });
-  }
-
-  static createPayPalOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      paymentMethod: PaymentMethodType.PAYPAL,
       paymentId: 1,
       ...overrides,
     });
@@ -166,45 +133,17 @@ export class OrderTestFactory {
     });
   }
 
-  static createCODOrderReadyForConfirmation(): IOrder {
-    // COD orders can be confirmed immediately - they start in PENDING_CONFIRMATION
-    return this.createMockOrder({
-      status: OrderStatus.PENDING_CONFIRMATION,
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      paymentId: null,
-    });
-  }
-
   static createOnlineOrderReadyForConfirmation(): IOrder {
-    // Online orders ready for confirmation have completed payment
     return this.createMockOrder({
       status: OrderStatus.PENDING_PAYMENT,
       paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: 1, // Payment is complete - ready to confirm
-    });
-  }
-
-  static createOnlineOrderNotReadyForConfirmation(): IOrder {
-    // Online orders not ready for confirmation still have pending payment
-    return this.createMockOrder({
-      status: OrderStatus.PENDING_PAYMENT,
-      paymentMethod: PaymentMethodType.STRIPE,
-      paymentId: null, // No payment yet - cannot confirm
-    });
-  }
-
-  static createRefundedOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      status: OrderStatus.REFUNDED,
       paymentId: 1,
-      ...overrides,
     });
   }
 
-  // Additional helper for orders with payment
   static createOrderWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.CREDIT_CARD,
+    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
     overrides?: Partial<IOrder>,
   ): IOrder {
     return this.createMockOrder({
@@ -214,12 +153,32 @@ export class OrderTestFactory {
     });
   }
 
+  static createShippingAddressProps(
+    overrides?: Partial<ShippingAddressProps>,
+  ): ShippingAddressProps {
+    const base: ShippingAddressProps = {
+      id: 1,
+      firstName: 'John',
+      lastName: 'Doe',
+      street: '123 Main Street',
+      street2: null,
+      city: 'New York',
+      state: 'NY',
+      postalCode: '10001',
+      country: 'dz',
+      phone: '+1234567890',
+      deliveryInstructions: null,
+    };
+
+    return { ...base, ...overrides };
+  }
+
   static createOrderProps(overrides?: Partial<OrderProps>): OrderProps {
     const baseProps: OrderProps = {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.CREDIT_CARD,
+      paymentMethod: PaymentMethodType.STRIPE,
       shippingAddressId: 1,
       items: [
         {
@@ -230,29 +189,18 @@ export class OrderTestFactory {
           unitPrice: 10,
         },
       ],
-      shippingAddress: {
-        id: 1,
-        firstName: 'John',
-        lastName: 'Doe',
-        street: '123 Main Street',
-        street2: null,
-        city: 'New York',
-        state: 'NY',
-        postalCode: '10001',
-        country: 'dz',
-        phone: '+1234567890',
-        deliveryInstructions: null,
-      },
-      userNotes: 'Please ring doorbell upon delivery',
+      shippingAddress: this.createShippingAddressProps(),
       status: OrderStatus.PENDING_PAYMENT,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
+      userNotes: 'Please ring doorbell upon delivery',
     };
 
     return { ...baseProps, ...overrides };
   }
 
-  static createOrderEntity(overrides?: Partial<OrderProps>): Order {
-    return new Order(this.createOrderProps(overrides));
+  static createDomainOrder(overrides?: Partial<OrderProps>): Order {
+    const props = this.createOrderProps(overrides);
+    return Order.fromPrimitives(props);
   }
 }

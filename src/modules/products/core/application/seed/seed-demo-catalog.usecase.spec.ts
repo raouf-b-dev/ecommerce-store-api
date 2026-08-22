@@ -6,7 +6,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DEMO_SEED_PRODUCTS } from './demo-products';
 import { IProduct } from '../../domain/interfaces/product.interface';
-import { CreateProductInput } from '../../domain/repositories/product-repository';
+import { CreateProductCommand } from '../commands/create-product.command';
 
 describe('SeedDemoCatalogUseCase', () => {
   let useCase: SeedDemoCatalogUseCase;
@@ -45,17 +45,26 @@ describe('SeedDemoCatalogUseCase', () => {
   });
 
   it('should seed missing catalog products and return them', async () => {
-    listProductsUseCase.execute.mockResolvedValue(Result.success([]));
-    createProductUseCase.execute.mockImplementation((cmd: CreateProductInput) =>
-      Promise.resolve(
-        Result.success({
-          id: 100 + (cmd.sku?.length ?? 0),
-          sku: cmd.sku ?? '',
-          name: cmd.name,
-          description: cmd.description,
-          price: cmd.price,
-        } as IProduct),
-      ),
+    listProductsUseCase.execute.mockResolvedValue(
+      Result.success({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+      }),
+    );
+    createProductUseCase.execute.mockImplementation(
+      (cmd: CreateProductCommand) =>
+        Promise.resolve(
+          Result.success({
+            id: 100 + (cmd.sku?.length ?? 0),
+            sku: cmd.sku ?? '',
+            name: cmd.name,
+            description: cmd.description,
+            price: cmd.price,
+          } as IProduct),
+        ),
     );
 
     const result = await useCase.execute();
@@ -71,18 +80,28 @@ describe('SeedDemoCatalogUseCase', () => {
   });
 
   it('should skip seeding for products that already exist', async () => {
-    const existing: IProduct[] = DEMO_SEED_PRODUCTS.map(
-      (seed, idx) =>
-        ({
-          id: 500 + idx,
-          sku: seed.sku,
-          name: seed.name,
-          description: seed.description,
-          price: seed.price,
-        }) as IProduct,
-    );
+    const existing = DEMO_SEED_PRODUCTS.map((seed, idx) => ({
+      id: 500 + idx,
+      sku: seed.sku,
+      name: seed.name,
+      slug: seed.sku.toLowerCase(),
+      price: seed.price,
+      currency: 'USD',
+      imageUrl: null,
+      categoryId: null,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    }));
 
-    listProductsUseCase.execute.mockResolvedValue(Result.success(existing));
+    listProductsUseCase.execute.mockResolvedValue(
+      Result.success({
+        items: existing,
+        total: existing.length,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      }),
+    );
 
     const result = await useCase.execute();
 
@@ -111,7 +130,16 @@ describe('SeedDemoCatalogUseCase', () => {
   });
 
   it('should propagate failure if individual product creation fails', async () => {
-    listProductsUseCase.execute.mockResolvedValue(Result.success([]));
+    listProductsUseCase.execute.mockResolvedValue(
+      Result.success({
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+      }),
+    );
+
     createProductUseCase.execute.mockResolvedValue(
       Result.failure(new UseCaseError('Creation error')),
     );

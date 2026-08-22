@@ -1,3 +1,4 @@
+import { MockPermissionRepository } from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FindAllPermissionsUseCase } from './find-all-permissions.usecase';
 import { PermissionRepository } from '../../../../domain/repositories/permission.repository';
@@ -5,7 +6,6 @@ import { ResultAssertionHelper } from '../../../../../../../testing';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Permission } from '../../../../domain/entities/permission';
-import { MockPermissionRepository } from '../../../../../testing/mocks/permission-repository.mock';
 
 describe('FindAllPermissionsUseCase', () => {
   let useCase: FindAllPermissionsUseCase;

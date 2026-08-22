@@ -7,7 +7,7 @@ import {
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
@@ -17,6 +17,9 @@ import { DeleteProductUseCase } from './core/application/usecases/delete-product
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalog.usecase';
+
+import { ProductQueryService } from './core/application/ports/product-query.service';
+import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres-product-query.adapter';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductEntity]), RedisModule],
@@ -41,7 +44,7 @@ import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalo
       inject: [CachePort, POSTGRES_PRODUCT_REPOSITORY],
     },
 
-    // Default Repository Binding
+    // Default Repository Binding — cache-aside fails open via CachePort
     {
       provide: ProductRepository,
       useExisting: CACHED_PRODUCT_REPOSITORY,
@@ -54,7 +57,13 @@ import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalo
     ListProductsUseCase,
     UpdateProductUseCase,
     SeedDemoCatalogUseCase,
+
+    // CQRS Presentation Query Service
+    {
+      provide: ProductQueryService,
+      useClass: PostgresProductQueryAdapter,
+    },
   ],
-  exports: [ProductRepository, GetProductUseCase],
+  exports: [ProductRepository, GetProductUseCase, ProductQueryService],
 })
 export class ProductsModule {}

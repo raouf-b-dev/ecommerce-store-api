@@ -2,15 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
-  InventoryForCache,
   InventoryCacheMapper,
+  InventoryForCache,
 } from '../../persistence/mappers/inventory.mapper';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
+import {
+  LowStockQuery,
+  InventorySearchQuery,
+  InventoryBatchQuery,
+} from '../../../core/domain/repositories/inventory.repository';
 
 @Injectable()
 export class CachedInventoryRepository implements InventoryRepository {
@@ -32,11 +36,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
       );
-
       if (cached) {
-        return Result.success<Inventory>(
-          InventoryCacheMapper.fromCache(cached),
-        );
+        const inventory = InventoryCacheMapper.fromCache(cached);
+        if (inventory) return Result.success(inventory);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -75,11 +77,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.productKey(productId),
       );
-
       if (cached) {
-        return Result.success<Inventory>(
-          InventoryCacheMapper.fromCache(cached),
-        );
+        const inventory = InventoryCacheMapper.fromCache(cached);
+        if (inventory) return Result.success(inventory);
       }
 
       const dbResult = await this.postgresRepo.findByProductId(productId);
@@ -128,9 +128,12 @@ export class CachedInventoryRepository implements InventoryRepository {
           const cached = await this.cacheService.get<InventoryForCache>(
             this.productKey(productId),
           );
+          const inventory = cached
+            ? InventoryCacheMapper.fromCache(cached)
+            : null;
 
-          if (cached) {
-            foundMap.set(productId, InventoryCacheMapper.fromCache(cached));
+          if (inventory) {
+            foundMap.set(productId, inventory);
           } else {
             misses.push(productId);
           }
@@ -185,8 +188,6 @@ export class CachedInventoryRepository implements InventoryRepository {
     query: LowStockQuery,
   ): Promise<Result<Inventory[], RepositoryError>> {
     try {
-      const { threshold = 10, page = 1, limit = 20 } = query;
-
       const dbResult = await this.postgresRepo.findLowStock(query);
       if (dbResult.isFailure) return dbResult;
 
@@ -224,53 +225,47 @@ export class CachedInventoryRepository implements InventoryRepository {
     }
   }
 
-  async save(
-    inventory: Inventory,
-  ): Promise<Result<Inventory, RepositoryError>> {
-    try {
-      const dbResult = await this.postgresRepo.save(inventory);
-      if (dbResult.isFailure) return dbResult;
-
-      const saved = dbResult.value;
-
-      if (saved.id) {
-        await this.cacheService.set(
-          this.idKey(saved.id),
-          InventoryCacheMapper.toCache(saved),
-          {
-            ttl: INVENTORY_REDIS.EXPIRATION,
-          },
-        );
-      }
-
-      await this.cacheService.set(
-        this.productKey(saved.productId),
-        InventoryCacheMapper.toCache(saved),
-        {
-          ttl: INVENTORY_REDIS.EXPIRATION,
-        },
-      );
-
-      await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
-      return Result.success<Inventory>(saved);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save inventory', error);
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async update(
+  async findByProductIdForUpdate(
+    productId: number,
+  ): Promise<
+    Result<{ entity: Inventory; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByProductIdForUpdate(productId);
+  }
+
+  async findMany(
+    query?: InventorySearchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    return await this.postgresRepo.findMany(query);
+  }
+
+  async findBatch(
+    query?: InventoryBatchQuery,
+  ): Promise<Result<Inventory[], RepositoryError>> {
+    return await this.postgresRepo.findBatch(query);
+  }
+
+  async save(
     inventory: Inventory,
+    expectedVersion?: number,
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.update(inventory);
+      const dbResult = await this.postgresRepo.save(inventory, expectedVersion);
       if (dbResult.isFailure) return dbResult;
 
-      const updated = dbResult.value;
-
-      if (updated.id) {
+      const savedInventory = dbResult.value;
+      if (savedInventory.id) {
         await this.cacheService.set(
-          this.idKey(updated.id),
-          InventoryCacheMapper.toCache(updated),
+          this.idKey(savedInventory.id),
+          InventoryCacheMapper.toCache(savedInventory),
           {
             ttl: INVENTORY_REDIS.EXPIRATION,
           },
@@ -278,18 +273,17 @@ export class CachedInventoryRepository implements InventoryRepository {
       }
 
       await this.cacheService.set(
-        this.productKey(updated.productId),
-        InventoryCacheMapper.toCache(updated),
+        this.productKey(savedInventory.productId),
+        InventoryCacheMapper.toCache(savedInventory),
         {
           ttl: INVENTORY_REDIS.EXPIRATION,
         },
       );
 
       await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
-
-      return Result.success<Inventory>(updated);
+      return Result.success(savedInventory);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update inventory', error);
+      return ErrorFactory.RepositoryError('Failed to save inventory', error);
     }
   }
 
@@ -298,8 +292,8 @@ export class CachedInventoryRepository implements InventoryRepository {
       const cached = await this.cacheService.get<InventoryForCache>(
         this.idKey(id),
       );
-
-      if (cached) {
+      // Invalidate the product key even when the ID document fails full mapping.
+      if (cached && typeof cached.productId === 'number') {
         await this.cacheService.delete(this.productKey(cached.productId));
       }
 

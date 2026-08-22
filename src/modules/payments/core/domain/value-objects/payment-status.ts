@@ -10,7 +10,6 @@ export enum PaymentStatusType {
   REFUNDED = 'REFUNDED',
   PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED',
   CANCELLED = 'CANCELLED',
-  NOT_REQUIRED_YET = 'NOT_REQUIRED_YET', // For COD
 }
 
 export class PaymentStatus {
@@ -58,10 +57,6 @@ export class PaymentStatus {
     return this._status === PaymentStatusType.CANCELLED;
   }
 
-  isNotRequiredYet(): boolean {
-    return this._status === PaymentStatusType.NOT_REQUIRED_YET;
-  }
-
   isSuccessful(): boolean {
     return [PaymentStatusType.CAPTURED, PaymentStatusType.COMPLETED].includes(
       this._status,
@@ -100,9 +95,5 @@ export class PaymentStatus {
 
   static refunded(): PaymentStatus {
     return new PaymentStatus(PaymentStatusType.REFUNDED);
-  }
-
-  static notRequiredYet(): PaymentStatus {
-    return new PaymentStatus(PaymentStatusType.NOT_REQUIRED_YET);
   }
 }

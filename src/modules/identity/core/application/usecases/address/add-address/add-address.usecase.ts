@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -7,34 +7,16 @@ import {
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
-import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
-
-export interface AddAddressCommand {
-  street: string;
-  street2?: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  type?: AddressType;
-  isDefault?: boolean;
-  deliveryInstructions?: string;
-}
-
-export interface AddAddressInput {
-  userId: number;
-  command: AddAddressCommand;
-  callerContext: CallerContext;
-}
+import { AddAddressCommand } from '../../../commands/add-address.command';
 
 @Injectable()
 export class AddAddressUseCase extends UseCase<
-  AddAddressInput,
+  AddAddressCommand,
   void,
   UseCaseError
 > {
@@ -42,8 +24,21 @@ export class AddAddressUseCase extends UseCase<
     super();
   }
 
-  async execute(input: AddAddressInput): Promise<Result<void, UseCaseError>> {
-    const { userId, command: dto, callerContext } = input;
+  async execute(
+    command: AddAddressCommand,
+  ): Promise<Result<void, UseCaseError>> {
+    const {
+      userId,
+      callerContext,
+      street,
+      street2,
+      city,
+      state,
+      postalCode,
+      country,
+      isDefault,
+      deliveryInstructions,
+    } = command;
 
     if (
       !OwnedResourceAccessPolicy.canMutateResource(
@@ -52,35 +47,44 @@ export class AddAddressUseCase extends UseCase<
         USER_MUTATION_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+      return ErrorFactory.UseCaseError(
+        `User with id ${userId} not found`,
+        null,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
-    const userResult = await this.userRepository.findById(userId);
+    const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (isFailure(userResult)) return userResult;
 
-    const user = userResult.value;
+    if (!userResult.value) {
+      return ErrorFactory.UseCaseError(
+        'User not found',
+        null,
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-    if (!user) return ErrorFactory.UseCaseError('User not found');
+    const { entity: user, expectedVersion } = userResult.value;
 
-    //check if address already exist
     const addResult = user.addAddress({
-      street: dto.street,
-      city: dto.city,
-      state: dto.state,
-      postalCode: dto.postalCode,
-      country: dto.country,
-      type: dto.type ?? AddressType.SHIPPING,
-      street2: dto.street2 ?? null,
-      deliveryInstructions: dto.deliveryInstructions ?? null,
-      isDefault: dto.isDefault ?? false,
-      userId: userId,
+      street,
+      city,
+      state,
+      postalCode,
+      country,
+      type: AddressType.SHIPPING,
+      street2: street2 ?? null,
+      deliveryInstructions: deliveryInstructions ?? null,
+      isDefault: isDefault ?? false,
+      userId,
       id: null,
       createdAt: null,
       updatedAt: null,
     });
     if (isFailure(addResult)) return addResult;
 
-    const saveResult = await this.userRepository.update(user);
+    const saveResult = await this.userRepository.save(user, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success<void>(undefined);

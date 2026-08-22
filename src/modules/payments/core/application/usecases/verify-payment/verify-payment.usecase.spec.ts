@@ -1,30 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VerifyPaymentUseCase } from './verify-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { MockPaymentRepository } from '../../../../testing/mocks/payment-repository.mock';
-import { PaymentEntityTestFactory } from '../../../../testing/factories/payment-entity.test.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  MockPaymentRepository,
+  PaymentEntityTestFactory,
+} from 'src/modules/payments/testing';
 
 describe('VerifyPaymentUseCase', () => {
   let useCase: VerifyPaymentUseCase;
   let paymentRepository: MockPaymentRepository;
 
-  const adminContext: CallerContext = {
-    kind: 'user',
+  const adminContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
     permissions: new Set(['view_all_payments']),
-  };
+  });
 
-  const customerContext: CallerContext = {
-    kind: 'user',
+  const customerContext = createUserCallerContext({
     userId: 2,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_payments']),
-  };
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

@@ -225,6 +225,8 @@ flowchart LR
 
 The version must also be **returned** in all read DTOs so that clients always have the current version for their next update.
 
+> **Applied (this repository):** the domain entity does **not** carry `version` (see [CONVENTIONS.md](../../ai/CONVENTIONS.md) §13). TypeORM `@VersionColumn()` on `save()` only applies to **managed** entities. Adapters map to detached ORM objects, so they MUST use QueryBuilder `UPDATE … WHERE version = :expectedVersion`, spread `toUpdatePayload()`, and stamp `version` / `updatedAt` in `.set()`.
+
 ---
 
 ## 7. References

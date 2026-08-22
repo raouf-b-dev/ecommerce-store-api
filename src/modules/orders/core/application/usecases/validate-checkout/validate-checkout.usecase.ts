@@ -20,7 +20,6 @@ import { isSystemCaller } from '../../../../../../shared-kernel/domain/interface
 export interface ValidateCheckoutInput {
   cartId: number;
   callerContext: CallerContext | null;
-  cartToken?: string | null;
   shippingAddress?: ShippingAddressInput;
 }
 
@@ -48,7 +47,7 @@ export class ValidateCheckoutUseCase extends UseCase<
   async execute(
     input: ValidateCheckoutInput,
   ): Promise<Result<ValidatedCheckoutContext, UseCaseError>> {
-    const { cartId, callerContext, cartToken, shippingAddress } = input;
+    const { cartId, callerContext, shippingAddress } = input;
 
     if (!isSystemCaller(callerContext)) {
       if (
@@ -65,7 +64,6 @@ export class ValidateCheckoutUseCase extends UseCase<
     const cartResult = await this.cartGateway.validateCartForCheckout({
       cartId,
       callerContext,
-      cartToken: cartToken ?? null,
     });
     if (isFailure(cartResult)) {
       return Result.failure(cartResult.error);
@@ -76,39 +74,9 @@ export class ValidateCheckoutUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Cart is empty');
     }
 
-    if (isSystemCaller(callerContext)) {
-      if (!cart.userId) {
-        return ErrorFactory.UseCaseError(
-          'Checkout requires a customer account',
-        );
-      }
-
-      const userResult = await this.userGateway.getUserInfo(cart.userId);
-      if (isFailure(userResult)) {
-        return Result.failure(userResult.error);
-      }
-
-      const user = userResult.value;
-      const resolvedAddress = this.addressResolver.resolve(
-        shippingAddress,
-        user,
-      );
-
-      if (!resolvedAddress) {
-        return ErrorFactory.UseCaseError(
-          'No default address found. Please provide a shipping address.',
-        );
-      }
-
-      return Result.success({
-        user,
-        cart,
-        shippingAddress: resolvedAddress,
-        userId: cart.userId,
-      });
-    }
-
-    const userId = callerContext.userId;
+    const userId = isSystemCaller(callerContext)
+      ? cart.userId
+      : callerContext.userId;
 
     const userResult = await this.userGateway.getUserInfo(userId);
     if (isFailure(userResult)) {

@@ -1,0 +1,146 @@
+name: Prepare test environment
+description: Wait for Postgres/Redis, validate secrets, and write .env.test for CI E2E and smoke tests.
+
+inputs:
+  db-username:
+    description: PostgreSQL username
+    required: false
+    default: postgres
+  db-password:
+    description: PostgreSQL password
+    required: false
+    default: postgres
+  db-database:
+    description: PostgreSQL database name
+    required: false
+    default: test_db
+  redis-password:
+    description: Redis password (empty when auth is disabled)
+    required: false
+    default: ''
+  redis-keyprefix:
+    description: Redis key prefix
+    required: false
+    default: 'ecom:test:'
+  jwt-private-key:
+    description: Base64-encoded RSA PKCS#8 JWT private key PEM (from CI_JWT_PRIVATE_KEY secret)
+    required: true
+  metrics-api-key:
+    description: Metrics API key for /metrics smoke probe
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install network and DB clients
+      shell: bash
+      run: |
+        # Host postgresql-client is for readiness probes only; dump/restore use docker.
+        sudo apt-get update -y
+        sudo apt-get install -y netcat-openbsd redis-tools postgresql-client
+
+    - name: Wait for services and create .env.test
+      shell: bash
+      env:
+        CI_DB_USERNAME: ${{ inputs.db-username }}
+        CI_DB_PASSWORD: ${{ inputs.db-password }}
+        CI_DB_DATABASE: ${{ inputs.db-database }}
+        CI_REDIS_PASSWORD: ${{ inputs.redis-password }}
+        CI_REDIS_KEYPREFIX: ${{ inputs.redis-keyprefix }}
+        CI_JWT_PRIVATE_KEY: ${{ inputs.jwt-private-key }}
+        CI_METRICS_API_KEY: ${{ inputs.metrics-api-key }}
+      run: |
+        set -euo pipefail
+
+        DB_USER="${CI_DB_USERNAME:-postgres}"
+        DB_NAME="${CI_DB_DATABASE:-test_db}"
+        PG_HOST="localhost"
+        REDIS_HOST_DETECTED="localhost"
+        export PG_HOST REDIS_HOST_DETECTED
+
+        echo "Testing PostgreSQL connection..."
+        pg_ready=false
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5432 -U "${DB_USER}" -d "${DB_NAME}"; then
+            echo "PostgreSQL is ready at localhost:5432"
+            pg_ready=true
+            break
+          fi
+          echo "Waiting for PostgreSQL... ($i/30)"
+          sleep 2
+        done
+        if [ "$pg_ready" != true ]; then
+          echo "PostgreSQL never became ready"
+          exit 1
+        fi
+
+        echo "Testing Redis connection..."
+        REDIS_CMD="redis-cli -h localhost -p 6379"
+        if [ -n "${CI_REDIS_PASSWORD:-}" ]; then
+          REDIS_CMD="${REDIS_CMD} -a ${CI_REDIS_PASSWORD}"
+        fi
+
+        redis_ready=false
+        for i in {1..30}; do
+          if $REDIS_CMD ping > /dev/null 2>&1; then
+            echo "Redis is ready at localhost:6379"
+            redis_ready=true
+            break
+          fi
+          echo "Waiting for Redis... ($i/30)"
+          sleep 2
+        done
+        if [ "$redis_ready" != true ]; then
+          echo "Redis never became ready"
+          exit 1
+        fi
+
+        node -e '
+          const fs = require("fs");
+          const required = {
+            NODE_ENV: "test",
+            PORT: "3000",
+            DB_HOST: process.env.PG_HOST || "localhost",
+            DB_PORT: "5432",
+            DB_USERNAME: process.env.CI_DB_USERNAME,
+            DB_PASSWORD: process.env.CI_DB_PASSWORD,
+            DB_DATABASE: process.env.CI_DB_DATABASE,
+            POSTGRES_CONTAINER_NAME: process.env.POSTGRES_CONTAINER_NAME || "postgres-db",
+            POSTGRES_IMAGE: process.env.POSTGRES_IMAGE,
+            REDIS_HOST: process.env.REDIS_HOST_DETECTED || "localhost",
+            REDIS_PORT: "6379",
+            REDIS_PASSWORD: process.env.CI_REDIS_PASSWORD || "",
+            REDIS_KEYPREFIX: process.env.CI_REDIS_KEYPREFIX || "ecom:test:",
+            REDIS_DB: "0",
+            JWT_ACCESS_TOKEN_TTL: "15m",
+            JWT_REFRESH_TOKEN_TTL: "7d",
+            METRICS_API_KEY: process.env.CI_METRICS_API_KEY,
+          };
+
+          let jwtKeyVal = process.env.CI_JWT_PRIVATE_KEY || "";
+
+          const missing = Object.entries(required)
+            .filter(([, v]) => v === undefined || v === null || v === "")
+            .map(([k]) => k);
+
+          if (!jwtKeyVal) missing.push("CI_JWT_PRIVATE_KEY");
+
+          if (missing.length > 0) {
+            console.error("STRICT CI ERROR: Missing required repository secrets:", missing.join(", "));
+            process.exit(1);
+          }
+
+          if (!jwtKeyVal.includes("BEGIN PRIVATE KEY") && !jwtKeyVal.includes("BEGIN RSA PRIVATE KEY")) {
+            jwtKeyVal = Buffer.from(jwtKeyVal, "base64").toString("utf8");
+          }
+
+          const jwtKeyDotenvEscaped = `"${jwtKeyVal.replace(/\r?\n/g, "\\n")}"`;
+
+          const lines = [
+            ...Object.entries(required).map(([k, v]) => `${k}=${JSON.stringify(v)}`),
+            `JWT_PRIVATE_KEY=${jwtKeyDotenvEscaped}`,
+          ];
+
+          fs.writeFileSync(".env.test", lines.join("\n") + "\n");
+          console.log(".env.test created successfully with strict secret verification.");
+        '

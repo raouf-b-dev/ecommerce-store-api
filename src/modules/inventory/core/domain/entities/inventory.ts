@@ -17,7 +17,7 @@ export interface InventoryProps {
 }
 
 export class Inventory implements IInventory {
-  private readonly _id: number | null;
+  private _id: number | null;
   private readonly _productId: number;
   private _availableQuantity: Quantity;
   private _reservedQuantity: Quantity;
@@ -72,6 +72,10 @@ export class Inventory implements IInventory {
   // Getters
   get id(): number | null {
     return this._id;
+  }
+
+  setId(id: number): void {
+    this._id = id;
   }
 
   get productId(): number {

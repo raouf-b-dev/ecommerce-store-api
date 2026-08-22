@@ -1,0 +1,23 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../../",
+  "testEnvironment": "node",
+  "testRegex": ".*\\.integration\\.spec\\.ts$",
+  "testPathIgnorePatterns": [".*\\.chaos\\.integration\\.spec\\.ts$"],
+  "globalSetup": "<rootDir>/test/integration/harness/testcontainers.global-setup.ts",
+  "globalTeardown": "<rootDir>/test/integration/harness/testcontainers.global-teardown.ts",
+  "setupFilesAfterEnv": [
+    "<rootDir>/test/integration/harness/testcontainers.setup.ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": ["node_modules/(?!jose/.*)"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1",
+    "^test/(.*)$": "<rootDir>/test/$1",
+    "^testing/(.*)$": "<rootDir>/src/testing/$1"
+  },
+  "maxWorkers": 1,
+  "testTimeout": 60000
+}

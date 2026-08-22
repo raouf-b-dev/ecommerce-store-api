@@ -13,9 +13,11 @@ import {
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 
 @Injectable()
-export class RefundCheckoutPaymentUseCase
-  implements UseCase<ProcessRefundInput, void, UseCaseError>
-{
+export class RefundCheckoutPaymentUseCase implements UseCase<
+  ProcessRefundInput,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly paymentGateway: PaymentGateway,
     private readonly domainEventPublisher: DomainEventPublisher,

@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { JwksPort } from '../ports/jwks.port';
 import { EnvConfigService } from '../../../config/env-config.service';
+import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 import {
   importPKCS8,
   importJWK,
@@ -8,6 +9,18 @@ import {
   calculateJwkThumbprint,
   JWK,
 } from 'jose';
+
+const RSA_PRIVATE_JWK_FIELDS = ['d', 'p', 'q', 'dp', 'dq', 'qi'] as const;
+
+function toPublicRsaJwk(jwk: JWK): JWK {
+  const publicJwk: JWK = { ...jwk };
+
+  for (const field of RSA_PRIVATE_JWK_FIELDS) {
+    delete publicJwk[field];
+  }
+
+  return publicJwk;
+}
 
 @Injectable()
 export class JwksService implements OnModuleInit, JwksPort {
@@ -30,7 +43,7 @@ export class JwksService implements OnModuleInit, JwksPort {
 
       // Export the full JWK and strip private parameters to derive the public key
       const fullJwk = await exportJWK(privateKey);
-      const { d, p, q, dp, dq, qi, ...publicJwk } = fullJwk;
+      const publicJwk = toPublicRsaJwk(fullJwk);
 
       // Compute RFC 7638 thumbprint as the kid
       // This creates a deterministic, collision-resistant key identifier
@@ -56,10 +69,10 @@ export class JwksService implements OnModuleInit, JwksPort {
         `RSA JWT keys imported and JWKS generated successfully. kid=${this.kid}`,
       );
     } catch (error: unknown) {
-      const stack = error instanceof Error ? error.stack : undefined;
+      const err = toError(error);
       this.logger.error(
         'Failed to initialize JWT keys. Ensure JWT_PRIVATE_KEY is a valid RSA PEM string.',
-        stack,
+        err.stack,
       );
       throw error;
     }

@@ -1,35 +1,32 @@
 // src/modules/carts/testing/factories/cart.factory.ts
-import { ICart } from '../../core/domain/interfaces/cart.interface';
+import { Cart, CartProps } from '../../core/domain/entities/cart';
 
 export class CartTestFactory {
-  static createMockCart(overrides?: Partial<ICart>): ICart {
-    const baseCart: ICart = {
+  static createMockCart(overrides?: Partial<CartProps>): Cart {
+    const cartProps: CartProps = {
       id: 123,
       userId: 123,
-      sessionId: null,
       items: [],
-      itemCount: 0,
-      totalAmount: 0,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
+      ...overrides,
     };
 
-    return { ...baseCart, ...overrides };
+    const cart = Cart.fromPrimitives(cartProps);
+    return cart;
   }
 
-  static createEmptyCart(overrides?: Partial<ICart>): ICart {
+  static createEmptyCart(overrides?: Partial<CartProps>): Cart {
     return this.createMockCart({
       items: [],
-      itemCount: 0,
-      totalAmount: 0,
       ...overrides,
     });
   }
 
   static createCartWithItems(
     itemCount: number = 3,
-    overrides?: Partial<ICart>,
-  ): ICart {
+    overrides?: Partial<CartProps>,
+  ): Cart {
     const items = Array.from({ length: itemCount }, (_, i) => ({
       id: i + 1,
       productId: i + 1,
@@ -40,28 +37,15 @@ export class CartTestFactory {
       imageUrl: `http://example.com/image-${i + 1}.jpg`,
     }));
 
-    const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
-
     return this.createMockCart({
       items,
-      itemCount,
-      totalAmount,
       ...overrides,
     });
   }
 
-  static createGuestCart(sessionId: number, overrides?: Partial<ICart>): ICart {
-    return this.createMockCart({
-      userId: null,
-      sessionId,
-      ...overrides,
-    });
-  }
-
-  static createUserCart(userId: number, overrides?: Partial<ICart>): ICart {
+  static createUserCart(userId: number, overrides?: Partial<CartProps>): Cart {
     return this.createMockCart({
       userId: userId,
-      sessionId: null,
       ...overrides,
     });
   }

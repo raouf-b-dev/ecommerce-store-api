@@ -15,30 +15,30 @@ import { PaymentEntity } from './payment.schema';
 @Index('idx_refunds_payment_id', ['paymentId'])
 export class RefundEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'payment_id', type: 'int' })
-  paymentId: number;
+  paymentId!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'varchar', length: 3 })
-  currency: string;
+  currency!: string;
 
   @Column({ type: 'text' })
-  reason: string;
+  reason!: string;
 
   @Column({ type: 'varchar' })
-  status: string;
+  status!: string;
 
   @ManyToOne(() => PaymentEntity, (payment) => payment.refunds)
   @JoinColumn({ name: 'payment_id' })
-  payment: Relation<PaymentEntity>;
+  payment!: Relation<PaymentEntity>;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

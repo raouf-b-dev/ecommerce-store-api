@@ -342,10 +342,6 @@ export class Payment implements IPayment {
     return this._refundedAmount.amount > 0 && !this.isFullyRefunded();
   }
 
-  isCOD(): boolean {
-    return this._paymentMethod.isCOD();
-  }
-
   get refunds(): Refund[] {
     return this._refunds;
   }
@@ -398,34 +394,6 @@ export class Payment implements IPayment {
       gatewayPaymentIntentId: null,
       gatewayClientSecret: null,
       paymentMethodInfo: paymentMethodInfo || null,
-      refundedAmount: 0,
-      refunds: [],
-      failureReason: null,
-      createdAt: new Date(),
-      completedAt: null,
-      updatedAt: new Date(),
-    });
-  }
-
-  static createCOD(
-    id: number | null,
-    orderId: number,
-    amount: number,
-    currency: string,
-    userId?: number,
-  ): Payment {
-    return new Payment({
-      id,
-      orderId,
-      userId: userId || null,
-      amount,
-      currency,
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      status: PaymentStatusType.NOT_REQUIRED_YET,
-      transactionId: null,
-      gatewayPaymentIntentId: null,
-      gatewayClientSecret: null,
-      paymentMethodInfo: null,
       refundedAmount: 0,
       refunds: [],
       failureReason: null,

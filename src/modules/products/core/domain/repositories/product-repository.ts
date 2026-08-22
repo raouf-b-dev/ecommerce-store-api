@@ -1,29 +1,21 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-export interface CreateProductInput {
-  name: string;
-  description?: string;
-  sku?: string;
-  price: number;
-}
-
-export interface UpdateProductInput {
-  name?: string;
-  description?: string;
-  sku?: string;
-  price?: number;
-}
-import { IProduct } from '../interfaces/product.interface';
+import { Product } from '../entities/product';
 
 export abstract class ProductRepository {
-  abstract save(
-    product: CreateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>>;
-  abstract update(
+  abstract findByIdForUpdate(
     id: number,
-    product: UpdateProductInput,
-  ): Promise<Result<IProduct, RepositoryError>>;
-  abstract findById(id: number): Promise<Result<IProduct, RepositoryError>>;
-  abstract findAll(): Promise<Result<IProduct[], RepositoryError>>;
+  ): Promise<
+    Result<{ entity: Product; expectedVersion: number }, RepositoryError>
+  >;
+  abstract save(
+    product: Product,
+    expectedVersion?: number,
+  ): Promise<Result<Product, RepositoryError>>;
+  abstract findById(id: number): Promise<Result<Product, RepositoryError>>;
+  abstract findByIds(
+    ids: number[],
+  ): Promise<Result<Product[], RepositoryError>>;
+  abstract findAll(): Promise<Result<Product[], RepositoryError>>;
   abstract deleteById(id: number): Promise<Result<void, RepositoryError>>;
 }

@@ -1,210 +1,187 @@
-# CI/CD Project Pipeline — Applied GitHub Actions Guide
+# CI/CD Project Pipeline — GitHub Actions Guide
 
-This document describes the concrete, applied CI/CD pipeline implemented for the E-Commerce Store API. It serves as a direct guide for developers working on this codebase to understand how verification, testing, and branch protection are executed.
+This document describes the CI/CD pipeline for the E-Commerce Store API: job graph, secrets, fork behavior, container validation, and GHCR release.
 
 ---
 
-## 1. Pipeline Architecture
+## 1. Pipeline architecture
 
-The pipeline is designed using the **Fan-out/Fan-in** pattern. Five lightweight, independent check jobs run in parallel without services. Once they all pass, the pipeline fans in to run the integration job (which boots PostgreSQL and Redis containers) followed by a final status aggregator.
+The pipeline uses a **fan-out / fan-in** pattern. Parallel static checks run first; integration, E2E, smoke, and restore-drill jobs run after typecheck and unit tests succeed (smoke / restore-drill-smoke also need build). A single **CI Status Check** aggregator gates branch protection, Docker validation, and GHCR publish.
 
-### Pipeline Flow Diagram
+Triggers: `pull_request`, `push` to `master` / semver tags, and `workflow_dispatch`. Nightly restore verification is a **separate thin workflow** ([`nightly-restore-drill.yml`](../../../.github/workflows/nightly-restore-drill.yml), `0 3 * * *` UTC) — build + restore-drill + restore-drill-smoke only.
 
 ```mermaid
 graph TD
-    %% Styling
-    classDef default fill:#0d1117,stroke:#30363d,stroke-width:1px,color:#c9d1d9
-    classDef parallel fill:#161b22,stroke:#58a6ff,stroke-width:1px,color:#c9d1d9
-    classDef integration fill:#0d1117,stroke:#bc8cff,stroke-width:1px,color:#c9d1d9
-    classDef aggregator fill:#238636,stroke:#2ea043,stroke-width:1px,color:#ffffff,font-weight:bold
-
-    Trigger[PR or Manual Workflow Dispatch] --> Lint
+    Trigger[PR_push_master_tag_or_dispatch] --> Lint
     Trigger --> Typecheck
     Trigger --> UnitTests
     Trigger --> ArchTests
+    Trigger --> Audit
     Trigger --> Build
 
-    Lint --> Integration
     Typecheck --> Integration
     UnitTests --> Integration
-    ArchTests --> Integration
     Build --> Integration
+    Typecheck --> E2E
+    UnitTests --> E2E
+    Build --> E2E
+    Typecheck --> Smoke
+    UnitTests --> Smoke
+    Build --> Smoke
+    Typecheck --> RestoreDrill
+    UnitTests --> RestoreDrill
+    Typecheck --> RestoreDrillSmoke
+    UnitTests --> RestoreDrillSmoke
+    Build --> RestoreDrillSmoke
 
     Lint --> StatusCheck
     Typecheck --> StatusCheck
     UnitTests --> StatusCheck
     ArchTests --> StatusCheck
+    Audit --> StatusCheck
     Build --> StatusCheck
     Integration --> StatusCheck
+    E2E --> StatusCheck
+    Smoke --> StatusCheck
+    RestoreDrill --> StatusCheck
+    RestoreDrillSmoke --> StatusCheck
 
-    %% Apply Classes
-    class Lint,Typecheck,UnitTests,ArchTests,Build parallel
-    class Integration integration
-    class StatusCheck aggregator
+    StatusCheck[CI_Status_Check] --> DockerValidate[Docker_validate_PR_only]
+    StatusCheck --> DockerPublish[GHCR_publish_master_and_tags]
 ```
 
 ---
 
-## 2. Job Breakdown
+## 2. Job breakdown
 
-All parallel jobs run on the `ubuntu-latest` runner and reuse Node.js 20 with dependency caching enabled via `actions/setup-node@v4`.
+All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with `actions/setup-node` npm cache (no shared `node_modules` artifact).
 
-| Job Name        | Script Run                                          | Purpose                                                                            | Key Reason for Separation                                                                   |
-| :-------------- | :-------------------------------------------------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| **lint**        | `npm run lint:check`<br/>`npm run format:check`     | Enforces ESLint rules and Prettier formatting standard.                            | Prevents formatting/style issues from reaching merge stage.                                 |
-| **typecheck**   | `npm run typecheck`                                 | Compiles the project using `tsc --noEmit` to find TypeScript compilation errors.   | Catches type safety issues early before compilation.                                        |
-| **unit-tests**  | `npm run test -- --ci`                              | Executes the unit tests in parallel using Jest.                                    | Isolates pure domain and business logic testing from external dependencies.                 |
-| **arch**        | `npm run test:arch`                                 | Runs architecture rules using `ts-arch` to enforce DDD/Hexagonal boundaries.       | Ensures developers do not violate layer boundaries (e.g., Domain importing Infrastructure). |
-| **build**       | `npm run build`                                     | Compiles the NestJS application into the production `dist` directory.              | Verifies that the codebase is build-ready for container creation or deployment.             |
-| **integration** | `npm run migration:run:test`<br/>`npm run test:e2e` | Starts PostgreSQL + Redis containers and runs database integrations and E2E tests. | Verifies correct data mapping, transaction handling, and API routing.                       |
-| **ci**          | Custom shell logic                                  | Aggregates the statuses of all jobs and reports a single result.                   | Simplifies GitHub Branch Protection rules.                                                  |
+| Job                     | Command / action                                                                     | Purpose                                        |
+| ----------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| **lint**                | `lint:check`, `format:check`                                                         | ESLint + Prettier                              |
+| **typecheck**           | `typecheck`                                                                          | TypeScript compile check                       |
+| **unit-tests**          | `test:ci`                                                                            | Jest unit tests                                |
+| **arch**                | `test:arch`                                                                          | Hexagonal architecture boundaries              |
+| **audit**               | `npm audit --omit=dev --audit-level=high`                                            | Blocks high/critical vulnerabilities           |
+| **dependency-review**   | `dependency-review-action`                                                           | PR supply-chain review (PRs only)              |
+| **build**               | `build` + upload `dist-app` artifact                                                 | Compile + artifact for smoke                   |
+| **integration-tests**   | `test:integration`                                                                   | Testcontainers Postgres 18.4 (no GHA services) |
+| **e2e-tests**           | Postgres 18.4 + Redis → `prepare-test-env` → migrations → `test:e2e`                 | Full-stack E2E including IDOR suite            |
+| **smoke-test**          | Same infra + `dist` → start app → `smoke-test`                                       | HTTP runtime probes                            |
+| **restore-drill**       | `prepare-db-env` → `migration:run:test` → `db:restore:drill` (marker + known tables) | Backup/restore ops check                       |
+| **restore-drill-smoke** | `master` push: drill `--keep-dump` → app on restored DB → smoke                      | Full recovery DoD                              |
+| **ci**                  | Aggregator                                                                           | Required branch protection check               |
+| **docker-validate**     | `docker build` (no push)                                                             | PR container recipe validation                 |
+| **docker-publish**      | Build + push to GHCR                                                                 | `master` push and `v*.*.*` tags only           |
 
 ---
 
-## 3. Dynamic Environment & Service Bootstrapping
+## 3. Postgres version policy
 
-The `integration` job requires a database (PostgreSQL 16) and a cache (Redis 7.2 stack). To keep the pipeline clean and robust, we bootstrap this environment dynamically during execution:
+`POSTGRES_IMAGE` and `POSTGRES_CONTAINER_NAME` are defined once in **`.env.example`** (validated by Nest, used by Compose and dump/restore scripts).
 
-### 3.1 GHA Service Containers
+CI cannot load `.env` before GHA service containers start, so a `resolve-env` job reads those keys from `.env.example` and passes them via job outputs into service `image:` and job env. Bump the image only in `.env.example`.
 
-Service containers are declared in the workflow YAML and mapped to local host ports (`5432:5432` and `6379:6379`).
+Integration Testcontainers keep a separate alpine tag in `test/integration/harness/integration-test.constants.ts`.
 
-- **Postgres health check**: Uses `pg_isready -q` with retries to prevent tests starting before the database is listening.
-- **Redis health check**: Uses `redis-cli ping` to verify readiness.
+---
 
-### 3.2 Dynamic `.env.test` Creation
+## 4. Test environment composites
 
-Instead of committing a static `.env.test` containing hardcoded secrets, the runner constructs the configuration file dynamically in memory at runtime:
+### 4.1 `prepare-test-env` (E2E / smoke / restore-drill-smoke)
+
+Composite action: [`.github/actions/prepare-test-env/action.yml`](../../.github/actions/prepare-test-env/action.yml)
+
+1. Waits for Postgres and Redis (hard fail after 30 retries).
+2. Validates required GitHub secrets.
+3. Writes `.env.test` using the **ecommerce env contract** (`DB_*`, `REDIS_*`, not CRM `POSTGRES_*`).
+4. Decodes `CI_JWT_PRIVATE_KEY` from base64 when needed.
+
+Generate secrets locally:
 
 ```bash
-# Write .env.test using GHA runner variables and fallback defaults
-cat > .env.test << ENVEOF
-NODE_ENV=test
-PORT=3000
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=${DB_USER}
-DB_PASSWORD=${DB_PASS}
-DB_DATABASE=${DB_NAME}
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=${REDIS_PASS}
-REDIS_KEYPREFIX=${REDIS_KEYPREFIX}
-REDIS_DB=0
-
-JWT_PRIVATE_KEY="${CI_JWT_PRIVATE_KEY}"
-JWT_ACCESS_TOKEN_TTL=15m
-JWT_REFRESH_TOKEN_TTL=7d
-ENVEOF
+npm run env:init:secrets -- --overwrite
 ```
 
-### 3.3 Test Database Migrations
+### 4.2 `prepare-db-env` (schema-only restore-drill)
 
-Before executing E2E tests, the runner installs `netcat`, `redis-tools`, and `postgresql-client` to probe service ports, waits until ports respond, and then executes migrations:
+Composite action: [`.github/actions/prepare-db-env/action.yml`](../../.github/actions/prepare-db-env/action.yml)
 
-```bash
-npm run migration:run:test
-```
+1. Installs `postgresql-client` and waits for Postgres only (Redis stubs satisfy `validateEnv` for TypeORM CLI; Redis need not be running).
+2. Writes `.env.test` with `DB_*`, Redis stubs, and JWT for `migration:run:test`.
 
-This ensures the schema inside the container matches the codebase migrations exactly.
+The restore drill inserts a marker `products` row, dumps, restores into `ecommerce_restore_drill`, asserts required tables (`users`, `products`, `orders`, `payments`, `reservations`) plus the marker, then cleans the marker from the source DB. See [RELEASE-BACKUP-RECOVERY.md](../RELEASE-BACKUP-RECOVERY.md).
+
+Baseline schema is created by [`src/migrations`](../../../src/migrations/) (`InitialBaseline`). CI does not use `schema:sync`.
+
+Copy values from `.secrets` into GitHub **Settings → Secrets and variables → Actions**.
+
+| Secret               | Required | Notes                               |
+| -------------------- | -------- | ----------------------------------- |
+| `CI_JWT_PRIVATE_KEY` | Yes      | RSA-4096 PKCS#8 PEM, base64-encoded |
+| `CI_METRICS_API_KEY` | Yes      | Hex key for `/metrics` smoke probe  |
+| `CI_DB_USERNAME`     | No       | Defaults to `postgres`              |
+| `CI_DB_PASSWORD`     | No       | Defaults to `postgres`              |
+| `CI_DB_DATABASE`     | No       | Defaults to `test_db`               |
+| `CI_REDIS_PASSWORD`  | No       | Empty = no Redis auth               |
+| `CI_REDIS_KEYPREFIX` | No       | Defaults to `ecom:test:`            |
 
 ---
 
-## 4. Fork-PR Security
+## 5. Fork PR security
 
-Workflows triggered by PR forks (`pull_request` from an external repository) do **not** have access to the repository secrets (e.g. `CI_DB_PASSWORD`, `CI_JWT_PRIVATE_KEY`).
-
-To prevent the pipeline from failing on external forks (which lack secrets) and to protect secrets from being exfiltrated via malicious PR code changes, the `integration` job uses a strict security conditional:
+Service jobs (integration, E2E, smoke) run only when:
 
 ```yaml
-integration:
-  runs-on: ubuntu-latest
-  needs: [lint, typecheck, unit-tests, arch, build]
-  if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 ```
 
-**Outcome**:
-
-- Fork PRs will skip the `integration` job entirely.
-- The parallel verification checks (lint, typecheck, unit-tests, arch, build) still run, providing feedback on code correctness.
-- Maintainers can review the PR and run the integration tests in their own local environment or inside a secure branch before merging.
+Fork PRs skip these jobs (no repository secrets). The aggregator treats `skipped` as acceptable for those jobs.
 
 ---
 
-## 5. Aggregator Job Pattern (CI Status Check)
+## 6. Health probes
 
-When using multiple parallel jobs in a workflow, configuring Branch Protection Rules in GitHub presents a challenge: if you require individual job names (e.g., `lint`, `typecheck`), adding or renaming a job requires updating repository configuration.
+| Endpoint                | Checks                                 |
+| ----------------------- | -------------------------------------- |
+| `GET /health/liveness`  | Process viability (event loop, memory) |
+| `GET /health/readiness` | PostgreSQL + Redis                     |
+| `GET /health`           | Composite (postgres, redis, websocket) |
 
-To solve this, we implement the **Aggregator Job Pattern**:
-
-```yaml
-ci:
-  name: CI Status Check
-  runs-on: ubuntu-latest
-  needs: [lint, typecheck, unit-tests, arch, build, integration]
-  if: always()
-  steps:
-    - name: Check all jobs status
-      run: |
-        # Retrieve results of upstream jobs using needs context
-        lint_status="${{ needs.lint.result }}"
-        ...
-
-        # Fail status check if any required job failed or was cancelled
-        for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$build_status"; do
-          if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
-            exit 1
-          fi
-        done
-```
-
-### GitHub Branch Protection Setup
-
-Instead of requiring 6 separate checks, configure the branch protection to require only:
-
-- `CI Status Check`
-
-This status check represents the unified health of the entire pipeline. If a developer refactors the testing jobs, the Branch Protection rules remain completely untouched.
+Dockerfile `HEALTHCHECK` uses **liveness**. Compose production healthcheck uses **readiness**.
 
 ---
 
-## 6. Local Automation & Git Hooks
+## 7. Release (GHCR)
 
-Automated verification is not useful if it only runs in CI — developers discover failures too late, resulting in slow feedback loops. We enforce verification locally before code is committed to Git.
+After **CI Status Check** passes on `push` to `master` or semver tag `v*.*.*`:
 
-### 6.1 Husky & lint-staged
+- Registry: `ghcr.io/raouf-b-dev/ecommerce-store-api`
+- Tags: `sha-<commit>`, semver on tag push
+- SBOM + provenance enabled
+- PRs never push images
 
-This project uses **Husky** to intercept Git commits. The pre-commit hook runs **lint-staged**, which runs fast, local checks _only on files staged for commit_:
-
-- Staged `.ts` files: `eslint --fix` and `prettier --write`.
-- All other files: `prettier --write`.
-
-If formatting or linting fails, Husky aborts the `git commit` immediately. The developer must resolve the issues locally, preventing broken styles from ever reaching GitHub.
-
-### 6.2 Running CI Locally with `act`
-
-To run the GitHub Actions workflow locally on your machine without pushing to a branch, you can use `nektos/act`. It uses local Docker daemons to execute the jobs exactly as GitHub would.
-
-1. **Install `act`** (via Homebrew, Chocolatey, or direct download):
-   ```bash
-   choco install act-cli
-   ```
-2. **Run the parallel checks**:
-   ```bash
-   act -j lint
-   ```
-3. **Run the entire pipeline (requires Docker running)**:
-   ```bash
-   act pull_request
-   ```
+**Release invariant:** `docker-publish` has `needs: [ci]` — images cannot bypass the CI gate.
 
 ---
 
-## 7. References
+## 8. Branch protection
 
-1. GitHub Actions Docs — [Service Containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers).
-2. GitHub Actions Docs — [Contexts (Needs context)](https://docs.github.com/en/actions/learn-github-actions/contexts#needs-context).
-3. Husky Documentation — [Git hooks made easy](https://typicode.github.io/husky/).
-4. Nektos Act Repository — [Run your GitHub Actions locally](https://github.com/nektos/act).
+Require a single status check: **CI Status Check**.
+
+---
+
+## 9. Local automation
+
+- **Husky + lint-staged**: pre-commit lint/format on staged files
+- **Smoke test**: `npm run build && npm run start:test` then `npm run smoke-test`
+- **Restore drill**: `npm run db:restore:drill` (marker + known tables; see [RELEASE-BACKUP-RECOVERY.md](../RELEASE-BACKUP-RECOVERY.md))
+- **act**: `act -j lint` or `act pull_request` (requires Docker)
+
+---
+
+## 10. References
+
+- [GitHub Actions service containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers)
+- [Dependency Review Action](https://github.com/actions/dependency-review-action)
+- [Publishing Docker images to GHCR](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)

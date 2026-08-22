@@ -13,13 +13,13 @@ import { numericToNumber } from '../../../../infrastructure/database/number.tran
 @Entity({ name: 'cart_items' })
 export class CartItemEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'product_id', type: 'int' })
-  productId: number;
+  productId!: number;
 
   @Column({ name: 'product_name', type: 'varchar' })
-  productName: string;
+  productName!: string;
 
   @Column({
     type: 'numeric',
@@ -27,17 +27,17 @@ export class CartItemEntity {
     scale: 2,
     transformer: numericToNumber,
   })
-  price: number;
+  price!: number;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity!: number;
 
   @Column({ name: 'image_url', type: 'varchar', nullable: true })
-  imageUrl: string | null;
+  imageUrl!: string | null;
 
   @ManyToOne(() => CartEntity, (cart) => cart.items, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'cart_id' })
-  cart: Relation<CartEntity>;
+  cart!: Relation<CartEntity>;
 }

@@ -4,35 +4,35 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity({ name: 'shipping_addresses' })
 export class ShippingAddressEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar' })
-  firstName: string;
+  firstName!: string;
 
   @Column({ type: 'varchar' })
-  lastName: string;
+  lastName!: string;
 
   @Column({ type: 'varchar' })
-  street: string;
+  street!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  street2: string | null;
+  street2!: string | null;
 
   @Column({ type: 'varchar' })
-  city: string;
+  city!: string;
 
   @Column({ type: 'varchar' })
-  state: string;
+  state!: string;
 
   @Column({ type: 'varchar' })
-  postalCode: string;
+  postalCode!: string;
 
   @Column({ type: 'varchar' })
-  country: string;
+  country!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  phone: string | null;
+  phone!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  deliveryInstructions: string | null;
+  deliveryInstructions!: string | null;
 }

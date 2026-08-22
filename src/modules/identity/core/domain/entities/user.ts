@@ -18,7 +18,7 @@ export interface UserProps {
 }
 
 export class User implements IUser {
-  private readonly _id: number | null;
+  private _id: number | null;
   private _firstName: string;
   private _lastName: string;
   private _email: string;
@@ -64,6 +64,9 @@ export class User implements IUser {
   // Getters
   get id(): number | null {
     return this._id;
+  }
+  setId(id: number): void {
+    this._id = id;
   }
   get firstName(): string {
     return this._firstName;

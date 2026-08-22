@@ -65,12 +65,6 @@ export class OrderBuilder {
     return this.withStatus(OrderStatus.DELIVERED).withPaymentId(1);
   }
 
-  asCODPending(): this {
-    return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
-      .withStatus(OrderStatus.CONFIRMED) // COD starts confirmed
-      .withPaymentId(null);
-  }
-
   asOnlinePaymentPending(): this {
     return this.withPaymentMethod(PaymentMethodType.STRIPE)
       .withStatus(OrderStatus.PENDING_PAYMENT)
@@ -80,12 +74,6 @@ export class OrderBuilder {
   asOnlinePaymentCompleted(): this {
     return this.withPaymentMethod(PaymentMethodType.STRIPE)
       .withStatus(OrderStatus.CONFIRMED)
-      .withPaymentId(1);
-  }
-
-  asCODDelivered(): this {
-    return this.withPaymentMethod(PaymentMethodType.CASH_ON_DELIVERY)
-      .withStatus(OrderStatus.DELIVERED)
       .withPaymentId(1);
   }
 

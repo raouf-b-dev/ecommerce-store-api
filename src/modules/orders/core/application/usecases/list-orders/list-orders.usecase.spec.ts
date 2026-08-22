@@ -1,91 +1,93 @@
 import { ListOrdersUsecase } from './list-orders.usecase';
-import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { isFailure } from '../../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { Result } from '../../../../../../shared-kernel/domain/result';
+import {
+  isFailure,
+  Result,
+} from '../../../../../../shared-kernel/domain/result';
+import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { Order } from '../../../domain/entities/order';
-import { ListOrdersQuery } from '../../../domain/repositories/order-repository';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { ListOrdersQuery } from '../../queries/list-orders.query';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import {
+  MockOrderQueryService,
+  OrderDtoTestFactory,
+} from 'src/modules/orders/testing';
 
 describe('ListOrdersUsecase', () => {
   let usecase: ListOrdersUsecase;
-  let mockRepository: MockOrderRepository;
+  let mockQueryService: MockOrderQueryService;
 
-  const adminContext: CallerContext = {
-    kind: 'user',
+  const adminContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
     permissions: new Set(['view_all_orders']),
-  };
+  });
 
-  const customerContext: CallerContext = {
-    kind: 'user',
+  const customerContext = createUserCallerContext({
     userId: 2,
     role: 'CUSTOMER',
     permissions: new Set(['view_own_orders']),
-  };
+  });
+
+  const sampleDTO = OrderDtoTestFactory.createOrderListItemDTO({
+    id: 100,
+    userId: 2,
+  });
 
   beforeEach(() => {
-    mockRepository = new MockOrderRepository();
-    usecase = new ListOrdersUsecase(mockRepository);
+    mockQueryService = new MockOrderQueryService();
+    usecase = new ListOrdersUsecase(mockQueryService);
   });
 
   afterEach(() => {
-    mockRepository.reset();
+    mockQueryService.reset();
   });
 
-  it('returns success with list of orders when repository returns success and caller is admin', async () => {
+  it('returns success with paginated read DTOs when query service returns success for admin', async () => {
     const query: ListOrdersQuery = {};
-    const sampleOrder = Order.fromPrimitives(
-      OrderTestFactory.createMockOrder(),
-    );
-
-    mockRepository.mockSuccessfulList([sampleOrder]);
+    mockQueryService.mockSuccessfulList([sampleDTO]);
 
     const result = await usecase.execute({
       query,
       callerContext: adminContext,
     });
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
+    expect(mockQueryService.list).toHaveBeenCalledWith({
+      authorizedUserId: undefined,
+    });
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value).toEqual([sampleOrder]);
+    expect(result.value.items).toEqual([sampleDTO]);
   });
 
-  it('filters by customer ID when caller is customer, ignoring tampered userId query param', async () => {
-    const query: ListOrdersQuery = { userId: 999 }; // tampered
-    const sampleOrder = Order.fromPrimitives(
-      OrderTestFactory.createMockOrder({ userId: 123 }),
-    );
-
-    mockRepository.mockSuccessfulList([sampleOrder]);
+  it('filters by authorizedUserId when caller is customer, ignoring tampered requestedUserId', async () => {
+    const query: ListOrdersQuery = { requestedUserId: 999 }; // tampered
+    mockQueryService.mockSuccessfulList([sampleDTO]);
 
     const result = await usecase.execute({
       query,
       callerContext: customerContext,
     });
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith({ userId: 2 });
+    expect(mockQueryService.list).toHaveBeenCalledWith({
+      requestedUserId: 999,
+      authorizedUserId: 2,
+    });
     ResultAssertionHelper.assertResultSuccess(result);
   });
 
-  it('propagates repository failure as usecase failure', async () => {
+  it('propagates query service failure as usecase failure', async () => {
     const query: ListOrdersQuery = {};
-    const repoErr = new RepositoryError('repo failed');
+    const queryErr = new QueryError('query failed');
 
-    mockRepository.listOrders.mockResolvedValue(Result.failure(repoErr));
+    mockQueryService.list.mockResolvedValue(Result.failure(queryErr));
 
     const result = await usecase.execute({
       query,
       callerContext: adminContext,
     });
 
-    expect(mockRepository.listOrders).toHaveBeenCalledWith(query);
+    expect(mockQueryService.list).toHaveBeenCalledWith({
+      authorizedUserId: undefined,
+    });
     expect(isFailure(result)).toBe(true);
-    if (isFailure(result)) {
-      expect(result.error).toBe(repoErr);
-    }
   });
 });

@@ -9,10 +9,7 @@ const nodeEnv = process.env.NODE_ENV || 'development';
 const envPath = `.env.${nodeEnv}`;
 
 if (existsSync(envPath)) {
-  console.log(`🔑 Loading environment from ${envPath}`);
   loadEnv({ path: envPath });
-} else {
-  console.log(`🔑 No env file at ${envPath}; using process.env (${nodeEnv})`);
 }
 
 const config = configuration();
@@ -28,7 +25,7 @@ const options: DataSourceOptions = {
   database: dbConfig.database,
   synchronize: false,
   logging: appEnv !== 'production' ? 'all' : ['error'],
-  entities: [__dirname + '/**/*.schema.{ts,js}'],
+  entities: [join(__dirname, 'src/**/*.schema.{ts,js}')],
   migrations: [join(__dirname, 'src/migrations/*.{ts,js}')],
   migrationsTableName: 'typeorm_migrations',
 };

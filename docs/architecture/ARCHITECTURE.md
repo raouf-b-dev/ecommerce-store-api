@@ -108,13 +108,11 @@ C4Context
     System(ecommerce, "E-commerce API", "Handles orders, payments, inventory, and products")
 
     System_Ext(stripe, "Stripe", "Payment Gateway")
-    System_Ext(paypal, "PayPal", "Payment Gateway")
     System_Ext(redis, "Redis Stack", "Cache, Search, & Queue")
     System_Ext(postgres, "PostgreSQL", "Primary Database")
 
     Rel(customer, ecommerce, "Uses", "HTTPS/WSS")
     Rel(ecommerce, stripe, "Processes payments", "HTTPS")
-    Rel(ecommerce, paypal, "Processes payments", "HTTPS")
     Rel(ecommerce, redis, "Reads/Writes", "TCP")
     Rel(ecommerce, postgres, "Persists data", "TCP")
 ```
@@ -162,7 +160,7 @@ graph TD
     end
 ```
 
-> **Key Strength**: This system implements a **Hybrid Payment Architecture**, orchestrating both synchronous online payments (Stripe/PayPal imitation) and asynchronous manual confirmations (Cash on Delivery) via unified SAGA flows.
+> **Key Strength**: This system implements a **Stripe-Only Payment Architecture**, orchestrating clean, deterministic SAGA flows (Validate Cart → Reserve Stock → Process Payment → Confirm Order) with automated BullMQ queue processing and webhook reconciliation.
 
 ## 🧩 Component Dependencies (C4 Level 2)
 
@@ -205,9 +203,9 @@ graph TD
     Payments -->|Verifies| Authentication
 ```
 
-## 🛒 Checkout Sequence Diagram (Online Flow)
+## 🛒 Checkout Sequence Diagram (Stripe Flow)
 
-The standard flow for online payments (Credit Card, PayPal) where strict SAGA coordination is required ensuring payment is only captured if stock is reserved.
+The standard flow for checkout where strict SAGA coordination is required ensuring payment is captured via Stripe and inventory is reserved cleanly.
 
 ```mermaid
 sequenceDiagram
@@ -220,22 +218,22 @@ sequenceDiagram
     participant Payment as Payment Module
 
     Client->>CheckoutUC: POST /checkout
-    CheckoutUC->>CheckoutUC: Validate Cart & User
+    CheckoutUC->>CheckoutUC: Validate User & Cart
     CheckoutUC->>OrderRepo: Create Order (Status: PENDING_PAYMENT)
-    CheckoutUC->>BullMQ: Schedule SAGA Process
-    CheckoutUC-->>Client: 201 Created (Payment Pending)
+    CheckoutUC->>BullMQ: Schedule SAGA Checkout Process
+    CheckoutUC-->>Client: 201 Created (Checkout Initiated)
 
     rect rgba(0, 255, 0, 0.1)
-    Note over Worker,Inventory: Async Phase 1: Reservations
+    Note over Worker,Inventory: Async Phase 1: Stock Reservation
     BullMQ->>Worker: Process Job
     Worker->>Inventory: Reserve Stock logic
-    Inventory-->>Worker: Confirmed
+    Inventory-->>Worker: Stock Reserved
     end
 
     rect rgba(0, 0, 255, 0.1)
-    Note over Worker,Payment: Async Phase 2: Payment
-    Worker->>Payment: Process Payment logic
-    Payment-->>Worker: Success
+    Note over Worker,Payment: Async Phase 2: Stripe Payment Processing
+    Worker->>Payment: Process Stripe Payment
+    Payment-->>Worker: Payment Authorized & Captured
     end
 
     Worker->>OrderRepo: Update Order Status (CONFIRMED)
@@ -244,7 +242,7 @@ sequenceDiagram
 
 ## 🔄 SAGA Compensation Flow (Failure Handling)
 
-If any step in the checkout process fails (e.g., payment declined), the system triggers a **Compensation SAGA** to rollback previous changes and ensure consistency.
+If any step in the checkout process fails (e.g., stock unavailable, payment declined), the system triggers a **Compensation SAGA** to rollback previous steps automatically.
 
 ```mermaid
 sequenceDiagram
@@ -255,9 +253,9 @@ sequenceDiagram
     participant Inventory as Inventory Module
 
     Note over Job: Checkout Job Fails ❌
-    Job->>Listener: Emits 'failed' event
+    Job->>Listener: Emits 'checkout.saga.failed' event
 
-    Listener->>Listener: Analyze Failure Reason
+    Listener->>Listener: Analyze Failure Step
 
     par Compensation Steps
         Listener->>Payment: Process Refund (if paid)
@@ -274,80 +272,54 @@ sequenceDiagram
 
 ### 1. Domain-Driven Design (DDD)
 
-- **Rich Domain Models**: Business logic resides in entities, not services.
-- **Value Objects**: Immutable objects for things like `Money`, `Address`.
-- **Repositories**: Interfaces defined in Domain, implemented in Infrastructure.
+- **Rich Domain Models**: Business logic resides in entities (`Cart`, `Order`, `Product`), enforcing invariants.
+- **Value Objects**: Immutable objects for things like `Money`, `Address`, `PaymentMethod`.
+- **Repositories**: Interfaces defined in Domain, implemented in Secondary Adapters.
 
 ### 2. Result Pattern
 
-We use a functional `Result<T, E>` type instead of throwing exceptions for business logic flow. This makes error handling explicit and type-safe.
+We use a functional `Result<T, E>` type instead of throwing exceptions for business logic flow. This makes error handling explicit and type-safe across domain and application layers.
 
 ### 3. Idempotency
 
-Critical endpoints (like Checkout) are protected by a custom `@Idempotent()` decorator backed by Redis, preventing double-charging or duplicate orders during network retries.
+Critical endpoints (like Checkout) are protected by a custom `@Idempotent()` decorator backed by Redis locks, preventing duplicate orders or double-charging during network retries.
 
 ### 4. Background Processing
 
-Long-running tasks are offloaded to **BullMQ** to keep the API responsive.
+Multi-step workflows are processed asynchronously via **BullMQ** to maintain high throughput and low HTTP latency.
 
-## 🔀 Online vs COD Checkout Logic
+## 🔀 Checkout Execution & SAGA Compensation Flow
 
-A unified view of how the system handles different payment flows, including **Failure & Compensation** paths.
+A unified view of how the system handles the checkout workflow, including **Failure & Compensation** paths.
 
 ```mermaid
 flowchart TD
-    Start((Start)) --> Validate[Validate Cart & User]
-    Validate --> CreateOrder[Create Order]
+    Start((Start)) --> Validate[Validate Cart & Authenticated User]
+    Validate --> CreateOrder[Create Order: PENDING_PAYMENT]
+    CreateOrder --> Schedule[Schedule Checkout SAGA Job]
+    Schedule --> ReturnClient[Return 201: Checkout Initiated]
 
-    CreateOrder --> CheckMethod{Payment Method?}
-
-    %% Online Flow
-    CheckMethod -->|Online| AssignPending[Status: PENDING_PAYMENT]
-    AssignPending --> ScheduleOnline[Schedule SAGA: Online Flow]
-    ScheduleOnline --> ReturnOnline[Return 201: Created]
-
-    ScheduleOnline -.-> WorkerOnline[Worker Processing]
-    WorkerOnline --> ValidateCart[Validate Cart]
-    ValidateCart -->|Fail| FailSAGA[❌ Compensation SAGA]
+    Schedule -.-> Worker[BullMQ Worker Processing]
+    Worker --> ValidateCart[Validate Cart State]
+    ValidateCart -->|Fail| FailSAGA[❌ Trigger Compensation SAGA]
     ValidateCart --> ReserveStock[Reserve Stock]
 
     ReserveStock -->|Fail| FailSAGA
-    ReserveStock --> ProcessPayment[Process Payment]
+    ReserveStock --> ProcessPayment[Process Stripe Payment]
 
     ProcessPayment -->|Fail| FailSAGA
     ProcessPayment --> PaymentSuccess{Success?}
-    PaymentSuccess -- Yes --> ConfirmOnline[Status: CONFIRMED]
+    PaymentSuccess -- Yes --> ConfirmOrder[Update Order Status: CONFIRMED]
     PaymentSuccess -- No --> FailSAGA
 
-    ConfirmOnline --> ConfirmResOnline[Confirm Reservation]
-    ConfirmResOnline --> ClearCartOnline[Clear Cart]
-    ClearCartOnline --> FinalizeOnline[Finalize Order]
+    ConfirmOrder --> ConfirmRes[Confirm Stock Reservation]
+    ConfirmRes --> ClearCart[Clear User Cart]
+    ClearCart --> Finalize[Finalize Order & Emit Event]
 
-    %% COD Flow
-    CheckMethod -->|COD| AssignConfirm[Status: PENDING_CONFIRMATION]
-    AssignConfirm --> ScheduleCOD[Schedule SAGA: COD Flow]
-    ScheduleCOD --> ReturnCOD[Return 201: Action Required]
-
-    ScheduleCOD -.-> WorkerCOD[Worker Processing]
-    WorkerCOD --> ValidateCartCOD[Validate Cart]
-    ValidateCartCOD -->|Fail| FailSAGA
-    ValidateCartCOD --> ReserveStockCOD[Reserve Stock]
-
-    ReserveStockCOD -->|Fail| FailSAGA
-    ReserveStockCOD --> Stop[🛑 Stop & Wait]
-    Stop --> ManualCall[📞 Manual Confirmation Call]
-    ManualCall --> AdminConfirm[Admin Clicks 'Confirm']
-
-    AdminConfirm --> UpdateStatus[Status: CONFIRMED]
-    UpdateStatus --> ScheduleFinalizeCOD[Schedule Finalization]
-    ScheduleFinalizeCOD --> ConfirmResCOD[Confirm Reservation]
-    ConfirmResCOD --> ClearCartCOD[Clear Cart]
-    ClearCartCOD --> FinalizeCOD[Finalize Order]
-
-    %% Shared Compensation Logic (Handles both Online & COD)
-    FailSAGA --> Refund["Refund Payment<br/>(If Paid)"]
-    Refund --> ReleaseStock["Release Stock<br/>(If Reserved)"]
-    ReleaseStock --> CancelOrder[Status: CANCELLED]
+    %% Compensation Logic
+    FailSAGA --> Refund["Refund Stripe Payment<br/>(If Paid)"]
+    Refund --> ReleaseStock["Release Stock Reservation<br/>(If Reserved)"]
+    ReleaseStock --> CancelOrder[Update Status: CANCELLED]
 ```
 
 ## 💸 Payment Event Handling (Async)

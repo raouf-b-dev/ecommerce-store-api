@@ -6,18 +6,18 @@ import { ShippingAddressProps } from '../../core/domain/value-objects/shipping-a
 export class ShippingAddressDto {
   @ApiProperty({ example: 'John', description: 'First name' })
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ example: 'Doe', description: 'Last name' })
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({
     example: '123 Main Street',
     description: 'Street address',
   })
   @IsString()
-  street: string;
+  street!: string;
 
   @ApiPropertyOptional({
     example: 'Apt 4B',
@@ -29,22 +29,22 @@ export class ShippingAddressDto {
 
   @ApiProperty({ example: 'New York', description: 'City' })
   @IsString()
-  city: string;
+  city!: string;
 
   @ApiProperty({ example: 'NY', description: 'State or province' })
   @IsString()
-  state: string;
+  state!: string;
 
   @ApiProperty({ example: '10001', description: 'Postal code' })
   @IsString()
-  postalCode: string;
+  postalCode!: string;
 
   @ApiProperty({
     example: 'US',
     description: 'Country code (ISO 3166-1 alpha-2)',
   })
   @IsString()
-  country: string;
+  country!: string;
 
   @ApiPropertyOptional({
     example: '+1234567890',

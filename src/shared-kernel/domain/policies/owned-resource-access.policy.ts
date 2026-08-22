@@ -28,6 +28,11 @@ export const USER_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
   viewOwn: 'view_own_profile',
 };
 
+export const CART_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
+  viewAll: 'view_all_carts',
+  viewOwn: 'manage_own_cart',
+};
+
 export const USER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
   manageAll: 'manage_users',
   manageOwn: 'manage_own_addresses',
@@ -53,7 +58,7 @@ export class OwnedResourceAccessPolicy {
 
     return (
       callerContext.permissions.has(permissions.viewOwn) &&
-      callerContext.userId !== null &&
+      Boolean(callerContext.userId) &&
       Number(callerContext.userId) === Number(resourceUserId)
     );
   }
@@ -77,7 +82,7 @@ export class OwnedResourceAccessPolicy {
 
     return (
       callerContext.permissions.has(permissions.manageOwn) &&
-      callerContext.userId !== null &&
+      Boolean(callerContext.userId) &&
       Number(callerContext.userId) === Number(resourceUserId)
     );
   }
@@ -100,7 +105,34 @@ export class OwnedResourceAccessPolicy {
         return { allowed: false };
       }
 
-      return { allowed: true, userId: Number(callerContext.userId) };
+      return {
+        allowed: true,
+        userId: Number(callerContext.userId),
+      };
+    }
+
+    return { allowed: false };
+  }
+
+  static resolveResourceScope(
+    callerContext: CallerContext,
+    permissions: OwnedResourcePermissions,
+  ):
+    | { allowed: true; authorizedUserId: number | undefined }
+    | { allowed: false } {
+    if (isSystemCaller(callerContext)) {
+      return { allowed: true, authorizedUserId: undefined };
+    }
+
+    if (callerContext.permissions.has(permissions.viewAll)) {
+      return { allowed: true, authorizedUserId: undefined };
+    }
+
+    if (callerContext.permissions.has(permissions.viewOwn)) {
+      if (!callerContext.userId) {
+        return { allowed: false };
+      }
+      return { allowed: true, authorizedUserId: Number(callerContext.userId) };
     }
 
     return { allowed: false };

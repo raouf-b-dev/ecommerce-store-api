@@ -8,6 +8,7 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 import { CorrelationService } from './correlation/correlation.service';
 import { EnvConfigService } from '../../config/env-config.service';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
 import { trace, context } from '@opentelemetry/api';
 
 @Injectable()
@@ -23,57 +24,6 @@ export class WinstonLoggerService
     const logDir = this.config.logDir;
     const logLevel = this.config.logLevel;
     const isProduction = this.config.node.env === 'production';
-
-    const jsonFormat = winston.format.combine(
-      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-      winston.format.errors({ stack: true }),
-      winston.format.json(),
-    );
-
-    const consoleFormat = winston.format.combine(
-      winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
-      winston.format.errors({ stack: true }),
-      winston.format.colorize({ all: true }),
-      winston.format.printf((info) => {
-        const { timestamp, level, message, context, correlationId, stack } =
-          info;
-
-        // Ensure all fields are strings or stringified
-        const ts =
-          typeof timestamp === 'string' ? timestamp : String(timestamp);
-        const lvl = typeof level === 'string' ? level : String(level);
-        const msg = typeof message === 'string' ? message : String(message);
-
-        let ctx = '';
-        if (context) {
-          ctx =
-            typeof context === 'string'
-              ? `[${context}]`
-              : `[${JSON.stringify(context)}]`;
-        }
-
-        // Show correlation ID and trace ID in dev console for easy visual tracing
-        const cid =
-          typeof correlationId === 'string'
-            ? ` (cid:${correlationId.slice(0, 8)})`
-            : '';
-
-        const tid =
-          typeof info.traceId === 'string'
-            ? ` (tid:${info.traceId.slice(0, 8)})`
-            : '';
-
-        let stackTrace = '';
-        if (stack) {
-          stackTrace =
-            typeof stack === 'string'
-              ? `\n${stack}`
-              : `\n${JSON.stringify(stack)}`;
-        }
-
-        return `${ts} ${lvl} ${ctx}${cid}${tid} ${msg}${stackTrace}`;
-      }),
-    );
 
     // --- Transports ---
 
@@ -238,3 +188,95 @@ export class WinstonLoggerService
     });
   }
 }
+
+// --- Winston Formats & Helper Functions ---
+
+const SENSITIVE_KEYS_REGEX =
+  /^(password|token|secret|authorization|cookie|cardNumber|cvv|pan|ssn|creditCard)$/i;
+
+function redactInPlace(
+  target: unknown,
+  visited = new WeakSet<object>(),
+): unknown {
+  if (target === null || target === undefined || typeof target !== 'object') {
+    return target;
+  }
+  if (visited.has(target)) {
+    return target;
+  }
+  visited.add(target);
+
+  if (Array.isArray(target)) {
+    for (let i = 0; i < target.length; i++) {
+      if (typeof target[i] === 'object' && target[i] !== null) {
+        target[i] = redactInPlace(target[i], visited);
+      }
+    }
+    return target;
+  }
+
+  if (!isRecord(target)) {
+    return target;
+  }
+
+  for (const key of Object.keys(target)) {
+    if (SENSITIVE_KEYS_REGEX.test(key)) {
+      target[key] = '[REDACTED]';
+    } else if (typeof target[key] === 'object' && target[key] !== null) {
+      target[key] = redactInPlace(target[key], visited);
+    }
+  }
+  return target;
+}
+
+const piiRedactFormat = winston.format((info) => {
+  redactInPlace(info);
+  return info;
+})();
+
+const jsonFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+  winston.format.errors({ stack: true }),
+  piiRedactFormat,
+  winston.format.json(),
+);
+
+const consoleFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'HH:mm:ss.SSS' }),
+  winston.format.errors({ stack: true }),
+  piiRedactFormat,
+  winston.format.colorize({ all: true }),
+  winston.format.printf((info) => {
+    const { timestamp, level, message, context, correlationId, stack } = info;
+
+    const ts = typeof timestamp === 'string' ? timestamp : String(timestamp);
+    const lvl = typeof level === 'string' ? level : String(level);
+    const msg = typeof message === 'string' ? message : String(message);
+
+    let ctx = '';
+    if (context) {
+      ctx =
+        typeof context === 'string'
+          ? `[${context}]`
+          : `[${JSON.stringify(context)}]`;
+    }
+
+    const cid =
+      typeof correlationId === 'string'
+        ? ` (cid:${correlationId.slice(0, 8)})`
+        : '';
+
+    const tid =
+      typeof info.traceId === 'string'
+        ? ` (tid:${info.traceId.slice(0, 8)})`
+        : '';
+
+    let stackTrace = '';
+    if (stack) {
+      stackTrace =
+        typeof stack === 'string' ? `\n${stack}` : `\n${JSON.stringify(stack)}`;
+    }
+
+    return `${ts} ${lvl} ${ctx}${cid}${tid} ${msg}${stackTrace}`;
+  }),
+);

@@ -18,7 +18,7 @@ export class CreatePaymentDto {
     description: 'Order ID',
   })
   @IsNumber()
-  orderId: number;
+  orderId!: number;
 
   @ApiProperty({
     example: 299.99,
@@ -26,22 +26,22 @@ export class CreatePaymentDto {
   })
   @IsNumber()
   @Min(0)
-  amount: number;
+  amount!: number;
 
   @ApiProperty({
     enum: PaymentMethodType,
-    example: PaymentMethodType.CREDIT_CARD,
+    example: PaymentMethodType.STRIPE,
     description: 'Payment method',
   })
   @IsEnum(PaymentMethodType)
-  paymentMethod: PaymentMethodType;
+  paymentMethod!: PaymentMethodType;
 
   @ApiProperty({
     example: 'USD',
     description: 'Currency code',
   })
   @IsString()
-  currency: string;
+  currency!: string;
 
   @ApiPropertyOptional({
     type: PaymentMethodDetailsDto,

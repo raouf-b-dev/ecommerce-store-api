@@ -1,39 +1,25 @@
 import { CreateCartUseCase } from './create-cart.usecase';
-import { MockCartRepository } from '../../../../testing/mocks/cart-repository.mock';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Cart } from '../../../domain/entities/cart';
-import { CartTestFactory } from '../../../../testing/factories/cart.factory';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartSessionTokenGateway } from '../../ports/session-token.gateway';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
 
 describe('CreateCartUseCase', () => {
   let usecase: CreateCartUseCase;
   let mockCartRepository: MockCartRepository;
-  let mockSessionTokenGateway: jest.Mocked<CartSessionTokenGateway>;
 
-  const customerContext: CallerContext = {
-    kind: 'user',
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  };
+  const customerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(() => {
     mockCartRepository = new MockCartRepository();
-    mockSessionTokenGateway = {
-      generateToken: jest
-        .fn()
-        .mockResolvedValue(Result.success('mock-session-token')),
-      validateToken: jest.fn(),
-    } as any;
-
-    usecase = new CreateCartUseCase(
-      mockCartRepository,
-      mockSessionTokenGateway,
+    mockCartRepository.findByuserId.mockResolvedValue(
+      Result.failure(new RepositoryError('Cart not found')),
     );
+    usecase = new CreateCartUseCase(mockCartRepository);
   });
 
   afterEach(() => {
@@ -42,78 +28,71 @@ describe('CreateCartUseCase', () => {
 
   describe('execute', () => {
     it('should create a user cart successfully', async () => {
-      const mockCartData = CartTestFactory.createUserCart(123);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: 777 });
-
-      mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
-
-      const result = await usecase.execute({ callerContext: customerContext });
-
-      expect(mockCartRepository.create).toHaveBeenCalledWith({
-        userId: 123,
+      mockCartRepository.save.mockImplementation((cart: Cart) => {
+        cart.setId(42);
+        return Promise.resolve(Result.success(cart));
       });
+
+      const result = await usecase.execute(customerContext);
+
+      expect(mockCartRepository.save).toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.cart.userId).toBe(123);
-      expect(result.value.token).toBeUndefined();
+      expect(result.value.id).toBe(42);
+      expect(result.value.userId).toBe(123);
+      expect(result.value.items).toEqual([]);
+      expect(result.value.itemCount).toBe(0);
     });
 
-    it('should create a guest cart and return session token for anonymous callers', async () => {
-      const mockCartData = CartTestFactory.createGuestCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: 777 });
+    it('should return the existing cart if the user already has one', async () => {
+      const mockCart = CartTestFactory.createUserCart(123, { id: 42 });
 
-      mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
-
-      const result = await usecase.execute({ callerContext: null });
-
-      expect(mockCartRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sessionId: expect.any(Number),
-        }),
+      mockCartRepository.findByuserId.mockResolvedValue(
+        Result.success(mockCart),
       );
+
+      const result = await usecase.execute(customerContext);
+
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.cart.sessionId).toBe(456);
-      expect(result.value.token).toBe('mock-session-token');
-      expect(mockSessionTokenGateway.generateToken).toHaveBeenCalledWith(777);
+      expect(result.value.id).toBe(42);
+      expect(result.value.items).toEqual([]);
     });
 
-    it('should create a guest cart for authenticated callers without a customer profile', async () => {
-      const adminContext: CallerContext = {
-        kind: 'user',
-        userId: 1,
-        role: 'ADMIN',
-        permissions: new Set(['manage_carts']),
-      };
-
-      const mockCartData = CartTestFactory.createGuestCart(456);
-      const mockCart = Cart.fromPrimitives(mockCartData);
-      Object.defineProperty(mockCart, 'id', { value: 777 });
-
-      mockCartRepository.create.mockResolvedValue(Result.success(mockCart));
-
-      const result = await usecase.execute({ callerContext: adminContext });
-
-      expect(mockCartRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sessionId: expect.any(Number),
-        }),
+    it('should fail closed when the persisted cart has no id', async () => {
+      mockCartRepository.save.mockImplementation((cart: Cart) =>
+        Promise.resolve(Result.success(cart)),
       );
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.token).toBe('mock-session-token');
+
+      const result = await usecase.execute(customerContext);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart for user 123 not found after persist',
+        UseCaseError,
+      );
+    });
+
+    it('should reject cart creation when callerContext is missing', async () => {
+      const result = await usecase.execute(null);
+
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Not authorized to create a customer cart',
+        UseCaseError,
+      );
     });
 
     it('should reject customer cart creation when manage_own_cart permission is missing', async () => {
-      const unscopedCustomer: CallerContext = {
-        kind: 'user',
+      const unscopedCustomer = createUserCallerContext({
         userId: 1,
         role: 'CUSTOMER',
         permissions: new Set(),
-      };
+      });
 
-      const result = await usecase.execute({ callerContext: unscopedCustomer });
+      const result = await usecase.execute(unscopedCustomer);
 
-      expect(mockCartRepository.create).not.toHaveBeenCalled();
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
       ResultAssertionHelper.assertResultFailure(
         result,
         'Not authorized to create a customer cart',
@@ -122,10 +101,9 @@ describe('CreateCartUseCase', () => {
     });
 
     it('should return failure when repository fails', async () => {
-      const error = new RepositoryError('Failed to create cart');
-      mockCartRepository.create.mockResolvedValue(Result.failure(error));
+      mockCartRepository.mockSaveFailure('Failed to create cart');
 
-      const result = await usecase.execute({ callerContext: customerContext });
+      const result = await usecase.execute(customerContext);
 
       ResultAssertionHelper.assertResultFailure(
         result,

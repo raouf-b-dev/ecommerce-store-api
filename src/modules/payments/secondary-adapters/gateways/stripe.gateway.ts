@@ -17,64 +17,72 @@ export class StripeGateway implements IPaymentGateway {
     return PaymentMethodType.STRIPE;
   }
 
-  async createPaymentIntent(
-    amount: number,
-    currency: string,
-    metadata?: Record<string, string>,
+  createPaymentIntent(
+    _amount: number,
+    _currency: string,
+    _metadata?: Record<string, string>,
   ): Promise<Result<PaymentIntentResult, InfrastructureError>> {
     // STUB: Simulate Stripe PaymentIntent creation
     const paymentIntentId = `pi_${uuidv4().replace(/-/g, '')}`;
     const clientSecret = `${paymentIntentId}_secret_${uuidv4().substring(0, 24)}`;
 
-    return Result.success({
-      paymentIntentId,
-      clientSecret,
-      status: PaymentStatusType.PENDING,
-    });
+    return Promise.resolve(
+      Result.success({
+        paymentIntentId,
+        clientSecret,
+        status: PaymentStatusType.PENDING,
+      }),
+    );
   }
 
-  async authorize(
+  authorize(
     amount: number,
     currency: string,
     paymentMethodDetails?: string,
   ): Promise<Result<PaymentResult, InfrastructureError>> {
     // STUB: Simulate Stripe authorization
-    return Result.success({
-      success: true,
-      status: PaymentStatusType.AUTHORIZED,
-      transactionId: `stripe_pi_${uuidv4()}`,
-      metadata: {
-        method: 'Stripe',
-        amount,
-        currency,
-        details: paymentMethodDetails,
-      },
-    });
+    return Promise.resolve(
+      Result.success({
+        success: true,
+        status: PaymentStatusType.AUTHORIZED,
+        transactionId: `stripe_pi_${uuidv4()}`,
+        metadata: {
+          method: 'Stripe',
+          amount,
+          currency,
+          details: paymentMethodDetails,
+        },
+      }),
+    );
   }
 
-  async capture(
+  capture(
     transactionId: string,
   ): Promise<Result<PaymentResult, InfrastructureError>> {
     // STUB: Simulate Stripe capture
-    return Result.success({
-      success: true,
-      status: PaymentStatusType.CAPTURED,
-      transactionId,
-    });
+    return Promise.resolve(
+      Result.success({
+        success: true,
+        status: PaymentStatusType.CAPTURED,
+        transactionId,
+      }),
+    );
   }
 
-  async refund(
+  refund(
     transactionId: string,
     amount: number,
   ): Promise<Result<PaymentResult, InfrastructureError>> {
     // STUB: Simulate Stripe refund
-    return Result.success({
-      success: true,
-      status: PaymentStatusType.REFUNDED,
-      transactionId,
-      metadata: {
-        refundAmount: amount,
-      },
-    });
+    return Promise.resolve(
+      Result.success({
+        success: true,
+        status: PaymentStatusType.REFUNDED,
+        transactionId,
+        metadata: {
+          refundAmount: amount,
+        },
+      }),
+    );
   }
 }

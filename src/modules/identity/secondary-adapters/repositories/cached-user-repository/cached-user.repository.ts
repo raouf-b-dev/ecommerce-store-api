@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 import { User } from '../../../core/domain/entities/user';
 import {
   UserCacheMapper,
@@ -25,51 +25,39 @@ export class CachedUserRepository implements UserRepository {
     return `${USER_REDIS.CACHE_KEY}:${id}`;
   }
 
-  async save(user: User): Promise<Result<User, RepositoryError>> {
-    try {
-      const dbResult = await this.postgresRepo.save(user);
-      if (dbResult.isFailure) return dbResult;
-
-      const saved = dbResult.value;
-
-      try {
-        await this.cacheService.set(
-          this.idKey(saved.id!),
-          UserCacheMapper.toCache(saved),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
-      } catch (cacheError) {
-        this.logger.warn(
-          `Failed to cache user ${saved.id} after save`,
-          cacheError,
-        );
-      }
-
-      return Result.success(saved);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save user', error);
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: User; expectedVersion: number } | null, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async update(user: User): Promise<Result<void, RepositoryError>> {
+  async save(
+    user: User,
+    expectedVersion?: number,
+  ): Promise<Result<User, RepositoryError>> {
     try {
-      const dbResult = await this.postgresRepo.update(user);
-      if (dbResult.isFailure) return dbResult;
+      const saveResult = await this.postgresRepo.save(user, expectedVersion);
+      if (saveResult.isFailure) return saveResult;
 
-      try {
-        await this.cacheService.set(
-          this.idKey(user.id!),
-          UserCacheMapper.toCache(user),
-          { ttl: USER_REDIS.EXPIRATION },
-        );
-      } catch (cacheError) {
-        this.logger.warn(
-          `Failed to cache user ${user.id} after save`,
-          cacheError,
-        );
+      const savedUser = saveResult.value;
+      if (savedUser.id) {
+        try {
+          await this.cacheService.set(
+            this.idKey(savedUser.id),
+            UserCacheMapper.toCache(savedUser),
+            { ttl: USER_REDIS.EXPIRATION },
+          );
+        } catch (cacheError) {
+          this.logger.warn(
+            `Failed to cache user ${savedUser.id} after save`,
+            cacheError,
+          );
+        }
       }
 
-      return Result.success(undefined);
+      return Result.success(savedUser);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to save user', error);
     }
@@ -95,16 +83,7 @@ export class CachedUserRepository implements UserRepository {
     limit?: number,
   ): Promise<Result<User[], RepositoryError>> {
     try {
-      const cachedUsers = await this.cacheService.getAll<UserForCache>(
-        USER_REDIS.INDEX,
-      );
-
-      if (cachedUsers.length > 0) {
-        return Result.success(
-          cachedUsers.map((c) => UserCacheMapper.fromCache(c)),
-        );
-      }
-
+      // Paginated lists are not a complete RediSearch result set — always query Postgres.
       const dbResult = await this.postgresRepo.findAll(page, limit);
       if (dbResult.isFailure) return dbResult;
 
@@ -139,13 +118,13 @@ export class CachedUserRepository implements UserRepository {
     email: string,
   ): Promise<Result<User | null, RepositoryError>> {
     try {
-      const cachedUsers = await this.cacheService.getAll<UserForCache>(
+      const [cached] = await this.cacheService.search<UserForCache>(
         USER_REDIS.INDEX,
-        `@email:{${escapeRedisSearchTextValue(email)}}`,
+        tagEquals('email', email),
       );
-
-      if (cachedUsers.length > 0) {
-        return Result.success(UserCacheMapper.fromCache(cachedUsers[0]));
+      if (cached) {
+        const user = UserCacheMapper.fromCache(cached);
+        if (user) return Result.success(user);
       }
     } catch (error) {
       this.logger.warn(`Cache lookup failed for email: ${email}`, error);
@@ -184,7 +163,8 @@ export class CachedUserRepository implements UserRepository {
     try {
       const cached = await this.cacheService.get<UserForCache>(this.idKey(id));
       if (cached) {
-        return Result.success(UserCacheMapper.fromCache(cached));
+        const user = UserCacheMapper.fromCache(cached);
+        if (user) return Result.success(user);
       }
     } catch (error) {
       this.logger.warn(`Cache lookup failed for ID: ${id}`, error);

@@ -5,24 +5,25 @@ import {
 } from './validate-checkout.usecase';
 import { ShippingAddressResolver } from '../../services/shipping-address-resolver';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { CheckoutUserInfoResult, UserGateway } from '../../ports/user.gateway';
-import { CartGateway, CheckoutCartInfo } from '../../ports/cart.gateway';
+import { ResultAssertionHelper } from '../../../../../../testing';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CheckoutCartInfo, CartGateway } from '../../ports/cart.gateway';
+import { CheckoutUserInfoResult, UserGateway } from '../../ports/user.gateway';
 import {
-  createUserCallerContext,
-  SYSTEM_CALLER_CONTEXT,
-} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { MockCartGateway } from 'src/modules/orders/testing/mocks/cart-gateway.mock';
-import { MockUserGateway } from 'src/modules/orders/testing/mocks/user-gateway.mock';
-import { OrderDtoTestFactory } from 'src/modules/orders/testing';
+  MockCartGateway,
+  MockShippingAddressResolver,
+  MockUserGateway,
+  OrderDtoTestFactory,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 describe('ValidateCheckoutUseCase', () => {
   let useCase: ValidateCheckoutUseCase;
   let userGateway: MockUserGateway;
   let cartGateway: MockCartGateway;
-  let addressResolver: jest.Mocked<ShippingAddressResolver>;
+  let addressResolver: MockShippingAddressResolver;
 
   const mockuserId = 123;
   const mockCartId = 456;
@@ -33,11 +34,7 @@ describe('ValidateCheckoutUseCase', () => {
   const mockResolvedAddress =
     OrderTestFactory.createMockOrder().shippingAddress;
 
-  const customerCallerContext = createUserCallerContext({
-    userId: 123,
-    role: 'CUSTOMER',
-    permissions: new Set(['manage_own_cart']),
-  });
+  const customerCallerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(async () => {
     mockUser = OrderDtoTestFactory.createCheckoutUserInfoResult({
@@ -51,19 +48,14 @@ describe('ValidateCheckoutUseCase', () => {
 
     userGateway = new MockUserGateway();
     cartGateway = new MockCartGateway();
-
-    const mockAddressResolver = {
-      resolve: jest.fn(),
-      resolveFromDto: jest.fn(),
-      resolveFromDefault: jest.fn(),
-    };
+    addressResolver = new MockShippingAddressResolver();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateCheckoutUseCase,
         { provide: UserGateway, useValue: userGateway },
         { provide: CartGateway, useValue: cartGateway },
-        { provide: ShippingAddressResolver, useValue: mockAddressResolver },
+        { provide: ShippingAddressResolver, useValue: addressResolver },
       ],
     }).compile();
 
@@ -84,7 +76,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -96,20 +87,20 @@ describe('ValidateCheckoutUseCase', () => {
       expect(cartGateway.validateCartForCheckout).toHaveBeenCalledWith({
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       });
     });
 
     it('should call addressResolver with shippingAddress dto when provided', async () => {
-      const shippingAddressDto = {
-        firstName: 'Jane',
-        lastName: 'Smith',
-        street: '456 Other St',
-        city: 'LA',
-        state: 'CA',
-        postalCode: '90001',
-        country: 'USA',
-      };
+      const shippingAddressDto =
+        OrderDtoTestFactory.createCheckoutShippingAddressInput({
+          firstName: 'Jane',
+          lastName: 'Smith',
+          street: '456 Other St',
+          city: 'LA',
+          state: 'CA',
+          postalCode: '90001',
+          country: 'USA',
+        });
 
       userGateway.getUserInfo.mockResolvedValue(Result.success(mockUser));
       cartGateway.validateCartForCheckout.mockResolvedValue(
@@ -120,7 +111,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
         shippingAddress: shippingAddressDto,
       };
 
@@ -145,7 +135,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -161,7 +150,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -178,7 +166,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: customerCallerContext,
-        cartToken: null,
       };
 
       const result = await useCase.execute(input);
@@ -190,7 +177,6 @@ describe('ValidateCheckoutUseCase', () => {
       const input: ValidateCheckoutInput = {
         cartId: mockCartId,
         callerContext: null,
-        cartToken: 'guest-token',
       };
 
       const result = await useCase.execute(input);
@@ -211,14 +197,12 @@ describe('ValidateCheckoutUseCase', () => {
       const result = await useCase.execute({
         cartId: mockCartId,
         callerContext: SYSTEM_CALLER_CONTEXT,
-        cartToken: null,
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(cartGateway.validateCartForCheckout).toHaveBeenCalledWith({
         cartId: mockCartId,
         callerContext: SYSTEM_CALLER_CONTEXT,
-        cartToken: null,
       });
     });
   });

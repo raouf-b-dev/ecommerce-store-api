@@ -9,20 +9,20 @@ import {
 @Entity('credentials')
 export class CredentialEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ name: 'user_id', type: 'int', unique: true })
-  userId: number;
+  userId!: number;
 
   @Column({ name: 'password_hash' })
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({ name: 'must_change_password', type: 'boolean', default: false })
-  mustChangePassword: boolean;
+  mustChangePassword!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

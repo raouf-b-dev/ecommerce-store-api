@@ -8,31 +8,31 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   Relation,
+  VersionColumn,
 } from 'typeorm';
 import { CartItemEntity } from './cart-item.schema';
 
 @Entity({ name: 'carts' })
 @Index('idx_carts_user_id', ['userId'])
-@Index('idx_carts_session_id', ['sessionId'])
 export class CartEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
-  @Column({ name: 'user_id', type: 'int', nullable: true })
-  userId: number | null;
+  @VersionColumn({ default: 1 })
+  version!: number;
 
-  @Column({ name: 'session_id', type: 'int', nullable: true })
-  sessionId: number | null;
+  @Column({ name: 'user_id', type: 'int', nullable: false, unique: true })
+  userId!: number;
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, {
     cascade: true,
     eager: true,
   })
-  items: Relation<CartItemEntity>[];
+  items!: Relation<CartItemEntity>[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

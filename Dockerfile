@@ -36,10 +36,13 @@ FROM node:24-alpine AS production
 WORKDIR /app
 
 # tini: proper PID 1 init — forwards SIGTERM to Node.js for graceful shutdown
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini wget
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Pre-load OpenTelemetry instrumentation before any application code.
+# tracing.ts checks OTEL_TRACING_ENABLED internally, so --require is always safe.
+ENV NODE_OPTIONS="--require ./dist/src/infrastructure/tracing/tracing.js"
 
 # Copy only production artifacts
 COPY --from=build /app/dist ./dist
@@ -59,9 +62,9 @@ USER appuser
 
 EXPOSE $PORT
 
-# Liveness check — verifies the app is running and DB + Redis are reachable
+# Liveness check — process viability only
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT}/health || exit 1
+  CMD wget -qO- http://localhost:${PORT}/health/liveness || exit 1
 
 ENTRYPOINT ["tini", "--", "/app/docker-entrypoint.sh"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

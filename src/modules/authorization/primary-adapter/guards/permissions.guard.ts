@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { REQUIRED_PERMISSIONS_KEY } from '../../../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { ResolveRolePermissionsService } from '../../../authorization/core/application/services/resolve-role-permissions.service';
 import { RolePermissionsVO } from '../../../authorization/core/domain/value-objects/role-permissions';
@@ -24,7 +25,7 @@ export class PermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const user = request.user;
 
     if (!user || !user.role) {

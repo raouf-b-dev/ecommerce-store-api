@@ -12,10 +12,13 @@ import {
   CART_GATEWAY,
   INVENTORY_RESERVATION_GATEWAY,
   PAYMENT_GATEWAY,
+  ORDER_QUERY_SERVICE,
 } from './order.token';
 
 import { CachedOrderRepository } from './secondary-adapters/repositories/cached-order-repository/cached.order-repository';
 import { PostgresOrderRepository } from './secondary-adapters/repositories/postgres-order-repository/postgres.order-repository';
+import { PostgresOrderQueryAdapter } from './secondary-adapters/query/postgres-order-query.adapter';
+import { OrderQueryService } from './core/application/ports/order-query.service';
 import { ModuleUserGateway } from './secondary-adapters/adapters/module-user.gateway';
 import { ModuleCartGateway } from './secondary-adapters/adapters/module-cart.gateway';
 import { ModuleInventoryReservationGateway } from './secondary-adapters/adapters/module-inventory-reservation.gateway';
@@ -26,7 +29,7 @@ import { InventoryReservationGateway } from './core/application/ports/inventory-
 import { PaymentGateway } from './core/application/ports/payment.gateway';
 import { OrderEntity } from './secondary-adapters/orm/order.schema';
 import { OrderItemEntity } from './secondary-adapters/orm/order-item.schema';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { OrderFactory } from './core/domain/factories/order.factory';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
@@ -56,7 +59,6 @@ import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-o
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 import { ReleaseOrderStockUseCase } from './core/application/usecases/release-order-stock/release-order-stock.usecase';
 import { ShippingAddressResolver } from './core/application/services/shipping-address-resolver';
-import { PaymentMethodPolicy } from './core/domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from './core/application/usecases/validate-checkout/validate-checkout.usecase';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
 import { ReserveStockStep } from './primary-adapters/jobs/reserve-stock-job/reserve-stock.job';
@@ -68,7 +70,6 @@ import { ReleaseStockStep } from './primary-adapters/jobs/release-stock.job';
 import { CancelOrderStep } from './primary-adapters/jobs/cancel-order.job';
 import { RefundPaymentStep } from './primary-adapters/jobs/refund-payment.job';
 import { FinalizeCheckoutStep } from './primary-adapters/jobs/finalize-checkout.job';
-import { ConfirmOrderStep } from './primary-adapters/jobs/confirm-order.job';
 import { OrdersProcessor } from './orders.processor';
 import { ReserveStockForCheckoutUseCase } from './core/application/usecases/reserve-stock-for-checkout/reserve-stock-for-checkout.usecase';
 import { ReleaseCheckoutStockUseCase } from './core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
@@ -77,6 +78,7 @@ import { CreateCheckoutPaymentUseCase } from './core/application/usecases/create
 import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-checkout/finalize-checkout.usecase';
+import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.usecase';
 
 @Module({
   imports: [
@@ -85,7 +87,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
       OrderItemEntity,
       ShippingAddressEntity,
     ]),
-    RedisModule,
     RedisModule,
     PaymentsModule,
     IdentityModule,
@@ -111,9 +112,12 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
       useFactory: (
         cacheService: CachePort,
         postgresRepo: PostgresOrderRepository,
-        logger: Logger,
       ) => {
-        return new CachedOrderRepository(cacheService, postgresRepo, logger);
+        return new CachedOrderRepository(
+          cacheService,
+          postgresRepo,
+          new Logger(CachedOrderRepository.name),
+        );
       },
       inject: [CachePort, POSTGRES_ORDER_REPOSITORY],
     },
@@ -152,7 +156,7 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
       useExisting: PAYMENT_GATEWAY,
     },
 
-    // Default Repository Binding
+    // Default Repository Binding — cache-aside fails open via CachePort
     {
       provide: OrderRepository,
       useExisting: CACHED_ORDER_REPOSITORY,
@@ -167,7 +171,6 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     // Domain
     OrderFactory,
     ShippingAddressResolver,
-    PaymentMethodPolicy,
 
     // Use cases
     GetOrderUseCase,
@@ -191,6 +194,7 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     RefundCheckoutPaymentUseCase,
     ClearCheckoutCartUseCase,
     FinalizeCheckoutUseCase,
+    SeedDemoOrdersUseCase,
 
     // Job Handlers
     PaymentCompletedStep,
@@ -207,15 +211,24 @@ import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-ch
     CancelOrderStep,
     RefundPaymentStep,
     FinalizeCheckoutStep,
-    ConfirmOrderStep,
 
     // Listeners
     CheckoutFailureListener,
+
+    // Query Port Binding
+    {
+      provide: ORDER_QUERY_SERVICE,
+      useClass: PostgresOrderQueryAdapter,
+    },
+    {
+      provide: OrderQueryService,
+      useExisting: ORDER_QUERY_SERVICE,
+    },
 
     // Processors
     PaymentEventsProcessor,
     OrdersProcessor,
   ],
-  exports: [OrderRepository],
+  exports: [OrderRepository, OrderQueryService, SeedDemoOrdersUseCase],
 })
 export class OrdersModule {}

@@ -75,8 +75,8 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ) {
     return await this.updateUserUseCase.execute({
-      id: id,
-      command: dto,
+      id,
+      ...dto,
     });
   }
 

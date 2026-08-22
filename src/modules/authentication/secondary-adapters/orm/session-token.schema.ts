@@ -9,24 +9,24 @@ import {
 @Entity('session_tokens')
 export class SessionTokenEntity {
   @PrimaryColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index()
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column()
-  tokenHash: string;
+  tokenHash!: string;
 
   @Column()
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @Column({ default: false })
-  isRevoked: boolean;
+  isRevoked!: boolean;
 
   @Column({ type: 'timestamp', nullable: true })
-  revokedAt: Date | null;
+  revokedAt!: Date | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

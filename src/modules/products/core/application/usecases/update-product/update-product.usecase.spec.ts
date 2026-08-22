@@ -1,10 +1,12 @@
-// src/modules/Products/application/usecases/update-product/update-product.usecase.spec.ts
+import {
+  MockProductRepository,
+  ProductTestFactory,
+  UpdateProductInputFactory,
+} from 'src/modules/products/testing';
 import { UpdateProductUseCase } from './update-product.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
-import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { UpdateProductInputFactory } from '../../../../testing/factories/update-product-input.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import { Product } from '../../../domain/entities/product';
 
 describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
@@ -22,54 +24,61 @@ describe('UpdateProductUseCase', () => {
   describe('execute', () => {
     it('should return Success if product is updated', async () => {
       const productId = 1;
-      const updateDto = UpdateProductInputFactory.createMockDto();
-      const updatedProduct = ProductTestFactory.createMockProduct({
+      const command = UpdateProductInputFactory.createMockDto({
         id: productId,
         name: 'Updated Product',
       });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          name: 'Old Product',
+        }),
+      );
 
-      mockRepository.mockSuccessfulUpdate(updatedProduct);
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+      mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ id: productId, dto: updateDto });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.name).toBe('Updated Product');
-      expect(mockRepository.update).toHaveBeenCalledWith(productId, updateDto);
-      expect(mockRepository.update).toHaveBeenCalledTimes(1);
+      expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(productId);
+      expect(mockRepository.save).toHaveBeenCalledWith(existingProduct, 1);
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure(UseCaseError) if product is not updated', async () => {
-      const productId = 1;
-      const updateDto = UpdateProductInputFactory.createMockDto();
+    it('should return Failure(UseCaseError) if product is not found', async () => {
+      const productId = 999;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+      });
 
-      mockRepository.mockUpdateFailure('Failed to update product');
+      mockRepository.mockProductNotFound(productId);
 
-      const result = await useCase.execute({ id: productId, dto: updateDto });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Failed to update product',
+        `Product with id ${productId} not found`,
         UseCaseError,
       );
     });
 
     it('should update only price', async () => {
       const productId = 1;
-      const priceOnlyDto = UpdateProductInputFactory.createPriceOnlyDto(200);
-      const updatedProduct = ProductTestFactory.createMockProduct({
-        id: productId,
-        price: 200,
-      });
+      const command = UpdateProductInputFactory.createPriceOnlyDto(200);
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({ id: productId, price: 100 }),
+      );
 
-      mockRepository.mockSuccessfulUpdate(updatedProduct);
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 2);
+      mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({
-        id: productId,
-        dto: priceOnlyDto,
-      });
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.price).toBe(200);
+      expect(mockRepository.save).toHaveBeenCalledWith(existingProduct, 2);
     });
   });
 });

@@ -109,7 +109,7 @@ export class JwtVerifierService implements JwtVerifierPort {
   ): asserts payload is VerifiedRefreshTokenPayload {
     if (
       typeof payload.sub !== 'string' ||
-      typeof payload['sessionId'] !== 'string' ||
+      typeof payload['sid'] !== 'string' ||
       typeof payload['typ'] !== 'string' ||
       typeof payload.iss !== 'string' ||
       typeof payload.iat !== 'number' ||

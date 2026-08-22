@@ -5,40 +5,17 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ShippingAddressInput } from '../../services/shipping-address-resolver';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderFactory } from '../../../domain/factories/order.factory';
-import { PaymentMethodPolicy } from '../../../domain/services/payment-method-policy';
 import { ValidateCheckoutUseCase } from '../validate-checkout/validate-checkout.usecase';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-
-export interface CheckoutCommand {
-  cartId: number;
-  paymentMethod: PaymentMethodType;
-  shippingAddress?: ShippingAddressInput;
-  customerNotes?: string;
-}
-
-export interface CheckoutResult {
-  orderId: number;
-  jobId: string;
-  status: OrderStatus;
-  message: string;
-}
-
-export interface CheckoutInput {
-  command: CheckoutCommand;
-  callerContext: CallerContext | null;
-  cartToken?: string | null;
-}
+import { CheckoutCommand } from '../../commands/checkout.command';
+import { CheckoutResult } from '../../queries/results/checkout.result';
 
 @Injectable()
 export class CheckoutUseCase extends UseCase<
-  CheckoutInput,
+  CheckoutCommand,
   CheckoutResult,
   UseCaseError
 > {
@@ -48,7 +25,6 @@ export class CheckoutUseCase extends UseCase<
     private readonly orderScheduler: OrderScheduler,
     private readonly orderRepository: OrderRepository,
     private readonly orderFactory: OrderFactory,
-    private readonly paymentPolicy: PaymentMethodPolicy,
     private readonly validateCheckoutUseCase: ValidateCheckoutUseCase,
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {
@@ -56,14 +32,13 @@ export class CheckoutUseCase extends UseCase<
   }
 
   async execute(
-    input: CheckoutInput,
+    command: CheckoutCommand,
   ): Promise<Result<CheckoutResult, UseCaseError>> {
-    const { command, callerContext, cartToken } = input;
+    const { callerContext } = command;
 
     const validationResult = await this.validateCheckoutUseCase.execute({
       cartId: command.cartId,
       callerContext,
-      cartToken: cartToken ?? null,
       shippingAddress: command.shippingAddress,
     });
 
@@ -91,8 +66,7 @@ export class CheckoutUseCase extends UseCase<
     if (isFailure(saveResult)) {
       return Result.failure(saveResult.error);
     }
-    const savedOrder = saveResult.value;
-    const orderId = savedOrder.id!;
+    const orderId = saveResult.value.id;
 
     this.domainEventPublisher.publish('order.created', { orderId, userId });
 
@@ -102,7 +76,7 @@ export class CheckoutUseCase extends UseCase<
       shippingAddress,
       paymentMethod: command.paymentMethod,
       customerNotes: command.customerNotes,
-      orderId,
+      orderId: orderId!,
       flowId: `checkout-${orderId}-${Date.now()}`,
     });
 
@@ -111,17 +85,19 @@ export class CheckoutUseCase extends UseCase<
         `Scheduling failed for order ${orderId}. Cancelling order...`,
         scheduleResult.error,
       );
-      await this.orderRepository.cancelOrder(savedOrder);
+      order.cancel();
+      await this.orderRepository.save(order);
       return Result.failure(scheduleResult.error);
     }
 
     const flowId = scheduleResult.value;
 
     const response: CheckoutResult = {
-      orderId,
+      orderId: orderId!,
       jobId: flowId,
-      status: savedOrder.status,
-      message: this.paymentPolicy.getCheckoutMessage(command.paymentMethod),
+      status: order.status,
+      message:
+        'Checkout initiated. Please check order status for payment details.',
     };
 
     return Result.success(response);

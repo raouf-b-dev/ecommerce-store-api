@@ -1,15 +1,16 @@
+import { MockPasswordHasher } from 'src/modules/authentication/testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { RegisterCommand, RegisterUserUseCase } from './register-user.usecase';
-import { MockPasswordHasher } from '../../../../testing/mocks/password-hasher.mock';
+import { RegisterUserUseCase } from './register-user.usecase';
 import { IdentityAccessGatewayMock } from 'src/modules/authentication/testing/mocks/identity-access-gateway.mock';
 import { IdentityAccessGatewayDtoFactory } from 'src/modules/authentication/testing/factories/indentity-gateway-dto.factory';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
-import { UserRecord, CreateUserInput } from '../../ports/identity.gateway';
+import { UserRecord } from '../../ports/identity.gateway';
 import { AuthorizationGatewayMock } from 'src/modules/authentication/testing/mocks/authorization-gateway.mock';
 import { CredentialRepositoryMock } from 'src/modules/authentication/testing/mocks/credential-repository.mock';
 import { AuthenticationDtoFactory } from 'src/modules/authentication/testing/factories/authentication-dto.factory';
 import { Credential } from '../../../domain/entities/credential';
+import { RegisterCommand } from '../../commands/register.command';
 
 describe('RegisterUserUseCase', () => {
   let usecase: RegisterUserUseCase;
@@ -18,7 +19,6 @@ describe('RegisterUserUseCase', () => {
   let credentialRepositorymock: CredentialRepositoryMock;
   let passwordHasher: MockPasswordHasher;
   let mockUserRecord: UserRecord;
-  let mockCreateUserInput: CreateUserInput;
   let mockRegisterCommand: RegisterCommand;
   let credential: Credential;
 
@@ -34,8 +34,6 @@ describe('RegisterUserUseCase', () => {
       credentialRepositorymock,
     );
     mockUserRecord = IdentityAccessGatewayDtoFactory.buildUserRecord();
-    mockCreateUserInput =
-      IdentityAccessGatewayDtoFactory.buildCreateUserInput();
     mockRegisterCommand = AuthenticationDtoFactory.createRegisterCommand();
     credential = AuthenticationDtoFactory.buildCredentialEntity();
     // Default mocks

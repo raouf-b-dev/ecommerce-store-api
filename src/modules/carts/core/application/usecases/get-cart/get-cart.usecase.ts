@@ -1,50 +1,84 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { ICart } from '../../../domain/interfaces/cart.interface';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+import {
+  CART_ACCESS_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+import { CartQueryService } from '../../ports/cart-query.service';
+import { CartPresentationDTO } from '../../queries/results/cart-presentation.result';
 
 export interface GetCartInput {
-  cartId: number;
+  cartId?: number;
+  userId?: number;
   callerContext: CallerContext | null;
-  cartToken: string | null;
 }
 
 @Injectable()
-export class GetCartUseCase extends UseCase<GetCartInput, ICart, UseCaseError> {
-  constructor(
-    private readonly cartRepository: CartRepository,
-    private readonly cartOwnershipValidator: CartOwnershipValidator,
-  ) {
+export class GetCartUseCase extends UseCase<
+  GetCartInput,
+  CartPresentationDTO,
+  UseCaseError
+> {
+  constructor(private readonly cartQueryService: CartQueryService) {
     super();
   }
 
-  async execute(input: GetCartInput): Promise<Result<ICart, UseCaseError>> {
-    const cartResult = await this.cartRepository.findById(input.cartId);
+  async execute(
+    input: GetCartInput,
+  ): Promise<Result<CartPresentationDTO, UseCaseError>> {
+    const { cartId, userId, callerContext } = input;
 
-    if (isFailure(cartResult)) return cartResult;
-
-    if (!cartResult.value) {
+    if (!callerContext) {
       return ErrorFactory.UseCaseError(
-        `Cart with id ${input.cartId} not found`,
+        `Cart ${cartId || userId || ''} not found`,
       );
     }
 
-    const ownershipResult = await this.cartOwnershipValidator.validate(
-      cartResult.value,
-      input.callerContext,
-      input.cartToken,
+    const scope = OwnedResourceAccessPolicy.resolveResourceScope(
+      callerContext,
+      CART_ACCESS_PERMISSIONS,
     );
 
-    if (isFailure(ownershipResult)) return ownershipResult;
+    if (!scope.allowed) {
+      return ErrorFactory.UseCaseError(
+        `Cart ${cartId || userId || ''} not found`,
+      );
+    }
 
-    return Result.success(cartResult.value.toPrimitives());
+    let result: Result<CartPresentationDTO | null, any>;
+
+    if (cartId) {
+      result = await this.cartQueryService.getById(
+        cartId,
+        scope.authorizedUserId,
+      );
+    } else if (userId) {
+      result = await this.cartQueryService.getByUserId(
+        userId,
+        scope.authorizedUserId,
+      );
+    } else if (scope.authorizedUserId) {
+      result = await this.cartQueryService.getByUserId(
+        scope.authorizedUserId,
+        scope.authorizedUserId,
+      );
+    } else {
+      return ErrorFactory.UseCaseError('Cart ID or User ID is required');
+    }
+
+    if (isFailure(result) || !result.value) {
+      return ErrorFactory.UseCaseError(
+        `Cart ${cartId || userId || ''} not found`,
+      );
+    }
+
+    return Result.success(result.value);
   }
 }

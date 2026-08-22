@@ -8,31 +8,31 @@ export class UserResponseDto {
     example: 123,
     description: 'User ID',
   })
-  id: number;
+  id!: number;
 
   @ApiProperty({
     example: 'John',
     description: 'User first name',
   })
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({
     example: 'Doe',
     description: 'User last name',
   })
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({
     example: 'John Doe',
     description: 'User full name',
   })
-  fullName: string;
+  fullName!: string;
 
   @ApiProperty({
     example: 'john.doe@example.com',
     description: 'User email',
   })
-  email: string;
+  email!: string;
 
   @ApiPropertyOptional({
     example: '+1234567890',
@@ -45,7 +45,7 @@ export class UserResponseDto {
     description: 'User addresses',
   })
   @Type(() => AddressResponseDto)
-  addresses: AddressResponseDto[];
+  addresses!: AddressResponseDto[];
 
   @ApiPropertyOptional({
     type: AddressResponseDto,
@@ -58,23 +58,23 @@ export class UserResponseDto {
     example: 5,
     description: 'Total number of orders',
   })
-  totalOrders: number;
+  totalOrders!: number;
 
   @ApiProperty({
     example: 1499.95,
     description: 'Total amount spent',
   })
-  totalSpent: number;
+  totalSpent!: number;
 
   @ApiProperty({
     example: '2025-10-31T10:00:00Z',
     description: 'User registration date',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00Z',
     description: 'Last update date',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

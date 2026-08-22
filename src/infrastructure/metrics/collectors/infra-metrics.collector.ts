@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { MetricsService } from '../metrics.service';
 import { RedisService } from '../../redis/redis.service';
+import { toError } from '../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
 export class InfraMetricsCollector {
@@ -23,15 +24,16 @@ export class InfraMetricsCollector {
     // 1. DB pool
     const driver = this.dataSource.driver as PostgresDriver;
     const pool = driver.master as
-      | { totalCount?: number; idleCount?: number }
-      | undefined;
+      { totalCount?: number; idleCount?: number } | undefined;
     const totalCount = pool?.totalCount ?? 0;
     const idleCount = pool?.idleCount ?? 0;
     this.metrics.dbPoolActiveConnections.set(totalCount - idleCount);
 
     // 2. Redis
-    const isRedisReady = this.redisService.client.isReady;
-    this.metrics.redisHealthStatus.set(isRedisReady ? 1 : 0);
+    this.metrics.redisHealthStatus.set(this.redisService.isReady() ? 1 : 0);
+    this.metrics.redisCacheGeneration.set(
+      this.redisService.getCacheGeneration(),
+    );
 
     // 3. BullMQ
     try {
@@ -47,9 +49,11 @@ export class InfraMetricsCollector {
           (notifCounts.delayed || 0),
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      const stack = err instanceof Error ? err.stack : undefined;
-      this.logger.warn(`Failed to collect BullMQ metrics: ${message}`, stack);
+      const error = toError(err);
+      this.logger.warn(
+        `Failed to collect BullMQ metrics: ${error.message}`,
+        error.stack,
+      );
     }
   }
 }

@@ -8,7 +8,7 @@ export class CartResponseDto {
     example: 'cart-123',
     description: 'Cart ID',
   })
-  id: string;
+  id!: string;
 
   @ApiPropertyOptional({
     example: 123,
@@ -27,29 +27,29 @@ export class CartResponseDto {
     description: 'Cart items',
   })
   @Type(() => CartItemResponseDto)
-  items: CartItemResponseDto[];
+  items!: CartItemResponseDto[];
 
   @ApiProperty({
     example: 3,
     description: 'Total number of items',
   })
-  itemCount: number;
+  itemCount!: number;
 
   @ApiProperty({
     example: 299.97,
     description: 'Cart total amount',
   })
-  totalAmount: number;
+  totalAmount!: number;
 
   @ApiProperty({
     example: '2025-10-31T10:00:00Z',
     description: 'Cart creation date',
   })
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00Z',
     description: 'Last update date',
   })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

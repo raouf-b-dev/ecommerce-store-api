@@ -1,8 +1,8 @@
-// src/modules/Products/application/usecases/create-product/create-product.usecase.spec.ts
+import {
+  MockProductRepository,
+  CreateProductInputFactory,
+} from 'src/modules/products/testing';
 import { CreateProductUseCase } from './create-product.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
-import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { CreateProductInputFactory } from '../../../../testing/factories/create-product-input.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
@@ -21,25 +21,23 @@ describe('CreateProductUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if product is created', async () => {
-      const createDto = CreateProductInputFactory.createMockDto();
-      const product = ProductTestFactory.createMockProduct();
+      const command = CreateProductInputFactory.createMockDto();
 
-      mockRepository.mockSuccessfulSave(product);
+      mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute(createDto);
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toBe(product);
-      expect(mockRepository.save).toHaveBeenCalledWith(createDto);
+      expect(result.value.name).toBe('Test Product');
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should return Failure(UseCaseError) if product is not created', async () => {
-      const createDto = CreateProductInputFactory.createMockDto();
+      const command = CreateProductInputFactory.createMockDto();
 
       mockRepository.mockSaveFailure('Failed to save product');
 
-      const result = await useCase.execute(createDto);
+      const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -49,13 +47,12 @@ describe('CreateProductUseCase', () => {
     });
 
     it('should create expensive product', async () => {
-      const expensiveDto =
+      const expensiveCommand =
         CreateProductInputFactory.createExpensiveProductDto();
-      const expensiveProduct = ProductTestFactory.createExpensiveProduct();
 
-      mockRepository.mockSuccessfulSave(expensiveProduct);
+      mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute(expensiveDto);
+      const result = await useCase.execute(expensiveCommand);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.price).toBe(35000);

@@ -22,7 +22,7 @@ export class WsAuthGuard implements CanActivate {
       // Attach user to socket object for later use
       client['user'] = payload;
       return true;
-    } catch (err) {
+    } catch (_err) {
       throw new WsException('Unauthorized');
     }
   }

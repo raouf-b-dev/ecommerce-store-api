@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
   PaymentGateway,
-  RecordCodPaymentInput,
-  PaymentRecord,
   CreatePaymentIntentInput,
   PaymentIntentResult,
   ProcessRefundInput,
 } from '../../core/application/ports/payment.gateway';
-import { RecordCodPaymentUseCase } from '../../../payments/core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { CreatePaymentIntentUseCase } from '../../../payments/core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { ProcessRefundUseCase } from '../../../payments/core/application/usecases/process-refund/process-refund.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
@@ -17,31 +14,9 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 @Injectable()
 export class ModulePaymentGateway implements PaymentGateway {
   constructor(
-    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
     private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
     private readonly processRefundUseCase: ProcessRefundUseCase,
   ) {}
-
-  async recordCodPayment(
-    input: RecordCodPaymentInput,
-  ): Promise<Result<PaymentRecord, InfrastructureError>> {
-    const result = await this.recordCodPaymentUseCase.execute({
-      orderId: input.orderId,
-      amountCollected: input.amountCollected,
-      currency: input.currency,
-      notes: input.notes,
-      collectedBy: input.collectedBy,
-    });
-
-    if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to record COD payment',
-        result.error,
-      );
-    }
-
-    return Result.success({ id: result.value.id });
-  }
 
   async createPaymentIntent(
     input: CreatePaymentIntentInput,
@@ -72,11 +47,9 @@ export class ModulePaymentGateway implements PaymentGateway {
     input: ProcessRefundInput,
   ): Promise<Result<void, InfrastructureError>> {
     const result = await this.processRefundUseCase.execute({
-      id: input.paymentId,
-      dto: {
-        amount: input.amount,
-        reason: input.reason,
-      },
+      paymentId: input.paymentId,
+      amount: input.amount,
+      reason: input.reason,
     });
 
     if (isFailure(result)) {

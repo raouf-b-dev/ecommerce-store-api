@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Cart } from '../../../core/domain/entities/cart';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
@@ -11,8 +11,6 @@ import {
   CartCacheMapper,
   CartForCache,
 } from '../../persistence/mappers/cart.mapper';
-
-import { CreateCartInput } from '../../../core/domain/repositories/cart.repository';
 
 @Injectable()
 export class CachedCartRepository implements CartRepository {
@@ -28,7 +26,8 @@ export class CachedCartRepository implements CartRepository {
         `${CART_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success(CartCacheMapper.fromCache(cached));
+        const cart = CartCacheMapper.fromCache(cached);
+        if (cart) return Result.success(cart);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -49,26 +48,47 @@ export class CachedCartRepository implements CartRepository {
 
   async findByuserId(userId: number): Promise<Result<Cart, RepositoryError>> {
     try {
-      const cachedCarts = await this.cacheService.search<CartForCache>(
+      const [cached] = await this.cacheService.search<CartForCache>(
         CART_REDIS.INDEX,
         `@userId:${userId}`,
       );
-
-      if (cachedCarts.length > 0) {
-        return Result.success(CartCacheMapper.fromCache(cachedCarts[0]));
+      if (cached) {
+        const cart = CartCacheMapper.fromCache(cached);
+        if (cart) {
+          await this.cacheService.set(
+            `${CART_REDIS.CACHE_KEY}:${cart.id}`,
+            CartCacheMapper.toCache(cart),
+            { ttl: CART_REDIS.EXPIRATION },
+          );
+          return Result.success(cart);
+        }
       }
 
       const dbResult = await this.postgresRepo.findByuserId(userId);
-      if (dbResult.isFailure) return dbResult;
-      const cart = dbResult.value;
+      if (dbResult.isSuccess) {
+        const cart = dbResult.value;
+
+        await this.cacheService.set(
+          `${CART_REDIS.CACHE_KEY}:${cart.id}`,
+          CartCacheMapper.toCache(cart),
+          { ttl: CART_REDIS.EXPIRATION },
+        );
+
+        return dbResult;
+      }
+
+      // Transparent auto-creation if cart expired/missing
+      const freshCart = Cart.createUserCart(userId);
+      const createResult = await this.postgresRepo.save(freshCart);
+      if (createResult.isFailure) return createResult;
 
       await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${cart.id}`,
-        CartCacheMapper.toCache(cart),
+        `${CART_REDIS.CACHE_KEY}:${freshCart.id}`,
+        CartCacheMapper.toCache(freshCart),
         { ttl: CART_REDIS.EXPIRATION },
       );
 
-      return dbResult;
+      return Result.success(freshCart);
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find cart by user ID',
@@ -77,71 +97,42 @@ export class CachedCartRepository implements CartRepository {
     }
   }
 
-  async findBySessionId(
-    sessionId: number,
-  ): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const cachedCarts = await this.cacheService.search<CartForCache>(
-        CART_REDIS.INDEX,
-        `@sessionId:${sessionId}`,
-      );
-
-      if (cachedCarts.length > 0) {
-        return Result.success(CartCacheMapper.fromCache(cachedCarts[0]));
-      }
-
-      const dbResult = await this.postgresRepo.findBySessionId(sessionId);
-      if (dbResult.isFailure) return dbResult;
-      const cart = dbResult.value;
-
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${cart.id}`,
-        CartCacheMapper.toCache(cart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return dbResult;
-    } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by session ID',
-        error,
-      );
-    }
+  async findByIdForUpdate(
+    id: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByIdForUpdate(id);
   }
 
-  async create(input: CreateCartInput): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const createResult = await this.postgresRepo.create(input);
-      if (createResult.isFailure) return createResult;
-      const savedCart = createResult.value;
+  async findByUserIdForUpdate(
+    userId: number,
+  ): Promise<
+    Result<{ entity: Cart; expectedVersion: number }, RepositoryError>
+  > {
+    return await this.postgresRepo.findByUserIdForUpdate(userId);
+  }
 
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${savedCart.id}`,
-        CartCacheMapper.toCache(savedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
+  async save(
+    cart: Cart,
+    expectedVersion?: number,
+  ): Promise<Result<Cart, RepositoryError>> {
+    try {
+      const saveResult = await this.postgresRepo.save(cart, expectedVersion);
+      if (saveResult.isFailure) return saveResult;
+
+      const savedCart = saveResult.value;
+      if (savedCart.id) {
+        await this.cacheService.set(
+          `${CART_REDIS.CACHE_KEY}:${savedCart.id}`,
+          CartCacheMapper.toCache(savedCart),
+          { ttl: CART_REDIS.EXPIRATION },
+        );
+      }
 
       return Result.success(savedCart);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to create cart', error);
-    }
-  }
-
-  async update(cart: Cart): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const updateResult = await this.postgresRepo.update(cart);
-      if (updateResult.isFailure) return updateResult;
-      const updatedCart = updateResult.value;
-
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${updatedCart.id}`,
-        CartCacheMapper.toCache(updatedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(updatedCart);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', error);
     }
   }
 
@@ -155,34 +146,6 @@ export class CachedCartRepository implements CartRepository {
       return Result.success(undefined);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to delete cart', error);
-    }
-  }
-
-  async mergeCarts(
-    guestCart: Cart,
-    userCart: Cart,
-  ): Promise<Result<Cart, RepositoryError>> {
-    try {
-      const mergeResult = await this.postgresRepo.mergeCarts(
-        guestCart,
-        userCart,
-      );
-      if (mergeResult.isFailure) return mergeResult;
-      const mergedCart = mergeResult.value;
-
-      // Invalidate guest cart cache
-      await this.cacheService.delete(`${CART_REDIS.CACHE_KEY}:${guestCart.id}`);
-
-      // Update user cart cache
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${mergedCart.id}`,
-        CartCacheMapper.toCache(mergedCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(mergedCart);
-    } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to merge carts', error);
     }
   }
 }

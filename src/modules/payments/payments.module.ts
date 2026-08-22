@@ -9,7 +9,7 @@ import {
   CACHED_PAYMENT_REPOSITORY,
 } from './payment.token';
 import { PostgresPaymentRepository } from './secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository';
-import { CachePort } from '../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { CachedPaymentRepository } from './secondary-adapters/repositories/cached-payment-repository/cached.payment-repository';
 import { PaymentRepository } from './core/domain/repositories/payment.repository';
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
@@ -18,24 +18,22 @@ import { ListPaymentsUseCase } from './core/application/usecases/list-payments/l
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { HandlePaymentWebhookService } from './core/application/services/handle-payment-webhook/handle-payment-webhook.service';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
+import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
+
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
-import { CodGateway } from './secondary-adapters/gateways/cod.gateway';
 import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
-import { PayPalGateway } from './secondary-adapters/gateways/paypal.gateway';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
-import { PayPalSignatureService } from './secondary-adapters/services/paypal-signature.service';
 import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
-import { PayPalSignatureVerifier } from './core/application/ports/paypal-signature-verifier';
 import { PaymentGatewayResolver } from './core/application/ports/payment-gateway-resolver';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
+import { PaymentQueryService } from './core/application/ports/payment-query.service';
+import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres-payment-query.adapter';
 
 @Module({
   imports: [
@@ -49,9 +47,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
   controllers: [PaymentsController],
   providers: [
     // Gateways
-    CodGateway,
     StripeGateway,
-    PayPalGateway,
     PaymentGatewayFactory,
     {
       provide: PaymentGatewayResolver,
@@ -60,14 +56,9 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
 
     // Services
     StripeSignatureService,
-    PayPalSignatureService,
     {
       provide: StripeSignatureVerifier,
       useExisting: StripeSignatureService,
-    },
-    {
-      provide: PayPalSignatureVerifier,
-      useExisting: PayPalSignatureService,
     },
 
     // Schedulers
@@ -98,7 +89,7 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
       inject: [CachePort, POSTGRES_PAYMENT_REPOSITORY],
     },
 
-    // Default Repository Binding
+    // Default Repository Binding — cache-aside fails open via CachePort
     {
       provide: PaymentRepository,
       useExisting: CACHED_PAYMENT_REPOSITORY,
@@ -111,17 +102,22 @@ import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bu
     CapturePaymentUseCase,
     ProcessRefundUseCase,
     VerifyPaymentUseCase,
-    RecordCodPaymentUseCase,
     HandlePaymentWebhookService,
     HandleStripeWebhookUseCase,
-    HandlePayPalWebhookUseCase,
     CreatePaymentIntentUseCase,
+    GetPaymentByOrderIdUseCase,
+    // CQRS Presentation Query Service
+    {
+      provide: PaymentQueryService,
+      useClass: PostgresPaymentQueryAdapter,
+    },
   ],
   exports: [
+    PaymentQueryService,
     PaymentRepository,
     CreatePaymentUseCase,
+    GetPaymentByOrderIdUseCase,
     PaymentGatewayResolver,
-    RecordCodPaymentUseCase,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,
   ],

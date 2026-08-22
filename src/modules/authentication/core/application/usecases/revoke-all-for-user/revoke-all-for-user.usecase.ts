@@ -3,9 +3,11 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 
-export class RevokeAllForUserUsecase
-  implements UseCase<number, void, UseCaseError>
-{
+export class RevokeAllForUserUsecase implements UseCase<
+  number,
+  void,
+  UseCaseError
+> {
   constructor(
     private readonly sessionTokenRepository: SessionTokenRepository,
   ) {}

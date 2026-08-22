@@ -1,5 +1,10 @@
 // src/modules/inventory/infrastructure/repositories/postgres-inventory.repository.spec.ts
 
+import {
+  InventoryEntityTestFactory,
+  InventoryTestFactory,
+  InventoryCommandTestFactory,
+} from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
@@ -10,17 +15,14 @@ import {
 } from 'typeorm';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import {
-  createMockTransactionManager,
   createMockQueryBuilder,
+  createMockTransactionManager,
 } from '../../../../../testing/mocks/typeorm.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
-import { InventoryEntityTestFactory } from '../../../testing/factories/inventory-entity.test.factory';
 import { Inventory } from '../../../core/domain/entities/inventory';
-import { InventoryTestFactory } from '../../../testing/factories/inventory.test.factory';
 import { InventoryMapper } from '../../persistence/mappers/inventory.mapper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { PostgresInventoryRepository } from './postgres-inventory-repository';
-import { InventoryCommandTestFactory } from '../../../testing/factories/inventory-dto.test.factory';
 import { LowStockQuery } from '../../../core/domain/repositories/inventory.repository';
 
 describe('PostgresInventoryRepository', () => {
@@ -43,6 +45,8 @@ describe('PostgresInventoryRepository', () => {
           provide: getRepositoryToken(InventoryEntity),
           useValue: {
             findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
             delete: jest.fn(),
             createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
           },
@@ -217,6 +221,53 @@ describe('PostgresInventoryRepository', () => {
   });
 
   // ----------------------------------------------------------------
+  // findMany & findBatch
+  // ----------------------------------------------------------------
+  describe('findMany', () => {
+    it('should find many entities with pagination and sorting', async () => {
+      const mockEntities = [InventoryEntityTestFactory.createInventoryEntity()];
+      mockOrmRepo.find.mockResolvedValue(mockEntities);
+
+      const result = await repository.findMany({
+        page: 2,
+        limit: 10,
+        sortBy: 'productId',
+        sortOrder: 'DESC',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.find).toHaveBeenCalledWith({
+        skip: 10,
+        take: 10,
+        order: { productId: 'DESC' },
+      });
+      expect(result.value).toHaveLength(1);
+    });
+  });
+
+  describe('findBatch', () => {
+    it('should query batch with keyset cursor afterId', async () => {
+      const mockEntities = [InventoryEntityTestFactory.createInventoryEntity()];
+      mockQueryBuilder.getMany.mockResolvedValue(mockEntities);
+
+      const result = await repository.findBatch({ afterId: 50, limit: 100 });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrmRepo.createQueryBuilder).toHaveBeenCalledWith('inventory');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'inventory.id',
+        'ASC',
+      );
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(100);
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'inventory.id > :afterId',
+        { afterId: 50 },
+      );
+      expect(result.value).toHaveLength(1);
+    });
+  });
+
+  // ----------------------------------------------------------------
   // findLowStock
   // ----------------------------------------------------------------
   describe('findLowStock', () => {
@@ -301,76 +352,30 @@ describe('PostgresInventoryRepository', () => {
   // save
   // ----------------------------------------------------------------
   describe('save', () => {
-    it('should save a new inventory within a transaction', async () => {
+    it('should save inventory successfully', async () => {
       const domainInventory = InventoryTestFactory.createMockInventory();
-
       const entityToSave = InventoryMapper.toEntity(
         Inventory.fromPrimitives(domainInventory),
       );
-      // entityToSave.id is already set correctly by mapper if domainInventory has id
 
-      mockTransactionManager.findOne.mockResolvedValue(null);
-      mockTransactionManager.save.mockResolvedValue(entityToSave);
+      mockOrmRepo.save.mockResolvedValue(entityToSave);
 
       const result = await repository.save(
         Inventory.fromPrimitives(domainInventory),
       );
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockTransactionManager.findOne).toHaveBeenCalledWith(
-        InventoryEntity,
-        {
-          where: { productId: 1 },
-        },
-      );
-      expect(mockTransactionManager.save).toHaveBeenCalledWith(
-        InventoryEntity,
+      expect(mockOrmRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
           productId: 1,
         }),
       );
-      expect(result.value.id).toBe(1);
     });
 
-    it('should return a RepositoryError if inventory for product already exists', async () => {
-      const domainInventory = InventoryTestFactory.createMockInventory();
-      const existingEntity = InventoryEntityTestFactory.createInventoryEntity();
-      mockTransactionManager.findOne.mockResolvedValue(existingEntity);
-
-      const result = await repository.save(
-        Inventory.fromPrimitives(domainInventory),
-      );
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        `INVENTORY_EXISTS: Inventory already exists for product ${domainInventory.productId}`,
-        RepositoryError,
-      );
-      expect(mockTransactionManager.save).not.toHaveBeenCalled();
-    });
-
-    it('should return a RepositoryError on transaction failure', async () => {
+    it('should return a RepositoryError on save failure', async () => {
       const dbError = new Error('DB Error');
       const domainInventory = InventoryTestFactory.createMockInventory();
-      mockDataSource.transaction.mockRejectedValue(dbError);
-
-      const result = await repository.save(
-        Inventory.fromPrimitives(domainInventory),
-      );
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to save inventory',
-        RepositoryError,
-        dbError,
-      );
-    });
-
-    it('should return a RepositoryError on findOne failure inside transaction', async () => {
-      const dbError = new Error('DB Error');
-      const domainInventory = InventoryTestFactory.createMockInventory();
-      mockTransactionManager.findOne.mockRejectedValue(dbError);
+      mockOrmRepo.save.mockRejectedValue(dbError);
 
       const result = await repository.save(
         Inventory.fromPrimitives(domainInventory),
@@ -385,102 +390,26 @@ describe('PostgresInventoryRepository', () => {
     });
   });
 
-  // ----------------------------------------------------------------
-  // update
-  // ----------------------------------------------------------------
-  describe('update', () => {
-    it('should update an existing inventory within a transaction', async () => {
-      const domainInventory = InventoryTestFactory.createMockInventory({
-        availableQuantity: 999,
-      });
-      const existingEntity = InventoryEntityTestFactory.createInventoryEntity({
-        id: domainInventory.id ?? undefined,
-      });
-      const updatedEntity = InventoryMapper.toEntity(
-        Inventory.fromPrimitives(domainInventory),
-      );
+  describe('findByIdForUpdate', () => {
+    it('should return inventory and version for update', async () => {
+      const entity = InventoryEntityTestFactory.createInventoryEntity();
+      mockOrmRepo.findOne.mockResolvedValue(entity);
 
-      mockTransactionManager.findOne
-        .mockResolvedValueOnce(existingEntity)
-        .mockResolvedValueOnce(updatedEntity);
-      mockTransactionManager.update.mockResolvedValue({ affected: 1 });
-
-      const result = await repository.update(
-        Inventory.fromPrimitives(domainInventory),
-      );
+      const result = await repository.findByIdForUpdate(entity.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(mockDataSource.transaction).toHaveBeenCalled();
-      expect(mockTransactionManager.findOne).toHaveBeenCalledWith(
-        InventoryEntity,
-        {
-          where: { id: domainInventory.id },
-        },
-      );
-      expect(mockTransactionManager.update).toHaveBeenCalledWith(
-        InventoryEntity,
-        { id: domainInventory.id },
-        expect.objectContaining({
-          availableQuantity: 999,
-        }),
-      );
-      expect(mockTransactionManager.findOne).toHaveBeenCalledTimes(2);
-      expect(result.value.availableQuantity).toBe(999);
+      if (result.isSuccess) {
+        expect(result.value.entity.id).toBe(entity.id);
+        expect(result.value.expectedVersion).toBe(entity.version);
+      }
     });
 
-    it('should return a RepositoryError if inventory to update is not found', async () => {
-      const domainInventory = InventoryTestFactory.createMockInventory();
-      mockTransactionManager.findOne.mockResolvedValue(null);
+    it('should return error when inventory not found', async () => {
+      mockOrmRepo.findOne.mockResolvedValue(null);
 
-      const result = await repository.update(
-        Inventory.fromPrimitives(domainInventory),
-      );
+      const result = await repository.findByIdForUpdate(999);
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        `INVENTORY_NOT_FOUND: Inventory with ID ${domainInventory.id} not found`,
-        RepositoryError,
-      );
-      expect(mockTransactionManager.update).not.toHaveBeenCalled();
-    });
-
-    it('should return a RepositoryError if inventory not found after update', async () => {
-      const domainInventory = InventoryTestFactory.createMockInventory();
-      const existingEntity = InventoryEntityTestFactory.createInventoryEntity({
-        id: domainInventory.id ?? undefined,
-      });
-
-      mockTransactionManager.findOne
-        .mockResolvedValueOnce(existingEntity)
-        .mockResolvedValueOnce(null);
-      mockTransactionManager.update.mockResolvedValue({ affected: 1 });
-
-      const result = await repository.update(
-        Inventory.fromPrimitives(domainInventory),
-      );
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        `INVENTORY_NOT_FOUND: Inventory with ID ${domainInventory.id} not found after update`,
-        RepositoryError,
-      );
-    });
-
-    it('should return a RepositoryError on transaction failure', async () => {
-      const dbError = new Error('DB Error');
-      const domainInventory = InventoryTestFactory.createMockInventory();
-      mockDataSource.transaction.mockRejectedValue(dbError);
-
-      const result = await repository.update(
-        Inventory.fromPrimitives(domainInventory),
-      );
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Failed to update inventory',
-        RepositoryError,
-        dbError,
-      );
+      ResultAssertionHelper.assertResultFailure(result, 'Inventory not found');
     });
   });
 

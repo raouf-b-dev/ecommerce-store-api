@@ -7,8 +7,8 @@ export class CartEntityTestFactory {
     const defaultEntity: CartEntity = {
       id: 123,
       userId: 123,
-      sessionId: null,
       items: [],
+      version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-01-01T10:00:00Z'),
     };

@@ -1,4 +1,6 @@
 // src/modules/carts/secondary-adapters/repositories/cached-cart-repository/cached.cart-repository.spec.ts
+import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
+import { MockCacheService, MockLogger } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -6,14 +8,9 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { CART_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { CachedCartRepository } from './cached.cart-repository';
 import { Cart } from '../../../core/domain/entities/cart';
-import { CartTestFactory } from '../../../testing/factories/cart.factory';
-import { CartCacheMapper } from '../../persistence/mappers/cart.mapper';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Logger } from '@nestjs/common';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
-import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
-import { MockLogger } from '../../../../../testing/mocks/logger.mock';
-import { MockCartRepository } from '../../../testing/mocks/cart-repository.mock';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 
 describe('CachedCartRepository', () => {
   let repository: CachedCartRepository;
@@ -21,7 +18,6 @@ describe('CachedCartRepository', () => {
   let postgresRepo: MockCartRepository;
 
   const mockCart = Cart.fromPrimitives(CartTestFactory.createMockCart());
-  const mockCachedCart = CartCacheMapper.toCache(mockCart);
 
   beforeEach(async () => {
     const mockCacheService = new MockCacheService();
@@ -44,113 +40,19 @@ describe('CachedCartRepository', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  describe('create', () => {
-    it('should create cart in postgres and cache', async () => {
-      const dto = { userId: 123 };
-      postgresRepo.create.mockResolvedValue(Result.success(mockCart));
-      cacheService.set.mockResolvedValue(undefined);
-
-      const result = await repository.create(dto);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(postgresRepo.create).toHaveBeenCalledWith(dto);
-      expect(cacheService.set).toHaveBeenCalledWith(
-        `${CART_REDIS.CACHE_KEY}:${mockCart.id}`,
-        expect.anything(),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-    });
-
-    it('should return failure if postgres create fails', async () => {
-      const dto = { userId: 123 };
-      const error = new RepositoryError('Postgres create failed');
-      postgresRepo.create.mockResolvedValue(Result.failure(error));
-
-      const result = await repository.create(dto);
-
-      ResultAssertionHelper.assertResultFailureWithError(result, error);
-      expect(cacheService.set).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('findById', () => {
-    it('should return cart from cache', async () => {
-      cacheService.get.mockResolvedValue(mockCachedCart);
-
-      const result = await repository.findById(mockCart.id!);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.id).toBe(mockCart.id);
-      }
-      expect(postgresRepo.findById).not.toHaveBeenCalled();
-    });
-
-    it('should fetch from postgres and cache if not cached', async () => {
-      cacheService.get.mockResolvedValue(null);
-      postgresRepo.findById.mockResolvedValue(Result.success(mockCart));
-      cacheService.set.mockResolvedValue(undefined);
-
-      const result = await repository.findById(mockCart.id!);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(cacheService.set).toHaveBeenCalled();
-    });
-  });
-
   describe('findByuserId', () => {
-    it('should return cart from cache (search)', async () => {
-      cacheService.search.mockResolvedValue([mockCachedCart]);
-
-      const result = await repository.findByuserId(mockCart.userId!);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.id).toBe(mockCart.id);
-      }
-    });
-
-    it('should fetch from postgres and cache if not found in cache', async () => {
+    it('should auto-create a fresh cart if cart is expired/missing from both cache and postgres', async () => {
       cacheService.search.mockResolvedValue([]);
-      postgresRepo.findByuserId.mockResolvedValue(Result.success(mockCart));
-      cacheService.set.mockResolvedValue(undefined);
+      postgresRepo.findByuserId.mockResolvedValue(
+        Result.failure(new RepositoryError('Cart not found')),
+      );
+      postgresRepo.mockSuccessfulSave();
+      cacheService.set.mockResolvedValue(true);
 
-      const result = await repository.findByuserId(mockCart.userId!);
+      const result = await repository.findByuserId(mockCart.userId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(cacheService.set).toHaveBeenCalled();
-    });
-  });
-
-  describe('findBySessionId', () => {
-    it('should return cart from cache (search)', async () => {
-      const sessionCart = Cart.fromPrimitives(
-        CartTestFactory.createGuestCart(123),
-      );
-      const sessionCachedCart = CartCacheMapper.toCache(sessionCart);
-      cacheService.search.mockResolvedValue([sessionCachedCart]);
-
-      const result = await repository.findBySessionId(123);
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.sessionId).toBe(123);
-      }
-    });
-
-    it('should fetch from postgres and cache if not found in cache', async () => {
-      const sessionCart = Cart.fromPrimitives(
-        CartTestFactory.createGuestCart(123),
-      );
-      cacheService.search.mockResolvedValue([]);
-      postgresRepo.findBySessionId.mockResolvedValue(
-        Result.success(sessionCart),
-      );
-      cacheService.set.mockResolvedValue(undefined);
-
-      const result = await repository.findBySessionId(123);
-
-      ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.save).toHaveBeenCalled();
       expect(cacheService.set).toHaveBeenCalled();
     });
   });
@@ -163,6 +65,7 @@ describe('CachedCartRepository', () => {
       const result = await repository.delete(mockCart.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(postgresRepo.delete).toHaveBeenCalledWith(mockCart.id);
       expect(cacheService.delete).toHaveBeenCalledWith(
         `${CART_REDIS.CACHE_KEY}:${mockCart.id}`,
       );

@@ -1,17 +1,19 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
+import { MockCacheService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CachedUserRepository } from './cached-user.repository';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { UserRepository } from '../../../core/domain/repositories/user.repository';
-import { MockUserRepository } from '../../../testing/mocks/user-repository.mock';
-import { UserTestFactory } from '../../../testing/factories/user.factory';
 import { User } from '../../../core/domain/entities/user';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UserCacheMapper } from '../../persistence/mappers/user.mapper';
 import { USER_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { MockCacheService } from '../../../../../testing/mocks/cache.mock';
-import { escapeRedisSearchTextValue } from '../../../../../infrastructure/redis/search/search-utils';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 
 describe('CachedUserRepository', () => {
   let repository: CachedUserRepository;
@@ -47,12 +49,12 @@ describe('CachedUserRepository', () => {
 
   describe('save', () => {
     it('should save user to postgres and cache', async () => {
-      postgresRepo.save.mockResolvedValue(Result.success(mockUser));
+      postgresRepo.mockSuccessfulSave(mockUser);
 
       const result = await repository.save(mockUser);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(postgresRepo.save).toHaveBeenCalledWith(mockUser);
+      expect(postgresRepo.save).toHaveBeenCalledWith(mockUser, undefined);
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringContaining(String(mockUser.id!)),
         mockUserCache,
@@ -79,7 +81,7 @@ describe('CachedUserRepository', () => {
 
   describe('findByEmail', () => {
     it('should return user from cache if available', async () => {
-      cacheService.getAll.mockResolvedValue([mockUserCache]);
+      cacheService.search.mockResolvedValue([mockUserCache]);
 
       const result = await repository.findByEmail(mockUser.email);
 
@@ -87,27 +89,27 @@ describe('CachedUserRepository', () => {
       expect(result.value).toBeDefined();
       expect(result.value!.email).toBe(mockUser.email);
       expect(postgresRepo.findByEmail).not.toHaveBeenCalled();
-      expect(cacheService.getAll).toHaveBeenCalledWith(
+      expect(cacheService.search).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:{${escapeRedisSearchTextValue(mockUser.email)}}`,
+        tagEquals('email', mockUser.email),
       );
     });
 
-    it('should escape email with special characters', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+    it('should escape email TAG punctuation including hyphens', async () => {
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
 
-      const specialEmail = 'test"admin\\special@example.com';
+      const specialEmail = 'e2e-admin"special\\user@example.com';
       await repository.findByEmail(specialEmail);
 
-      expect(cacheService.getAll).toHaveBeenCalledWith(
+      expect(cacheService.search).toHaveBeenCalledWith(
         USER_REDIS.INDEX,
-        `@email:{test\\"admin\\\\special@example.com}`,
+        tagEquals('email', specialEmail),
       );
     });
 
     it('should return user from postgres if not in cache', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(mockUser));
 
       const result = await repository.findByEmail(mockUser.email);
@@ -123,7 +125,7 @@ describe('CachedUserRepository', () => {
     });
 
     it('should return null if not found in postgres', async () => {
-      cacheService.getAll.mockResolvedValue([]);
+      cacheService.search.mockResolvedValue([]);
       postgresRepo.findByEmail.mockResolvedValue(Result.success(null));
 
       const result = await repository.findByEmail('notfound@example.com');

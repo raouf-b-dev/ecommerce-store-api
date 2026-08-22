@@ -2,6 +2,7 @@
 import { IOrder } from '../interfaces/order.interface';
 import { IOrderItem } from '../interfaces/order-item.interface';
 import { OrderStatus, OrderStatusVO } from '../value-objects/order-status';
+import { OrderWorkflow } from '../policies/order-workflow';
 import { OrderItem, OrderItemProps } from './order-items';
 import {
   ShippingAddress,
@@ -150,41 +151,6 @@ export class Order implements IOrder {
     return this._pricing;
   }
 
-  // ==================== PAYMENT METHOD HELPERS ====================
-
-  /**
-   * Check if this order requires payment before confirmation (online payments)
-   */
-  requiresPaymentBeforeConfirmation(): boolean {
-    return [
-      PaymentMethodType.STRIPE,
-      PaymentMethodType.PAYPAL,
-      PaymentMethodType.CREDIT_CARD,
-      PaymentMethodType.DEBIT_CARD,
-      PaymentMethodType.BANK_TRANSFER,
-    ].includes(this._paymentMethod);
-  }
-
-  /**
-   * Check if this is a Cash on Delivery order
-   */
-  isCOD(): boolean {
-    return this._paymentMethod === PaymentMethodType.CASH_ON_DELIVERY;
-  }
-
-  /**
-   * Check if payment method requires a payment gateway
-   */
-  requiresPaymentGateway(): boolean {
-    return [
-      PaymentMethodType.STRIPE,
-      PaymentMethodType.PAYPAL,
-      PaymentMethodType.CREDIT_CARD,
-      PaymentMethodType.DEBIT_CARD,
-      PaymentMethodType.BANK_TRANSFER,
-    ].includes(this._paymentMethod);
-  }
-
   // ==================== PAYMENT ASSOCIATION ====================
 
   /**
@@ -247,28 +213,6 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.PENDING_PAYMENT);
   }
 
-  canBeConfirmed(): boolean {
-    return (
-      this.isCOD() ||
-      this._status.isPendingPayment() ||
-      this._status.isPendingConfirmation()
-    );
-  }
-
-  confirm(): Result<void, DomainError> {
-    if (!this.isCOD()) {
-      return ErrorFactory.DomainError(
-        'Online payment orders must use confirmPayment() after payment webhook',
-      );
-    }
-    if (!this._status.isPendingConfirmation()) {
-      return ErrorFactory.DomainError(
-        'Only orders in pending confirmation can be confirmed manually',
-      );
-    }
-    return this.changeStatus(OrderStatus.CONFIRMED);
-  }
-
   canBeProcessed(): boolean {
     return this._status.isConfirmed();
   }
@@ -311,7 +255,6 @@ export class Order implements IOrder {
   isCancellable(): boolean {
     return (
       this._status.isPendingPayment() ||
-      this._status.isPendingConfirmation() ||
       this._status.isPaymentFailed() ||
       this._status.isConfirmed() ||
       this._status.isProcessing() ||
@@ -354,10 +297,6 @@ export class Order implements IOrder {
       return 'Awaiting payment confirmation';
     }
 
-    if (this._status.isPendingConfirmation()) {
-      return 'Awaiting manual confirmation';
-    }
-
     if (this._status.isPaymentFailed()) {
       return 'Payment failed - awaiting retry or cancellation';
     }
@@ -371,9 +310,6 @@ export class Order implements IOrder {
     }
 
     if (this._status.isShipped()) {
-      if (this.isCOD()) {
-        return 'Awaiting delivery and payment collection';
-      }
       return 'In transit';
     }
 
@@ -431,7 +367,7 @@ export class Order implements IOrder {
   ): Result<void, DomainError> {
     const newStatusVO = new OrderStatusVO(newStatus);
 
-    if (!this._status.canTransitionTo(newStatusVO.value)) {
+    if (!OrderWorkflow.canTransition(this._status.value, newStatusVO.value)) {
       return ErrorFactory.DomainError(
         `Cannot transition from ${this._status.value} to ${newStatusVO.value}`,
       );
@@ -503,8 +439,6 @@ export class Order implements IOrder {
     shippingAddress: ShippingAddressProps;
     customerNotes: string | null;
   }): Order {
-    const isCOD = props.paymentMethod === PaymentMethodType.CASH_ON_DELIVERY;
-
     return new Order({
       id: props.id,
       userId: props.userId,
@@ -514,31 +448,7 @@ export class Order implements IOrder {
       items: props.items,
       shippingAddress: props.shippingAddress,
       userNotes: props.customerNotes,
-      status: isCOD
-        ? OrderStatus.PENDING_CONFIRMATION
-        : OrderStatus.PENDING_PAYMENT,
-      createdAt: null,
-      updatedAt: null,
-    });
-  }
-
-  static createForCOD(props: {
-    id: number | null;
-    userId: number;
-    items: OrderItemProps[];
-    shippingAddress: ShippingAddressProps;
-    customerNotes: string | null;
-  }): Order {
-    return new Order({
-      id: props.id,
-      userId: props.userId,
-      paymentId: null,
-      paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-      shippingAddressId: props.shippingAddress.id,
-      items: props.items,
-      shippingAddress: props.shippingAddress,
-      userNotes: props.customerNotes,
-      status: OrderStatus.PENDING_CONFIRMATION,
+      status: OrderStatus.PENDING_PAYMENT,
       createdAt: null,
       updatedAt: null,
     });

@@ -30,8 +30,16 @@ export class MetricsService implements OnModuleInit {
   // Infrastructure gauges
   readonly dbPoolActiveConnections: Gauge;
   readonly redisHealthStatus: Gauge;
+  readonly redisCacheGeneration: Gauge;
+  readonly throttlerStorageDegraded: Gauge;
   readonly bullmqQueueDepth: Gauge;
   readonly websocketConnectionsActive: Gauge;
+
+  // Audit metrics
+  readonly inventoryDriftCount: Counter;
+  readonly redisCacheHitsTotal: Counter;
+  readonly redisCacheMissesTotal: Counter;
+  readonly redisCacheRecoveryFailuresTotal: Counter;
 
   constructor(private readonly config: EnvConfigService) {
     this.registry = new Registry();
@@ -126,6 +134,18 @@ export class MetricsService implements OnModuleInit {
       registers: [this.registry],
     });
 
+    this.redisCacheGeneration = new Gauge({
+      name: 'redis_cache_generation',
+      help: 'Current Redis cache key-space generation used for versioned keys',
+      registers: [this.registry],
+    });
+
+    this.throttlerStorageDegraded = new Gauge({
+      name: 'throttler_storage_degraded',
+      help: 'Whether throttler is using in-memory fallback (1=degraded, 0=redis)',
+      registers: [this.registry],
+    });
+
     this.bullmqQueueDepth = new Gauge({
       name: 'bullmq_queue_depth',
       help: 'Total number of active, waiting, and delayed jobs in BullMQ',
@@ -136,6 +156,31 @@ export class MetricsService implements OnModuleInit {
     this.websocketConnectionsActive = new Gauge({
       name: 'websocket_connections_active',
       help: 'Active WebSocket connections in gateway',
+      registers: [this.registry],
+    });
+
+    this.inventoryDriftCount = new Counter({
+      name: 'inventory_drift_count',
+      help: 'Total number of detected inventory mathematical or reservation discrepancies',
+      labelNames: ['type'],
+      registers: [this.registry],
+    });
+
+    this.redisCacheHitsTotal = new Counter({
+      name: 'redis_cache_hits_total',
+      help: 'Total Redis cache-aside hits via CachePort.get/getMany',
+      registers: [this.registry],
+    });
+
+    this.redisCacheMissesTotal = new Counter({
+      name: 'redis_cache_misses_total',
+      help: 'Total Redis cache-aside misses via CachePort.get/getMany',
+      registers: [this.registry],
+    });
+
+    this.redisCacheRecoveryFailuresTotal = new Counter({
+      name: 'redis_cache_recovery_failures_total',
+      help: 'Total failed Redis reconnect cache recovery attempts',
       registers: [this.registry],
     });
   }

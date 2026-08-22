@@ -71,12 +71,12 @@ This template aligns with:
 
 ## 4. Scenario Matrix (Minimum Coverage)
 
-| Test Type                  | Required Scenarios                                                                                                                                                      |
-| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Domain**                 | Valid transition, invalid transition (`DomainError`), invariant preservation, primitives round-trip, controlled-time timestamp behavior                                 |
-| **Use Case**               | Happy path orchestration, dependency failure propagation, validation/authentication/authorization failure, side-effect call contract, forbidden-path non-call assertion |
-| **Repository Integration** | CRUD happy path, transaction atomicity behavior, mapper round-trip, filter/sort/pagination correctness, expected DB error mapping                                       |
-| **E2E**                    | Authentication/token lifecycle, bounded-context happy path, failure contract (status + payload), cross-context integration behavior                                     |
+| Test Type                  | Required Scenarios                                                                                                                                                                 |
+| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Domain**                 | Valid transition, invalid transition (`DomainError`), invariant preservation, primitives round-trip, controlled-time timestamp behavior                                            |
+| **Use Case**               | Happy path orchestration, dependency failure propagation, validation/authentication/authorization failure, side-effect call contract, forbidden-path non-call assertion            |
+| **Repository Integration** | CRUD happy path, transaction atomicity, mapper round-trip, OCC stale-version 409, OCC `toUpdatePayload` column parity, child-row unchanged on lock miss, expected DB error mapping |
+| **E2E**                    | Authentication/token lifecycle, bounded-context happy path, failure contract (status + payload), cross-context integration behavior                                                |
 
 ---
 

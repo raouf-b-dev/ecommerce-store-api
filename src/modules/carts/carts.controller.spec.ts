@@ -5,21 +5,20 @@ import { AddCartItemUseCase } from './core/application/usecases/add-cart-item/ad
 import { ClearCartUseCase } from './core/application/usecases/clear-cart/clear-cart.usecase';
 import { CreateCartUseCase } from './core/application/usecases/create-cart/create-cart.usecase';
 import { GetCartUseCase } from './core/application/usecases/get-cart/get-cart.usecase';
-import { MergeCartsUseCase } from './core/application/usecases/merge-carts/merge-carts.usecase';
 import { RemoveCartItemUseCase } from './core/application/usecases/remove-cart-item/remove-cart-item.usecase';
 import { UpdateCartItemUseCase } from './core/application/usecases/update-cart-item/update-cart-item.usecase';
-import { CartSessionCookieInterceptor } from './primary-adapters/interceptors/cart-session-cookie.interceptor';
+import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
+import { CartDtoTestFactory } from './testing';
 
 describe('CartsController', () => {
   let controller: CartsController;
-
-  let getCartUseCase: GetCartUseCase;
-  let createCartUseCase: CreateCartUseCase;
-  let addCartItemUseCase: AddCartItemUseCase;
-  let updateCartItemUseCase: UpdateCartItemUseCase;
-  let removeCartItemUseCase: RemoveCartItemUseCase;
-  let clearCartUseCase: ClearCartUseCase;
-  let mergeCartsUseCase: MergeCartsUseCase;
+  let getCartUseCase: jest.Mocked<GetCartUseCase>;
+  let createCartUseCase: jest.Mocked<CreateCartUseCase>;
+  let addCartItemUseCase: jest.Mocked<AddCartItemUseCase>;
+  let updateCartItemUseCase: jest.Mocked<UpdateCartItemUseCase>;
+  let removeCartItemUseCase: jest.Mocked<RemoveCartItemUseCase>;
+  let clearCartUseCase: jest.Mocked<ClearCartUseCase>;
+  const callerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -61,37 +60,67 @@ describe('CartsController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
-        {
-          provide: MergeCartsUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
-          },
-        },
       ],
-    })
-      .overrideInterceptor(CartSessionCookieInterceptor)
-      .useValue({
-        intercept: (_ctx: unknown, next: { handle: () => unknown }) =>
-          next.handle(),
-      })
-      .compile();
+    }).compile();
 
     controller = module.get<CartsController>(CartsController);
-
-    getCartUseCase = module.get<GetCartUseCase>(GetCartUseCase);
-    createCartUseCase = module.get<CreateCartUseCase>(CreateCartUseCase);
-    addCartItemUseCase = module.get<AddCartItemUseCase>(AddCartItemUseCase);
-    updateCartItemUseCase = module.get<UpdateCartItemUseCase>(
-      UpdateCartItemUseCase,
-    );
-    removeCartItemUseCase = module.get<RemoveCartItemUseCase>(
-      RemoveCartItemUseCase,
-    );
-    clearCartUseCase = module.get<ClearCartUseCase>(ClearCartUseCase);
-    mergeCartsUseCase = module.get<MergeCartsUseCase>(MergeCartsUseCase);
+    getCartUseCase = module.get(GetCartUseCase);
+    createCartUseCase = module.get(CreateCartUseCase);
+    addCartItemUseCase = module.get(AddCartItemUseCase);
+    updateCartItemUseCase = module.get(UpdateCartItemUseCase);
+    removeCartItemUseCase = module.get(RemoveCartItemUseCase);
+    clearCartUseCase = module.get(ClearCartUseCase);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('should delegate createCart to CreateCartUseCase', async () => {
+    await controller.createCart(callerContext);
+    expect(createCartUseCase.execute).toHaveBeenCalledWith(callerContext);
+  });
+
+  it('should delegate getCart to GetCartUseCase', async () => {
+    await controller.getCart(10, callerContext);
+    expect(getCartUseCase.execute).toHaveBeenCalledWith({
+      cartId: 10,
+      callerContext,
+    });
+  });
+
+  it('should delegate addItem to AddCartItemUseCase', async () => {
+    const dto = CartDtoTestFactory.createAddCartItemDto();
+    await controller.addItem(10, dto, callerContext);
+    expect(addCartItemUseCase.execute).toHaveBeenCalledWith({
+      cartId: 10,
+      productId: dto.productId,
+      quantity: dto.quantity,
+      callerContext,
+    });
+  });
+
+  it('should delegate updateItem to UpdateCartItemUseCase', async () => {
+    const dto = CartDtoTestFactory.createUpdateCartItemDto();
+    await controller.updateItem(10, 5, dto, callerContext);
+    expect(updateCartItemUseCase.execute).toHaveBeenCalledWith({
+      cartId: 10,
+      itemId: 5,
+      quantity: dto.quantity,
+      callerContext,
+    });
+  });
+
+  it('should delegate removeItem to RemoveCartItemUseCase', async () => {
+    await controller.removeItem(10, 5, callerContext);
+    expect(removeCartItemUseCase.execute).toHaveBeenCalledWith({
+      cartId: 10,
+      itemId: 5,
+      callerContext,
+    });
+  });
+
+  it('should delegate clearCart to ClearCartUseCase', async () => {
+    await controller.clearCart(10, callerContext);
+    expect(clearCartUseCase.execute).toHaveBeenCalledWith({
+      cartId: 10,
+      callerContext,
+    });
   });
 });

@@ -35,18 +35,40 @@ export class ListOrdersQueryDto {
   limit?: number = 10;
 
   @IsOptional()
+  @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Filter orders by customer ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'Filter orders by user ID',
+    example: 1,
   })
   userId?: number;
 
   @IsOptional()
   @ApiPropertyOptional({
-    description: 'Filter orders by customer email',
-    example: 'customer@example.com',
+    description: 'Filter orders by user email',
+    example: 'user@example.com',
   })
-  customerEmail?: string;
+  userEmail?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter orders by user first name',
+    example: 'John',
+  })
+  firstName?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter orders by user last name',
+    example: 'Doe',
+  })
+  lastName?: string;
+
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: 'Filter orders by user first or last name',
+    example: 'John',
+  })
+  userName?: string;
 
   @IsOptional()
   @IsEnum(OrderStatus)

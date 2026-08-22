@@ -5,17 +5,30 @@ import { ConfirmCheckoutReservationUseCase } from '../../core/application/usecas
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
-import { ProcessPaymentResult } from './process-payment.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { isRecord } from '../../../../shared-kernel/infra/lang/is-record';
+import { PostPaymentJobData } from './post-payment-job.data';
 
-export interface ConfirmReservationResult extends ProcessPaymentResult {
+export interface ConfirmReservationResult {
+  orderId: number;
+  reservationId: number;
   reservationConfirmed: boolean;
+}
+
+export function isConfirmReservationResult(
+  value: unknown,
+): value is ConfirmReservationResult {
+  return (
+    isRecord(value) &&
+    typeof value.orderId === 'number' &&
+    typeof value.reservationId === 'number' &&
+    typeof value.reservationConfirmed === 'boolean'
+  );
 }
 
 @Injectable()
 export class ConfirmReservationStep extends BaseJobHandler<
-  ScheduleCheckoutProps,
+  PostPaymentJobData,
   ConfirmReservationResult
 > {
   protected readonly logger = new Logger(ConfirmReservationStep.name);
@@ -32,18 +45,16 @@ export class ConfirmReservationStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<ScheduleCheckoutProps>,
+    job: Job<PostPaymentJobData>,
   ): Promise<Result<ConfirmReservationResult, AppError>> {
-    const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(childrenValues)[0] as ProcessPaymentResult;
+    const { orderId, reservationId } = job.data;
 
-    if (!childData || !childData.reservationId) {
+    if (!reservationId) {
       return ErrorFactory.ServiceError(
         'Missing reservation data from previous step',
       );
     }
 
-    const { reservationId } = childData;
     this.logger.log(`Confirming reservation ${reservationId}...`);
 
     const result = await this.confirmReservationUseCase.execute(reservationId);
@@ -54,7 +65,8 @@ export class ConfirmReservationStep extends BaseJobHandler<
 
     this.logger.log(`Reservation ${reservationId} confirmed.`);
     return Result.success({
-      ...childData,
+      orderId,
+      reservationId,
       reservationConfirmed: true,
     });
   }

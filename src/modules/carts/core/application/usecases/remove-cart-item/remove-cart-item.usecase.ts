@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
@@ -15,13 +14,12 @@ export interface RemoveCartItemUseCaseInput {
   cartId: number;
   itemId: number;
   callerContext: CallerContext | null;
-  cartToken: string | null;
 }
 
 @Injectable()
 export class RemoveCartItemUseCase extends UseCase<
   RemoveCartItemUseCaseInput,
-  ICart,
+  void,
   UseCaseError
 > {
   constructor(
@@ -33,21 +31,20 @@ export class RemoveCartItemUseCase extends UseCase<
 
   async execute(
     input: RemoveCartItemUseCaseInput,
-  ): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, itemId, callerContext, cartToken } = input;
-    const cartResult = await this.cartRepository.findById(cartId);
+  ): Promise<Result<void, UseCaseError>> {
+    const { cartId, itemId, callerContext } = input;
+    const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
     if (isFailure(cartResult)) return cartResult;
 
-    const cart = cartResult.value;
+    const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
 
-    const ownershipResult = await this.cartOwnershipValidator.validate(
+    const ownershipResult = this.cartOwnershipValidator.validate(
       cart,
       callerContext,
-      cartToken,
     );
 
     if (isFailure(ownershipResult)) return ownershipResult;
@@ -56,10 +53,10 @@ export class RemoveCartItemUseCase extends UseCase<
 
     if (isFailure(removeResult)) return removeResult;
 
-    const saveResult = await this.cartRepository.update(cart);
+    const saveResult = await this.cartRepository.save(cart, expectedVersion);
 
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(cart.toPrimitives());
+    return Result.success<void>(undefined);
   }
 }

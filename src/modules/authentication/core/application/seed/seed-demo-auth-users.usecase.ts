@@ -11,6 +11,7 @@ import { Credential } from '../../domain/entities/credential';
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 
 export interface SeededDemoAuthUser {
+  userId: number;
   email: string;
   status: 'created' | 'existing';
 }
@@ -81,7 +82,11 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     }
 
     if (existingResult.value) {
-      return Result.success({ email: input.email, status: 'existing' });
+      return Result.success({
+        userId: existingResult.value.id,
+        email: input.email,
+        status: 'existing',
+      });
     }
 
     const passwordHash = await this.passwordHasher.hash(input.password);
@@ -127,6 +132,10 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       );
     }
 
-    return Result.success({ email: input.email, status: 'created' });
+    return Result.success({
+      userId: user.id,
+      email: input.email,
+      status: 'created',
+    });
   }
 }

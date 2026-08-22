@@ -19,19 +19,23 @@ import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
 import { InventoryResponseDto } from './primary-adapters/dto/inventory-response.dto';
 import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
-import { GetInventoryUseCase } from './core/application/get-inventory/get-inventory.usecase';
-import { AdjustStockUseCase } from './core/application/adjust-stock/adjust-stock.usecase';
-import { ReserveStockUseCase } from './core/application/reserve-stock/reserve-stock.usecase';
-import { ReleaseStockUseCase } from './core/application/release-stock/release-stock.usecase';
-import { CheckStockUseCase } from './core/application/check-stock/check-stock.usecase';
-import { ListLowStockUseCase } from './core/application/list-low-stock/list-low-stock.usecase';
-import { BulkCheckStockUseCase } from './core/application/bulk-check-stock/bulk-check-stock.usecase';
+import { ListInventoryQueryDto } from './primary-adapters/dto/list-inventory-query.dto';
+import { GetInventoryUseCase } from './core/application/usecases/get-inventory/get-inventory.usecase';
+import { ListInventoryUseCase } from './core/application/usecases/list-inventory/list-inventory.usecase';
+
+import { AdjustStockUseCase } from './core/application/usecases/adjust-stock/adjust-stock.usecase';
+import { ReserveStockUseCase } from './core/application/usecases/reserve-stock/reserve-stock.usecase';
+import { ReleaseStockUseCase } from './core/application/usecases/release-stock/release-stock.usecase';
+import { CheckStockUseCase } from './core/application/usecases/check-stock/check-stock.usecase';
+import { ListLowStockUseCase } from './core/application/usecases/list-low-stock/list-low-stock.usecase';
+import { BulkCheckStockUseCase } from './core/application/usecases/bulk-check-stock/bulk-check-stock.usecase';
 
 @ApiTags('inventory')
 @Controller('inventory')
 export class InventoryController {
   constructor(
     private readonly getInventoryUseCase: GetInventoryUseCase,
+    private readonly listInventoryUseCase: ListInventoryUseCase,
     private readonly adjustStockUseCase: AdjustStockUseCase,
     private readonly reserveStockUseCase: ReserveStockUseCase,
     private readonly releaseStockUseCase: ReleaseStockUseCase,
@@ -39,6 +43,13 @@ export class InventoryController {
     private readonly listLowStockUseCase: ListLowStockUseCase,
     private readonly bulkCheckStockUseCase: BulkCheckStockUseCase,
   ) {}
+
+  @Get()
+  @Public()
+  @ApiOperation({ summary: 'List inventory items' })
+  async findAll(@Query() query: ListInventoryQueryDto) {
+    return await this.listInventoryUseCase.execute(query);
+  }
 
   @Get('products/:productId')
   @Public()
@@ -58,8 +69,8 @@ export class InventoryController {
     @Body() dto: AdjustStockDto,
   ) {
     return await this.adjustStockUseCase.execute({
-      productId: productId,
-      command: dto,
+      productId,
+      ...dto,
     });
   }
 

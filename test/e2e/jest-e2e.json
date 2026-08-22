@@ -1,0 +1,16 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "maxWorkers": 1,
+  "testTimeout": 180000,
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": ["node_modules/(?!jose/.*)"],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/../../src/$1",
+    "^testing/(.*)$": "<rootDir>/../../src/testing/$1"
+  }
+}

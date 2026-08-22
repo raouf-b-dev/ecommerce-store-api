@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { ICart } from '../../../domain/interfaces/cart.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
@@ -11,25 +10,13 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartProductGateway } from '../../ports/product.gateway';
 import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
-import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
-
-export interface AddCartItemInput {
-  productId: number;
-  quantity: number;
-}
-
-export interface AddCartItemUseCaseInput {
-  cartId: number;
-  input: AddCartItemInput;
-  callerContext: CallerContext | null;
-  cartToken: string | null;
-}
+import { AddCartItemCommand } from '../../commands/add-cart-item.command';
 
 @Injectable()
 export class AddCartItemUseCase extends UseCase<
-  AddCartItemUseCaseInput,
-  ICart,
+  AddCartItemCommand,
+  void,
   UseCaseError
 > {
   constructor(
@@ -44,52 +31,51 @@ export class AddCartItemUseCase extends UseCase<
   }
 
   async execute(
-    input: AddCartItemUseCaseInput,
-  ): Promise<Result<ICart, UseCaseError>> {
-    const { cartId, input: addInput, callerContext, cartToken } = input;
-    const cartResult = await this.cartRepository.findById(cartId);
+    command: AddCartItemCommand,
+  ): Promise<Result<void, UseCaseError>> {
+    const { cartId, productId, quantity, callerContext } = command;
+
+    if (!cartId) {
+      return ErrorFactory.UseCaseError('cartId is required');
+    }
+
+    const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
     if (isFailure(cartResult)) return cartResult;
 
-    const cart = cartResult.value;
+    const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
       return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
     }
 
-    const ownershipResult = await this.cartOwnershipValidator.validate(
+    const ownershipResult = this.cartOwnershipValidator.validate(
       cart,
       callerContext,
-      cartToken,
     );
-
     if (isFailure(ownershipResult)) return ownershipResult;
 
-    const productResult = await this.productGateway.findById(
-      addInput.productId,
-    );
-
+    const productResult = await this.productGateway.findById(productId);
     if (isFailure(productResult)) return productResult;
 
     const product = productResult.value;
     if (!product) {
       return ErrorFactory.UseCaseError(
-        `Product with id ${addInput.productId} not found`,
+        `Product with id ${productId} not found`,
       );
     }
 
-    // Check stock availability
-    const stockCheckResult = await this.inventoryGateway.checkStock(
-      addInput.productId,
-      addInput.quantity,
+    const stockResult = await this.inventoryGateway.checkStock(
+      productId,
+      quantity,
     );
 
-    if (isFailure(stockCheckResult)) {
-      return ErrorFactory.UseCaseError(stockCheckResult.error.message);
+    if (isFailure(stockResult)) {
+      return ErrorFactory.UseCaseError(stockResult.error.message);
     }
 
-    if (!stockCheckResult.value.isAvailable) {
+    if (!stockResult.value.isAvailable) {
       return ErrorFactory.UseCaseError(
-        `Insufficient stock for product ${product.name}. Available: ${stockCheckResult.value.availableQuantity}`,
+        `Insufficient stock for product ${product.name}`,
       );
     }
 
@@ -97,16 +83,13 @@ export class AddCartItemUseCase extends UseCase<
       product.id!,
       product.name,
       product.price,
-      addInput.quantity,
-      undefined,
+      quantity,
     );
-
     if (isFailure(addResult)) return addResult;
 
-    const saveResult = await this.cartRepository.update(cart);
-
+    const saveResult = await this.cartRepository.save(cart, expectedVersion);
     if (isFailure(saveResult)) return saveResult;
 
-    return Result.success(cart.toPrimitives());
+    return Result.success(undefined);
   }
 }

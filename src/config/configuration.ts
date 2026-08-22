@@ -1,5 +1,4 @@
 import { validateEnv } from './validate-env';
-import { StringValue } from 'ms';
 
 export interface IAppConfig {
   node: {
@@ -19,6 +18,8 @@ export interface IAppConfig {
     username?: string;
     password?: string;
     database?: string;
+    containerName: string;
+    image: string;
   };
   jwt: {
     privateKey: string;
@@ -33,6 +34,9 @@ export interface IAppConfig {
   throttle: {
     globalLimit: number;
     strictLimit: number;
+  };
+  http: {
+    trustProxy: string;
   };
   metricsApiKey: string;
   otel: {
@@ -64,6 +68,8 @@ export default (): IAppConfig => {
       username: env.DB_USERNAME,
       password: env.DB_PASSWORD,
       database: env.DB_DATABASE,
+      containerName: env.POSTGRES_CONTAINER_NAME,
+      image: env.POSTGRES_IMAGE,
     },
     jwt: {
       privateKey: env.JWT_PRIVATE_KEY,
@@ -83,6 +89,9 @@ export default (): IAppConfig => {
     throttle: {
       globalLimit: env.THROTTLE_GLOBAL_LIMIT,
       strictLimit: env.THROTTLE_STRICT_LIMIT,
+    },
+    http: {
+      trustProxy: env.TRUST_PROXY,
     },
     metricsApiKey: env.METRICS_API_KEY,
     otel: {

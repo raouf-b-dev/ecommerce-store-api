@@ -1,5 +1,25 @@
 {
   "files.eol": "\n",
   "editor.formatOnSave": true,
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "atlascode.jira.jqlList": [
+    {
+      "id": "47cc54f8-2a08-42e6-bc01-945033d529ce",
+      "siteId": "29371d80-3452-46f8-abcb-a6dc03d43838",
+      "filterId": "10103",
+      "name": "ECOM In Progress",
+      "query": "project = ES AND assignee = currentUser() AND status = \"In Progress\" ORDER BY created DESC",
+      "enabled": true,
+      "monitor": true
+    },
+    {
+      "id": "519af72a-7241-4793-815a-c5821424b278",
+      "siteId": "29371d80-3452-46f8-abcb-a6dc03d43838",
+      "filterId": "10102",
+      "name": "ECOM Todo",
+      "query": "project = ES AND assignee = currentUser() AND status = \"To Do\" ORDER BY created DESC",
+      "enabled": true,
+      "monitor": true
+    }
+  ]
 }

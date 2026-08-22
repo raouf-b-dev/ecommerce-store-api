@@ -5,8 +5,9 @@ import { importPKCS8, SignJWT, decodeJwt } from 'jose';
 import * as crypto from 'crypto';
 import {
   JwtSignerPort,
-  SignAccessTokenPayload,
   RefreshTokenResult,
+  SignAccessTokenPayload,
+  SignRefreshTokenPayload,
 } from '../ports/jwt-signer.port';
 
 @Injectable()
@@ -36,11 +37,17 @@ export class JwtSignerService implements JwtSignerPort {
       .sign(privateKey);
   }
 
-  async signRefreshToken(payload: any): Promise<string> {
+  async signRefreshToken(payload: SignRefreshTokenPayload): Promise<string> {
     const pem = this.configService.jwt.privateKey;
     const privateKey = await importPKCS8(pem, 'RS256');
 
-    return new SignJWT({ ...payload, typ: 'refresh' })
+    const jwtPayload = {
+      sub: String(payload.sub),
+      ...(payload.sid ? { sid: payload.sid } : {}),
+      typ: 'refresh',
+    };
+
+    return new SignJWT(jwtPayload)
       .setProtectedHeader({
         alg: 'RS256',
         kid: this.jwksService.getKid(),
@@ -59,13 +66,13 @@ export class JwtSignerService implements JwtSignerPort {
    * Returns the signed JWT, a unique sessionId, and the token's expiration Date.
    */
   async signRefreshTokenWithSession(
-    payload: Record<string, unknown>,
+    payload: Pick<SignRefreshTokenPayload, 'sub'>,
   ): Promise<RefreshTokenResult> {
     const sessionId = crypto.randomUUID();
 
     const token = await this.signRefreshToken({
       ...payload,
-      sessionId,
+      sid: sessionId,
     });
 
     const decoded = decodeJwt(token);

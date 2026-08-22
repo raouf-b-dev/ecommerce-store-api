@@ -1,5 +1,5 @@
-import { LoginCommand } from '../../core/application/usecases/login-user/login-user.usecase';
-import { RegisterCommand } from '../../core/application/usecases/register-user/register-user.usecase';
+import { LoginCommand } from '../../core/application/commands/login.command';
+import { RegisterCommand } from '../../core/application/commands/register.command';
 import {
   Credential,
   CredentialProps,

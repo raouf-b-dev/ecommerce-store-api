@@ -1,8 +1,12 @@
 // src/modules/orders/orders.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { OrderTestFactory } from './testing/factories/order.factory';
-import { OrderDtoTestFactory } from './testing/factories/order-dto.factory';
+import {
+  OrderDtoTestFactory,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { MockIdempotencyStore } from 'src/testing/mocks/idempotency-store.mock';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import { Result } from '../../shared-kernel/domain/result';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
@@ -40,48 +44,29 @@ describe('OrdersController', () => {
   let callerContext: CallerContext;
 
   beforeEach(async () => {
-    mockOrder = OrderTestFactory.createOrderEntity();
-    cancelledOrder = OrderTestFactory.createOrderEntity({
+    mockOrder = OrderTestFactory.createDomainOrder();
+    cancelledOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.CANCELLED,
     });
-    confirmedOrder = OrderTestFactory.createOrderEntity({
+    confirmedOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.CONFIRMED,
     });
-    processingOrder = OrderTestFactory.createOrderEntity({
+    processingOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.PROCESSING,
     });
-    deliveredOrder = OrderTestFactory.createOrderEntity({
+    deliveredOrder = OrderTestFactory.createDomainOrder({
       status: OrderStatus.DELIVERED,
     });
     createDeliveredOrderDto = OrderDtoTestFactory.createDeliverOrderCommand();
-    const cmd = OrderDtoTestFactory.createCreditCardCheckoutCommand();
-    checkoutDto = {
-      ...cmd,
-      shippingAddress: cmd.shippingAddress
-        ? {
-            ...cmd.shippingAddress,
-            firstName: cmd.shippingAddress.firstName || 'Test',
-            lastName: cmd.shippingAddress.lastName || 'User',
-          }
-        : undefined,
-    };
-    callerContext = {
-      kind: 'user',
-      userId: 123,
-      role: 'CUSTOMER',
-      permissions: new Set(['manage_own_cart']),
-    };
+    checkoutDto = OrderDtoTestFactory.createCheckoutDto();
+    callerContext = AuthPayloadFactory.createCustomerContext();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
         {
           provide: IdempotencyStore,
-          useValue: {
-            checkAndLock: jest.fn(),
-            complete: jest.fn(),
-            release: jest.fn(),
-          },
+          useValue: new MockIdempotencyStore(),
         },
         {
           provide: CheckoutUseCase,
@@ -162,11 +147,10 @@ describe('OrdersController', () => {
   });
 
   it('should call CheckoutUseCase.execute when checkout is called', async () => {
-    await controller.checkout(checkoutDto, callerContext, 'cart-token');
+    await controller.checkout(checkoutDto, callerContext);
     expect(checkoutUseCase.execute).toHaveBeenCalledWith({
-      command: checkoutDto,
+      ...checkoutDto,
       callerContext,
-      cartToken: 'cart-token',
     });
   });
 
@@ -199,11 +183,9 @@ describe('OrdersController', () => {
 
   it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
     const res = await controller.confirmOrder(confirmedOrder.id!);
-    expect(confirmOrderUseCase.execute).toHaveBeenCalledWith({
-      orderId: confirmedOrder.id!,
-      reservationId: undefined,
-      cartId: undefined,
-    });
+    expect(confirmOrderUseCase.execute).toHaveBeenCalledWith(
+      confirmedOrder.id!,
+    );
     expect(res).toEqual(Result.success(confirmedOrder));
   });
 
@@ -225,5 +207,10 @@ describe('OrdersController', () => {
       command: createDeliveredOrderDto,
     });
     expect(res).toEqual(Result.success(deliveredOrder));
+  });
+
+  it('should call ShipOrderUseCase.execute when shipOrder is called', async () => {
+    await controller.shipOrder(processingOrder.id!);
+    expect(shipOrderUseCase.execute).toHaveBeenCalledWith(processingOrder.id!);
   });
 });

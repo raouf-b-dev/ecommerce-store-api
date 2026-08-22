@@ -1,62 +1,36 @@
-// src/modules/Products/application/usecases/list-products/list-products.usecase.spec.ts
+import {
+  MockProductQueryService,
+  ProductDtoTestFactory,
+} from 'src/modules/products/testing';
 import { ListProductsUseCase } from './list-products.usecase';
-import { MockProductRepository } from '../../../../testing/mocks/product-repository.mock';
-import { ProductTestFactory } from '../../../../testing/factories/product.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('ListProductsUseCase', () => {
   let useCase: ListProductsUseCase;
-  let mockRepository: MockProductRepository;
+  let mockQueryService: MockProductQueryService;
 
   beforeEach(() => {
-    mockRepository = new MockProductRepository();
-    useCase = new ListProductsUseCase(mockRepository);
+    mockQueryService = new MockProductQueryService();
+    useCase = new ListProductsUseCase(mockQueryService);
   });
 
   afterEach(() => {
-    mockRepository.reset();
+    mockQueryService.reset();
   });
 
   describe('execute', () => {
     it('should return Success if products are found', async () => {
-      const products = ProductTestFactory.createProductList(5);
+      const sampleItem = ProductDtoTestFactory.createProductListItemDTO();
+      mockQueryService.mockSuccessfulList([sampleItem], 1);
 
-      mockRepository.mockSuccessfulList(products);
-
-      const result = await useCase.execute();
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toHaveLength(5);
-      expect(mockRepository.findAll).toHaveBeenCalledWith();
-      expect(mockRepository.findAll).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return Failure(UseCaseError) if no product is found', async () => {
-      mockRepository.mockListFailure('Products not found');
-
-      const result = await useCase.execute();
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Products not found',
-        UseCaseError,
-      );
-    });
-
-    it('should return mixed product types', async () => {
-      const products = [
-        ProductTestFactory.createInStockProduct(),
-        ProductTestFactory.createLowStockProduct(),
-        ProductTestFactory.createOutOfStockProduct(),
-      ];
-
-      mockRepository.mockSuccessfulList(products);
-
-      const result = await useCase.execute();
+      const result = await useCase.execute({ page: 1, limit: 10 });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toHaveLength(3);
+      expect(result.value.items).toEqual([sampleItem]);
+      expect(mockQueryService.list).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+      });
     });
   });
 });

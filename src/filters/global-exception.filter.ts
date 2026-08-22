@@ -8,6 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 
 interface ValidationErrorResponse {
@@ -50,8 +51,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     else if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
       const exceptionResponse = exception.getResponse() as
-        | string
-        | ValidationErrorResponse;
+        string | ValidationErrorResponse;
 
       message =
         typeof exceptionResponse === 'string'
@@ -80,6 +80,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         `[AppError: ${code}] ${message} - Path: ${request.method} ${request.url}`,
       );
     }
+    // Branch 4: Optimistic Lock Version Mismatch (TypeORM)
+    else if (exception instanceof OptimisticLockVersionMismatchError) {
+      statusCode = HttpStatus.CONFLICT;
+      message =
+        'Resource was modified by another request. Please reload and retry.';
+      code = 'OPTIMISTIC_LOCK_CONFLICT';
+      errorDetail = exception.message;
+
+      this.logger.warn(
+        `[OptimisticLockConflict] ${exception.message} - Path: ${request.method} ${request.url}`,
+      );
+    }
     // Branch 4: Generic Error / Unknown
     else if (exception instanceof Error) {
       this.logger.error(
@@ -102,7 +114,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       statusCode,
       message,
-      ...(code && { code }),
+      ...(!isProduction && code && { code }),
       ...(errors && { errors }),
       ...(!isProduction && errorDetail && { error: errorDetail }),
       ...(!isProduction && stack && { stack }),

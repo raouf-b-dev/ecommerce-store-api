@@ -6,10 +6,14 @@ import {
 import { IInventory } from '../../../core/domain/interfaces/inventory.interface';
 import { InventoryEntity } from '../../orm/inventory.schema';
 
-type InventoryCreate = CreateFromEntity<InventoryEntity>;
-export type InventoryForCache = Omit<IInventory, 'createdAt' | 'updatedAt'> & {
+type InventoryCreate = CreateFromEntity<InventoryEntity, 'version'>;
+export type InventoryForCache = Omit<
+  IInventory,
+  'createdAt' | 'updatedAt' | 'lastRestockDate'
+> & {
   createdAt: number;
   updatedAt: number;
+  lastRestockDate: number | null;
 };
 
 export class InventoryMapper {
@@ -35,7 +39,6 @@ export class InventoryMapper {
       productId: primitives.productId,
       availableQuantity: primitives.availableQuantity,
       reservedQuantity: primitives.reservedQuantity,
-      totalQuantity: primitives.totalQuantity,
       lowStockThreshold: primitives.lowStockThreshold,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
@@ -56,6 +59,7 @@ export class InventoryMapper {
     return domains.map((domain) => InventoryMapper.toEntity(domain));
   }
 }
+
 export class InventoryCacheMapper {
   public static toCache(domain: Inventory): InventoryForCache {
     const primitives = domain.toPrimitives();
@@ -63,15 +67,25 @@ export class InventoryCacheMapper {
       ...primitives,
       createdAt: primitives.createdAt.getTime(),
       updatedAt: primitives.updatedAt.getTime(),
+      lastRestockDate: primitives.lastRestockDate
+        ? primitives.lastRestockDate.getTime()
+        : null,
     };
   }
 
-  public static fromCache(cachedInventory: InventoryForCache): Inventory {
-    const inventoryDomain = Inventory.fromPrimitives({
-      ...cachedInventory,
-      createdAt: new Date(cachedInventory.createdAt),
-      updatedAt: new Date(cachedInventory.updatedAt),
-    });
-    return inventoryDomain;
+  public static fromCache(cached: InventoryForCache): Inventory | null {
+    try {
+      return Inventory.fromPrimitives({
+        ...cached,
+        createdAt: new Date(cached.createdAt),
+        updatedAt: new Date(cached.updatedAt),
+        lastRestockDate:
+          cached.lastRestockDate == null
+            ? null
+            : new Date(cached.lastRestockDate),
+      });
+    } catch {
+      return null;
+    }
   }
 }

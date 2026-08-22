@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { FlowJob } from 'bullmq';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { FlowJob, Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   OrderScheduler,
   ScheduleCheckoutProps,
+  SchedulePostPaymentProps,
 } from '../../core/domain/schedulers/order.scheduler';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -10,92 +12,68 @@ import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
-import { PaymentMethodPolicy } from '../../core/domain/services/payment-method-policy';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 @Injectable()
-export class BullMqOrderScheduler implements OrderScheduler {
+export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
+  private readonly logger = new Logger(BullMqOrderScheduler.name);
+
   constructor(
     private readonly jobConfig: JobConfigService,
     private readonly flowProducerService: FlowProducerService,
-    private readonly paymentPolicy: PaymentMethodPolicy,
     private readonly correlation: CorrelationService,
+    @InjectQueue('checkout')
+    private readonly checkoutQueue: Queue,
   ) {}
+
+  async onModuleInit() {
+    await this.schedulePendingOrdersExpiration();
+  }
 
   async scheduleCheckout(
     props: ScheduleCheckoutProps,
   ): Promise<Result<string, InfrastructureError>> {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
-      const isOnline = this.paymentPolicy.isOnlinePayment(props.paymentMethod);
       const correlationId = this.correlation.getId();
 
-      let flowDefinition: FlowJob;
       const propsWithCorrelation = {
         ...props,
         ...(correlationId ? { correlationId } : {}),
       };
 
-      if (isOnline) {
-        // Online Flow: Validate -> Reserve -> Process Payment
-        // Order is already created in CheckoutUseCase
-        flowDefinition = {
-          name: JobNames.PROCESS_PAYMENT,
-          queueName: 'checkout',
-          data: { ...propsWithCorrelation, flowId },
-          opts: {
-            jobId: `${flowId}-process-payment`,
-            ...this.jobConfig.getJobOptions(JobNames.PROCESS_PAYMENT),
-          },
-          children: [
-            {
-              name: JobNames.RESERVE_STOCK,
-              queueName: 'checkout',
-              data: propsWithCorrelation,
-              opts: {
-                jobId: `${flowId}-reserve-stock`,
-                ...this.jobConfig.getJobOptions(JobNames.RESERVE_STOCK),
-              },
-              children: [
-                {
-                  name: JobNames.VALIDATE_CART,
-                  queueName: 'checkout',
-                  data: propsWithCorrelation,
-                  opts: {
-                    jobId: `${flowId}-validate-cart`,
-                    ...this.jobConfig.getJobOptions(JobNames.VALIDATE_CART),
-                  },
+      // Single Checkout Flow: Validate -> Reserve -> Process Payment
+      const flowDefinition: FlowJob = {
+        name: JobNames.PROCESS_PAYMENT,
+        queueName: 'checkout',
+        data: { ...propsWithCorrelation, flowId },
+        opts: {
+          jobId: `${flowId}-process-payment`,
+          ...this.jobConfig.getJobOptions(JobNames.PROCESS_PAYMENT),
+        },
+        children: [
+          {
+            name: JobNames.RESERVE_STOCK,
+            queueName: 'checkout',
+            data: propsWithCorrelation,
+            opts: {
+              jobId: `${flowId}-reserve-stock`,
+              ...this.jobConfig.getJobOptions(JobNames.RESERVE_STOCK),
+            },
+            children: [
+              {
+                name: JobNames.VALIDATE_CART,
+                queueName: 'checkout',
+                data: propsWithCorrelation,
+                opts: {
+                  jobId: `${flowId}-validate-cart`,
+                  ...this.jobConfig.getJobOptions(JobNames.VALIDATE_CART),
                 },
-              ],
-            },
-          ],
-        };
-      } else {
-        // COD Flow: Validate -> Reserve Stock
-        // Order is already created in CheckoutUseCase with PENDING_CONFIRMATION status
-        // Stops here - awaits manual confirmation via phone call
-        // schedulePostConfirmation() is called after manual confirmation
-        flowDefinition = {
-          name: JobNames.RESERVE_STOCK,
-          queueName: 'checkout',
-          data: { ...propsWithCorrelation, flowId },
-          opts: {
-            jobId: `${flowId}-reserve-stock`,
-            ...this.jobConfig.getJobOptions(JobNames.RESERVE_STOCK),
-          },
-          children: [
-            {
-              name: JobNames.VALIDATE_CART,
-              queueName: 'checkout',
-              data: propsWithCorrelation,
-              opts: {
-                jobId: `${flowId}-validate-cart`,
-                ...this.jobConfig.getJobOptions(JobNames.VALIDATE_CART),
               },
-            },
-          ],
-        };
-      }
+            ],
+          },
+        ],
+      };
 
       const flow = await this.flowProducerService.add(flowDefinition);
 
@@ -122,7 +100,7 @@ export class BullMqOrderScheduler implements OrderScheduler {
     try {
       const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
       const correlationId = this.correlation.getId();
-      const props = {
+      const props: SchedulePostPaymentProps & { correlationId?: string } = {
         orderId,
         reservationId,
         cartId,
@@ -155,90 +133,17 @@ export class BullMqOrderScheduler implements OrderScheduler {
                   jobId: `${flowId}-confirm-reservation`,
                   ...this.jobConfig.getJobOptions(JobNames.CONFIRM_RESERVATION),
                 },
-                children: [
-                  {
-                    name: JobNames.CONFIRM_ORDER,
-                    queueName: 'checkout',
-                    data: props,
-                    opts: {
-                      jobId: `${flowId}-confirm-order`,
-                      ...this.jobConfig.getJobOptions(JobNames.CONFIRM_ORDER),
-                    },
-                  },
-                ],
               },
             ],
           },
         ],
       };
 
-      const flow = await this.flowProducerService.add(flowDefinition);
+      await this.flowProducerService.add(flowDefinition);
       return Result.success(flowId);
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule post-payment flow',
-        error,
-      );
-    }
-  }
-
-  /**
-   * Schedule post-confirmation flow for COD orders.
-   * Called after manual confirmation (e.g., phone call with user).
-   * Triggers: CONFIRM_RESERVATION -> CLEAR_CART -> FINALIZE
-   */
-  async schedulePostConfirmation(
-    orderId: number,
-    reservationId: number,
-    cartId: number,
-  ): Promise<Result<string, InfrastructureError>> {
-    try {
-      const flowId = this.jobConfig.generateJobId(JobNames.PROCESS_CHECKOUT);
-      const correlationId = this.correlation.getId();
-      const props = {
-        orderId,
-        reservationId,
-        cartId,
-        ...(correlationId ? { correlationId } : {}),
-      };
-
-      const flowDefinition: FlowJob = {
-        name: JobNames.FINALIZE_CHECKOUT,
-        queueName: 'checkout',
-        data: { ...props, flowId },
-        opts: {
-          jobId: `${flowId}-finalize`,
-          ...this.jobConfig.getJobOptions(JobNames.FINALIZE_CHECKOUT),
-        },
-        children: [
-          {
-            name: JobNames.CLEAR_CART,
-            queueName: 'checkout',
-            data: props,
-            opts: {
-              jobId: `${flowId}-clear-cart`,
-              ...this.jobConfig.getJobOptions(JobNames.CLEAR_CART),
-            },
-            children: [
-              {
-                name: JobNames.CONFIRM_RESERVATION,
-                queueName: 'checkout',
-                data: props,
-                opts: {
-                  jobId: `${flowId}-confirm-reservation`,
-                  ...this.jobConfig.getJobOptions(JobNames.CONFIRM_RESERVATION),
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      const flow = await this.flowProducerService.add(flowDefinition);
-      return Result.success(flowId);
-    } catch (error) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to schedule post-confirmation flow',
         error,
       );
     }
@@ -297,6 +202,38 @@ export class BullMqOrderScheduler implements OrderScheduler {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule order stock release',
+        error,
+      );
+    }
+  }
+
+  async schedulePendingOrdersExpiration(): Promise<
+    Result<string, InfrastructureError>
+  > {
+    const jobName = JobNames.EXPIRE_PENDING_ORDERS;
+    const cron = '*/5 * * * *'; // Every 5 minutes
+    const jobId = 'expire-pending-orders-job';
+
+    try {
+      await this.checkoutQueue.add(
+        jobName,
+        {},
+        {
+          repeat: { pattern: cron },
+          jobId,
+        },
+      );
+      this.logger.log(
+        'Pending orders expiration job scheduled successfully (cron: */5 * * * *)',
+      );
+      return Result.success(jobId);
+    } catch (error) {
+      this.logger.error(
+        'Failed to schedule pending orders expiration job',
+        error,
+      );
+      return ErrorFactory.InfrastructureError(
+        'Failed to schedule pending orders expiration job',
         error,
       );
     }

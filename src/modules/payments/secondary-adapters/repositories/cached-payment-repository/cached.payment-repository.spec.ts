@@ -1,3 +1,8 @@
+import {
+  PaymentBuilder,
+  MockPaymentRepository,
+  RefundTestFactory,
+} from 'src/modules/payments/testing';
 import { Payment } from '../../../core/domain/entities/payment';
 import {
   PaymentCacheMapper,
@@ -7,10 +12,8 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
-import { PaymentBuilder } from '../../../testing/builders/payment.test.builder';
-import { MockPaymentRepository } from '../../../testing/mocks/payment-repository.mock';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 import { CachedPaymentRepository } from './cached.payment-repository';
-import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import { Refund } from '../../../core/domain/entities/refund';
 import { MockCacheService, MockLogger } from '../../../../../testing';
 
@@ -121,26 +124,8 @@ describe('CachedPaymentRepository', () => {
 
   // --- FindByOrderId Tests ---
   describe('findByOrderId', () => {
-    it('should return payments from cache on cache hit and not call postgres', async () => {
+    it('should fetch from postgres, cache individual items, and return payments', async () => {
       // Arrange
-      cacheService.search.mockResolvedValueOnce([cachedPayment]);
-
-      // Act
-      const result = await repository.findByOrderId(orderId);
-
-      // Assert
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value).toEqual([domainPayment]);
-      expect(cacheService.search).toHaveBeenCalledWith(
-        PAYMENT_REDIS.INDEX,
-        `@orderId:${orderId}`,
-      );
-      expect(postgresRepo.findByOrderId).not.toHaveBeenCalled();
-    });
-
-    it('should fetch from postgres, cache individual items, and return payments on cache miss', async () => {
-      // Arrange
-      cacheService.search.mockResolvedValueOnce([]);
       postgresRepo.mockSuccessfulFindByOrderId([paymentPrimitives]);
 
       // Act
@@ -150,6 +135,7 @@ describe('CachedPaymentRepository', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value).toEqual([domainPayment]);
       expect(postgresRepo.findByOrderId).toHaveBeenCalledWith(orderId);
+      expect(cacheService.search).not.toHaveBeenCalled();
 
       expect(cacheService.set).toHaveBeenCalledWith(
         idKey(paymentId),
@@ -158,9 +144,8 @@ describe('CachedPaymentRepository', () => {
       );
     });
 
-    it('should return failure if postgres lookup fails on cache miss', async () => {
+    it('should return failure if postgres lookup fails', async () => {
       // Arrange
-      cacheService.search.mockResolvedValueOnce([]);
       const dbError = new RepositoryError('DB error');
       postgresRepo.findByOrderId.mockResolvedValue(Result.failure(dbError));
 
@@ -188,7 +173,7 @@ describe('CachedPaymentRepository', () => {
       expect(result.value).toEqual(domainPayment);
       expect(cacheService.search).toHaveBeenCalledWith(
         PAYMENT_REDIS.INDEX,
-        `@transactionId:${transactionId}`,
+        tagEquals('transactionId', transactionId),
       );
       expect(postgresRepo.findByTransactionId).not.toHaveBeenCalled();
     });

@@ -26,17 +26,14 @@ import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto'
 import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
 import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
-import { RecordCodPaymentDto } from './primary-adapters/dto/record-cod-payment.dto';
-
 import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
-import { RecordCodPaymentUseCase } from './core/application/usecases/record-cod-payment/record-cod-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
-import { HandlePayPalWebhookUseCase } from './core/application/usecases/handle-paypal-webhook/handle-paypal-webhook.usecase';
+import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
 import { isFailure } from '../../shared-kernel/domain/result';
 
 @ApiTags('payments')
@@ -49,9 +46,8 @@ export class PaymentsController {
     private readonly capturePaymentUseCase: CapturePaymentUseCase,
     private readonly processRefundUseCase: ProcessRefundUseCase,
     private readonly verifyPaymentUseCase: VerifyPaymentUseCase,
-    private readonly recordCodPaymentUseCase: RecordCodPaymentUseCase,
     private readonly handleStripeWebhookUseCase: HandleStripeWebhookUseCase,
-    private readonly handlePayPalWebhookUseCase: HandlePayPalWebhookUseCase,
+    private readonly getPaymentByOrderIdUseCase: GetPaymentByOrderIdUseCase,
   ) {}
 
   @Post('webhooks/stripe')
@@ -68,17 +64,6 @@ export class PaymentsController {
     });
   }
 
-  @Post('webhooks/paypal')
-  @Public()
-  @HttpCode(200)
-  @ApiExcludeEndpoint()
-  async handlePayPalWebhook(@Headers() headers: any, @Body() body: any) {
-    return await this.handlePayPalWebhookUseCase.execute({
-      headers,
-      payload: body,
-    });
-  }
-
   @Post()
   @RequirePermissions('view_all_orders', 'view_own_orders')
   @ApiBearerAuth()
@@ -89,9 +74,10 @@ export class PaymentsController {
     @CallerCtx() callerContext: CallerContext,
   ) {
     const result = await this.createPaymentUseCase.execute({
-      command: dto,
+      ...dto,
       callerContext,
     });
+
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
@@ -100,34 +86,30 @@ export class PaymentsController {
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
-  @ApiResponse({ status: 200, type: PaymentResponseDto })
+  @ApiResponse({ status: 200 })
   async getPayment(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.getPaymentUseCase.execute({
+    return await this.getPaymentUseCase.execute({
       paymentId: id,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get()
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
-  @ApiResponse({ status: 200, type: [PaymentResponseDto] })
+  @ApiResponse({ status: 200 })
   async listPayments(
     @Query() query: ListPaymentsQueryDto,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.listPaymentsUseCase.execute({
+    return await this.listPaymentsUseCase.execute({
       query,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 
   @Post(':id/capture')
@@ -151,8 +133,9 @@ export class PaymentsController {
     @Body() dto: ProcessRefundDto,
   ) {
     const result = await this.processRefundUseCase.execute({
-      id: id,
-      dto,
+      paymentId: id,
+      amount: dto.amount,
+      reason: dto.reason,
     });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
@@ -175,31 +158,18 @@ export class PaymentsController {
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
-  @Post('cod/record')
-  @RequirePermissions('manage_payments')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Record cash on delivery payment collection' })
-  @ApiResponse({ status: 201, type: PaymentResponseDto })
-  async recordCodPayment(@Body() dto: RecordCodPaymentDto) {
-    const result = await this.recordCodPaymentUseCase.execute(dto);
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponse(result.value));
-  }
-
   @Get('orders/:orderId')
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all payments for an order' })
-  @ApiResponse({ status: 200, type: [PaymentResponseDto] })
+  @ApiOperation({ summary: 'Get payment for an order' })
+  @ApiResponse({ status: 200 })
   async getOrderPayments(
     @Param('orderId', ParseIntPipe) orderId: number,
     @CallerCtx() callerContext: CallerContext,
   ) {
-    const result = await this.listPaymentsUseCase.execute({
-      query: { orderId: orderId },
+    return await this.getPaymentByOrderIdUseCase.execute({
+      orderId,
       callerContext,
     });
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponseList(result.value));
   }
 }

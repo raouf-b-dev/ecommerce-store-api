@@ -1,5 +1,5 @@
+import { MockSessionTokenRepository } from 'src/modules/authentication/testing';
 import { LogoutAllUseCase } from './logout-all.usecase';
-import { MockSessionTokenRepository } from '../../../../testing/mocks/session-token-repository.mock';
 import {
   MockJwtVerifierService,
   ResultAssertionHelper,
@@ -23,7 +23,7 @@ describe('LogoutAllUseCase', () => {
 
     jwtVerifierService.verifyRefreshToken.mockResolvedValue({
       sub: String(userId),
-      sessionId: 'mock-session-id',
+      sid: 'mock-session-id',
       typ: 'Refresh',
       iss: 'test-issuer',
       iat: Math.floor(Date.now() / 1000),
@@ -34,7 +34,7 @@ describe('LogoutAllUseCase', () => {
       Result.success(undefined),
     );
 
-    const result = await usecase.execute({ refreshToken: 'dummy-token' });
+    const result = await usecase.execute('dummy-token');
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(sessionTokenRepository.revokeAllForUser).toHaveBeenCalledWith(

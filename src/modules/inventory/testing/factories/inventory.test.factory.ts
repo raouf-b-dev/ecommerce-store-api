@@ -1,5 +1,9 @@
 // src/modules/inventory/testing/factories/inventory.test.factory.ts
 import { IInventory } from '../../core/domain/interfaces/inventory.interface';
+import {
+  Inventory,
+  InventoryProps,
+} from '../../core/domain/entities/inventory';
 
 export class InventoryTestFactory {
   static createMockInventory(overrides?: Partial<IInventory>): IInventory {
@@ -111,5 +115,25 @@ export class InventoryTestFactory {
       availableQuantity: quantity,
       lowStockThreshold: threshold,
     });
+  }
+
+  static createInventoryProps(
+    overrides?: Partial<InventoryProps>,
+  ): InventoryProps {
+    return {
+      id: 1,
+      productId: 1,
+      availableQuantity: 100,
+      reservedQuantity: 10,
+      lowStockThreshold: 10,
+      createdAt: new Date('2025-01-01T10:00:00Z'),
+      updatedAt: new Date('2025-01-01T10:00:00Z'),
+      lastRestockDate: new Date('2025-01-01T09:00:00Z'),
+      ...overrides,
+    };
+  }
+
+  static createDomainInventory(overrides?: Partial<InventoryProps>): Inventory {
+    return Inventory.fromPrimitives(this.createInventoryProps(overrides));
   }
 }

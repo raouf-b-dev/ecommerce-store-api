@@ -70,3 +70,35 @@ Escalate before completion if any apply:
 - Security or data-integrity concern.
 - Cross-context architectural ambiguity.
 - Tooling limits that prevent reliable verification.
+
+## 6. Concrete ADR Triggers & Lifecycle States
+
+An Architecture Decision Record (ADR) MUST be written in `docs/architecture/adr/ADR-XXXX-[title].md` whenever a task involves:
+
+1. **Transaction Isolation Changes**: Overriding transaction isolation levels (e.g. upgrading to `REPEATABLE READ`).
+2. **Schema Normalization Decisions**: Adding or removing a denormalized field on a relational entity.
+3. **Module Boundary Changes**: Creating a new bounded context or splitting an existing module.
+4. **Integration Protocol Changes**: Introducing a new message broker, distributed lock manager, or event streaming infrastructure.
+5. **Consistency Strategy Shift**: Switching between strong transactional consistency and eventual consistency.
+
+### ADR Lifecycle States:
+
+- **`Proposed`**: Written during design phase awaiting peer approval.
+- **`Accepted`**: Approved and merged into main branch codebase.
+- **`Deprecated`**: No longer recommended, superseded by a newer decision.
+- **`Superseded`**: Obsoleted by a subsequent ADR (MUST link to new `ADR-XXXX`).
+
+---
+
+## 7. PR Design Review Checklist
+
+Before marking a Pull Request ready for review, verify:
+
+- [ ] **Aggregate Boundaries**: All mutated entities belong strictly to a single aggregate root.
+- [ ] **Domain Purity**: Zero ORM or NestJS framework imports inside `core/domain/`.
+- [ ] **Thin Controllers**: Controllers contain zero business logic and delegate execution directly to use cases.
+- [ ] **Repository Contracts**: Repositories operate exclusively on pure domain entities.
+- [ ] **Optimistic Locking**: Update queries specify atomic conditional SQL predicates checking `version = :expectedVersion`.
+- [ ] **Verification**: `npm run typecheck` and relevant Jest test suites pass.
+- [ ] **Documentation**: Updated `FEATURES.md`, `ROADMAP.md`, and relevant domain/applied docs.
+- [ ] **ADR Checked**: Evaluated against ADR triggers and created `ADR-XXXX` if required.

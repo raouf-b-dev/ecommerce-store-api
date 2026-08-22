@@ -8,17 +8,15 @@ import { CartItem, CartItemProps } from './cart-item';
 
 export interface CartProps {
   id: number | null;
-  userId: number | null;
-  sessionId: number | null;
+  userId: number;
   items: CartItemProps[];
   createdAt: Date | null;
   updatedAt: Date | null;
 }
 
 export class Cart implements ICart {
-  private readonly _id: number | null;
-  private _userId: number | null;
-  private _sessionId: number | null;
+  private _id: number | null;
+  private readonly _userId: number;
   private _items: CartItem[];
   private readonly _createdAt: Date;
   private _updatedAt: Date;
@@ -28,24 +26,15 @@ export class Cart implements ICart {
     if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id ? props.id : null;
-    this._userId = props.userId ? props.userId : null;
-    this._sessionId = props.sessionId ? props.sessionId : null;
+    this._userId = props.userId;
     this._items = props.items.map((item) => CartItem.fromPrimitives(item));
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
 
   private validateProps(props: CartProps): Result<void, DomainError> {
-    // ID is optional for new carts
-    if (!props.userId && !props.sessionId) {
-      return ErrorFactory.DomainError(
-        'Either userId or sessionId must be provided',
-      );
-    }
-    if (props.userId && props.sessionId) {
-      return ErrorFactory.DomainError(
-        'Cart cannot have both userId and sessionId',
-      );
+    if (!props.userId) {
+      return ErrorFactory.DomainError('User ID is required');
     }
 
     return Result.success(undefined);
@@ -60,12 +49,12 @@ export class Cart implements ICart {
     return this._id;
   }
 
-  get userId(): number | null {
-    return this._userId;
+  setId(id: number): void {
+    this._id = id;
   }
 
-  get sessionId(): number | null {
-    return this._sessionId;
+  get userId(): number {
+    return this._userId;
   }
 
   get items(): ICartItem[] {
@@ -194,66 +183,11 @@ export class Cart implements ICart {
     this._updatedAt = new Date();
   }
 
-  mergeItems(otherItems: CartItem[]): Result<void, DomainError> {
-    for (const otherItem of otherItems) {
-      const existingItem = this.findItem(otherItem.productId);
-
-      if (existingItem) {
-        const increaseResult = existingItem.increaseQuantity(
-          otherItem.quantity,
-        );
-        if (increaseResult.isFailure) return increaseResult;
-      } else {
-        try {
-          const newItem = CartItem.create(
-            otherItem.productId,
-            otherItem.productName,
-            otherItem.price,
-            otherItem.quantity,
-            otherItem.imageUrl || undefined,
-          );
-          this._items.push(newItem);
-        } catch (error) {
-          if (error instanceof DomainError) {
-            return Result.failure(error);
-          }
-          return ErrorFactory.DomainError('Failed to merge cart items');
-        }
-      }
-    }
-
-    this._updatedAt = new Date();
-    return Result.success(undefined);
-  }
-
-  convertToUserCart(userId: number): Result<void, DomainError> {
-    if (!userId) {
-      return ErrorFactory.DomainError('User ID is required');
-    }
-    if (this._userId) {
-      return ErrorFactory.DomainError('Cart is already associated with a user');
-    }
-
-    this._userId = userId;
-    this._sessionId = null;
-    this._updatedAt = new Date();
-    return Result.success(undefined);
-  }
-
-  isGuestCart(): boolean {
-    return this._sessionId !== null && this._userId === null;
-  }
-
-  isUserCart(): boolean {
-    return this._userId !== null && this._sessionId === null;
-  }
-
   // Serialization
   toPrimitives(): ICart {
     return {
       id: this._id,
       userId: this._userId,
-      sessionId: this._sessionId,
       items: this._items.map((item) => item.toPrimitives()),
       itemCount: this.itemCount,
       totalAmount: this.totalAmount,
@@ -274,7 +208,6 @@ export class Cart implements ICart {
     return {
       id: this._id,
       userId: this._userId,
-      sessionId: this._sessionId,
       items: this._items,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -289,22 +222,10 @@ export class Cart implements ICart {
     });
   }
 
-  static createGuestCart(sessionId: number): Cart {
-    return new Cart({
-      id: null,
-      userId: null,
-      sessionId,
-      items: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }
-
   static createUserCart(userId: number): Cart {
     return new Cart({
       id: null,
       userId,
-      sessionId: null,
       items: [],
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -19,7 +19,6 @@ export class MockCartGateway implements CartGateway {
       {
         cartId: number;
         callerContext: CallerContext | null;
-        cartToken: string | null;
       },
     ]
   >();

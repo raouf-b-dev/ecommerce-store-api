@@ -1,3 +1,9 @@
+import {
+  PaymentEntityTestFactory,
+  RefundEntityTestFactory,
+  PaymentTestFactory,
+  RefundTestFactory,
+} from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
@@ -6,10 +12,6 @@ import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundEntity } from '../../orm/refund.schema';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
-import { PaymentEntityTestFactory } from '../../../testing/factories/payment-entity.test.factory';
-import { RefundEntityTestFactory } from '../../../testing/factories/refund-entity.test.factory';
-import { PaymentTestFactory } from '../../../testing/factories/payment.test.factory';
-import { RefundTestFactory } from '../../../testing/factories/refund.test.factory';
 import {
   createMockQueryBuilder,
   createMockTransactionManager,
@@ -22,7 +24,6 @@ import { RefundMapper } from '../../persistence/mappers/refund.mapper';
 describe('PostgresPaymentRepository', () => {
   let repository: PostgresPaymentRepository;
   let mockOrmRepo: jest.Mocked<Repository<PaymentEntity>>;
-  let mockRefundRepo: jest.Mocked<Repository<RefundEntity>>;
   let mockDataSource: jest.Mocked<DataSource>;
   let mockTransactionManager: any;
   let mockQueryBuilder: jest.Mocked<SelectQueryBuilder<PaymentEntity>>;
@@ -66,7 +67,6 @@ describe('PostgresPaymentRepository', () => {
       PostgresPaymentRepository,
     );
     mockOrmRepo = module.get(getRepositoryToken(PaymentEntity));
-    mockRefundRepo = module.get(getRepositoryToken(RefundEntity));
     mockDataSource = module.get(DataSource);
   });
 

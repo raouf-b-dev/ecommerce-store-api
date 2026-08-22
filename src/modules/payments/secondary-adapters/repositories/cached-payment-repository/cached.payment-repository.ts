@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { CachePort } from '../../../../../infrastructure/redis/cache/cache.port';
+import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { PAYMENT_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
+import { tagEquals } from '../../../../../infrastructure/redis/search/search-utils';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
 import { PaymentRepository } from '../../../core/domain/repositories/payment.repository';
@@ -26,7 +27,8 @@ export class CachedPaymentRepository implements PaymentRepository {
         `${PAYMENT_REDIS.CACHE_KEY}:${id}`,
       );
       if (cached) {
-        return Result.success(PaymentCacheMapper.fromCache(cached));
+        const payment = PaymentCacheMapper.fromCache(cached);
+        if (payment) return Result.success(payment);
       }
 
       const dbResult = await this.postgresRepo.findById(id);
@@ -49,22 +51,11 @@ export class CachedPaymentRepository implements PaymentRepository {
     orderId: number,
   ): Promise<Result<Payment[], RepositoryError>> {
     try {
-      const cachedPayments = await this.cacheService.search<PaymentForCache>(
-        PAYMENT_REDIS.INDEX,
-        `@orderId:${orderId}`,
-      );
-
-      if (cachedPayments.length > 0) {
-        return Result.success(
-          cachedPayments.map((p) => PaymentCacheMapper.fromCache(p)),
-        );
-      }
-
+      // Collection-by-order cannot be proven complete from RediSearch hits alone.
       const dbResult = await this.postgresRepo.findByOrderId(orderId);
       if (dbResult.isFailure) return dbResult;
       const payments = dbResult.value;
 
-      // Cache individual items
       for (const payment of payments) {
         await this.cacheService.set(
           `${PAYMENT_REDIS.CACHE_KEY}:${payment.id}`,
@@ -86,13 +77,13 @@ export class CachedPaymentRepository implements PaymentRepository {
     transactionId: string,
   ): Promise<Result<Payment, RepositoryError>> {
     try {
-      const cachedPayments = await this.cacheService.search<PaymentForCache>(
+      const [cached] = await this.cacheService.search<PaymentForCache>(
         PAYMENT_REDIS.INDEX,
-        `@transactionId:${transactionId}`,
+        tagEquals('transactionId', transactionId),
       );
-
-      if (cachedPayments.length > 0) {
-        return Result.success(PaymentCacheMapper.fromCache(cachedPayments[0]));
+      if (cached) {
+        const payment = PaymentCacheMapper.fromCache(cached);
+        if (payment) return Result.success(payment);
       }
 
       const dbResult =
@@ -126,7 +117,6 @@ export class CachedPaymentRepository implements PaymentRepository {
   async findByGatewayPaymentIntentId(
     paymentIntentId: string,
   ): Promise<Result<Payment, RepositoryError>> {
-    // Delegate to postgres - intent ID lookups are webhook-driven and rare
     return this.postgresRepo.findByGatewayPaymentIntentId(paymentIntentId);
   }
 

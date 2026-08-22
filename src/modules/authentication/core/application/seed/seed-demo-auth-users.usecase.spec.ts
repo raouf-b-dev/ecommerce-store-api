@@ -4,11 +4,13 @@ import { PasswordHasher } from '../../../../../shared-kernel/domain/interfaces/p
 import { IdentityGateway } from '../ports/identity.gateway';
 import { AuthorizationGateway } from '../ports/authorization.gateway';
 import { CredentialRepository } from '../../domain/repositories/credential.repository';
-import { IdentityAccessGatewayMock } from '../../../testing/mocks/identity-access-gateway.mock';
-import { AuthorizationGatewayMock } from '../../../testing/mocks/authorization-gateway.mock';
-import { CredentialRepositoryMock } from '../../../testing/mocks/credential-repository.mock';
-import { MockPasswordHasher } from '../../../testing/mocks/password-hasher.mock';
-import { IdentityAccessGatewayDtoFactory } from '../../../testing/factories/indentity-gateway-dto.factory';
+import {
+  IdentityAccessGatewayMock,
+  AuthorizationGatewayMock,
+  CredentialRepositoryMock,
+  MockPasswordHasher,
+  IdentityAccessGatewayDtoFactory,
+} from 'src/modules/authentication/testing';
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 import { ResultAssertionHelper } from '../../../../../testing';
 
@@ -71,8 +73,8 @@ describe('SeedDemoAuthUsersUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
-      admin: { email: 'admin@store.local', status: 'created' },
-      customer: { email: 'customer@store.local', status: 'created' },
+      admin: { userId: 1, email: 'admin@store.local', status: 'created' },
+      customer: { userId: 2, email: 'customer@store.local', status: 'created' },
     });
     expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
       'admin@store.local',
@@ -116,8 +118,12 @@ describe('SeedDemoAuthUsersUseCase', () => {
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
-      admin: { email: 'admin@store.local', status: 'existing' },
-      customer: { email: 'customer@store.local', status: 'existing' },
+      admin: { userId: 1, email: 'admin@store.local', status: 'existing' },
+      customer: {
+        userId: 2,
+        email: 'customer@store.local',
+        status: 'existing',
+      },
     });
     expect(identityGateway.createUser).not.toHaveBeenCalled();
     expect(credentialRepository.save).not.toHaveBeenCalled();

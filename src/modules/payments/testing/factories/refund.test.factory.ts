@@ -1,3 +1,4 @@
+import { Refund, RefundProps } from '../../core/domain/entities/refund';
 import { IRefund } from '../../core/domain/interfaces/refund.interface';
 import { RefundStatusType } from '../../core/domain/value-objects/refund-status';
 
@@ -29,5 +30,23 @@ export class RefundTestFactory {
       status: RefundStatusType.FAILED,
       ...overrides,
     });
+  }
+
+  static createRefundProps(overrides?: Partial<RefundProps>): RefundProps {
+    return {
+      id: 1,
+      paymentId: 1,
+      amount: 50,
+      currency: 'USD',
+      reason: 'Defective product',
+      status: RefundStatusType.PENDING,
+      createdAt: new Date('2025-01-02T10:00:00Z'),
+      updatedAt: new Date('2025-01-02T10:00:00Z'),
+      ...overrides,
+    };
+  }
+
+  static createDomainRefund(overrides?: Partial<RefundProps>): Refund {
+    return Refund.fromPrimitives(this.createRefundProps(overrides));
   }
 }

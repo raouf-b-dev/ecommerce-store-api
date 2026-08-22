@@ -16,7 +16,7 @@
 8. [Environment Parity & Promotion](#8-environment-parity--promotion)
 9. [Build vs Runtime — The Separation Principle](#9-build-vs-runtime--the-separation-principle)
 10. [Secret Injection Patterns by Deployment Model](#10-secret-injection-patterns-by-deployment-model)
-11. [Key Rotation Procedures](#11-key-rotation-procedures)
+11. [Key Rotation Procedures](#11-key-rotation-procedures) → canonical: [SECRET-ROTATION.md](SECRET-ROTATION.md)
 12. [Incident Response — Compromised Secrets](#12-incident-response--compromised-secrets)
 13. [Defence in Depth](#13-defence-in-depth)
 14. [Adding a New Environment Variable](#14-adding-a-new-environment-variable)
@@ -74,11 +74,11 @@ Missing or malformed configuration should crash the application **immediately at
 
 Not all environment variables carry equal risk. This project classifies every variable into one of three tiers, and each tier determines how the value is stored, transmitted, and rotated.
 
-| Tier   | Classification                                                                       | Examples                                                | Storage                               | Rotation Frequency     | Leak Impact                                                          |
-| :----- | :----------------------------------------------------------------------------------- | :------------------------------------------------------ | :------------------------------------ | :--------------------- | :------------------------------------------------------------------- |
-| **T1** | **Secrets** — Credentials that grant access to systems or can impersonate identities | `JWT_SECRET`, `DB_PASSWORD`, `REDIS_PASSWORD`           | Secrets manager, injected at runtime  | 90 days or on incident | **Critical** — full system compromise, data breach, identity forgery |
-| **T2** | **Sensitive Config** — Infrastructure details that reveal attack surface             | `DB_HOST`, `DB_PORT`, `REDIS_HOST`                      | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium** — aids reconnaissance, enables targeted attacks           |
-| **T3** | **Non-Sensitive Config** — Behavioural settings with no security impact              | `NODE_ENV`, `PORT`, `JWT_EXPIRES_IN`, `REDIS_KEYPREFIX` | `.env.<environment>`, can be in code  | Per environment        | **Low** — no direct security impact                                  |
+| Tier   | Classification                                                                       | Examples                                                              | Storage                               | Rotation Frequency     | Leak Impact                                                          |
+| :----- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------------- | :------------------------------------ | :--------------------- | :------------------------------------------------------------------- |
+| **T1** | **Secrets** — Credentials that grant access to systems or can impersonate identities | `JWT_PRIVATE_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `METRICS_API_KEY` | Secrets manager, injected at runtime  | 90 days or on incident | **Critical** — full system compromise, data breach, identity forgery |
+| **T2** | **Sensitive Config** — Infrastructure details that reveal attack surface             | `DB_HOST`, `DB_PORT`, `REDIS_HOST`                                    | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium** — aids reconnaissance, enables targeted attacks           |
+| **T3** | **Non-Sensitive Config** — Behavioural settings with no security impact              | `NODE_ENV`, `PORT`, `JWT_ACCESS_TOKEN_TTL`, `REDIS_KEYPREFIX`         | `.env.<environment>`, can be in code  | Per environment        | **Low** — no direct security impact                                  |
 
 > [!IMPORTANT]
 > The tier determines the **minimum acceptable storage mechanism**. A T1 secret must never be stored in a lower-security tier's mechanism (e.g., hardcoded in code, committed to git).
@@ -142,14 +142,14 @@ The E-Commerce API consumes secrets exactly once — at application boot — via
 
 ### 3.5 — Rotation
 
-See [Section 11](#11-key-rotation-procedures) for full procedures. The key principle: rotation must be **possible without downtime** and **practised regularly**, not only during incidents.
+See [SECRET-ROTATION.md](SECRET-ROTATION.md) for production procedures (canonical). The key principle: rotation must be **practised regularly**, not only during incidents. With the current single RSA key, JWT rotation requires a brief restart and forces re-login; dual-key JWKS overlap is a future enhancement.
 
 ### 3.6 — Revocation
 
 When a secret is compromised or a team member departs:
 
-1. **Rotate immediately** — generate and deploy a new secret
-2. **Invalidate sessions** — rotating `JWT_SECRET` automatically invalidates all access tokens
+1. **Rotate immediately** — generate and deploy a new secret ([SECRET-ROTATION.md](SECRET-ROTATION.md))
+2. **Invalidate sessions** — rotating `JWT_PRIVATE_KEY` invalidates all RS256 JWTs (access, refresh, cart session); users must re-login
 3. **Audit access logs** — determine if the compromised secret was exploited
 4. **Update dependent systems** — any service that consumed the old secret must be updated
 
@@ -205,13 +205,15 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### PostgreSQL
 
-| Variable      | Type     | Required | Default | Tier      | Description              |
-| :------------ | :------- | :------- | :------ | :-------- | :----------------------- |
-| `DB_HOST`     | `string` | ✅       | —       | T2        | Database server hostname |
-| `DB_PORT`     | `number` | ✅       | `5432`  | T2        | Database port            |
-| `DB_USERNAME` | `string` | ✅       | —       | T2        | Database role name       |
-| `DB_PASSWORD` | `string` | ✅       | —       | **T1** 🔑 | Database role password   |
-| `DB_DATABASE` | `string` | ✅       | —       | T3        | Database name            |
+| Variable                  | Type     | Required | Default | Tier      | Description                                        |
+| :------------------------ | :------- | :------- | :------ | :-------- | :------------------------------------------------- |
+| `DB_HOST`                 | `string` | ✅       | —       | T2        | Database server hostname                           |
+| `DB_PORT`                 | `number` | ✅       | `5432`  | T2        | Database port                                      |
+| `DB_USERNAME`             | `string` | ✅       | —       | T2        | Database role name                                 |
+| `DB_PASSWORD`             | `string` | ✅       | —       | **T1** 🔑 | Database role password                             |
+| `DB_DATABASE`             | `string` | ✅       | —       | T3        | Database name                                      |
+| `POSTGRES_CONTAINER_NAME` | `string` | ✅       | —       | T3        | Compose / `docker exec` container name             |
+| `POSTGRES_IMAGE`          | `string` | ✅       | —       | T3        | Postgres image tag (Compose + dump/restore client) |
 
 ### Redis
 
@@ -225,10 +227,12 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### Authentication (JWT)
 
-| Variable         | Type     | Required | Default | Tier      | Description                              |
-| :--------------- | :------- | :------- | :------ | :-------- | :--------------------------------------- |
-| `JWT_SECRET`     | `string` | ✅       | —       | **T1** 🔑 | Symmetric secret for signing JWTs        |
-| `JWT_EXPIRES_IN` | `string` | ✅       | —       | T3        | Access token lifetime (e.g. `1h`, `15m`) |
+| Variable                | Type     | Required | Default | Tier      | Description                                |
+| :---------------------- | :------- | :------- | :------ | :-------- | :----------------------------------------- |
+| `JWT_PRIVATE_KEY`       | `string` | ✅       | —       | **T1** 🔑 | RSA PKCS#8 PEM private key (RS256 signing) |
+| `JWT_ACCESS_TOKEN_TTL`  | `string` | ❌       | `15m`   | T3        | Access token lifetime (e.g. `15m`, `1h`)   |
+| `JWT_REFRESH_TOKEN_TTL` | `string` | ❌       | `7d`    | T3        | Refresh token lifetime                     |
+| `JWT_CART_SESSION_TTL`  | `string` | ❌       | `7d`    | T3        | Guest cart session token lifetime          |
 
 ---
 
@@ -478,7 +482,7 @@ CMD ["node", "dist/main.js"]
 # Secrets injected at container start — never baked
 docker run -d \
   --env-file .env.production \
-  -e JWT_SECRET="your_production_secret" \
+  -e JWT_PRIVATE_KEY="$(cat /run/secrets/jwt_private_key.pem)" \
   ecommerce-store-api:latest
 ```
 
@@ -568,7 +572,8 @@ jobs:
           # These come from GitHub Settings → Secrets and Variables → Actions
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
         run: |
           ssh deploy@${{ vars.DEPLOY_HOST }} "cat > /opt/ecommerce-api/.env.production << 'ENVEOF'
           NODE_ENV=production
@@ -582,8 +587,10 @@ jobs:
           REDIS_PORT=${{ vars.REDIS_PORT }}
           REDIS_PASSWORD=${REDIS_PASSWORD}
           REDIS_KEYPREFIX=ecom:prod:
-          JWT_SECRET=${JWT_SECRET}
-          JWT_EXPIRES_IN=1h
+          JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+          JWT_ACCESS_TOKEN_TTL=15m
+          JWT_REFRESH_TOKEN_TTL=7d
+          METRICS_API_KEY=${METRICS_API_KEY}
           ENVEOF"
 
           ssh deploy@${{ vars.DEPLOY_HOST }} "cd /opt/ecommerce-api && docker compose -f docker-compose.yaml -f docker-compose.prod.yml --env-file .env.production up -d --build"
@@ -617,7 +624,8 @@ services:
       # T1 secrets override — can come from CI/CD or host env
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - METRICS_API_KEY=${METRICS_API_KEY}
     depends_on:
       - postgres
       - redis
@@ -636,7 +644,11 @@ type: Opaque
 stringData:
   DB_PASSWORD: 'generated-production-password'
   REDIS_PASSWORD: 'generated-redis-password'
-  JWT_SECRET: 'super-long-randomly-generated-symmetric-key'
+  JWT_PRIVATE_KEY: |
+    -----BEGIN PRIVATE KEY-----
+    (RSA-4096 PKCS#8 PEM — never commit real keys)
+    -----END PRIVATE KEY-----
+  METRICS_API_KEY: 'generated-metrics-api-key-hex'
 ```
 
 ```yaml
@@ -685,55 +697,19 @@ When deploying to environments requiring maximum compliance, you should implemen
 
 ## 11. Key Rotation Procedures
 
-### JWT Secret
+Canonical production runbooks live in **[SECRET-ROTATION.md](SECRET-ROTATION.md)** (JWT RSA key, database, Redis, metrics, Grafana, and Phase 17 third-party stubs).
 
-The most critical secret — possession enables forging authentication tokens for any user.
+Summary:
 
-```bash
-# 1. Generate new 32-byte secret
-openssl rand -base64 32
+| Secret            | Frequency                             | Notes                                                          |
+| :---------------- | :------------------------------------ | :------------------------------------------------------------- |
+| `JWT_PRIVATE_KEY` | 90 days, or immediately on compromise | Single RS256 key today — restart + force re-login; see runbook |
+| `DB_PASSWORD`     | 90 days                               | Alter role → update env → restart API                          |
+| `REDIS_PASSWORD`  | 90 days                               | `CONFIG SET requirepass` → update env → restart API            |
+| `METRICS_API_KEY` | 90 days                               | Update env → restart → refresh scrapers                        |
+| **All secrets**   | **Immediately**                       | Staff departure, suspected breach, secret in logs/git          |
 
-# 2. Update the target .env file or CI/CD secret store
-# 3. Restart the API / redeploy via orchestrator
-```
-
-> [!WARNING]
-> Since the project uses symmetric JWT signing (`HS256` or equivalent), rotating the `JWT_SECRET` **invalidates all existing access and refresh tokens**. All users are forced to re-authenticate. Plan production rotations during maintenance windows.
-
-### PostgreSQL Password
-
-```bash
-# 1. Generate new password
-openssl rand -base64 32
-
-# 2. Update in PostgreSQL
-psql -U postgres -c "ALTER USER ecom_user WITH PASSWORD 'new_password';"
-
-# 3. Update .env / secrets manager
-# 4. Restart the application container
-```
-
-### Redis Password
-
-```bash
-# 1. Generate new password
-openssl rand -base64 32
-
-# 2. Update in Redis (live, no restart needed)
-redis-cli -a old_password CONFIG SET requirepass "new_password"
-
-# 3. Update .env / secrets manager
-# 4. Restart the application container
-```
-
-### Rotation Schedule
-
-| Secret           | Frequency       | Trigger                                                          |
-| :--------------- | :-------------- | :--------------------------------------------------------------- |
-| `JWT_SECRET`     | 90 days         | Scheduled, or immediately on compromise                          |
-| `DB_PASSWORD`    | 90 days         | Scheduled                                                        |
-| `REDIS_PASSWORD` | 90 days         | Scheduled                                                        |
-| **All secrets**  | **Immediately** | Team member departure, suspected breach, secret detected in logs |
+Do not use the outdated HS256 / `JWT_SECRET` procedure — this project signs with `JWT_PRIVATE_KEY` (RS256).
 
 ---
 
@@ -743,8 +719,8 @@ If a secret has been (or may have been) exposed:
 
 ### Immediate Actions (First 30 Minutes)
 
-1. **Rotate the compromised secret** — this is the single most important step. Generate a new value, deploy it, restart affected services.
-2. **Revoke active sessions** — if `JWT_SECRET` was compromised, rotate it; all tokens are automatically invalidated.
+1. **Rotate the compromised secret** — follow [SECRET-ROTATION.md](SECRET-ROTATION.md). Generate a new value, deploy it, restart affected services.
+2. **Revoke active sessions** — if `JWT_PRIVATE_KEY` was compromised, rotate it; all RS256 JWTs (access, refresh, cart session) fail verification and users must re-login.
 3. **Assess scope** — determine which systems used the compromised credential and whether unauthorised access occurred.
 
 ### Follow-Up Actions (Next 24 Hours)
@@ -789,11 +765,11 @@ If a secret has been (or may have been) exposed:
 
 ### Layer 4 — Recovery
 
-| Control                                 | Implementation                                               |
-| :-------------------------------------- | :----------------------------------------------------------- |
-| Documented rotation procedures          | See [Section 11](#11-key-rotation-procedures)                |
-| Incident response playbook              | See [Section 12](#12-incident-response--compromised-secrets) |
-| `git-filter-repo` for history scrubbing | Removes secrets from all commits                             |
+| Control                                 | Implementation                                                                             |
+| :-------------------------------------- | :----------------------------------------------------------------------------------------- |
+| Documented rotation procedures          | See [SECRET-ROTATION.md](SECRET-ROTATION.md) and [Section 11](#11-key-rotation-procedures) |
+| Incident response playbook              | See [Section 12](#12-incident-response--compromised-secrets)                               |
+| `git-filter-repo` for history scrubbing | Removes secrets from all commits                                                           |
 
 ---
 
@@ -863,7 +839,7 @@ As the system grows, these enhancements build on the foundation established abov
 EnvError: ================================
  Invalid environment variables:
     DB_PASSWORD: Missing value for DB_PASSWORD
-    JWT_SECRET: Missing value for JWT_SECRET
+    JWT_PRIVATE_KEY: Missing value for JWT_PRIVATE_KEY
  ================================
 ```
 

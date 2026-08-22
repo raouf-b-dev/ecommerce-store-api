@@ -60,10 +60,12 @@ For Domain <-> ORM mapping:
 2. Extract with `toPrimitives()` from domain entity.
 3. Build explicit typed payload.
 4. Create entity via `Object.assign(new Entity(), payload)`.
+5. For atomic OCC QueryBuilder updates, define `UpdateFromEntity<TEntity, ExcludeKeys>` and `toUpdatePayload()`. `ExcludeKeys` is the **ownership** list: identity (`id`), OCC (`version`), persistence-owned timestamps (`@CreateDateColumn` / `@UpdateDateColumn`), and relations persisted in a separate step. It is not a list of "fields we currently skip." QueryBuilder `UPDATE` does not run TypeORM date or version hooks; the repository stamps `version: () => 'version + 1'` and `updatedAt: () => 'CURRENT_TIMESTAMP'` in `.set()`.
 
-Reference utility:
+Reference utilities:
 
 - `src/infrastructure/mappers/utils/create-from-entity.type`
+- `src/infrastructure/mappers/utils/update-from-entity.type`
 
 ## 5. Notifications and Real-Time Rules
 
@@ -78,23 +80,24 @@ Reference utility:
 
 1. Job names: kebab-case prefixed by action (`process-checkout`, `deliver-notification`).
 2. Process files: `[action].process.ts`.
-3. Scheduler files: `bullmq.[module]-scheduler.ts`.
+3. Scheduler files: `bullmq.[module]-scheduler.ts` or `bullmq-[feature].scheduler.ts`.
 
-### Structure
+### Structure & Architectural Placement (DIP Enforcement)
 
-1. Job handlers extend `BaseJobHandler<TData, TResult>`.
-2. Cron triggers live in scheduler implementations, not processors.
-3. Use `JobConfigService` for retry/options.
+1. **Schedulers are Secondary (Outbound) Adapters**: Schedulers enqueue or configure background/cron jobs (e.g. BullMQ repeatable jobs). They MUST live in `secondary-adapters/schedulers/` and implement an abstract scheduler contract (port) defined in `core/domain/schedulers/` or `core/application/ports/` (e.g., `InventoryScheduler`, `NotificationScheduler`).
+2. **Job Handlers are Primary (Inbound) Adapters**: Job handlers live in `primary-adapters/jobs/` and extend `BaseJobHandler<TData, TResult>`. They receive job executions from the processor/queue worker and delegate to application use cases.
+3. **Distributed Jobs Must Not Rely on In-Process Scheduling**: Do not use NestJS `@Cron()` directly for jobs that must execute once across multiple API instances. `@Cron()` is process-local, so every active instance registers its own schedule. Use BullMQ repeatable/scheduled jobs configured via secondary adapter schedulers (`secondary-adapters/schedulers/`) for distributed execution safety and centralized Redis locking. Job handlers should also remain idempotent.
+4. Cron patterns and job defaults must use `JobConfigService` for retry policies and options.
 
 ### New Scheduled Job Checklist
 
-1. Add name to `src/infrastructure/jobs/job-names.ts`.
+1. Add job name to `src/infrastructure/jobs/job-names.ts`.
 2. Add retry policy to `src/infrastructure/jobs/job-retry-policies.ts`.
-3. Add/extend scheduler port in `core/application/ports`.
-4. Add scheduler adapter in `secondary-adapters/schedulers`.
-5. Add handler in `primary-adapters/jobs`.
-6. Update processor routing.
-7. Register providers.
+3. Add abstract scheduler port class in `core/domain/schedulers/` (or `core/application/ports/`).
+4. Add secondary scheduler adapter in `secondary-adapters/schedulers/` implementing `OnModuleInit` and the scheduler port.
+5. Add primary job handler in `primary-adapters/jobs/` extending `BaseJobHandler`.
+6. Update processor routing in `[module].processor.ts`.
+7. Register abstract port -> concrete adapter and job handler providers in `[module].module.ts`.
 
 ### Boundary Rule
 
@@ -112,6 +115,8 @@ Job handlers must **not** contain business logic, publish domain events, or inje
 2. Use module factories under `modules/[module]/testing/factories`.
 3. Use typed mock repositories under `modules/[module]/testing/mocks`.
 4. Every behavior change requires test impact analysis.
+5. Domain entity and value-object specs follow [DOMAIN-ENTITY-TESTING.md](../testing/DOMAIN-ENTITY-TESTING.md) (GWT/AAA, `it.each`, transition matrices, invariant checklists).
+6. Write-side postgres OCC adapters follow [INTEGRATION-TESTING-GUIDE.md](../testing/INTEGRATION-TESTING-GUIDE.md) §6: stale `expectedVersion` must fail; child rows must stay unchanged; one parity spec must persist every application-owned column from `toUpdatePayload()` through the OCC path. Unit specs cover insert (`save()` without version) vs OCC update (`WHERE version = :expectedVersion`, `affected === 0` → 409 vs not-found).
 
 ## 8. Redis Conventions
 
@@ -172,13 +177,13 @@ Applied documents describe **how this project implements** a pattern, or contain
 
 **Current applied documents**:
 
-| Folder            | Document                                          | Topic                                                  |
-| ----------------- | ------------------------------------------------- | ------------------------------------------------------ |
-| `architecture/`   | `ARCHITECTURE.md`                                 | Project system context, bounded contexts, domain flows |
-| `security/`       | `SECRETS-MANAGEMENT.md`, `ADMIN-BOOTSTRAP.md`     | Project secret handling, bootstrap                     |
-| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7) | Runbook, project shutdown hooks                        |
-| `testing/`        | `TESTING-TASK-TEMPLATE.md`                        | Project test plan template                             |
-| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`          | Project state & progress                               |
+| Folder            | Document                                                            | Topic                                                    |
+| ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
+| `architecture/`   | `ARCHITECTURE.md`                                                   | Project system context, bounded contexts, domain flows   |
+| `security/`       | `SECRETS-MANAGEMENT.md`, `SECRET-ROTATION.md`, `ADMIN-BOOTSTRAP.md` | Project secret handling, rotation, bootstrap             |
+| `infrastructure/` | `TROUBLESHOOTING.md`, `PROCESS-LIFECYCLE.md` (§7)                   | Runbook, project shutdown hooks                          |
+| `testing/`        | `TESTING-TASK-TEMPLATE.md`, `INTEGRATION-TESTING-GUIDE.md`          | Project test plan template, write-side adapter OCC specs |
+| root `docs/`      | `FEATURES.md`, `ROADMAP.md`, `README.md`                            | Project state & progress                                 |
 
 ### 10.3 Hybrid Documents
 
@@ -247,7 +252,164 @@ To ensure maximum type safety and prevent runtime errors:
 2. **Library Escape Hatches**: The only acceptable exception for using `any` is when a third-party library's types are dynamic, circular, or poorly defined (such as the dynamic JSON/Search modules of the Node-Redis client in `RedisService`), where strict typing would trigger cascade compiler errors across consumers.
 3. **Explicit Callbacks**: Always add explicit parameter typings (such as `(err: Error)`) to event handlers and callbacks instead of letting them fall back to implicit `any`.
 
-## 13. Canonical References
+## 13. Optimistic Locking (Version) Convention
+
+`version` is a persistence/concurrency concern, not a business concept — it must never appear on domain entities, domain interfaces, or domain props. The domain entity has zero knowledge of versioning.
+
+Rationale: [ADR-0005](../architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md) (extends [ADR-0004](../architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md) Decision 3).
+
+### 13.1 The Pattern: Version Travels as an Explicit Value, Not Entity State
+
+The repository port returns the version **alongside** the entity, not inside it:
+
+```typescript
+// core/domain/repositories/product-repository.ts (port)
+interface ProductRepository {
+  findByIdForUpdate(
+    id: number,
+  ): Promise<Result<{ entity: Product; expectedVersion: number }>>;
+  save(entity: Product, expectedVersion: number): Promise<Result<void>>;
+}
+```
+
+The use case threads `expectedVersion` through as a plain value:
+
+```typescript
+async execute(command: UpdateProductCommand) {
+  const result = await this.repo.findByIdForUpdate(command.productId);
+  if (result.isFailure) throw new NotFoundError();
+
+  const { entity, expectedVersion } = result.value;
+  entity.rename(command.newName); // pure domain method — no version involved
+
+  await this.repo.save(entity, expectedVersion);
+}
+```
+
+The infrastructure adapter is where version actually gets used. `findByIdForUpdate` reads `orm.version` and returns it beside the domain entity. Do **not** stamp `orm.version` and call TypeORM `save()` on a detached mapped entity — that increment can succeed without `WHERE version = :expectedVersion`. Use an atomic QueryBuilder update:
+
+```typescript
+async save(entity: Product, expectedVersion?: number) {
+  if (expectedVersion === undefined) {
+    const saved = await this.ormRepo.save(ProductMapper.toEntity(entity));
+    entity.setId(saved.id);
+    return Result.success(entity);
+  }
+
+  const res = await this.ormRepo
+    .createQueryBuilder()
+    .update(ProductEntity)
+    .set({
+      ...ProductMapper.toUpdatePayload(entity),
+      version: () => 'version + 1',
+      updatedAt: () => 'CURRENT_TIMESTAMP',
+    })
+    .where('id = :id AND version = :expectedVersion', {
+      id: entity.id,
+      expectedVersion,
+    })
+    .execute();
+
+  if (res.affected === 0) {
+    return ErrorFactory.RepositoryError(
+      'Optimistic lock failure',
+      undefined,
+      HttpStatus.CONFLICT,
+    );
+  }
+  const updated = await this.ormRepo.findOneByOrFail({ id: entity.id! });
+  return Result.success(ProductMapper.toDomain(updated));
+}
+```
+
+**Domain entity**: zero knowledge of `version`, ever.
+**Mapper**: never maps `version` in either direction. Application-owned columns go through `toUpdatePayload()`. Persistence-owned `version` / `updatedAt` are stamped in the QueryBuilder `.set()`, not copied from the domain.
+**Repository adapter**: only place that touches `version`, via the atomic `WHERE` predicate and `version + 1`.
+
+### 13.2 Same-Request vs. Cross-Request Flows
+
+This distinction determines where `expectedVersion` comes from:
+
+**Same-request flow** (server-side load → mutate → save in one method call):
+`expectedVersion` comes from the `findByIdForUpdate` call a few lines up in the use case. Nothing special to design.
+
+**Cross-request flow** (GET loads it, user edits for a while, PUT saves it later):
+There is no in-memory value to carry across two separate HTTP requests. `expectedVersion` must be serialized to the client on load and sent back by the client on save:
+
+```typescript
+// GET /products/:id response DTO
+{ id, name, price, version: 3 }
+
+// PUT /products/:id request body
+{ name: "New Name", expectedVersion: 3 }
+```
+
+The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a command/DTO concern — perfectly fine to live there), and it flows into `repo.save(entity, command.expectedVersion)`. Nothing about the domain model changes between the two scenarios; only where the number comes from changes.
+
+### 13.3 Where Version Is Allowed
+
+| Layer                             | Allowed? | Form                                                         |
+| --------------------------------- | -------- | ------------------------------------------------------------ |
+| ORM schema (`@VersionColumn()`)   | ✅ Yes   | `version: number` with TypeORM decorator                     |
+| Repository port (domain layer)    | ✅ Yes   | As a separate parameter or return field alongside the entity |
+| Use case / application layer      | ✅ Yes   | As a plain value threaded through, never on the entity       |
+| Command / DTO (primary adapter)   | ✅ Yes   | `expectedVersion` field on update commands and response DTOs |
+| Domain entity / interface / props | ❌ Never | Not a business concept                                       |
+| Domain-to-ORM mapper              | ❌ Never | `toEntity` / `toUpdatePayload` must not map `version`        |
+
+### 13.4 Anti-Pattern: In-Memory Version Cache
+
+Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version — so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to — either as a same-call in-memory value or as an explicit param threaded through the command — never as shared mutable state keyed only by ID.
+
+## 14. Unknown Error Normalization
+
+When handling `catch (err: unknown)` or rejected promises, never stringify or wrap errors manually. Use the shared helpers in `src/shared-kernel/infra/lang/error.utils.ts`:
+
+| Helper                 | Use when                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `toErrorMessage(err)`  | You need a safe log/response string from an unknown value                                                                                                            |
+| `toError(err)`         | You need an `Error` for logging, rethrowing, or passing to factories — preserves existing `Error` instances and sets `{ cause: err }` when wrapping non-Error values |
+| `toOptionalError(err)` | A cause is optional (e.g. `ErrorFactory` with `undefined` allowed for falsy inputs)                                                                                  |
+
+For Redis-specific logging, use `logRedisError(logger, source, err)` from `src/infrastructure/redis/redis-error.utils.ts`.
+
+**Banned patterns** (enforced by ESLint and `test/architecture/error-handling.spec.ts`):
+
+```typescript
+// ❌ Do not use
+err instanceof Error ? err.message : String(err);
+new Error(String(err));
+error instanceof Error ? error.stack : undefined;
+
+// ✅ Use instead
+toErrorMessage(err);
+toError(err);
+toOptionalError(err)?.stack;
+```
+
+`if (err instanceof Error)` checks and `instanceof` used for control flow (not ternaries) remain valid — e.g. rethrowing known error types in job handlers.
+
+## 15. Documentation Taxonomy & Naming Standards
+
+Every documentation artifact in the repository MUST comply with the 6-layer taxonomy and naming conventions:
+
+1. **Document Classification**: Every document MUST be classified as **Reference** (timeless theory), **Applied** (project design/runbook), or **Hybrid** in its frontmatter metadata header.
+2. **Directory Placement**:
+   - `docs/architecture/` — Core architecture principles, domain architecture (`domains/`), project patterns (`project-patterns/`), and ADRs (`adr/`).
+   - `docs/database/` — Relational schema design (`DATABASE-DESIGN.md`), transaction policies (`TRANSACTIONS.md`), indexing strategies (`INDEXES.md`), and coding standards (`DATABASE-STANDARDS.md`).
+   - `docs/decision-guides/` — Cross-cutting decision frameworks helping engineers choose between patterns (`WHEN-TO-*`).
+   - `docs/data/` — Timeless computer science and software engineering theory (`concurrency/`, `consistency/`, `performance/`).
+   - `docs/infrastructure/` — Deployment, CI/CD, process lifecycles, and operational runbooks.
+3. **Filename Standards**:
+   - Use uppercase kebab-case for technical reference documents (`DATABASE-DESIGN.md`, `ENGINEERING-PRINCIPLES.md`).
+   - ADRs MUST use 4-digit zero-padded numbering: `ADR-XXXX-[short-title].md` (e.g. `ADR-0004-inventory-integrity-and-concurrency.md`).
+   - Engineering decision guides MUST begin with `WHEN-TO-*` (e.g. `WHEN-TO-DENORMALIZE-DATA.md`).
+   - Codebase implementation patterns MUST end with `-PATTERN.md` (e.g. `REPOSITORY-PATTERN.md`).
+   - Every major directory MUST include a `README.md` defining _What belongs here_, _What doesn't belong here_, and _Recommended reading order_.
+4. **Document Layout Structure**:
+   - Applied documents MUST be structured as **Timeless Policy / Enduring Rationale** (top half) followed by **Current Implementation Appendix** (bottom half).
+
+## 16. Canonical References
 
 - [../../AGENT.md](../../AGENT.md)
 - [../architecture/DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md)

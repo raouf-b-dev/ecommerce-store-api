@@ -32,24 +32,22 @@ export class ModuleUserGateway implements UserGateway {
     const user = result.value;
 
     const userInfo: CheckoutUserInfoResult = {
-      id: user.id!,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
       phone: user.phone,
-      addresses: (user.addresses || []).map(
-        (addr): CheckoutUserAddress => ({
-          id: addr.id,
-          street: addr.street,
-          street2: addr.street2 ?? null,
-          city: addr.city,
-          state: addr.state,
-          postalCode: addr.postalCode,
-          country: addr.country,
-          isDefault: addr.isDefault,
-          deliveryInstructions: addr.deliveryInstructions ?? null,
-        }),
-      ),
+      addresses: (user.addresses || []).map((addr): CheckoutUserAddress => ({
+        id: addr.id,
+        street: addr.street,
+        street2: addr.street2 ?? null,
+        city: addr.city,
+        state: addr.state,
+        postalCode: addr.postalCode,
+        country: addr.country,
+        isDefault: addr.isDefault,
+        deliveryInstructions: addr.deliveryInstructions ?? null,
+      })),
     };
 
     return Result.success(userInfo);

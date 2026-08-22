@@ -11,15 +11,11 @@ import { Refund } from '../../../domain/entities/refund';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-
-export interface ProcessRefundCommand {
-  amount: number;
-  reason?: string;
-}
+import { ProcessRefundCommand } from '../../commands/process-refund.command';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
-  { id: number; dto: ProcessRefundCommand },
+  ProcessRefundCommand,
   IPayment,
   UseCaseError
 > {
@@ -31,11 +27,12 @@ export class ProcessRefundUseCase extends UseCase<
     super();
   }
 
-  async execute(input: {
-    id: number;
-    dto: ProcessRefundCommand;
-  }): Promise<Result<IPayment, UseCaseError>> {
-    const paymentResult = await this.paymentRepository.findById(input.id);
+  async execute(
+    command: ProcessRefundCommand,
+  ): Promise<Result<IPayment, UseCaseError>> {
+    const { paymentId, amount, reason } = command;
+
+    const paymentResult = await this.paymentRepository.findById(paymentId);
     if (isFailure(paymentResult)) return paymentResult;
 
     const payment = paymentResult.value;
@@ -53,10 +50,7 @@ export class ProcessRefundUseCase extends UseCase<
       );
     }
 
-    const gatewayResult = await gateway.refund(
-      payment.transactionId,
-      input.dto.amount,
-    );
+    const gatewayResult = await gateway.refund(payment.transactionId, amount);
     if (isFailure(gatewayResult)) {
       return ErrorFactory.UseCaseError(
         `Gateway refund failed: ${gatewayResult.error.message}`,
@@ -74,9 +68,9 @@ export class ProcessRefundUseCase extends UseCase<
     const refund = Refund.create(
       null,
       payment.id!,
-      input.dto.amount,
+      amount,
       payment.currency,
-      input.dto.reason || 'Refund request',
+      reason || 'Refund request',
     );
 
     // We might need to set status to COMPLETED if that was the logic before

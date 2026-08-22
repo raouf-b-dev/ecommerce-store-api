@@ -1,15 +1,35 @@
 // src/modules/products/infrastructure/orm/product.schema.ts
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  VersionColumn,
+} from 'typeorm';
 
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
 @Entity({ name: 'products' })
+@Index('idx_products_slug', ['slug'], { unique: true })
+@Index('idx_products_category_id', ['categoryId'])
+@Index('idx_products_active', ['isActive'], { where: '"is_active" = true' })
+@Index('idx_products_category_active', ['categoryId', 'isActive'], {
+  where: '"is_active" = true',
+})
 export class ProductEntity {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
+
+  @VersionColumn({ default: 1 })
+  version!: number;
 
   @Column()
-  name: string;
+  name!: string;
+
+  @Column({ default: '' })
+  slug!: string;
 
   @Column({ nullable: true })
   description?: string;
@@ -18,15 +38,23 @@ export class ProductEntity {
   sku?: string;
 
   @Column('decimal', { precision: 12, scale: 2, transformer: numericToNumber })
-  price: number;
+  price!: number;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column({ default: 'USD' })
+  currency!: string;
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
+  @Column({ nullable: true, name: 'image_url' })
+  imageUrl?: string;
+
+  @Column({ nullable: true, name: 'category_id', type: 'int' })
+  categoryId?: number;
+
+  @Column({ default: true, name: 'is_active' })
+  isActive!: boolean;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

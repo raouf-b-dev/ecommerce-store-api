@@ -5,14 +5,14 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   PAYMENT_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+import { PaymentQueryService } from '../../ports/payment-query.service';
+import { PaymentDetailDTO } from '../../queries/results/payment-detail.result';
 
 export interface GetPaymentInput {
   paymentId: number;
@@ -22,40 +22,40 @@ export interface GetPaymentInput {
 @Injectable()
 export class GetPaymentUseCase extends UseCase<
   GetPaymentInput,
-  IPayment,
+  PaymentDetailDTO,
   UseCaseError
 > {
-  constructor(private readonly paymentRepository: PaymentRepository) {
+  constructor(private readonly paymentQueryService: PaymentQueryService) {
     super();
   }
 
   async execute(
     input: GetPaymentInput,
-  ): Promise<Result<IPayment, UseCaseError>> {
+  ): Promise<Result<PaymentDetailDTO, UseCaseError>> {
     const { paymentId, callerContext } = input;
-    const result = await this.paymentRepository.findById(paymentId);
 
-    if (isFailure(result)) return result;
+    const scope = OwnedResourceAccessPolicy.resolveResourceScope(
+      callerContext,
+      PAYMENT_ACCESS_PERMISSIONS,
+    );
 
-    const payment = result.value;
-    if (!payment) {
+    if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Payment with id ${paymentId} not found`,
       );
     }
 
-    if (
-      !OwnedResourceAccessPolicy.canViewResource(
-        callerContext,
-        payment.userId,
-        PAYMENT_ACCESS_PERMISSIONS,
-      )
-    ) {
+    const result = await this.paymentQueryService.getById(
+      paymentId,
+      scope.authorizedUserId,
+    );
+
+    if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(
         `Payment with id ${paymentId} not found`,
       );
     }
 
-    return Result.success(payment.toPrimitives());
+    return Result.success(result.value);
   }
 }

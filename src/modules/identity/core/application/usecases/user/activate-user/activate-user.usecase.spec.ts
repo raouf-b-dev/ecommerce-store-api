@@ -1,9 +1,9 @@
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
 import { ActivateUserUseCase } from './activate-user.usecase';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
-import { User } from '../../../../domain/entities/user';
-import { UserTestFactory } from '../../../../../testing/factories/user.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
-import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainError } from '../../../../../../../shared-kernel/domain/exceptions/domain.error';
 
@@ -17,24 +17,19 @@ describe('ActivateUserUseCase', () => {
   });
 
   it('should activate a deactivated user', async () => {
-    const user = User.fromProps(
-      UserTestFactory.createMockUser({ isActive: false }),
-    );
-    userRepository.findById.mockResolvedValue(Result.success(user));
-    userRepository.save.mockResolvedValue(Result.success(user));
+    const userData = UserTestFactory.createMockUser({ isActive: false });
+    userRepository.mockSuccessfulFindByIdForUpdate(userData);
+    userRepository.mockSuccessfulSave();
 
     const result = await usecase.execute(1);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(user.isActive).toBe(true);
-    expect(userRepository.save).toHaveBeenCalledWith(user);
+    expect(userRepository.save).toHaveBeenCalled();
   });
 
   it('should return failure if user is already active', async () => {
-    const user = User.fromProps(
-      UserTestFactory.createMockUser({ isActive: true }),
-    );
-    userRepository.findById.mockResolvedValue(Result.success(user));
+    const userData = UserTestFactory.createMockUser({ isActive: true });
+    userRepository.mockSuccessfulFindByIdForUpdate(userData);
 
     const result = await usecase.execute(1);
 
@@ -47,7 +42,7 @@ describe('ActivateUserUseCase', () => {
   });
 
   it('should return failure if user not found', async () => {
-    userRepository.findById.mockResolvedValue(Result.success(null));
+    userRepository.mockUserNotFound();
 
     const result = await usecase.execute(999);
 

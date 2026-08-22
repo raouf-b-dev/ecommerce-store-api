@@ -2,9 +2,16 @@ import { UserRepository } from '../../core/domain/repositories/user.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { User } from '../../core/domain/entities/user';
+import { IUser } from '../../core/domain/interfaces/user.interface';
 import { UserTestFactory } from '../factories/user.factory';
 
 export class MockUserRepository implements UserRepository {
+  findByIdForUpdate = jest.fn<
+    Promise<
+      Result<{ entity: User; expectedVersion: number } | null, RepositoryError>
+    >,
+    [number]
+  >();
   existsByEmail = jest.fn<
     Promise<Result<boolean, RepositoryError>>,
     [string]
@@ -13,8 +20,7 @@ export class MockUserRepository implements UserRepository {
     Promise<Result<User[], RepositoryError>>,
     [number, number]
   >();
-  update = jest.fn<Promise<Result<void, RepositoryError>>, [User]>();
-  save = jest.fn<Promise<Result<User, RepositoryError>>, [User]>();
+  save = jest.fn<Promise<Result<User, RepositoryError>>, [User, number?]>();
   findByEmail = jest.fn<
     Promise<Result<User | null, RepositoryError>>,
     [string]
@@ -22,8 +28,14 @@ export class MockUserRepository implements UserRepository {
   findById = jest.fn<Promise<Result<User | null, RepositoryError>>, [number]>();
   delete = jest.fn<Promise<Result<void, RepositoryError>>, [number]>();
 
-  mockSuccessfulSave(user: User): void {
-    this.save.mockResolvedValue(Result.success(user));
+  mockSuccessfulSave(user?: User): void {
+    if (user) {
+      this.save.mockResolvedValue(Result.success(user));
+    } else {
+      this.save.mockImplementation((u: User) =>
+        Promise.resolve(Result.success(u)),
+      );
+    }
   }
 
   mockSaveFailure(errorMessage: string): void {
@@ -32,13 +44,13 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulUpdate(): void {
-    this.update.mockResolvedValue(Result.success(undefined));
-  }
-
-  mockUpdateFailure(errorMessage: string): void {
-    this.update.mockResolvedValue(
-      Result.failure(new RepositoryError(errorMessage)),
+  mockSuccessfulFindByIdForUpdate(
+    overrides?: Partial<IUser>,
+    expectedVersion = 1,
+  ): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.success({ entity: user, expectedVersion }),
     );
   }
 
@@ -61,7 +73,7 @@ export class MockUserRepository implements UserRepository {
   }
 
   mockSuccessfulFindAll(): void {
-    const users = [User.fromProps(UserTestFactory.createMockUser())];
+    const users = [User.fromProps(UserTestFactory.createUserProps())];
     this.findAll.mockResolvedValue(Result.success(users));
   }
 
@@ -72,8 +84,8 @@ export class MockUserRepository implements UserRepository {
   }
 
   mockSuccessfulFindById(id: number): void {
-    const user = User.fromProps(UserTestFactory.createMockUser());
-    this.findById.mockResolvedValue(Result.success(user || null));
+    const user = User.fromProps(UserTestFactory.createUserProps({ id }));
+    this.findById.mockResolvedValue(Result.success(user));
   }
 
   mockFindByIdFailure(errorMessage: string): void {
@@ -82,8 +94,8 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFindByEmail(userData: any): void {
-    const user = User.fromProps(userData);
+  mockSuccessfulFindByEmail(overrides?: Partial<IUser>): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
     this.findByEmail.mockResolvedValue(Result.success(user));
   }
 
@@ -97,15 +109,17 @@ export class MockUserRepository implements UserRepository {
     );
   }
 
-  mockSuccessfulFind(userData: any): void {
-    const user = User.fromProps(userData);
+  mockSuccessfulFind(overrides?: Partial<IUser>): void {
+    const user = User.fromProps(UserTestFactory.createUserProps(overrides));
     this.findById.mockResolvedValue(Result.success(user));
+    this.findByIdForUpdate.mockResolvedValue(
+      Result.success({ entity: user, expectedVersion: 1 }),
+    );
   }
 
   mockUserNotFound(): void {
-    this.findById.mockResolvedValue(
-      Result.failure(new RepositoryError('User not found')),
-    );
+    this.findById.mockResolvedValue(Result.success(null));
+    this.findByIdForUpdate.mockResolvedValue(Result.success(null));
   }
 
   /** Alias used in some legacy specs */
@@ -122,7 +136,6 @@ export class MockUserRepository implements UserRepository {
     expect(this.findByEmail).not.toHaveBeenCalled();
     expect(this.save).not.toHaveBeenCalled();
     expect(this.delete).not.toHaveBeenCalled();
-    expect(this.update).not.toHaveBeenCalled();
     expect(this.findAll).not.toHaveBeenCalled();
     expect(this.existsByEmail).not.toHaveBeenCalled();
   }

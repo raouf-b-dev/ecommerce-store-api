@@ -1,9 +1,10 @@
-import { CreateUserUseCase, CreateUserCommand } from './create-user.usecase';
-import { MockUserRepository } from '../../../../../testing/mocks/user-repository.mock';
+import {
+  MockUserRepository,
+  UserTestFactory,
+} from 'src/modules/identity/testing';
+import { CreateUserUseCase } from './create-user.usecase';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../../testing';
-import { Result } from '../../../../../../../shared-kernel/domain/result';
-import { User } from '../../../../domain/entities/user';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('CreateUserUseCase', () => {
@@ -14,14 +15,7 @@ describe('CreateUserUseCase', () => {
     mockUserRepository = new MockUserRepository();
     useCase = new CreateUserUseCase(mockUserRepository);
 
-    // Mock successful user save
-    mockUserRepository.save.mockImplementation((user) => {
-      const primitives = user.toPrimitives();
-      if (!primitives.id) {
-        primitives.id = 123;
-      }
-      return Promise.resolve(Result.success(User.fromProps(primitives)));
-    });
+    mockUserRepository.mockSuccessfulSave();
   });
 
   afterEach(() => {
@@ -30,11 +24,7 @@ describe('CreateUserUseCase', () => {
 
   describe('execute', () => {
     it('should return Success if user is created successfully', async () => {
-      const createUserDto: CreateUserCommand = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-      };
+      const createUserDto = UserTestFactory.createCreateUserCommand();
 
       const result = await useCase.execute(createUserDto);
 
@@ -45,11 +35,7 @@ describe('CreateUserUseCase', () => {
     });
 
     it('should return Failure(RepositoryError) if repository save fails', async () => {
-      const createUserDto: CreateUserCommand = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-      };
+      const createUserDto = UserTestFactory.createCreateUserCommand();
       const repoError = ErrorFactory.RepositoryError('Failed to save User');
       mockUserRepository.save.mockResolvedValue(repoError);
 

@@ -1,70 +1,35 @@
-// src/modules/orders/application/usecases/confirm-order/confirm-order.usecase.spec.ts
-import { ConfirmOrderUseCase } from './confirm-order.usecase';
-import { MockOrderRepository } from '../../../../testing/mocks/order-repository.mock';
-import { OrderTestFactory } from '../../../../testing/factories/order.factory';
-import { OrderStatus } from '../../../domain/value-objects/order-status';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import {
-  ResultAssertionHelper,
-  LoggerTestHelper,
-} from '../../../../../../testing';
+  MockOrderRepository,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
+import { ConfirmOrderUseCase } from './confirm-order.usecase';
+import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
+import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
-import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
-
-import { MockOrderScheduler } from '../../../../testing/mocks/order-scheduler.mock';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
   let mockOrderRepository: MockOrderRepository;
-  let mockOrderScheduler: MockOrderScheduler;
 
   beforeEach(() => {
-    // Silence logs during tests
-    LoggerTestHelper.silence();
-
     mockOrderRepository = new MockOrderRepository();
-    mockOrderScheduler = new MockOrderScheduler();
-    useCase = new ConfirmOrderUseCase(mockOrderRepository, mockOrderScheduler);
+    useCase = new ConfirmOrderUseCase(mockOrderRepository);
   });
 
   afterEach(() => {
-    mockOrderRepository.reset();
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('execute', () => {
-    it('should return Success if COD order is confirmed', async () => {
-      const pendingOrder =
-        OrderTestFactory.createCODOrderReadyForConfirmation();
-
-      mockOrderRepository.mockSuccessfulFind(pendingOrder);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
-
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-      expect(result.value.id).toBe(pendingOrder.id);
-
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(
-        pendingOrder.id!,
-      );
-      expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        pendingOrder.id!,
-        OrderStatus.CONFIRMED,
-      );
-      expect(mockOrderRepository.findById).toHaveBeenCalledTimes(1);
-      expect(mockOrderRepository.updateStatus).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return Success if online payment order with completed payment is confirmed', async () => {
+    it('should confirm pending order successfully', async () => {
       const pendingOrder =
         OrderTestFactory.createOnlineOrderReadyForConfirmation();
 
-      mockOrderRepository.mockSuccessfulFind(pendingOrder);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingOrder);
+      mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
@@ -74,7 +39,7 @@ describe('ConfirmOrderUseCase', () => {
       const orderId = 999;
       mockOrderRepository.mockOrderNotFound(orderId);
 
-      const result = await useCase.execute({ orderId: orderId });
+      const result = await useCase.execute(orderId);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -82,37 +47,37 @@ describe('ConfirmOrderUseCase', () => {
         RepositoryError,
       );
 
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(orderId);
-      expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockOrderRepository.findByIdForUpdate).toHaveBeenCalledWith(
+        orderId,
+      );
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order cannot be confirmed (already confirmed)', async () => {
       const confirmedOrder = OrderTestFactory.createConfirmedOrder();
 
-      mockOrderRepository.mockSuccessfulFind(confirmedOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(confirmedOrder);
 
-      const result = await useCase.execute({ orderId: confirmedOrder.id! });
+      const result = await useCase.execute(confirmedOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        // Online payment order is already confirmed, so confirmPayment fails
         'Payment can only be confirmed when order is pending payment',
         DomainError,
       );
 
-      expect(mockOrderRepository.findById).toHaveBeenCalledWith(
+      expect(mockOrderRepository.findByIdForUpdate).toHaveBeenCalledWith(
         confirmedOrder.id!,
       );
-      expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should return Failure if online payment order has pending payment', async () => {
-      const pendingOrder =
-        OrderTestFactory.createOnlineOrderNotReadyForConfirmation();
+    it('should return Failure if online payment order has pending payment without paymentId', async () => {
+      const pendingOrder = OrderTestFactory.createPendingPaymentOrder();
 
-      mockOrderRepository.mockSuccessfulFind(pendingOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingOrder);
 
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
+      const result = await useCase.execute(pendingOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -120,15 +85,15 @@ describe('ConfirmOrderUseCase', () => {
         DomainError,
       );
 
-      expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is already delivered', async () => {
       const deliveredOrder = OrderTestFactory.createDeliveredOrder();
 
-      mockOrderRepository.mockSuccessfulFind(deliveredOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(deliveredOrder);
 
-      const result = await useCase.execute({ orderId: deliveredOrder.id! });
+      const result = await useCase.execute(deliveredOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -136,89 +101,52 @@ describe('ConfirmOrderUseCase', () => {
         DomainError,
       );
 
-      expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
     it('should return Failure if order is cancelled', async () => {
       const cancelledOrder = OrderTestFactory.createCancelledOrder();
 
-      mockOrderRepository.mockSuccessfulFind(cancelledOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
 
-      const result = await useCase.execute({ orderId: cancelledOrder.id! });
+      const result = await useCase.execute(cancelledOrder.id!);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        // Cancelled order has no payment, so fails at payment check
         'Cannot confirm order - payment must be completed first',
         DomainError,
       );
 
-      expect(mockOrderRepository.updateStatus).not.toHaveBeenCalled();
-    });
-
-    it('should return Failure if updateStatus fails', async () => {
-      const pendingOrder =
-        OrderTestFactory.createCODOrderReadyForConfirmation();
-
-      mockOrderRepository.mockSuccessfulFind(pendingOrder);
-      mockOrderRepository.mockUpdateStatusFailure('Database error');
-
-      const result = await useCase.execute({ orderId: pendingOrder.id! });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Database error',
-        RepositoryError,
-      );
-
-      expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
-        pendingOrder.id!,
-        OrderStatus.CONFIRMED,
-      );
+      expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
     it('should confirm order with Stripe payment method', async () => {
       const stripeOrder = OrderTestFactory.createStripeOrder({
         status: OrderStatus.PENDING_PAYMENT,
-        paymentId: 1, // Payment already completed
+        paymentId: 1,
       });
 
-      mockOrderRepository.mockSuccessfulFind(stripeOrder);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(stripeOrder);
+      mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: stripeOrder.id! });
+      const result = await useCase.execute(stripeOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
-    });
-
-    it('should confirm order with PayPal payment method', async () => {
-      const paypalOrder = OrderTestFactory.createPayPalOrder({
-        status: OrderStatus.PENDING_PAYMENT,
-        paymentId: 1, // Payment already completed
-      });
-
-      mockOrderRepository.mockSuccessfulFind(paypalOrder);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
-
-      const result = await useCase.execute({ orderId: paypalOrder.id! });
-
-      ResultAssertionHelper.assertResultSuccess(result);
     });
 
     it('should confirm multi-item order', async () => {
       const multiItemOrder = OrderTestFactory.createMultiItemOrder(5);
       const pendingMultiItem = {
         ...multiItemOrder,
-        status: OrderStatus.PENDING_CONFIRMATION,
-        paymentMethod: PaymentMethodType.CASH_ON_DELIVERY,
-        paymentId: null,
+        status: OrderStatus.PENDING_PAYMENT,
+        paymentId: 1,
       };
 
-      mockOrderRepository.mockSuccessfulFind(pendingMultiItem);
-      mockOrderRepository.mockSuccessfulUpdateStatus();
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(pendingMultiItem);
+      mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: pendingMultiItem.id! });
+      const result = await useCase.execute(pendingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.items).toHaveLength(5);

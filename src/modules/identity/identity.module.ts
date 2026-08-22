@@ -4,7 +4,8 @@ import { RedisModule } from 'src/infrastructure/redis/redis.module';
 import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { UsersController } from './users.controller';
-import { CachePort } from 'src/infrastructure/redis/cache/cache.port';
+import { AddressesController } from './addresses.controller';
+import { CachePort } from 'src/shared-kernel/domain/interfaces/cache.port';
 import {
   POSTGRES_USER_REPOSITORY,
   CACHED_USER_REPOSITORY,
@@ -25,10 +26,12 @@ import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/
 import { GetUserUseCase } from './core/application/usecases/user/get-user/get-user.usecase';
 import { ListUsersUseCase } from './core/application/usecases/user/list-users/list-users.usecase';
 import { UpdateUserUseCase } from './core/application/usecases/user/update-user/update-user.usecase';
+import { UserQueryService } from './core/application/ports/user-query.service';
+import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-user-query.adapter';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity, AddressEntity]), RedisModule],
-  controllers: [UsersController],
+  controllers: [UsersController, AddressesController],
   providers: [
     {
       provide: POSTGRES_USER_REPOSITORY,
@@ -63,6 +66,12 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
     UpdateUserUseCase,
     CheckEmailExistsUseCase,
     GetUserByEmailUseCase,
+
+    // CQRS Presentation Query Service
+    {
+      provide: UserQueryService,
+      useClass: PostgresUserQueryAdapter,
+    },
   ],
   exports: [
     CreateUserUseCase,
@@ -70,6 +79,7 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
     GetUserByEmailUseCase,
     CheckEmailExistsUseCase,
     DeleteUserUseCase,
+    UserQueryService,
   ],
 })
 export class IdentityModule {}

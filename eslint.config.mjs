@@ -1,6 +1,7 @@
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import pluginSecurity from 'eslint-plugin-security';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -18,6 +19,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
+  pluginSecurity.configs.recommended,
   {
     languageOptions: {
       globals: {
@@ -33,21 +35,22 @@ export default tseslint.config(
   },
   {
     rules: {
-      '@typescript-eslint/require-await': 'warn',
+      '@typescript-eslint/require-await': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
 
       '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/prefer-readonly': 'off',
 
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
 
@@ -63,24 +66,41 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/await-thenable': 'warn',
+      '@typescript-eslint/await-thenable': 'error',
 
       'prefer-const': 'error',
       'no-var': 'error',
-      'no-console': 'warn',
+      'no-console': 'error',
       'no-debugger': 'error',
+      'security/detect-object-injection': 'off',
     },
   },
 
+  {
+    files: ['**/*.controller.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          // @Body() usage is not tracked reliably with emitDecoratorMetadata (typescript-eslint false positive).
+          varsIgnorePattern: '^_|^Body$',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
   {
     files: [
       '**/*.spec.ts',
       '**/*.test.ts',
       '**/test/**/*.ts',
       '**/*.e2e-spec.ts',
+      'data-source.ts',
+      'scripts/**/*.{js,ts}',
     ],
     rules: {
-      '@typescript-eslint/require-await': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -91,6 +111,32 @@ export default tseslint.config(
       '@typescript-eslint/prefer-readonly': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    ignores: [
+      'src/shared-kernel/infra/lang/error.utils.ts',
+      '**/*.spec.ts',
+      '**/*.test.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'NewExpression[callee.name="Error"] > CallExpression[callee.name="String"]',
+          message:
+            'Use toError() from src/shared-kernel/infra/lang/error.utils instead of new Error(String(...)).',
+        },
+        {
+          selector:
+            'ConditionalExpression > BinaryExpression[operator="instanceof"][right.name="Error"]',
+          message:
+            'Use toErrorMessage(), toError(), or toOptionalError() from src/shared-kernel/infra/lang/error.utils instead of instanceof Error ternaries.',
+        },
+      ],
     },
   },
 );
