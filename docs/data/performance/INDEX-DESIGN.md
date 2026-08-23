@@ -10,7 +10,7 @@ A deep-dive into practical index design: composite index column ordering rules, 
 
 The order of columns in a composite index significantly affects which queries can use it and how efficiently.
 
-### 1.1 Rule 1 — Equality Columns First, Range Columns Last
+### 1.1 Rule 1: Equality Columns First, Range Columns Last
 
 ```sql
 -- Query: WHERE user_id = ? AND created_at > ?
@@ -23,7 +23,7 @@ CREATE INDEX idx_suboptimal ON orders (created_at, user_id);
 -- Scans the date range, then filters by user_id within each date
 ```
 
-### 1.2 Rule 2 — High-Selectivity Columns First (Both Equality)
+### 1.2 Rule 2: High-Selectivity Columns First (Both Equality)
 
 ```sql
 -- user_id: 10,000 distinct values; status: 5 distinct values
@@ -36,7 +36,7 @@ CREATE INDEX idx_suboptimal ON orders (status, user_id);
 -- Narrows to ~20% first, then filters
 ```
 
-### 1.3 Rule 3 — Match `ORDER BY` Direction
+### 1.3 Rule 3: Match `ORDER BY` Direction
 
 ```sql
 -- Query: WHERE user_id = ? ORDER BY created_at DESC LIMIT 10
@@ -81,7 +81,7 @@ INCLUDE (created_at);
 - ❌ Cannot be used in `WHERE` clauses
 
 > _"An index-only scan can be 10-100x faster than an index scan with heap fetches, because it eliminates the random I/O pattern of looking up each row in the heap."_
-> — Winand, M. (2012). SQL Performance Explained, §3.3.
+> Source: Winand, M. (2012). SQL Performance Explained, §3.3.
 
 ### 2.2 Visibility Map Requirement
 
@@ -176,7 +176,7 @@ ORDER BY heap_blks_read DESC LIMIT 10;
 
 ---
 
-## 6. Applied Index Strategy — E-Commerce Store API
+## 6. Applied Index Strategy: E-Commerce Store API
 
 ### 6.1 Orders Module
 
@@ -241,3 +241,4 @@ Before deploying new indexes:
 - PostgreSQL Documentation. _Chapter 11: Indexes_. https://www.postgresql.org/docs/current/indexes.html
 - PostgreSQL Documentation. _§11.8: Partial Indexes_. https://www.postgresql.org/docs/current/indexes-partial.html
 - PostgreSQL Documentation. _§11.9: Index-Only Scans and Covering Indexes_. https://www.postgresql.org/docs/current/indexes-index-only-scans.html
+

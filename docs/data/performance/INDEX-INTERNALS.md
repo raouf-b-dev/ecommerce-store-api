@@ -6,9 +6,9 @@ A deep-dive into the internal structure and behaviour of PostgreSQL's index type
 
 ---
 
-## 1. B-tree Indexes — Structure and Behaviour
+## 1. B-tree Indexes: Structure and Behaviour
 
-> _Source: Comer, D. (1979). "The Ubiquitous B-Tree." ACM Computing Surveys, 11(2), pp. 121–137._
+> _Source: Comer, D. (1979). "The Ubiquitous B-Tree." ACM Computing Surveys, 11(2), pp. 121-137._
 
 The B-tree (Balanced Tree) is PostgreSQL's default and most versatile index type. It maintains sorted data and allows searches, sequential access, insertions, and deletions in **O(log n)** time.
 
@@ -120,7 +120,7 @@ CREATE INDEX idx_sessions_token ON sessions USING hash (session_token);
 GIN indexes map each **element** (array member, JSON key, lexeme) to the set of rows containing that element. Designed for multi-valued columns.
 
 ```
-Conceptual structure — GIN on a tags[] column:
+Conceptual structure: GIN on a tags[] column:
 
   "electronics" → {row_1, row_3, row_7}
   "sale"        → {row_1, row_2}
@@ -177,7 +177,7 @@ CREATE INDEX idx_stores_location ON stores USING gist (location);
 -- Supports: ORDER BY location <-> point(40.7128, -74.0060) LIMIT 10
 ```
 
-**Key difference from GIN**: GiST indexes are **lossy** — they may return false positives that are rechecked against actual data. GiST is better for insert-heavy workloads; GIN is better for read-heavy workloads.
+**Key difference from GIN**: GiST indexes are **lossy**: they may return false positives that are rechecked against actual data. GiST is better for insert-heavy workloads; GIN is better for read-heavy workloads.
 
 ---
 
@@ -220,10 +220,11 @@ CREATE INDEX idx_audit_logs_created ON audit_logs USING brin (created_at);
 
 ## 7. References
 
-- Comer, D. (1979). "The Ubiquitous B-Tree." _ACM Computing Surveys_, 11(2), pp. 121–137. DOI: 10.1145/356770.356776
-- Graefe, G. (2011). "Modern B-Tree Techniques." _Foundations and Trends in Databases_, 3(4), pp. 203–402.
+- Comer, D. (1979). "The Ubiquitous B-Tree." _ACM Computing Surveys_, 11(2), pp. 121-137. DOI: 10.1145/356770.356776
+- Graefe, G. (2011). "Modern B-Tree Techniques." _Foundations and Trends in Databases_, 3(4), pp. 203-402.
 - PostgreSQL Documentation. _Chapter 11: Indexes_. https://www.postgresql.org/docs/current/indexes.html
 - PostgreSQL Documentation. _§67.4: B-Tree Implementation_. https://www.postgresql.org/docs/current/btree-implementation.html
 - PostgreSQL Documentation. _§70: GIN Indexes_. https://www.postgresql.org/docs/current/gin.html
 - PostgreSQL Documentation. _§71: GiST Indexes_. https://www.postgresql.org/docs/current/gist.html
 - PostgreSQL Documentation. _§72: BRIN Indexes_. https://www.postgresql.org/docs/current/brin.html
+

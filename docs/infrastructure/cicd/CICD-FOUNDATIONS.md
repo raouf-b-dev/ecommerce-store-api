@@ -1,6 +1,6 @@
-# CI/CD Foundations — Pipelines, Automation & Deployment Theory
+# CI/CD Foundations: Pipelines, Automation & Deployment Theory
 
-A reference guide covering Continuous Integration, Continuous Delivery, and Continuous Deployment principles. This document is designed to be consumed by any engineering team — it contains no project-specific configuration, module names, or environment variables.
+A reference guide covering Continuous Integration, Continuous Delivery, and Continuous Deployment principles. This document is designed to be consumed by any engineering team: it contains no project-specific configuration, module names, or environment variables.
 
 > _This document covers universal CI/CD concepts. For a project-specific implementation walkthrough, see the companion [applied document](PROJECT-PIPELINE.md)._
 
@@ -10,7 +10,7 @@ A reference guide covering Continuous Integration, Continuous Delivery, and Cont
 
 1. [Core Definitions](#1-core-definitions)
 2. [The CI/CD Pipeline Model](#2-the-cicd-pipeline-model)
-3. [Pipeline Architecture — Jobs, Steps & Stages](#3-pipeline-architecture--jobs-steps--stages)
+3. [Pipeline Architecture: Jobs, Steps & Stages](#3-pipeline-architecture--jobs-steps--stages)
 4. [GitHub Actions Execution Model](#4-github-actions-execution-model)
 5. [Parallelisation Strategies](#5-parallelisation-strategies)
 6. [The Testing Pyramid in CI](#6-the-testing-pyramid-in-ci)
@@ -28,10 +28,10 @@ A reference guide covering Continuous Integration, Continuous Delivery, and Cont
 
 ### Continuous Integration (CI)
 
-The practice of merging all developer working copies to a shared mainline **frequently** — at least once per day — and validating each merge with an automated build and test run. The goal is to detect integration errors early, when they are cheap to fix.
+The practice of merging all developer working copies to a shared mainline **frequently**: at least once per day: and validating each merge with an automated build and test run. The goal is to detect integration errors early, when they are cheap to fix.
 
 > _"Continuous Integration doesn't get rid of bugs, but it does make them dramatically easier to find and remove."_
-> — Martin Fowler, _Continuous Integration_ (2006)
+> Source: Martin Fowler, _Continuous Integration_ (2006)
 
 ### Continuous Delivery (CD)
 
@@ -48,7 +48,7 @@ Goes one step beyond Continuous Delivery: every commit that passes all pipeline 
 | Rollback strategy  | Pre-planned         | Automated (canary, blue-green) |
 | Adoption maturity  | Most organisations  | Mature DevOps teams            |
 
-> **Source**: Humble, J. & Farley, D. — _Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation_ (2010). ISBN 978-0-321-60191-9.
+> **Source**: Humble, J. & Farley, D.: _Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation_ (2010). ISBN 978-0-321-60191-9.
 
 ---
 
@@ -67,18 +67,18 @@ A CI/CD pipeline is a **directed acyclic graph (DAG)** of automated stages that 
 
 | Stage      | Purpose                                                                     | Typical Duration |
 | :--------- | :-------------------------------------------------------------------------- | :--------------- |
-| **Source** | Triggered by a SCM event (push, PR, tag). Checks out the code.              | 5–15s            |
-| **Build**  | Compiles source, resolves dependencies, produces artifacts.                 | 15–120s          |
-| **Test**   | Runs linting, type-checking, unit tests, integration tests, security scans. | 30s–15m          |
-| **Deploy** | Publishes artifacts, pushes container images, updates infrastructure.       | 30s–10m          |
+| **Source** | Triggered by a SCM event (push, PR, tag). Checks out the code. | 5-15s |
+| **Build** | Compiles source, resolves dependencies, produces artifacts. | 15-120s |
+| **Test** | Runs linting, type-checking, unit tests, integration tests, security scans. | 30s-15m |
+| **Deploy** | Publishes artifacts, pushes container images, updates infrastructure. | 30s-10m |
 
-The key insight is that stages should be ordered by **feedback speed** — fast, cheap checks run first. If linting fails in 10 seconds, there is no reason to wait 5 minutes for integration tests to discover the same broken commit.
+The key insight is that stages should be ordered by **feedback speed**: fast, cheap checks run first. If linting fails in 10 seconds, there is no reason to wait 5 minutes for integration tests to discover the same broken commit.
 
-> **Source**: Kim, G. et al. — _The DevOps Handbook_ (2016), Chapter 10: "Enable Fast and Reliable Automated Testing". ISBN 978-1-942788-00-3.
+> **Source**: Kim, G. et al.: _The DevOps Handbook_ (2016), Chapter 10: "Enable Fast and Reliable Automated Testing". ISBN 978-1-942788-00-3.
 
 ---
 
-## 3. Pipeline Architecture — Jobs, Steps & Stages
+## 3. Pipeline Architecture: Jobs, Steps & Stages
 
 Most CI/CD platforms (GitHub Actions, GitLab CI, Jenkins, CircleCI) organise pipelines using three levels of granularity:
 
@@ -115,7 +115,7 @@ Workflow
 
 The trade-off is clear: parallel jobs are faster and provide better failure isolation, but consume more runner minutes. For open-source projects with generous free-tier minutes, parallelisation is almost always worth it.
 
-> **Source**: GitHub Docs — [Using jobs in a workflow](https://docs.github.com/en/actions/using-jobs/using-jobs-in-a-workflow).
+> **Source**: GitHub Docs: [Using jobs in a workflow](https://docs.github.com/en/actions/using-jobs/using-jobs-in-a-workflow).
 
 ---
 
@@ -125,7 +125,7 @@ GitHub Actions is an event-driven CI/CD platform built into GitHub. Understandin
 
 ### Runners
 
-A **runner** is a virtual machine (or self-hosted machine) that executes a single job. GitHub-hosted runners are ephemeral — they are provisioned for the job, execute it, and are destroyed. Each runner starts with a clean filesystem.
+A **runner** is a virtual machine (or self-hosted machine) that executes a single job. GitHub-hosted runners are ephemeral: they are provisioned for the job, execute it, and are destroyed. Each runner starts with a clean filesystem.
 
 ### Event triggers
 
@@ -149,7 +149,7 @@ concurrency:
   cancel-in-progress: true
 ```
 
-This prevents wasted runner minutes when a developer pushes multiple commits in quick succession — only the latest commit is tested.
+This prevents wasted runner minutes when a developer pushes multiple commits in quick succession: only the latest commit is tested.
 
 ### Permissions
 
@@ -161,7 +161,7 @@ permissions:
   pull-requests: read
 ```
 
-> **Source**: GitHub Docs — [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions).
+> **Source**: GitHub Docs: [Workflow syntax for GitHub Actions](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions).
 
 ---
 
@@ -179,7 +179,7 @@ push ───▶├── unit-tests ─┼──▶ integration ──▶ depl
          └── arch-tests ─┘
 ```
 
-**Why this works**: lint, typecheck, unit tests, and build are _independent_ — they don't share state. The integration job depends on all of them because:
+**Why this works**: lint, typecheck, unit tests, and build are _independent_: they don't share state. The integration job depends on all of them because:
 
 1. There is no point running expensive integration tests if the code doesn't compile.
 2. Service containers (databases, caches) consume runner resources and boot slowly.
@@ -194,11 +194,11 @@ strategy:
     node-version: [18, 20, 22]
 ```
 
-This spawns N parallel jobs — one per matrix entry. Useful for library authors who support multiple runtimes.
+This spawns N parallel jobs: one per matrix entry. Useful for library authors who support multiple runtimes.
 
 ### Dependency caching
 
-Dependency installation (`npm ci`) can account for 30–60% of job time. Caching the dependency directory across runs eliminates redundant downloads:
+Dependency installation (`npm ci`) can account for 30-60% of job time. Caching the dependency directory across runs eliminates redundant downloads:
 
 ```yaml
 - uses: actions/setup-node@v4
@@ -209,7 +209,7 @@ Dependency installation (`npm ci`) can account for 30–60% of job time. Caching
 
 The `cache` option hashes `package-lock.json` and restores `~/.npm` if the hash matches. A cache hit reduces `npm ci` from 30s+ to under 5s.
 
-> **Source**: GitHub Docs — [Caching dependencies to speed up workflows](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
+> **Source**: GitHub Docs: [Caching dependencies to speed up workflows](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows).
 
 ---
 
@@ -232,20 +232,20 @@ The testing pyramid (coined by Mike Cohn) prescribes that a healthy test suite s
 | Layer           | CI job characteristics                                             | Service deps   |
 | :-------------- | :----------------------------------------------------------------- | :------------- |
 | **Unit**        | Fast (seconds). No external deps. Runs with mocked boundaries.     | None           |
-| **Integration** | Medium (seconds–minutes). Tests real database/cache interactions.  | DB, cache      |
+| **Integration** | Medium (seconds-minutes). Tests real database/cache interactions. | DB, cache |
 | **E2E**         | Slow (minutes). Full HTTP request/response cycles through the app. | DB, cache, app |
 
 ### CI optimisation principle
 
 Run fast checks first, expensive checks last. If a unit test catches a bug in 5 seconds, the 2-minute integration test is wasted effort. This is why the fan-out/fan-in pattern places unit tests, linting, and type-checking in parallel _before_ integration tests.
 
-> **Source**: Cohn, M. — _Succeeding with Agile: Software Development Using Scrum_ (2009), Chapter 16: "The Testing Pyramid". ISBN 978-0-321-57936-2.
+> **Source**: Cohn, M.: _Succeeding with Agile: Software Development Using Scrum_ (2009), Chapter 16: "The Testing Pyramid". ISBN 978-0-321-57936-2.
 
 ---
 
 ## 7. Service Containers & Integration Testing
 
-Integration tests need real infrastructure — databases, caches, message brokers. CI platforms provide two approaches:
+Integration tests need real infrastructure: databases, caches, message brokers. CI platforms provide two approaches:
 
 ### Approach 1: Service containers (GitHub Actions)
 
@@ -267,7 +267,7 @@ services:
 
 **Advantages**: Simple configuration, no external dependencies, health-check support built in.
 
-**Disadvantages**: Containers boot before _any_ step runs — if used in a monolithic job, they idle during lint/typecheck steps. This is why integration tests should be in a **separate job** that only starts service containers when needed.
+**Disadvantages**: Containers boot before _any_ step runs: if used in a monolithic job, they idle during lint/typecheck steps. This is why integration tests should be in a **separate job** that only starts service containers when needed.
 
 ### Approach 2: Testcontainers
 
@@ -283,7 +283,7 @@ const container = await new PostgreSqlContainer('postgres:16')
 
 **Disadvantages**: Requires Docker-in-Docker or a Docker socket mount on the CI runner, slightly more complex setup.
 
-> **Source**: GitHub Docs — [About service containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers). Testcontainers — [Node.js module](https://node.testcontainers.org/).
+> **Source**: GitHub Docs: [About service containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers). Testcontainers: [Node.js module](https://node.testcontainers.org/).
 
 ---
 
@@ -314,7 +314,7 @@ This pattern allows the branch protection rule to require only the `ci` job name
 
 Complementary to automated checks. At least one (or more) human reviewers must approve the PR before merging. Automated checks verify _correctness_; reviews verify _intent_ and _design_.
 
-> **Source**: GitHub Docs — [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+> **Source**: GitHub Docs: [About protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
 ---
 
@@ -336,13 +336,13 @@ Secrets must be injected at runtime via the CI platform's secret store, never co
 
 ### Fork safety
 
-Forks of public repositories should **never** have access to the upstream repository's secrets. GitHub Actions enforces this by default — `secrets.*` values are empty for PRs from forks. Workflows should handle this gracefully by skipping secret-dependent steps (e.g., integration tests) for fork PRs.
+Forks of public repositories should **never** have access to the upstream repository's secrets. GitHub Actions enforces this by default: `secrets.*` values are empty for PRs from forks. Workflows should handle this gracefully by skipping secret-dependent steps (e.g., integration tests) for fork PRs.
 
 ```yaml
 if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
 ```
 
-> **Source**: GitHub Docs — [Using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions). OWASP — [CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/).
+> **Source**: GitHub Docs: [Using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions). OWASP: [CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/).
 
 ---
 
@@ -368,7 +368,7 @@ deploy:
 
 ### Blue-Green deployment
 
-Two identical production environments exist: Blue (current) and Green (new). Traffic is switched atomically from Blue to Green once the new version passes health checks. Rollback is instant — switch traffic back to Blue.
+Two identical production environments exist: Blue (current) and Green (new). Traffic is switched atomically from Blue to Green once the new version passes health checks. Rollback is instant: switch traffic back to Blue.
 
 ### Canary deployment
 
@@ -381,7 +381,7 @@ A small percentage of production traffic (e.g., 5%) is routed to the new version
 | Canary     | Fast           | 1× + margin   | High       | Very low |
 | Rolling    | Medium         | 1×            | Medium     | Medium   |
 
-> **Source**: Humble, J. & Farley, D. — _Continuous Delivery_ (2010), Chapters 10–12. ISBN 978-0-321-60191-9. AWS — [Blue/Green Deployments](https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html).
+> **Source**: Humble, J. & Farley, D.: _Continuous Delivery_ (2010), Chapters 10-12. ISBN 978-0-321-60191-9. AWS: [Blue/Green Deployments](https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html).
 
 ---
 
@@ -408,7 +408,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
 ```
 
-**Benefits**: The final image contains no dev dependencies, no source code, no build tools — only the compiled output and production `node_modules`.
+**Benefits**: The final image contains no dev dependencies, no source code, no build tools: only the compiled output and production `node_modules`.
 
 ### Image tagging strategies
 
@@ -421,7 +421,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 
 The recommended practice is to tag with both the Git SHA (immutable, for traceability) and the semantic version (human-readable, for releases).
 
-> **Source**: Docker Docs — [Multi-stage builds](https://docs.docker.com/build/building/multi-stage/). Google — [Best practices for building containers](https://cloud.google.com/architecture/best-practices-for-building-containers).
+> **Source**: Docker Docs: [Multi-stage builds](https://docs.docker.com/build/building/multi-stage/). Google: [Best practices for building containers](https://cloud.google.com/architecture/best-practices-for-building-containers).
 
 ---
 
@@ -430,7 +430,7 @@ The recommended practice is to tag with both the Git SHA (immutable, for traceab
 | Anti-Pattern                            | Problem                                                                                                                                                            | Correct Approach                                                                                                         |
 | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
 | **Monolithic CI job**                   | All checks run sequentially in one job. A lint failure at step 2 blocks test results at step 8. Feedback is slow.                                                  | Split into parallel jobs. Fast checks (lint, typecheck) run independently from slow checks (integration tests).          |
-| **Service containers in every job**     | Databases and caches boot for jobs that don't need them (e.g., linting). Wastes 20–40 seconds per unnecessary container.                                           | Only declare service containers in integration/e2e jobs that actually use them.                                          |
+| **Service containers in every job** | Databases and caches boot for jobs that don't need them (e.g., linting). Wastes 20-40 seconds per unnecessary container. | Only declare service containers in integration/e2e jobs that actually use them. |
 | **`--runInBand` for unit tests**        | Forces single-threaded test execution. Appropriate for integration tests sharing state, but cripples unit test performance.                                        | Use `--runInBand` only for tests that share mutable external state. Run unit tests in parallel (Jest default).           |
 | **Hardcoded secrets in workflow files** | Credentials in YAML files are committed to SCM history forever. Even if deleted, they remain in git history.                                                       | Use the CI platform's encrypted secret store. Reference via `${{ secrets.KEY }}`.                                        |
 | **No concurrency control**              | Multiple workflow runs for the same branch execute simultaneously, wasting runner minutes and producing confusing results.                                         | Use `concurrency` groups with `cancel-in-progress: true`.                                                                |
@@ -438,7 +438,7 @@ The recommended practice is to tag with both the Git SHA (immutable, for traceab
 | **Testing only in CI**                  | Developers push broken code because they don't run checks locally. CI becomes a slow feedback loop.                                                                | Use pre-commit hooks (e.g., Husky + lint-staged) for fast local checks. CI is the safety net, not the primary check.     |
 | **No status check aggregator**          | After splitting a monolithic job into parallel jobs, branch protection rules reference a job name that no longer exists. PRs can be merged without checks passing. | Add a final aggregator job that depends on all parallel jobs and reports a single pass/fail status.                      |
 | **Ignoring fork PR security**           | Fork PRs access repository secrets, enabling secret exfiltration via malicious workflow modifications.                                                             | Skip secret-dependent steps for fork PRs using `if: github.event.pull_request.head.repo.full_name == github.repository`. |
-| **No dependency caching**               | `npm ci` downloads the entire dependency tree on every run, adding 30–90 seconds to every job.                                                                     | Cache the npm/yarn/pnpm store and restore on cache hits using `actions/setup-node` with `cache: 'npm'`.                  |
+| **No dependency caching** | `npm ci` downloads the entire dependency tree on every run, adding 30-90 seconds to every job. | Cache the npm/yarn/pnpm store and restore on cache hits using `actions/setup-node` with `cache: 'npm'`. |
 
 ---
 
@@ -446,18 +446,19 @@ The recommended practice is to tag with both the Git SHA (immutable, for traceab
 
 |  #  | Source                                                   | URL / ISBN                                                                                                                                      |
 | :-: | :------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
-|  1  | Humble, J. & Farley, D. — _Continuous Delivery_ (2010)   | ISBN 978-0-321-60191-9                                                                                                                          |
-|  2  | Kim, G. et al. — _The DevOps Handbook_ (2016)            | ISBN 978-1-942788-00-3                                                                                                                          |
-|  3  | Cohn, M. — _Succeeding with Agile_ (2009)                | ISBN 978-0-321-57936-2                                                                                                                          |
-|  4  | Fowler, M. — _Continuous Integration_ (2006)             | https://martinfowler.com/articles/continuousIntegration.html                                                                                    |
-|  5  | GitHub Docs — Workflow syntax for GitHub Actions         | https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions                                                           |
-|  6  | GitHub Docs — Using jobs in a workflow                   | https://docs.github.com/en/actions/using-jobs/using-jobs-in-a-workflow                                                                          |
-|  7  | GitHub Docs — Caching dependencies to speed up workflows | https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows                                                   |
-|  8  | GitHub Docs — About service containers                   | https://docs.github.com/en/actions/using-containerized-services/about-service-containers                                                        |
-|  9  | GitHub Docs — About protected branches                   | https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches |
-| 10  | GitHub Docs — Using secrets in GitHub Actions            | https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions                                                              |
-| 11  | OWASP — Top 10 CI/CD Security Risks                      | https://owasp.org/www-project-top-10-ci-cd-security-risks/                                                                                      |
-| 12  | Docker Docs — Multi-stage builds                         | https://docs.docker.com/build/building/multi-stage/                                                                                             |
-| 13  | Google Cloud — Best practices for building containers    | https://cloud.google.com/architecture/best-practices-for-building-containers                                                                    |
-| 14  | AWS — Blue/Green Deployments                             | https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html                                           |
-| 15  | Testcontainers — Node.js module                          | https://node.testcontainers.org/                                                                                                                |
+| 1 | Humble, J. & Farley, D.: _Continuous Delivery_ (2010) | ISBN 978-0-321-60191-9 |
+| 2 | Kim, G. et al.: _The DevOps Handbook_ (2016) | ISBN 978-1-942788-00-3 |
+| 3 | Cohn, M.: _Succeeding with Agile_ (2009) | ISBN 978-0-321-57936-2 |
+| 4 | Fowler, M.: _Continuous Integration_ (2006) | https://martinfowler.com/articles/continuousIntegration.html |
+| 5 | GitHub Docs: Workflow syntax for GitHub Actions | https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions |
+| 6 | GitHub Docs: Using jobs in a workflow | https://docs.github.com/en/actions/using-jobs/using-jobs-in-a-workflow |
+| 7 | GitHub Docs: Caching dependencies to speed up workflows | https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows |
+| 8 | GitHub Docs: About service containers | https://docs.github.com/en/actions/using-containerized-services/about-service-containers |
+| 9 | GitHub Docs: About protected branches | https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches |
+| 10 | GitHub Docs: Using secrets in GitHub Actions | https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions |
+| 11 | OWASP: Top 10 CI/CD Security Risks | https://owasp.org/www-project-top-10-ci-cd-security-risks/ |
+| 12 | Docker Docs: Multi-stage builds | https://docs.docker.com/build/building/multi-stage/ |
+| 13 | Google Cloud: Best practices for building containers | https://cloud.google.com/architecture/best-practices-for-building-containers |
+| 14 | AWS: Blue/Green Deployments | https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html |
+| 15 | Testcontainers: Node.js module | https://node.testcontainers.org/ |
+

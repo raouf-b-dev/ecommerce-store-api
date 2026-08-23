@@ -47,7 +47,7 @@ This includes, at minimum:
 - Jobs/scheduler naming and workflow
 - Notifications/socket usage boundaries
 - Testing and Redis conventions
-- Unknown error normalization (`toErrorMessage`, `toError`, `toOptionalError` — see [CONVENTIONS §14](docs/ai/CONVENTIONS.md#14-unknown-error-normalization))
+- Unknown error normalization (`toErrorMessage`, `toError`, `toOptionalError`: see [CONVENTIONS §14](docs/ai/CONVENTIONS.md#14-unknown-error-normalization))
 
 ## 5. Skills and Mirrors
 

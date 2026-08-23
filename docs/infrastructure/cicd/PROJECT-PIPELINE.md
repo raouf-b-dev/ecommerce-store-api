@@ -1,4 +1,4 @@
-# CI/CD Project Pipeline — GitHub Actions Guide
+# CI/CD Project Pipeline: GitHub Actions Guide
 
 This document describes the CI/CD pipeline for the E-Commerce Store API: job graph, secrets, fork behavior, container validation, and GHCR release.
 
@@ -8,7 +8,7 @@ This document describes the CI/CD pipeline for the E-Commerce Store API: job gra
 
 The pipeline uses a **fan-out / fan-in** pattern. Parallel static checks run first; integration, E2E, smoke, and restore-drill jobs run after typecheck and unit tests succeed (smoke / restore-drill-smoke also need build). A single **CI Status Check** aggregator gates branch protection, Docker validation, and GHCR publish.
 
-Triggers: `pull_request`, `push` to `master` / semver tags, and `workflow_dispatch`. Nightly restore verification is a **separate thin workflow** ([`nightly-restore-drill.yml`](../../../.github/workflows/nightly-restore-drill.yml), `0 3 * * *` UTC) — build + restore-drill + restore-drill-smoke only.
+Triggers: `pull_request`, `push` to `master` / semver tags, and `workflow_dispatch`. Nightly restore verification is a **separate thin workflow** ([`nightly-restore-drill.yml`](../../../.github/workflows/nightly-restore-drill.yml), `0 3 * * *` UTC): build + restore-drill + restore-drill-smoke only.
 
 ```mermaid
 graph TD
@@ -161,7 +161,7 @@ After **CI Status Check** passes on `push` to `master` or semver tag `v*.*.*`:
 - SBOM + provenance enabled
 - PRs never push images
 
-**Release invariant:** `docker-publish` has `needs: [ci]` — images cannot bypass the CI gate.
+**Release invariant:** `docker-publish` has `needs: [ci]`: images cannot bypass the CI gate.
 
 ---
 
@@ -185,3 +185,4 @@ Require a single status check: **CI Status Check**.
 - [GitHub Actions service containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers)
 - [Dependency Review Action](https://github.com/actions/dependency-review-action)
 - [Publishing Docker images to GHCR](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)
+

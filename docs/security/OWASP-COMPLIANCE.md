@@ -73,7 +73,7 @@ Below is the formal mapping of `ecommerce-store-api` controls against the ten vu
 
 ## 🏛️ In-Depth Technical Analysis by OWASP Category
 
-### A01:2025 – Broken Access Control & IDOR Prevention
+### A01:2025 - Broken Access Control & IDOR Prevention
 
 **Threat Model:** Insecure Direct Object References (IDOR) occur when an API endpoint uses client-supplied keys (e.g. `/orders/:id`) without validating whether the requesting principal owns or has explicit authorization to operate on the target aggregate entity.
 
@@ -104,7 +104,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A02:2025 – Security Misconfiguration
+### A02:2025 - Security Misconfiguration
 
 **Threat Model:** Unhardened server settings, default framework headers, missing CORS constraints, and over-permissive container privileges expose application infrastructure to automated scanning and execution exploits.
 
@@ -120,7 +120,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A03:2025 – Software Supply Chain Failures
+### A03:2025 - Software Supply Chain Failures
 
 **Threat Model:** Compromised third-party npm packages, malicious post-install lifecycle scripts, and untracked dependency drift introduce backdoors and remote code execution vulnerabilities into the server runtime.
 
@@ -132,7 +132,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A04:2025 – Cryptographic Failures
+### A04:2025 - Cryptographic Failures
 
 **Threat Model:** Weak encryption algorithms, hardcoded secret keys, insecure password storage, and unencrypted transport allow attackers to sniff or forge authentication tokens and credentials.
 
@@ -144,7 +144,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A05:2025 – Injection (SQL, XSS, Command Injection)
+### A05:2025 - Injection (SQL, XSS, Command Injection)
 
 **Threat Model:** Untrusted client input concatenated into SQL queries, rendered unescaped in HTML responses, or passed into shell execution functions leads to database exfiltration or remote code execution.
 
@@ -157,7 +157,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A06:2025 – Insecure Design & Architectural Boundaries
+### A06:2025 - Insecure Design & Architectural Boundaries
 
 **Threat Model:** Monolithic applications with highly coupled module boundaries suffer from accidental data leaks, circular dependencies, and unhandled cross-domain side effects.
 
@@ -169,7 +169,7 @@ export class OwnedResourceAccessPolicy {
 
 ---
 
-### A07:2025 – Authentication Failures & Token Lifecycle
+### A07:2025 - Authentication Failures & Token Lifecycle
 
 **Threat Model:** Broken authentication mechanisms enable credential stuffing, session hijacking, refresh token replay, and brute-force account lockouts.
 
@@ -196,19 +196,19 @@ High-risk endpoints (`/authentication/login`, `/orders/checkout`) are protected 
 
 ---
 
-### A08:2025 – Software and Data Integrity Failures
+### A08:2025 - Software and Data Integrity Failures
 
 **Threat Model:** Race conditions during payment or order placement can lead to double-spending, inventory overselling, or unhandled asynchronous SAGA step failures.
 
 **Control Implementation:**
 
-1. **Distributed Idempotency Protection:** High-impact mutation routes (such as order checkout) are decorated with `@Idempotent()`. A Redis-backed store uses atomic `SET NX` locks keyed by authenticated `userId` + HTTP method + route + client key (`Idempotency-Key` or legacy `x-idempotency-key`; body `idempotencyKey` remains a fallback). Completed responses are replayed; concurrent in-progress duplicates return HTTP 409 with `Retry-After`. Redis errors fail closed with HTTP 503. This covers the HTTP checkout command only — not the BullMQ worker/SAGA chain.
+1. **Distributed Idempotency Protection:** High-impact mutation routes (such as order checkout) are decorated with `@Idempotent()`. A Redis-backed store uses atomic `SET NX` locks keyed by authenticated `userId` + HTTP method + route + client key (`Idempotency-Key` or legacy `x-idempotency-key`; body `idempotencyKey` remains a fallback). Completed responses are replayed; concurrent in-progress duplicates return HTTP 409 with `Retry-After`. Redis errors fail closed with HTTP 503. This covers the HTTP checkout command only: not the BullMQ worker/SAGA chain.
 2. **Inventory Lock Conservation:** Inventory decrement operations during checkout utilize PostgreSQL row-level pessimistic write locking (`SELECT ... FOR UPDATE`), ensuring concurrent transactions cannot reduce stock below zero.
 3. **SAGA Compensation Mechanics:** Checkout processes managed via BullMQ feature failure listeners (`CheckoutFailureListener`) that execute compensating transactions (refunding authorizations, releasing stock reservations) if downstream steps fail.
 
 ---
 
-### A09:2025 – Logging & Alerting Failures
+### A09:2025 - Logging & Alerting Failures
 
 **Threat Model:** Inadequate logging prevents timely detection of security breaches, while unrestricted logging can accidentally leak sensitive customer data (PII) or credentials into log aggregation systems.
 
@@ -247,7 +247,7 @@ const redactObject = (obj: any): any => {
 
 ---
 
-### A10:2025 – Mishandling of Exceptional Conditions (Error Masking)
+### A10:2025 - Mishandling of Exceptional Conditions (Error Masking)
 
 **Threat Model:** Unhandled exceptions exposed to API clients can leak stack traces, database schema details, framework versions, or internal file system paths, aiding attackers in footprinting the application.
 
@@ -303,3 +303,4 @@ The security controls detailed in this specification are subject to continuous a
 2. **Domain & Unit Testing:** `npm run test` (validates domain logic, security filter masking, and exception handling).
 3. **Architecture Boundary Tests:** `npm run test:arch` (enforces module encapsulation and hexagonal boundary rules).
 4. **Integration & E2E Security Tests:** `npm run test:e2e` (runs `test/e2e/security/security-idor.e2e-spec.ts` for RBAC/ownership isolation, plus `test/e2e/auth/authentication-lifecycle.e2e-spec.ts` and `test/e2e/checkout/checkout-saga.e2e-spec.ts`, against real PostgreSQL and Redis).
+

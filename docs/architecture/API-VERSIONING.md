@@ -1,4 +1,4 @@
-# API Versioning — Strategy & Reference
+# API Versioning: Strategy & Reference
 
 A comprehensive, framework-agnostic guide to API versioning strategy for RESTful services. Covers rationale, implementation patterns (with NestJS examples), deployment considerations, DTO mapping via the Anti-Corruption Layer, deprecation protocols, and common anti-patterns.
 
@@ -27,19 +27,19 @@ POST /v1/authentication/login
 
 **URI Path is the recommended default** for most teams, for these reasons:
 
-1. **Explicitness** — The version is visible in every request. No ambiguity.
-2. **Load Balancer Routing** — NGINX, AWS ALB, and Cloudflare can route `/v1/*` and `/v2/*` to different backends without inspecting headers.
-3. **Cache Safety** — CDNs and reverse proxies key on URL by default. Different versions are automatically cached separately.
-4. **Developer Experience** — Swagger UI, Postman, and curl all work naturally. No custom header setup required.
-5. **Framework Support** — Most modern frameworks (NestJS, Express, ASP.NET, Spring Boot) support URI versioning natively.
+1. **Explicitness**: The version is visible in every request. No ambiguity.
+2. **Load Balancer Routing**: NGINX, AWS ALB, and Cloudflare can route `/v1/*` and `/v2/*` to different backends without inspecting headers.
+3. **Cache Safety**: CDNs and reverse proxies key on URL by default. Different versions are automatically cached separately.
+4. **Developer Experience**: Swagger UI, Postman, and curl all work naturally. No custom header setup required.
+5. **Framework Support**: Most modern frameworks (NestJS, Express, ASP.NET, Spring Boot) support URI versioning natively.
 
 ### 1.2 Implementation (NestJS)
 
 ```typescript
-// src/infrastructure/http/api-version.ts — single source of truth for URI default version
+// src/infrastructure/http/api-version.ts: single source of truth for URI default version
 export const DEFAULT_API_VERSION = '1';
 
-// main.ts — enables versioning globally with a default
+// main.ts: enables versioning globally with a default
 app.enableVersioning({
   type: VersioningType.URI,
   defaultVersion: DEFAULT_API_VERSION, // All controllers inherit v1 unless overridden
@@ -49,12 +49,12 @@ app.enableVersioning({
 With `defaultVersion`, every controller automatically becomes v1 without any per-controller annotation. Only controllers that need to **opt out** of versioning (e.g. health checks) require explicit decoration:
 
 ```typescript
-// Business controller — inherits defaultVersion '1'
+// Business controller: inherits defaultVersion '1'
 // Routes become /v1/products/* with zero extra config
 @Controller('products')
 export class ProductsController { ... }
 
-// Version-neutral controller — explicitly overrides the default
+// Version-neutral controller: explicitly overrides the default
 // Routes stay at /health (no version prefix)
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController { ... }
@@ -62,15 +62,15 @@ export class HealthController { ... }
 
 > **Why `defaultVersion` over per-controller declarations?**
 >
-> Hardcoding `version: '1'` in every controller is a DRY violation. If you ever need to change the default version, you'd have to touch every file. With `defaultVersion`, version policy is centralized in the bootstrap file — the single source of truth. Only controllers that _differ_ from the default need an explicit override.
+> Hardcoding `version: '1'` in every controller is a DRY violation. If you ever need to change the default version, you'd have to touch every file. With `defaultVersion`, version policy is centralized in the bootstrap file: the single source of truth. Only controllers that _differ_ from the default need an explicit override.
 
 ### 1.3 What Gets Versioned vs What Doesn't
 
 | Category                                            | Versioned?                | Rationale                                                  |
 | --------------------------------------------------- | ------------------------- | ---------------------------------------------------------- |
-| **Business endpoints** (CRUD, Authentication, etc.) | ✅ Yes                    | API contract — breaking changes require a new version      |
-| **Health checks** (`/health`, `/readiness`)         | ❌ No (`VERSION_NEUTRAL`) | Infrastructure probes — must be stable across all versions |
-| **Metrics** (`/metrics`)                            | ❌ No (`VERSION_NEUTRAL`) | Prometheus/monitoring scrape targets — version-agnostic    |
+| **Business endpoints** (CRUD, Authentication, etc.) | ✅ Yes | API contract: breaking changes require a new version |
+| **Health checks** (`/health`, `/readiness`) | ❌ No (`VERSION_NEUTRAL`) | Infrastructure probes: must be stable across all versions |
+| **Metrics** (`/metrics`) | ❌ No (`VERSION_NEUTRAL`) | Prometheus/monitoring scrape targets: version-agnostic |
 | **Documentation** (`/api/docs`)                     | ❌ No                     | Static content served outside the controller layer         |
 | **WebSocket Gateways**                              | ❌ No                     | Socket protocols use their own versioning mechanisms       |
 
@@ -94,7 +94,7 @@ Create a new version **only** when you need to make a **breaking change** to an 
 | Change pagination format                | **Yes**   | ✅ New version                   |
 | Change error response structure         | **Yes**   | ✅ New version                   |
 
-### 2.2 Adding a New Version — Step by Step
+### 2.2 Adding a New Version: Step by Step
 
 When a breaking change is needed:
 
@@ -102,7 +102,7 @@ When a breaking change is needed:
 
    ```text
    src/modules/products/
-   ├── products.controller.ts          ← v1 (existing — kept alive)
+ ├── products.controller.ts ← v1 (existing: kept alive)
    ├── products-v2.controller.ts       ← v2 (new contract)
    ```
 
@@ -111,13 +111,13 @@ When a breaking change is needed:
    ```typescript
    @Controller({ path: 'products', version: '2' })
    export class ProductsV2Controller {
-     // New contract — can have different DTOs, responses, etc.
+ // New contract: can have different DTOs, responses, etc.
    }
    ```
 
 3. **Both versions coexist.** The framework routes `/v1/products` to the original controller and `/v2/products` to the new one.
 
-4. **Reuse the application layer.** Both controllers call the **same use cases** — the controller is just a presentation adapter. This is a direct benefit of layered/hexagonal architecture:
+4. **Reuse the application layer.** Both controllers call the **same use cases**: the controller is just a presentation adapter. This is a direct benefit of layered/hexagonal architecture:
 
    ```text
    ProductsController (v1)  ──┐
@@ -133,7 +133,7 @@ When a breaking change is needed:
 
 > **The core question**: _If the application layer changes its input shape, doesn't that break the old version?_
 >
-> **No.** The old version's controller acts as an **Anti-Corruption Layer (ACL)** — it maps the frozen external contract to whatever the application layer currently expects. Consumers of the old version never see the internal change.
+> **No.** The old version's controller acts as an **Anti-Corruption Layer (ACL)**: it maps the frozen external contract to whatever the application layer currently expects. Consumers of the old version never see the internal change.
 
 #### Controller DTOs ≠ Application DTOs
 
@@ -151,18 +151,18 @@ The controller's **only job** is to translate between these two layers.
 Suppose the business decides to rename the `name` field to `title` internally:
 
 ```typescript
-// ── Application Layer — internal input changed ──────────────────
+// ── Application Layer: internal input changed ──────────────────
 export interface CreateProductInput {
   title: string; // was: name
   amount: number; // was: price
 }
 
-// ── V1 Controller — frozen API contract, absorbs change via mapping
+// ── V1 Controller: frozen API contract, absorbs change via mapping
 @Controller('products')
 export class ProductsController {
   @Post()
   async create(@Body() dto: CreateProductDto) {
-    // dto.name still works for v1 clients — contract unchanged
+ // dto.name still works for v1 clients: contract unchanged
     return this.createProductUseCase.execute({
       title: dto.name, // ← map old field to new internal name
       amount: dto.price, // ← map old field to new internal name
@@ -170,7 +170,7 @@ export class ProductsController {
   }
 }
 
-// ── V2 Controller — new API contract, matches internal shape directly
+// ── V2 Controller: new API contract, matches internal shape directly
 @Controller({ path: 'products', version: '2' })
 export class ProductsV2Controller {
   @Post()
@@ -190,7 +190,7 @@ export class ProductsV2Controller {
 Suppose a new version adds a mandatory `categoryId` field:
 
 ```typescript
-// ── V1 Controller — provides a sensible default ─────────────────
+// ── V1 Controller: provides a sensible default ─────────────────
 @Controller('products')
 export class ProductsController {
   @Post()
@@ -202,12 +202,12 @@ export class ProductsController {
   }
 }
 
-// ── V2 Controller — requires it explicitly ──────────────────────
+// ── V2 Controller: requires it explicitly ──────────────────────
 @Controller({ path: 'products', version: '2' })
 export class ProductsV2Controller {
   @Post()
   async create(@Body() dto: CreateProductDtoV2) {
-    // categoryId is required in v2 DTO — no default needed
+ // categoryId is required in v2 DTO: no default needed
     return this.createProductUseCase.execute(dto);
   }
 }
@@ -215,13 +215,13 @@ export class ProductsV2Controller {
 
 #### When Is a Change Truly Unmappable?
 
-In rare cases, no reasonable mapping or default exists — for example:
+In rare cases, no reasonable mapping or default exists: for example:
 
 - A required field is added that has **no sensible default** and cannot be derived
 - The operation semantics changed entirely (e.g., sync → async with a job ID)
 - A security model change makes the old contract inherently unsafe
 
-**Only then** do you deprecate the old version with a `Sunset` header and a migration timeline. The goal is to give consumers time to migrate — **never** to silently break them.
+**Only then** do you deprecate the old version with a `Sunset` header and a migration timeline. The goal is to give consumers time to migrate: **never** to silently break them.
 
 #### Decision Flowchart
 
@@ -245,7 +245,7 @@ Application input changed?
 When a version must be retired:
 
 ```typescript
-// Old controller — add sunset headers to signal deprecation
+// Old controller: add sunset headers to signal deprecation
 @Controller('products')
 @Header('Sunset', 'Sat, 01 Mar 2027 00:00:00 GMT')
 @Header('Deprecation', 'true')
@@ -262,7 +262,7 @@ Timeline:
 
 > **Version numbers are permanent, immutable identifiers. They must never be reused.**
 
-Once a version number has been assigned and exposed to consumers, it is permanently associated with a specific API contract. Even after a version is retired and removed, its number is **burned** — it can never be reassigned to a different contract.
+Once a version number has been assigned and exposed to consumers, it is permanently associated with a specific API contract. Even after a version is retired and removed, its number is **burned**: it can never be reassigned to a different contract.
 
 #### Why Reusing Version Numbers Is Forbidden
 
@@ -287,7 +287,7 @@ If you want to simplify your version space after retiring old versions:
 
 Active versions `v2, v3, v5` are perfectly normal in mature APIs. Gaps in version numbers are a sign of healthy lifecycle management, not a problem to fix.
 
-> _"Version numbers are like database primary keys — they are identifiers, not counters. Gaps are expected and harmless."_
+> _"Version numbers are like database primary keys: they are identifiers, not counters. Gaps are expected and harmless."_
 
 ---
 
@@ -298,7 +298,7 @@ Active versions `v2, v3, v5` are perfectly normal in mature APIs. Gaps in versio
 URI versioning enables **version-based routing** at the infrastructure level:
 
 ```nginx
-# NGINX — route different versions to different backends
+# NGINX: route different versions to different backends
 location /v1/ {
     proxy_pass http://api-v1-backend;
 }
@@ -308,7 +308,7 @@ location /v2/ {
 }
 ```
 
-This enables **blue-green deployments** per version — you can deploy v2 independently without affecting v1 consumers.
+This enables **blue-green deployments** per version: you can deploy v2 independently without affecting v1 consumers.
 
 ### 3.2 Webhook URLs
 
@@ -325,7 +325,7 @@ Most frameworks automatically discover versioned routes and include the version 
 When multiple versions coexist, generate **separate OpenAPI specs per version**:
 
 ```typescript
-// NestJS example — separate docs per version
+// NestJS example: separate docs per version
 const v1Doc = SwaggerModule.createDocument(app, config, {
   include: [ProductsModule, OrdersModule],
 });
@@ -354,7 +354,7 @@ When deploying a versioned API for the first time:
 
 ### 4.1 Layered / Hexagonal Architecture & Versioning
 
-Versioning is a **presentation concern** — it belongs exclusively in the **Primary Adapter** layer (controllers). The application core (use cases, domain entities) is **version-agnostic**:
+Versioning is a **presentation concern**: it belongs exclusively in the **Primary Adapter** layer (controllers). The application core (use cases, domain entities) is **version-agnostic**:
 
 ```text
 ┌─────────────────────────────────────────────────┐
@@ -365,17 +365,17 @@ Versioning is a **presentation concern** — it belongs exclusively in the **Pri
 │  Controller (v2)  ──┘                            │
 │                                                  │
 │              APPLICATION CORE                    │
-│  (version-agnostic — no version awareness)       │
+│ (version-agnostic: no version awareness) │
 │                                                  │
 │              SECONDARY ADAPTERS                  │
-│  (version-agnostic — no version awareness)       │
+│ (version-agnostic: no version awareness) │
 └─────────────────────────────────────────────────┘
 ```
 
 **Rules**:
 
 - ✅ Version policy is centralized in the bootstrap/entry point
-- ✅ Business controllers use the default version — no per-controller decoration
+- ✅ Business controllers use the default version: no per-controller decoration
 - ✅ New version controllers explicitly declare their version
 - ✅ Infrastructure controllers override with `VERSION_NEUTRAL`
 - ✅ Different versions can have different DTOs (input/output transformation)
@@ -420,10 +420,10 @@ src/modules/products/
 
 ## References
 
-- NestJS Documentation — [Versioning](https://docs.nestjs.com/techniques/versioning)
+- NestJS Documentation: [Versioning](https://docs.nestjs.com/techniques/versioning)
 - Fielding, Roy T. _Architectural Styles and the Design of Network-based Software Architectures_. Doctoral dissertation, University of California, Irvine, 2000. ([full text](https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm))
 - Richardson, Chris. _Microservices Patterns: With Examples in Java_. Manning, 2018. ISBN 978-1617294549.
 - Masse, Mark. _REST API Design Rulebook_. O'Reilly, 2011. ISBN 978-1449310509.
 - Sturgeon, Phil. _Build APIs You Won't Hate_. LeanPub, 2015. ISBN 978-0692232699.
-- IETF RFC 8594 — [The Sunset HTTP Header Field](https://datatracker.ietf.org/doc/html/rfc8594). Wilde, E., June 2019.
-- IETF Draft — [The Deprecation HTTP Header Field](https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-deprecation-header). Dalal, S. & Wilde, E.
+- IETF RFC 8594: [The Sunset HTTP Header Field](https://datatracker.ietf.org/doc/html/rfc8594). Wilde, E., June 2019.
+- IETF Draft: [The Deprecation HTTP Header Field](https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-deprecation-header). Dalal, S. & Wilde, E.

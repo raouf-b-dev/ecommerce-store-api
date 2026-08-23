@@ -1,14 +1,14 @@
-# Process Lifecycle Guide — PIDs, Signals & Graceful Shutdown
+# Process Lifecycle Guide: PIDs, Signals & Graceful Shutdown
 
 A reference guide covering how operating systems manage processes, how termination signals work, and how server applications should handle graceful shutdown in containerised environments.
 
-> _Sections 1–6 are universal and project-agnostic. Section 7 documents a specific NestJS implementation as an applied example._
+> _Sections 1-6 are universal and project-agnostic. Section 7 documents a specific NestJS implementation as an applied example._
 
 ---
 
 ## 1. Process Identifiers (PIDs)
 
-When the OS starts a program (e.g. `node dist/main.js`), it creates a **process** and assigns it a unique **Process ID (PID)** — a positive integer used to track, signal, and manage the running instance.
+When the OS starts a program (e.g. `node dist/main.js`), it creates a **process** and assigns it a unique **Process ID (PID)**: a positive integer used to track, signal, and manage the running instance.
 
 ### Key concepts
 
@@ -16,7 +16,7 @@ When the OS starts a program (e.g. `node dist/main.js`), it creates a **process*
 | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **PID**    | Unique integer assigned to every running process by the kernel.                                                                                                           |
 | **PID 1**  | The first user-space process started at boot (`init` or `systemd`). All other processes descend from it. Inside a Docker container, the entrypoint process becomes PID 1. |
-| **PPID**   | Parent Process ID — the PID of the process that spawned the current one. Viewable via `ps -o pid,ppid` or `process.ppid` in Node.js.                                      |
+| **PPID** | Parent Process ID: the PID of the process that spawned the current one. Viewable via `ps -o pid,ppid` or `process.ppid` in Node.js. |
 | **Orphan** | A child process whose parent has exited. The kernel re-parents orphans to PID 1 (the init process).                                                                       |
 | **Zombie** | A terminated child whose exit status has not yet been collected by its parent via `wait()`. It occupies a slot in the process table but consumes no CPU or memory.        |
 
@@ -33,7 +33,7 @@ When the OS starts a program (e.g. `node dist/main.js`), it creates a **process*
 
 Default actions include: **Term** (terminate), **Core** (terminate + core dump), **Stop** (suspend), **Cont** (resume), and **Ign** (ignore).
 
-> **Source**: Signal semantics, default actions, and the full signal table are specified in `signal(7)` — Linux Programmer's Manual, and in POSIX.1-2017 `<signal.h>`.
+> **Source**: Signal semantics, default actions, and the full signal table are specified in `signal(7)`: Linux Programmer's Manual, and in POSIX.1-2017 `<signal.h>`.
 
 ---
 
@@ -41,7 +41,7 @@ Default actions include: **Term** (terminate), **Core** (terminate + core dump),
 
 These are the three signals most relevant to server application lifecycle:
 
-### SIGINT — Signal 2 (Interrupt)
+### SIGINT: Signal 2 (Interrupt)
 
 | Property           | Value        |
 | :----------------- | :----------- |
@@ -54,7 +54,7 @@ These are the three signals most relevant to server application lifecycle:
 - **Meaning**: The user is requesting an interactive interruption.
 - **In Node.js**: Can be caught via `process.on('SIGINT', handler)`. If a handler is registered, the default behavior (immediate exit) is suppressed and the handler runs instead.
 
-### SIGTERM — Signal 15 (Terminate)
+### SIGTERM: Signal 15 (Terminate)
 
 | Property           | Value        |
 | :----------------- | :----------- |
@@ -64,10 +64,10 @@ These are the three signals most relevant to server application lifecycle:
 | **POSIX standard** | POSIX.1-1990 |
 
 - **Trigger**: The default signal sent by the `kill` command (`kill <PID>` sends `SIGTERM`). Also the signal sent by Docker (`docker stop`), Kubernetes (Pod termination), and `systemd` during service shutdown.
-- **Meaning**: A polite request to terminate — the application should clean up resources (close DB connections, drain HTTP requests, finish in-flight jobs) and exit.
+- **Meaning**: A polite request to terminate: the application should clean up resources (close DB connections, drain HTTP requests, finish in-flight jobs) and exit.
 - **In Node.js**: Can be caught via `process.on('SIGTERM', handler)`. This is the primary signal used for graceful shutdown.
 
-### SIGKILL — Signal 9 (Kill)
+### SIGKILL: Signal 9 (Kill)
 
 | Property           | Value        |
 | :----------------- | :----------- |
@@ -81,7 +81,7 @@ These are the three signals most relevant to server application lifecycle:
 - **In Node.js**: **Cannot** be caught or intercepted. `process.on('SIGKILL', ...)` has no effect.
 - **Consequences**: Open file descriptors are abandoned, in-flight database transactions are left uncommitted, network sockets are dropped, and shared memory may be corrupted.
 
-> **Source**: The Linux `signal(7)` man page states: _"The signals SIGKILL and SIGSTOP cannot be caught, blocked, or ignored."_ This is also mandated by POSIX.1-2017: _"SIGKILL — Kill (cannot be caught or ignored)."_
+> **Source**: The Linux `signal(7)` man page states: _"The signals SIGKILL and SIGSTOP cannot be caught, blocked, or ignored."_ This is also mandated by POSIX.1-2017: _"SIGKILL: Kill (cannot be caught or ignored)."_
 
 ---
 
@@ -97,17 +97,17 @@ These are the three signals most relevant to server application lifecycle:
 | `SIGUSR2` |   12   |  Term   |    Yes    | User-defined signal. Available for application-specific purposes.                                            |
 | `SIGPIPE` |   13   |  Term   |    Yes    | Write to a pipe/socket with no reader. Node.js ignores `SIGPIPE` by default to prevent unexpected crashes.   |
 
-> **Source**: Signal numbers shown are for x86/ARM/most architectures. Numbers may differ on Alpha, SPARC, and MIPS — see the signal numbering table in `signal(7)`.
+> **Source**: Signal numbers shown are for x86/ARM/most architectures. Numbers may differ on Alpha, SPARC, and MIPS: see the signal numbering table in `signal(7)`.
 
 ---
 
 ## 5. Exit Codes
 
-When a process terminates, it returns an integer **exit code** (0–255) to the parent process. The convention is:
+When a process terminates, it returns an integer **exit code** (0-255) to the parent process. The convention is:
 
 | Exit Code | Meaning                                                                                                                         |
 | :-------: | :------------------------------------------------------------------------------------------------------------------------------ |
-|    `0`    | Success — clean exit.                                                                                                           |
+| `0` | Success: clean exit. |
 |    `1`    | General error / uncaught fatal exception (Node.js).                                                                             |
 |    `2`    | Reserved by Bash for builtin misuse.                                                                                            |
 | `128 + N` | Process was killed by signal `N`. For example: `128 + 9 = 137` (SIGKILL), `128 + 15 = 143` (SIGTERM), `128 + 2 = 130` (SIGINT). |
@@ -122,7 +122,7 @@ The `128 + N` convention is a POSIX standard practice. The Node.js documentation
 |   `143`   | SIGTERM (15) | Container received SIGTERM and exited (normal shutdown).                           |
 |   `130`   | SIGINT (2)   | Process interrupted by Ctrl+C.                                                     |
 
-> **Source**: Node.js documentation — [Exit Codes](https://nodejs.org/docs/latest/api/process.html#exit-codes). POSIX exit status conventions are defined in `waitpid(2)` and the Shell Command Language specification (§2.8.2).
+> **Source**: Node.js documentation: [Exit Codes](https://nodejs.org/docs/latest/api/process.html#exit-codes). POSIX exit status conventions are defined in `waitpid(2)` and the Shell Command Language specification (§2.8.2).
 
 ---
 
@@ -154,7 +154,7 @@ Understanding the signal lifecycle is critical for container deployments. Here i
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> **Source**: Kubernetes documentation — [Pod Termination](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination). Docker documentation — [`docker stop`](https://docs.docker.com/reference/cli/docker/container/stop/).
+> **Source**: Kubernetes documentation: [Pod Termination](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination). Docker documentation: [`docker stop`](https://docs.docker.com/reference/cli/docker/container/stop/).
 
 ---
 
@@ -162,7 +162,7 @@ Understanding the signal lifecycle is critical for container deployments. Here i
 
 This project implements graceful shutdown via NestJS lifecycle hooks. The shutdown flow is:
 
-### `main.ts` — Bootstrap
+### `main.ts`: Bootstrap
 
 ```typescript
 // Enable NestJS shutdown hooks (listens for SIGTERM/SIGINT)
@@ -179,13 +179,13 @@ When `enableShutdownHooks()` is active and a termination signal arrives, NestJS 
 | Service                      | Hook                      | Action                                                                                                   |
 | :--------------------------- | :------------------------ | :------------------------------------------------------------------------------------------------------- |
 | `WebsocketConnectionGateway` | `onApplicationShutdown()` | Disconnects all connected WebSocket clients via `server.disconnectSockets(true)`.                        |
-| `OrdersProcessor`            | `onApplicationShutdown()` | Calls `this.worker.close()` — stops polling for new checkout jobs, waits for in-flight jobs to complete. |
-| `NotificationsProcessor`     | `onApplicationShutdown()` | Calls `this.worker.close()` — stops polling for new notification jobs.                                   |
-| `PaymentEventsProcessor`     | `onApplicationShutdown()` | Calls `this.worker.close()` — stops polling for new payment event jobs.                                  |
-| `FlowProducerService`        | `onApplicationShutdown()` | Calls `flowProducer.close()` — closes the BullMQ flow producer connection.                               |
+| `OrdersProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new checkout jobs, waits for in-flight jobs to complete. |
+| `NotificationsProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new notification jobs. |
+| `PaymentEventsProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new payment event jobs. |
+| `FlowProducerService` | `onApplicationShutdown()` | Calls `flowProducer.close()`: closes the BullMQ flow producer connection. |
 | `QueueEventsService`         | `onApplicationShutdown()` | Closes all `QueueEvents` listener instances.                                                             |
-| `RedisService`               | `onApplicationShutdown()` | Calls `client.quit()` — sends the Redis `QUIT` command for a clean disconnect.                           |
-| `RedisIoAdapter`             | `server.on('close')`      | Calls `pubClient.quit()` and `subClient.quit()` — closes the Socket.IO Redis adapter connections.        |
+| `RedisService` | `onApplicationShutdown()` | Calls `client.quit()`: sends the Redis `QUIT` command for a clean disconnect. |
+| `RedisIoAdapter` | `server.on('close')` | Calls `pubClient.quit()` and `subClient.quit()`: closes the Socket.IO Redis adapter connections. |
 
 ---
 
@@ -204,10 +204,11 @@ When `enableShutdownHooks()` is active and a termination signal arrives, NestJS 
 
 |  #  | Source                                                                      | URL                                                                               |
 | :-: | :-------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-|  1  | `signal(7)` — Linux Programmer's Manual                                     | https://man7.org/linux/man-pages/man7/signal.7.html                               |
-|  2  | POSIX.1-2017 `<signal.h>` — The Open Group                                  | https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html           |
-|  3  | Node.js `process` — Signal Events                                           | https://nodejs.org/docs/latest/api/process.html#signal-events                     |
-|  4  | Node.js `process` — Exit Codes                                              | https://nodejs.org/docs/latest/api/process.html#exit-codes                        |
-|  5  | Kubernetes — Pod Lifecycle (Termination)                                    | https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination |
-|  6  | Docker — `docker stop` Reference                                            | https://docs.docker.com/reference/cli/docker/container/stop/                      |
-|  7  | Kerrisk, M. — _The Linux Programming Interface_ (2010), Ch. 20–22 (Signals) | ISBN 978-1-59327-220-3                                                            |
+| 1 | `signal(7)`: Linux Programmer's Manual | https://man7.org/linux/man-pages/man7/signal.7.html |
+| 2 | POSIX.1-2017 `<signal.h>`: The Open Group | https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html |
+| 3 | Node.js `process`: Signal Events | https://nodejs.org/docs/latest/api/process.html#signal-events |
+| 4 | Node.js `process`: Exit Codes | https://nodejs.org/docs/latest/api/process.html#exit-codes |
+| 5 | Kubernetes: Pod Lifecycle (Termination) | https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination |
+| 6 | Docker: `docker stop` Reference | https://docs.docker.com/reference/cli/docker/container/stop/ |
+| 7 | Kerrisk, M.: _The Linux Programming Interface_ (2010), Ch. 20-22 (Signals) | ISBN 978-1-59327-220-3 |
+

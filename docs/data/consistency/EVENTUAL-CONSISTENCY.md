@@ -8,14 +8,14 @@ A deep-dive into eventual consistency: formal convergence definitions, the hiera
 
 ## 1. Formal Definition
 
-> _Source: Vogels, W. (2009). "Eventually Consistent." Communications of the ACM, 52(1), pp. 40–44._
+> _Source: Vogels, W. (2009). "Eventually Consistent." Communications of the ACM, 52(1), pp. 40-44._
 
-**Eventual consistency** is a consistency model that guarantees that, if no new updates are made to a data item, all replicas of that item will **eventually** converge to the same value. It makes no guarantee about _when_ convergence will occur — only that it will.
+**Eventual consistency** is a consistency model that guarantees that, if no new updates are made to a data item, all replicas of that item will **eventually** converge to the same value. It makes no guarantee about _when_ convergence will occur: only that it will.
 
 **Formal statement**: For a data item x with replicas R₁, R₂, ..., Rₙ, if all writes to x cease at time t, then there exists a time t' > t such that for all i, j: Rᵢ(x) = Rⱼ(x). The interval [t, t'] is the **inconsistency window**.
 
 > _"The eventual consistency model says only that updates will eventually be reflected everywhere. It says nothing about the size of the window during which inconsistencies are visible."_
-> — Vogels, W. (2009)
+> Source: Vogels, W. (2009)
 
 ---
 
@@ -61,9 +61,9 @@ GET /orders (my orders)
 
 ### 2.2 Monotonic Reads
 
-**Guarantee**: If a client reads a value v at time t₁, any subsequent read by **the same client** at time t₂ > t₁ will return v or a newer value — never an older one. The client's view of the data never moves backward.
+**Guarantee**: If a client reads a value v at time t₁, any subsequent read by **the same client** at time t₂ > t₁ will return v or a newer value: never an older one. The client's view of the data never moves backward.
 
-**Why it matters**: Without monotonic reads, a client refreshing a page might see data "jump backward" — e.g., an order status that was `CONFIRMED` reverts to `PENDING` on the next page load because the second request hit a replica with higher lag than the first.
+**Why it matters**: Without monotonic reads, a client refreshing a page might see data "jump backward": e.g., an order status that was `CONFIRMED` reverts to `PENDING` on the next page load because the second request hit a replica with higher lag than the first.
 
 **Implementation**: Pin a client's reads to a specific replica for the duration of a session (session affinity). Alternatively, track the replica's replication offset and route to replicas that have caught up to at least that offset.
 
@@ -71,11 +71,11 @@ GET /orders (my orders)
 
 **Guarantee**: If operation A causally precedes operation B (A _happened before_ B), then every node observes A before B. Concurrent operations (no causal relationship) may be observed in any order.
 
-> _Source: Lamport, L. (1978). "Time, Clocks, and the Ordering of Events in a Distributed System." Communications of the ACM, 21(7), pp. 558–565._
+> _Source: Lamport, L. (1978). "Time, Clocks, and the Ordering of Events in a Distributed System." Communications of the ACM, 21(7), pp. 558-565._
 
 **Example**: In a comment thread, if User A posts a comment and User B replies to it, causal consistency guarantees that no reader sees the reply without seeing the original comment. However, two independent comments posted concurrently may appear in different orders on different nodes.
 
-**Implementation**: Requires tracking causal dependencies — typically via vector clocks, Lamport timestamps, or explicit happens-before metadata. This is expensive and uncommon in typical API backends. Most systems settle for read-after-write + monotonic reads as a pragmatic approximation.
+**Implementation**: Requires tracking causal dependencies: typically via vector clocks, Lamport timestamps, or explicit happens-before metadata. This is expensive and uncommon in typical API backends. Most systems settle for read-after-write + monotonic reads as a pragmatic approximation.
 
 ---
 
@@ -117,11 +117,11 @@ flowchart TD
 | **Event-driven invalidation** | A domain event (e.g., `product.updated`) triggers cache invalidation in subscribers.           | Event propagation latency (typically < 1 second)                         | Medium     |
 
 > _"There are only two hard things in Computer Science: cache invalidation and naming things."_
-> — Phil Karlton (attributed)
+> Source: Phil Karlton (attributed)
 
 ### 3.2 Read Replicas (Database Replication)
 
-PostgreSQL streaming replication introduces **replication lag** — the delay between a write committed on the primary and the same write becoming visible on a replica.
+PostgreSQL streaming replication introduces **replication lag**: the delay between a write committed on the primary and the same write becoming visible on a replica.
 
 ```mermaid
 sequenceDiagram
@@ -167,21 +167,21 @@ flowchart TD
     t0 --> t1 --> t2 --> t3
 ```
 
-This is **by design** — asynchronous processing trades immediate consistency for decoupled, resilient, scalable architectures. The [Saga pattern](SAGAS-AND-COMPENSATION.md) provides the framework for managing this type of distributed consistency.
+This is **by design**: asynchronous processing trades immediate consistency for decoupled, resilient, scalable architectures. The [Saga pattern](SAGAS-AND-COMPENSATION.md) provides the framework for managing this type of distributed consistency.
 
 ---
 
 ## 4. Conflict-Free Replicated Data Types (CRDTs)
 
-> _Source: Shapiro, M., Preguiça, N., Baquero, C., & Zawirski, M. (2011). "Conflict-Free Replicated Data Types." Proceedings of SSS 2011. Springer LNCS 6976, pp. 386–400._
+> _Source: Shapiro, M., Preguiça, N., Baquero, C., & Zawirski, M. (2011). "Conflict-Free Replicated Data Types." Proceedings of SSS 2011. Springer LNCS 6976, pp. 386-400._
 
 CRDTs are data structures that can be replicated across multiple nodes, updated independently and concurrently, and **guaranteed to converge** to the same state without any coordination or conflict resolution protocol.
 
 ### 4.1 How CRDTs Achieve Convergence
 
-CRDTs ensure convergence by constraining operations to be **commutative**, **associative**, and **idempotent** — meaning the order and duplication of operations does not affect the final result.
+CRDTs ensure convergence by constraining operations to be **commutative**, **associative**, and **idempotent**: meaning the order and duplication of operations does not affect the final result.
 
-**Example — G-Counter (Grow-only Counter)**:
+**Example: G-Counter (Grow-only Counter)**:
 
 ```
 Each node maintains its own counter. The merged value is the SUM of all nodes.
@@ -208,15 +208,15 @@ No matter WHAT ORDER the merges happen, the result is always 10.
 
 ### 4.3 Practical Relevance
 
-CRDTs are rarely used directly in typical API backends — they shine in peer-to-peer, offline-first, and geo-replicated systems (e.g., collaborative editors, distributed caches). However, understanding CRDTs provides theoretical grounding for:
+CRDTs are rarely used directly in typical API backends: they shine in peer-to-peer, offline-first, and geo-replicated systems (e.g., collaborative editors, distributed caches). However, understanding CRDTs provides theoretical grounding for:
 
 - Why "last-write-wins" is a valid (if lossy) conflict resolution strategy
 - How distributed counters (e.g., Redis `INCR` across replicas) can converge without locking
-- The mathematical foundation behind eventual consistency — convergence is not "hope"; it is a provable property of correctly designed data structures
+- The mathematical foundation behind eventual consistency: convergence is not "hope"; it is a provable property of correctly designed data structures
 
 ---
 
-## 5. Designing for Eventual Consistency — Practical Checklist
+## 5. Designing for Eventual Consistency: Practical Checklist
 
 When introducing eventual consistency into an API, verify each of these:
 
@@ -234,9 +234,10 @@ When introducing eventual consistency into an API, verify each of these:
 
 ## 6. References
 
-- Vogels, W. (2009). "Eventually Consistent." _Communications of the ACM_, 52(1), pp. 40–44.
-- Lamport, L. (1978). "Time, Clocks, and the Ordering of Events in a Distributed System." _Communications of the ACM_, 21(7), pp. 558–565.
-- Shapiro, M. et al. (2011). "Conflict-Free Replicated Data Types." _Proceedings of SSS 2011_. Springer LNCS 6976, pp. 386–400.
-- Terry, D. et al. (1994). "Session Guarantees for Weakly Consistent Replicated Data." _Proceedings of PDIS_, pp. 140–149. (Defines read-after-write, monotonic reads, monotonic writes, writes-follow-reads.)
+- Vogels, W. (2009). "Eventually Consistent." _Communications of the ACM_, 52(1), pp. 40-44.
+- Lamport, L. (1978). "Time, Clocks, and the Ordering of Events in a Distributed System." _Communications of the ACM_, 21(7), pp. 558-565.
+- Shapiro, M. et al. (2011). "Conflict-Free Replicated Data Types." _Proceedings of SSS 2011_. Springer LNCS 6976, pp. 386-400.
+- Terry, D. et al. (1994). "Session Guarantees for Weakly Consistent Replicated Data." _Proceedings of PDIS_, pp. 140-149. (Defines read-after-write, monotonic reads, monotonic writes, writes-follow-reads.)
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapters 5 and 9.
 - Bailis, P. & Ghodsi, A. (2013). "Eventual Consistency Today: Limitations, Extensions, and Beyond." _ACM Queue_, 11(3).
+

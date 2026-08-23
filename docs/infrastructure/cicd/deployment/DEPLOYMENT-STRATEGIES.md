@@ -1,4 +1,4 @@
-# Deployment Strategies — Topologies, GitOps & Configuration Management
+# Deployment Strategies: Topologies, GitOps & Configuration Management
 
 This document defines the architectures, strategies, and operational methodologies used to deploy software products securely, reliably, and with zero downtime. It covers deployment topologies, CD pipeline patterns, Infrastructure as Code (IaC), and production configuration principles.
 
@@ -13,7 +13,7 @@ Manual VM Copies ──▶ VM Images (Packer) ──▶ Container Orchestration 
   (SSH / FTP)         (Mutable Virtual)          (Immutable Containers)               (Continuous Reconciliation)
 ```
 
-In modern cloud-native architectures, the core requirement is **zero-downtime deployment** — the ability to release new software without interrupting active user traffic (Humble & Farley, 2010).
+In modern cloud-native architectures, the core requirement is **zero-downtime deployment**: the ability to release new software without interrupting active user traffic (Humble & Farley, 2010).
 
 ---
 
@@ -180,3 +180,4 @@ Secrets (passwords, private keys) must never be injected as plain text variables
 3. Richardson, C. (2018). _Microservices Patterns: With examples in Java_. Manning. ISBN 978-1617294549. (Expand/Contract database refactoring pattern).
 4. Morris, K. (2020). _Infrastructure as Code: Managing Servers in the Cloud_. O'Reilly. ISBN 978-1492080619.
 5. CNCF (Cloud Native Computing Foundation). (2023). _GitOps Principles_. https://github.com/open-gitops/project/blob/main/docs/principles.md
+

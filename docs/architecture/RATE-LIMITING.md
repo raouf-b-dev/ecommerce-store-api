@@ -1,4 +1,4 @@
-# Rate Limiting & Throttling — Strategy & Reference
+# Rate Limiting & Throttling: Strategy & Reference
 
 A comprehensive guide to API rate limiting and throttling for RESTful services. Covers the distinction between rate limiting and throttling, algorithm selection, tiered enforcement strategies, storage backends, response conventions, and common anti-patterns.
 
@@ -12,8 +12,8 @@ Rate limiting and throttling are often used interchangeably, but they describe d
 
 | Concept           | Definition                                                                                                                              | Analogy                                                         |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Rate Limiting** | Capping the total number of requests a client can make within a time window. After the limit is reached, further requests are rejected. | A nightclub with a maximum capacity — once full, no one enters. |
-| **Throttling**    | Slowing down or queuing requests that exceed a threshold, rather than outright rejecting them.                                          | A highway on-ramp meter — cars are paced, not turned away.      |
+| **Rate Limiting** | Capping the total number of requests a client can make within a time window. After the limit is reached, further requests are rejected. | A nightclub with a maximum capacity: once full, no one enters. |
+| **Throttling** | Slowing down or queuing requests that exceed a threshold, rather than outright rejecting them. | A highway on-ramp meter: cars are paced, not turned away. |
 | **Quota**         | A long-term limit (daily, monthly) on total API usage, typically enforced per subscription tier.                                        | A monthly data cap on a mobile plan.                            |
 
 In practice, most implementations use **rate limiting with hard rejection** (HTTP 429) rather than throttling with queuing. This document covers both but focuses on the more common rejection-based approach.
@@ -34,7 +34,7 @@ Rate limiting protects your system from several categories of abuse and failure:
 | **Cascading failure prevention** | Stops upstream overload from propagating to downstream services                 |
 
 > _"Rate limiting is a reliability pattern, not just a security pattern. It protects the system from itself as much as from external threats."_
-> — Betsy Beyer et al., _Site Reliability Engineering_ (O'Reilly, 2016)
+> Source: Betsy Beyer et al., _Site Reliability Engineering_ (O'Reilly, 2016)
 
 ---
 
@@ -45,13 +45,13 @@ Rate limiting protects your system from several categories of abuse and failure:
 Counts requests in fixed time intervals (e.g., per calendar minute). Resets at the boundary.
 
 ```text
-Window: [12:00:00 – 12:01:00]  →  87 requests  ✅ (limit: 100)
-Window: [12:01:00 – 12:02:00]  →  0 requests (counter reset)
+Window: [12:00:00 - 12:01:00] → 87 requests ✅ (limit: 100)
+Window: [12:01:00 - 12:02:00] → 0 requests (counter reset)
 ```
 
 | Pros                             | Cons                                                                                    |
 | -------------------------------- | --------------------------------------------------------------------------------------- |
-| Simple to implement              | **Burst at boundaries** — 100 requests at 12:00:59 + 100 at 12:01:00 = 200 in 2 seconds |
+| Simple to implement | **Burst at boundaries**: 100 requests at 12:00:59 + 100 at 12:01:00 = 200 in 2 seconds |
 | Low memory (one counter per key) | Unfair to clients who start mid-window                                                  |
 
 ### 3.2 Sliding Window Log
@@ -60,7 +60,7 @@ Records the timestamp of every request. Counts how many fall within the trailing
 
 | Pros                                | Cons                                     |
 | ----------------------------------- | ---------------------------------------- |
-| Precise — no boundary burst problem | **High memory** — stores every timestamp |
+| Precise: no boundary burst problem | **High memory**: stores every timestamp |
 | Fair across all clients             | Expensive to compute at high throughput  |
 
 ### 3.3 Sliding Window Counter (Recommended)
@@ -79,7 +79,7 @@ Estimated sliding count = 30 + (80 × 60%) = 30 + 48 = 78  ✅ (limit: 100)
 | ---------------------------------- | ---------------------------------------------------- |
 | Low memory (two counters per key)  | Slight approximation (acceptable for most use cases) |
 | No boundary burst problem          | Marginally more complex than fixed window            |
-| Used by Cloudflare, Stripe, GitHub | —                                                    |
+| Used by Cloudflare, Stripe, GitHub |: |
 
 ### 3.4 Token Bucket
 
@@ -129,16 +129,16 @@ Not all endpoints carry equal risk. A product listing endpoint can tolerate high
 
 | Tier                 | Typical Limit    | Applied To                                            | Rationale                                       |
 | -------------------- | ---------------- | ----------------------------------------------------- | ----------------------------------------------- |
-| **Global (default)** | 100–300 req/min  | All endpoints unless overridden                       | General protection against abuse                |
-| **Strict**           | 5–20 req/min     | Login, registration, password reset, token refresh    | Brute-force protection for credential endpoints |
-| **Relaxed**          | 500–1000 req/min | Public read-only endpoints (catalog, search)          | High-traffic, low-risk operations               |
-| **Critical**         | 1–5 req/min      | Password change, account deletion, payment submission | Irreversible or high-impact operations          |
+| **Global (default)** | 100-300 req/min | All endpoints unless overridden | General protection against abuse |
+| **Strict** | 5-20 req/min | Login, registration, password reset, token refresh | Brute-force protection for credential endpoints |
+| **Relaxed** | 500-1000 req/min | Public read-only endpoints (catalog, search) | High-traffic, low-risk operations |
+| **Critical** | 1-5 req/min | Password change, account deletion, payment submission | Irreversible or high-impact operations |
 | **Exempt**           | No limit         | Health checks, metrics, internal service-to-service   | Infrastructure probes must never be throttled   |
 
 ### 4.3 Implementation Pattern (NestJS)
 
 ```typescript
-// Global — applied automatically via APP_GUARD
+// Global: applied automatically via APP_GUARD
 ThrottlerModule.forRoot({
   throttlers: [
     { name: 'default', ttl: seconds(60), limit: 100 },
@@ -146,7 +146,7 @@ ThrottlerModule.forRoot({
   ],
 });
 
-// Per-endpoint override — stricter than global
+// Per-endpoint override: stricter than global
 @Throttle({
   default: { limit: 10, ttl: 60000 },
   strict:  { limit: 10, ttl: 60000 },
@@ -170,7 +170,7 @@ Stores counters in the application process memory.
 
 | Pros              | Cons                                                               |
 | ----------------- | ------------------------------------------------------------------ |
-| Zero dependencies | **Not shared across instances** — each replica has its own counter |
+| Zero dependencies | **Not shared across instances**: each replica has its own counter |
 | Lowest latency    | Lost on restart                                                    |
 
 **Use when**: Single-instance development/testing only.
@@ -183,7 +183,7 @@ Stores counters in a shared Redis instance.
 | --------------------------------------- | ----------------------------- |
 | Shared across all application instances | Adds a network hop (~1ms)     |
 | Survives application restarts           | Requires Redis infrastructure |
-| Atomic operations via `INCR` + `EXPIRE` | —                             |
+| Atomic operations via `INCR` + `EXPIRE` |: |
 
 **Use when**: Multi-instance production deployments, Kubernetes, auto-scaled environments.
 
@@ -192,7 +192,7 @@ Stores counters in a shared Redis instance.
 When using Redis as a throttler backend, the connection must be properly managed:
 
 ```typescript
-// ✅ CORRECT — managed client with lifecycle hooks
+// ✅ CORRECT: managed client with lifecycle hooks
 const client = new Redis({ host, port, password, db });
 client.on('error', (err) => Logger.error('Throttler Redis error', err));
 
@@ -201,7 +201,7 @@ await client.quit(); // graceful shutdown
 ```
 
 ```typescript
-// ❌ WRONG — inline, unmanaged client
+// ❌ WRONG: inline, unmanaged client
 storage: new ThrottlerStorageRedis(new Redis({ ... }))
 // No error handling, no graceful shutdown, connection leak on restart
 ```
@@ -363,10 +363,10 @@ Rate limiting generates valuable signals. Track these metrics:
 
 | Metric                                | What It Tells You                                                     |
 | ------------------------------------- | --------------------------------------------------------------------- |
-| `http_requests_throttled_total`       | Total 429 responses — trending up means abuse or misconfigured limits |
+| `http_requests_throttled_total` | Total 429 responses: trending up means abuse or misconfigured limits |
 | `http_requests_throttled_by_endpoint` | Which endpoints are most targeted                                     |
 | `http_requests_throttled_by_client`   | Which clients are hitting limits (potential abuse)                    |
-| `throttle_storage_latency_ms`         | Redis/storage health — high latency means rate limiting adds overhead |
+| `throttle_storage_latency_ms` | Redis/storage health: high latency means rate limiting adds overhead |
 
 Set alerts on:
 
@@ -382,8 +382,9 @@ Set alerts on:
 - Burns, Brendan. _Designing Distributed Systems: Patterns and Paradigms for Scalable, Reliable Services_. O'Reilly, 2018. ISBN 978-1491983645.
 - Richardson, Chris. _Microservices Patterns: With Examples in Java_. Manning, 2018. ISBN 978-1617294549.
 - Kleppmann, Martin. _Designing Data-Intensive Applications_. O'Reilly, 2017. ISBN 978-1449373320.
-- NestJS Documentation — [Rate Limiting](https://docs.nestjs.com/security/rate-limiting)
-- IETF RFC 6585 §4 — [429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4). Nottingham, M. & Fielding, R., April 2012.
-- IETF Draft — [RateLimit Header Fields for HTTP](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/). Polli, R. & Martinez, A.
-- Stripe API Documentation — [Rate Limiting](https://docs.stripe.com/rate-limits). (Industry reference for tiered rate limiting in production SaaS.)
-- Cloudflare Blog — [How We Built Rate Limiting](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/). (Real-world sliding window counter implementation.)
+- NestJS Documentation: [Rate Limiting](https://docs.nestjs.com/security/rate-limiting)
+- IETF RFC 6585 §4: [429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4). Nottingham, M. & Fielding, R., April 2012.
+- IETF Draft: [RateLimit Header Fields for HTTP](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/). Polli, R. & Martinez, A.
+- Stripe API Documentation: [Rate Limiting](https://docs.stripe.com/rate-limits). (Industry reference for tiered rate limiting in production SaaS.)
+- Cloudflare Blog: [How We Built Rate Limiting](https://blog.cloudflare.com/counting-things-a-lot-of-different-things/). (Real-world sliding window counter implementation.)
+

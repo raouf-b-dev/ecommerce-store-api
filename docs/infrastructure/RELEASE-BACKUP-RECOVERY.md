@@ -42,10 +42,10 @@ Passwords are passed via process env (`PGPASSWORD`), never interpolated into she
 
 ## 2. Backup security
 
-1. **Never commit dumps** — `backups/` is gitignored. Dumps contain PII and password hashes.
-2. **Host-mounted output** — write to the host `backups/` directory (default), not an ephemeral container filesystem.
-3. **Least privilege** — prefer a read-only backup role for scheduled dumps when you harden beyond the ship gate; scripts today use `DB_*` credentials.
-4. **Encryption / off-site** — not automated here; Phase 18.
+1. **Never commit dumps**: `backups/` is gitignored. Dumps contain PII and password hashes.
+2. **Host-mounted output**: write to the host `backups/` directory (default), not an ephemeral container filesystem.
+3. **Least privilege**: prefer a read-only backup role for scheduled dumps when you harden beyond the ship gate; scripts today use `DB_*` credentials.
+4. **Encryption / off-site**: not automated here; Phase 18.
 
 ---
 
@@ -97,7 +97,7 @@ Schema comes from the baseline TypeORM migration ([`src/migrations/*InitialBasel
 - [ ] Secrets present in `.env.production` (`npm run env:init:prod` / ops secret store).
 - [ ] Pending TypeORM migrations reviewed (`npm run migration:show:prod`).
 - [ ] Pre-release backup: `npm run db:backup`.
-- [ ] Current release answers `/health/liveness` and `/health/readiness` (Postgres required; Redis reported on `/health` — see [REDIS.md](REDIS.md)).
+- [ ] Current release answers `/health/liveness` and `/health/readiness` (Postgres required; Redis reported on `/health`: see [REDIS.md](REDIS.md)).
 
 ### 4.2 Single-instance Compose lifecycle
 
@@ -160,7 +160,7 @@ Entrypoint: [`scripts/smoke-test.js`](../../scripts/smoke-test.js) → helpers u
 
 - **Fail-fast**: first failure exits `1`.
 - **Base URL**: `--base-url=` or `SMOKE_TEST_BASE_URL` or `http://localhost:$PORT`.
-- Success means probes answered — not “production fully certified.”
+- Success means probes answered: not “production fully certified.”
 
 CI runs the same runner after `start:test` (see [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md)).
 
@@ -182,7 +182,7 @@ CI runs the same runner after `start:test` (see [PROJECT-PIPELINE.md](cicd/PROJE
 
 ```bash
 npm run db:backup
-# Custom output / retention (call node directly — reliable across npm versions):
+# Custom output / retention (call node directly: reliable across npm versions):
 node scripts/db-backup.js --output=backups/pre-release.dump --retain=14
 ```
 
@@ -223,6 +223,7 @@ npm run db:restore:drill
 
 ## 10. References
 
-1. PostgreSQL Backup and Restore — https://www.postgresql.org/docs/current/backup.html
-2. Twelve-Factor App (config / build-once) — https://12factor.net/
-3. OWASP Database Security Cheat Sheet — https://cheatsheetseries.owasp.org/
+1. PostgreSQL Backup and Restore: https://www.postgresql.org/docs/current/backup.html
+2. Twelve-Factor App (config / build-once): https://12factor.net/
+3. OWASP Database Security Cheat Sheet: https://cheatsheetseries.owasp.org/
+

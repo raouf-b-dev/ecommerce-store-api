@@ -1,4 +1,4 @@
-# CI/CD Pipeline Optimization — Caching, Speed & Testing Strategy
+# CI/CD Pipeline Optimization: Caching, Speed & Testing Strategy
 
 This document defines the principles and strategies for optimizing CI/CD pipelines. It focuses on reducing execution time, improving resource utilization, ensuring secure static analysis, and accelerating developer feedback loops. It is designed to be completely portable across technologies and frameworks.
 
@@ -6,7 +6,7 @@ This document defines the principles and strategies for optimizing CI/CD pipelin
 
 ## 1. The Economics of Pipeline Speed
 
-Pipeline speed directly governs **Change Lead Time** and **Feedback Loops** — two key indicators of software engineering health.
+Pipeline speed directly governs **Change Lead Time** and **Feedback Loops**: two key indicators of software engineering health.
 
 ### 1.1 Impact on Developer Velocity
 
@@ -86,7 +86,7 @@ Sharding is useful when execution time exceeds 5 minutes. The CI coordinator dis
 
 ### 3.2 State Isolation and the Database Bottleneck
 
-The primary bottleneck in test parallelization is **shared mutable state** — typically databases, filesystems, or caches.
+The primary bottleneck in test parallelization is **shared mutable state**: typically databases, filesystems, or caches.
 
 - **Unit Tests**: Must run with mocked external boundaries. Since they use no shared state, they can safely execute in parallel using maximum local CPU threads.
 - **Integration/E2E Tests**: If multiple tests write to the same database tables concurrently, they will cause non-deterministic failures (race conditions, foreign key conflicts).
@@ -166,3 +166,4 @@ Scanners search files and git history for accidentally committed credentials (AP
 3. Weinberg, G. M. (1998). _The Psychology of Computer Programming_. Dorset House Publishing. ISBN 978-0932633422. (Conceptual foundation of context switching costs).
 4. OWASP Foundation. (2023). _OWASP Top 10 CI/CD Security Risks_. https://owasp.org/www-project-top-10-ci-cd-security-risks/
 5. CNCF (Cloud Native Computing Foundation). (2022). _Software Supply Chain Best Practices_. https://github.com/cncf/tag-security-software-supply-chain-best-practices
+

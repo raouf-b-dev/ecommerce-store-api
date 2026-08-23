@@ -8,7 +8,7 @@ A deep-dive into idempotency as a correctness mechanism in APIs and distributed 
 
 ## 1. Formal Definition
 
-> _Source: HTTP/1.1 Semantics — RFC 9110 §9.2.2. Fielding, R. et al. (2022)._
+> _Source: HTTP/1.1 Semantics: RFC 9110 §9.2.2. Fielding, R. et al. (2022)._
 
 An operation is **idempotent** if executing it once produces the same result as executing it multiple times. Formally, for a function f:
 
@@ -50,7 +50,7 @@ Three failure modes:
 2. Response lost (server processed, client unaware) → Client retries → DUPLICATE!
 3. Timeout (client doesn't know which of 1 or 2) → Client retries → MAYBE DUPLICATE
 
-**The fundamental problem**: When a client receives a timeout or network error, it **cannot distinguish** between "the server never received my request" and "the server processed my request but the response was lost." The only safe action is to retry — but retrying a non-idempotent operation (e.g., `POST /checkout`) can cause **duplicate processing** (double charges, duplicate orders).
+**The fundamental problem**: When a client receives a timeout or network error, it **cannot distinguish** between "the server never received my request" and "the server processed my request but the response was lost." The only safe action is to retry: but retrying a non-idempotent operation (e.g., `POST /checkout`) can cause **duplicate processing** (double charges, duplicate orders).
 
 ### 2.2 Real-World Failure Scenarios
 
@@ -97,7 +97,7 @@ sequenceDiagram
 
 | Store                         | TTL                                         | Pros                                    | Cons                                                                |
 | :---------------------------- | :------------------------------------------ | :-------------------------------------- | :------------------------------------------------------------------ |
-| **Redis**                     | 24-72 hours                                 | Fast, atomic SETNX, natural TTL support | Volatile — lost on restart unless AOF/RDB persistence is configured |
+| **Redis** | 24-72 hours | Fast, atomic SETNX, natural TTL support | Volatile: lost on restart unless AOF/RDB persistence is configured |
 | **Database table**            | 24-72 hours (cleanup job)                   | Durable, survives restarts              | Slower, requires cleanup cron                                       |
 | **Hybrid** (Redis + database) | Redis for fast check, DB for durable record | Fast path + durable fallback            | More complex                                                        |
 
@@ -109,7 +109,7 @@ sequenceDiagram
 | **Key scope**                 | Per-operation + per-client                  | The key `550e...` belongs to client A's checkout attempt. Client B using the same key (collision) must be rejected.                                                                        |
 | **TTL**                       | 24-72 hours                                 | Long enough to cover retry windows and user sessions. Short enough to avoid unbounded storage growth.                                                                                      |
 | **What to store**             | The full HTTP response (status code + body) | On replay, the server returns the **exact same response**, making the retry indistinguishable from the original for the client.                                                            |
-| **What if the body differs?** | Return `422 Unprocessable Entity`           | If a client sends the same idempotency key with a different request body, this is a client error — they're trying to reuse a key for a different operation.                                |
+| **What if the body differs?** | Return `422 Unprocessable Entity` | If a client sends the same idempotency key with a different request body, this is a client error: they're trying to reuse a key for a different operation. |
 
 ---
 
@@ -146,13 +146,13 @@ sequenceDiagram
     Note over ReqB: Complete request without re-executing
 ```
 
-**Without the lock**: Both requests pass the "key not found" check and both execute the operation — defeating the purpose of idempotency. The lock ensures exactly-once execution.
+**Without the lock**: Both requests pass the "key not found" check and both execute the operation: defeating the purpose of idempotency. The lock ensures exactly-once execution.
 
 This is why idempotency implementations typically combine:
 
-1. **Redis SETNX** (distributed lock) — mutual exclusion for concurrent duplicates
-2. **Stored response** (idempotency store) — replay for sequential duplicates
-3. **Database transaction** — atomicity of the underlying operation
+1. **Redis SETNX** (distributed lock): mutual exclusion for concurrent duplicates
+2. **Stored response** (idempotency store): replay for sequential duplicates
+3. **Database transaction**: atomicity of the underlying operation
 
 ---
 
@@ -184,7 +184,7 @@ RETURNING *;
 
 ## 6. Idempotency in Asynchronous Job Processing
 
-Queue systems (BullMQ, SQS, Kafka) provide **at-least-once** delivery — a message may be delivered more than once. Every job processor must be idempotent.
+Queue systems (BullMQ, SQS, Kafka) provide **at-least-once** delivery: a message may be delivered more than once. Every job processor must be idempotent.
 
 ### 6.1 Strategies
 
@@ -197,7 +197,7 @@ Queue systems (BullMQ, SQS, Kafka) provide **at-least-once** delivery — a mess
 
 ### 6.2 The Transactional Outbox Pattern
 
-The outbox pattern solves the dual-write problem: "How do I atomically update the database AND publish an event?" Without it, the database write and the queue publish are two separate operations — if the process crashes between them, they become inconsistent.
+The outbox pattern solves the dual-write problem: "How do I atomically update the database AND publish an event?" Without it, the database write and the queue publish are two separate operations: if the process crashes between them, they become inconsistent.
 
 ```mermaid
 flowchart TD
@@ -227,7 +227,7 @@ flowchart TD
 
 | Anti-Pattern                                | Why It's Wrong                                                                                                | Fix                                                                         |
 | :------------------------------------------ | :------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------- |
-| **Server-generated idempotency key**        | The client doesn't have the key before the first request — it can't send it on retry.                         | Client generates the key (UUID) before the first request.                   |
+| **Server-generated idempotency key** | The client doesn't have the key before the first request: it can't send it on retry. | Client generates the key (UUID) before the first request. |
 | **No lock between check and execute**       | Two concurrent requests both pass the "key not found" check.                                                  | Acquire a distributed lock (Redis SETNX) on the key before checking.        |
 | **Idempotency key without TTL**             | Keys accumulate forever, consuming unbounded storage.                                                         | Set a TTL (24-72 hours) on stored keys.                                     |
 | **Idempotency key but no stored response**  | On replay, the server re-executes the operation (with side effects) instead of returning the cached response. | Store the full response on first execution; return it on replay.            |
@@ -239,8 +239,9 @@ flowchart TD
 ## 8. References
 
 - Fielding, R. et al. (2022). RFC 9110: _HTTP Semantics_. §9.2.2: Idempotent Methods.
-- Stripe (2023). "Idempotent Requests." https://stripe.com/docs/api/idempotent_requests — The industry reference implementation for API idempotency.
+- Stripe (2023). "Idempotent Requests." https://stripe.com/docs/api/idempotent_requests: The industry reference implementation for API idempotency.
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. §11.2: "Exactly-once semantics."
-- Helland, P. (2012). "Idempotence Is Not a Medical Condition." _Communications of the ACM_, 55(5), pp. 56–65.
+- Helland, P. (2012). "Idempotence Is Not a Medical Condition." _Communications of the ACM_, 55(5), pp. 56-65.
 - Hohpe, G. & Woolf, B. (2003). _Enterprise Integration Patterns_. Addison-Wesley. §10: "Idempotent Receiver."
-- Gu, R. et al. (2023). "Transactional Outbox Pattern in Event-Driven Architectures." _IEEE Access_, 11, pp. 22445–22456.
+- Gu, R. et al. (2023). "Transactional Outbox Pattern in Event-Driven Architectures." _IEEE Access_, 11, pp. 22445-22456.
+

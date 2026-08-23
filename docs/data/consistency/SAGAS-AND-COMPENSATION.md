@@ -6,27 +6,27 @@ A deep-dive into the Saga pattern for managing consistency across multi-step wor
 
 ---
 
-## 1. The Problem — Transactions That Span Boundaries
+## 1. The Problem: Transactions That Span Boundaries
 
-> _Source: Garcia-Molina, H. & Salem, K. (1987). "Sagas." Proceedings of ACM SIGMOD, pp. 249–259._
+> _Source: Garcia-Molina, H. & Salem, K. (1987). "Sagas." Proceedings of ACM SIGMOD, pp. 249-259._
 
-ACID transactions guarantee atomicity within a single database: either all changes commit or none do. But many business workflows span **multiple transactional boundaries** — different database tables owned by different bounded contexts, external API calls, or asynchronous queue operations.
+ACID transactions guarantee atomicity within a single database: either all changes commit or none do. But many business workflows span **multiple transactional boundaries**: different database tables owned by different bounded contexts, external API calls, or asynchronous queue operations.
 
-**Example — E-commerce checkout**:
+**Example: E-commerce checkout**:
 
 ```
-Step 1: Create Order         (Orders context — DB transaction)
-Step 2: Reserve Inventory    (Inventory context — DB transaction)
-Step 3: Capture Payment      (External payment provider — HTTP call)
-Step 4: Confirm Order        (Orders context — DB transaction)
-Step 5: Send Confirmation    (Notification service — async job)
+Step 1: Create Order (Orders context: DB transaction)
+Step 2: Reserve Inventory (Inventory context: DB transaction)
+Step 3: Capture Payment (External payment provider: HTTP call)
+Step 4: Confirm Order (Orders context: DB transaction)
+Step 5: Send Confirmation (Notification service: async job)
 ```
 
 A single ACID transaction **cannot** span all five steps because:
 
 - Steps 1, 2, and 4 may involve different aggregate roots (DDD boundary).
-- Step 3 is an external HTTP call — it cannot participate in a database transaction.
-- Step 5 is asynchronous — it must not block the checkout response.
+- Step 3 is an external HTTP call: it cannot participate in a database transaction.
+- Step 5 is asynchronous: it must not block the checkout response.
 - Holding a database transaction open across HTTP calls causes **connection starvation** (the connection is held idle for the duration of the external call).
 
 ---
@@ -46,7 +46,7 @@ Each Tᵢ is a LOCAL transaction (ACID within its own database).
 Each Cᵢ is a COMPENSATING transaction that semantically undoes Tᵢ.
 ```
 
-> **Key distinction**: Compensating transactions do not "roll back" in the database sense — they are **new forward transactions** that logically reverse the effect. For example, the compensation for "reserve inventory" is "release inventory," not a database `ROLLBACK`.
+> **Key distinction**: Compensating transactions do not "roll back" in the database sense: they are **new forward transactions** that logically reverse the effect. For example, the compensation for "reserve inventory" is "release inventory," not a database `ROLLBACK`.
 
 ### 2.1 Saga Guarantees
 
@@ -54,10 +54,10 @@ Each Cᵢ is a COMPENSATING transaction that semantically undoes Tᵢ.
 | :-------------- | :------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------ |
 | **Atomicity**   | All-or-nothing (database enforced)                                              | All-or-compensate (application enforced)                                                                |
 | **Consistency** | Database constraints guarantee valid end state                                  | Business logic in compensating transactions must restore a valid state                                  |
-| **Isolation**   | Other transactions see either the before or after state, never the intermediate | **No isolation** — intermediate states are visible to concurrent operations (the "dirty read" of sagas) |
+| **Isolation** | Other transactions see either the before or after state, never the intermediate | **No isolation**: intermediate states are visible to concurrent operations (the "dirty read" of sagas) |
 | **Durability**  | Committed changes survive crashes                                               | Each local transaction is durable individually                                                          |
 
-> **The isolation gap**: This is the most significant difference between ACID and sagas. During saga execution, other transactions can observe **partially completed** state — e.g., an order exists but inventory is not yet reserved. This requires careful handling. See §5 (Semantic Locks).
+> **The isolation gap**: This is the most significant difference between ACID and sagas. During saga execution, other transactions can observe **partially completed** state: e.g., an order exists but inventory is not yet reserved. This requires careful handling. See §5 (Semantic Locks).
 
 ---
 
@@ -65,7 +65,7 @@ Each Cᵢ is a COMPENSATING transaction that semantically undoes Tᵢ.
 
 ### 3.1 Choreography (Event-Driven)
 
-Each step publishes a domain event. The next step's service subscribes to that event and acts. There is no central coordinator — each service knows what event triggers its participation and what event it publishes on completion.
+Each step publishes a domain event. The next step's service subscribes to that event and acts. There is no central coordinator: each service knows what event triggers its participation and what event it publishes on completion.
 
 ```mermaid
 flowchart LR
@@ -84,10 +84,10 @@ flowchart LR
 
 | Advantage                                                              | Disadvantage                                                                                       |
 | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| Loose coupling — services know only about events, not about each other | **Difficult to understand** — the workflow is distributed across multiple services' event handlers |
-| No single point of failure (no coordinator)                            | **Hard to debug** — tracing a saga's progress requires correlating events across services          |
-| Natural fit for event-driven architectures                             | **Cyclic dependencies** — services may inadvertently create circular event chains                  |
-| Easy to add new steps (new subscriber)                                 | **No global view** — no single place shows the saga's current state                                |
+| Loose coupling: services know only about events, not about each other | **Difficult to understand**: the workflow is distributed across multiple services' event handlers |
+| No single point of failure (no coordinator) | **Hard to debug**: tracing a saga's progress requires correlating events across services |
+| Natural fit for event-driven architectures | **Cyclic dependencies**: services may inadvertently create circular event chains |
+| Easy to add new steps (new subscriber) | **No global view**: no single place shows the saga's current state |
 
 ### 3.2 Orchestration (Command-Driven)
 
@@ -111,10 +111,10 @@ flowchart TD
 
 | Advantage                                                                            | Disadvantage                                                     |
 | :----------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| **Easy to understand** — the entire workflow is in one place                         | Single point of failure (the orchestrator)                       |
-| **Easy to debug** — saga state is tracked centrally                                  | Tighter coupling — the orchestrator knows about all participants |
-| **Clear control flow** — sequential, conditional, parallel steps are straightforward | Risk of becoming a "god object" if not properly bounded          |
-| **Global view** — saga status is queryable                                           | Orchestrator must be durable (crash recovery)                    |
+| **Easy to understand**: the entire workflow is in one place | Single point of failure (the orchestrator) |
+| **Easy to debug**: saga state is tracked centrally | Tighter coupling: the orchestrator knows about all participants |
+| **Clear control flow**: sequential, conditional, parallel steps are straightforward | Risk of becoming a "god object" if not properly bounded |
+| **Global view**: saga status is queryable | Orchestrator must be durable (crash recovery) |
 
 ### 3.3 Choosing Between Choreography and Orchestration
 
@@ -148,7 +148,7 @@ flowchart TD
 | **Database write** (create order, reserve stock) | ✅ Yes                 | Write a compensating transaction (cancel order, release stock)                                                                              |
 | **Payment capture**                              | ✅ Yes (within window) | Issue a refund. Most payment providers support refunds for a limited window.                                                                |
 | **Email/SMS sent**                               | ❌ No                  | You cannot unsend a message. Strategy: delay sending until the saga completes, or send a follow-up correction.                              |
-| **External API call** (non-reversible)           | ❌ Possibly not        | Check if the external API supports cancellation. If not, the step is a **pivot point** — it must be placed as late as possible in the saga. |
+| **External API call** (non-reversible) | ❌ Possibly not | Check if the external API supports cancellation. If not, the step is a **pivot point**: it must be placed as late as possible in the saga. |
 
 ### 4.3 The Pivot Transaction
 
@@ -180,7 +180,7 @@ flowchart LR
 
 ---
 
-## 5. Semantic Locks — Mitigating the Isolation Gap
+## 5. Semantic Locks: Mitigating the Isolation Gap
 
 > _Source: Richardson, C. (2018). Microservices Patterns. Manning. §4.3.1: "Counter-measures for handling the lack of isolation."_
 
@@ -191,7 +191,7 @@ Since sagas lack the isolation property of ACID transactions, intermediate state
 -- Other operations check this status before acting:
 
 -- ❌ Prevents: admin cancelling an order mid-checkout
--- "Cannot cancel an order in PENDING_CHECKOUT state — a saga is in progress."
+-- "Cannot cancel an order in PENDING_CHECKOUT state: a saga is in progress."
 
 -- ❌ Prevents: customer modifying cart during checkout
 -- "Cart is locked for checkout. Please wait or start a new checkout."
@@ -210,10 +210,10 @@ Since sagas lack the isolation property of ACID transactions, intermediate state
 
 | Counter-Measure         | How It Works                                                                   | Example                                                                                        |
 | :---------------------- | :----------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **Semantic lock**       | Flag on the resource indicating saga-in-progress                               | `order.status = 'PENDING_CHECKOUT'` — other operations refuse to act                           |
+| **Semantic lock** | Flag on the resource indicating saga-in-progress | `order.status = 'PENDING_CHECKOUT'`: other operations refuse to act |
 | **Commutative updates** | Design updates to be order-independent                                         | `INCREMENT balance BY 10` commutes with `INCREMENT balance BY 5`                               |
 | **Pessimistic view**    | Re-read and re-validate data at each saga step                                 | Before capturing payment, re-check that the order still exists and inventory is still reserved |
-| **Reread value**        | Before writing, re-read the current value and abort if it changed unexpectedly | Version column check at each step — if the version changed, another saga interfered            |
+| **Reread value** | Before writing, re-read the current value and abort if it changed unexpectedly | Version column check at each step: if the version changed, another saga interfered |
 | **Version file**        | Maintain a record of saga steps completed, read by downstream steps            | Saga state table tracks which steps have completed                                             |
 
 ---
@@ -266,9 +266,10 @@ Each state transition is persisted to the database. On crash recovery, the orche
 
 ## 8. References
 
-- Garcia-Molina, H. & Salem, K. (1987). "Sagas." _Proceedings of ACM SIGMOD_, pp. 249–259. The foundational paper defining the Saga pattern.
+- Garcia-Molina, H. & Salem, K. (1987). "Sagas." _Proceedings of ACM SIGMOD_, pp. 249-259. The foundational paper defining the Saga pattern.
 - Richardson, C. (2018). _Microservices Patterns_. Manning. Chapter 4: "Managing Transactions with Sagas." The most practical modern treatment of sagas in service-oriented architectures.
 - Vernon, V. (2013). _Implementing Domain-Driven Design_. Addison-Wesley. Chapter 8: Long-running processes and domain events.
 - Hohpe, G. & Woolf, B. (2003). _Enterprise Integration Patterns_. Addison-Wesley. Process Manager pattern (§7).
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. §9.4: "Distributed Transactions and Consensus," §12.4: "Unbundling Databases."
 - Helland, P. (2007). "Life beyond Distributed Transactions: An Apostate's Opinion." _Proceedings of CIDR_. Argues that in large-scale systems, distributed transactions are impractical and sagas with idempotent operations are the pragmatic alternative.
+
