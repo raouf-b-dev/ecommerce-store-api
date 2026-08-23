@@ -14,10 +14,10 @@
 6. [Boot-Time Configuration Pipeline](#6-boot-time-configuration-pipeline)
 7. [The `generate-envs` Toolchain](#7-the-generate-envs-toolchain)
 8. [Environment Parity & Promotion](#8-environment-parity--promotion)
-9. [Build vs Runtime — The Separation Principle](#9-build-vs-runtime--the-separation-principle)
+9. [Build vs Runtime: The Separation Principle](#9-build-vs-runtime--the-separation-principle)
 10. [Secret Injection Patterns by Deployment Model](#10-secret-injection-patterns-by-deployment-model)
 11. [Key Rotation Procedures](#11-key-rotation-procedures) → canonical: [SECRET-ROTATION.md](SECRET-ROTATION.md)
-12. [Incident Response — Compromised Secrets](#12-incident-response--compromised-secrets)
+12. [Incident Response: Compromised Secrets](#12-incident-response--compromised-secrets)
 13. [Defence in Depth](#13-defence-in-depth)
 14. [Adding a New Environment Variable](#14-adding-a-new-environment-variable)
 15. [Developer Quick Start](#15-developer-quick-start)
@@ -30,18 +30,18 @@
 
 The secrets management strategy is built on five industry-standard principles. Every decision in this document traces back to one of them.
 
-### 1.1 — Store config in the environment (12-Factor App, Factor III)
+### 1.1: Store config in the environment (12-Factor App, Factor III)
 
-Configuration that varies between environments (credentials, hostnames, feature flags) must live **outside the codebase** — in environment variables, secret stores, or injected files. The application binary/image is identical across all environments; only the configuration changes.
+Configuration that varies between environments (credentials, hostnames, feature flags) must live **outside the codebase**: in environment variables, secret stores, or injected files. The application binary/image is identical across all environments; only the configuration changes.
 
 > _"An app's config is everything that is likely to vary between deploys. [...] The twelve-factor app stores config in environment variables."_
-> — [12factor.net/config](https://12factor.net/config)
+> Source: [12factor.net/config](https://12factor.net/config)
 >
 > See also: [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 
-### 1.2 — Strict separation of build, release, run (12-Factor App, Factor V)
+### 1.2: Strict separation of build, release, run (12-Factor App, Factor V)
 
-The **build stage** produces an executable artifact (e.g., `dist/`, Docker image). The **release stage** combines the build artifact with environment-specific configuration. The **run stage** executes the release. Secrets are injected at the release stage — they are never baked into the build artifact.
+The **build stage** produces an executable artifact (e.g., `dist/`, Docker image). The **release stage** combines the build artifact with environment-specific configuration. The **run stage** executes the release. Secrets are injected at the release stage: they are never baked into the build artifact.
 
 ```
 Build ──→ Immutable Artifact ──→ Release (artifact + config) ──→ Run
@@ -49,11 +49,11 @@ Build ──→ Immutable Artifact ──→ Release (artifact + config) ──�
                                  Secrets injected here
 ```
 
-### 1.3 — Principle of Least Privilege
+### 1.3: Principle of Least Privilege
 
 Each environment, service, and team member should have access only to the secrets they need. A developer's local database password should not grant access to production. CI/CD pipelines should have read-only access to secrets, not administrative access to the secret store.
 
-### 1.4 — Defence in Depth
+### 1.4: Defence in Depth
 
 No single control prevents all breaches. Layer multiple independent safeguards:
 
@@ -64,9 +64,9 @@ No single control prevents all breaches. Layer multiple independent safeguards:
 | **Mitigation** | Rotation, short-lived tokens       | Leaked secrets remain valid indefinitely     |
 | **Recovery**   | Incident response playbook         | Panic, ad-hoc responses, incomplete rotation |
 
-### 1.5 — Fail-Fast Validation
+### 1.5: Fail-Fast Validation
 
-Missing or malformed configuration should crash the application **immediately at startup** — not surface as a cryptic runtime error hours later under specific code paths. The API enforces this with `envalid` schema validation before any NestJS module loads.
+Missing or malformed configuration should crash the application **immediately at startup**: not surface as a cryptic runtime error hours later under specific code paths. The API enforces this with `envalid` schema validation before any NestJS module loads.
 
 ---
 
@@ -76,9 +76,9 @@ Not all environment variables carry equal risk. This project classifies every va
 
 | Tier   | Classification                                                                       | Examples                                                              | Storage                               | Rotation Frequency     | Leak Impact                                                          |
 | :----- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------------- | :------------------------------------ | :--------------------- | :------------------------------------------------------------------- |
-| **T1** | **Secrets** — Credentials that grant access to systems or can impersonate identities | `JWT_PRIVATE_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `METRICS_API_KEY` | Secrets manager, injected at runtime  | 90 days or on incident | **Critical** — full system compromise, data breach, identity forgery |
-| **T2** | **Sensitive Config** — Infrastructure details that reveal attack surface             | `DB_HOST`, `DB_PORT`, `REDIS_HOST`                                    | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium** — aids reconnaissance, enables targeted attacks           |
-| **T3** | **Non-Sensitive Config** — Behavioural settings with no security impact              | `NODE_ENV`, `PORT`, `JWT_ACCESS_TOKEN_TTL`, `REDIS_KEYPREFIX`         | `.env.<environment>`, can be in code  | Per environment        | **Low** — no direct security impact                                  |
+| **T1** | **Secrets**: Credentials that grant access to systems or can impersonate identities | `JWT_PRIVATE_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `METRICS_API_KEY` | Secrets manager, injected at runtime | 90 days or on incident | **Critical**: full system compromise, data breach, identity forgery |
+| **T2** | **Sensitive Config**: Infrastructure details that reveal attack surface | `DB_HOST`, `DB_PORT`, `REDIS_HOST` | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium**: aids reconnaissance, enables targeted attacks |
+| **T3** | **Non-Sensitive Config**: Behavioural settings with no security impact | `NODE_ENV`, `PORT`, `JWT_ACCESS_TOKEN_TTL`, `REDIS_KEYPREFIX` | `.env.<environment>`, can be in code | Per environment | **Low**: no direct security impact |
 
 > [!IMPORTANT]
 > The tier determines the **minimum acceptable storage mechanism**. A T1 secret must never be stored in a lower-security tier's mechanism (e.g., hardcoded in code, committed to git).
@@ -99,7 +99,7 @@ flowchart LR
     F -.->|"New secret"| A
 ```
 
-### 3.1 — Generation
+### 3.1: Generation
 
 Secrets must be generated with cryptographically secure randomness:
 
@@ -111,7 +111,7 @@ openssl rand -base64 32
 > [!CAUTION]
 > Never use human-created passwords (`dev1234`, `password123`, `admin`), dictionary words, or reuse secrets across environments. Each environment must have independently generated credentials.
 
-### 3.2 — Storage (at Rest)
+### 3.2: Storage (at Rest)
 
 | Method                                                        | Security Level | When to Use                           |
 | :------------------------------------------------------------ | :------------- | :------------------------------------ |
@@ -121,7 +121,7 @@ openssl rand -base64 32
 | External secrets manager (AWS SM, Vault, Azure KV)            | 🟢 High        | Production, compliance-sensitive      |
 | Hardware Security Module (HSM) / KMS                          | 🟢 Highest     | Signing keys, regulatory requirements |
 
-### 3.3 — Distribution (in Transit)
+### 3.3: Distribution (in Transit)
 
 How do secrets move from storage to the running application?
 
@@ -132,26 +132,26 @@ How do secrets move from storage to the running application?
 | Secret volume mount (K8s/Docker) | Mounted as read-only tmpfs file            | In-memory filesystem                 |
 | API fetch at boot                | App calls secrets manager before start     | Application memory only              |
 
-### 3.4 — Consumption (at Runtime)
+### 3.4: Consumption (at Runtime)
 
-The E-Commerce API consumes secrets exactly once — at application boot — via the configuration pipeline (see [Section 6](#6-boot-time-configuration-pipeline)). After validation and mapping, the raw `process.env` values are accessed only through the typed `EnvConfigService`. Secrets are never:
+The E-Commerce API consumes secrets exactly once: at application boot: via the configuration pipeline (see [Section 6](#6-boot-time-configuration-pipeline)). After validation and mapping, the raw `process.env` values are accessed only through the typed `EnvConfigService`. Secrets are never:
 
 - Logged (Structured logging must exclude secret fields)
 - Returned in API responses (Global exception filters must strip internal details in production)
 - Passed to third-party analytics or error tracking
 
-### 3.5 — Rotation
+### 3.5: Rotation
 
 See [SECRET-ROTATION.md](SECRET-ROTATION.md) for production procedures (canonical). The key principle: rotation must be **practised regularly**, not only during incidents. With the current single RSA key, JWT rotation requires a brief restart and forces re-login; dual-key JWKS overlap is a future enhancement.
 
-### 3.6 — Revocation
+### 3.6: Revocation
 
 When a secret is compromised or a team member departs:
 
-1. **Rotate immediately** — generate and deploy a new secret ([SECRET-ROTATION.md](SECRET-ROTATION.md))
-2. **Invalidate sessions** — rotating `JWT_PRIVATE_KEY` invalidates all RS256 JWTs (access, refresh, cart session); users must re-login
-3. **Audit access logs** — determine if the compromised secret was exploited
-4. **Update dependent systems** — any service that consumed the old secret must be updated
+1. **Rotate immediately**: generate and deploy a new secret ([SECRET-ROTATION.md](SECRET-ROTATION.md))
+2. **Invalidate sessions**: rotating `JWT_PRIVATE_KEY` invalidates all RS256 JWTs (access, refresh, cart session); users must re-login
+3. **Audit access logs**: determine if the compromised secret was exploited
+4. **Update dependent systems**: any service that consumed the old secret must be updated
 
 ---
 
@@ -207,19 +207,19 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 | Variable                  | Type     | Required | Default | Tier      | Description                                        |
 | :------------------------ | :------- | :------- | :------ | :-------- | :------------------------------------------------- |
-| `DB_HOST`                 | `string` | ✅       | —       | T2        | Database server hostname                           |
+| `DB_HOST` | `string` | ✅ |: | T2 | Database server hostname |
 | `DB_PORT`                 | `number` | ✅       | `5432`  | T2        | Database port                                      |
-| `DB_USERNAME`             | `string` | ✅       | —       | T2        | Database role name                                 |
-| `DB_PASSWORD`             | `string` | ✅       | —       | **T1** 🔑 | Database role password                             |
-| `DB_DATABASE`             | `string` | ✅       | —       | T3        | Database name                                      |
-| `POSTGRES_CONTAINER_NAME` | `string` | ✅       | —       | T3        | Compose / `docker exec` container name             |
-| `POSTGRES_IMAGE`          | `string` | ✅       | —       | T3        | Postgres image tag (Compose + dump/restore client) |
+| `DB_USERNAME` | `string` | ✅ |: | T2 | Database role name |
+| `DB_PASSWORD` | `string` | ✅ |: | **T1** 🔑 | Database role password |
+| `DB_DATABASE` | `string` | ✅ |: | T3 | Database name |
+| `POSTGRES_CONTAINER_NAME` | `string` | ✅ |: | T3 | Compose / `docker exec` container name |
+| `POSTGRES_IMAGE` | `string` | ✅ |: | T3 | Postgres image tag (Compose + dump/restore client) |
 
 ### Redis
 
 | Variable          | Type     | Required | Default | Tier      | Description           |
 | :---------------- | :------- | :------- | :------ | :-------- | :-------------------- |
-| `REDIS_HOST`      | `string` | ✅       | —       | T2        | Redis server hostname |
+| `REDIS_HOST` | `string` | ✅ |: | T2 | Redis server hostname |
 | `REDIS_PORT`      | `number` | ❌       | `6379`  | T2        | Redis server port     |
 | `REDIS_PASSWORD`  | `string` | ❌       | `""`    | **T1** 🔑 | Redis AUTH password   |
 | `REDIS_KEYPREFIX` | `string` | ❌       | `""`    | T3        | Key namespace prefix  |
@@ -229,7 +229,7 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 | Variable                | Type     | Required | Default | Tier      | Description                                |
 | :---------------------- | :------- | :------- | :------ | :-------- | :----------------------------------------- |
-| `JWT_PRIVATE_KEY`       | `string` | ✅       | —       | **T1** 🔑 | RSA PKCS#8 PEM private key (RS256 signing) |
+| `JWT_PRIVATE_KEY` | `string` | ✅ |: | **T1** 🔑 | RSA PKCS#8 PEM private key (RS256 signing) |
 | `JWT_ACCESS_TOKEN_TTL`  | `string` | ❌       | `15m`   | T3        | Access token lifetime (e.g. `15m`, `1h`)   |
 | `JWT_REFRESH_TOKEN_TTL` | `string` | ❌       | `7d`    | T3        | Refresh token lifetime                     |
 | `JWT_CART_SESSION_TTL`  | `string` | ❌       | `7d`    | T3        | Guest cart session token lifetime          |
@@ -245,7 +245,7 @@ flowchart TD
     Start["Process starts<br/><code>NODE_ENV=production node dist/main.js</code>"]
     --> L1
 
-    subgraph L1 ["Layer 1 — File / Output Loading"]
+ subgraph L1 ["Layer 1: File / Output Loading"]
         direction LR
         L1a["NestJS ConfigModule reads<br/><code>.env.&dollar;{NODE_ENV}</code> or inherited env variables"]
         L1b["Variables merged into<br/><code>process.env</code>"]
@@ -254,7 +254,7 @@ flowchart TD
 
     L1 --> L2
 
-    subgraph L2 ["Layer 2 — Schema Validation"]
+ subgraph L2 ["Layer 2: Schema Validation"]
         direction LR
         L2a["<code>envalid.cleanEnv()</code><br/>validates types, ranges, required fields"]
         L2b["❌ Missing/invalid → immediate crash<br/>with list of all violations"]
@@ -263,14 +263,14 @@ flowchart TD
 
     L2 --> L3
 
-    subgraph L3 ["Layer 3 — Typed Mapping"]
+ subgraph L3 ["Layer 3: Typed Mapping"]
         direction LR
         L3a["<code>configuration.ts</code><br/>maps flat env vars to nested<br/><code>IAppConfig</code> interface"]
     end
 
     L3 --> L4
 
-    subgraph L4 ["Layer 4 — Injectable Service"]
+ subgraph L4 ["Layer 4: Injectable Service"]
         direction LR
         L4a["<code>EnvConfigService</code><br/>global injectable with typed getters"]
         L4b["All modules consume config<br/>via dependency injection"]
@@ -278,7 +278,7 @@ flowchart TD
     end
 ```
 
-### Layer 1 — File Loading
+### Layer 1: File Loading
 
 ```typescript
 // src/app.module.ts
@@ -296,15 +296,15 @@ ConfigModule.forRoot({
 
 `NODE_ENV` determines which file is loaded. If the file does not exist (common in containerised deployments where env vars are injected directly), `envFilePath` resolves to `undefined` and `ConfigModule` gracefully skips file loading. On the host, `NODE_ENV` is typically set via `cross-env` in the npm script.
 
-### Layer 2 — Schema Validation
+### Layer 2: Schema Validation
 
 ```typescript
 // src/config/validate-env.ts
 export function validateEnv(env: NodeJS.ProcessEnv) {
   return cleanEnv(env, {
-    DB_HOST: str(), // required — crashes if absent
+ DB_HOST: str(), // required: crashes if absent
     REDIS_HOST: str(), // required
-    PORT: port({ default: 3000 }), // optional — falls back to default
+ PORT: port({ default: 3000 }), // optional: falls back to default
     NODE_ENV: str({
       choices: ['development', 'production', 'test', 'staging'],
     }),
@@ -315,13 +315,13 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
 `envalid` provides: type coercion (string → number/bool), required vs optional with defaults, enumerated choices, and an aggregated error report listing **all** violations at once.
 
-### Layer 3 — Typed Configuration Object
+### Layer 3: Typed Configuration Object
 
 Flat environment variables are mapped to a nested, domain-organised `IAppConfig` interface in `configuration.ts`. This provides IDE autocompletion and compile-time type safety.
 
-### Layer 4 — Injectable Config Service
+### Layer 4: Injectable Config Service
 
-`EnvConfigService` is exported from the `@Global()` `EnvConfigModule`, making it available across the entire application without per-module imports. All application code accesses configuration exclusively through this service — never through `process.env` directly.
+`EnvConfigService` is exported from the `@Global()` `EnvConfigModule`, making it available across the entire application without per-module imports. All application code accesses configuration exclusively through this service: never through `process.env` directly.
 
 > [!IMPORTANT]
 > **Direct `process.env` access is prohibited** in business logic, domain entities, use cases, and adapters. The only acceptable locations are `main.ts` (bootstrap), the config layer itself, and files managing logger/exception details dynamically.
@@ -358,8 +358,8 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 | :------------ | :----------------------------------------------- |
 | `development` | Copied from `.env.example` (safe local defaults) |
 | `test`        | Copied from `.env.example` (safe local defaults) |
-| `production`  | **Emptied** — must be explicitly set             |
-| `staging`     | **Emptied** — must be explicitly set             |
+| `production` | **Emptied**: must be explicitly set |
+| `staging` | **Emptied**: must be explicitly set |
 
 ---
 
@@ -409,7 +409,7 @@ flowchart LR
 
 ---
 
-## 9. Build vs Runtime — The Separation Principle
+## 9. Build vs Runtime: The Separation Principle
 
 This is the core architectural decision that determines how secrets reach production. The API follows the industry-standard pattern: **build once, deploy many**.
 
@@ -458,7 +458,7 @@ flowchart LR
 ### The Correct Pattern
 
 ```dockerfile
-# ✅ Correct Dockerfile — no secrets
+# ✅ Correct Dockerfile: no secrets
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
@@ -473,13 +473,13 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
 
-# No .env files copied — they are injected at runtime
+# No .env files copied: they are injected at runtime
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
 ```
 
 ```bash
-# Secrets injected at container start — never baked
+# Secrets injected at container start: never baked
 docker run -d \
   --env-file .env.production \
   -e JWT_PRIVATE_KEY="$(cat /run/secrets/jwt_private_key.pem)" \
@@ -492,7 +492,7 @@ docker run -d \
 
 This section describes **how secrets physically reach the running process** at each deployment maturity level. Choose the pattern that matches your current infrastructure.
 
-### Pattern A — Manual File Deployment (VPS / Bare Metal)
+### Pattern A: Manual File Deployment (VPS / Bare Metal)
 
 **Best for**: Solo developer, single server, early-stage product
 
@@ -523,7 +523,7 @@ ssh deploy@server "cd /opt/ecommerce-api && docker compose -f docker-compose.yam
 
 - File permissions: `chmod 600 .env.production` (owner read/write only)
 - File ownership: `chown apiuser:apiuser .env.production` (application user only)
-- Never store production env files on developer laptops permanently — transfer and delete
+- Never store production env files on developer laptops permanently: transfer and delete
 
 | ✅ Strengths                    | ❌ Weaknesses                                             |
 | :------------------------------ | :-------------------------------------------------------- |
@@ -534,7 +534,7 @@ ssh deploy@server "cd /opt/ecommerce-api && docker compose -f docker-compose.yam
 
 ---
 
-### Pattern B — CI/CD Secret Injection
+### Pattern B: CI/CD Secret Injection
 
 **Best for**: Team with automated deployments (GitHub Actions, GitLab CI, Bitbucket Pipelines)
 
@@ -607,7 +607,7 @@ jobs:
 
 ---
 
-### Pattern C — Container Orchestration Secrets
+### Pattern C: Container Orchestration Secrets
 
 **Best for**: Docker Swarm, Kubernetes, AWS ECS
 
@@ -621,7 +621,7 @@ services:
     env_file:
       - .env.production # T2/T3 config
     environment:
-      # T1 secrets override — can come from CI/CD or host env
+ # T1 secrets override: can come from CI/CD or host env
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
@@ -634,7 +634,7 @@ services:
 #### Kubernetes Secrets
 
 ```yaml
-# k8s/secrets.yaml — NEVER commit this file
+# k8s/secrets.yaml: NEVER commit this file
 apiVersion: v1
 kind: Secret
 metadata:
@@ -646,7 +646,7 @@ stringData:
   REDIS_PASSWORD: 'generated-redis-password'
   JWT_PRIVATE_KEY: |
     -----BEGIN PRIVATE KEY-----
-    (RSA-4096 PKCS#8 PEM — never commit real keys)
+ (RSA-4096 PKCS#8 PEM: never commit real keys)
     -----END PRIVATE KEY-----
   METRICS_API_KEY: 'generated-metrics-api-key-hex'
 ```
@@ -679,7 +679,7 @@ spec:
 
 ---
 
-### Pattern D — External Secrets Manager (Production-Grade)
+### Pattern D: External Secrets Manager (Production-Grade)
 
 **Best for**: Multi-service architecture, regulatory compliance, enterprise deployments
 
@@ -703,29 +703,29 @@ Summary:
 
 | Secret            | Frequency                             | Notes                                                          |
 | :---------------- | :------------------------------------ | :------------------------------------------------------------- |
-| `JWT_PRIVATE_KEY` | 90 days, or immediately on compromise | Single RS256 key today — restart + force re-login; see runbook |
+| `JWT_PRIVATE_KEY` | 90 days, or immediately on compromise | Single RS256 key today: restart + force re-login; see runbook |
 | `DB_PASSWORD`     | 90 days                               | Alter role → update env → restart API                          |
 | `REDIS_PASSWORD`  | 90 days                               | `CONFIG SET requirepass` → update env → restart API            |
 | `METRICS_API_KEY` | 90 days                               | Update env → restart → refresh scrapers                        |
 | **All secrets**   | **Immediately**                       | Staff departure, suspected breach, secret in logs/git          |
 
-Do not use the outdated HS256 / `JWT_SECRET` procedure — this project signs with `JWT_PRIVATE_KEY` (RS256).
+Do not use the outdated HS256 / `JWT_SECRET` procedure: this project signs with `JWT_PRIVATE_KEY` (RS256).
 
 ---
 
-## 12. Incident Response — Compromised Secrets
+## 12. Incident Response: Compromised Secrets
 
 If a secret has been (or may have been) exposed:
 
 ### Immediate Actions (First 30 Minutes)
 
-1. **Rotate the compromised secret** — follow [SECRET-ROTATION.md](SECRET-ROTATION.md). Generate a new value, deploy it, restart affected services.
-2. **Revoke active sessions** — if `JWT_PRIVATE_KEY` was compromised, rotate it; all RS256 JWTs (access, refresh, cart session) fail verification and users must re-login.
-3. **Assess scope** — determine which systems used the compromised credential and whether unauthorised access occurred.
+1. **Rotate the compromised secret**: follow [SECRET-ROTATION.md](SECRET-ROTATION.md). Generate a new value, deploy it, restart affected services.
+2. **Revoke active sessions**: if `JWT_PRIVATE_KEY` was compromised, rotate it; all RS256 JWTs (access, refresh, cart session) fail verification and users must re-login.
+3. **Assess scope**: determine which systems used the compromised credential and whether unauthorised access occurred.
 
 ### Follow-Up Actions (Next 24 Hours)
 
-4. **Audit access logs** — check database logs, Redis logs, and application logs for suspicious activity during the exposure window.
+4. **Audit access logs**: check database logs, Redis logs, and application logs for suspicious activity during the exposure window.
 5. **Remove from git history** (if committed):
    ```bash
    # Recommended: git-filter-repo (faster, safer than BFG)
@@ -733,14 +733,14 @@ If a secret has been (or may have been) exposed:
    git filter-repo --path .env.production --invert-paths
    git push --force --all
    ```
-6. **Notify stakeholders** — team members, security officer, and (if required by regulation) affected users.
-7. **Post-mortem** — document how the exposure happened and what preventive controls to add.
+6. **Notify stakeholders**: team members, security officer, and (if required by regulation) affected users.
+7. **Post-mortem**: document how the exposure happened and what preventive controls to add.
 
 ---
 
 ## 13. Defence in Depth
 
-### Layer 1 — Prevention
+### Layer 1: Prevention
 
 | Control                                 | Implementation                                       |
 | :-------------------------------------- | :--------------------------------------------------- |
@@ -748,7 +748,7 @@ If a secret has been (or may have been) exposed:
 | Generator produces empty prod values    | Prevents copy-paste of dev credentials to production |
 | Boot validation crashes on missing vars | Impossible to start with incomplete config           |
 
-### Layer 2 — Detection
+### Layer 2: Detection
 
 | Control                        | Implementation                                   |
 | :----------------------------- | :----------------------------------------------- |
@@ -756,14 +756,14 @@ If a secret has been (or may have been) exposed:
 | GitHub secret scanning         | Automatic detection of keys/passwords in pushes  |
 | GitLeaks / TruffleHog (CI job) | Scans entire repo history for secret patterns    |
 
-### Layer 3 — Mitigation
+### Layer 3: Mitigation
 
 | Control                   | Implementation                     |
 | :------------------------ | :--------------------------------- |
 | Short-lived access tokens | Limits window of token misuse      |
 | Environment isolation     | Unique credentials per environment |
 
-### Layer 4 — Recovery
+### Layer 4: Recovery
 
 | Control                                 | Implementation                                                                             |
 | :-------------------------------------- | :----------------------------------------------------------------------------------------- |
@@ -779,16 +779,16 @@ When a new feature requires configuration, follow this checklist to maintain con
 
 ### Checklist
 
-- [ ] **Step 1** — Add to `.env.example` with a dummy/placeholder value
-- [ ] **Step 2** — Add validation rule in `src/config/validate-env.ts`
-- [ ] **Step 3** — Add to `IAppConfig` interface and factory in `src/config/configuration.ts`
-- [ ] **Step 4** — Add typed getter(s) in `src/config/env-config.service.ts`
-- [ ] **Step 5** — Update `scripts/generate-envs.js` if the variable needs per-environment logic
-- [ ] **Step 6** — Regenerate local files: `npm run env:init -- --force`
-- [ ] **Step 7** — Add to the [Variables Reference](#5-environment-variables-reference) table in this document
+- [ ] **Step 1**: Add to `.env.example` with a dummy/placeholder value
+- [ ] **Step 2**: Add validation rule in `src/config/validate-env.ts`
+- [ ] **Step 3**: Add to `IAppConfig` interface and factory in `src/config/configuration.ts`
+- [ ] **Step 4**: Add typed getter(s) in `src/config/env-config.service.ts`
+- [ ] **Step 5**: Update `scripts/generate-envs.js` if the variable needs per-environment logic
+- [ ] **Step 6**: Regenerate local files: `npm run env:init -- --force`
+- [ ] **Step 7**: Add to the [Variables Reference](#5-environment-variables-reference) table in this document
 
 > [!IMPORTANT]
-> **All 7 steps are required.** Skipping any step creates drift. The fail-fast validation is your safety net — if you add a variable to `.env.example` but forget `validate-env.ts`, the app may start without it and fail at runtime instead of boot.
+> **All 7 steps are required.** Skipping any step creates drift. The fail-fast validation is your safety net: if you add a variable to `.env.example` but forget `validate-env.ts`, the app may start without it and fail at runtime instead of boot.
 
 ---
 
@@ -857,7 +857,7 @@ docker compose up   # ❌ Variables not interpolated securely for the app overri
 
 ### `env:init` skips existing files
 
-By design — prevents accidental overwrite. Use `--force`:
+By design: prevents accidental overwrite. Use `--force`:
 
 ```bash
 npm run env:init -- --force
@@ -870,3 +870,4 @@ The variable was added to `.env.example` but not to `validate-env.ts`. Without v
 ---
 
 _Last updated: April 2026_
+

@@ -23,7 +23,7 @@ This directory contains technical reference documents for data modeling, transac
 
 ## 3. Recommended Reading Order
 
-1. [DATABASE-DESIGN.md](DATABASE-DESIGN.md) — Relational schema design and data modeling.
-2. [TRANSACTIONS.md](TRANSACTIONS.md) — Transaction isolation policies and locking rules.
-3. [INDEXES.md](INDEXES.md) — Indexing policies and provisioned index inventory.
-4. [DATABASE-STANDARDS.md](DATABASE-STANDARDS.md) — Schema conventions and migration rules.
+1. [DATABASE-DESIGN.md](DATABASE-DESIGN.md): Relational schema design and data modeling.
+2. [TRANSACTIONS.md](TRANSACTIONS.md): Transaction isolation policies and locking rules.
+3. [INDEXES.md](INDEXES.md): Indexing policies and provisioned index inventory.
+4. [DATABASE-STANDARDS.md](DATABASE-STANDARDS.md): Schema conventions and migration rules.

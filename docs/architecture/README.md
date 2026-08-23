@@ -24,8 +24,8 @@ This directory contains system architecture context, domain design documents, co
 
 ## 3. Recommended Reading Order
 
-1. [ARCHITECTURE.md](ARCHITECTURE.md) — System context and bounded context map.
-2. [ENGINEERING-PRINCIPLES.md](ENGINEERING-PRINCIPLES.md) — Architectural principles and DDD rules.
-3. [ARCHITECTURAL-DECISION-RULES.md](ARCHITECTURAL-DECISION-RULES.md) — Meta-rules for system growth.
-4. [domains/INVENTORY.md](domains/INVENTORY.md) — Inventory domain architecture reference.
-5. [project-patterns/REPOSITORY-PATTERN.md](project-patterns/REPOSITORY-PATTERN.md) — Repository implementation conventions.
+1. [ARCHITECTURE.md](ARCHITECTURE.md): System context and bounded context map.
+2. [ENGINEERING-PRINCIPLES.md](ENGINEERING-PRINCIPLES.md): Architectural principles and DDD rules.
+3. [ARCHITECTURAL-DECISION-RULES.md](ARCHITECTURAL-DECISION-RULES.md): Meta-rules for system growth.
+4. [domains/INVENTORY.md](domains/INVENTORY.md): Inventory domain architecture reference.
+5. [project-patterns/REPOSITORY-PATTERN.md](project-patterns/REPOSITORY-PATTERN.md): Repository implementation conventions.

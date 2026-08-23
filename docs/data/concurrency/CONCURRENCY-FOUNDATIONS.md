@@ -1,4 +1,4 @@
-# Concurrency Control — Foundations
+# Concurrency Control: Foundations
 
 An introduction to the theory of database concurrency control: the anomalies that arise from uncoordinated concurrent access, the two fundamental strategies for preventing them, and a decision framework for choosing between them. This document serves as the hub for the concurrency deep-dive series.
 
@@ -23,9 +23,9 @@ An introduction to the theory of database concurrency control: the anomalies tha
 
 > _Source: Bernstein, P.A., Hadzilacos, V., & Goodman, N. (1987). Concurrency Control and Recovery in Database Systems. Addison-Wesley._
 
-A database system must serve multiple transactions simultaneously. Without coordination, concurrent transactions that read and write shared data can produce **anomalous results** — outcomes that are impossible under any sequential (serial) execution of those same transactions. The discipline of **concurrency control** exists to prevent these anomalies while maximising throughput.
+A database system must serve multiple transactions simultaneously. Without coordination, concurrent transactions that read and write shared data can produce **anomalous results**: outcomes that are impossible under any sequential (serial) execution of those same transactions. The discipline of **concurrency control** exists to prevent these anomalies while maximising throughput.
 
-**Formal definition**: A **schedule** is a sequence of interleaved read and write operations from multiple transactions. A schedule is **serialisable** if its effect on the database is equivalent to some serial execution of the same transactions — that is, as if the transactions had run one after another in some order, with no interleaving (Bernstein et al., 1987, §1.4).
+**Formal definition**: A **schedule** is a sequence of interleaved read and write operations from multiple transactions. A schedule is **serialisable** if its effect on the database is equivalent to some serial execution of the same transactions: that is, as if the transactions had run one after another in some order, with no interleaving (Bernstein et al., 1987, §1.4).
 
 ---
 
@@ -39,7 +39,7 @@ The ANSI SQL standard (ANSI, 1992) identifies three classical anomalies. Berenso
 | **Non-Repeatable Read** | P2 / Fuzzy Read             | T₁ reads a row, T₂ modifies and commits that row, T₁ re-reads and gets a different value.                                                                       | T₁ reads `price = 49.99`, T₂ updates `price = 59.99` and commits, T₁ reads `price = 59.99`. Order computed with inconsistent price. |
 | **Phantom Read**        | P3                          | T₁ executes a predicate query (e.g., `WHERE status = 'ACTIVE'`), T₂ inserts or deletes a matching row and commits, T₁ re-executes and sees a different row set. | T₁ counts active carts for rate limiting, T₂ creates a new cart, T₁ re-counts and gets a different number.                          |
 | **Lost Update**         | P4                          | T₁ and T₂ both read the same value, each computes a new value based on what they read, and each writes. The last write silently overwrites the first.           | Two admins both read `stock = 10`, each decrements by 1, both write `stock = 9`. One decrement is lost.                             |
-| **Write Skew**          | A5B                         | Two transactions each read a value that the other writes, producing a state that violates a constraint that neither transaction violated individually.          | Two doctors each check that at least one is on call, each removes themselves, both commit — no doctor is on call.                   |
+| **Write Skew** | A5B | Two transactions each read a value that the other writes, producing a state that violates a constraint that neither transaction violated individually. | Two doctors each check that at least one is on call, each removes themselves, both commit: no doctor is on call. |
 
 > **Note on the Lost Update**: The Lost Update is not explicitly named in ANSI SQL-92's isolation level definitions, but it is the most practically impactful anomaly in application development. Berenson et al. (1995) classify it as anomaly P4 and demonstrate that it can occur under `READ COMMITTED`. See [Optimistic Locking](OPTIMISTIC-LOCKING.md) §1 for a full worked example and solution.
 
@@ -77,11 +77,11 @@ flowchart TD
 | **Optimistic**  | Assume conflicts are rare; allow transactions to proceed without locks, then detect conflicts at commit time. | Low-contention resources where conflicts are rare and the cost of occasionally retrying is acceptable (e.g., user profile updates). | Retry cost: conflicting transactions must be re-executed. No blocking. |
 
 > _"Optimistic methods are superior when the probability of conflict is low; pessimistic methods are superior when conflicts are frequent and the cost of rollback is high."_
-> — Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." ACM Transactions on Database Systems, 6(2), pp. 213–226.
+> Source: Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." ACM Transactions on Database Systems, 6(2), pp. 213-226.
 
 ---
 
-## 4. Scope Spectrum — Where Concurrency Control Applies
+## 4. Scope Spectrum: Where Concurrency Control Applies
 
 Concurrency control is not a single-layer concern. Different mechanisms operate at different layers of the stack:
 
@@ -96,16 +96,16 @@ flowchart TD
     app --> fw --> db --> dist --> arch
 ```
 
-Each layer addresses a different failure mode. A well-designed system uses **multiple layers** — for example, a checkout flow might use:
+Each layer addresses a different failure mode. A well-designed system uses **multiple layers**: for example, a checkout flow might use:
 
-1. **Idempotency key** (application layer) — prevents duplicate checkout submissions
-2. **`SELECT ... FOR UPDATE`** (database layer) — prevents overselling inventory
-3. **Version column** (framework layer) — prevents lost updates on order edits
-4. **Saga compensation** (architectural layer) — handles cross-step failures in the checkout pipeline
+1. **Idempotency key** (application layer): prevents duplicate checkout submissions
+2. **`SELECT ... FOR UPDATE`** (database layer): prevents overselling inventory
+3. **Version column** (framework layer): prevents lost updates on order edits
+4. **Saga compensation** (architectural layer): handles cross-step failures in the checkout pipeline
 
 ---
 
-## 5. Decision Framework — Choosing a Strategy
+## 5. Decision Framework: Choosing a Strategy
 
 ### 5.1 Decision Matrix
 
@@ -122,12 +122,12 @@ Each layer addresses a different failure mode. A well-designed system uses **mul
 
 | Entity / Operation                                                  | Strategy                       | Rationale                                                                                                                                        |
 | :------------------------------------------------------------------ | :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Product** (catalog updates by admin)                              | Optimistic (version column)    | Low contention — few admins update products simultaneously.                                                                                      |
-| **User** (profile updates)                                          | Optimistic (version column)    | Very low contention — a user updates their own profile.                                                                                          |
+| **Product** (catalog updates by admin) | Optimistic (version column) | Low contention: few admins update products simultaneously. |
+| **User** (profile updates) | Optimistic (version column) | Very low contention: a user updates their own profile. |
 | **Order** (status transitions)                                      | Optimistic (version column)    | Status transitions are driven by the SAGA. Concurrent transitions indicate a system bug; `409 Conflict` serves as a safety net.                  |
 | **Cart** (item updates)                                             | Optimistic (version column)    | Carts are user-owned. Concurrent edits are rare (same user, multiple tabs).                                                                      |
 | **Inventory** (stock reservation)                                   | **Pessimistic** (`FOR UPDATE`) | High contention during flash sales. Cost of SAGA compensation on failure is high. Stock invariant (`stock >= 0`) must be enforced atomically.    |
-| **Inventory** (admin adjustment)                                    | Optimistic (version column)    | Low contention — admin operations are infrequent and can be retried.                                                                             |
+| **Inventory** (admin adjustment) | Optimistic (version column) | Low contention: admin operations are infrequent and can be retried. |
 | **Cross-process coordination** (cron deduplication, singleton jobs) | **Distributed lock** (Redis)   | Multiple application instances may attempt the same job. Database locks don't span processes. See [Distributed Locking](DISTRIBUTED-LOCKING.md). |
 
 ---
@@ -135,7 +135,8 @@ Each layer addresses a different failure mode. A well-designed system uses **mul
 ## 6. References
 
 - Bernstein, P.A., Hadzilacos, V., & Goodman, N. (1987). _Concurrency Control and Recovery in Database Systems_. Addison-Wesley.
-- Berenson, H., Bernstein, P., Gray, J., Melton, J., O'Neil, E., & O'Neil, P. (1995). "A Critique of ANSI SQL Isolation Levels." _Proceedings of ACM SIGMOD_, pp. 1–10.
-- Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." _ACM Transactions on Database Systems_, 6(2), pp. 213–226.
+- Berenson, H., Bernstein, P., Gray, J., Melton, J., O'Neil, E., & O'Neil, P. (1995). "A Critique of ANSI SQL Isolation Levels." _Proceedings of ACM SIGMOD_, pp. 1-10.
+- Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." _ACM Transactions on Database Systems_, 6(2), pp. 213-226.
 - Gray, J. & Reuter, A. (1992). _Transaction Processing: Concepts and Techniques_. Morgan Kaufmann.
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapter 7: "Transactions."
+

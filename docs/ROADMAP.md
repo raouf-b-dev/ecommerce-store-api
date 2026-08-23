@@ -1,4 +1,4 @@
-# 🗺️ E-Commerce Store API — Feature Roadmap
+# 🗺️ E-Commerce Store API: Feature Roadmap
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
 >
@@ -8,15 +8,15 @@
 
 ## How to Use This File
 
-- `[ ]` — Not started
-- `[/]` — In progress
-- `[x]` — Completed
+- `[ ]`: Not started
+- `[/]`: In progress
+- `[x]`: Completed
 - Open a new chat, reference this file, and pick the next unchecked task in top-to-bottom order.
 - Complete work sequentially by following the priority order below.
 
 ---
 
-## ✅ Completed Phases — Summary
+## ✅ Completed Phases: Summary
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
@@ -42,21 +42,21 @@
 
 ---
 
-## 📋 Pending Work — Execution Sequence
+## 📋 Pending Work: Execution Sequence
 
-> **Execution guide**: Pick tasks strictly in order from top to bottom. Do not deploy the first production release until **Phase 14 (Single-Instance Production Deploy Gate)** is completed. Complete **Phase 15** before scaling to multiple application instances.
+> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. Complete **Phase 15** before scaling to multiple application instances.
 
 | Phase  | Name                                              | Status | Target / Focus                                                                                    |
 | ------ | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
-| **10** | Security Hardening Phase 2                        | `[x]`  | **Security** — OWASP audit, Dependabot, user-scoped rate limits                                   |
-| **11** | Data Integrity & Concurrency                      | `[x]`  | **Data & Stock** — OCC version locking, inventory audit, cart TTL                                 |
-| **12** | CQRS Read Path                                    | `[x]`  | **Read Path** — flat read DTOs, cross-context SQL JOIN adapters across all modules                |
-| **13** | Production Confidence & Integration Testing       | `[x]`  | **Integration confidence** — real DB repos, concurrent checkout proof, E2E core flows             |
-| **14** | Single-Instance Production Gate                   | `[ ]`  | **First Production Ship** — baseline migration, Redis cleanup + degradation, probes, backup/smoke |
-| **15** | Multi-Instance & Distributed Consistency          | `[ ]`  | **Horizontal scale** — outbox, singleton jobs, SAGA recovery, search reconciliation               |
-| **16** | Performance Engineering                           | `[ ]`  | **Performance** — k6 baselines, V8 profiling, RED/USE Grafana alert rules                         |
-| **17** | Product Ecosystem & Integrations                  | `[ ]`  | **Features & Payments** — real email, cart recovery, webhooks, Stripe webhook dedup               |
-| **18** | Conditional Enterprise & Infrastructure Evolution | `[ ]`  | **When justified** — message broker, multi-tenancy, K8s, encrypted off-site backups               |
+| **10** | Security Hardening Phase 2 | `[x]` | **Security**: OWASP audit, Dependabot, user-scoped rate limits |
+| **11** | Data Integrity & Concurrency | `[x]` | **Data & Stock**: OCC version locking, inventory audit, cart TTL |
+| **12** | CQRS Read Path | `[x]` | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules |
+| **13** | Production Confidence & Integration Testing | `[x]` | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows |
+| **14** | Single-Instance Production Gate | `[x]` | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke |
+| **15** | Multi-Instance & Distributed Consistency | `[ ]` | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation |
+| **16** | Performance Engineering | `[ ]` | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules |
+| **17** | Product Ecosystem & Integrations | `[ ]` | **Features & Payments**: real email, cart recovery, webhooks, Stripe webhook dedup |
+| **18** | Conditional Enterprise & Infrastructure Evolution | `[ ]` | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups |
 
 ---
 
@@ -73,11 +73,11 @@
 | [x] Production error stack masking & PII log audit verified                                                                                         | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
 | [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                 | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
 | [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                    | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
-| [x] CQRS read path — query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query |
 
 | [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
-| [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance — not a later refactor |
+| [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance: not a later refactor |
 | [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL required; Redis via `/health`) |
 | [x] Backup, restore, rollback runbook & smoke test runner | **14** | `db:backup` / `db:restore` / `db:restore:drill` · `scripts/smoke/` · [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md) |
 | [x] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
@@ -88,14 +88,14 @@
 
 | Task / Item                                                                                         | Phase     | Critical Purpose                                                            |
 | --------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
-| [x] E2E core flow tests — auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes         | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes       |
+| [x] E2E core flow tests: auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Pre-deploy verification via `supertest`; not post-deploy smoke probes |
 | [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
-| [x] Checkout idempotency E2E — same key replay must not create a second checkout                    | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist           |
-| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2 — does not block first deploy                                   |
+| [x] Checkout idempotency E2E: same key replay must not create a second checkout | **13** | Proves `@Idempotent()` on checkout; do after HTTP contracts exist |
+| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs) | **13** | Optional P2: does not block first deploy |
 | [x] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy             |
 | [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                              |
 | [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)          |
-| [x] Concurrent checkout integration proof (pessimistic lock verification)                           | **13**    | Repository-level reservation proof — parallel saves against last stock unit |
+| [x] Concurrent checkout integration proof (pessimistic lock verification) | **13** | Repository-level reservation proof: parallel saves against last stock unit |
 
 ---
 
@@ -111,13 +111,13 @@
 
 ---
 
-## 🚀 Phase 14 — Single-Instance Production Deploy Gate
+## 🚀 Phase 14: Single-Instance Production Deploy Gate
 
-> **Goal**: Prove you can **operate** a single application instance without being reckless (migrations, Redis/proxy, backup/restore, secrets, smoke). This is the **first private production deployment gate**, not a claim that the API is a production-grade ecommerce platform. Phases 15–17 still contain major capabilities.
+> **Goal**: Prove you can **operate** a single application instance without being reckless (migrations, Redis/proxy, backup/restore, secrets, smoke). This is the **first private production deployment gate**, not a claim that the API is a production-grade ecommerce platform. Phases 15-17 still contain major capabilities.
 >
 > **Required for the ship gate:** baseline migration, Redis/proxy behavior, Redis infrastructure cleanup, backup/restore/rollback, secret rotation, smoke.
 >
-> **Optional (do not block first deploy):** Redis polish (post–ship gate); HTTP idempotency hardening; staging environment.
+> **Optional (do not block first deploy):** Redis polish (post-ship gate); HTTP idempotency hardening; staging environment.
 
 ---
 
@@ -137,7 +137,7 @@
 
 **Location**: `src/migrations/`, `scripts/docker-migrate.js`
 
-> **Existing local DBs** that already have tables from Nest `synchronize` (non-production): either reset the volume, or stamp the baseline as applied (`INSERT INTO typeorm_migrations ...`) after verifying the schema matches — do not re-run `InitialBaseline` against a populated synchronized schema.
+> **Existing local DBs** that already have tables from Nest `synchronize` (non-production): either reset the volume, or stamp the baseline as applied (`INSERT INTO typeorm_migrations ...`) after verifying the schema matches: do not re-run `InitialBaseline` against a populated synchronized schema.
 
 ---
 
@@ -147,7 +147,7 @@
 
 **Scope**:
 
-- [x] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop — verify client-IP and rate-limit behavior; do not assume `1` is always right.
+- [x] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop: verify client-IP and rate-limit behavior; do not assume `1` is always right.
 - [x] Harden central Redis client configuration with connection retry strategies and drop event handlers.
 - [x] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
 - [x] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → **fail-closed** (HTTP 503); session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops for cache paths.
@@ -158,7 +158,7 @@
 
 ### [x] Redis Infrastructure Cleanup (Ship Gate)
 
-**What**: Simplify the Redis stack so first production ships with one clear degradation model — not overlapping resilience layers that grew during Phase 14 hardening.
+**What**: Simplify the Redis stack so first production ships with one clear degradation model: not overlapping resilience layers that grew during Phase 14 hardening.
 
 > **Blocks the Phase 14 ship gate.** Behavior already degrades safely; this pass cleans structure so the production baseline is maintainable.
 
@@ -167,20 +167,20 @@
 - [x] Collapse Redis layering to a **connection/lifecycle owner** + **`CachePort` adapter**. Remove thin pass-through clients (`RedisJsonClient`, `RedisKeyClient`, and equivalents that only forward to `RedisService`) unless a real second implementation needs them.
 - [x] Remove `createHealthAwareProxy` from module DI. Cache-aside repositories always sit behind `CachePort`; when Redis is down, the adapter fails open to DB without a second DI switch.
 - [x] Keep **one** fail-open policy in the cache/Redis adapter (`isReady` + try/catch safe returns). Do not duplicate the same guards across `RedisService` methods, the Proxy, and every cached repository.
-- [x] Document Redis **roles** explicitly (cache-aside vs cart RedisJSON SoR vs idempotency locks vs throttler vs BullMQ vs Socket.IO pub/sub) in infrastructure docs or module README — different concerns, different failure modes.
+- [x] Document Redis **roles** explicitly (cache-aside vs cart RedisJSON SoR vs idempotency locks vs throttler vs BullMQ vs Socket.IO pub/sub) in infrastructure docs or module README: different concerns, different failure modes.
 - [x] Replace reconnect `SCAN` domain-key flush with **key-space versioning** (bump generation/prefix so stale keys expire naturally) or an equivalent cheap invalidation; keep index re-init on reconnect.
 - [x] Prefer **atomic JSON write + TTL** where the client API allows (avoid `json.set` then separate `expire` races).
 - [x] Type the Redis client (drop `client: any`).
-- [x] Centralize shared Redis connection options (host/port/password/db/reconnect). Separate library clients (`ioredis` throttler, BullMQ, Socket.IO) may remain, but must share config — do not invent a fourth ad-hoc connection setup.
+- [x] Centralize shared Redis connection options (host/port/password/db/reconnect). Separate library clients (`ioredis` throttler, BullMQ, Socket.IO) may remain, but must share config: do not invent a fourth ad-hoc connection setup.
 - [x] Update unit/integration specs and module factories after the DI simplification; keep existing per-concern degradation contracts (cache → DB, throttler → memory, idempotency → fail-closed).
 
 **Location**: `src/infrastructure/redis/`, `src/infrastructure/resilience/`, `src/modules/*/…module.ts`, `docs/infrastructure/REDIS.md`
 
 ---
 
-### [x] Redis Polish (Post–Ship Gate)
+### [x] Redis Polish (Post-Ship Gate)
 
-**What**: Close remaining Redis polish gaps after Infrastructure Cleanup — options/DI consistency, slimmer hexagonal ports, typed cache reads, keep `CacheService` as the port adapter (do not merge into `RedisService`), split oversized `RedisService` into helpers, and prove reconnect under load with Redis Stack Testcontainers.
+**What**: Close remaining Redis polish gaps after Infrastructure Cleanup: options/DI consistency, slimmer hexagonal ports, typed cache reads, keep `CacheService` as the port adapter (do not merge into `RedisService`), split oversized `RedisService` into helpers, and prove reconnect under load with Redis Stack Testcontainers.
 
 > **Does not block the Phase 14 ship gate.** Do this **after** [Redis Infrastructure Cleanup (Ship Gate)](#x-redis-infrastructure-cleanup-ship-gate). Separate TCP clients remain (library constraints); polish the shared options contract and docs, not a single-socket merge.
 
@@ -204,7 +204,7 @@
 
 - [x] Implement `ProcessHealthIndicator` measuring event loop lag and RSS memory limits.
 - [x] Implement `/health/liveness` returning process viability.
-- [x] Implement `/health/readiness` checking required dependencies (PostgreSQL only — Redis degradation is reported via `/health` and metrics).
+- [x] Implement `/health/readiness` checking required dependencies (PostgreSQL only: Redis degradation is reported via `/health` and metrics).
 - [x] Expose probes in HealthController; Dockerfile uses liveness, Compose prod uses readiness.
 - [ ] Update Swagger documentation for probe endpoints.
 
@@ -221,7 +221,7 @@
 - [x] Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
 - [x] Build a post-deploy smoke test runner (`smoke-test.js`) targeting liveness/readiness, `/metrics`, register/login, and authenticated profile access.
 - [x] Wire smoke runner into GitHub Actions CI (Postgres + Redis services, `dist` artifact, migrations).
-- [x] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/` — **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
+- [x] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/`: **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
 - [x] Keep smoke as process-alive probes only (no checkout SAGA, queues, or Stripe). That remains `npm run test:e2e`.
 - [x] Soften the success log so it does not claim “production deployment verified”; it verifies probes answered.
 - [x] Document comprehensive release, rollback, disaster recovery procedures in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
@@ -246,7 +246,7 @@
 
 ---
 
-### [x] HTTP Idempotency Hardening (Optional — P2)
+### [x] HTTP Idempotency Hardening (Optional: P2)
 
 > **Does not block the Phase 14 ship gate.** Do this **after** checkout idempotency E2E exists. Do **not** open a design/plan workstream. Current `@Idempotent()` + Redis `SET NX` is good enough to ship; this is a short implementation pass.
 
@@ -256,7 +256,7 @@
 
 - [x] Namespace Redis keys with authenticated `userId` + HTTP method + route (stop cross-user / cross-route key collisions).
 - [x] Accept `Idempotency-Key` as well as `x-idempotency-key` (body `idempotencyKey` remains fallback).
-- [x] If `SET NX` fails and `GET` misses (TTL race), retry as a new lock — do not 409.
+- [x] If `SET NX` fails and `GET` misses (TTL race), retry as a new lock: do not 409.
 - [x] If `complete()` cannot persist the cached body, fail the request (logged error); do not succeed HTTP and then allow a retry to create a second checkout.
 - [x] Optional: `Retry-After` on in-progress **409**.
 - [x] Align docs with the store: Redis `SET NX` (not Redlock); **fail-closed** on Redis errors (HTTP 503); interceptor covers the HTTP checkout command, not the worker chain (`FEATURES.md`, `OWASP-COMPLIANCE.md`, README).
@@ -282,9 +282,9 @@
 
 ---
 
-## 🛡️ Phase 15 — Multi-Instance & Distributed Consistency
+## 🛡️ Phase 15: Multi-Instance & Distributed Consistency
 
-> **Goal**: Prepare for multi-pod scaling behind a load balancer — distributed consistency for events, jobs, SAGA recovery, and derived search indexes. **Complete before deploying to 2+ application instances.**
+> **Goal**: Prepare for multi-pod scaling behind a load balancer: distributed consistency for events, jobs, SAGA recovery, and derived search indexes. **Complete before deploying to 2+ application instances.**
 
 ---
 
@@ -297,7 +297,7 @@
 - [ ] Create `outbox_events` table schema: `id`, `eventName`, `payload` (JSON), `status`, `retries`, `correlationId`, timestamps.
 - [ ] Ensure aggregate mutation and outbox record commit atomically in one DB transaction.
 - [ ] Implement outbox processor to claim pending rows (e.g. PostgreSQL `SKIP LOCKED`) and publish to subscribers.
-- [ ] Schedule/trigger processing (BullMQ or equivalent — implementation detail, not the guarantee).
+- [ ] Schedule/trigger processing (BullMQ or equivalent: implementation detail, not the guarantee).
 - [ ] Audit domain event listeners to ensure they are **idempotent**.
 
 **Location**: `src/infrastructure/events/outbox/`
@@ -344,7 +344,7 @@
 
 ---
 
-## 📈 Phase 16 — Performance Engineering & Observability Maturity
+## 📈 Phase 16: Performance Engineering & Observability Maturity
 
 > **Goal**: Define reliability metrics, establish automated performance test baselines, profile the runtime, and provision alert dashboards.
 
@@ -377,7 +377,7 @@
 
 **New documentation**:
 
-- [ ] `docs/infrastructure/PERFORMANCE-ENGINEERING.md` — Performance engineering guide covering k6, capacity planning, profiling, and caching.
+- [ ] `docs/infrastructure/PERFORMANCE-ENGINEERING.md`: Performance engineering guide covering k6, capacity planning, profiling, and caching.
 
 **Location**: `test/load/results/`, `docs/infrastructure/`
 
@@ -397,7 +397,7 @@
 
 ---
 
-## 📦 Phase 17 — Product Ecosystem, Webhooks & Real Integrations
+## 📦 Phase 17: Product Ecosystem, Webhooks & Real Integrations
 
 > **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, and production Stripe payments with webhook deduplication.
 
@@ -476,15 +476,15 @@
 
 ---
 
-## 🌐 Phase 18 — Conditional Enterprise & Infrastructure Evolution
+## 🌐 Phase 18: Conditional Enterprise & Infrastructure Evolution
 
-> **Goal**: Optional enterprise capabilities and infrastructure — only when product or operational requirements justify them. Message broker adapters build on Phase 15 outbox (outbox = durable handoff; broker = cross-process transport when needed).
+> **Goal**: Optional enterprise capabilities and infrastructure: only when product or operational requirements justify them. Message broker adapters build on Phase 15 outbox (outbox = durable handoff; broker = cross-process transport when needed).
 
 ---
 
 ### [ ] Message Broker Adapter (Kafka or RabbitMQ)
 
-**What**: Broker adapter for cross-process event streaming when the outbox processor needs external transport. Builds on Phase 15 transactional outbox — the outbox remains the durable handoff from DB writes; the broker is the transport layer when justified.
+**What**: Broker adapter for cross-process event streaming when the outbox processor needs external transport. Builds on Phase 15 transactional outbox: the outbox remains the durable handoff from DB writes; the broker is the transport layer when justified.
 
 **Trigger**: Implement only when cross-process throughput, independent consumer scaling, durability, or organizational boundaries require a dedicated broker.
 
@@ -548,20 +548,20 @@
 
 ## 🛠️ Engineering Platform & Tooling Backlog
 
-> Future tooling only — completed CI/CD and supply-chain work lives in Phases 10 and 12b.
+> Future tooling only: completed CI/CD and supply-chain work lives in Phases 10 and 12b.
 
-- [ ] **Dependency upgrade policy** — `docs/security/DEPENDENCY-UPGRADE-POLICY.md`.
-- [/] **Automated architecture linting** — extend `npm run test:arch` with dependency-cruiser and additional layer rules.
-- [ ] **Architecture drift detection** — verify module exports and layer dependencies against `docs/architecture/domains/`.
-- [ ] **Living architecture dependency graphs** — auto-generate directional dependency maps in CI.
-- [ ] **Module architecture scorecards** — per-bounded-context health metrics (entities, repos, events, tests).
-- [ ] **ADR validation in CI** — require linked ADR when core architectural policies change.
-- [ ] **Pin GitHub Actions to full commit SHAs** — replace mutable `@vN` tags in `.github/workflows/ci.yml` (and composite actions) with verified full-length SHAs + release-version comments. Dedicated hardening PR across all jobs — do not mix into feature work.
-- [ ] **Bounded CI job timeouts** — add `timeout-minutes` to long-running jobs (especially `redis-chaos-tests`, integration, e2e) so hung runners fail closed instead of burning minutes.
-- [ ] **Redis chaos: drop Jest `forceExit`** — after open-handle cleanup is proven (`detectOpenHandles`, quit/disconnect Testcontainers clients), remove `forceExit` from `test/integration/redis/jest-redis-chaos.json` so leaked Redis handles surface again.
-- [ ] **Modularize CONVENTIONS.md** — split when file exceeds ~500–700 lines.
-- [ ] **Property-based domain testing** — evaluate `fast-check` for value-object validation.
-- [ ] **Mutation testing** — evaluate Stryker on domain layer.
+- [ ] **Dependency upgrade policy**: `docs/security/DEPENDENCY-UPGRADE-POLICY.md`.
+- [/] **Automated architecture linting**: extend `npm run test:arch` with dependency-cruiser and additional layer rules.
+- [ ] **Architecture drift detection**: verify module exports and layer dependencies against `docs/architecture/domains/`.
+- [ ] **Living architecture dependency graphs**: auto-generate directional dependency maps in CI.
+- [ ] **Module architecture scorecards**: per-bounded-context health metrics (entities, repos, events, tests).
+- [ ] **ADR validation in CI**: require linked ADR when core architectural policies change.
+- [ ] **Pin GitHub Actions to full commit SHAs**: replace mutable `@vN` tags in `.github/workflows/ci.yml` (and composite actions) with verified full-length SHAs + release-version comments. Dedicated hardening PR across all jobs: do not mix into feature work.
+- [ ] **Bounded CI job timeouts**: add `timeout-minutes` to long-running jobs (especially `redis-chaos-tests`, integration, e2e) so hung runners fail closed instead of burning minutes.
+- [ ] **Redis chaos: drop Jest `forceExit`**: after open-handle cleanup is proven (`detectOpenHandles`, quit/disconnect Testcontainers clients), remove `forceExit` from `test/integration/redis/jest-redis-chaos.json` so leaked Redis handles surface again.
+- [ ] **Modularize CONVENTIONS.md**: split when file exceeds ~500-700 lines.
+- [ ] **Property-based domain testing**: evaluate `fast-check` for value-object validation.
+- [ ] **Mutation testing**: evaluate Stryker on domain layer.
 
 ---
 
@@ -577,3 +577,4 @@
 | Full Dual-Database CQRS     | CQRS Phase 2 (dedicated read methods, Phase 12) gives most performance benefit at fraction of complexity. Separate read/write DBs require eventual consistency and projection infrastructure. | Read traffic needs independent horizontal scaling from write traffic, or read latency SLOs cannot be met with a single database. |
 | gRPC Internal Communication | REST is sufficient for modular monolith. gRPC shines for inter-service communication with strict contracts and low latency.                                                                   | Microservice extraction happens and services need typed, low-latency internal APIs.                                              |
 | Redis Cluster / Sentinel    | Single Redis instance is sufficient until availability, memory, throughput, or failover requirements justify distributed Redis topology.                                                      | Redis becomes a production availability bottleneck or exceeds single-instance capacity.                                          |
+

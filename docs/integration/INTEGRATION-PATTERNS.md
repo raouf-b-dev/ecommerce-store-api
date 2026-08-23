@@ -1,46 +1,46 @@
-# Integration Patterns — Cross-Context Communication Reference
+# Integration Patterns: Cross-Context Communication Reference
 
-A comprehensive reference covering the canonical integration patterns for communicating between Bounded Contexts in DDD-based systems. Each pattern is grounded in Domain-Driven Design and Hexagonal Architecture, with guidance on when to use it and how it adapts when migrating from a modular monolith to microservices.
+Canonical patterns for communicating between bounded contexts in DDD and hexagonal systems: when to use each pattern, and how it changes if you extract a modular monolith into services.
 
-> _This document is designed to be consumed by any engineering team. It is not tied to a specific project or codebase._
+> Project examples below refer to this repository. The decision rules apply more broadly.
 
 ---
 
 ## Quick Decision Matrix
 
-| Scenario                                          | Pattern                    | Direction                     | Coupling       |
+| Scenario | Pattern | Direction | Coupling |
 | ------------------------------------------------- | -------------------------- | ----------------------------- | -------------- |
-| Defer my own module's work (retry, cron, batch)   | **Job Scheduler**          | Self → Self                   | None           |
-| Query data from another context                   | **ACL Gateway**            | Downstream → Upstream         | Unidirectional |
-| Command another context and wait for result       | **ACL Gateway**            | Downstream → Upstream         | Unidirectional |
-| Something happened here, others may need to react | **Domain Events**          | Publisher → Bus → Subscribers | None           |
-| Multi-step workflow across contexts with rollback | **Saga / Process Manager** | Orchestrator → Participants   | Orchestrated   |
-| Guarantee event delivery after DB commit          | **Transactional Outbox**   | Publisher → Outbox → Bus      | None           |
+| Defer my own module's work (retry, cron, batch) | **Job Scheduler** | Self → Self | None |
+| Query data from another context | **ACL Gateway** | Downstream → Upstream | Unidirectional |
+| Command another context and wait for result | **ACL Gateway** | Downstream → Upstream | Unidirectional |
+| Something happened here, others may need to react | **Domain Events** | Publisher → Bus → Subscribers | None |
+| Multi-step workflow across contexts with rollback | **Saga / Process Manager** | Orchestrator → Participants | Orchestrated |
+| Guarantee event delivery after DB commit | **Transactional Outbox** | Publisher → Outbox → Bus | None |
 
 ### The Litmus Test
 
 ```
 1. Is the work within the SAME Bounded Context?
-   └─ YES → Job Scheduler
-   └─ NO  → Continue ↓
+ └─ YES → Job Scheduler
+ └─ NO → Continue ↓
 
 2. Does the caller NEED a response?
-   └─ YES → ACL Gateway
-   └─ NO  → Continue ↓
+ └─ YES → ACL Gateway
+ └─ NO → Continue ↓
 
 3. Is it a single fire-and-forget reaction?
-   └─ YES → Domain Events
-   └─ NO  → Continue ↓
+ └─ YES → Domain Events
+ └─ NO → Continue ↓
 
 4. Is it a multi-step workflow requiring compensation?
-   └─ YES → Saga / Process Manager
+ └─ YES → Saga / Process Manager
 ```
 
 ---
 
 ## Pattern 1: Job Scheduler
 
-> **Purpose**: Defer a module's **own work** to run later — cron jobs, retries, batch processing.
+> **Purpose**: Defer a module's **own work** to run later: cron jobs, retries, batch processing.
 
 The Job Scheduler is an **infrastructure concern**, not a DDD tactical pattern. In Hexagonal Architecture, the queue producer is a **secondary adapter** and the job handler is a **primary adapter** that drives the application core.
 
@@ -56,20 +56,20 @@ The Job Scheduler is an **infrastructure concern**, not a DDD tactical pattern. 
 
 ```
 ┌─────────────── MODULE A ───────────────────────────┐
-│                                                     │
-│  Application Core                                   │
-│  ├── UseCase → SchedulerPort.scheduleX()            │
-│  └── ports/module-a.scheduler.ts (abstract class)   │
-│                                                     │
-│  Secondary Adapter (producer)                       │
-│  └── schedulers/bullmq.module-a-scheduler.ts        │
-│      └── moduleAQueue.add(JOB_NAME, payload)        │
-│                                                     │
-│  Primary Adapter (consumer)                         │
-│  ├── module-a.processor.ts (WorkerHost router)      │
-│  └── jobs/my-job.process.ts (BaseJobHandler)        │
-│      └── calls UseCase.execute()                    │
-│                                                     │
+│ │
+│ Application Core │
+│ ├── UseCase → SchedulerPort.scheduleX() │
+│ └── ports/module-a.scheduler.ts (abstract class) │
+│ │
+│ Secondary Adapter (producer) │
+│ └── schedulers/bullmq.module-a-scheduler.ts │
+│ └── moduleAQueue.add(JOB_NAME, payload) │
+│ │
+│ Primary Adapter (consumer) │
+│ ├── module-a.processor.ts (WorkerHost router) │
+│ └── jobs/my-job.process.ts (BaseJobHandler) │
+│ └── calls UseCase.execute() │
+│ │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -80,95 +80,95 @@ BullMQ queues for checkout SAGA steps and notification delivery (save → send �
 ```typescript
 // Port: notifications/core/application/ports/notification.scheduler.ts
 export abstract class NotificationScheduler {
-  abstract scheduleNotification(
-    notification: Notification,
-  ): Promise<Result<{ jobIds: string[] }, InfrastructureError>>;
+ abstract scheduleNotification(
+ notification: Notification,
+ ): Promise<Result<{ jobIds: string[] }, InfrastructureError>>;
 }
 
 // Adapter: notifications/secondary-adapters/schedulers/bullmq.notification-scheduler.ts
 @Injectable()
 export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
-  constructor(@InjectQueue('notifications') private queue: Queue) {}
+ constructor(@InjectQueue('notifications') private queue: Queue) {}
 
-  async scheduleNotification(notification: Notification) {
-    // Uses FlowProducer for ordered save → send → update chain
-    const job = await this.flowProducer.add(/*...*/);
-    return Result.success({ jobIds: [job.job.id] });
-  }
+ async scheduleNotification(notification: Notification) {
+ // Uses FlowProducer for ordered save → send → update chain
+ const job = await this.flowProducer.add(/*...*/);
+ return Result.success({ jobIds: [job.job.id] });
+ }
 }
 ```
 
 ### Microservice Migration
 
-| Monolith                                | Microservice                         |
+| Monolith | Microservice |
 | --------------------------------------- | ------------------------------------ |
-| BullMQ queue (Redis-backed)             | Same BullMQ or AWS SQS / Cloud Tasks |
-| Queue registered in NestJS module       | Queue internal to the service        |
-| **No change needed** — already isolated | ✅                                   |
+| BullMQ queue (Redis-backed) | Same BullMQ or AWS SQS / Cloud Tasks |
+| Queue registered in NestJS module | Queue internal to the service |
+| **No change needed**: already isolated | ✅ |
 
 ---
 
 ## Pattern 2: ACL Gateway (Anti-Corruption Layer)
 
-> **Purpose**: Request something **from another context** — query data or command an action — while translating between domain models to prevent leakage.
+> **Purpose**: Request something **from another context**: query data or command an action: while translating between domain models to prevent leakage.
 
 > _"Create an isolating layer to provide clients with functionality in terms of their own domain model."_
-> — Evans, _Domain-Driven Design_ (2003), Ch. 14
+> Source: Evans, _Domain-Driven Design_ (2003), Ch. 14
 
 ### When to Use
 
 - ✅ Downstream context needs **data from** upstream (synchronous query)
 - ✅ Downstream context needs to **command** upstream and **wait for the result**
 - ✅ Models differ between contexts and need **translation**
-- ❌ **NEVER** bidirectional — if you need A→B _and_ B→A, your context boundaries are wrong
+- ❌ **NEVER** bidirectional: if you need A→B _and_ B→A, your context boundaries are wrong
 - ❌ **NEVER** for fire-and-forget side effects (use Domain Events)
 
 ### Architecture
 
 ```
-┌─── DOWNSTREAM (Orders) ──────────────┐     ┌─── UPSTREAM (Access) ──────┐
-│                                       │     │                            │
-│  CheckoutUseCase                      │     │  GetUserUseCase            │
-│  └── userGateway.validateUser()       │     │         ▲                  │
-│                                       │     │         │                  │
-│  Port (application layer)             │     │         │                  │
-│  └── ports/user.gateway.ts            │     │         │                  │
-│      (defines CheckoutUserInfoResult) │     │         │                  │
-│                                       │     │         │                  │
-│  ACL Adapter (secondary adapter)      │     │         │                  │
-│  └── gateways/user-gateway ───────────┼────►│    (direct call in        │
-│      (translates User → DTO)          │     │     monolith, HTTP in     │
-│                                       │     │     microservices)         │
-└───────────────────────────────────────┘     └────────────────────────────┘
+┌─── DOWNSTREAM (Orders) ──────────────┐ ┌─── UPSTREAM (Access) ──────┐
+│ │ │ │
+│ CheckoutUseCase │ │ GetUserUseCase │
+│ └── userGateway.validateUser() │ │ ▲ │
+│ │ │ │ │
+│ Port (application layer) │ │ │ │
+│ └── ports/user.gateway.ts │ │ │ │
+│ (defines CheckoutUserInfoResult) │ │ │ │
+│ │ │ │ │
+│ ACL Adapter (secondary adapter) │ │ │ │
+│ └── gateways/user-gateway ───────────┼────►│ (direct call in │
+│ (translates User → DTO) │ │ monolith, HTTP in │
+│ │ │ microservices) │
+└───────────────────────────────────────┘ └────────────────────────────┘
 ```
 
 ### Critical Rules
 
-1. **Unidirectional only** — Downstream calls upstream. Bidirectional = DDD anti-pattern.
-2. **Port defines downstream DTOs** — The port never exposes upstream entities.
-3. **Only ACL adapters import upstream code** — The application core sees only its own gateway port.
-4. **Adapter injects upstream Use Cases** (not Repositories) — Preserves upstream invariants.
+1. **Unidirectional only**: Downstream calls upstream. Bidirectional = DDD anti-pattern.
+2. **Port defines downstream DTOs**: The port never exposes upstream entities.
+3. **Only ACL adapters import upstream code**: The application core sees only its own gateway port.
+4. **Adapter injects upstream Use Cases** (not Repositories): Preserves upstream invariants.
 
-### Example Implementation (E-Commerce — 7 Gateways)
+### Example Implementation (E-Commerce: 7 Gateways)
 
-| Gateway                       | Downstream → Upstream          | What It Wraps                          |
+| Gateway | Downstream → Upstream | What It Wraps |
 | ----------------------------- | ------------------------------ | -------------------------------------- |
-| `UserGateway`                 | Orders → Identity              | User validation and details lookup     |
-| `CartGateway`                 | Orders → Carts                 | Cart retrieval and clearing            |
-| `InventoryReservationGateway` | Orders → Inventory             | Stock reservation/release/confirmation |
-| `PaymentGateway`              | Orders → Payments              | Payment processing                     |
-| `ProductGateway`              | Carts → Products               | Product validation for cart items      |
-| `InventoryGateway`            | Carts → Inventory              | Stock availability checks              |
-| `IdentityGateway`             | Authentication → Identity      | User identity lookup and user creation |
-| `AuthorizationGateway`        | Authentication → Authorization | Role resolution and role assignment    |
+| `UserGateway` | Orders → Identity | User validation and details lookup |
+| `CartGateway` | Orders → Carts | Cart retrieval and clearing |
+| `InventoryReservationGateway` | Orders → Inventory | Stock reservation/release/confirmation |
+| `PaymentGateway` | Orders → Payments | Payment processing |
+| `ProductGateway` | Carts → Products | Product validation for cart items |
+| `InventoryGateway` | Carts → Inventory | Stock availability checks |
+| `IdentityGateway` | Authentication → Identity | User identity lookup and user creation |
+| `AuthorizationGateway` | Authentication → Authorization | Role resolution and role assignment |
 
 ### Microservice Migration
 
-| Monolith                                       | Microservice                                    |
+| Monolith | Microservice |
 | ---------------------------------------------- | ----------------------------------------------- |
 | ACL adapter injects upstream Use Case directly | ACL adapter calls upstream via HTTP/gRPC client |
-| In-process, synchronous                        | Network call, synchronous (or async w/ timeout) |
-| Swap adapter implementation only               | Port contract stays **identical** ✅            |
+| In-process, synchronous | Network call, synchronous (or async w/ timeout) |
+| Swap adapter implementation only | Port contract stays **identical** ✅ |
 
 ---
 
@@ -177,7 +177,7 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 > **Purpose**: Orchestrate a **multi-step workflow** across multiple Bounded Contexts where each step may need **compensation** (rollback) if a later step fails.
 
 > _"A Saga is a sequence of local transactions. Each local transaction updates the database and publishes a message or event to trigger the next local transaction in the saga."_
-> — Richardson, _Microservices Patterns_ (2018), Ch. 4
+> Source: Richardson, _Microservices Patterns_ (2018), Ch. 4
 
 ### When to Use
 
@@ -191,21 +191,22 @@ export class BullMqNotificationSchedulerImpl implements NotificationScheduler {
 A checkout SAGA orchestrates across Orders, Inventory, Payments, and Carts:
 
 ```
-Online Flow:  Validate Cart → Reserve Stock → Process Payment → Confirm Order → Clear Cart
-COD Flow:     Validate Cart → Reserve Stock → [WAIT] → Manual Confirm → Clear Cart
+Checkout flow: Validate Cart → Reserve Stock → Process Payment (gateway port, mock today) → Confirm Order → Clear Cart
 
 Compensation: Release Stock → Refund Payment (if paid) → Cancel Order
 ```
+
+`PaymentMethodType` is Stripe-only today. COD is not an active checkout path.
 
 The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensation automatically.
 
 ### Microservice Migration
 
-| Monolith                                     | Microservice                                       |
+| Monolith | Microservice |
 | -------------------------------------------- | -------------------------------------------------- |
-| In-process orchestrator with BullMQ steps    | Orchestrator + message broker (Kafka/RabbitMQ)     |
-| Compensation via direct use case calls       | Compensation via compensating commands over broker |
-| Pattern is **inherently microservice-ready** | ✅                                                 |
+| In-process orchestrator with BullMQ steps | Orchestrator + message broker (Kafka/RabbitMQ) |
+| Compensation via direct use case calls | Compensation via compensating commands over broker |
+| Pattern is **inherently microservice-ready** | ✅ |
 
 ---
 
@@ -213,7 +214,7 @@ The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensa
 
 > **Purpose**: Announce that **something significant happened** in your context. Other contexts react autonomously. The publisher has **zero knowledge** of who subscribes.
 
-> **Status**: 🔜 Not yet implemented — documented for future reference.
+> **Status**: 🔜 Not yet implemented: documented for future reference.
 
 ### When to Use
 
@@ -225,19 +226,19 @@ The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensa
 
 ### Planned Events
 
-| Event              | Publisher | Potential Subscribers               |
+| Event | Publisher | Potential Subscribers |
 | ------------------ | --------- | ----------------------------------- |
-| `OrderConfirmed`   | Orders    | Notifications, Inventory (finalize) |
-| `PaymentCompleted` | Payments  | Orders (update status)              |
-| `StockReserved`    | Inventory | Orders (proceed to payment)         |
+| `OrderConfirmed` | Orders | Notifications, Inventory (finalize) |
+| `PaymentCompleted` | Payments | Orders (update status) |
+| `StockReserved` | Inventory | Orders (proceed to payment) |
 
 ### Microservice Migration
 
-| Monolith                                       | Microservice                           |
+| Monolith | Microservice |
 | ---------------------------------------------- | -------------------------------------- |
-| NestJS `@nestjs/event-emitter` (EventEmitter2) | Kafka topic / RabbitMQ exchange        |
-| In-process, non-persistent                     | Persistent, distributed                |
-| Medium migration — need broker setup           | Port abstraction eases adapter swap ✅ |
+| NestJS `@nestjs/event-emitter` (EventEmitter2) | Kafka topic / RabbitMQ exchange |
+| In-process, non-persistent | Persistent, distributed |
+| Medium migration: need broker setup | Port abstraction eases adapter swap ✅ |
 
 ---
 
@@ -245,7 +246,7 @@ The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensa
 
 > **Purpose**: Guarantee that **domain events are published reliably** after a database transaction commits.
 
-> **Status**: 📋 Not yet implemented — documented for future reference.
+> **Status**: 📋 Not yet implemented: documented for future reference.
 
 ### When to Use
 
@@ -257,23 +258,23 @@ The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensa
 
 ```
 UseCase:
-  1. BEGIN transaction
-  2. UPDATE aggregate in business table
-  3. INSERT event into outbox table
-  4. COMMIT transaction
+ 1. BEGIN transaction
+ 2. UPDATE aggregate in business table
+ 3. INSERT event into outbox table
+ 4. COMMIT transaction
 
 Outbox Relay (background BullMQ worker):
-  1. Poll outbox table for unsent events
-  2. Publish to event bus
-  3. Mark event as sent
+ 1. Poll outbox table for unsent events
+ 2. Publish to event bus
+ 3. Mark event as sent
 ```
 
 ### Microservice Migration
 
-| Monolith                                 | Microservice                             |
+| Monolith | Microservice |
 | ---------------------------------------- | ---------------------------------------- |
 | Not needed (EventEmitter2 is in-process) | Outbox table + CDC (Debezium) or polling |
-| Simple                                   | Essential for reliability ✅             |
+| Simple | Essential for reliability ✅ |
 
 ---
 
@@ -281,15 +282,15 @@ Outbox Relay (background BullMQ worker):
 
 All five patterns follow **Ports & Adapters**. The port stays the same; only the adapter swaps:
 
-| Pattern                  | Monolith Adapter          | Microservice Adapter          | Migration Effort |
+| Pattern | Monolith Adapter | Microservice Adapter | Migration Effort |
 | ------------------------ | ------------------------- | ----------------------------- | ---------------- |
-| **Job Scheduler**        | BullMQ (own queue)        | SQS / own BullMQ instance     | 🟢 Low           |
-| **ACL Gateway**          | Direct Use Case injection | HTTP / gRPC client            | 🟢 Low           |
-| **Saga**                 | In-process BullMQ steps   | Orchestrator + message broker | 🟡 Medium        |
-| **Domain Events**        | NestJS EventEmitter2      | Kafka / RabbitMQ topic        | 🟡 Medium        |
-| **Transactional Outbox** | Not needed (in-process)   | Outbox table + CDC relay      | 🔴 High          |
+| **Job Scheduler** | BullMQ (own queue) | SQS / own BullMQ instance | 🟢 Low |
+| **ACL Gateway** | Direct Use Case injection | HTTP / gRPC client | 🟢 Low |
+| **Saga** | In-process BullMQ steps | Orchestrator + message broker | 🟡 Medium |
+| **Domain Events** | NestJS EventEmitter2 | Kafka / RabbitMQ topic | 🟡 Medium |
+| **Transactional Outbox** | Not needed (in-process) | Outbox table + CDC relay | 🔴 High |
 
-> **Microservice readiness comes from the Port abstraction, not the transport mechanism.** Whether you use BullMQ, Kafka, or HTTP doesn't matter — what matters is that your application core depends on an abstract port, and the adapter is the only component that knows about the transport.
+> **Microservice readiness comes from the Port abstraction, not the transport mechanism.** Whether you use BullMQ, Kafka, or HTTP doesn't matter: what matters is that your application core depends on an abstract port, and the adapter is the only component that knows about the transport.
 
 ---
 

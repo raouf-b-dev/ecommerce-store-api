@@ -1,256 +1,226 @@
-# 🛒 E-commerce Store API
+# E-commerce Store API
 
-<p align="center"> <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a> <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a> <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a> <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a> <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a> <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a> <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a> <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-22%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a> </p>
+<p align="center">
+  <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a>
+  <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a>
+  <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a>
+  <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a>
+  <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a>
+</p>
 
-> A NestJS modular-monolith e-commerce API using **Domain-Driven Design** and **Hexagonal Architecture**.
+> NestJS modular-monolith e-commerce API built with Domain-Driven Design and Hexagonal Architecture.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [What Is This?](#what-is-this)
-- [How to Review This Project in 5 Minutes](#how-to-review-this-project-in-5-minutes)
-- [🚀 Quick Start](#quick-start)
-- [Architecture at a Glance](#architecture-at-a-glance)
-- [⭐ Feature Catalog](#feature-catalog)
-- [📖 Documentation](#documentation)
-- [🧪 Testing](#testing)
-- [🏗️ Project Structure](#project-structure)
-- [📄 License](#license)
-
----
-
-<a id="what-is-this"></a>
-
-## What Is This?
-
-A **modular monolith** for an e-commerce store: ten bounded contexts under `src/modules/`, talking only through ACL gateways and domain events. NestJS + TypeScript, PostgreSQL, Redis Stack, and BullMQ.
-
-It is a **reference implementation** of backend patterns that tutorials often skip — checkout SAGA with compensation, Redis-backed HTTP idempotency, RSA JWT with refresh rotation and reuse detection, RBAC, and structured observability (logs, metrics, traces).
-
-It is **not** a hosted storefront product and **not** a claim that the API is finished for public ecommerce. Current work and sequencing live in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+- [What this is](#what-this-is)
+- [Quick start](#quick-start)
+- [Verify](#verify)
+- [Architecture](#architecture)
+- [Documentation](#documentation)
+- [Capabilities](#capabilities)
+- [Project layout](#project-layout)
+- [License](#license)
 
 ---
 
-<a id="how-to-review-this-project-in-5-minutes"></a>
+<a id="what-this-is"></a>
 
-## How to Review This Project in 5 Minutes
+## What this is
 
-| What to inspect                  | Why it matters                                        | Where to look                                                                   |
-| :------------------------------- | :---------------------------------------------------- | :------------------------------------------------------------------------------ |
-| Checkout orchestration           | Multi-step purchase flow                              | `src/modules/orders/core/application/usecases/checkout/`                        |
-| SAGA compensation                | Stock release / refund / cancel after payment failure | `src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts`    |
-| Auth, RBAC, and refresh sessions | JWT, rotation, reuse detection, permissions           | `src/modules/authentication/`, [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
-| HTTP idempotency                 | Retry-safe checkout command (not the whole SAGA)      | `src/infrastructure/idempotency/`                                               |
-| Hexagonal boundaries             | Domain/application isolated from adapters             | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md), `src/modules/*/core/`   |
-| Observability                    | Logs, metrics, traces, dashboards                     | `src/infrastructure/metrics/`, `src/infrastructure/tracing/`, `docker/`         |
-| Tests                            | Unit, integration, architecture rules, E2E            | `src/modules/*/*.spec.ts`, `src/modules/*/testing/`, `test/`                    |
+A **modular monolith** e-commerce backend: ten bounded contexts under `src/modules/`, NestJS, TypeScript, PostgreSQL, Redis Stack, and BullMQ. Contexts communicate only through ACL gateways and domain events.
 
-Shortest path: **Auth/RBAC → checkout use case → SAGA compensation → idempotency → tests**.
+It is a **reference implementation** you can run, test, and read chapter by chapter in [`docs/`](docs/README.md). Checkout SAGA, CQRS reads, concurrency controls, auth/RBAC, and ops foundations are implemented with tests and linked runbooks.
+
+**Current limits**
+
+| Topic | Status |
+| :---- | :----- |
+| Payment gateway | Mock adapter only. The port is ready for a real provider. |
+| Deploy topology | Single-instance ops foundation (migrations, health probes, backup/smoke). Not multi-instance consistency yet. |
+| Product scope | Reference backend, not a hosted storefront or finished public ecommerce product. |
+| Hosted demo | No public staging environment. Run locally with Docker. |
+
+What is done and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
 <a id="quick-start"></a>
 
-## 🚀 Quick Start
+## Quick start
 
 ### Prerequisites
 
-- **Node.js** ≥ 22 · **npm** ≥ 11 · **Docker Desktop** ≥ 28 · **Git** ≥ 2.49
+- **Node.js** ≥ 24
+- **npm** ≥ 11
+- **Docker Desktop** ≥ 28
+- **Git** ≥ 2.47
 
-### Installation
+### Run locally
 
 ```bash
-# 1. Clone & install
+# 1. Clone and install
 git clone https://github.com/raouf-b-dev/ecommerce-store-api.git
 cd ecommerce-store-api
 npm install
 
-# 2. Generate environment files
+# 2. Generate environment files (JWT and metrics keys are auto-generated)
 npm run env:init
+# Verify DB_* and REDIS_* in .env.development match Compose defaults (see LOCAL-SETUP.md)
 
-# 3. Fill .env.* with local secrets (DB, Redis, JWT keys)
-
-# 4. Start PostgreSQL + Redis and run migrations
+# 3. Start PostgreSQL + Redis and run migrations
 npm run d:up:dev
 npm run migration:run:dev
 
-# 5. Start the API, then seed local data (roles must exist from first boot)
+# 4. Start the API (first boot initializes roles/permissions), then seed
 npm run start:dev
 npm run db:seed
 ```
 
-- API: `http://localhost:3000`
-- Swagger: `http://localhost:3000/api`
-- Seeded accounts: [SEEDING.md](docs/development/SEEDING.md)
+First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md). Seeded accounts: [`docs/development/SEEDING.md`](docs/development/SEEDING.md).
 
-#### Optional: monitoring stack
+| Endpoint | URL |
+| :------- | :-- |
+| API | `http://localhost:3000` |
+| Swagger | `http://localhost:3000/api` |
+| Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+| Local env setup | [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) |
+
+### Optional: monitoring stack
 
 ```bash
 npm run d:up:full:prod
 ```
 
-Grafana is published on **`http://localhost:3001`** (not 3000 — that is the API).
+Grafana is on **`http://localhost:3001`**. The API stays on port 3000.
 
 ---
 
-<a id="architecture-at-a-glance"></a>
+<a id="verify"></a>
 
-## Architecture at a Glance
+## Verify
+
+The CI pipeline runs the same layers locally. Use these commands to confirm behavior after changes:
+
+```bash
+npm test                      # Unit tests (domain, use cases, adapters)
+npm run test:integration      # Real Postgres / Redis (Testcontainers)
+npm run test:e2e              # Full-app HTTP flows (auth, checkout, IDOR, idempotency)
+npm run test:arch             # Hexagonal and module boundary rules
+npm run test:redis:chaos      # Redis reconnect and degradation behavior
+npm run smoke-test            # Live-process probes (health, auth) when API is running
+npm run test:cov              # Coverage report
+```
+
+| Layer | What it proves |
+| :---- | :------------- |
+| Unit | Domain rules, use cases, and adapter logic in isolation |
+| Integration | Write repositories, cache-aside, CQRS query adapters against real databases |
+| E2E | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay |
+| Architecture | No illegal imports across bounded contexts |
+| Smoke | Liveness, readiness, and authenticated endpoints on a running process |
+
+Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`docs/infrastructure/cicd/PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md).
+
+---
+
+<a id="architecture"></a>
+
+## Architecture
+
+Ten bounded contexts live in one deployable unit. Orders orchestrate checkout through ACL gateways and BullMQ jobs. Authentication reaches Identity and Authorization through ACL gateways. Full C4, ACL maps, SAGA sequences, and infrastructure wiring live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
 
 ```mermaid
 graph TD
-    Client["Client (Web/Mobile)"] -->|HTTP/REST| API["NestJS API"]
+    Client["Client"] -->|HTTP/REST| API["NestJS API"]
     Client -->|WebSocket| WS["WebSocket Gateway"]
 
     subgraph Monolith["Modular monolith"]
         API --> Auth["Authentication"]
+        API --> Authz["Authorization"]
         API --> Identity["Identity"]
         API --> Orders["Orders"]
         API --> Products["Products"]
         API --> Carts["Carts"]
         API --> Payments["Payments"]
         API --> Inventory["Inventory"]
+        API --> Health["Health"]
         WS --> Notifications["Notifications"]
-        Orders -->|"ACL + jobs (SAGA)"| Inventory
-        Orders -->|"ACL + jobs (SAGA)"| Payments
+        Auth -->|ACL| Identity
+        Auth -->|ACL| Authz
+        Orders -->|ACL| Identity
+        Orders -->|ACL| Carts
+        Orders -->|"ACL + SAGA jobs"| Inventory
+        Orders -->|"ACL + SAGA jobs"| Payments
         Orders -->|Domain events| Notifications
-    end
-
-    subgraph Infra["Infrastructure"]
-        Auth --> PG["PostgreSQL"]
-        Orders --> PG
-        Products --> PG
-        Carts --> Redis["Redis Stack"]
-        Products --> Redis
-        Orders --> BullMQ["BullMQ"]
-        Notifications --> BullMQ
-    end
-
-    subgraph Observability["Observability"]
-        API --> Loki["Loki"]
-        API --> Prometheus["Prometheus"]
-        API --> Tempo["Tempo"]
-        Loki --> Grafana["Grafana"]
-        Prometheus --> Grafana
-        Tempo --> Grafana
-    end
-
-    subgraph External["External"]
-        Payments -->|"Gateway port (Stripe stub today)"| Stripe["Payment gateway"]
     end
 ```
 
-C4, sequence, and class diagrams: [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md).
+### Where to look in the code
 
----
+| Topic | Why it matters | Where |
+| :---- | :------------- | :---- |
+| Checkout orchestration | Multi-step purchase flow | [`src/modules/orders/core/application/usecases/checkout/`](src/modules/orders/core/application/usecases/checkout/) |
+| SAGA compensation | Stock release, refund, cancel after failure | [`checkout-failure.listener.ts`](src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts) |
+| CQRS read adapters | Flat list/detail reads without N+1 | `src/modules/*/secondary-adapters/query/` |
+| HTTP idempotency | Retry-safe checkout command | [`src/infrastructure/idempotency/`](src/infrastructure/idempotency/) |
+| Auth and RBAC | RSA JWT, refresh rotation, permissions | [`authentication/`](src/modules/authentication/), [`authorization/`](src/modules/authorization/) |
+| Hexagonal boundaries | Domain isolated from infrastructure | [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) |
 
-<a id="feature-catalog"></a>
-
-## ⭐ Feature Catalog
-
-Canonical write-ups: [`docs/FEATURES.md`](docs/FEATURES.md).
-
-### 🏗️ Architecture
-
-| Feature                | Description                                              | Location                                                            |
-| :--------------------- | :------------------------------------------------------- | :------------------------------------------------------------------ |
-| Strategic DDD          | Subdomains, bounded contexts, context mapping            | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)                |
-| Tactical DDD           | Entities, value objects, aggregates, domain services     | `src/modules/*/core/domain/`                                        |
-| Hexagonal Architecture | Ports and adapters — infrastructure-agnostic domain core | [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md)              |
-| ACL Gateway Pattern    | Gateway ports decoupling bounded contexts                | [INTEGRATION-PATTERNS.md](docs/integration/INTEGRATION-PATTERNS.md) |
-| Modular Monolith       | Isolated modules under `src/modules/`                    | `src/modules/`                                                      |
-| Result Pattern         | `Result<T, E>` instead of throwing from use cases        | `src/shared-kernel/domain/`                                         |
-
-### 🔄 Workflows & jobs
-
-| Feature             | Description                                                                | Location                                    |
-| :------------------ | :------------------------------------------------------------------------- | :------------------------------------------ |
-| SAGA orchestration  | Multi-step checkout with compensation on failure                           | `src/modules/orders/primary-adapters/jobs/` |
-| HTTP idempotency    | Redis `SET NX` + `@Idempotent()` on checkout — retry-safe **HTTP command** | `src/infrastructure/idempotency/`           |
-| BullMQ nested flows | Background job pipelines (e.g. notifications)                              | `src/modules/notifications/`                |
-| Payment gateway     | Gateway port; Stripe adapter is a **stub** until real integration lands    | `src/modules/payments/`                     |
-
-### ⚡ Data & performance
-
-| Feature               | Description                                     | Location                                                  |
-| :-------------------- | :---------------------------------------------- | :-------------------------------------------------------- |
-| RedisJSON             | Cart storage as JSON documents                  | `src/modules/carts/secondary-adapters/`                   |
-| RedisSearch           | Catalog search/filter from Redis                | `src/modules/products/secondary-adapters/`                |
-| Cache-aside decorator | `CachedRepository` wrapping Postgres with Redis | `src/modules/*/secondary-adapters/repositories/cached-*/` |
-
-### 🔐 Security
-
-| Feature                | Description                                           | Location                                         |
-| :--------------------- | :---------------------------------------------------- | :----------------------------------------------- |
-| RSA JWT (RS256 + JWKS) | Access tokens with JWKS public-key distribution       | [JWT-RSA-JWKS.md](docs/security/JWT-RSA-JWKS.md) |
-| Refresh token rotation | Session tokens, SHA-256 hashing, reuse detection      | `src/modules/authentication/`                    |
-| RBAC                   | Database-backed roles and permissions                 | `src/modules/authorization/`                     |
-| Rate limiting          | Redis-backed `@nestjs/throttler`                      | `src/infrastructure/throttler/`                  |
-| Helmet / CORS / XSS    | Security headers, origin whitelist, body sanitization | `src/main.ts`, `src/interceptors/`               |
-| Pagination caps        | `@Max(100)` on list query DTOs                        | `src/modules/*/primary-adapters/dtos/`           |
-
-### 📦 Infrastructure
-
-| Feature            | Description                                         | Location                                                         |
-| :----------------- | :-------------------------------------------------- | :--------------------------------------------------------------- |
-| Multi-stage Docker | Node 24 Alpine, tini, non-root                      | `Dockerfile`                                                     |
-| Graceful shutdown  | Drain HTTP, close pools, stop workers               | [PROCESS-LIFECYCLE.md](docs/infrastructure/PROCESS-LIFECYCLE.md) |
-| Health probes      | Liveness (process) and readiness (Postgres + Redis) | `src/modules/health/`                                            |
-| API versioning     | URI versioning (`/v1/`)                             | `src/modules/*/`                                                 |
-| Local seeding      | Admin/customer accounts and catalog                 | [SEEDING.md](docs/development/SEEDING.md)                        |
-| Multi-env config   | Typed env validation and secrets separation         | [SECRETS-MANAGEMENT.md](docs/security/SECRETS-MANAGEMENT.md)     |
-
-### 🔭 Observability
-
-| Feature            | Description                                                   | Location                                                                  |
-| :----------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------ |
-| Structured logging | Winston JSON → Loki via Promtail                              | `src/infrastructure/logging/`                                             |
-| Correlation IDs    | `X-Request-Id` on HTTP and BullMQ jobs                        | `src/infrastructure/logging/`                                             |
-| Prometheus metrics | RED + domain counters                                         | `src/infrastructure/metrics/`                                             |
-| Tracing            | OpenTelemetry → Tempo (OTLP gRPC)                             | `src/infrastructure/tracing/`                                             |
-| Grafana stack      | Pre-provisioned Loki / Prometheus / Tempo                     | [MONITORING-STACK-GUIDE.md](docs/observability/MONITORING-STACK-GUIDE.md) |
-| CI                 | GitHub Actions: lint, typecheck, unit, arch, integration, E2E | `.github/workflows/`                                                      |
+Shortest path through the tree: **auth/RBAC → checkout → compensation → CQRS query adapter → idempotency → tests**.
 
 ---
 
 <a id="documentation"></a>
 
-## 📖 Documentation
+## Documentation
 
-| Document                                                                      | Description                                   |
-| :---------------------------------------------------------------------------- | :-------------------------------------------- |
-| [**docs/README.md**](docs/README.md)                                          | Full documentation index                      |
-| [**FEATURES.md**](docs/FEATURES.md)                                           | Feature catalog with code locations           |
-| [**ROADMAP.md**](docs/ROADMAP.md)                                             | What is done, what is next, and in what order |
-| [**ARCHITECTURE.md**](docs/architecture/ARCHITECTURE.md)                      | C4, domain flows, sequence diagrams           |
-| [**DDD-HEXAGONAL.md**](docs/architecture/DDD-HEXAGONAL.md)                    | DDD and hexagonal rules                       |
-| [**INTEGRATION-PATTERNS.md**](docs/integration/INTEGRATION-PATTERNS.md)       | ACL, SAGA, domain events                      |
-| [**JWT-RSA-JWKS.md**](docs/security/JWT-RSA-JWKS.md)                          | RSA JWT and JWKS                              |
-| [**SECRETS-MANAGEMENT.md**](docs/security/SECRETS-MANAGEMENT.md)              | Config taxonomy and secrets                   |
-| [**SEEDING.md**](docs/development/SEEDING.md)                                 | Local seed accounts and catalog               |
-| [**MONITORING-STACK-GUIDE.md**](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana / Prometheus / Loki / Tempo           |
-| [**PROCESS-LIFECYCLE.md**](docs/infrastructure/PROCESS-LIFECYCLE.md)          | Signals and graceful shutdown                 |
-| [**TROUBLESHOOTING.md**](docs/infrastructure/TROUBLESHOOTING.md)              | Common local issues                           |
-| [**AGENT.md**](AGENT.md)                                                      | Contributor / agent conventions               |
+Start with the full index: [`docs/README.md`](docs/README.md). These chapters are the main entry points:
 
----
-
-<a id="testing"></a>
-
-## 🧪 Testing
-
-```bash
-npm test                 # Unit tests
-npm run test:integration # Testcontainers / real DB
-npm run test:e2e         # Full-app HTTP flows
-npm run test:arch        # Hexagonal / module boundary rules
-npm run test:cov         # Coverage
-```
+| Document | Description |
+| :------- | :---------- |
+| [`FEATURES.md`](docs/FEATURES.md) | Implemented features with code locations |
+| [`ROADMAP.md`](docs/ROADMAP.md) | Completed work and planned phases |
+| [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) | System context, bounded contexts, diagrams |
+| [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) | Layer rules and module boundaries |
+| [`CQRS.md`](docs/architecture/CQRS.md) | Read path design and query adapters |
+| [`INTEGRATION-PATTERNS.md`](docs/integration/INTEGRATION-PATTERNS.md) | ACL gateways, SAGA, domain events |
+| [`OWASP-COMPLIANCE.md`](docs/security/OWASP-COMPLIANCE.md) | Security control mapping |
+| [`JWT-RSA-JWKS.md`](docs/security/JWT-RSA-JWKS.md) | RSA JWT and JWKS |
+| [`SECRET-ROTATION.md`](docs/security/SECRET-ROTATION.md) | Production secret rotation |
+| [`RELEASE-BACKUP-RECOVERY.md`](docs/infrastructure/RELEASE-BACKUP-RECOVERY.md) | Backup, restore, smoke, rollback |
+| [`PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md) | CI/CD workflow |
+| [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo |
+| [`architecture/adr/`](docs/architecture/adr/README.md) | Architecture decision records |
+| [`SEEDING.md`](docs/development/SEEDING.md) | Local seed accounts and catalog |
+| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) | Environment files and first boot order |
+| [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md) | Common local issues |
+| [`AGENT.md`](AGENT.md) | Contributor and agent conventions |
 
 ---
 
-<a id="project-structure"></a>
+<a id="capabilities"></a>
 
-## 🏗️ Project Structure
+## Capabilities
+
+Full catalog with locations: [`docs/FEATURES.md`](docs/FEATURES.md).
+
+- **Modular monolith** with ten bounded contexts and ACL gateway isolation
+- **Checkout SAGA** with BullMQ orchestration and compensation on failure
+- **CQRS read path** with JOIN query adapters across core modules
+- **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation
+- **Auth and security**: RSA JWT (JWKS), refresh rotation, RBAC, user-scoped rate limiting, HTTP idempotency on checkout
+- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, full CI fan-out (unit, integration, E2E, arch, restore drill)
+
+---
+
+<a id="project-layout"></a>
+
+## Project layout
 
 ```
 src/
@@ -268,13 +238,13 @@ src/
 └── main.ts
 ```
 
-Layer rules: [DDD-HEXAGONAL.md](docs/architecture/DDD-HEXAGONAL.md).
+Layer rules: [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md).
 
 ---
 
 <a id="license"></a>
 
-## 📄 License
+## License
 
 Released under the [MIT License](LICENSE).
 

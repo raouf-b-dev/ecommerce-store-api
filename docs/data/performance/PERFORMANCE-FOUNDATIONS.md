@@ -1,4 +1,4 @@
-# Database Performance — Foundations
+# Database Performance: Foundations
 
 An introduction to the fundamental principles of database performance engineering: the I/O cost model, when indexes help (and when they don't), and the systematic query tuning workflow. This document serves as the hub for the performance deep-dive series.
 
@@ -16,7 +16,7 @@ An introduction to the fundamental principles of database performance engineerin
 | **[Storage & Maintenance](STORAGE-AND-MAINTENANCE.md)**       | Write-Ahead Log (WAL), TOAST, autovacuum tuning, table partitioning, materialised views, and bulk operations                              |
 | **[Connection & Replication](CONNECTION-AND-REPLICATION.md)** | Connection pool sizing, PgBouncer, PostgreSQL memory configuration, streaming and logical replication, and read replica routing           |
 
-**Related series**: [Concurrency Foundations](../concurrency/CONCURRENCY-FOUNDATIONS.md) (locking and isolation — the correctness counterpart to performance)
+**Related series**: [Concurrency Foundations](../concurrency/CONCURRENCY-FOUNDATIONS.md) (locking and isolation: the correctness counterpart to performance)
 
 ---
 
@@ -33,7 +33,7 @@ Database performance is fundamentally governed by the **I/O cost model**. Data r
 | **Index-only scan**                   | Reads only index pages. The data table is not accessed. Only possible when all columns needed by the query are in the index (a **covering index**). |
 
 > _"The single most important factor in query performance is whether the query can use an index to avoid a full table scan. The second most important factor is whether that index scan can be an index-only scan."_
-> — Winand, M. (2012). SQL Performance Explained, p. 1.
+> Source: Winand, M. (2012). SQL Performance Explained, p. 1.
 
 ---
 
@@ -42,8 +42,8 @@ Database performance is fundamentally governed by the **I/O cost model**. Data r
 | Scenario                                                   | Index Helpful? | Explanation                                                                                                  |
 | :--------------------------------------------------------- | :------------- | :----------------------------------------------------------------------------------------------------------- |
 | `WHERE id = 42` (equality on PK)                           | ✅ Yes         | B-tree traversal: O(log n) page reads.                                                                       |
-| `WHERE status = 'ACTIVE'` (low selectivity — 80% match)    | ❌ No          | Planner prefers sequential scan because reading 80% via random I/O is slower than reading 100% sequentially. |
-| `WHERE status = 'CANCELLED'` (high selectivity — 2% match) | ✅ Yes         | Index narrows scan to a small fraction.                                                                      |
+| `WHERE status = 'ACTIVE'` (low selectivity: 80% match) | ❌ No | Planner prefers sequential scan because reading 80% via random I/O is slower than reading 100% sequentially. |
+| `WHERE status = 'CANCELLED'` (high selectivity: 2% match) | ✅ Yes | Index narrows scan to a small fraction. |
 | `WHERE name ILIKE '%search%'` (unanchored pattern)         | ❌ No\*        | B-tree cannot support leading-wildcard searches. Requires GIN/trigram.                                       |
 | `ORDER BY created_at DESC LIMIT 10`                        | ✅ Yes         | B-tree provides pre-sorted output, avoiding a filesort.                                                      |
 | `SELECT COUNT(*) FROM orders`                              | ❌ No          | Counting all rows requires visiting every live tuple (MVCC visibility check).                                |
@@ -52,7 +52,7 @@ Database performance is fundamentally governed by the **I/O cost model**. Data r
 
 ### 2.1 The Selectivity Threshold
 
-The query planner decides between a sequential scan and an index scan based on **selectivity** — the fraction of rows the query is expected to return.
+The query planner decides between a sequential scan and an index scan based on **selectivity**: the fraction of rows the query is expected to return.
 
 ```mermaid
 flowchart LR
@@ -156,6 +156,7 @@ flowchart TD
 
 ## 5. References
 
-- Ramakrishnan, R. & Gehrke, J. (2003). _Database Management Systems_ (3rd ed.). McGraw-Hill. Chapters 8–10.
+- Ramakrishnan, R. & Gehrke, J. (2003). _Database Management Systems_ (3rd ed.). McGraw-Hill. Chapters 8-10.
 - Winand, M. (2012). _SQL Performance Explained_. Self-published. ISBN: 978-3-9503078-0-2. https://use-the-index-luke.com/
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapter 3: "Storage and Retrieval."
+

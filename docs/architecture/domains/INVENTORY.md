@@ -129,7 +129,7 @@ Customer                Checkout / Order          Reservation System           I
 
 ## 9. Related Documents
 
-- [docs/database/DATABASE-DESIGN.md](../../database/DATABASE-DESIGN.md) — Relational schema access patterns and data modeling decisions.
-- [docs/database/TRANSACTIONS.md](../../database/TRANSACTIONS.md) — Transaction isolation policies and current locking implementations.
-- [ADR-0004](../adr/ADR-0004-inventory-integrity-and-concurrency.md) — Architectural rationale for totalQuantity removal, atomic OCC, and reconciliation.
-- [WHEN-TO-DENORMALIZE-DATA.md](../../decision-guides/WHEN-TO-DENORMALIZE-DATA.md) — Data denormalization evaluation framework.
+- [docs/database/DATABASE-DESIGN.md](../../database/DATABASE-DESIGN.md): Relational schema access patterns and data modeling decisions.
+- [docs/database/TRANSACTIONS.md](../../database/TRANSACTIONS.md): Transaction isolation policies and current locking implementations.
+- [ADR-0004](../adr/ADR-0004-inventory-integrity-and-concurrency.md): Architectural rationale for totalQuantity removal, atomic OCC, and reconciliation.
+- [WHEN-TO-DENORMALIZE-DATA.md](../../decision-guides/WHEN-TO-DENORMALIZE-DATA.md): Data denormalization evaluation framework.

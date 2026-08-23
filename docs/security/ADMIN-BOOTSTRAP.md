@@ -63,7 +63,7 @@ This dual-seeder + forced rotation pattern is standard across enterprise SaaS:
 - **Grafana:** Uses `GF_SECURITY_ADMIN_PASSWORD` and forces a change on first login.
 - **GitLab:** Uses `GITLAB_ROOT_PASSWORD` for initial setup.
 
-## 5. Implementation — `mustChangePassword` Property
+## 5. Implementation: `mustChangePassword` Property
 
 The `User` domain entity implements a `mustChangePassword` boolean flag:
 

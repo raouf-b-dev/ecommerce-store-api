@@ -8,7 +8,7 @@ A deep-dive into optimistic locking: the theory behind version-based conflict de
 
 ## 1. Theory
 
-> _Source: Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." ACM Transactions on Database Systems, 6(2), pp. 213–226._
+> _Source: Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." ACM Transactions on Database Systems, 6(2), pp. 213-226._
 
 Optimistic Concurrency Control (OCC) operates on the assumption that conflicts between concurrent transactions are **rare**. Instead of acquiring locks to prevent conflicts, OCC allows all transactions to execute freely against a snapshot of the data, then validates at commit time whether any conflict occurred.
 
@@ -155,7 +155,7 @@ sequenceDiagram
 
 ---
 
-## 6. Implementation — TypeORM `@VersionColumn()`
+## 6. Implementation: TypeORM `@VersionColumn()`
 
 TypeORM provides built-in OCC support via `@VersionColumn()`. When an entity with a version column is saved, TypeORM automatically:
 
@@ -231,8 +231,9 @@ The version must also be **returned** in all read DTOs so that clients always ha
 
 ## 7. References
 
-- Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." _ACM Transactions on Database Systems_, 6(2), pp. 213–226. DOI: 10.1145/319566.319567
+- Kung, H.T. & Robinson, J.T. (1981). "On Optimistic Methods for Concurrency Control." _ACM Transactions on Database Systems_, 6(2), pp. 213-226. DOI: 10.1145/319566.319567
 - Fowler, M. (2002). _Patterns of Enterprise Application Architecture_. Addison-Wesley. §16: "Offline Concurrency Patterns."
 - Vernon, V. (2013). _Implementing Domain-Driven Design_. Addison-Wesley. Chapter 8: aggregate root versioning.
 - TypeORM. _Version Column_. https://typeorm.io/entities#version-column
 - Fielding, R. & Reschke, J. (2014). RFC 7232: _Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests_. §3.1: If-Match.
+

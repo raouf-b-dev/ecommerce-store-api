@@ -39,9 +39,9 @@ Integration testing infrastructure is located under `test/integration/`:
 test/integration/
 ├── jest-integration.json                    # Dedicated Jest configuration
 ├── harness/
-│   ├── testcontainers.global-setup.ts       # Jest globalSetup — starts Postgres container
-│   ├── testcontainers.global-teardown.ts    # Jest globalTeardown — stops Postgres container
-│   ├── testcontainers.setup.ts              # Per-file hook — shared DataSource singleton
+│ ├── testcontainers.global-setup.ts # Jest globalSetup: starts Postgres container
+│ ├── testcontainers.global-teardown.ts # Jest globalTeardown: stops Postgres container
+│ ├── testcontainers.setup.ts # Per-file hook: shared DataSource singleton
 │   ├── integration-test.constants.ts        # Postgres image version and DB credentials
 │   ├── seed-reference-data.ts               # Minimal deterministic FK reference data seeder
 │   ├── inventory-seed.helper.ts             # Concurrency scenario inventory overrides
@@ -174,7 +174,7 @@ it('verifies index existence for orders(user_id)', async () => {
 
 ## 6. Write-Side Repository Adapters
 
-Write-side repository integration tests live alongside adapters as `*.integration.spec.ts` under `secondary-adapters/repositories/`. They complement mock-based `*.spec.ts` unit tests — do **not** replace them.
+Write-side repository integration tests live alongside adapters as `*.integration.spec.ts` under `secondary-adapters/repositories/`. They complement mock-based `*.spec.ts` unit tests: do **not** replace them.
 
 This guide is an **applied** testing document: it describes how this repository writes real-DB adapter specs. Progress tracking belongs in project-state files, not here.
 
@@ -217,7 +217,7 @@ Write a real-DB spec when the adapter has **persistence behavior that mocks cann
 
 Skip (or keep unit-only) when the adapter is thin CRUD with no extra SQL invariants, or when PostgreSQL is not the production store for that aggregate.
 
-Each spec: a few focused scenarios. Integration tests prove **persistence, transactions, and constraints** — not every error branch already covered in unit tests.
+Each spec: a few focused scenarios. Integration tests prove **persistence, transactions, and constraints**: not every error branch already covered in unit tests.
 
 ### Concurrent reservation invariant (repository-level)
 
@@ -241,6 +241,7 @@ BEFORE: availableQuantity = 1, reservedQuantity = 0
 AFTER:  exactly 1 success, availableQuantity = 0, reservedQuantity = 1, 1 reservation row
 ```
 
-Use `seedSingleUnitInventory()` from `test/integration/harness/inventory-seed.helper.ts` for explicit absolute initial state — do not assert relative to default seed quantities.
+Use `seedSingleUnitInventory()` from `test/integration/harness/inventory-seed.helper.ts` for explicit absolute initial state: do not assert relative to default seed quantities.
 
-**Contention design:** Launch N concurrent `save()` calls via `Promise.all`. If overlap is uncertain, escalate to a barrier/hold or `pg_locks` inspection — do not weaken assertions to pass.
+**Contention design:** Launch N concurrent `save()` calls via `Promise.all`. If overlap is uncertain, escalate to a barrier/hold or `pg_locks` inspection: do not weaken assertions to pass.
+
