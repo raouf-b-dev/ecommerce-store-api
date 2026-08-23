@@ -1,445 +1,434 @@
-# 🏗️ System Architecture
+# System Architecture
 
-This document provides a high-level overview of the **ecommerce-store-api** architecture, design decisions, and system flows.
+High-level overview of the ecommerce-store-api architecture, design decisions, and system flows.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [System Context](#-system-context-c4-level-1)
-- [Strategic Domain-Driven Design](#-strategic-domain-driven-design)
-- [High-Level Architecture](#-high-level-architecture)
-- [Component Dependencies](#-component-dependencies-c4-level-2)
-- [Checkout Sequence Diagram](#-checkout-sequence-diagram-online-flow)
-- [SAGA Compensation Flow](#-saga-compensation-flow-failure-handling)
+- [System Context](#system-context-c4-level-1)
+- [Strategic Domain-Driven Design](#strategic-domain-driven-design)
+- [High-Level Architecture](#high-level-architecture)
+- [Component Dependencies](#component-dependencies-c4-level-2)
+- [Checkout Sequence Diagram](#checkout-sequence-diagram)
+- [SAGA Compensation Flow](#saga-compensation-flow-failure-handling)
 - [Key Patterns Implemented](#key-patterns-implemented)
-- [Online vs COD Checkout Logic](#-online-vs-cod-checkout-logic)
-- [Payment Event Handling](#-payment-event-handling-async)
-- [Idempotency Logic](#-idempotency-logic)
-- [Notification System Architecture](#-notification-system-architecture)
+- [Payment Methods (Current Scope)](#payment-methods-current-scope)
+- [Payment Event Handling](#payment-event-handling-async)
+- [Idempotency Logic](#idempotency-logic)
+- [Notification System Architecture](#notification-system-architecture)
 
-## 🧠 Strategic Domain-Driven Design
+## Strategic Domain-Driven Design
 
-We utilize **Strategic DDD** to define boundaries and relationships between different parts of the system.
+Strategic DDD defines boundaries and relationships between parts of the system.
 
 ### Subdomains
 
-| Subdomain          | Type            | Description                                                                                                              |
-| :----------------- | :-------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| **Orders**         | **Core Domain** | The heart of the business. Handles the complex lifecycle of customer orders, SAGA orchestration, and revenue generation. |
-| **Identity**       | Supporting      | Manages user account identities, profile details, contact info, and shipping addresses.                                  |
-| **Authorization**  | Supporting      | Role-based access control (RBAC), permission resolution, and user role assignments.                                      |
-| **Carts**          | Supporting      | Manages temporary shopping sessions, item selection, and cart persistence.                                               |
-| **Inventory**      | Supporting      | Manages stock levels and reservations. Essential but not the primary competitive advantage.                              |
-| **Products**       | Supporting      | Manages the product catalog, categories, and search indexing. Supports the core selling process.                         |
-| **Payments**       | Generic         | Handles transaction processing. Uses standard patterns (Stripe/PayPal) that can be bought/outsourced.                    |
-| **Authentication** | Generic         | User credentials, password hashing, and Session/JWT Management. Standard JWT implementation.                             |
-| **Notifications**  | Generic         | Delivery mechanism for real-time and background alerts.                                                                  |
+| Subdomain | Type | Description |
+| :-------- | :--- | :---------- |
+| **Orders** | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows. |
+| **Identity** | Supporting | User accounts, profiles, contact info, and shipping addresses. |
+| **Authorization** | Supporting | RBAC, permission resolution, and user role assignments. |
+| **Carts** | Supporting | Shopping sessions, item selection, and cart persistence (RedisJSON). |
+| **Inventory** | Supporting | Stock levels and reservations. |
+| **Products** | Supporting | Catalog, categories, and search indexing. |
+| **Payments** | Generic | Payment intents and gateway abstraction. Provider adapter is a mock today. |
+| **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
+| **Notifications** | Generic | Real-time and background alerts. |
+| **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
 
-### Bounded Contexts & Context Mapping
+### Bounded Contexts and Context Mapping
 
-Each Module acts as a **Bounded Context**. We use **Context Mapping** to define how they interact, strictly enforcing boundaries to prevent a "Big Ball of Mud".
-
-```mermaid
-graph TD
-    SK[Shared Kernel] --> Orders[Orders — Core Domain]
-    SK --> Carts[Carts]
-    SK --> Inventory[Inventory]
-    SK --> Products[Products]
-    SK --> Identity[Identity]
-    SK --> Authorization[Authorization]
-    SK --> Payments[Payments]
-    SK --> Authentication[Authentication]
-    SK --> Notifications[Notifications]
-
-    subgraph ACL_Orders["ACL Gateways (in Orders)"]
-        CustGW["UserGateway"]
-        CartGW["CartGateway"]
-        InvGW["InventoryReservationGateway"]
-        PayGW["PaymentGateway"]
-    end
-
-    Identity -.-|"GetUserUseCase"| CustGW
-    Carts -.-|"GetCartUseCase / ClearCartUseCase"| CartGW
-    Inventory -.-|"ReserveStockUseCase / ReleaseStockUseCase"| InvGW
-    Payments -.-|"ProcessPaymentUseCase"| PayGW
-
-    CustGW -->|"validateUser()"| Orders
-    CartGW -->|"getCart() / clearCart()"| Orders
-    InvGW -->|"reserve() / release() / confirm()"| Orders
-    PayGW -->|"processPayment() / refund()"| Orders
-
-    subgraph ACL_Carts["ACL Gateways (in Carts)"]
-        ProdGW["ProductGateway"]
-        InvGW2["InventoryGateway"]
-    end
-
-    Products -.-|"GetProductUseCase"| ProdGW
-    Inventory -.-|"CheckStockUseCase"| InvGW2
-
-    ProdGW -->|"getProduct()"| Carts
-    InvGW2 -->|"checkStock()"| Carts
-
-    Authentication -->|"ACL / IdentityGateway"| Identity
-    Authentication -->|"ACL / AuthorizationGateway"| Authorization
-    Orders -->|"Event"| Notifications
-
-    style Orders fill:#ff6b6b,stroke:#333,color:#fff
-    style SK fill:#4ecdc4,stroke:#333,color:#fff
-    style ACL_Orders fill:#2d2d2d,stroke:#ffd700,color:#ffd700,stroke-width:2px
-    style ACL_Carts fill:#2d2d2d,stroke:#ffd700,color:#ffd700,stroke-width:2px
-
-    classDef support fill:#99ff99,stroke:#333,stroke-width:1px;
-    classDef generic fill:#9999ff,stroke:#333,stroke-width:1px;
-
-    class Inventory,Products,Carts,Identity,Authorization support;
-    class Payments,Authentication,Notifications generic;
-```
-
-> **Anti-Corruption Layer (ACL)**: Downstream contexts define their own **Ports** (Gateway interfaces) with only the data they need. **Adapters** in the secondary layer translate upstream models into the downstream domain's language. This protects every module from schema changes in its dependencies — if `Identity` changes its user entity, only the `UserGatewayAdapter` needs updating, not the `Orders` use cases.
-
-## 🌍 System Context (C4 Level 1)
-
-A high-level view of how the E-commerce API fits into the existing landscape.
-
-```mermaid
-C4Context
-    title System Context Diagram for E-commerce Store API
-
-    Person(customer, "Customer", "A user of the e-commerce store")
-    System(ecommerce, "E-commerce API", "Handles orders, payments, inventory, and products")
-
-    System_Ext(stripe, "Stripe", "Payment Gateway")
-    System_Ext(redis, "Redis Stack", "Cache, Search, & Queue")
-    System_Ext(postgres, "PostgreSQL", "Primary Database")
-
-    Rel(customer, ecommerce, "Uses", "HTTPS/WSS")
-    Rel(ecommerce, stripe, "Processes payments", "HTTPS")
-    Rel(ecommerce, redis, "Reads/Writes", "TCP")
-    Rel(ecommerce, postgres, "Persists data", "TCP")
-```
-
-## 📐 High-Level Architecture
-
-The system is built as a modular monolith using **NestJS**, designed for scalability and maintainability. It uses **PostgreSQL** as the primary data store and **Redis Stack** for high-performance caching, search, and message brokering.
+Each NestJS module is a bounded context. Context mapping keeps boundaries explicit and avoids a tangled dependency graph.
 
 ```mermaid
 graph TD
-    Client["📱 Client App (Web/Mobile)"] -->|HTTP/REST| API["🛡️ NestJS API Gateway"]
-    Client -->|WebSocket| WS["🔌 WebSocket Gateway"]
+ SK[Shared Kernel] --> Orders[Orders Core Domain]
+ SK --> Carts[Carts]
+ SK --> Inventory[Inventory]
+ SK --> Products[Products]
+ SK --> Identity[Identity]
+ SK --> Authorization[Authorization]
+ SK --> Payments[Payments]
+ SK --> Authentication[Authentication]
+ SK --> Notifications[Notifications]
+ SK --> Health[Health]
 
-    subgraph "Application Core (Modular Monolith)"
-        API --> Authentication["🔐 Authentication Module"]
-        API --> Orders["📦 Orders Module"]
-        API --> Products["🏷️ Products Module"]
-        API --> Carts["🛒 Carts Module"]
-        API --> Payments["💳 Payments Module"]
-        API --> Inventory["🏭 Inventory Module"]
-        API --> Identity["👥 Identity Module"]
-        API --> Authorization["🛡️ Authorization Module"]
+ subgraph ACL_Orders["ACL Gateways in Orders"]
+ CustGW["UserGateway"]
+ CartGW["CartGateway"]
+ InvGW["InventoryReservationGateway"]
+ PayGW["PaymentGateway"]
+ end
 
-        WS --> Notifications["🔔 Notifications Module"]
+ Identity -.-|"GetUserUseCase"| CustGW
+ Carts -.-|"GetCartUseCase / ClearCartUseCase"| CartGW
+ Inventory -.-|"ReserveStockUseCase / ReleaseStockUseCase"| InvGW
+ Payments -.-|"ProcessPaymentUseCase"| PayGW
 
-        Orders -->|SAGA Orchestration| Inventory
-        Orders -->|SAGA Orchestration| Payments
-        Orders -->|Event| Notifications
-    end
+ CustGW -->|"validateUser()"| Orders
+ CartGW -->|"getCart() / clearCart()"| Orders
+ InvGW -->|"reserve() / release() / confirm()"| Orders
+ PayGW -->|"processPayment() / refund()"| Orders
 
-    subgraph "Secondary Adapters (Infrastructure)"
-        Authentication -->|Persist| PG["🐘 PostgreSQL"]
-        Orders -->|Persist| PG
-        Products -->|Persist| PG
+ subgraph ACL_Carts["ACL Gateways in Carts"]
+ ProdGW["ProductGateway"]
+ InvGW2["InventoryGateway"]
+ end
 
-        Carts -->|Cache/Persist| Redis["⚡ Redis Stack"]
-        Products -->|Search| Redis
+ Products -.-|"GetProductUseCase"| ProdGW
+ Inventory -.-|"CheckStockUseCase"| InvGW2
 
-        Orders -->|Async Jobs| BullMQ["🐂 BullMQ Job Queue"]
-        Notifications -->|Async Jobs| BullMQ
-    end
+ ProdGW -->|"getProduct()"| Carts
+ InvGW2 -->|"checkStock()"| Carts
 
-    subgraph "External Services"
-        Payments <-->|Verify| Stripe["💳 Payment Gateway"]
-    end
+ Authentication -->|"ACL / IdentityGateway"| Identity
+ Authentication -->|"ACL / AuthorizationGateway"| Authorization
+ Orders -->|"Event"| Notifications
 ```
 
-> **Key Strength**: This system implements a **Stripe-Only Payment Architecture**, orchestrating clean, deterministic SAGA flows (Validate Cart → Reserve Stock → Process Payment → Confirm Order) with automated BullMQ queue processing and webhook reconciliation.
+> **Anti-Corruption Layer (ACL):** Downstream contexts define their own ports (gateway interfaces) with only the data they need. Adapters in the secondary layer translate upstream models into the downstream domain language. If Identity changes its user entity, only the Orders `ModuleUserGateway` adapter needs updating, not Orders use cases.
 
-## 🧩 Component Dependencies (C4 Level 2)
+Health has no ACL consumers. It exposes HTTP probes only.
 
-The application is structured into **Bounded Contexts** (Modules). This diagram shows the actual dependencies between modules, highlighting the orchestration role of the `Orders` module.
+## System Context (C4 Level 1)
+
+How the API sits in the local landscape:
+
+```mermaid
+flowchart LR
+    Customer["Customer"] -->|HTTPS/WSS| API["E-commerce API"]
+    API -->|"TCP"| Postgres["PostgreSQL"]
+    API -->|"TCP"| Redis["Redis Stack"]
+    API -->|"HTTPS gateway port mock today"| PayGw["Payment Gateway"]
+```
+
+The payment gateway edge is a port with a mock adapter today. A real provider can replace the adapter without changing Orders or the checkout SAGA shape.
+
+## High-Level Architecture
+
+Modular monolith on NestJS. PostgreSQL is the primary store. Redis Stack handles caching, cart documents, search, and BullMQ.
 
 ```mermaid
 graph TD
-    subgraph "Orchestration Layer"
-        Orders["📦 Orders Module"]
-    end
+ Client["Client App"] -->|HTTP/REST| API["NestJS API"]
+ Client -->|WebSocket| WS["WebSocket Gateway"]
 
-    subgraph "Core Domains"
-        Inventory["🏭 Inventory Module"]
-        Payments["💳 Payments Module"]
-        Products["🏷️ Products Module"]
-        Identity["👥 Identity Module"]
-        Authorization["🛡️ Authorization Module"]
-        Carts["🛒 Carts Module"]
-    end
+ subgraph AppCore["Application Core"]
+ API --> Authentication["Authentication"]
+ API --> Authorization["Authorization"]
+ API --> Orders["Orders"]
+ API --> Products["Products"]
+ API --> Carts["Carts"]
+ API --> Payments["Payments"]
+ API --> Inventory["Inventory"]
+ API --> Identity["Identity"]
+ API --> Health["Health"]
+ WS --> Notifications["Notifications"]
 
-    subgraph "Support"
-        Authentication["🔐 Authentication Module"]
-        Notifications["🔔 Notifications Module"]
-    end
+ Authentication -->|ACL| Identity
+ Authentication -->|ACL| Authorization
+ Orders -->|SAGA| Inventory
+ Orders -->|SAGA| Payments
+ Orders -->|ACL| Identity
+ Orders -->|ACL| Carts
+ Orders -->|Event| Notifications
+ end
 
-    %% Orders Dependencies
-    Orders -->|ACL| Inventory
-    Orders -->|ACL| Payments
-    Orders -->|ACL| Identity
-    Orders -->|ACL| Carts
-    Orders -->|Event| Notifications
+ subgraph Infra["Secondary Adapters"]
+ Authentication -->|Persist| PG["PostgreSQL"]
+ Authorization -->|Persist| PG
+ Identity -->|Persist| PG
+ Orders -->|Persist| PG
+ Products -->|Persist| PG
+ Inventory -->|Persist| PG
+ Payments -->|Persist| PG
+ Carts -->|Cache/Persist| Redis["Redis Stack"]
+ Products -->|Search| Redis
+ Orders -->|Async Jobs| BullMQ["BullMQ"]
+ Notifications -->|Async Jobs| BullMQ
+ end
 
-    %% Carts Dependencies
-    Carts -->|ACL| Inventory
-    Carts -->|Validates Item| Products
-
-    %% Auth Dependencies
-    Authentication -->|ACL / IdentityGateway| Identity
-    Authentication -->|ACL / AuthorizationGateway| Authorization
-    Payments -->|Verifies| Authentication
+ subgraph External["External"]
+ Payments -->|"Gateway port mock today"| PayPort["Payment Gateway"]
+ end
 ```
 
-## 🛒 Checkout Sequence Diagram (Stripe Flow)
+Checkout SAGA steps: Validate Cart → Reserve Stock → Process Payment (gateway port) → Confirm Order. Payment runs through a mock adapter today. The port is ready for a real provider when you wire one in.
 
-The standard flow for checkout where strict SAGA coordination is required ensuring payment is captured via Stripe and inventory is reserved cleanly.
+## Component Dependencies (C4 Level 2)
+
+Module dependencies with Orders as orchestrator:
+
+```mermaid
+graph TD
+ subgraph Orchestration["Orchestration"]
+ Orders["Orders"]
+ end
+
+ subgraph Domains["Domains"]
+ Inventory["Inventory"]
+ Payments["Payments"]
+ Products["Products"]
+ Identity["Identity"]
+ Authorization["Authorization"]
+ Carts["Carts"]
+ end
+
+ subgraph Support["Support"]
+ Authentication["Authentication"]
+ Notifications["Notifications"]
+ Health["Health"]
+ end
+
+ Orders -->|ACL| Inventory
+ Orders -->|ACL| Payments
+ Orders -->|ACL| Identity
+ Orders -->|ACL| Carts
+ Orders -->|Event| Notifications
+
+ Carts -->|ACL| Inventory
+ Carts -->|ACL| Products
+
+ Authentication -->|ACL IdentityGateway| Identity
+ Authentication -->|ACL AuthorizationGateway| Authorization
+```
+
+Note: `PaymentsModule` imports `AuthenticationModule` so Nest can apply auth guards on payment routes. That is a Nest wiring import, not an ACL gateway between Payments and Authentication.
+
+## Checkout Sequence Diagram
+
+Happy path with SAGA coordination. Payment goes through the gateway port (mock adapter today).
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant CheckoutUC as CheckoutUseCase
-    participant OrderRepo as Order Repository
-    participant BullMQ as Job Queue
-    participant Worker as Background Worker
-    participant Inventory as Inventory Module
-    participant Payment as Payment Module
+ participant Client
+ participant CheckoutUC as CheckoutUseCase
+ participant OrderRepo as Order Repository
+ participant BullMQ as Job Queue
+ participant Worker as Background Worker
+ participant Inventory as Inventory Module
+ participant Payment as Payment Module
 
-    Client->>CheckoutUC: POST /checkout
-    CheckoutUC->>CheckoutUC: Validate User & Cart
-    CheckoutUC->>OrderRepo: Create Order (Status: PENDING_PAYMENT)
-    CheckoutUC->>BullMQ: Schedule SAGA Checkout Process
-    CheckoutUC-->>Client: 201 Created (Checkout Initiated)
+ Client->>CheckoutUC: POST /checkout
+ CheckoutUC->>CheckoutUC: Validate User and Cart
+ CheckoutUC->>OrderRepo: Create Order PENDING_PAYMENT
+ CheckoutUC->>BullMQ: Schedule SAGA Checkout Process
+ CheckoutUC-->>Client: 201 Created
 
-    rect rgba(0, 255, 0, 0.1)
-    Note over Worker,Inventory: Async Phase 1: Stock Reservation
-    BullMQ->>Worker: Process Job
-    Worker->>Inventory: Reserve Stock logic
-    Inventory-->>Worker: Stock Reserved
-    end
+ rect rgba(0, 255, 0, 0.1)
+ Note over Worker,Inventory: Async Phase 1: Stock Reservation
+ BullMQ->>Worker: Process Job
+ Worker->>Inventory: Reserve Stock
+ Inventory-->>Worker: Stock Reserved
+ end
 
-    rect rgba(0, 0, 255, 0.1)
-    Note over Worker,Payment: Async Phase 2: Stripe Payment Processing
-    Worker->>Payment: Process Stripe Payment
-    Payment-->>Worker: Payment Authorized & Captured
-    end
+ rect rgba(0, 0, 255, 0.1)
+ Note over Worker,Payment: Async Phase 2: Payment via Gateway
+ Worker->>Payment: Process payment via gateway
+ Payment-->>Worker: Payment Authorized and Captured
+ end
 
-    Worker->>OrderRepo: Update Order Status (CONFIRMED)
-    Worker-->>BullMQ: Job Completed
+ Worker->>OrderRepo: Update Order Status CONFIRMED
+ Worker-->>BullMQ: Job Completed
 ```
 
-## 🔄 SAGA Compensation Flow (Failure Handling)
+## SAGA Compensation Flow (Failure Handling)
 
-If any step in the checkout process fails (e.g., stock unavailable, payment declined), the system triggers a **Compensation SAGA** to rollback previous steps automatically.
+If a checkout step fails (stock unavailable, payment declined, and so on), `CheckoutFailureListener` runs compensation.
 
 ```mermaid
 sequenceDiagram
-    participant Job as Checkout Job
-    participant Listener as CheckoutFailureListener
-    participant Payment as Payment Module
-    participant Order as Order Module
-    participant Inventory as Inventory Module
+ participant Job as Checkout Job
+ participant Listener as CheckoutFailureListener
+ participant Payment as Payment Module
+ participant Order as Order Module
+ participant Inventory as Inventory Module
 
-    Note over Job: Checkout Job Fails ❌
-    Job->>Listener: Emits 'checkout.saga.failed' event
+ Note over Job: Checkout Job Fails
+ Job->>Listener: Emits checkout.saga.failed
 
-    Listener->>Listener: Analyze Failure Step
+ Listener->>Listener: Analyze Failure Step
 
-    par Compensation Steps
-        Listener->>Payment: Process Refund (if paid)
-        Listener->>Order: Cancel Order Entity
-        Listener->>Inventory: Release Stock Reservation
-    end
+ par Compensation Steps
+ Listener->>Payment: Process Refund if paid
+ Listener->>Order: Cancel Order Entity
+ Listener->>Inventory: Release Stock Reservation
+ end
 
-    Listener-->>Listener: Log Compensation Success
+ Listener-->>Listener: Log Compensation Success
 ```
 
 <a id="key-patterns-implemented"></a>
 
-## 🛡️ Key Patterns Implemented
+## Key Patterns Implemented
 
 ### 1. Domain-Driven Design (DDD)
 
-- **Rich Domain Models**: Business logic resides in entities (`Cart`, `Order`, `Product`), enforcing invariants.
-- **Value Objects**: Immutable objects for things like `Money`, `Address`, `PaymentMethod`.
-- **Repositories**: Interfaces defined in Domain, implemented in Secondary Adapters.
+- Rich domain models: business rules live in entities (`Cart`, `Order`, `Product`).
+- Value objects: `Money`, `Address`, `PaymentMethod`, and similar.
+- Repositories: interfaces in domain, implementations in secondary adapters.
 
 ### 2. Result Pattern
 
-We use a functional `Result<T, E>` type instead of throwing exceptions for business logic flow. This makes error handling explicit and type-safe across domain and application layers.
+Use cases return `Result<T, E>` instead of throwing for business outcomes. Errors stay explicit and typed.
 
 ### 3. Idempotency
 
-Critical endpoints (like Checkout) are protected by a custom `@Idempotent()` decorator backed by Redis locks, preventing duplicate orders or double-charging during network retries.
+Checkout is protected by `@Idempotent()` with a Redis store so retries do not duplicate side effects.
 
 ### 4. Background Processing
 
-Multi-step workflows are processed asynchronously via **BullMQ** to maintain high throughput and low HTTP latency.
+Multi-step workflows run on BullMQ so HTTP stays fast and work can retry safely.
 
-## 🔀 Checkout Execution & SAGA Compensation Flow
-
-A unified view of how the system handles the checkout workflow, including **Failure & Compensation** paths.
+## Checkout Execution and SAGA Compensation Flow
 
 ```mermaid
 flowchart TD
-    Start((Start)) --> Validate[Validate Cart & Authenticated User]
-    Validate --> CreateOrder[Create Order: PENDING_PAYMENT]
-    CreateOrder --> Schedule[Schedule Checkout SAGA Job]
-    Schedule --> ReturnClient[Return 201: Checkout Initiated]
+ Start((Start)) --> Validate[Validate Cart and Authenticated User]
+ Validate --> CreateOrder[Create Order PENDING_PAYMENT]
+ CreateOrder --> Schedule[Schedule Checkout SAGA Job]
+ Schedule --> ReturnClient[Return 201 Checkout Initiated]
 
-    Schedule -.-> Worker[BullMQ Worker Processing]
-    Worker --> ValidateCart[Validate Cart State]
-    ValidateCart -->|Fail| FailSAGA[❌ Trigger Compensation SAGA]
-    ValidateCart --> ReserveStock[Reserve Stock]
+ Schedule -.-> Worker[BullMQ Worker Processing]
+ Worker --> ValidateCart[Validate Cart State]
+ ValidateCart -->|Fail| FailSAGA[Trigger Compensation SAGA]
+ ValidateCart --> ReserveStock[Reserve Stock]
 
-    ReserveStock -->|Fail| FailSAGA
-    ReserveStock --> ProcessPayment[Process Stripe Payment]
+ ReserveStock -->|Fail| FailSAGA
+ ReserveStock --> ProcessPayment[Process payment via gateway]
 
-    ProcessPayment -->|Fail| FailSAGA
-    ProcessPayment --> PaymentSuccess{Success?}
-    PaymentSuccess -- Yes --> ConfirmOrder[Update Order Status: CONFIRMED]
-    PaymentSuccess -- No --> FailSAGA
+ ProcessPayment -->|Fail| FailSAGA
+ ProcessPayment --> PaymentSuccess{Success?}
+ PaymentSuccess -- Yes --> ConfirmOrder[Update Order Status CONFIRMED]
+ PaymentSuccess -- No --> FailSAGA
 
-    ConfirmOrder --> ConfirmRes[Confirm Stock Reservation]
-    ConfirmRes --> ClearCart[Clear User Cart]
-    ClearCart --> Finalize[Finalize Order & Emit Event]
+ ConfirmOrder --> ConfirmRes[Confirm Stock Reservation]
+ ConfirmRes --> ClearCart[Clear User Cart]
+ ClearCart --> Finalize[Finalize Order and Emit Event]
 
-    %% Compensation Logic
-    FailSAGA --> Refund["Refund Stripe Payment<br/>(If Paid)"]
-    Refund --> ReleaseStock["Release Stock Reservation<br/>(If Reserved)"]
-    ReleaseStock --> CancelOrder[Update Status: CANCELLED]
+ FailSAGA --> Refund["Refund payment if paid"]
+ Refund --> ReleaseStock["Release Stock if Reserved"]
+ ReleaseStock --> CancelOrder[Update Status CANCELLED]
 ```
 
-## 💸 Payment Event Handling (Async)
+## Payment Methods (Current Scope)
 
-While checkout initiates payment, the final confirmation often happens asynchronously (e.g., via webhooks or delayed processing).
+`PaymentMethodType` currently includes **Stripe only**. The Stripe gateway adapter is a **mock** suitable for local and CI checkout proofs. A real provider SDK is not wired yet.
+
+Leftover COD-oriented use cases or Swagger text may still exist in the tree. They are not part of the active checkout payment-method enum. Treat them as legacy until removed or reintroduced on the roadmap.
+
+## Payment Event Handling (Async)
+
+Orders can react to payment-completed jobs on the payment-events queue.
 
 ```mermaid
 sequenceDiagram
-    participant Queue as Payment Events Queue
-    participant Processor as PaymentEventsProcessor
-    participant Step as PaymentCompletedStep
-    participant UseCase as HandlePaymentCompletedUC
-    participant OrderRepo as OrderRepository
+ participant Queue as Payment Events Queue
+ participant Processor as PaymentEventsProcessor
+ participant Step as PaymentCompletedStep
+ participant UseCase as HandlePaymentCompletedUC
+ participant OrderRepo as OrderRepository
 
-    Queue->>Processor: Process Job (PAYMENT_COMPLETED)
-    Processor->>Step: Execute Step
-    Step->>UseCase: Execute UseCase
-    UseCase->>OrderRepo: Find Order
-    UseCase->>OrderRepo: Update Status (PAID)
-    UseCase-->>Step: Success
-    Step-->>Processor: Job Completed
+ Queue->>Processor: Process Job PAYMENT_COMPLETED
+ Processor->>Step: Execute Step
+ Step->>UseCase: Execute UseCase
+ UseCase->>OrderRepo: Find Order
+ UseCase->>OrderRepo: Update Status PAID
+ UseCase-->>Step: Success
+ Step-->>Processor: Job Completed
 ```
 
-## 🔒 Idempotency Logic
+Webhook signature verification for a live Stripe account is stubbed. Do not treat production webhook security as complete until a real verifier is implemented.
 
-We prevent duplicate operations using a custom interceptor backed by Redis.
+## Idempotency Logic
 
 ```mermaid
 flowchart TD
-    Request[Incoming Request] --> Interceptor{Idempotency Interceptor}
-    Interceptor -->|Key Exists?| CheckRedis[Check Redis Store]
+ Request[Incoming Request] --> Interceptor{Idempotency Interceptor}
+ Interceptor -->|Key Exists?| CheckRedis[Check Redis Store]
 
-    CheckRedis -->|Found Result| ReturnCached[Return Cached Response]
-    CheckRedis -->|Found 'In Progress'| ThrowConflict[Throw 409 Conflict]
-    CheckRedis -->|Not Found| Lock[Lock Key in Redis]
+ CheckRedis -->|Found Result| ReturnCached[Return Cached Response]
+ CheckRedis -->|Found In Progress| ThrowConflict[Throw 409 Conflict]
+ CheckRedis -->|Not Found| Lock[Lock Key in Redis]
 
-    Lock --> Controller[Execute Controller Logic]
-    Controller --> Store[Store Result in Redis]
-    Store --> Response[Return Response]
+ Lock --> Controller[Execute Controller Logic]
+ Controller --> Store[Store Result in Redis]
+ Store --> Response[Return Response]
 ```
 
-## 🔔 Notification System Architecture
+## Notification System Architecture
 
-The notification system is designed for **reliability** and **real-time delivery**, ensuring no notifications are lost even if the user is offline. It uses a **Nested BullMQ Flow** to guarantee the order of operations: `Save -> Send -> Update`.
+Notifications use a nested BullMQ flow: Save → Send → Update, so delivery and persistence stay ordered.
 
 ### Module Structure (Hexagonal Architecture)
 
-The module follows strict **Ports & Adapters** layering, separating business rules from technical implementation.
-
 ```mermaid
 graph TD
-    subgraph "Primary Adapters (Driving)"
-        NC[NotificationsController]
-        NP[NotificationsProcessor]
-    end
+ subgraph Primary["Primary Adapters"]
+ NC[NotificationsController]
+ NP[NotificationsProcessor]
+ end
 
-    subgraph "Core / Application"
-        DNS[DeliverNotificationService]
-        GUC[GetNotificationsUseCase]
-        MUC[MarkAsReadUseCase]
-    end
+ subgraph Application["Core Application"]
+ DNS[DeliverNotificationService]
+ GUC[GetNotificationsUseCase]
+ MUC[MarkAsReadUseCase]
+ end
 
-    subgraph "Core / Domain"
-        NE[Notification Entity]
-        RI[NotificationRepository Interface]
-        SI[NotificationScheduler Interface]
-    end
+ subgraph Domain["Core Domain"]
+ NE[Notification Entity]
+ RI[NotificationRepository Interface]
+ SI[NotificationScheduler Interface]
+ end
 
-    subgraph "Secondary Adapters (Driven)"
-        PR[PostgresNotificationRepository]
-        BS[BullMqNotificationScheduler]
-        WG[WebsocketGateway]
-    end
+ subgraph Secondary["Secondary Adapters"]
+ PR[PostgresNotificationRepository]
+ BS[BullMqNotificationScheduler]
+ WG[WebsocketGateway]
+ end
 
-    %% Interactions
-    NC --> GUC
-    NC --> MUC
-    NP --> DNS
+ NC --> GUC
+ NC --> MUC
+ NP --> DNS
 
-    GUC --> RI
-    MUC --> RI
+ GUC --> RI
+ MUC --> RI
 
-    DNS --> WG
-    DNS --> NE
+ DNS --> WG
+ DNS --> NE
 
-    BS -- implements --> SI
-    PR -- implements --> RI
+ BS -- implements --> SI
+ PR -- implements --> RI
 
-    BS --> NE
+ BS --> NE
 ```
 
 ### Reliable Delivery Flow (BullMQ Nested Flow)
 
-To prevent "lost notifications" (where a notification is sent but not saved, or vice versa), we use a strictly ordered job flow.
-
 ```mermaid
 sequenceDiagram
-    participant System as Trigger (e.g., OrderService)
-    participant Scheduler as NotificationScheduler
-    participant Queue as BullMQ Flow
-    participant Worker as NotificationProcessor
-    participant DB as PostgreSQL
-    participant WS as WebSocketGateway
-    participant Client
+ participant System as Trigger
+ participant Scheduler as NotificationScheduler
+ participant Queue as BullMQ Flow
+ participant Worker as NotificationProcessor
+ participant DB as PostgreSQL
+ participant WS as WebSocketGateway
+ participant Client
 
-    System->>Scheduler: Schedule Notification
-    Scheduler->>Queue: Add Flow (Save -> Send -> Update)
+ System->>Scheduler: Schedule Notification
+ Scheduler->>Queue: Add Flow Save then Send then Update
 
-    Note over Queue, Worker: Step 1: Persistence (Critical)
-    Queue->>Worker: Job: SAVE_NOTIFICATION_HISTORY
-    Worker->>DB: INSERT Notification (Status: PENDING)
-    DB-->>Worker: Success
+ Note over Queue, Worker: Step 1 Persistence
+ Queue->>Worker: Job SAVE_NOTIFICATION_HISTORY
+ Worker->>DB: INSERT Notification PENDING
+ DB-->>Worker: Success
 
-    Note over Queue, Worker: Step 2: Delivery
-    Queue->>Worker: Job: SEND_NOTIFICATION
-    Worker->>WS: Send to User Room
-    WS-->>Client: Emit 'notification' Event
-    Worker-->>Queue: Success
+ Note over Queue, Worker: Step 2 Delivery
+ Queue->>Worker: Job SEND_NOTIFICATION
+ Worker->>WS: Send to User Room
+ WS-->>Client: Emit notification Event
+ Worker-->>Queue: Success
 
-    Note over Queue, Worker: Step 3: Status Update
-    Queue->>Worker: Job: UPDATE_NOTIFICATION_STATUS
-    Worker->>DB: UPDATE Status (SENT)
+ Note over Queue, Worker: Step 3 Status Update
+ Queue->>Worker: Job UPDATE_NOTIFICATION_STATUS
+ Worker->>DB: UPDATE Status SENT
 ```
