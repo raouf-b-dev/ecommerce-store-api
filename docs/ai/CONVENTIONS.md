@@ -101,7 +101,7 @@ Reference utilities:
 
 ### Boundary Rule
 
-Job handlers are **primary adapters** — they follow the same rules as controllers:
+Job handlers are **primary adapters**: they follow the same rules as controllers:
 
 1. Extract data from the job payload.
 2. Delegate to a use case.
@@ -128,9 +128,9 @@ Job handlers must **not** contain business logic, publish domain events, or inje
 
 1. Classify risk (low/medium/high).
 2. Run verification commands for changed behavior:
-   - `npm run typecheck` — TypeScript compile check (`tsc --noEmit`); run for any code change.
-   - `npm test` (or targeted `npx jest <path>`) — unit/integration tests for affected behavior.
-   - `npm run test:arch` — hexagonal and cross-module boundary rules; run when layers, modules, ports, or adapters change.
+   - `npm run typecheck`: TypeScript compile check (`tsc --noEmit`); run for any code change.
+   - `npm test` (or targeted `npx jest <path>`): unit/integration tests for affected behavior.
+   - `npm run test:arch`: hexagonal and cross-module boundary rules; run when layers, modules, ports, or adapters change.
 3. Report outcomes, gaps, assumptions, residual risks.
 4. Use handoff order: summary, changed scope, evidence, risks, assumptions.
 
@@ -146,12 +146,12 @@ Reference documents explain **universal concepts, patterns, and theory**. They a
 
 **Rules**:
 
-1. **Project-agnostic** — No project-specific tables, controller lists, module names, env vars, or "Current State" sections. No references to specific bounded contexts (e.g., "our Orders module").
-2. **Reference-backed** — Every significant claim must cite a trusted source: published book with ISBN, IETF RFC, official framework documentation, POSIX/IEEE standard, or peer-reviewed paper. Do not cite uncertain chapter numbers or unverifiable sources.
-3. **Framework examples are allowed** — Use NestJS, Express, or other framework code for illustration, but present them as _examples of the pattern_, not as the only way.
-4. **Anti-patterns section** — Include an anti-patterns table so engineers know what to avoid.
-5. **Decision rationale** — Explain _why_ the chosen approach was selected over alternatives, not just _what_ was chosen.
-6. **No companion doc links** — Do not reference sibling project files (e.g., `ROADMAP.md`, `ARCHITECTURE.md`). The document must stand alone.
+1. **Project-agnostic**: No project-specific tables, controller lists, module names, env vars, or "Current State" sections. No references to specific bounded contexts (e.g., "our Orders module").
+2. **Reference-backed**: Every significant claim must cite a trusted source: published book with ISBN, IETF RFC, official framework documentation, POSIX/IEEE standard, or peer-reviewed paper. Do not cite uncertain chapter numbers or unverifiable sources.
+3. **Framework examples are allowed**: Use NestJS, Express, or other framework code for illustration, but present them as _examples of the pattern_, not as the only way.
+4. **Anti-patterns section**: Include an anti-patterns table so engineers know what to avoid.
+5. **Decision rationale**: Explain _why_ the chosen approach was selected over alternatives, not just _what_ was chosen.
+6. **No companion doc links**: Do not reference sibling project files (e.g., `ROADMAP.md`, `ARCHITECTURE.md`). The document must stand alone.
 
 **Current reference documents**:
 
@@ -170,10 +170,10 @@ Applied documents describe **how this project implements** a pattern, or contain
 
 **Rules**:
 
-1. **May reference project internals** — Controller names, env vars, Docker commands, module-specific details are expected.
+1. **May reference project internals**: Controller names, env vars, Docker commands, module-specific details are expected.
 2. **Should link to the reference doc** for the underlying theory (e.g., `ADMIN-BOOTSTRAP.md` links to NIST/OWASP standards inline).
-3. **Runbook format preferred** — Use symptom → diagnosis → fix structure for operational docs.
-4. **Keep project state in dedicated files** — Controller inventories go in `FEATURES.md` or `README.md`, not in reference docs.
+3. **Runbook format preferred**: Use symptom → diagnosis → fix structure for operational docs.
+4. **Keep project state in dedicated files**: Controller inventories go in `FEATURES.md` or `README.md`, not in reference docs.
 
 **Current applied documents**:
 
@@ -193,25 +193,25 @@ Some documents are **primarily reference** with a project-specific appendix (e.g
 2. The project-specific section is clearly separated (e.g., its own `##` heading).
 3. The reference sections do not contain project-specific details.
 
-### 10.4 Creating New Documentation — Checklist
+### 10.4 Creating New Documentation: Checklist
 
 Before writing a new document:
 
-1. **Decide the type** — Is this universal theory (reference) or project-specific (applied)?
-2. **Choose the correct folder** — Place it in the category folder matching its domain (`security/`, `data/`, `infrastructure/`, etc.), not always `architecture/`.
+1. **Decide the type**: Is this universal theory (reference) or project-specific (applied)?
+2. **Choose the correct folder**: Place it in the category folder matching its domain (`security/`, `data/`, `infrastructure/`, etc.), not always `architecture/`.
 3. **If reference**: Write it so it can be dropped into any codebase. No project names, no module lists, no env vars.
 4. **If reference**: Include a `## References` section at the bottom with verifiable sources (books with ISBN, RFCs with URLs, official docs with links).
 5. **If applied**: Link to the relevant reference doc for theory.
-6. **Update `docs/README.md`** — Add the new document to the documentation index.
+6. **Update `docs/README.md`**: Add the new document to the documentation index.
 
 ### 10.5 Applied Document Maintenance Rule
 
 When a code change implements, removes, or significantly modifies a feature:
 
-1. **`FEATURES.md`** — Update the feature description or add the new feature entry.
-2. **`ROADMAP.md`** — Mark the relevant task as complete (`✅`).
-3. **`ADMIN-BOOTSTRAP.md`** — Update if auth/bootstrap flow changes.
-4. **`ARCHITECTURE.md`** — Update if bounded context relationships change.
+1. **`FEATURES.md`**: Update the feature description or add the new feature entry.
+2. **`ROADMAP.md`**: Mark the relevant task as complete (`✅`).
+3. **`ADMIN-BOOTSTRAP.md`**: Update if auth/bootstrap flow changes.
+4. **`ARCHITECTURE.md`**: Update if bounded context relationships change.
 
 This is a mandatory part of the Definition of Done (see `GOVERNANCE-AND-QUALITY-GATES.md` §1).
 
@@ -254,7 +254,7 @@ To ensure maximum type safety and prevent runtime errors:
 
 ## 13. Optimistic Locking (Version) Convention
 
-`version` is a persistence/concurrency concern, not a business concept — it must never appear on domain entities, domain interfaces, or domain props. The domain entity has zero knowledge of versioning.
+`version` is a persistence/concurrency concern, not a business concept: it must never appear on domain entities, domain interfaces, or domain props. The domain entity has zero knowledge of versioning.
 
 Rationale: [ADR-0005](../architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md) (extends [ADR-0004](../architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md) Decision 3).
 
@@ -280,13 +280,13 @@ async execute(command: UpdateProductCommand) {
   if (result.isFailure) throw new NotFoundError();
 
   const { entity, expectedVersion } = result.value;
-  entity.rename(command.newName); // pure domain method — no version involved
+ entity.rename(command.newName); // pure domain method: no version involved
 
   await this.repo.save(entity, expectedVersion);
 }
 ```
 
-The infrastructure adapter is where version actually gets used. `findByIdForUpdate` reads `orm.version` and returns it beside the domain entity. Do **not** stamp `orm.version` and call TypeORM `save()` on a detached mapped entity — that increment can succeed without `WHERE version = :expectedVersion`. Use an atomic QueryBuilder update:
+The infrastructure adapter is where version actually gets used. `findByIdForUpdate` reads `orm.version` and returns it beside the domain entity. Do **not** stamp `orm.version` and call TypeORM `save()` on a detached mapped entity: that increment can succeed without `WHERE version = :expectedVersion`. Use an atomic QueryBuilder update:
 
 ```typescript
 async save(entity: Product, expectedVersion?: number) {
@@ -344,7 +344,7 @@ There is no in-memory value to carry across two separate HTTP requests. `expecte
 { name: "New Name", expectedVersion: 3 }
 ```
 
-The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a command/DTO concern — perfectly fine to live there), and it flows into `repo.save(entity, command.expectedVersion)`. Nothing about the domain model changes between the two scenarios; only where the number comes from changes.
+The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a command/DTO concern: perfectly fine to live there), and it flows into `repo.save(entity, command.expectedVersion)`. Nothing about the domain model changes between the two scenarios; only where the number comes from changes.
 
 ### 13.3 Where Version Is Allowed
 
@@ -359,7 +359,7 @@ The `UpdateProductCommand` carries `expectedVersion` as a plain field (it is a c
 
 ### 13.4 Anti-Pattern: In-Memory Version Cache
 
-Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version — so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to — either as a same-call in-memory value or as an explicit param threaded through the command — never as shared mutable state keyed only by ID.
+Do not try to solve the cross-request case with an in-memory cache in the repository (e.g., a `Map<id, version>` keyed by entity ID, populated on load, read on save). If the repository is a singleton (NestJS default DI scope) and two different requests load the same entity concurrently, the second load overwrites the first's cached version: so a save that should be rejected as stale can silently succeed. The version must ride with the specific call it belongs to: either as a same-call in-memory value or as an explicit param threaded through the command: never as shared mutable state keyed only by ID.
 
 ## 14. Unknown Error Normalization
 
@@ -368,7 +368,7 @@ When handling `catch (err: unknown)` or rejected promises, never stringify or wr
 | Helper                 | Use when                                                                                                                                                             |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `toErrorMessage(err)`  | You need a safe log/response string from an unknown value                                                                                                            |
-| `toError(err)`         | You need an `Error` for logging, rethrowing, or passing to factories — preserves existing `Error` instances and sets `{ cause: err }` when wrapping non-Error values |
+| `toError(err)` | You need an `Error` for logging, rethrowing, or passing to factories: preserves existing `Error` instances and sets `{ cause: err }` when wrapping non-Error values |
 | `toOptionalError(err)` | A cause is optional (e.g. `ErrorFactory` with `undefined` allowed for falsy inputs)                                                                                  |
 
 For Redis-specific logging, use `logRedisError(logger, source, err)` from `src/infrastructure/redis/redis-error.utils.ts`.
@@ -387,7 +387,7 @@ toError(err);
 toOptionalError(err)?.stack;
 ```
 
-`if (err instanceof Error)` checks and `instanceof` used for control flow (not ternaries) remain valid — e.g. rethrowing known error types in job handlers.
+`if (err instanceof Error)` checks and `instanceof` used for control flow (not ternaries) remain valid: e.g. rethrowing known error types in job handlers.
 
 ## 15. Documentation Taxonomy & Naming Standards
 
@@ -395,11 +395,11 @@ Every documentation artifact in the repository MUST comply with the 6-layer taxo
 
 1. **Document Classification**: Every document MUST be classified as **Reference** (timeless theory), **Applied** (project design/runbook), or **Hybrid** in its frontmatter metadata header.
 2. **Directory Placement**:
-   - `docs/architecture/` — Core architecture principles, domain architecture (`domains/`), project patterns (`project-patterns/`), and ADRs (`adr/`).
-   - `docs/database/` — Relational schema design (`DATABASE-DESIGN.md`), transaction policies (`TRANSACTIONS.md`), indexing strategies (`INDEXES.md`), and coding standards (`DATABASE-STANDARDS.md`).
-   - `docs/decision-guides/` — Cross-cutting decision frameworks helping engineers choose between patterns (`WHEN-TO-*`).
-   - `docs/data/` — Timeless computer science and software engineering theory (`concurrency/`, `consistency/`, `performance/`).
-   - `docs/infrastructure/` — Deployment, CI/CD, process lifecycles, and operational runbooks.
+   - `docs/architecture/`: Core architecture principles, domain architecture (`domains/`), project patterns (`project-patterns/`), and ADRs (`adr/`).
+   - `docs/database/`: Relational schema design (`DATABASE-DESIGN.md`), transaction policies (`TRANSACTIONS.md`), indexing strategies (`INDEXES.md`), and coding standards (`DATABASE-STANDARDS.md`).
+   - `docs/decision-guides/`: Cross-cutting decision frameworks helping engineers choose between patterns (`WHEN-TO-*`).
+   - `docs/data/`: Timeless computer science and software engineering theory (`concurrency/`, `consistency/`, `performance/`).
+   - `docs/infrastructure/`: Deployment, CI/CD, process lifecycles, and operational runbooks.
 3. **Filename Standards**:
    - Use uppercase kebab-case for technical reference documents (`DATABASE-DESIGN.md`, `ENGINEERING-PRINCIPLES.md`).
    - ADRs MUST use 4-digit zero-padded numbering: `ADR-XXXX-[short-title].md` (e.g. `ADR-0004-inventory-integrity-and-concurrency.md`).
@@ -416,3 +416,4 @@ Every documentation artifact in the repository MUST comply with the 6-layer taxo
 - [../integration/INTEGRATION-PATTERNS.md](../integration/INTEGRATION-PATTERNS.md)
 - [GOVERNANCE-AND-QUALITY-GATES.md](GOVERNANCE-AND-QUALITY-GATES.md)
 - [WORKFLOW-PLAYBOOK.md](WORKFLOW-PLAYBOOK.md)
+

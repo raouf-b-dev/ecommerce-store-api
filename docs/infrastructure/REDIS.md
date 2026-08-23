@@ -2,7 +2,7 @@
 
 How this API uses Redis across concerns, how keys are namespaced, and what happens when Redis is unavailable.
 
-**Why**: [ADR-0006](../architecture/adr/ADR-0006-redis-fail-open-cache-aside.md) — fail-open cache-aside, fail-closed idempotency, generation invalidation, shared connection options.
+**Why**: [ADR-0006](../architecture/adr/ADR-0006-redis-fail-open-cache-aside.md): fail-open cache-aside, fail-closed idempotency, generation invalidation, shared connection options.
 
 ## Roles
 
@@ -39,7 +39,7 @@ IdempotencyService ──────────────────┘
                                RedisService (connection + typed client)
 ```
 
-- **`CachePort` lives in shared-kernel** (driven port for KV + RediSearch). Methods: `get`/`getMany`/`set`/`setAll`/`delete`/`search`. Callers pass a type parameter (`get<ProductForCache>`, `search<OrderForCache>`); `*CacheMapper.fromCache` maps the wire DTO to the domain entity (corrupt / invalid payload → `null` → treat as miss → Postgres). Wire dates are epoch milliseconds. `CacheService` is the Redis adapter; readiness is `CachePort.isAvailable()` so adapters like idempotency never inject `RedisService`. Do **not** merge `CacheService` into `RedisService` — that would put the port implementation inside the vendor client.
+- **`CachePort` lives in shared-kernel** (driven port for KV + RediSearch). Methods: `get`/`getMany`/`set`/`setAll`/`delete`/`search`. Callers pass a type parameter (`get<ProductForCache>`, `search<OrderForCache>`); `*CacheMapper.fromCache` maps the wire DTO to the domain entity (corrupt / invalid payload → `null` → treat as miss → Postgres). Wire dates are epoch milliseconds. `CacheService` is the Redis adapter; readiness is `CachePort.isAvailable()` so adapters like idempotency never inject `RedisService`. Do **not** merge `CacheService` into `RedisService`: that would put the port implementation inside the vendor client.
 - **One fail-open boundary for cache**: `CacheService` / `RedisService` command helpers return null/false/[] on outage. Cached repositories treat that as a miss and use Postgres.
 - **Idempotency is fail-closed**: if the cache is unavailable (`!isAvailable()` / set fails) or cannot persist the completed body, checkout returns **503** so clients retry safely.
 - **No health-aware DI Proxy**: modules bind `*Repository` to the cached implementation directly.
@@ -87,3 +87,4 @@ Requires Docker. Harness: `test/integration/redis/`. Spec kills Redis clients un
 
 - Phase 14 graceful degradation scope: [`docs/ROADMAP.md`](../ROADMAP.md)
 - Process lifecycle / shutdown: [`PROCESS-LIFECYCLE.md`](./PROCESS-LIFECYCLE.md)
+

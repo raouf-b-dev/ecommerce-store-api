@@ -19,7 +19,7 @@ Each PostgreSQL connection consumes approximately **5-10 MB of memory** (backend
 3. Lock contention on shared structures increases with connection count.
 
 > _"The optimal number of active database connections is typically: `connections = (2 × CPU cores) + number_of_disks`. More connections reduce throughput."_
-> — PostgreSQL Wiki
+> Source: PostgreSQL Wiki
 
 ### 1.2 Application-Level Pooling (TypeORM)
 
@@ -80,9 +80,9 @@ flowchart TD
 
 | Mode            | Description                                                                  | Compatibility                                                                                          |
 | :-------------- | :--------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| **Session**     | One PgBouncer connection → one PostgreSQL connection for the entire session. | Full — all features work.                                                                              |
-| **Transaction** | Connection returned to pool after each transaction.                          | High — incompatible with `SET`, session-level prepared statements, advisory locks across transactions. |
-| **Statement**   | Connection returned after each statement.                                    | Limited — incompatible with multi-statement transactions.                                              |
+| **Session** | One PgBouncer connection → one PostgreSQL connection for the entire session. | Full: all features work. |
+| **Transaction** | Connection returned to pool after each transaction. | High: incompatible with `SET`, session-level prepared statements, advisory locks across transactions. |
+| **Statement** | Connection returned after each statement. | Limited: incompatible with multi-statement transactions. |
 
 > **Recommendation for TypeORM**: Use `transaction` mode. Set `prepareStatements: false` in TypeORM config. Avoid session-scoped `SET` commands.
 
@@ -132,9 +132,9 @@ flowchart TD
 | Parameter                  | Default | Recommendation                                      | Notes                                                                                                                                                                                                                               |
 | :------------------------- | :------ | :-------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`shared_buffers`**       | 128 MB  | **25% of total RAM** (e.g., 4 GB on a 16 GB server) | PostgreSQL's internal page cache. Beyond ~40% of RAM, returns diminish because the OS page cache becomes less effective.                                                                                                            |
-| **`work_mem`**             | 4 MB    | **32-128 MB** for typical workloads                 | Memory for sorts, hashes, and bitmap operations. **Allocated per-operation, not per-connection** — a complex query with 5 sort nodes allocates 5 × `work_mem`. Set conservatively globally; increase per-session for heavy queries. |
+| **`work_mem`** | 4 MB | **32-128 MB** for typical workloads | Memory for sorts, hashes, and bitmap operations. **Allocated per-operation, not per-connection**: a complex query with 5 sort nodes allocates 5 × `work_mem`. Set conservatively globally; increase per-session for heavy queries. |
 | **`maintenance_work_mem`** | 64 MB   | **256 MB - 1 GB**                                   | Used by VACUUM, CREATE INDEX, ALTER TABLE. Higher = faster maintenance operations. Safe to set high because only a few maintenance operations run concurrently.                                                                     |
-| **`effective_cache_size`** | 4 GB    | **75% of total RAM**                                | Not an allocation — just a hint to the planner about how much total cache (shared_buffers + OS page cache) is available. Affects planner decisions about index vs. sequential scans.                                                |
+| **`effective_cache_size`** | 4 GB | **75% of total RAM** | Not an allocation: just a hint to the planner about how much total cache (shared_buffers + OS page cache) is available. Affects planner decisions about index vs. sequential scans. |
 
 ### 3.2 The `work_mem` Trap
 
@@ -217,7 +217,7 @@ sequenceDiagram
 
 ### 5.2 Change Data Capture (CDC)
 
-Logical replication enables **Change Data Capture** — streaming database changes to external systems:
+Logical replication enables **Change Data Capture**: streaming database changes to external systems:
 
 ```mermaid
 flowchart LR
@@ -311,7 +311,7 @@ const dataSource = new DataSource({
 
 ### 6.3 Read-After-Write Consistency with Replicas
 
-Replicas introduce **replication lag** — the user might not see their own writes. See [Eventual Consistency](../consistency/EVENTUAL-CONSISTENCY.md) §3.2 for strategies:
+Replicas introduce **replication lag**: the user might not see their own writes. See [Eventual Consistency](../consistency/EVENTUAL-CONSISTENCY.md) §3.2 for strategies:
 
 ```typescript
 // After a write, force reads from primary for this user briefly
@@ -335,3 +335,4 @@ const queryRunner = usePrimary
 - PgBouncer Documentation. https://www.pgbouncer.org/config.html
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapter 5: "Replication." Chapter 6: "Partitioning."
 - TypeORM. _Read/Write Splitting (Replication)_. https://typeorm.io/multiple-data-sources#replication
+

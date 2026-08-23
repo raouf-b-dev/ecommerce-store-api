@@ -70,14 +70,14 @@ Execution Time: 0.168 ms
 | Node Type             | Description                                               | Performance Implication                                                                                          |
 | :-------------------- | :-------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
 | **Seq Scan**          | Reads every page of the table.                            | Acceptable for small tables or low selectivity. Red flag on large tables with selective predicates.              |
-| **Index Scan**        | Traverses index, then fetches full row from heap.         | Good — query uses an index. Check if index-only scan is possible.                                                |
-| **Index Only Scan**   | Satisfies query entirely from index.                      | Excellent — most efficient scan. Requires covering index + clean visibility map.                                 |
+| **Index Scan** | Traverses index, then fetches full row from heap. | Good: query uses an index. Check if index-only scan is possible. |
+| **Index Only Scan** | Satisfies query entirely from index. | Excellent: most efficient scan. Requires covering index + clean visibility map. |
 | **Bitmap Index Scan** | Builds TID bitmap from index, fetches in physical order.  | Good for medium selectivity (1-20%). Reduces random I/O via batching.                                            |
 | **Nested Loop**       | For each outer row, scans inner input.                    | Efficient when outer is small + inner has index. Catastrophic when both are large: O(n × m).                     |
 | **Hash Join**         | Builds hash table from smaller input, probes with larger. | Efficient for equi-joins. Requires enough `work_mem` for the hash table.                                         |
 | **Merge Join**        | Merges two sorted inputs.                                 | Efficient when both are pre-sorted (from index scans).                                                           |
 | **Sort**              | Sorts input rows.                                         | If unexpected, may indicate missing index. Check `Sort Method`: `quicksort` (memory) vs `external merge` (disk). |
-| **Aggregate**         | Computes `COUNT`, `SUM`, `AVG`, etc.                      | Check input — if Seq Scan, the aggregate scans the entire table.                                                 |
+| **Aggregate** | Computes `COUNT`, `SUM`, `AVG`, etc. | Check input: if Seq Scan, the aggregate scans the entire table. |
 
 ---
 
@@ -88,9 +88,9 @@ Execution Time: 0.168 ms
 | **Seq Scan on large table with selective WHERE**        | Missing index.                                                       | Create an appropriate index. See [Index Design](INDEX-DESIGN.md).                     |
 | **Estimated rows ≠ actual rows (10x+)**                 | Stale statistics. Planner makes bad decisions.                       | Run `ANALYZE tablename;`                                                              |
 | **Nested Loop with large outer input**                  | O(n × m) join on large datasets.                                     | Ensure inner has an index on join column. Check `work_mem` for Hash Join.             |
-| **Sort with `external merge`**                          | Sort spills to disk — insufficient `work_mem`.                       | `SET work_mem = '64MB';` or add an index providing sort order.                        |
+| **Sort with `external merge`** | Sort spills to disk: insufficient `work_mem`. | `SET work_mem = '64MB';` or add an index providing sort order. |
 | **Bitmap Heap Scan with high "Rows Removed by Filter"** | Index covers partial predicate only.                                 | Add filter columns to the index (composite or `INCLUDE`).                             |
-| **Index Scan with "Filter" removing many rows**         | Same as above — index used partially.                                | Refine index to cover all predicate columns.                                          |
+| **Index Scan with "Filter" removing many rows** | Same as above: index used partially. | Refine index to cover all predicate columns. |
 | **`loops=N` with large N**                              | Inner node executes N times. If N is large, it dominates query time. | Verify N matches expected outer rows. If too high, add more selective index on outer. |
 
 ---
@@ -100,7 +100,7 @@ Execution Time: 0.168 ms
 The N+1 problem occurs when an ORM executes 1 query to fetch N parents, then N queries to fetch each parent's related children.
 
 ```
-N+1 Problem — Order with OrderItems:
+N+1 Problem: Order with OrderItems:
 
 Query 1:   SELECT * FROM orders WHERE user_id = ?;          → 100 rows
 Query 2:   SELECT * FROM order_items WHERE order_id = 'order_1'; → 3 rows
@@ -127,8 +127,8 @@ Enable TypeORM query logging (`logging: true`) and inspect for repeated identica
 
 | Solution           | Implementation                                        | Generated SQL                                                   |
 | :----------------- | :---------------------------------------------------- | :-------------------------------------------------------------- |
-| **Eager JOIN**     | `relations: ['orderItems']` or `.leftJoinAndSelect()` | `SELECT ... FROM orders LEFT JOIN order_items ON ...` — 1 query |
-| **Subquery batch** | `@RelationId` or manual `IN` query                    | `SELECT ... WHERE order_id IN (?, ?, ...)` — 2 queries          |
+| **Eager JOIN** | `relations: ['orderItems']` or `.leftJoinAndSelect()` | `SELECT ... FROM orders LEFT JOIN order_items ON ...`: 1 query |
+| **Subquery batch** | `@RelationId` or manual `IN` query | `SELECT ... WHERE order_id IN (?, ?, ...)`: 2 queries |
 | **QueryBuilder**   | `.leftJoinAndSelect('order.items', 'items')`          | Full control over columns fetched                               |
 
 > **Recommendation**: For read-only list/search endpoints, use QueryBuilder with explicit `.leftJoinAndSelect()`. For write operations, load only the aggregate root. See also [CQRS.md](../../architecture/CQRS.md) §2.2.1.
@@ -180,4 +180,5 @@ ORDER BY mean_exec_time DESC LIMIT 10;
 - PostgreSQL Documentation. _§14.1: Using EXPLAIN_. https://www.postgresql.org/docs/current/using-explain.html
 - PostgreSQL Documentation. _§28.2: pg_stat_statements_. https://www.postgresql.org/docs/current/pgstatstatements.html
 - Winand, M. (2012). _SQL Performance Explained_. https://use-the-index-luke.com/
-- Selinger, P.G. et al. (1979). "Access Path Selection in a Relational Database Management System." _Proceedings of ACM SIGMOD_, pp. 23–34. DOI: 10.1145/582095.582099
+- Selinger, P.G. et al. (1979). "Access Path Selection in a Relational Database Management System." _Proceedings of ACM SIGMOD_, pp. 23-34. DOI: 10.1145/582095.582099
+

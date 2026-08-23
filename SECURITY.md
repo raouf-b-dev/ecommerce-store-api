@@ -14,7 +14,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Email**: Send details to [rbdz@hotmail.fr](mailto:rbdz@hotmail.fr)
-2. **Subject**: `[SECURITY] ecommerce-store-api — Brief description`
+2. **Subject**: `[SECURITY] ecommerce-store-api: Brief description`
 3. **Include**:
    - Description of the vulnerability
    - Steps to reproduce

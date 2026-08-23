@@ -71,4 +71,5 @@ The API includes bootstrap-level protection against port conflicts. If you see t
 
 1. Find and kill the process using the port: `lsof -i :3000`
 2. Or change the `PORT` value in your `.env.*` file
-3. The API will log the conflict and exit with a non-zero code — it won't crash-loop silently
+3. The API will log the conflict and exit with a non-zero code: it won't crash-loop silently
+

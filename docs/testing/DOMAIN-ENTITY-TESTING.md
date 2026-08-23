@@ -5,7 +5,7 @@ type: Applied
 # Domain Entity Testing
 
 > Executable specifications for domain invariants, state machines, and value objects.
-> Phase 13 methodology — apply to all new specs under `src/modules/*/core/domain/`.
+> Phase 13 methodology: apply to all new specs under `src/modules/*/core/domain/`.
 
 ## Workflow
 
@@ -21,7 +21,7 @@ write tests that document those rules
 
 Tests document **current** domain code. They do not silently redefine behaviour.
 
-## Structure — Given / When / Then
+## Structure: Given / When / Then
 
 Nest `describe` by **behaviour**, then **precondition**:
 
@@ -41,7 +41,7 @@ describe('Order', () => {
 
 Prefer names that read as domain rules: _"transitions order to CONFIRMED"_ over _"should confirm payment"_.
 
-## Parameterized tests — `it.each`
+## Parameterized tests: `it.each`
 
 Use when the **rule is the same** but **input varies**:
 
@@ -56,12 +56,12 @@ it.each([OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED])(
 
 Do not use `it.each` when each case needs different setup or assertions.
 
-## State machines — transition matrix
+## State machines: transition matrix
 
-Maintain an **independent expected specification** in the test file. Assert production policy against it — never derive expected values from production code (that is tautological).
+Maintain an **independent expected specification** in the test file. Assert production policy against it: never derive expected values from production code (that is tautological).
 
 ```ts
-// order-workflow.spec.ts (top) — independent business specification
+// order-workflow.spec.ts (top): independent business specification
 const allowedTransitions: [OrderStatus, OrderStatus][] = [
   [OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED],
   // ...
@@ -97,8 +97,8 @@ Prefer `createDomain*()` helpers over inline 20-line prop objects.
 | Value objects | `core/domain/value-objects/` | Validation, normalization, calculations, transitions    |
 | Entities      | `core/domain/entities/`      | Invariants, transitions, mutation guards, serialization |
 | Aggregates    | entity + children            | Order + items, Cart + items, User + addresses           |
-| Use cases     | `core/application/`          | Separate — orchestration, ports, auth                   |
-| Repositories  | `secondary-adapters/`        | Separate — integration tests                            |
+| Use cases | `core/application/` | Separate: orchestration, ports, auth |
+| Repositories | `secondary-adapters/` | Separate: integration tests |
 
 ## Anti-patterns
 
@@ -116,3 +116,4 @@ npm run typecheck
 npx jest "src/modules/*/core/domain/**/*.spec.ts"
 npm test
 ```
+

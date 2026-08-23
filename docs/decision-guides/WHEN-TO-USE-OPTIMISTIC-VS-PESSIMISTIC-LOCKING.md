@@ -28,7 +28,7 @@ Use OCC when:
 2. Accept `expectedVersion` in repository `save()` / update application use cases.
 3. Execute explicit conditional SQL updates checking `WHERE id = :id AND version = :expectedVersion`.
 4. Throw `HttpStatus.CONFLICT` (`409 Conflict`) if zero rows are updated.
-5. Map application-owned columns with `UpdateFromEntity` / `toUpdatePayload()`. Exclude persistence-owned `id`, `version`, `@CreateDateColumn`, `@UpdateDateColumn`, and separately persisted relations. Stamp `version` and `updatedAt` in the QueryBuilder `.set()` — TypeORM hooks do not run on QueryBuilder `UPDATE`.
+5. Map application-owned columns with `UpdateFromEntity` / `toUpdatePayload()`. Exclude persistence-owned `id`, `version`, `@CreateDateColumn`, `@UpdateDateColumn`, and separately persisted relations. Stamp `version` and `updatedAt` in the QueryBuilder `.set()`: TypeORM hooks do not run on QueryBuilder `UPDATE`.
 
 ---
 

@@ -1,12 +1,12 @@
 # Multi-Version Concurrency Control (MVCC) & Isolation Levels
 
-A deep-dive into PostgreSQL's MVCC implementation — how row versioning, snapshot isolation, and visibility rules work internally — and a rigorous treatment of the four SQL isolation levels with worked concurrent-transaction examples.
+A deep-dive into PostgreSQL's MVCC implementation: how row versioning, snapshot isolation, and visibility rules work internally: and a rigorous treatment of the four SQL isolation levels with worked concurrent-transaction examples.
 
 > _Part of the [Concurrency Control](CONCURRENCY-FOUNDATIONS.md) series._
 
 ---
 
-## 1. MVCC — Core Concept
+## 1. MVCC: Core Concept
 
 > _Source: PostgreSQL Documentation, Chapter 13: Concurrency Control. https://www.postgresql.org/docs/current/mvcc.html_
 
@@ -85,8 +85,8 @@ Because updates create new tuple versions rather than modifying existing ones, d
 2. Marks the space as reusable for future inserts.
 3. Updates the **Visibility Map** (VM) and **Free Space Map** (FSM) to track available space.
 
-> _"VACUUM is not optional maintenance — it is a fundamental requirement of MVCC. Without it, tables grow without bound (table bloat) and index performance degrades as dead tuples accumulate."_
-> — PostgreSQL Documentation, §25.1: Routine Vacuuming
+> _"VACUUM is not optional maintenance: it is a fundamental requirement of MVCC. Without it, tables grow without bound (table bloat) and index performance degrades as dead tuples accumulate."_
+> Source: PostgreSQL Documentation, §25.1: Routine Vacuuming
 
 For autovacuum tuning as a performance concern, see [Storage & Maintenance](../performance/STORAGE-AND-MAINTENANCE.md).
 
@@ -106,7 +106,7 @@ This write-write conflict resolution is where the isolation levels diverge.
 
 ## 5. Transaction Isolation Levels
 
-> _Source: ANSI/ISO SQL-92 Standard, §4.28; Berenson, H. et al. (1995). "A Critique of ANSI SQL Isolation Levels." Proceedings of ACM SIGMOD, pp. 1–10._
+> _Source: ANSI/ISO SQL-92 Standard, §4.28; Berenson, H. et al. (1995). "A Critique of ANSI SQL Isolation Levels." Proceedings of ACM SIGMOD, pp. 1-10._
 
 ### 5.1 The ANSI SQL Isolation Levels
 
@@ -117,7 +117,7 @@ This write-write conflict resolution is where the isolation levels diverge.
 | **REPEATABLE READ**  | Prevented  |      Prevented      |  Possible\*  |  Prevented  |  Possible  |
 | **SERIALIZABLE**     | Prevented  |      Prevented      |  Prevented   |  Prevented  | Prevented  |
 
-> \*PostgreSQL's `REPEATABLE READ` (Snapshot Isolation) also prevents phantom reads in practice. Berenson et al. (1995) demonstrate that SI is strictly stronger than ANSI `REPEATABLE READ` but strictly weaker than `SERIALIZABLE` — it permits write skew.
+> \*PostgreSQL's `REPEATABLE READ` (Snapshot Isolation) also prevents phantom reads in practice. Berenson et al. (1995) demonstrate that SI is strictly stronger than ANSI `REPEATABLE READ` but strictly weaker than `SERIALIZABLE`: it permits write skew.
 
 ### 5.2 PostgreSQL's Implementation
 
@@ -130,9 +130,9 @@ PostgreSQL implements only three distinct behaviours, because it uses MVCC rathe
 | `REPEATABLE READ`  | **Snapshot Isolation (SI)**               | Per-transaction (snapshot taken at first statement, fixed for the entire transaction) |
 | `SERIALIZABLE`     | **Serializable Snapshot Isolation (SSI)** | Per-transaction + dependency tracking                                                 |
 
-> _Source: Ports, D.R.K. & Grittner, K. (2012). "Serializable Snapshot Isolation in PostgreSQL." Proceedings of the VLDB Endowment, 5(12), pp. 1850–1861._
+> _Source: Ports, D.R.K. & Grittner, K. (2012). "Serializable Snapshot Isolation in PostgreSQL." Proceedings of the VLDB Endowment, 5(12), pp. 1850-1861._
 
-### 5.3 READ COMMITTED — The Default
+### 5.3 READ COMMITTED: The Default
 
 Each **SQL statement** within a transaction sees a snapshot of all data committed at the instant the statement begins. Different statements within the same transaction may see different committed states.
 
@@ -194,7 +194,7 @@ sequenceDiagram
 
 ### 5.5 SERIALIZABLE (SSI)
 
-The strongest guarantee: the result of any set of concurrent transactions is equivalent to **some** serial ordering. PostgreSQL implements this using **Serializable Snapshot Isolation (SSI)**, which extends SI with runtime detection of **dangerous structures** — read-write dependency cycles (Cahill et al., 2008).
+The strongest guarantee: the result of any set of concurrent transactions is equivalent to **some** serial ordering. PostgreSQL implements this using **Serializable Snapshot Isolation (SSI)**, which extends SI with runtime detection of **dangerous structures**: read-write dependency cycles (Cahill et al., 2008).
 
 **When to use**: Business invariants that span multiple rows or tables and cannot be enforced by a single `SELECT ... FOR UPDATE` or version check. The classic example is **write skew**:
 
@@ -240,9 +240,10 @@ sequenceDiagram
 
 ## 6. References
 
-- ANSI (1992). _ANSI X3.135-1992 — Database Language SQL_. §4.28: SQL-transactions.
-- Berenson, H. et al. (1995). "A Critique of ANSI SQL Isolation Levels." _Proceedings of ACM SIGMOD_, pp. 1–10. DOI: 10.1145/223784.223785
-- Cahill, M.J., Röhm, U., & Fekete, A.D. (2008). "Serializable Isolation for Snapshot Databases." _Proceedings of ACM SIGMOD_, pp. 729–738.
-- Ports, D.R.K. & Grittner, K. (2012). "Serializable Snapshot Isolation in PostgreSQL." _Proceedings of the VLDB Endowment_, 5(12), pp. 1850–1861.
+- ANSI (1992). _ANSI X3.135-1992: Database Language SQL_. §4.28: SQL-transactions.
+- Berenson, H. et al. (1995). "A Critique of ANSI SQL Isolation Levels." _Proceedings of ACM SIGMOD_, pp. 1-10. DOI: 10.1145/223784.223785
+- Cahill, M.J., Röhm, U., & Fekete, A.D. (2008). "Serializable Isolation for Snapshot Databases." _Proceedings of ACM SIGMOD_, pp. 729-738.
+- Ports, D.R.K. & Grittner, K. (2012). "Serializable Snapshot Isolation in PostgreSQL." _Proceedings of the VLDB Endowment_, 5(12), pp. 1850-1861.
 - PostgreSQL Global Development Group. _Chapter 13: Concurrency Control_. https://www.postgresql.org/docs/current/mvcc.html
 - PostgreSQL Global Development Group. _§25.1: Routine Vacuuming_. https://www.postgresql.org/docs/current/routine-vacuuming.html
+

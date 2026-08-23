@@ -26,7 +26,7 @@ A comprehensive reference covering the Entity-Attribute-Value data modelling pat
 ### Traditional (Column-Per-Attribute)
 
 ```sql
--- Fixed schema — every attribute is a column
+-- Fixed schema: every attribute is a column
 CREATE TABLE products (
   id SERIAL PRIMARY KEY,
   name VARCHAR(200),
@@ -43,7 +43,7 @@ CREATE TABLE products (
 
 **Problems:**
 
-- Schema is rigid — adding a new attribute requires a migration
+- Schema is rigid: adding a new attribute requires a migration
 - Category-specific columns pollute the generic entity
 - Every product row has dozens of unused `NULL` columns
 - ALTER TABLE on large tables causes downtime
@@ -51,7 +51,7 @@ CREATE TABLE products (
 ### EAV (Row-Per-Attribute)
 
 ```sql
--- Flexible schema — attributes are rows
+-- Flexible schema: attributes are rows
 CREATE TABLE product_attribute_definitions (
   id SERIAL PRIMARY KEY,
   code VARCHAR(50) UNIQUE,
@@ -72,7 +72,7 @@ CREATE TABLE product_attribute_values (
 
 **Benefits:**
 
-- Zero-migration attribute creation — just INSERT a row
+- Zero-migration attribute creation: just INSERT a row
 - Category-agnostic core entity
 - Each product category defines exactly what it needs
 - Clean separation between schema and data
@@ -110,16 +110,16 @@ EAV is not a replacement for core domain fields. Fields that:
 
 ## 🌍 Industry Examples
 
-### Magento / Adobe Commerce — EAV Pioneer
+### Magento / Adobe Commerce: EAV Pioneer
 
 Magento is the **most famous production EAV implementation** in e-commerce:
 
 - **EAV tables per entity type**: `catalog_product_entity_varchar`, `catalog_product_entity_int`, `catalog_product_entity_decimal`, `catalog_product_entity_text`
 - **Attribute sets**: Groups of attributes assigned to product types (e.g., "Clothing" has size/color, "Electronics" has battery/RAM)
-- **Admin UI**: Admins create custom attributes via dashboard — stored in `eav_attribute` table
-- **Takeaway**: The world's most deployed open-source e-commerce platform runs on EAV. Our approach follows the same principle at a simpler scale — one `value` column instead of type-specific tables.
+- **Admin UI**: Admins create custom attributes via dashboard: stored in `eav_attribute` table
+- **Takeaway**: The world's most deployed open-source e-commerce platform runs on EAV. Our approach follows the same principle at a simpler scale: one `value` column instead of type-specific tables.
 
-### Shopify — Metafields
+### Shopify: Metafields
 
 Shopify exposes dynamic product attributes as "Metafields":
 
@@ -139,7 +139,7 @@ Shopify exposes dynamic product attributes as "Metafields":
 - **Types** = our `data_type` enum (string, number, boolean, plus richer types like `list.single_line_text_field`)
 - **Takeaway**: Shopify's Metafields are exactly our "Attribute Definitions + Values"
 
-### Salesforce — Custom Fields
+### Salesforce: Custom Fields
 
 Salesforce is the gold standard for entity customization:
 
@@ -148,18 +148,18 @@ Salesforce is the gold standard for entity customization:
 - **Storage**: EAV-like `CustomFieldData` tables partitioned per org
 - **Takeaway**: The world's #1 CRM runs on dynamic field definitions. The pattern applies equally to e-commerce products.
 
-### WooCommerce — Post Meta
+### WooCommerce: Post Meta
 
-WordPress/WooCommerce uses `wp_postmeta` — one of the most deployed EAV systems on earth:
+WordPress/WooCommerce uses `wp_postmeta`: one of the most deployed EAV systems on earth:
 
 ```sql
--- wp_postmeta — powers product attributes for 28% of online stores
+-- wp_postmeta: powers product attributes for 28% of online stores
 SELECT meta_key, meta_value FROM wp_postmeta WHERE post_id = 42;
 -- Returns: ('_price', '29.99'), ('_sku', 'SHIRT-001'), ('color', 'Blue'), ...
 ```
 
 - Simple key-value store per product
-- No typing, no validation, no categories — our approach adds all three
+- No typing, no validation, no categories: our approach adds all three
 
 ---
 
@@ -167,11 +167,11 @@ SELECT meta_key, meta_value FROM wp_postmeta WHERE post_id = 42;
 
 ### Design Principles
 
-1. **Definitions are reference data** — seedable, CRUD-managed entities
-2. **Typed values** — `data_type` enforces STRING/NUMBER/BOOLEAN at the application layer
-3. **Constrained values** — `options` JSONB restricts allowed values for enum-like attributes (e.g., colors, sizes)
-4. **Categorized** — `category` field groups attributes for UI rendering and filtering (e.g., "Specifications", "Dimensions", "Materials")
-5. **Marketplace-ready** — any vendor or admin can define category-specific attributes via API
+1. **Definitions are reference data**: seedable, CRUD-managed entities
+2. **Typed values**: `data_type` enforces STRING/NUMBER/BOOLEAN at the application layer
+3. **Constrained values**: `options` JSONB restricts allowed values for enum-like attributes (e.g., colors, sizes)
+4. **Categorized**: `category` field groups attributes for UI rendering and filtering (e.g., "Specifications", "Dimensions", "Materials")
+5. **Marketplace-ready**: any vendor or admin can define category-specific attributes via API
 
 ### Architecture Alignment
 
@@ -274,14 +274,14 @@ erDiagram
 
 - **`ProductAttributeDefinition`** is a domain **entity** (has identity, lifecycle, CRUD)
 - **`ProductAttributeValue`** is a domain **entity** (has identity, belongs to Product)
-- **`AttributeDataType`** is a **value object** (enum — STRING, NUMBER, BOOLEAN)
-- **Definitions** are reference data — like product categories or order statuses
-- **Values** are product-scoped data — like order line items
+- **`AttributeDataType`** is a **value object** (enum: STRING, NUMBER, BOOLEAN)
+- **Definitions** are reference data: like product categories or order statuses
+- **Values** are product-scoped data: like order line items
 
 ### Validation in Domain Layer
 
 ```typescript
-// In SetProductAttributeUseCase — application-layer orchestration
+// In SetProductAttributeUseCase: application-layer orchestration
 // with domain-layer validation via the definition entity
 
 // 1. Definition must exist and be active
@@ -305,14 +305,14 @@ if (defResult.value.options && !defResult.value.options.includes(input.value)) {
 
 ### Aggregate Boundaries
 
-- **ProductAttributeDefinition** — standalone aggregate (CRUD independently of products)
-- **ProductAttributeValue** — belongs to the Product aggregate conceptually, but stored separately for flexibility. Accessed via `GET /products/:id/attributes`
+- **ProductAttributeDefinition**: standalone aggregate (CRUD independently of products)
+- **ProductAttributeValue**: belongs to the Product aggregate conceptually, but stored separately for flexibility. Accessed via `GET /products/:id/attributes`
 
 ---
 
 ## 🌐 API Design
 
-### Attribute Definitions (Global — Admin/System)
+### Attribute Definitions (Global: Admin/System)
 
 ```
 POST   /products/attributes/definitions          Create a new attribute definition
@@ -392,7 +392,7 @@ Food & Beverage   →   EXPIRY_DAYS            →   DETAILS
 POST /products/seed-attributes
 ```
 
-- Idempotent — skips definitions that already exist (by code)
+- Idempotent: skips definitions that already exist (by code)
 - Logs created/skipped counts
 
 ### Custom Deployments
@@ -491,10 +491,10 @@ Attribute definitions change infrequently. Cache them:
 Never fetch attributes one-by-one. Always batch:
 
 ```typescript
-// ✅ Good — single query for all product attributes
+// ✅ Good: single query for all product attributes
 const attrs = await this.valueRepo.findByProductId(productId);
 
-// ❌ Bad — N queries for N attributes
+// ❌ Bad: N queries for N attributes
 for (const def of definitions) {
   await this.valueRepo.findByProductAndDefinition(productId, def.id);
 }
@@ -512,7 +512,7 @@ For seeding or migration, use `saveMany()` to insert definitions and values in b
 
 | Resource                                                                                         | Description                                                       |
 | :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
-| [Martin Fowler — EAV](https://martinfowler.com/bliki/EntityAttributeValue.html)                  | Canonical description of the pattern, trade-offs, and when to use |
+| [Martin Fowler: EAV](https://martinfowler.com/bliki/EntityAttributeValue.html) | Canonical description of the pattern, trade-offs, and when to use |
 | [PostgreSQL JSONB Docs](https://www.postgresql.org/docs/current/datatype-json.html)              | JSONB operators for querying `options` column                     |
 | [Shopify Metafields API](https://shopify.dev/docs/api/admin-rest/2024-01/resources/metafield)    | How Shopify implements dynamic product fields                     |
 | [Magento EAV Model](https://developer.adobe.com/commerce/php/development/components/attributes/) | The most famous EAV implementation in e-commerce                  |
@@ -521,9 +521,9 @@ For seeding or migration, use `saveMany()` to insert definitions and values in b
 
 | Resource                                                                                                | Description                                                                                |
 | :------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |
-| [EAV — Magento's Approach](https://developer.adobe.com/commerce/php/development/components/attributes/) | How one of the largest EAV implementations works in production                             |
+| [EAV: Magento's Approach](https://developer.adobe.com/commerce/php/development/components/attributes/) | How one of the largest EAV implementations works in production |
 | [Custom Fields at Scale](https://www.figma.com/blog/how-figma-stores-custom-properties/)                | Figma's approach to flexible metadata storage                                              |
-| [WordPress Post Meta](https://developer.wordpress.org/reference/functions/get_post_meta/)               | WordPress's `wp_postmeta` — one of the most deployed EAV systems on earth (42% of the web) |
+| [WordPress Post Meta](https://developer.wordpress.org/reference/functions/get_post_meta/) | WordPress's `wp_postmeta`: one of the most deployed EAV systems on earth (42% of the web) |
 
 ### Decision Record
 
@@ -534,4 +534,5 @@ For seeding or migration, use `saveMany()` to insert definitions and values in b
 | `options` as JSONB                                 | Flexible enum-like constraints without a separate options table                                   |
 | Separate definitions table                         | Definitions are shared across all products; acts as a schema registry                             |
 | `category` column                                  | Groups attributes for UI rendering (tabs/sections) and API filtering                              |
-| Unique constraint on `(product_id, definition_id)` | One value per attribute per product — enforced at DB level                                        |
+| Unique constraint on `(product_id, definition_id)` | One value per attribute per product: enforced at DB level |
+

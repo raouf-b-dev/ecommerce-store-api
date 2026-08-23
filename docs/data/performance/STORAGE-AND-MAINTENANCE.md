@@ -12,7 +12,7 @@ A deep-dive into PostgreSQL's write-path internals and maintenance operations: t
 
 ### 1.1 What is WAL?
 
-The **Write-Ahead Log** (WAL) is PostgreSQL's durability mechanism. Every change to data files is first recorded in the WAL before the actual data page is modified. This ensures that committed transactions survive crashes — on recovery, PostgreSQL replays the WAL to reconstruct any changes that were committed but not yet flushed to the data files.
+The **Write-Ahead Log** (WAL) is PostgreSQL's durability mechanism. Every change to data files is first recorded in the WAL before the actual data page is modified. This ensures that committed transactions survive crashes: on recovery, PostgreSQL replays the WAL to reconstruct any changes that were committed but not yet flushed to the data files.
 
 ```
 Transaction commits:
@@ -24,17 +24,17 @@ Transaction commits:
 Crash recovery:
   1. Read WAL from the last checkpoint
   2. Replay all committed changes not yet in the data files
-  3. Database is consistent — no committed data lost
+ 3. Database is consistent: no committed data lost
 ```
 
 ### 1.2 Why WAL Matters for Performance
 
 | Aspect                  | Impact                                                                                                                                                                                  |
 | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Write amplification** | Every change is written twice — once to WAL, once to data files. This is the cost of durability.                                                                                        |
+| **Write amplification** | Every change is written twice: once to WAL, once to data files. This is the cost of durability. |
 | **Sequential writes**   | WAL writes are **sequential** (append-only), which is fast on both SSDs and spinning disks. Data page writes are random I/O.                                                            |
 | **Checkpoint pressure** | Checkpoints flush all dirty pages to disk, causing I/O spikes. Tuning `checkpoint_completion_target` (default 0.9) spreads the I/O.                                                     |
-| **Replication**         | WAL is the foundation of PostgreSQL streaming replication — replicas receive and replay WAL records from the primary. See [Connection & Replication](CONNECTION-AND-REPLICATION.md) §4. |
+| **Replication** | WAL is the foundation of PostgreSQL streaming replication: replicas receive and replay WAL records from the primary. See [Connection & Replication](CONNECTION-AND-REPLICATION.md) §4. |
 
 ### 1.3 Key WAL Configuration Parameters
 
@@ -44,7 +44,7 @@ Crash recovery:
 | `max_wal_size`                 | `1GB`     | `2-4GB` for write-heavy workloads                                 | Controls checkpoint frequency. Larger = less frequent checkpoints = smoother I/O                                     |
 | `min_wal_size`                 | `80MB`    | `512MB-1GB`                                                       | Prevents WAL segment recycling churn                                                                                 |
 | `checkpoint_completion_target` | `0.9`     | `0.9` (keep default)                                              | Spreads checkpoint I/O over 90% of the checkpoint interval                                                           |
-| `synchronous_commit`           | `on`      | `on` for data integrity; `off` for non-critical write-heavy paths | `off` allows the commit to return before WAL is flushed — faster but risks losing the last ~10ms of commits on crash |
+| `synchronous_commit` | `on` | `on` for data integrity; `off` for non-critical write-heavy paths | `off` allows the commit to return before WAL is flushed: faster but risks losing the last ~10ms of commits on crash |
 
 ---
 
@@ -56,9 +56,9 @@ Crash recovery:
 
 PostgreSQL's MVCC creates dead tuples on every UPDATE and DELETE (see [MVCC & Isolation](../concurrency/MVCC-AND-ISOLATION.md) §3). Autovacuum is the background process that:
 
-1. **Reclaims dead tuple space** — prevents table and index bloat
-2. **Updates planner statistics** (`ANALYZE`) — prevents bad query plans from stale cardinality estimates
-3. **Prevents transaction ID wraparound** — PostgreSQL's 32-bit transaction IDs wrap after ~4 billion transactions; VACUUM freezes old XIDs
+1. **Reclaims dead tuple space**: prevents table and index bloat
+2. **Updates planner statistics** (`ANALYZE`): prevents bad query plans from stale cardinality estimates
+3. **Prevents transaction ID wraparound**: PostgreSQL's 32-bit transaction IDs wrap after ~4 billion transactions; VACUUM freezes old XIDs
 
 **Consequence of insufficient autovacuum**:
 
@@ -74,7 +74,7 @@ PostgreSQL's MVCC creates dead tuples on every UPDATE and DELETE (see [MVCC & Is
 | Parameter                         | Default   | When to Change                          | Impact                                                                                                                                 |
 | :-------------------------------- | :-------- | :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | `autovacuum_vacuum_threshold`     | 50        | Rarely                                  | Minimum dead tuples before triggering vacuum                                                                                           |
-| `autovacuum_vacuum_scale_factor`  | 0.2 (20%) | **Lower for large tables** (e.g., 0.01) | Fraction of table that must be dead before vacuum triggers. For a 10M row table, 20% = 2M dead rows before vacuum runs — far too late. |
+| `autovacuum_vacuum_scale_factor` | 0.2 (20%) | **Lower for large tables** (e.g., 0.01) | Fraction of table that must be dead before vacuum triggers. For a 10M row table, 20% = 2M dead rows before vacuum runs: far too late. |
 | `autovacuum_analyze_threshold`    | 50        | Rarely                                  | Minimum changes before triggering ANALYZE                                                                                              |
 | `autovacuum_analyze_scale_factor` | 0.1 (10%) | Lower for large tables                  | Fraction of table that must change before statistics are refreshed                                                                     |
 | `autovacuum_vacuum_cost_delay`    | 2ms       | Lower for faster vacuum (e.g., 0)       | Delay between vacuum I/O operations. Lower = vacuum runs faster but uses more I/O bandwidth.                                           |
@@ -88,7 +88,7 @@ For high-update tables (e.g., inventory, sessions, order_status_history), apply 
 ALTER TABLE inventory SET (
   autovacuum_vacuum_scale_factor = 0.01,    -- Trigger at 1% dead rows instead of 20%
   autovacuum_analyze_scale_factor = 0.005,  -- Refresh stats at 0.5% changes
-  autovacuum_vacuum_cost_delay = 0          -- No throttling — vacuum as fast as possible
+ autovacuum_vacuum_cost_delay = 0 -- No throttling: vacuum as fast as possible
 );
 ```
 
@@ -100,7 +100,7 @@ ALTER TABLE inventory SET (
 
 ### 3.1 What is TOAST?
 
-PostgreSQL pages are fixed at 8 KB. When a row contains a column value larger than ~2 KB, PostgreSQL transparently moves it to a separate **TOAST table** — a companion table that stores oversized values in chunks.
+PostgreSQL pages are fixed at 8 KB. When a row contains a column value larger than ~2 KB, PostgreSQL transparently moves it to a separate **TOAST table**: a companion table that stores oversized values in chunks.
 
 ```mermaid
 graph TD
@@ -144,7 +144,7 @@ graph TD
 | :------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
 | `SELECT *` on a table with TOAST columns           | Each row requires additional I/O to fetch the TOAST chunks. Use `SELECT specific_columns` to avoid fetching large columns unnecessarily. |
 | `SELECT id, name FROM products` (no TOAST columns) | TOAST table is not accessed. Fast.                                                                                                       |
-| Large JSONB metadata columns                       | Stored in TOAST. Indexing the JSONB with GIN doesn't require detoasting the entire value — the GIN index stores extracted keys.          |
+| Large JSONB metadata columns | Stored in TOAST. Indexing the JSONB with GIN doesn't require detoasting the entire value: the GIN index stores extracted keys. |
 | `UPDATE` on a non-TOAST column                     | If TOAST columns are unchanged, PostgreSQL can use HOT updates (no TOAST table modification).                                            |
 
 ---
@@ -199,7 +199,7 @@ CREATE TABLE orders_2024_02 PARTITION OF orders
 
 | Factor                                     | Partition?                                              |
 | :----------------------------------------- | :------------------------------------------------------ |
-| Table < 10M rows                           | ❌ Usually not — B-tree indexes handle this efficiently |
+| Table < 10M rows | ❌ Usually not: B-tree indexes handle this efficiently |
 | Table > 100M rows, time-series queries     | ✅ Range partition by date                              |
 | Need to DROP old data efficiently          | ✅ Partition + DROP partition                           |
 | All queries filter on the partition key    | ✅ Maximum pruning benefit                              |
@@ -259,7 +259,7 @@ COPY products (id, name, price, category_id)
 FROM '/path/to/products.csv'
 WITH (FORMAT csv, HEADER true);
 
--- COPY from stdin (client-side — used by ORMs and pg drivers)
+-- COPY from stdin (client-side: used by ORMs and pg drivers)
 COPY products (id, name, price, category_id) FROM STDIN WITH (FORMAT csv);
 ```
 
@@ -297,4 +297,5 @@ ON CONFLICT (id) DO UPDATE SET
 - PostgreSQL Documentation. _§73: TOAST_. https://www.postgresql.org/docs/current/storage-toast.html
 - PostgreSQL Documentation. _§5.11: Table Partitioning_. https://www.postgresql.org/docs/current/ddl-partitioning.html
 - PostgreSQL Documentation. _§14.4: Populating a Database_. https://www.postgresql.org/docs/current/populate.html
-- Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapter 3: "Storage and Retrieval" — LSM-trees, B-trees, and WAL.
+- Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. Chapter 3: "Storage and Retrieval": LSM-trees, B-trees, and WAL.
+

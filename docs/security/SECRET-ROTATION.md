@@ -1,6 +1,6 @@
 # Production Secret Rotation Procedures
 
-Operational runbook for rotating production secrets on a **single-instance** E-Commerce Store API deployment (Compose + `.env.production` or host/platform secret injection). Secrets are loaded **once at process boot** — every rotation ends with an API (or dependent service) restart.
+Operational runbook for rotating production secrets on a **single-instance** E-Commerce Store API deployment (Compose + `.env.production` or host/platform secret injection). Secrets are loaded **once at process boot**: every rotation ends with an API (or dependent service) restart.
 
 Companion docs: [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md) (lifecycle & injection), [JWT-RSA-JWKS.md](JWT-RSA-JWKS.md) (RS256 / JWKS theory), [REDIS.md](../infrastructure/REDIS.md), [RELEASE-BACKUP-RECOVERY.md](../infrastructure/RELEASE-BACKUP-RECOVERY.md) (smoke), [METRICS.md](../observability/metrics/METRICS.md).
 
@@ -13,7 +13,7 @@ Companion docs: [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md) (lifecycle & inje
 | Topology    | One API container; managed or Compose PostgreSQL + Redis                                                                  |
 | Config load | Env validated at startup (`validate-env.ts` → `EnvConfigService`); no runtime secret reload                               |
 | JWT         | Single RSA private key (`JWT_PRIVATE_KEY`) → one JWKS entry; verifier uses that public key only                           |
-| CI secrets  | `CI_JWT_PRIVATE_KEY`, `CI_DB_PASSWORD`, etc. are **test/CI only** — rotate via GitHub Secrets independently of production |
+| CI secrets | `CI_JWT_PRIVATE_KEY`, `CI_DB_PASSWORD`, etc. are **test/CI only**: rotate via GitHub Secrets independently of production |
 
 **Not in this ship gate:** dual-key JWKS overlap (keep previous public key until access-token TTL expires). That pattern is documented conceptually in [JWT-RSA-JWKS.md §3.5](JWT-RSA-JWKS.md#35-key-rotation) but is **not implemented** (`JwksService` exposes one key). Until it ships, JWT rotation requires a maintenance window and forces re-login.
 
@@ -37,7 +37,7 @@ flowchart TD
 | `REDIS_PASSWORD`                          | T1              | 90 days, or on incident                                 | API                  | Cache, carts, idempotency, queues, Socket.IO reconnect                          |
 | `METRICS_API_KEY`                         | T1              | 90 days, or on leak                                     | API                  | Scrapers / `GET /metrics` get 401 until updated                                 |
 | `GRAFANA_ADMIN_PASSWORD`                  | T1              | 90 days, or on leak                                     | Grafana              | Ops UI only                                                                     |
-| Stripe / email / outbound webhook secrets | T1 (when wired) | Per provider policy, or on leak                         | API                  | Phase 17 — see §8                                                               |
+| Stripe / email / outbound webhook secrets | T1 (when wired) | Per provider policy, or on leak | API | Phase 17: see §8 |
 
 Rotate **immediately** when: suspected breach, secret in logs/git, or team member with production access departs.
 
@@ -47,14 +47,14 @@ Rotate **immediately** when: suspected breach, secret in logs/git, or team membe
 
 Before any production rotation:
 
-1. **Backup** — `npm run db:backup` (see [RELEASE-BACKUP-RECOVERY.md](../infrastructure/RELEASE-BACKUP-RECOVERY.md)).
-2. **Maintenance window** — required for `JWT_PRIVATE_KEY`; recommended for DB/Redis (brief API restart).
-3. **Record current JWT kid** — from boot logs (`RSA JWT keys imported... kid=...`) or:
+1. **Backup**: `npm run db:backup` (see [RELEASE-BACKUP-RECOVERY.md](../infrastructure/RELEASE-BACKUP-RECOVERY.md)).
+2. **Maintenance window**: required for `JWT_PRIVATE_KEY`; recommended for DB/Redis (brief API restart).
+3. **Record current JWT kid**: from boot logs (`RSA JWT keys imported... kid=...`) or:
    ```bash
    curl -sS "$BASE_URL/v1/authentication/.well-known/jwks.json"
    ```
-4. **Smoke env ready** — `SMOKE_TEST_BASE_URL` (or `--base-url=`), `METRICS_API_KEY` matching the value the API will use after restart.
-5. **Announce** — operators and clients: short API restart; JWT rotations force re-authentication.
+4. **Smoke env ready**: `SMOKE_TEST_BASE_URL` (or `--base-url=`), `METRICS_API_KEY` matching the value the API will use after restart.
+5. **Announce**: operators and clients: short API restart; JWT rotations force re-authentication.
 
 ---
 
@@ -66,7 +66,7 @@ Access, refresh (`typ=refresh`), and cart-session JWTs are all signed and verifi
 
 - Outstanding Bearer tokens and refresh cookies fail signature verification.
 - Refresh cannot silently recover sessions (signature is checked before the session store).
-- DB `session_token` rows remain until expiry/cleanup but are unreachable with old cookies — treat as effective logout for all clients.
+- DB `session_token` rows remain until expiry/cleanup but are unreachable with old cookies: treat as effective logout for all clients.
 - Guest cart session cookies become invalid.
 
 ### Steps
@@ -88,7 +88,7 @@ npm run d:up:full:prod
 ### Verify
 
 1. Boot log shows a **new** `kid=...`.
-2. `GET /v1/authentication/.well-known/jwks.json` — single key, `kid` matches the log.
+2. `GET /v1/authentication/.well-known/jwks.json`: single key, `kid` matches the log.
 3. Login succeeds; old refresh cookie returns 401.
 4. Run smoke: `npm run smoke-test` (register/login probes).
 
@@ -127,7 +127,7 @@ docker exec -it postgres-db \
 npm run d:up:full:prod
 ```
 
-**Failure mode:** If the role password changes while the API still has the old env value, readiness fails (Postgres required) and entrypoint migrations abort. Minimize the gap between steps 2–4. Prefer stop → alter → update env → start if you need a hard freeze.
+**Failure mode:** If the role password changes while the API still has the old env value, readiness fails (Postgres required) and entrypoint migrations abort. Minimize the gap between steps 2-4. Prefer stop → alter → update env → start if you need a hard freeze.
 
 ### Verify
 
@@ -165,7 +165,7 @@ npm run d:up:full:prod
 
 ### Verify
 
-1. `GET /health` — Redis reported healthy (or degraded only if intentionally empty password in non-prod).
+1. `GET /health`: Redis reported healthy (or degraded only if intentionally empty password in non-prod).
 2. No sustained `NOAUTH` / auth errors in Redis or API logs.
 3. `npm run smoke-test`.
 
@@ -192,7 +192,7 @@ Update the monitoring stack env / Compose secret, restart Grafana, confirm login
 
 ---
 
-## 8. Third-party secrets (Phase 17 — when adapters land)
+## 8. Third-party secrets (Phase 17: when adapters land)
 
 These are **not** required env vars for the current ship gate. Use this pattern when Stripe, email, or outbound webhooks are enabled.
 
@@ -233,8 +233,9 @@ Full contract: [RELEASE-BACKUP-RECOVERY.md §7](../infrastructure/RELEASE-BACKUP
 
 If a secret was exposed (logs, git, chat, departed staff):
 
-1. Rotate that secret using the matching section above — **first**.
+1. Rotate that secret using the matching section above: **first**.
 2. For `JWT_PRIVATE_KEY`, assume all tokens are hostile until rotation completes.
 3. Follow the full playbook in [SECRETS-MANAGEMENT.md §12](SECRETS-MANAGEMENT.md#12-incident-response--compromised-secrets) (scope assessment, log audit, history scrub if committed, notify, post-mortem).
 
 Do not delay rotation waiting for a perfect forensic picture.
+

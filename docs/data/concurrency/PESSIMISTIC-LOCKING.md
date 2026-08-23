@@ -27,11 +27,11 @@ PostgreSQL implements a hierarchy of lock modes, from least restrictive to most 
 
 | Lock Mode             | Abbreviation | Conflicts With                      | Use Case                                   |
 | :-------------------- | :----------- | :---------------------------------- | :----------------------------------------- |
-| `ACCESS SHARE`        | AS           | `ACCESS EXCLUSIVE`                  | `SELECT` — reading a row                   |
+| `ACCESS SHARE` | AS | `ACCESS EXCLUSIVE` | `SELECT`: reading a row |
 | `ROW SHARE`           | RS           | `EXCLUSIVE`, `ACCESS EXCLUSIVE`     | `SELECT ... FOR UPDATE` targeting          |
 | `ROW EXCLUSIVE`       | RX           | `SHARE`, `SRX`, `EXCLUSIVE`, `AX`   | `UPDATE`, `DELETE`, `INSERT`               |
 | `SHARE`               | S            | `RX`, `SRX`, `EXCLUSIVE`, `AX`      | `CREATE INDEX` (non-concurrent)            |
-| `SHARE ROW EXCLUSIVE` | SRX          | `RX`, `S`, `SRX`, `EXCLUSIVE`, `AX` | —                                          |
+| `SHARE ROW EXCLUSIVE` | SRX | `RX`, `S`, `SRX`, `EXCLUSIVE`, `AX` |: |
 | `EXCLUSIVE`           | X            | All except `ACCESS SHARE`           | Blocks concurrent writes                   |
 | `ACCESS EXCLUSIVE`    | AX           | All locks                           | `ALTER TABLE`, `DROP TABLE`, `VACUUM FULL` |
 
@@ -79,7 +79,7 @@ COMMIT;
 
 ## 4. Deadlocks
 
-When two or more transactions each hold a lock that the other needs, a **deadlock** occurs — a circular wait condition where no transaction can proceed.
+When two or more transactions each hold a lock that the other needs, a **deadlock** occurs: a circular wait condition where no transaction can proceed.
 
 ```mermaid
 flowchart TD
@@ -103,7 +103,7 @@ flowchart TD
 
 ## 5. Advisory Locks
 
-PostgreSQL provides **advisory locks** — application-defined locks not tied to any specific table or row. These are useful for application-level mutual exclusion:
+PostgreSQL provides **advisory locks**: application-defined locks not tied to any specific table or row. These are useful for application-level mutual exclusion:
 
 ```sql
 -- Acquire a transaction-level advisory lock
@@ -120,13 +120,13 @@ SELECT pg_advisory_xact_lock(42);
 | **Transaction-level**  | `pg_advisory_xact_lock(key)` | Automatic on `COMMIT` or `ROLLBACK`               |
 | **Try (non-blocking)** | `pg_try_advisory_lock(key)`  | Returns `false` immediately if already held       |
 
-Advisory locks are useful for coordinating work across multiple processes sharing the same database — e.g., ensuring only one instance of a cron job runs at a time. For coordination across processes that don't share a database, see [Distributed Locking](DISTRIBUTED-LOCKING.md).
+Advisory locks are useful for coordinating work across multiple processes sharing the same database: e.g., ensuring only one instance of a cron job runs at a time. For coordination across processes that don't share a database, see [Distributed Locking](DISTRIBUTED-LOCKING.md).
 
 ---
 
-## 6. The Overselling Problem — A Worked Case Study
+## 6. The Overselling Problem: A Worked Case Study
 
-The most critical concurrency problem in e-commerce systems is **overselling**: concurrent checkout transactions each read sufficient stock, each decrement — resulting in a negative stock level.
+The most critical concurrency problem in e-commerce systems is **overselling**: concurrent checkout transactions each read sufficient stock, each decrement: resulting in a negative stock level.
 
 ```mermaid
 sequenceDiagram
@@ -188,7 +188,7 @@ ALTER TABLE inventory
 ADD CONSTRAINT chk_stock_non_negative CHECK (stock_level >= 0);
 ```
 
-This is a **safety net**, not a replacement for proper locking — the application should detect insufficient stock _before_ attempting the decrement to provide a clean error message.
+This is a **safety net**, not a replacement for proper locking: the application should detect insufficient stock _before_ attempting the decrement to provide a clean error message.
 
 ### 6.3 Flash Sale Contention Strategies
 
@@ -203,7 +203,7 @@ During flash sales, `FOR UPDATE` creates a serialisation bottleneck. Mitigation 
 
 ---
 
-## 7. Implementation — TypeORM Lock Modes
+## 7. Implementation: TypeORM Lock Modes
 
 ### 7.1 Using QueryBuilder
 
@@ -228,11 +228,11 @@ const inventory = await queryRunner.manager.findOne(InventoryEntity, {
 
 | TypeORM Mode                  | SQL Generated       | Use Case                                          |
 | :---------------------------- | :------------------ | :------------------------------------------------ |
-| `'pessimistic_read'`          | `FOR SHARE`         | Read locks — allow concurrent reads, block writes |
-| `'pessimistic_write'`         | `FOR UPDATE`        | Write locks — block reads-for-update and writes   |
-| `'pessimistic_partial_write'` | `FOR NO KEY UPDATE` | Weaker write lock — doesn't block FK checks       |
+| `'pessimistic_read'` | `FOR SHARE` | Read locks: allow concurrent reads, block writes |
+| `'pessimistic_write'` | `FOR UPDATE` | Write locks: block reads-for-update and writes |
+| `'pessimistic_partial_write'` | `FOR NO KEY UPDATE` | Weaker write lock: doesn't block FK checks |
 | `'pessimistic_write_or_fail'` | `FOR UPDATE NOWAIT` | Fail immediately if locked                        |
-| `'for_key_share'`             | `FOR KEY SHARE`     | Weakest — only blocks key column changes          |
+| `'for_key_share'` | `FOR KEY SHARE` | Weakest: only blocks key column changes |
 
 ### 7.4 Transaction Management
 
@@ -287,8 +287,9 @@ WHERE NOT blocked_locks.granted AND blocking_locks.granted;
 
 ## 9. References
 
-- Eswaran, K.P. et al. (1976). "The Notions of Consistency and Predicate Locks in a Database System." _Communications of the ACM_, 19(11), pp. 624–633.
+- Eswaran, K.P. et al. (1976). "The Notions of Consistency and Predicate Locks in a Database System." _Communications of the ACM_, 19(11), pp. 624-633.
 - Gray, J. & Reuter, A. (1992). _Transaction Processing: Concepts and Techniques_. Morgan Kaufmann.
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. §7.2: "Weak Isolation Levels."
 - PostgreSQL Documentation. _§13.3: Explicit Locking_. https://www.postgresql.org/docs/current/explicit-locking.html
 - TypeORM. _Lock Modes_. https://typeorm.io/select-query-builder#lock-modes
+

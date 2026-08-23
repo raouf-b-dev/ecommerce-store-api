@@ -14,10 +14,10 @@ PostgreSQL's row-level locks (`SELECT ... FOR UPDATE`) and advisory locks (`pg_a
 | :----------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Multiple application instances** running the same cron job                                           | Advisory locks work only if all instances connect to the same database and use the same connection pool. In practice, connection poolers (PgBouncer in transaction mode) may release the connection between statements, silently dropping the lock. |
 | **Cross-service coordination** (e.g., only one service instance should process a webhook)              | Services may use different databases. No shared lock namespace exists.                                                                                                                                                                              |
-| **Rate-limited external API calls** (e.g., only one instance should call a payment provider at a time) | The critical section isn't a database transaction — it's an HTTP call. Holding a database transaction open during an external call is an anti-pattern (connection starvation).                                                                      |
-| **Leader election** (one instance should be the "primary" for certain background work)                 | Requires a persistent, distributed coordination primitive — not a per-transaction lock.                                                                                                                                                             |
+| **Rate-limited external API calls** (e.g., only one instance should call a payment provider at a time) | The critical section isn't a database transaction: it's an HTTP call. Holding a database transaction open during an external call is an anti-pattern (connection starvation). |
+| **Leader election** (one instance should be the "primary" for certain background work) | Requires a persistent, distributed coordination primitive: not a per-transaction lock. |
 
-The solution is a **distributed lock** — a coordination primitive backed by a shared external store (Redis, ZooKeeper, etcd) that is accessible to all processes.
+The solution is a **distributed lock**: a coordination primitive backed by a shared external store (Redis, ZooKeeper, etcd) that is accessible to all processes.
 
 ---
 
@@ -36,8 +36,8 @@ SET lock:checkout:order-42 <unique-token> NX PX 30000
 | Flag             | Meaning                                                                                                                   |
 | :--------------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `NX`             | Only set the key if it does **not** already exist. This is the mutual exclusion mechanism.                                |
-| `PX 30000`       | Set a 30-second TTL (time-to-live). This is the **lease** — it prevents a dead process from holding the lock forever.     |
-| `<unique-token>` | A unique value (e.g., UUID) identifying the lock holder. Required for safe unlock — only the holder can release the lock. |
+| `PX 30000` | Set a 30-second TTL (time-to-live). This is the **lease**: it prevents a dead process from holding the lock forever. |
+| `<unique-token>` | A unique value (e.g., UUID) identifying the lock holder. Required for safe unlock: only the holder can release the lock. |
 
 **Acquiring the lock**:
 
@@ -52,13 +52,13 @@ const acquired = await redis.set(
 );
 
 if (acquired === 'OK') {
-  // Lock acquired — proceed with critical section
+ // Lock acquired: proceed with critical section
 } else {
-  // Lock held by another process — retry or abort
+ // Lock held by another process: retry or abort
 }
 ```
 
-**Releasing the lock** (must be atomic — only the holder may release):
+**Releasing the lock** (must be atomic: only the holder may release):
 
 ```lua
 -- Lua script executed atomically by Redis
@@ -78,13 +78,13 @@ A lock backed by a single Redis instance has a fundamental safety gap: **if Redi
 This is acceptable for **efficiency locks** (preventing duplicate work where occasional duplication is harmless) but not for **correctness locks** (where concurrent execution would violate an invariant).
 
 > _"The purpose of a lock is either efficiency or correctness. For efficiency locks, a Redis single-instance lock is perfectly fine. For correctness locks, you need stronger guarantees."_
-> — Kleppmann, M. (2016). "How to do distributed locking." https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html
+> Source: Kleppmann, M. (2016). "How to do distributed locking." https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html
 
 ---
 
 ## 3. The Redlock Algorithm
 
-> _Source: Sanfilippo, S. "Distributed Locks with Redis — The Redlock Algorithm." https://redis.io/docs/latest/develop/use-cases/distributed-lock/_
+> _Source: Sanfilippo, S. "Distributed Locks with Redis: The Redlock Algorithm." https://redis.io/docs/latest/develop/use-cases/distributed-lock/_
 
 Redlock attempts to provide stronger safety guarantees by using **N independent Redis instances** (typically 5) and acquiring the lock on a majority of them.
 
@@ -114,7 +114,7 @@ Redlock attempts to provide stronger safety guarantees by using **N independent 
 
 Martin Kleppmann (2016) published a rigorous critique of Redlock, arguing that it is fundamentally unsafe for correctness locks because:
 
-1. **Process pauses**: A process acquires the lock, then experiences a long GC pause or network delay. The lock's TTL expires. Another process acquires the lock. The first process resumes and acts on the stale lock — mutual exclusion is violated.
+1. **Process pauses**: A process acquires the lock, then experiences a long GC pause or network delay. The lock's TTL expires. Another process acquires the lock. The first process resumes and acts on the stale lock: mutual exclusion is violated.
 
 2. **Clock assumptions**: Redlock's correctness depends on bounded clock drift across all nodes. If a Redis node's clock jumps forward (NTP adjustment), a lock may expire prematurely.
 
@@ -208,13 +208,13 @@ if (acquired) {
 }
 ```
 
-> **Note**: Fencing tokens require the downstream resource to **validate tokens**. This means the storage layer must track the highest token seen per resource and reject stale writes. Not all storage systems support this natively — it may require application-level enforcement.
+> **Note**: Fencing tokens require the downstream resource to **validate tokens**. This means the storage layer must track the highest token seen per resource and reject stale writes. Not all storage systems support this natively: it may require application-level enforcement.
 
 ---
 
 ## 5. Lease-Based Coordination
 
-A **lease** is a time-limited grant of exclusive access to a resource. Unlike a permanent lock that must be explicitly released, a lease automatically expires after its TTL — ensuring that crashed or partitioned processes cannot hold resources indefinitely.
+A **lease** is a time-limited grant of exclusive access to a resource. Unlike a permanent lock that must be explicitly released, a lease automatically expires after its TTL: ensuring that crashed or partitioned processes cannot hold resources indefinitely.
 
 ### 5.1 Lease Lifecycle
 
@@ -244,7 +244,7 @@ const RENEWAL_INTERVAL = 10000; // Renew every 10 seconds (TTL/3)
 const renewalTimer = setInterval(async () => {
   const extended = await redis.pexpire(`lock:${key}`, LEASE_TTL);
   if (!extended) {
-    // Lock was lost (expired or stolen) — stop work immediately
+ // Lock was lost (expired or stolen): stop work immediately
     clearInterval(renewalTimer);
     abortCurrentOperation();
   }
@@ -258,7 +258,7 @@ try {
 }
 ```
 
-> **Rule of thumb**: Set the renewal interval to **TTL / 3**. This gives two renewal attempts before expiry — enough to survive a single missed renewal due to transient network issues.
+> **Rule of thumb**: Set the renewal interval to **TTL / 3**. This gives two renewal attempts before expiry: enough to survive a single missed renewal due to transient network issues.
 
 ---
 
@@ -293,5 +293,6 @@ try {
 - Kleppmann, M. (2016). "How to do distributed locking." https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. §8.4: "Fencing tokens."
 - Hunt, P., Konar, M., Junqueira, F.P., & Reed, B. (2010). "ZooKeeper: Wait-free Coordination for Internet-scale Systems." _Proceedings of USENIX ATC_.
-- Ongaro, D. & Ousterhout, J. (2014). "In Search of an Understandable Consensus Algorithm." _Proceedings of USENIX ATC_. (The Raft consensus paper — etcd's foundation.)
-- Lamport, L. (1998). "The Part-Time Parliament." _ACM Transactions on Computer Systems_, 16(2), pp. 133–169. (The Paxos consensus paper.)
+- Ongaro, D. & Ousterhout, J. (2014). "In Search of an Understandable Consensus Algorithm." _Proceedings of USENIX ATC_. (The Raft consensus paper: etcd's foundation.)
+- Lamport, L. (1998). "The Part-Time Parliament." _ACM Transactions on Computer Systems_, 16(2), pp. 133-169. (The Paxos consensus paper.)
+

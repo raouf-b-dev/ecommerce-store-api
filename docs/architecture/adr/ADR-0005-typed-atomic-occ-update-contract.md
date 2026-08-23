@@ -46,15 +46,15 @@ How-to lives in [CONVENTIONS.md](../../ai/CONVENTIONS.md) §4 and §13. This ADR
 ## 3. Alternatives Considered
 
 1. **TypeORM `save()` after stamping `entity.version`**:  
-   _Rejected_ — proven against real PostgreSQL on Product: version incremented, stale save did not fail.
+ _Rejected_: proven against real PostgreSQL on Product: version incremented, stale save did not fail.
 2. **Load managed entity, `Object.assign`, `save()`**:  
-   _Rejected_ — the version check and write are not one atomic `UPDATE`, so two transactions can both pass the in-memory check (lost update).
+ _Rejected_: the version check and write are not one atomic `UPDATE`, so two transactions can both pass the in-memory check (lost update).
 3. **`.set({ ...entity, version: () => 'version + 1' })`**:  
-   _Rejected_ — ORM entities include `id`, `version`, timestamps, and relations that must not appear in a parent `UPDATE`.
+ _Rejected_: ORM entities include `id`, `version`, timestamps, and relations that must not appear in a parent `UPDATE`.
 4. **Drive `.set()` from TypeORM column metadata**:  
-   _Rejected_ — “which columns are application-mutable” is an architectural ownership rule, not a schema fact. Metadata would happily update `tenantId`, `deletedAt`, or similar once added.
+ _Rejected_: “which columns are application-mutable” is an architectural ownership rule, not a schema fact. Metadata would happily update `tenantId`, `deletedAt`, or similar once added.
 5. **Include `updatedAt` in `toUpdatePayload()` from domain `new Date()`**:  
-   _Rejected_ — timestamps are persistence-owned (`@UpdateDateColumn`). The adapter stamps `CURRENT_TIMESTAMP` next to `version` so QueryBuilder still has a single owner.
+ _Rejected_: timestamps are persistence-owned (`@UpdateDateColumn`). The adapter stamps `CURRENT_TIMESTAMP` next to `version` so QueryBuilder still has a single owner.
 
 ---
 
