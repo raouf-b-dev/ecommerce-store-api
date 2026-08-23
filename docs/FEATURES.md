@@ -1,92 +1,98 @@
-# 📚 Feature Documentation
+# Feature Documentation
 
-> Detailed reference for every feature implemented in the E-Commerce Store API.
-> For a quick overview, see the [Feature Catalog](../README.md#feature-catalog) in the README.
+Detailed reference for features implemented in the E-Commerce Store API.
+For a short list on the homepage, see [Capabilities](../README.md#capabilities) in the README.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [🏗️ Architecture](#architecture)
-- [🔄 Distributed Systems](#distributed-systems)
-- [⚡ Data & Performance](#data-performance)
-- [🔐 Security](#security)
-- [📦 Infrastructure](#infrastructure)
-- [🔭 Observability](#observability)
-- [🧪 Testing](#testing)
-- [🌱 Database Seeding](#database-seeding)
-- [📜 Available Scripts](#available-scripts)
+- [Architecture](#architecture)
+- [Distributed Systems](#distributed-systems)
+- [Data and Performance](#data-performance)
+- [Security](#security)
+- [Infrastructure](#infrastructure)
+- [Observability](#observability)
+- [Testing](#testing)
+- [Database Seeding](#database-seeding)
+- [Available Scripts](#available-scripts)
 
 ---
 
 <a id="architecture"></a>
 
-## 🏗️ Architecture
+## Architecture
 
 ### Domain-Driven Design (Strategic)
 
-The system is decomposed into explicit **Subdomains** (Core, Generic, Supporting) and **Bounded Contexts** that map directly to NestJS modules. Each context owns its domain model, repositories, and use cases — zero shared mutable state.
+The system is split into explicit **Subdomains** (Core, Generic, Supporting) and **Bounded Contexts** that map to NestJS modules. Each context owns its domain model, repositories, and use cases. There is no shared mutable state across contexts.
 
 **Location**: `src/modules/` · **Deep-dive**: [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Domain-Driven Design (Tactical)
 
-Every module follows tactical DDD patterns: **Entities**, **Value Objects**, **Aggregates**, **Domain Services**, and **Repository Ports**. Domain objects enforce their own invariants — no anaemic models.
+Modules use tactical DDD: **Entities**, **Value Objects**, **Aggregates**, **Domain Services**, and **Repository Ports**. Domain objects enforce their own invariants.
 
 **Location**: `src/modules/*/core/domain/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
-### Hexagonal Architecture (Ports & Adapters)
+### Hexagonal Architecture (Ports and Adapters)
 
-The core domain has zero dependency on infrastructure. All external concerns (database, cache, queues) are behind **Port** interfaces implemented by **Adapters**. Swapping PostgreSQL for another store means writing a new adapter — the domain doesn't change.
+The domain core does not depend on infrastructure. Databases, caches, and queues sit behind **Port** interfaces implemented by **Adapters**. Swapping a store means writing a new adapter; the domain stays the same.
 
 **Location**: `src/modules/*/secondary-adapters/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
 ### ACL Gateway Pattern
 
-10 bounded contexts communicate through **8 Gateway ports**. Zero cross-module executable imports. Each module defines its own interface for what it needs from other modules, preventing domain model leakage.
+Ten bounded contexts communicate through **eight gateway ports**. There are no direct executable imports of another module's domain. Each consumer defines the interface it needs.
 
-**Location**: `src/modules/orders/secondary-adapters/gateways/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
+**Location**: `src/modules/*/secondary-adapters/adapters/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md), [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Modular Monolith
 
-All 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) live in one deployable unit but are strictly isolated. Designed for future microservice extraction without refactoring domain logic.
+All ten modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
 
 **Location**: `src/modules/`
 
 ### Result Pattern
 
-A functional `Result<T, E>` type replaces exception-driven control flow across all layers. Use cases return success or typed failure — never throw. A global `ResultInterceptor` maps results to HTTP responses.
+`Result<T, E>` replaces exception-driven control flow in domain and application layers. Use cases return success or typed failure. A global `ResultInterceptor` maps results to HTTP responses.
 
 **Location**: `src/shared-kernel/domain/`
+
+### CQRS Read Path
+
+List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, and Notifications.
+
+**Location**: `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/` · **Deep-dive**: [CQRS.md](architecture/CQRS.md)
 
 ---
 
 <a id="distributed-systems"></a>
 
-## 🔄 Distributed Systems
+## Distributed Systems
 
 ### SAGA Orchestration with Compensation
 
-The checkout flow is a multi-step SAGA: **Validate → Reserve Stock → Process Payment → Confirm Order**. If any step fails, a `CheckoutFailureListener` automatically triggers compensation — releasing stock, issuing refunds, and cancelling the order.
+Checkout is a multi-step SAGA: **Validate → Reserve Stock → Process Payment → Confirm Order**. On failure, `CheckoutFailureListener` runs compensation: release stock, refund if needed, cancel the order.
 
 **Location**: `src/modules/orders/primary-adapters/jobs/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)
 
 ### Idempotency (Redis-Backed)
 
-A custom `@Idempotent()` decorator with a Redis `SET NX` store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route; clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable or a result cannot be persisted. It does **not** cover the BullMQ worker / SAGA compensation chain.
+`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/decorators/`, `src/infrastructure/interceptors/`
 
 ### BullMQ Nested Flows
 
-Background job processing using BullMQ with nested flow orchestration. The Notifications module uses `FlowProducer` to compose complex multi-step notification delivery pipelines.
+Background job processing with nested flow orchestration. Notifications use `FlowProducer` for ordered save → send → update pipelines.
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Unified Stripe Payment Strategy
+### Payment Gateway (Mock Adapter)
 
-A streamlined, deterministic **Strategy Pattern** handles online payment processing through Stripe via SAGA orchestration:
+Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook signature verification are not wired yet. The architecture is ready for a real provider when you add one.
 
-- **Flow**: Full SAGA (Validate Cart → Reserve Stock → Process Stripe Payment → Confirm Order)
-- **Webhooks**: Async payment confirmation and automated status synchronization via Stripe webhooks.
+- **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → Confirm Order
+- **Webhooks**: Handler and job path exist; signature verification is stubbed for testing
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -94,24 +100,30 @@ A streamlined, deterministic **Strategy Pattern** handles online payment process
 
 <a id="data-performance"></a>
 
-## ⚡ Data & Performance
+## Data and Performance
 
 ### Redis Stack (RedisJSON + RedisSearch)
 
-- **RedisJSON**: Stores Shopping carts as native JSON documents — no SQL joins for frequently accessed data.
-- **RedisSearch**: Full-text search and advanced filtering on products directly from Redis, replacing slow SQL `LIKE` queries.
+- **RedisJSON**: Shopping carts as JSON documents.
+- **RedisSearch**: Catalog search and filters from Redis.
 
 **Location**: `src/infrastructure/redis/`, `src/modules/products/secondary-adapters/`, `src/modules/carts/secondary-adapters/`
 
 ### Decorator-Based Cache-Aside
 
-A `CachedRepository` decorator pattern wraps PostgreSQL repositories with Redis cache-aside. Cache invalidation is handled transparently — the domain layer is unaware of caching.
+`CachedRepository` wraps PostgreSQL repositories with Redis cache-aside. The domain layer does not know about caching.
 
 **Location**: `src/modules/*/secondary-adapters/repositories/cached-*/`
 
+### Optimistic and Pessimistic Concurrency
+
+Versioned aggregates use `@VersionColumn` with HTTP 409 on conflict. Inventory reservations use `SELECT FOR UPDATE`. See ADRs 0004 and 0005.
+
+**Location**: `src/modules/*/`, [ADR-0004](architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md), [ADR-0005](architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md)
+
 ### TypeORM + PostgreSQL
 
-Relational persistence with TypeORM, including automated migration CLI scripts for all environments (dev, staging, prod, test). Entity schemas map cleanly to the domain model.
+Relational persistence with TypeORM and migration CLI scripts for all environments. Entity schemas map to the domain model.
 
 **Location**: `src/infrastructure/database/`, `data-source.ts`
 
@@ -119,59 +131,59 @@ Relational persistence with TypeORM, including automated migration CLI scripts f
 
 <a id="security"></a>
 
-## 🔐 Security
+## Security
 
 ### RSA JWT Authentication (RS256 + JWKS)
 
-Production-grade JWT authentication using RSA RS256 (replacing HMAC). Includes a `GET /authentication/.well-known/jwks.json` endpoint for public key distribution. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
+JWT authentication with RSA RS256 and a `GET /authentication/.well-known/jwks.json` endpoint. Key ID (`kid`) uses RFC 7638 SHA-256 thumbprint.
 
 **Location**: `src/infrastructure/jwt/` · **Deep-dive**: [JWT-RSA-JWKS.md](security/JWT-RSA-JWKS.md)
 
 ### Refresh Token Rotation
 
-Session-based refresh tokens stored in PostgreSQL with SHA-256 hashing. Supports: token rotation (old token invalidated on use), single-session logout, and all-session logout. Refresh tokens are transported via HttpOnly cookies.
+Session refresh tokens in PostgreSQL with SHA-256 hashing: rotation, single-session logout, and logout-all. Tokens travel via HttpOnly cookies.
 
 **Location**: `src/modules/authentication/core/domain/entities/`, `src/modules/authentication/secondary-adapters/`
 
 ### Helmet Security Headers
 
-Standard security headers applied via `helmet` middleware (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, etc.).
+Security headers via `helmet` (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, and others).
 
 **Location**: `src/main.ts`
 
 ### CORS with Environment Whitelist
 
-CORS origins are configured per-environment via `.env` files. No wildcard `*` in production.
+CORS origins come from `.env` files. No wildcard `*` in production.
 
 **Location**: `src/main.ts`, `src/config/`
 
 ### XSS Input Sanitization
 
-A global interceptor sanitizes all incoming request bodies using `sanitize-html`, stripping malicious HTML/script tags before they reach the domain layer.
+A global interceptor sanitizes request bodies with `sanitize-html` before they reach the domain layer.
 
 **Location**: `src/interceptors/`
 
-### Input Validation & Pagination Safety
+### Input Validation and Pagination Safety
 
-All DTOs use `class-validator` decorators for type-safe input validation. Pagination query DTOs enforce `@Max(100)` to prevent resource exhaustion.
+DTOs use `class-validator`. Pagination query DTOs enforce `@Max(100)`.
 
 **Location**: `src/modules/*/primary-adapters/dtos/`
 
 ### RBAC with Normalized Permissions
 
-Strict 3NF normalized Role-Based Access Control using `@RequirePermissions()` decorators and a `PermissionsGuard`. Roles and Permissions are seeded automatically on application boot.
+Normalized Role-Based Access Control with `@RequirePermissions()` and `PermissionsGuard`. Roles and permissions seed on boot.
 
-**Location**: `src/modules/identity/`
+**Location**: `src/modules/authorization/`
 
 ### Forced Credential Rotation (mustChangePassword)
 
-Admin accounts bootstrapped via CLI are flagged with `mustChangePassword = true`, forcing them to change their password upon first login (NIST SP 800-63B compliant).
+Admin accounts from CLI bootstrap set `mustChangePassword = true` so the first login forces a password change (NIST SP 800-63B style).
 
 **Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
-### Rate Limiting & Throttling
+### Rate Limiting and Throttling
 
-Global and route-specific API rate limiting using `@nestjs/throttler` backed by Redis, preventing abuse and brute-force attacks on sensitive endpoints like `/authentication/login`.
+`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated `sub`) in addition to IP-based keys.
 
 **Location**: `src/infrastructure/throttler/`
 
@@ -179,29 +191,35 @@ Global and route-specific API rate limiting using `@nestjs/throttler` backed by 
 
 <a id="infrastructure"></a>
 
-## 📦 Infrastructure
+## Infrastructure
 
 ### Multi-Stage Docker Build
 
-A 4-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) produces a minimal Node.js 24 Alpine image (~495MB). Uses `tini` as PID 1, runs as non-root `appuser`, and includes automatic migration execution via `docker-entrypoint.sh`.
+Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on Node.js 24 Alpine. Uses `tini` as PID 1, runs as non-root `appuser`, and runs migrations via `docker-entrypoint.sh`.
 
 **Location**: `Dockerfile`, `docker-entrypoint.sh`, `docker-compose.prod.yml`
 
 ### Graceful Shutdown
 
-Full lifecycle shutdown handling: `SIGTERM`/`SIGINT` signal capture, HTTP connection draining, BullMQ worker cleanup, Redis connection closure, and WebSocket adapter teardown — all orchestrated through NestJS lifecycle hooks with `tini` for proper signal forwarding in Docker. See → [PROCESS-LIFECYCLE.md](infrastructure/PROCESS-LIFECYCLE.md)
+`SIGTERM`/`SIGINT` handling: drain HTTP, stop BullMQ workers, close Redis and WebSocket adapters through NestJS lifecycle hooks and `tini`. See [PROCESS-LIFECYCLE.md](infrastructure/PROCESS-LIFECYCLE.md).
 
 **Location**: `src/infrastructure/shutdown/`, `src/main.ts`
 
 ### Health Checks
 
-Production health endpoint (`GET /health`) using @nestjs/terminus to monitor PostgreSQL and Redis connectivity. Docker-native healthcheck configured for container orchestration readiness.
+- `GET /health`: PostgreSQL, Redis, and WebSocket indicators
+- `GET /health/liveness`: process health (`ProcessHealthIndicator`)
+- `GET /health/readiness`: PostgreSQL required (Redis degradation is reported on `/health` and metrics)
 
 **Location**: `src/modules/health/`
 
+### Backup, Restore, and Smoke
+
+Ops scripts: `db:backup`, `db:restore`, `db:restore:drill`, `smoke-test`. Runbook: [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md).
+
 ### Multi-Environment Configuration
 
-4 environment profiles (development, staging, production, test) with type-safe configuration validation using `class-validator`. Secrets managed separately from config — see [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md).
+Four profiles (development, staging, production, test) with typed env validation. Secrets stay separate from config. See [SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md).
 
 **Location**: `src/config/`, `.env.example`, `.secrets.example`
 
@@ -209,23 +227,27 @@ Production health endpoint (`GET /health`) using @nestjs/terminus to monitor Pos
 
 <a id="observability"></a>
 
-## 🔭 Observability
+## Observability
 
 ### Structured JSON Logging (Winston)
 
-Production-grade structured logging with Winston. JSON output format for log aggregators, with human-readable console transport for development.
+Winston JSON for aggregators; human-readable console in development. PII redaction in structured logs.
 
 **Location**: `src/infrastructure/logging/`
 
 ### Correlation ID Propagation
 
-A middleware injects/reads `X-Request-Id` headers and propagates the correlation ID through the entire request lifecycle — including all 19 BullMQ job handlers and schedulers. Enables end-to-end request tracing across synchronous and asynchronous flows.
+`X-Request-Id` on HTTP and BullMQ jobs so async work stays linked to the originating request.
 
 **Location**: `src/infrastructure/logging/`, `src/infrastructure/jobs/`
 
+### Prometheus and Tracing
+
+`GET /metrics` (RED + domain counters). OpenTelemetry OTLP gRPC to Tempo. Grafana stack: [MONITORING-STACK-GUIDE.md](observability/MONITORING-STACK-GUIDE.md).
+
 ### CI/CD (GitHub Actions)
 
-Automated pipeline: lint → build → test (with coverage) → publish. Environment secrets injected at CI time for RSA key generation.
+Fan-out pipeline: lint, typecheck, unit, arch, audit, build, integration, e2e, smoke, restore-drill, with a single required status aggregator. GHCR publish on `master` and semver tags. Detail: [PROJECT-PIPELINE.md](infrastructure/cicd/PROJECT-PIPELINE.md).
 
 **Location**: `.github/workflows/`
 
@@ -233,23 +255,19 @@ Automated pipeline: lint → build → test (with coverage) → publish. Environ
 
 <a id="testing"></a>
 
-## 🧪 Testing
+## Testing
 
 ### Test Suite Strategy
 
-Comprehensive test infrastructure across all layers:
+- **Unit**: Domain logic, use cases, services, utilities
+- **Integration**: PostgreSQL Testcontainers for query adapters and write repositories (transactions, locks, cache-aside)
+- **E2E**: Auth lifecycle, IDOR denial, checkout SAGA, idempotency, CQRS read shapes
+- **Architecture**: Hexagonal and module boundary rules (`npm run test:arch`)
+- **Coverage**: `npm run test:cov`
 
-- **Unit Tests**: Domain logic, use cases, services, and utilities
-- **Integration Tests**: PostgreSQL Testcontainers (`*.integration.spec.ts`) for query adapters and write-side repositories (transactions, unique constraints, pessimistic inventory locks, cache-aside with a real postgres delegate)
-- **E2E Tests**: Full-app `supertest` suites for auth lifecycle, IDOR denial, checkout SAGA (happy path + payment-failure compensation), and CQRS order read shapes (`userName`, item `sku`)
-- **Coverage**: Detailed metrics via `npm run test:cov`
+### Test Factories and Typed Mocks
 
-### Test Factories & Typed Mocks
-
-Each module has its own `testing/` directory with:
-
-- **Factories**: Generate domain objects for specific scenarios (e.g., `OrderTestFactory.createCashOnDeliveryOrder()`)
-- **Typed Mocks**: Implement real repository interfaces with helper methods for common test setups
+Each module has `testing/` with factories and typed mocks for gateways and repositories.
 
 **Location**: `src/modules/*/testing/`
 
@@ -257,71 +275,76 @@ Each module has its own `testing/` directory with:
 
 <a id="database-seeding"></a>
 
-## 🌱 Database Seeding
+## Database Seeding
 
-### Mock Catalog & Test Accounts
+### Mock Catalog and Test Accounts
 
-A non-interactive database seeding command populates the local PostgreSQL database with standard test accounts and a diverse product catalog for developmental and manual verification workflows.
+`npm run db:seed` loads local accounts and a catalog. Blocked when `NODE_ENV=production`. Idempotent on reruns.
 
-- **Admin Account**: `admin@store.local` / `Admin123!` (ADMIN role)
-- **Customer Account**: `customer@store.local` / `Customer123!` (CUSTOMER role with a default shipping address)
-- **15-Product Catalog**: Distributed across 5 categories (Electronics, Clothing, Home & Garden, Sports, Books) with varying inventory stock levels (5 high, 5 medium, 3 low, 2 zero stock) to test low-stock alerts and out-of-stock validation rules.
-- **Safety & Idempotency**: Running the script with `NODE_ENV=production` is blocked. It skips existing catalog SKUs and user accounts to enable safe reruns.
+- **Admin**: `admin@store.local` / `Admin123!`
+- **Customer**: `customer@store.local` / `Customer123!`
+- **Catalog**: 15 products across categories with varied stock levels
 
-**Location**: `scripts/seed.ts`, module-owned seed use cases under `src/modules/*/core/application/seed/` · **Deep-dive**: [SEEDING.md](development/SEEDING.md)
+**Location**: `scripts/seed.ts`, module seed use cases · **Deep-dive**: [SEEDING.md](development/SEEDING.md)
 
 ---
 
 <a id="available-scripts"></a>
 
-## 📜 Available Scripts
+## Available Scripts
 
 ### Development
 
-| Script                | Description              |
-| :-------------------- | :----------------------- |
-| `npm run start:dev`   | Start in watch mode      |
-| `npm run start:debug` | Start with debugging     |
-| `npm run build`       | Build for production     |
-| `npm run lint`        | Run ESLint with auto-fix |
+| Script | Description |
+| :----- | :---------- |
+| `npm run start:dev` | Start in watch mode |
+| `npm run start:debug` | Start with debugging |
+| `npm run build` | Build for production |
+| `npm run lint` | Run ESLint with auto-fix |
 
 ### Testing
 
-| Script               | Description              |
-| :------------------- | :----------------------- |
-| `npm test`           | Run unit tests           |
-| `npm run test:watch` | Run tests in watch mode  |
-| `npm run test:cov`   | Generate coverage report |
-| `npm run test:e2e`   | Run end-to-end tests     |
-| `npm run test:ci`    | CI mode (GitHub Actions) |
+| Script | Description |
+| :----- | :---------- |
+| `npm test` | Unit tests |
+| `npm run test:watch` | Watch mode |
+| `npm run test:cov` | Coverage |
+| `npm run test:integration` | Real DB / Redis integration |
+| `npm run test:e2e` | End-to-end HTTP flows |
+| `npm run test:arch` | Architecture boundary rules |
+| `npm run test:redis:chaos` | Redis reconnect / degradation |
+| `npm run smoke-test` | Live-process smoke probes |
+| `npm run test:ci` | CI mode |
 
 ### Database Migrations
 
-| Script                           | Description                            |
-| :------------------------------- | :------------------------------------- |
+| Script | Description |
+| :----- | :---------- |
 | `npm run migration:generate:dev` | Generate migration from entity changes |
-| `npm run migration:create:dev`   | Create empty migration                 |
-| `npm run migration:run:dev`      | Run pending migrations                 |
-| `npm run migration:revert:dev`   | Revert last migration                  |
-| `npm run migration:show:dev`     | Show migration status                  |
+| `npm run migration:create:dev` | Create empty migration |
+| `npm run migration:run:dev` | Run pending migrations |
+| `npm run migration:revert:dev` | Revert last migration |
+| `npm run migration:show:dev` | Show migration status |
 
-> Replace `:dev` with `:prod`, `:staging`, or `:test` for different environments.
+> Replace `:dev` with `:prod`, `:staging`, or `:test` for other environments.
 
-### Docker
+### Docker and Ops
 
-| Script                     | Description                             |
-| :------------------------- | :-------------------------------------- |
-| `npm run d:up:dev`         | Start infrastructure (Postgres + Redis) |
-| `npm run d:down:dev`       | Stop infrastructure                     |
-| `npm run d:reset:dev`      | Reset infrastructure (⚠️ wipes data)    |
-| `npm run d:build:image`    | Build production Docker image           |
-| `npm run d:up:full:prod`   | Start full production stack             |
-| `npm run d:down:full:prod` | Stop full production stack              |
+| Script | Description |
+| :----- | :---------- |
+| `npm run d:up:dev` | Start Postgres + Redis |
+| `npm run d:down:dev` | Stop infrastructure |
+| `npm run d:reset:dev` | Reset infrastructure (wipes data) |
+| `npm run d:build:image` | Build production Docker image |
+| `npm run d:up:full:prod` | Start full production stack |
+| `npm run db:backup` | PostgreSQL backup |
+| `npm run db:restore` | PostgreSQL restore |
+| `npm run db:restore:drill` | Backup then restore drill |
 
 ### Utilities
 
-| Script             | Description                             |
-| :----------------- | :-------------------------------------- |
-| `npm run db:seed`  | Seed development database (idempotency) |
-| `npm run env:init` | Generate all environment files          |
-| `npm run clean`    | Remove build artifacts                  |
+| Script | Description |
+| :----- | :---------- |
+| `npm run db:seed` | Seed development database |
+| `npm run env:init` | Generate environment files |
+| `npm run clean` | Remove build artifacts |
