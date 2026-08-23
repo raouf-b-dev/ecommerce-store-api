@@ -32,9 +32,9 @@
 
 ## What this is
 
-A **modular monolith** for an e-commerce backend: ten bounded contexts under `src/modules/`, communicating only through ACL gateways and domain events. The stack is NestJS, TypeScript, PostgreSQL, Redis Stack, and BullMQ.
+A **modular monolith** e-commerce backend: ten bounded contexts under `src/modules/`, NestJS, TypeScript, PostgreSQL, Redis Stack, and BullMQ. Contexts communicate only through ACL gateways and domain events.
 
-The project focuses on backend patterns that tutorials often skip: checkout SAGA with compensation, Redis-backed HTTP idempotency, RSA JWT with refresh rotation and reuse detection, RBAC, CQRS read adapters, optimistic and pessimistic concurrency controls, and structured observability (logs, metrics, traces). It is a reference implementation you can run, test, and read chapter by chapter in [`docs/`](docs/README.md).
+It is a **reference implementation** you can run, test, and read chapter by chapter in [`docs/`](docs/README.md). Checkout SAGA, CQRS reads, concurrency controls, auth/RBAC, and ops foundations are implemented with tests and linked runbooks.
 
 **Current limits**
 
@@ -68,25 +68,27 @@ git clone https://github.com/raouf-b-dev/ecommerce-store-api.git
 cd ecommerce-store-api
 npm install
 
-# 2. Generate environment files
+# 2. Generate environment files (JWT and metrics keys are auto-generated)
 npm run env:init
+# Verify DB_* and REDIS_* in .env.development match Compose defaults (see LOCAL-SETUP.md)
 
-# 3. Fill .env.* with local secrets (DB, Redis, JWT keys)
-
-# 4. Start PostgreSQL + Redis and run migrations
+# 3. Start PostgreSQL + Redis and run migrations
 npm run d:up:dev
 npm run migration:run:dev
 
-# 5. Start the API, then seed local data (roles must exist from first boot)
+# 4. Start the API (first boot initializes roles/permissions), then seed
 npm run start:dev
 npm run db:seed
 ```
+
+First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md). Seeded accounts: [`docs/development/SEEDING.md`](docs/development/SEEDING.md).
 
 | Endpoint | URL |
 | :------- | :-- |
 | API | `http://localhost:3000` |
 | Swagger | `http://localhost:3000/api` |
 | Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+| Local env setup | [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) |
 
 ### Optional: monitoring stack
 
@@ -195,6 +197,7 @@ Start with the full index: [`docs/README.md`](docs/README.md). These chapters ar
 | [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo |
 | [`architecture/adr/`](docs/architecture/adr/README.md) | Architecture decision records |
 | [`SEEDING.md`](docs/development/SEEDING.md) | Local seed accounts and catalog |
+| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) | Environment files and first boot order |
 | [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md) | Common local issues |
 | [`AGENT.md`](AGENT.md) | Contributor and agent conventions |
 
@@ -208,14 +211,10 @@ Full catalog with locations: [`docs/FEATURES.md`](docs/FEATURES.md).
 
 - **Modular monolith** with ten bounded contexts and ACL gateway isolation
 - **Checkout SAGA** with BullMQ orchestration and compensation on failure
-- **CQRS read path** with JOIN query adapters across orders, inventory, payments, products, carts, identity, and notifications
-- **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation (`SELECT FOR UPDATE`)
-- **HTTP idempotency** on checkout via Redis (`@Idempotent()`, fail-closed when Redis is unavailable)
-- **Auth**: RSA JWT (JWKS), refresh rotation, reuse detection, RBAC, user-scoped rate limiting
-- **Data**: RedisJSON carts, RedisSearch catalog, cache-aside repositories
-- **Ops**: multi-stage Docker, graceful shutdown, liveness/readiness probes, backup/restore/smoke scripts
-- **Observability**: structured logs, correlation IDs, Prometheus metrics, OpenTelemetry traces
-- **Quality gates**: lint, typecheck, unit, architecture, audit, integration, E2E, smoke, restore drill in CI
+- **CQRS read path** with JOIN query adapters across core modules
+- **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation
+- **Auth and security**: RSA JWT (JWKS), refresh rotation, RBAC, user-scoped rate limiting, HTTP idempotency on checkout
+- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, full CI fan-out (unit, integration, E2E, arch, restore drill)
 
 ---
 
