@@ -36,10 +36,10 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Prerequisites
 
-- **Node.js** ≥ 22
+- **Node.js** ≥ 24
 - **npm** ≥ 11
 - **Docker Desktop** ≥ 28
-- **Git** ≥ 2.49
+- **Git** ≥ 2.47
 
 ### Installation
 
@@ -117,10 +117,10 @@ npm run format
 
 This project follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture** (Ports & Adapters). Please ensure:
 
-- **Core** (`core/domain/`): Pure business logic — entities, value objects, repository interfaces. Zero external dependencies.
+- **Core** (`core/domain/`): Pure business logic: entities, value objects, repository interfaces. Zero external dependencies.
 - **Core** (`core/application/`): Use cases that orchestrate domain logic. Depends only on Domain.
-- **Primary Adapters** (`primary-adapters/`): Driving adapters — DTOs, job handlers, event listeners. NestJS Controllers live at the module root and inject Use Cases directly (no intermediate controller classes).
-- **Secondary Adapters** (`secondary-adapters/`): Driven adapters — repository implementations, ORM entities, mappers, external service integrations.
+- **Primary Adapters** (`primary-adapters/`): Driving adapters: DTOs, job handlers, event listeners. NestJS Controllers live at the module root and inject Use Cases directly (no intermediate controller classes).
+- **Secondary Adapters** (`secondary-adapters/`): Driven adapters: repository implementations, ORM entities, mappers, external service integrations.
 - **Shared Kernel** (`src/shared-kernel/`): Cross-cutting infrastructure (database, Redis, jobs, error types, interceptors).
 
 ## Testing
