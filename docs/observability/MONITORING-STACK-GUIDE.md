@@ -1,100 +1,99 @@
-# 📊 Monitoring Stack Guide
+# Monitoring Stack Guide
 
-> A comprehensive guide to the E-Commerce Store API observability stack (Prometheus, Loki, Tempo, Grafana).
+Reference for the E-Commerce Store API observability stack: Prometheus, Loki, Tempo, Grafana, and Promtail.
 
 ## Architecture Overview
 
 ```text
-┌────────────────┐      ┌────────────────┐      ┌────────────────┐
-│  E-Commerce    │─────▶│   Prometheus   │─────▶│    Grafana     │
-│      API       │ metrics │   (Metrics)    │      │  (Dashboards)  │
-└────────────────┘      └────────────────┘      └───────▲────────┘
-        │                       ▲                       │
-        │ logs                  │ metrics               │
-        ▼                       │                       │
-┌────────────────┐      ┌───────┴────────┐      ┌───────┴────────┐
-│    Promtail    │─────▶│      Loki      │      │     Tempo      │
-│ (Log Collector)│ logs │ (Log Storage)  │      │(Trace Storage) │
-└────────────────┘      └───────▲────────┘      └───────▲────────┘
-                                │                       │
-                                └───────────────────────┘
-                                     Trace Correlation
+API -> Prometheus -> Grafana
+API -> Tempo -> Grafana
+Promtail -> Loki -> Grafana
 ```
 
-## Quick Start
+## Local Boot Model
 
-1. **Start the Infrastructure**:
+### Core only (default)
 
-   ```bash
-   npm run d:up:dev
-   ```
+```bash
+npm run d:up:dev
+```
 
-   This starts Postgres, Redis, Prometheus, Loki, Promtail, Tempo, and Grafana.
+This starts only PostgreSQL and Redis.
 
-2. **Access Grafana**:
-   - URL: [http://localhost:3001](http://localhost:3001)
-   - Credentials: `admin` / `admin`
+### Core + observability
 
-3. **Check Service Health**:
-   - Prometheus: [http://localhost:9090](http://localhost:9090)
-   - Loki: [http://localhost:3100/ready](http://localhost:3100/ready)
-   - Tempo: [http://localhost:3200/ready](http://localhost:3200/ready)
+```bash
+npm run d:up:obs:dev
+```
+
+This starts PostgreSQL, Redis, Prometheus, Loki, Promtail, Tempo, and Grafana.
+
+To stop the monitoring plane while keeping core infra running:
+
+```bash
+npm run d:stop:obs:dev
+```
+
+## Default Host Ports
+
+| Service         | Container port | Default host port | Env override           |
+| :-------------- | :------------- | :---------------- | :--------------------- |
+| Prometheus      | `9090`         | `9090`            | `PROMETHEUS_HOST_PORT` |
+| Loki            | `3100`         | `3100`            | `LOKI_HOST_PORT`       |
+| Tempo HTTP      | `3200`         | `3200`            | `TEMPO_HOST_PORT`      |
+| Tempo OTLP gRPC | `4317`         | `4317`            | `OTLP_GRPC_HOST_PORT`  |
+| Tempo OTLP HTTP | `4318`         | `4318`            | `OTLP_HTTP_HOST_PORT`  |
+| Grafana         | `3000`         | `3001`            | `GRAFANA_HOST_PORT`    |
+
+## Access URLs
+
+Use your env values when remapped locally.
+
+- Grafana: `http://localhost:<GRAFANA_HOST_PORT>`
+- Prometheus: `http://localhost:<PROMETHEUS_HOST_PORT>`
+- Loki readiness: `http://localhost:<LOKI_HOST_PORT>/ready`
+- Tempo readiness: `http://localhost:<TEMPO_HOST_PORT>/ready`
 
 ## Dashboards
 
-The stack comes with 4 pre-provisioned dashboards in the **"E-Commerce API"** folder:
+The stack provisions dashboards for:
 
-1. **API Overview (RED Method)**:
-   - **Request Rate**: Total HTTP requests per second.
-   - **Error Rate**: Percentage of 5xx responses.
-   - **Latency (P50, P95, P99)**: Request duration distribution.
-   - **Heatmap**: Visual distribution of request durations.
+1. API RED metrics
+2. Business metrics
+3. Infrastructure signals
+4. Checkout SAGA traces
 
-2. **Business Metrics**:
-   - **Orders**: Total orders created and creation rate.
-   - **Payments**: Captured and Refunded payment totals.
-   - **Authenticated**: Success vs Failure login rates with failure reasons.
-   - **Checkouts**: Cart checkout initiation vs completion rates.
+## Environment Rules
 
-3. **Infrastructure (USE Method)**:
-   - **Database**: Postgres pool active connections.
-   - **Redis**: Connection status (UP/DOWN).
-   - **Queues**: BullMQ queue depths (active/waiting/delayed).
-   - **WebSockets**: Active real-time connections.
-   - **Node.js**: Heap usage, Event Loop lag, CPU usage.
+| Variable                      | Default                 | Purpose                                |
+| :---------------------------- | :---------------------- | :------------------------------------- |
+| `METRICS_API_KEY`             | required                | Prometheus bearer auth for `/metrics`  |
+| `OTEL_TRACING_ENABLED`        | `true`                  | Enable OpenTelemetry tracing           |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` | Host endpoint used by the API process  |
+| `OTLP_GRPC_HOST_PORT`         | `4317`                  | Host port published for Tempo gRPC     |
+| `OTLP_HTTP_HOST_PORT`         | `4318`                  | Host port published for Tempo HTTP     |
+| `TEMPO_HOST_PORT`             | `3200`                  | Host port published for Tempo UI / API |
+| `PROMETHEUS_HOST_PORT`        | `9090`                  | Host port published for Prometheus     |
+| `GRAFANA_HOST_PORT`           | `3001`                  | Host port published for Grafana        |
+| `LOKI_HOST_PORT`              | `3100`                  | Host port published for Loki           |
 
-4. **Checkout SAGA**:
-   - **Throughput**: Success vs Failure of checkout workflows.
-   - **Compensations**: Breakdown of rollback steps (e.g., refund_payment, release_stock).
-   - **Traces**: Recent SAGA traces with direct links to Tempo.
+### Coupling to remember
 
-## Log ↔ Trace Correlation
-
-This stack implements bidirectional correlation between logs and traces:
-
-### From Logs to Traces
-
-In Grafana **Explore** (Loki), every log line from the API contains a `traceId`. Clicking the `traceId` will automatically open the corresponding trace in Tempo in a split-screen view.
-
-### From Traces to Logs
-
-In Grafana **Explore** (Tempo), clicking the "Logs for this span" button will automatically filter Loki logs to show exactly what happened during that specific trace span.
-
-## Environment Variables
-
-| Variable                      | Default                 | Description                                              |
-| ----------------------------- | ----------------------- | -------------------------------------------------------- |
-| `METRICS_API_KEY`             | (required)              | Shared secret between API and Prometheus                 |
-| `OTEL_TRACING_ENABLED`        | `true`                  | Enable/Disable OpenTelemetry tracing                     |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4317` | Tempo OTLP receiver endpoint                             |
-| `GRAFANA_ADMIN_USER`          | `admin`                 | Grafana admin username (cannot be 'admin' in production) |
-| `GRAFANA_ADMIN_PASSWORD`      | `admin`                 | Grafana admin password (cannot be 'admin' in production) |
-
-> [!IMPORTANT]
-> For security reasons, the monitoring stack will **fail to start** if `GRAFANA_ADMIN_USER` or `GRAFANA_ADMIN_PASSWORD` are set to the default value `admin`. Please update these in your `.env` file before deploying.
+- If `OTLP_GRPC_HOST_PORT` changes, `OTEL_EXPORTER_OTLP_ENDPOINT` must change to the same host port.
+- If the API `PORT` changes for local `npm run start:dev`, update [`docker/monitoring/prometheus/prometheus.yml`](../../docker/monitoring/prometheus/prometheus.yml) so `host.docker.internal:<PORT>` matches.
+- Production Prometheus uses [`prometheus.prod.yml`](../../docker/monitoring/prometheus/prometheus.prod.yml) and scrapes `api:3000` inside the Compose network, so this local host-port coupling does not apply there.
 
 ## Troubleshooting
 
-- **No Metrics in Grafana**: Check if the API is running and reachable by Prometheus (`http://localhost:9090/targets`).
-- **No Logs in Loki**: Verify `ecom-promtail` container logs. It needs access to `/var/run/docker.sock` to discover containers.
-- **No Traces in Tempo**: Ensure `OTEL_TRACING_ENABLED=true` in your `.env` and the API can reach `tempo:4317`.
+- No metrics in Grafana: check Prometheus targets and confirm the API host port matches `host.docker.internal:<PORT>`.
+- No logs in Loki: inspect `ecom-promtail` and confirm Docker socket access.
+- No traces in Tempo: confirm `OTEL_TRACING_ENABLED=true` and that `OTEL_EXPORTER_OTLP_ENDPOINT` matches the published gRPC host port.
+- Windows bind failures: see [`../infrastructure/TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md).
+
+## When to Extract
+
+Keep observability in-repo until one of these becomes true:
+
+- multiple applications share the same monitoring plane
+- observability deploy cadence diverges from the API deploy cadence
+- a separate platform/ops owner needs independent control over dashboards, retention, and secrets
