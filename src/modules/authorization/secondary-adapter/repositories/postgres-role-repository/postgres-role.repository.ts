@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { RoleRepository } from '../../../core/domain/repositories/role.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -11,22 +11,26 @@ import { PermissionEntity } from '../../orm/permission.schema';
 import { RolePermissionEntity } from '../../orm/role-permission.schema';
 import { RoleMapper } from '../../persistence/mappers/role.mapper';
 
+const ROLE_WITH_PERMISSIONS = [
+  'rolePermissions',
+  'rolePermissions.permission',
+] as const;
+
 @Injectable()
 export class PostgresRoleRepository implements RoleRepository {
   constructor(
     @InjectRepository(RoleEntity)
     private readonly roleRepo: Repository<RoleEntity>,
-    @InjectRepository(PermissionEntity)
-    private readonly permissionRepo: Repository<PermissionEntity>,
     @InjectRepository(RolePermissionEntity)
     private readonly rolePermissionRepo: Repository<RolePermissionEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findById(id: number): Promise<Result<Role, RepositoryError>> {
     try {
       const entity = await this.roleRepo.findOne({
         where: { id },
-        relations: ['rolePermissions', 'rolePermissions.permission'],
+        relations: [...ROLE_WITH_PERMISSIONS],
       });
       if (!entity) {
         return ErrorFactory.RepositoryError(`Role with ID ${id} not found`);
@@ -43,7 +47,7 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const entity = await this.roleRepo.findOne({
         where: { code },
-        relations: ['rolePermissions', 'rolePermissions.permission'],
+        relations: [...ROLE_WITH_PERMISSIONS],
       });
       if (!entity) {
         return Result.success(null);
@@ -58,7 +62,7 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const entities = await this.roleRepo.find({
         order: { id: 'ASC' },
-        relations: ['rolePermissions', 'rolePermissions.permission'],
+        relations: [...ROLE_WITH_PERMISSIONS],
       });
       return Result.success(entities.map((e) => RoleMapper.toDomain(e)));
     } catch (error) {
@@ -68,29 +72,22 @@ export class PostgresRoleRepository implements RoleRepository {
 
   async save(role: Role): Promise<Result<Role, RepositoryError>> {
     try {
-      const entityToSave = this.roleRepo.create({
-        id: role.id,
-        code: role.code,
-        name: role.name,
-        isSystem: role.isSystem,
+      const savedId = await this.dataSource.transaction(async (manager) => {
+        const roleRepo = manager.getRepository(RoleEntity);
+        const entity = Object.assign(
+          new RoleEntity(),
+          RoleMapper.toInsertPayload(role),
+        );
+        const savedEntity = await roleRepo.save(entity);
+        await this.syncRolePermissions(
+          manager,
+          savedEntity.id,
+          role.permissions.codes,
+        );
+        return savedEntity.id;
       });
 
-      const savedEntity = await this.roleRepo.save(entityToSave);
-
-      const codes = role.permissions.codes;
-      if (codes.length > 0) {
-        const permissions = await this.permissionRepo.find({
-          where: { code: In(codes) },
-        });
-        await this.rolePermissionRepo.save(
-          permissions.map((p) => ({
-            roleId: savedEntity.id,
-            permissionId: p.id,
-          })),
-        );
-      }
-
-      return await this.findById(savedEntity.id);
+      return await this.findById(savedId);
     } catch (error) {
       return ErrorFactory.RepositoryError('Failed to save role', error);
     }
@@ -112,34 +109,29 @@ export class PostgresRoleRepository implements RoleRepository {
 
   async update(role: Role): Promise<Result<void, RepositoryError>> {
     try {
-      const entityToUpdate = await this.roleRepo.findOne({
-        where: { id: role.id },
-      });
-
-      if (!entityToUpdate) {
-        return ErrorFactory.RepositoryError('Role not found for update');
-      }
-
-      entityToUpdate.name = role.name;
-      await this.roleRepo.save(entityToUpdate);
-
-      await this.rolePermissionRepo.delete({ roleId: role.id });
-
-      const codes = role.permissions.codes;
-      if (codes.length > 0) {
-        const permissions = await this.permissionRepo.find({
-          where: { code: In(codes) },
-        });
-        await this.rolePermissionRepo.save(
-          permissions.map((p) => ({
-            roleId: role.id,
-            permissionId: p.id,
-          })),
+      await this.dataSource.transaction(async (manager) => {
+        const updateResult = await manager.update(
+          RoleEntity,
+          role.id,
+          RoleMapper.toUpdatePayload(role),
         );
-      }
+
+        if (!updateResult.affected) {
+          throw new RepositoryError('Role not found for update');
+        }
+
+        await this.syncRolePermissions(
+          manager,
+          role.id,
+          role.permissions.codes,
+        );
+      });
 
       return Result.success(undefined);
     } catch (error) {
+      if (error instanceof RepositoryError) {
+        return Result.failure(error);
+      }
       return ErrorFactory.RepositoryError('Failed to update role', error);
     }
   }
@@ -174,6 +166,49 @@ export class PostgresRoleRepository implements RoleRepository {
       return ErrorFactory.RepositoryError(
         'Failed to fetch permission codes by role code',
         error,
+      );
+    }
+  }
+
+  /**
+   * Idempotent join sync (same idea as UserRepository.syncAddresses):
+   * delete removed links, insert missing ones — never delete-all + reinsert.
+   */
+  private async syncRolePermissions(
+    manager: EntityManager,
+    roleId: number,
+    permissionCodes: string[],
+  ): Promise<void> {
+    const rolePermissionRepo = manager.getRepository(RolePermissionEntity);
+    const permissionRepo = manager.getRepository(PermissionEntity);
+
+    const desiredPermissions =
+      permissionCodes.length > 0
+        ? await permissionRepo.find({ where: { code: In(permissionCodes) } })
+        : [];
+    const desiredIds = new Set(desiredPermissions.map((p) => p.id));
+
+    const existingLinks = await rolePermissionRepo.find({
+      where: { roleId },
+    });
+    const existingIds = new Set(existingLinks.map((rp) => rp.permissionId));
+
+    const linkIdsToRemove = existingLinks
+      .filter((rp) => !desiredIds.has(rp.permissionId))
+      .map((rp) => rp.id);
+    if (linkIdsToRemove.length > 0) {
+      await rolePermissionRepo.delete(linkIdsToRemove);
+    }
+
+    const permissionIdsToAdd = [...desiredIds].filter(
+      (id) => !existingIds.has(id),
+    );
+    if (permissionIdsToAdd.length > 0) {
+      await rolePermissionRepo.insert(
+        permissionIdsToAdd.map((permissionId) => ({
+          roleId,
+          permissionId,
+        })),
       );
     }
   }

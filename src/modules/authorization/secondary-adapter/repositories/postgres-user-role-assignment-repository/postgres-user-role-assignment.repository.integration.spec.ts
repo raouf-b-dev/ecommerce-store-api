@@ -2,7 +2,6 @@ import { Role } from '../../../core/domain/entities/role';
 import { UserRoleAssignment } from '../../../core/domain/entities/user-role-assignment';
 import { PostgresRoleRepository } from '../postgres-role-repository/postgres-role.repository';
 import { PostgresUserRoleAssignmentRepository } from './postgres-user-role-assignment.repository';
-import { PermissionEntity } from '../../orm/permission.schema';
 import { RoleEntity } from '../../orm/role.schema';
 import { RolePermissionEntity } from '../../orm/role-permission.schema';
 import { UserRoleAssignmentEntity } from '../../orm/user-role-assignment.schema';
@@ -23,8 +22,8 @@ describe('PostgresUserRoleAssignmentRepository (Integration - Real DB)', () => {
     const dataSource = IntegrationTestHelper.getDataSource();
     roleRepository = new PostgresRoleRepository(
       dataSource.getRepository(RoleEntity),
-      dataSource.getRepository(PermissionEntity),
       dataSource.getRepository(RolePermissionEntity),
+      dataSource,
     );
     assignmentRepository = new PostgresUserRoleAssignmentRepository(
       dataSource.getRepository(UserRoleAssignmentEntity),
