@@ -45,15 +45,16 @@ Implementation: [`scripts/generate-envs.js`](../../scripts/generate-envs.js).
 
 ### Auto-generated (no manual paste for local dev)
 
-| Variable                 | Notes                                            |
-| :----------------------- | :----------------------------------------------- |
-| `JWT_PRIVATE_KEY`        | RSA-4096 PEM, escaped for dotenv                 |
-| `METRICS_API_KEY`        | Random hex for `/metrics` auth                   |
-| `GRAFANA_ADMIN_PASSWORD` | Random hex when present in template              |
-| `NODE_ENV`               | Set per file (`development`, `production`, etc.) |
-| `APP_VERSION`            | From `package.json`                              |
-| `REDIS_KEYPREFIX`        | `ecom:<env>:`                                    |
-| `LOG_LEVEL`              | `debug` in development                           |
+| Variable                 | Notes                                                                                                                                                                                                                                                                                                    |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_PRIVATE_KEY`        | RSA-4096 PEM, escaped for dotenv                                                                                                                                                                                                                                                                         |
+| `METRICS_API_KEY`        | Random hex for `/metrics` auth                                                                                                                                                                                                                                                                           |
+| `GRAFANA_ADMIN_PASSWORD` | Random hex when present in template                                                                                                                                                                                                                                                                      |
+| `NODE_ENV`               | Set per file (`development`, `production`, etc.)                                                                                                                                                                                                                                                         |
+| `APP_VERSION`            | From `package.json`                                                                                                                                                                                                                                                                                      |
+| `REDIS_KEYPREFIX`        | `ecom:<env>:`                                                                                                                                                                                                                                                                                            |
+| `LOG_LEVEL`              | `debug` in development                                                                                                                                                                                                                                                                                   |
+| Local host ports         | For `development` / `test`: `PORT=4000` and obs remaps (`GRAFANA_HOST_PORT=3301`, `LOKI_HOST_PORT=13100`, `PROMETHEUS_HOST_PORT=19090`, Tempo/OTLP `13xxx`/`14xxx`) so Compose binds work on Windows Hyper-V reserved ranges. `CORS_ALLOWED_ORIGINS` and `OTEL_EXPORTER_OTLP_ENDPOINT` are kept in sync. |
 
 ### Verify against Compose defaults
 
@@ -77,7 +78,7 @@ Docker Compose reads the same `.env.development` via the local Docker scripts.
 If you remap ports locally:
 
 - `OTEL_EXPORTER_OTLP_ENDPOINT` must match `OTLP_GRPC_HOST_PORT` because `npm run start:dev` runs the API on the host.
-- If `PORT` changes for the host-run API, update [`docker/monitoring/prometheus/prometheus.yml`](../../docker/monitoring/prometheus/prometheus.yml) so `host.docker.internal:<port>` matches the new host port.
+- Prometheus scrapes `host.docker.internal:$PORT` (Compose injects `PORT` into the Prometheus container). After changing `PORT`, recreate the observability Prometheus service.
 
 ---
 
@@ -99,6 +100,8 @@ npm run start:dev
 # 5. Sample data (second terminal, after the first boot finishes)
 npm run db:seed
 ```
+
+Non-prod TypeORM logging is set to `error`/`warn` (not all queries) to keep local boot quieter. Schema sync still runs outside production; prefer `migration:run:dev` for intentional schema changes.
 
 ### Optional: observability profile
 

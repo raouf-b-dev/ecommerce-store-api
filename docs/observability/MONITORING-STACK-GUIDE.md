@@ -80,14 +80,14 @@ The stack provisions dashboards for:
 ### Coupling to remember
 
 - If `OTLP_GRPC_HOST_PORT` changes, `OTEL_EXPORTER_OTLP_ENDPOINT` must change to the same host port.
-- If the API `PORT` changes for local `npm run start:dev`, update [`docker/monitoring/prometheus/prometheus.yml`](../../docker/monitoring/prometheus/prometheus.yml) so `host.docker.internal:<PORT>` matches.
+- Local Prometheus scrapes `host.docker.internal:$PORT`. Compose passes `PORT` into the Prometheus container; [`entrypoint.sh`](../../docker/monitoring/prometheus/entrypoint.sh) renders [`prometheus.yml.template`](../../docker/monitoring/prometheus/prometheus.yml.template). After changing `PORT` in `.env.development`, recreate Prometheus (`npm run d:up:obs:dev` or force-recreate `prometheus`).
 - Production Prometheus uses [`prometheus.prod.yml`](../../docker/monitoring/prometheus/prometheus.prod.yml) and scrapes `api:3000` inside the Compose network, so this local host-port coupling does not apply there.
 
 ## Troubleshooting
 
-- No metrics in Grafana: check Prometheus targets and confirm the API host port matches `host.docker.internal:<PORT>`.
+- No metrics in Grafana: check Prometheus targets (`http://localhost:<PROMETHEUS_HOST_PORT>/targets`) and confirm the scrape address uses the same `PORT` as the host-run API.
 - No logs in Loki: inspect `ecom-promtail` and confirm Docker socket access.
-- No traces in Tempo: confirm `OTEL_TRACING_ENABLED=true` and that `OTEL_EXPORTER_OTLP_ENDPOINT` matches the published gRPC host port.
+- No traces in Tempo: confirm `OTEL_TRACING_ENABLED=true` and that `OTEL_EXPORTER_OTLP_ENDPOINT` matches the published gRPC host port. Note: `npm run start:dev` does not load the OTel SDK; use `start:built` / prod scripts for traces.
 - Windows bind failures: see [`../infrastructure/TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md).
 
 ## When to Extract

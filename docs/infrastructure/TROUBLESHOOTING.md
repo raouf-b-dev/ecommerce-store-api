@@ -99,7 +99,13 @@ Restart Docker Desktop and retry.
 
 Remap host ports outside the reserved range in `.env.development`.
 
-Example:
+`npm run env:init` / `env:init:dev` already writes Hyper-V-safe remaps for development and test (see `scripts/generate-envs.js`). Prefer regenerating rather than hand-editing:
+
+```bash
+npm run env:init:dev -- --overwrite
+```
+
+Example values (what the generator applies):
 
 ```env
 PORT=4000
@@ -128,8 +134,8 @@ Core-only boot avoids Grafana/Loki/Tempo bind failures until you need the monito
 ## Metrics missing after local port remap
 
 - Confirm the API is running on the `PORT` value from `.env.development`.
-- Update [`docker/monitoring/prometheus/prometheus.yml`](../../docker/monitoring/prometheus/prometheus.yml) so `host.docker.internal:<PORT>` matches the host-run API port.
-- Check Prometheus targets at `http://localhost:<PROMETHEUS_HOST_PORT>/targets`.
+- Recreate Prometheus after changing `PORT` so `entrypoint.sh` re-renders the scrape target (`npm run d:up:obs:dev` or `docker compose ... up -d --force-recreate prometheus`).
+- Check Prometheus targets at `http://localhost:<PROMETHEUS_HOST_PORT>/targets` — scrape URL should be `host.docker.internal:<PORT>/metrics`.
 - Confirm `METRICS_API_KEY` matches the API env.
 
 ---
@@ -140,3 +146,32 @@ Core-only boot avoids Grafana/Loki/Tempo bind failures until you need the monito
 - Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` matches `OTLP_GRPC_HOST_PORT`.
 - Confirm Tempo is healthy on `http://localhost:<TEMPO_HOST_PORT>/ready`.
 - Restart the API after changing OTLP settings.
+
+---
+
+## False role / BullMQ errors on Ctrl+C or watch restart
+
+**Symptom**: Logs like `Failed to lookup role`, `Failed to update system role`, or `Failed to schedule cleanup job` appear around the same time as `Received SIGINT` / graceful shutdown, even though the process may still print `Server is running`.
+
+**Cause**: Nest watch restart or Ctrl+C closes Redis/Postgres while role/permission bootstrap or BullMQ repeatable-job registration is still in flight.
+
+**Expected**: Init hooks consult `ApplicationLifecyclePort` and skip or demote those failures during shutdown. On a clean start with core Docker up (`npm run d:up:dev`), roles and schedulers should succeed with no errors.
+
+**Related**: `duplicate key ... UQ_... role_permissions` on every restart used to come from delete-all/reinsert of join rows (and TypeORM cascade). Role permission sync is now a transactional diff; up-to-date system roles skip `update` entirely.
+
+---
+
+## Slow local `npm run start` / `start:dev` with observability down
+
+**Symptom**: Host API start feels slow even when Grafana/Tempo/Prometheus are not running.
+
+**Note**: `npm run start` and `npm run start:dev` do **not** load OpenTelemetry (`tracing.js` is only required by `start:built` / `start:prod` / `start:staging`). Missing observability containers do not block those scripts.
+
+**Investigate**:
+
+```powershell
+Measure-Command { npm run build }
+Measure-Command { npm run start:built }
+```
+
+If `build` dominates, cost is Nest/SWC compile (and Nest CLI `typeCheck`). If `start:built` dominates, cost is runtime (Postgres, Redis, module init). Non-prod TypeORM logging is limited to `error`/`warn` to reduce bootstrap I/O.
