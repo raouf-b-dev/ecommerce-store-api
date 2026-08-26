@@ -13,6 +13,7 @@ import cookieParser from 'cookie-parser';
 import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 import { DEFAULT_API_VERSION } from './infrastructure/http/api-version';
 import { parseTrustProxy } from './infrastructure/http/parse-trust-proxy';
+import { ApplicationLifecyclePort } from './shared-kernel/domain/interfaces/application-lifecycle.port';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -82,10 +83,13 @@ async function bootstrap() {
   try {
     await app.listen(port);
 
-    Logger.log(
-      `🚀 Server is running on port ${port} in ${nodeEnv} mode`,
-      'Bootstrap',
-    );
+    const lifecycle = app.get(ApplicationLifecyclePort);
+    if (!lifecycle.isShuttingDown) {
+      Logger.log(
+        `🚀 Server is running on port ${port} in ${nodeEnv} mode`,
+        'Bootstrap',
+      );
+    }
   } catch (error: any) {
     if (error.code === 'EADDRINUSE') {
       Logger.error(
@@ -97,24 +101,6 @@ async function bootstrap() {
       process.exit(1);
     }
     throw error;
-  }
-
-  const SHUTDOWN_TIMEOUT_MS = 15_000;
-  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
-    process.on(signal, () => {
-      Logger.log(
-        `Received ${signal} — starting graceful shutdown (${SHUTDOWN_TIMEOUT_MS / 1000}s timeout)`,
-        'Bootstrap',
-      );
-      setTimeout(() => {
-        Logger.error(
-          `Graceful shutdown timed out after ${SHUTDOWN_TIMEOUT_MS / 1000}s — forcing exit`,
-          undefined,
-          'Bootstrap',
-        );
-        process.exit(1);
-      }, SHUTDOWN_TIMEOUT_MS).unref();
-    });
   }
 }
 void bootstrap();
