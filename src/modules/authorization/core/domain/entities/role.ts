@@ -111,4 +111,17 @@ export class Role {
       updatedAt: now,
     });
   }
+
+  static createSystem(code: string, name: string, permissions: string[]): Role {
+    const now = new Date();
+    return new Role({
+      id: 0,
+      code: code.toUpperCase(),
+      name: name,
+      isSystem: true,
+      permissions,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 }

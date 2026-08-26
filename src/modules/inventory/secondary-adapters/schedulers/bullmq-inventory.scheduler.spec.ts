@@ -1,17 +1,35 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { BullMqInventoryScheduler } from './bullmq-inventory.scheduler';
 import { JobNames } from 'src/infrastructure/jobs/job-names';
+import { ApplicationLifecyclePort } from 'src/shared-kernel/domain/interfaces/application-lifecycle.port';
+import { MockApplicationLifecycle, createMockQueue } from 'src/testing';
 
 describe('BullMqInventoryScheduler', () => {
   let scheduler: BullMqInventoryScheduler;
   let mockQueue: jest.Mocked<Queue>;
+  let lifecycle: MockApplicationLifecycle;
 
-  beforeEach(() => {
-    mockQueue = {
-      add: jest.fn().mockResolvedValue({ id: 'inventory-reconciliation-job' }),
-    } as unknown as jest.Mocked<Queue>;
+  beforeEach(async () => {
+    mockQueue = createMockQueue('inventory');
+    lifecycle = new MockApplicationLifecycle();
 
-    scheduler = new BullMqInventoryScheduler(mockQueue);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BullMqInventoryScheduler,
+        {
+          provide: getQueueToken('inventory'),
+          useValue: mockQueue,
+        },
+        {
+          provide: ApplicationLifecyclePort,
+          useValue: lifecycle,
+        },
+      ],
+    }).compile();
+
+    scheduler = module.get<BullMqInventoryScheduler>(BullMqInventoryScheduler);
   });
 
   describe('onModuleInit', () => {
@@ -26,6 +44,14 @@ describe('BullMqInventoryScheduler', () => {
           jobId: 'inventory-reconciliation-job',
         },
       );
+    });
+
+    it('should skip queue.add when shutting down', async () => {
+      lifecycle.isShuttingDown = true;
+
+      await scheduler.onModuleInit();
+
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
   });
 

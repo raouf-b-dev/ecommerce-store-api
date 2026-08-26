@@ -38,12 +38,12 @@ It is a **reference implementation** you can run, test, and read chapter by chap
 
 **Current limits**
 
-| Topic | Status |
-| :---- | :----- |
-| Payment gateway | Mock adapter only. The port is ready for a real provider. |
+| Topic           | Status                                                                                                        |
+| :-------------- | :------------------------------------------------------------------------------------------------------------ |
+| Payment gateway | Mock adapter only. The port is ready for a real provider.                                                     |
 | Deploy topology | Single-instance ops foundation (migrations, health probes, backup/smoke). Not multi-instance consistency yet. |
-| Product scope | Reference backend, not a hosted storefront or finished public ecommerce product. |
-| Hosted demo | No public staging environment. Run locally with Docker. |
+| Product scope   | Reference backend, not a hosted storefront or finished public ecommerce product.                              |
+| Hosted demo     | No public staging environment. Run locally with Docker.                                                       |
 
 What is done and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -83,20 +83,22 @@ npm run db:seed
 
 First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md). Seeded accounts: [`docs/development/SEEDING.md`](docs/development/SEEDING.md).
 
-| Endpoint | URL |
-| :------- | :-- |
-| API | `http://localhost:3000` |
-| Swagger | `http://localhost:3000/api` |
-| Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+| Endpoint        | URL                                                                  |
+| :-------------- | :------------------------------------------------------------------- |
+| API             | `http://localhost:<PORT>`                                            |
+| Swagger         | `http://localhost:<PORT>/api`                                        |
+| Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md)         |
 | Local env setup | [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) |
+
+Canonical local default is `3000`, but use the value from `.env.development` if you remap it.
 
 ### Optional: monitoring stack
 
 ```bash
-npm run d:up:full:prod
+npm run d:up:obs:dev
 ```
 
-Grafana is on **`http://localhost:3001`**. The API stays on port 3000.
+Grafana is on **`http://localhost:<GRAFANA_HOST_PORT>`**. See [`docs/observability/MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) for the full port map and extraction criteria.
 
 ---
 
@@ -116,13 +118,13 @@ npm run smoke-test            # Live-process probes (health, auth) when API is r
 npm run test:cov              # Coverage report
 ```
 
-| Layer | What it proves |
-| :---- | :------------- |
-| Unit | Domain rules, use cases, and adapter logic in isolation |
-| Integration | Write repositories, cache-aside, CQRS query adapters against real databases |
-| E2E | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay |
-| Architecture | No illegal imports across bounded contexts |
-| Smoke | Liveness, readiness, and authenticated endpoints on a running process |
+| Layer        | What it proves                                                              |
+| :----------- | :-------------------------------------------------------------------------- |
+| Unit         | Domain rules, use cases, and adapter logic in isolation                     |
+| Integration  | Write repositories, cache-aside, CQRS query adapters against real databases |
+| E2E          | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay           |
+| Architecture | No illegal imports across bounded contexts                                  |
+| Smoke        | Liveness, readiness, and authenticated endpoints on a running process       |
 
 Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`docs/infrastructure/cicd/PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md).
 
@@ -162,14 +164,14 @@ graph TD
 
 ### Where to look in the code
 
-| Topic | Why it matters | Where |
-| :---- | :------------- | :---- |
-| Checkout orchestration | Multi-step purchase flow | [`src/modules/orders/core/application/usecases/checkout/`](src/modules/orders/core/application/usecases/checkout/) |
-| SAGA compensation | Stock release, refund, cancel after failure | [`checkout-failure.listener.ts`](src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts) |
-| CQRS read adapters | Flat list/detail reads without N+1 | `src/modules/*/secondary-adapters/query/` |
-| HTTP idempotency | Retry-safe checkout command | [`src/infrastructure/idempotency/`](src/infrastructure/idempotency/) |
-| Auth and RBAC | RSA JWT, refresh rotation, permissions | [`authentication/`](src/modules/authentication/), [`authorization/`](src/modules/authorization/) |
-| Hexagonal boundaries | Domain isolated from infrastructure | [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) |
+| Topic                  | Why it matters                              | Where                                                                                                              |
+| :--------------------- | :------------------------------------------ | :----------------------------------------------------------------------------------------------------------------- |
+| Checkout orchestration | Multi-step purchase flow                    | [`src/modules/orders/core/application/usecases/checkout/`](src/modules/orders/core/application/usecases/checkout/) |
+| SAGA compensation      | Stock release, refund, cancel after failure | [`checkout-failure.listener.ts`](src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts)       |
+| CQRS read adapters     | Flat list/detail reads without N+1          | `src/modules/*/secondary-adapters/query/`                                                                          |
+| HTTP idempotency       | Retry-safe checkout command                 | [`src/infrastructure/idempotency/`](src/infrastructure/idempotency/)                                               |
+| Auth and RBAC          | RSA JWT, refresh rotation, permissions      | [`authentication/`](src/modules/authentication/), [`authorization/`](src/modules/authorization/)                   |
+| Hexagonal boundaries   | Domain isolated from infrastructure         | [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md)                                         |
 
 Shortest path through the tree: **auth/RBAC → checkout → compensation → CQRS query adapter → idempotency → tests**.
 
@@ -181,25 +183,25 @@ Shortest path through the tree: **auth/RBAC → checkout → compensation → CQ
 
 Start with the full index: [`docs/README.md`](docs/README.md). These chapters are the main entry points:
 
-| Document | Description |
-| :------- | :---------- |
-| [`FEATURES.md`](docs/FEATURES.md) | Implemented features with code locations |
-| [`ROADMAP.md`](docs/ROADMAP.md) | Completed work and planned phases |
-| [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) | System context, bounded contexts, diagrams |
-| [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) | Layer rules and module boundaries |
-| [`CQRS.md`](docs/architecture/CQRS.md) | Read path design and query adapters |
-| [`INTEGRATION-PATTERNS.md`](docs/integration/INTEGRATION-PATTERNS.md) | ACL gateways, SAGA, domain events |
-| [`OWASP-COMPLIANCE.md`](docs/security/OWASP-COMPLIANCE.md) | Security control mapping |
-| [`JWT-RSA-JWKS.md`](docs/security/JWT-RSA-JWKS.md) | RSA JWT and JWKS |
-| [`SECRET-ROTATION.md`](docs/security/SECRET-ROTATION.md) | Production secret rotation |
-| [`RELEASE-BACKUP-RECOVERY.md`](docs/infrastructure/RELEASE-BACKUP-RECOVERY.md) | Backup, restore, smoke, rollback |
-| [`PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md) | CI/CD workflow |
-| [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo |
-| [`architecture/adr/`](docs/architecture/adr/README.md) | Architecture decision records |
-| [`SEEDING.md`](docs/development/SEEDING.md) | Local seed accounts and catalog |
-| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) | Environment files and first boot order |
-| [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md) | Common local issues |
-| [`AGENT.md`](AGENT.md) | Contributor and agent conventions |
+| Document                                                                       | Description                                |
+| :----------------------------------------------------------------------------- | :----------------------------------------- |
+| [`FEATURES.md`](docs/FEATURES.md)                                              | Implemented features with code locations   |
+| [`ROADMAP.md`](docs/ROADMAP.md)                                                | Completed work and planned phases          |
+| [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md)                         | System context, bounded contexts, diagrams |
+| [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md)                       | Layer rules and module boundaries          |
+| [`CQRS.md`](docs/architecture/CQRS.md)                                         | Read path design and query adapters        |
+| [`INTEGRATION-PATTERNS.md`](docs/integration/INTEGRATION-PATTERNS.md)          | ACL gateways, SAGA, domain events          |
+| [`OWASP-COMPLIANCE.md`](docs/security/OWASP-COMPLIANCE.md)                     | Security control mapping                   |
+| [`JWT-RSA-JWKS.md`](docs/security/JWT-RSA-JWKS.md)                             | RSA JWT and JWKS                           |
+| [`SECRET-ROTATION.md`](docs/security/SECRET-ROTATION.md)                       | Production secret rotation                 |
+| [`RELEASE-BACKUP-RECOVERY.md`](docs/infrastructure/RELEASE-BACKUP-RECOVERY.md) | Backup, restore, smoke, rollback           |
+| [`PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md)          | CI/CD workflow                             |
+| [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md)    | Grafana, Prometheus, Loki, Tempo           |
+| [`architecture/adr/`](docs/architecture/adr/README.md)                         | Architecture decision records              |
+| [`SEEDING.md`](docs/development/SEEDING.md)                                    | Local seed accounts and catalog            |
+| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md)                            | Environment files and first boot order     |
+| [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md)                 | Common local issues                        |
+| [`AGENT.md`](AGENT.md)                                                         | Contributor and agent conventions          |
 
 ---
 

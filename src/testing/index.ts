@@ -32,4 +32,8 @@ export * from './mocks/env-config.service.mock';
 export * from './mocks/redis-pipeline.mock';
 export * from './mocks/logger.mock';
 export * from './mocks/bullmq-job.mock';
+export * from './mocks/application-lifecycle.mock';
+export * from './mocks/flow-producer.service.mock';
+export * from './mocks/job-config.service.mock';
+export * from './mocks/queue.mock';
 export * from '../infrastructure/redis/testing';

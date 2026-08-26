@@ -68,6 +68,16 @@ describe('ShutdownService', () => {
 
       expect(loggerSpy).toHaveBeenCalledTimes(1);
     });
+
+    it('should expose isShuttingDown via public getter', () => {
+      jest.useFakeTimers();
+      expect(service.isShuttingDown).toBe(false);
+
+      service.beforeApplicationShutdown('SIGTERM');
+
+      expect(service.isShuttingDown).toBe(true);
+      service.onApplicationShutdown();
+    });
   });
 
   describe('onApplicationShutdown', () => {

@@ -9,14 +9,21 @@ import { PermissionRepository } from '../../domain/repositories/permission.repos
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Role } from '../../domain/entities/role';
-import { LoggerTestHelper } from '../../../../../testing';
+import {
+  LoggerTestHelper,
+  MockApplicationLifecycle,
+} from '../../../../../testing';
 import { AuthorizationDtoFactory } from 'src/modules/authorization/testing/factories/authorization.dto.factory';
+import { ApplicationLifecyclePort } from '../../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
+import { Logger } from '@nestjs/common';
 
 describe('RoleSystemDataInitializer', () => {
   let initializer: RoleSystemDataInitializer;
   let mockRoleRepo: MockRoleRepository;
   let mockPermissionRepo: MockPermissionRepository;
+  let lifecycle: MockApplicationLifecycle;
   let role: Role;
+
   beforeEach(async () => {
     role = AuthorizationDtoFactory.buildEntity({
       id: 1,
@@ -29,8 +36,8 @@ describe('RoleSystemDataInitializer', () => {
     LoggerTestHelper.silence();
 
     mockRoleRepo = new MockRoleRepository();
-
     mockPermissionRepo = new MockPermissionRepository();
+    lifecycle = new MockApplicationLifecycle();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,6 +49,10 @@ describe('RoleSystemDataInitializer', () => {
         {
           provide: PermissionRepository,
           useValue: mockPermissionRepo,
+        },
+        {
+          provide: ApplicationLifecyclePort,
+          useValue: lifecycle,
         },
       ],
     }).compile();
@@ -65,9 +76,13 @@ describe('RoleSystemDataInitializer', () => {
     expect(mockRoleRepo.findByCode).toHaveBeenCalled();
     expect(mockRoleRepo.save).toHaveBeenCalled();
     expect(mockRoleRepo.update).not.toHaveBeenCalled();
+
+    const savedRoles = mockRoleRepo.save.mock.calls.map(([saved]) => saved);
+    expect(savedRoles.length).toBeGreaterThan(0);
+    expect(savedRoles.every((r) => r.isSystem)).toBe(true);
   });
 
-  it('should update system roles if they exist', async () => {
+  it('should update system roles if they exist with different permissions', async () => {
     mockRoleRepo.findByCode.mockResolvedValue(Result.success(role));
     mockRoleRepo.update.mockResolvedValue(Result.success<void>(undefined));
 
@@ -76,6 +91,68 @@ describe('RoleSystemDataInitializer', () => {
     expect(mockRoleRepo.findByCode).toHaveBeenCalled();
     expect(mockRoleRepo.update).toHaveBeenCalled();
     expect(mockRoleRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('should correct isSystem when an existing system role was saved as non-system', async () => {
+    const { SYSTEM_ROLES } =
+      await import('../../domain/reference-data/system-roles');
+
+    mockRoleRepo.findByCode.mockImplementation((code: string) => {
+      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code))!;
+      return Promise.resolve(
+        Result.success(
+          AuthorizationDtoFactory.buildEntity({
+            id: 1,
+            code: def.code,
+            name: def.name,
+            isSystem: false,
+            permissions: [...def.permissions],
+          }),
+        ),
+      );
+    });
+    mockRoleRepo.update.mockResolvedValue(Result.success<void>(undefined));
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockRoleRepo.save).not.toHaveBeenCalled();
+    expect(mockRoleRepo.update).toHaveBeenCalled();
+    const updatedRoles = mockRoleRepo.update.mock.calls.map(
+      ([updated]) => updated,
+    );
+    expect(updatedRoles.every((r) => r.isSystem)).toBe(true);
+  });
+
+  it('should skip update when system role permissions already match', async () => {
+    const { SYSTEM_ROLES } =
+      await import('../../domain/reference-data/system-roles');
+    const matching = AuthorizationDtoFactory.buildEntity({
+      id: 1,
+      code: SYSTEM_ROLES[0].code,
+      name: SYSTEM_ROLES[0].name,
+      isSystem: true,
+      permissions: [...SYSTEM_ROLES[0].permissions],
+    });
+
+    mockRoleRepo.findByCode.mockImplementation((code: string) => {
+      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code))!;
+      return Promise.resolve(
+        Result.success(
+          AuthorizationDtoFactory.buildEntity({
+            id: 1,
+            code: def.code,
+            name: def.name,
+            isSystem: true,
+            permissions: [...def.permissions],
+          }),
+        ),
+      );
+    });
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockRoleRepo.update).not.toHaveBeenCalled();
+    expect(matching.code).toBe(SYSTEM_ROLES[0].code);
   });
 
   it('should skip role and continue if findByCode fails', async () => {
@@ -115,5 +192,30 @@ describe('RoleSystemDataInitializer', () => {
 
     expect(mockRoleRepo.findByCode).toHaveBeenCalled();
     expect(mockRoleRepo.update).toHaveBeenCalled();
+  });
+
+  it('should skip init when already shutting down', async () => {
+    lifecycle.isShuttingDown = true;
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockRoleRepo.findByCode).not.toHaveBeenCalled();
+  });
+
+  it('should demote lookup failure to debug when shutting down mid-init', async () => {
+    const errorSpy = jest.spyOn(Logger.prototype, 'error');
+    const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+
+    mockRoleRepo.findByCode.mockImplementation(() => {
+      lifecycle.isShuttingDown = true;
+      return Promise.resolve(ErrorFactory.RepositoryError('connection closed'));
+    });
+
+    await initializer.onApplicationBootstrap();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(debugSpy).toHaveBeenCalledWith(
+      expect.stringContaining('ignored during shutdown'),
+    );
   });
 });

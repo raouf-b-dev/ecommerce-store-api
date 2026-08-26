@@ -22,8 +22,8 @@ describe('PostgresRoleRepository (Integration - Real DB)', () => {
     );
     roleRepository = new PostgresRoleRepository(
       dataSource.getRepository(RoleEntity),
-      dataSource.getRepository(PermissionEntity),
       dataSource.getRepository(RolePermissionEntity),
+      dataSource,
     );
   });
 
@@ -52,6 +52,52 @@ describe('PostgresRoleRepository (Integration - Real DB)', () => {
       await roleRepository.findPermissionCodesByRoleCode('CUSTOMER');
     ResultAssertionHelper.assertResultSuccess(codes);
     expect(codes.value).toEqual(['orders.read']);
+  });
+
+  it('update diffs role_permissions instead of replace-all', async () => {
+    await persistPermission('orders.read');
+    await persistPermission('orders.write');
+
+    const created = await roleRepository.save(
+      Role.create('STAFF', 'Staff', ['orders.read']),
+    );
+    ResultAssertionHelper.assertResultSuccess(created);
+
+    const role = created.value;
+    role.updatePermissions(['orders.read', 'orders.write']);
+    const updated = await roleRepository.update(role);
+    ResultAssertionHelper.assertResultSuccess(updated);
+
+    const codes = await roleRepository.findPermissionCodesByRoleCode('STAFF');
+    ResultAssertionHelper.assertResultSuccess(codes);
+    expect(codes.value?.sort()).toEqual(['orders.read', 'orders.write']);
+
+    role.updatePermissions(['orders.write']);
+    const trimmed = await roleRepository.update(role);
+    ResultAssertionHelper.assertResultSuccess(trimmed);
+
+    const afterTrim =
+      await roleRepository.findPermissionCodesByRoleCode('STAFF');
+    ResultAssertionHelper.assertResultSuccess(afterTrim);
+    expect(afterTrim.value).toEqual(['orders.write']);
+  });
+
+  it('update returns not-found when role id is missing', async () => {
+    const orphan = new Role({
+      id: 999_999,
+      code: 'GHOST',
+      name: 'Ghost',
+      isSystem: false,
+      permissions: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await roleRepository.update(orphan);
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Role not found for update',
+    );
   });
 
   it('save rejects a duplicate role code', async () => {
