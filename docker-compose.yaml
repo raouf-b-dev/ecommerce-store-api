@@ -41,16 +41,16 @@ services:
     profiles: ['observability']
     image: prom/prometheus:v3.4.0
     container_name: ecom-prometheus
+    environment:
+      # Host-run API listen port (npm run start:dev). Must match .env PORT.
+      PORT: ${PORT:-3000}
     volumes:
-      - ./docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/monitoring/prometheus/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
+      - ./docker/monitoring/prometheus/entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
       - prometheus_data:/prometheus
     ports:
       - '${PROMETHEUS_HOST_PORT:-9090}:9090'
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-remote-write-receiver'
+    entrypoint: ['/bin/sh', '/etc/prometheus/entrypoint.sh']
     healthcheck:
       test:
         [
