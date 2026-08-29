@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   ParseIntPipe,
 } from '@nestjs/common';
 import {
@@ -17,7 +18,12 @@ import {
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
-import { ProductResponseDto } from './primary-adapters/dto/product-response.dto';
+import { ListProductsQueryDto } from './primary-adapters/dto/list-products-query.dto';
+import {
+  ProductResponseDto,
+  ProductDetailResponseDto,
+  PaginatedProductsResponseDto,
+} from './primary-adapters/dto/product-response.dto';
 import { CreateProductUseCase } from './core/application/usecases/create-product/create-product.usecase';
 import { GetProductUseCase } from './core/application/usecases/get-product/get-product.usecase';
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
@@ -62,16 +68,22 @@ export class ProductsController {
   @ApiBearerAuth()
   @RequirePermissions('view_all_products')
   @ApiOperation({
-    summary: 'List all products',
-    description: 'Retrieves a list of all products in the catalog.',
+    summary: 'List products',
+    description:
+      'Retrieves a paginated list of products with optional filters and sorting.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of products retrieved successfully.',
-    type: [ProductResponseDto],
+    type: PaginatedProductsResponseDto,
   })
-  async findAll() {
-    return await this.listProductsUseCase.execute();
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
+  async findAll(@Query() query: ListProductsQueryDto) {
+    return await this.listProductsUseCase.execute(query);
   }
 
   @Get(':id')
@@ -81,9 +93,14 @@ export class ProductsController {
   @ApiResponse({
     status: 200,
     description: 'Product found.',
-    type: ProductResponseDto,
+    type: ProductDetailResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.getProductUseCase.execute(id);
   }
@@ -105,6 +122,11 @@ export class ProductsController {
   @ApiResponse({
     status: 403,
     description: 'Forbidden - Admin access required.',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflict — product was modified concurrently. Reload and retry.',
   })
   async update(
     @Param('id', ParseIntPipe) id: number,
