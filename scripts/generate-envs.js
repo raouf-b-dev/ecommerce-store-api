@@ -33,25 +33,6 @@ const SECRETS_ONLY = Boolean(args.secretsOnly || args['secrets-only']);
 
 const RSA_MODULUS_LENGTH = 4096;
 
-/**
- * Host-publish remaps for local Compose + host-run API.
- * Avoids Windows Hyper-V / WinNAT reserved ranges that commonly include 3000-3199.
- * Applied to development and test only; production/staging keep .env.example defaults.
- */
-const LOCAL_DEV_SAFE_HOST_PORTS = {
-  PORT: '4000',
-  PROMETHEUS_HOST_PORT: '19090',
-  GRAFANA_HOST_PORT: '3301',
-  LOKI_HOST_PORT: '13100',
-  TEMPO_HOST_PORT: '13200',
-  OTLP_GRPC_HOST_PORT: '14317',
-  OTLP_HTTP_HOST_PORT: '14318',
-};
-
-function usesLocalDevSafeHostPorts(envName) {
-  return envName === 'development' || envName === 'test';
-}
-
 function generatePEM() {
   const { privateKey } = generateKeyPairSync('rsa', {
     modulusLength: RSA_MODULUS_LENGTH,
@@ -87,7 +68,6 @@ function keyOf(line) {
 
 function buildLinesForEnv(lines, envName) {
   const isProdLike = envName === 'production' || envName === 'staging';
-  const localSafe = usesLocalDevSafeHostPorts(envName);
   const pkgVersion = require(
     path.resolve(process.cwd(), 'package.json'),
   ).version;
@@ -125,22 +105,6 @@ function buildLinesForEnv(lines, envName) {
 
     if (key === 'GRAFANA_ADMIN_PASSWORD') {
       return `GRAFANA_ADMIN_PASSWORD=${crypto.randomBytes(16).toString('hex')}`;
-    }
-
-    if (
-      localSafe &&
-      Object.prototype.hasOwnProperty.call(LOCAL_DEV_SAFE_HOST_PORTS, key)
-    ) {
-      return `${key}=${LOCAL_DEV_SAFE_HOST_PORTS[key]}`;
-    }
-
-    if (key === 'CORS_ALLOWED_ORIGINS' && localSafe) {
-      const port = LOCAL_DEV_SAFE_HOST_PORTS.PORT;
-      return `CORS_ALLOWED_ORIGINS=http://localhost:${port},http://localhost:5173,http://localhost:5174`;
-    }
-
-    if (key === 'OTEL_EXPORTER_OTLP_ENDPOINT' && localSafe) {
-      return `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:${LOCAL_DEV_SAFE_HOST_PORTS.OTLP_GRPC_HOST_PORT}`;
     }
 
     return line;
@@ -201,11 +165,6 @@ async function writeFile(targetPath, contentLines) {
         await writeFile(outPath, lines);
 
         console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
-        if (usesLocalDevSafeHostPorts(env)) {
-          console.log(
-            `   → Applied local host-port remaps (PORT=${LOCAL_DEV_SAFE_HOST_PORTS.PORT}, obs UI/OTLP remapped) for Compose + host-run API.`,
-          );
-        }
       }
     }
   }

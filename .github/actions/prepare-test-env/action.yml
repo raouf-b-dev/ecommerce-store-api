@@ -114,6 +114,7 @@ runs:
             REDIS_DB: "0",
             JWT_ACCESS_TOKEN_TTL: "15m",
             JWT_REFRESH_TOKEN_TTL: "7d",
+            CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS,
             METRICS_API_KEY: process.env.CI_METRICS_API_KEY,
           };
 

@@ -54,7 +54,7 @@ Implementation: [`scripts/generate-envs.js`](../../scripts/generate-envs.js).
 | `APP_VERSION`            | From `package.json`                                                                                                                                                                                                                                                                                      |
 | `REDIS_KEYPREFIX`        | `ecom:<env>:`                                                                                                                                                                                                                                                                                            |
 | `LOG_LEVEL`              | `debug` in development                                                                                                                                                                                                                                                                                   |
-| Local host ports         | For `development` / `test`: `PORT=4000` and obs remaps (`GRAFANA_HOST_PORT=3301`, `LOKI_HOST_PORT=13100`, `PROMETHEUS_HOST_PORT=19090`, Tempo/OTLP `13xxx`/`14xxx`) so Compose binds work on Windows Hyper-V reserved ranges. `CORS_ALLOWED_ORIGINS` and `OTEL_EXPORTER_OTLP_ENDPOINT` are kept in sync. |
+| Host ports, CORS, OTEL   | Copied from [`.env.example`](../../.env.example). If Windows cannot bind `3000–3199`, edit the generated file (see [`TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md)).                                                                                                                        |
 
 ### Verify against Compose defaults
 

@@ -97,15 +97,9 @@ Restart Docker Desktop and retry.
 
 ### Temporary workaround
 
-Remap host ports outside the reserved range in `.env.development`.
+Remap host ports outside the reserved range in `.env.development` (and keep `CORS_ALLOWED_ORIGINS` and `OTEL_EXPORTER_OTLP_ENDPOINT` in sync with `PORT` / `OTLP_GRPC_HOST_PORT`). Do not rely on `env:init --overwrite` for this: that script copies ports from [`.env.example`](../../.env.example) and would also rotate generated secrets.
 
-`npm run env:init` / `env:init:dev` already writes Hyper-V-safe remaps for development and test (see `scripts/generate-envs.js`). Prefer regenerating rather than hand-editing:
-
-```bash
-npm run env:init:dev -- --overwrite
-```
-
-Example values (what the generator applies):
+Example values:
 
 ```env
 PORT=4000
