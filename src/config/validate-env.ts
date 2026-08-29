@@ -27,9 +27,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     JWT_CART_SESSION_TTL: str({ default: '7d' }),
 
-    CORS_ALLOWED_ORIGINS: str({
-      default: 'http://localhost:3000,http://localhost:5173',
-    }),
+    CORS_ALLOWED_ORIGINS: str(),
 
     LOG_LEVEL: str({
       choices: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
