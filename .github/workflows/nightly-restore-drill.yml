@@ -20,6 +20,7 @@ jobs:
     outputs:
       postgres_image: ${{ steps.resolve.outputs.postgres_image }}
       postgres_container_name: ${{ steps.resolve.outputs.postgres_container_name }}
+      cors_allowed_origins: ${{ steps.resolve.outputs.cors_allowed_origins }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -85,6 +86,7 @@ jobs:
       DB_DATABASE: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
       POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
       POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
+      CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
 
     steps:
       - name: Checkout
@@ -149,6 +151,7 @@ jobs:
       NODE_ENV: test
       POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
       POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
+      CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
 
     steps:
       - name: Checkout
