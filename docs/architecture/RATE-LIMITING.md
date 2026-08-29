@@ -160,8 +160,8 @@ async healthCheck() { ... }
 ```
 
 In this codebase, auth overrides live in `src/infrastructure/throttler/throttle.constants.ts`
-(`AUTH_STRICT_THROTTLE` / `AUTH_REFRESH_THROTTLE`). Keep those limits aligned with
-`THROTTLE_STRICT_LIMIT` in env (default 10/min for login/register/change-password).
+(`AUTH_STRICT_THROTTLE` = 10/min, `AUTH_REFRESH_THROTTLE` = 20/min). Nest `@Throttle`
+values are fixed at import time (not read from `THROTTLE_STRICT_LIMIT` in `.env`).
 
 ---
 

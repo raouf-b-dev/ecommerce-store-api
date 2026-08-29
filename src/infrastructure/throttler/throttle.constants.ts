@@ -1,17 +1,16 @@
 /**
- * Per-route auth throttle overrides.
- * Keep AUTH_STRICT_LIMIT aligned with `THROTTLE_STRICT_LIMIT` in env (default 10).
+ * Per-route auth throttle overrides (applied via `@Throttle` on auth routes).
  *
  * Nest applies every named profile registered in `ThrottlerModule.forRoot` to all
- * routes. Only `default` is registered globally; sensitive auth routes tighten
- * that named profile via `@Throttle`.
+ * routes. Only `default` is registered globally; credential routes tighten that
+ * profile here (~10/min is a common strict login window).
  */
 export const THROTTLE_WINDOW_MS = 60_000;
 
 /** Login, register, change-password — brute-force protection. */
 export const AUTH_STRICT_LIMIT = 10;
 
-/** Refresh is used more often by clients (silent refresh); slightly higher. */
+/** Silent refresh — slightly higher than login (clients refresh more often). */
 export const AUTH_REFRESH_LIMIT = 20;
 
 export const AUTH_STRICT_THROTTLE = {
