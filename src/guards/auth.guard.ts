@@ -53,6 +53,7 @@ export class AuthGuard implements CanActivate {
         userId: Number(payload.sub),
         email: payload.email,
         role: payload.role,
+        mustChangePassword: payload.mustChangePassword === true,
       };
     } catch {
       throw new UnauthorizedException(

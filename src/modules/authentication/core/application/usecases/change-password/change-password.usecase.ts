@@ -1,26 +1,29 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { Result } from '../../../../../../shared-kernel/domain/result';
+import {
+  isFailure,
+  Result,
+} from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { SessionToken } from '../../../domain/entities/session-token';
 import { PasswordHasher } from '../../../../../../shared-kernel/domain/interfaces/password-hasher.interface';
-import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { IdentityGateway } from '../../ports/identity.gateway';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { CredentialRepository } from '../../../domain/repositories/credential.repository';
-import { LoginCommand } from '../../commands/login.command';
+import { ChangePasswordCommand } from '../../commands/change-password.command';
 import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
+import { RevokeAllForUserUsecase } from '../revoke-all-for-user/revoke-all-for-user.usecase';
 
 @Injectable()
-export class LoginUserUseCase extends UseCase<
-  LoginCommand,
+export class ChangePasswordUseCase extends UseCase<
+  ChangePasswordCommand,
   AuthTokensResult,
   UseCaseError
 > {
-  private readonly logger = new Logger(LoginUserUseCase.name);
+  private readonly logger = new Logger(ChangePasswordUseCase.name);
 
   constructor(
     private readonly identityGateway: IdentityGateway,
@@ -29,55 +32,24 @@ export class LoginUserUseCase extends UseCase<
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSignerService: JwtSignerPort,
-    private readonly domainEventPublisher: DomainEventPublisher,
+    private readonly revokeAllForUserUsecase: RevokeAllForUserUsecase,
   ) {
     super();
   }
 
   async execute(
-    command: LoginCommand,
+    command: ChangePasswordCommand,
   ): Promise<Result<AuthTokensResult, UseCaseError>> {
-    // 1. Find User Identity
-    const userResult = await this.identityGateway.findUserByEmail(
-      command.email,
-    );
-
-    if (userResult.isFailure) {
+    if (command.newPassword === command.currentPassword) {
       return ErrorFactory.UseCaseError(
-        'Failed to retrieve user information',
-        userResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    const user = userResult.value;
-
-    if (!user) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'invalid_user',
-      });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
+        'New password must differ from current password',
         null,
-        HttpStatus.UNAUTHORIZED,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
-    // 2. Check if user is active
-    if (!user.isActive) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'inactive_user',
-      });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
-
-    // 3. Find Credential by UserId & Verify Password
     const credentialResult = await this.credentialRepository.findByUserId(
-      user.id,
+      command.userId,
     );
 
     if (credentialResult.isFailure) {
@@ -91,39 +63,85 @@ export class LoginUserUseCase extends UseCase<
     const credential = credentialResult.value;
 
     if (!credential) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'invalid_credential',
-      });
       return ErrorFactory.UseCaseError(
-        'Invalid credentials',
+        'Credential not found',
         null,
-        HttpStatus.UNAUTHORIZED,
+        HttpStatus.NOT_FOUND,
       );
     }
 
-    const isMatch = await this.passwordHasher.compare(
-      command.password,
+    const currentMatches = await this.passwordHasher.compare(
+      command.currentPassword,
       credential.passwordHash,
     );
-    if (!isMatch) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'invalid_password',
-      });
+
+    if (!currentMatches) {
       return ErrorFactory.UseCaseError(
-        'Invalid credentials',
+        'Current password is incorrect',
         null,
         HttpStatus.UNAUTHORIZED,
       );
     }
 
-    // 4. Resolve role code for JWT payload (PermissionsGuard requires the string code)
+    const sameAsCurrent = await this.passwordHasher.compare(
+      command.newPassword,
+      credential.passwordHash,
+    );
+
+    if (sameAsCurrent) {
+      return ErrorFactory.UseCaseError(
+        'New password must differ from current password',
+        null,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const newHash = await this.passwordHasher.hash(command.newPassword);
+    credential.changePassword(newHash);
+
+    const updateResult = await this.credentialRepository.update(credential);
+    if (updateResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to update credential',
+        updateResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const revokeResult = await this.revokeAllForUserUsecase.execute(
+      command.userId,
+    );
+    if (revokeResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to revoke existing sessions',
+        revokeResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const userResult = await this.identityGateway.findUserById(command.userId);
+    if (userResult.isFailure || !userResult.value) {
+      return ErrorFactory.UseCaseError(
+        'User not found',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const user = userResult.value;
+
+    if (!user.isActive) {
+      return ErrorFactory.UseCaseError(
+        'User account is inactive',
+        null,
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     const roleResult = await this.authorizationGateway.findRoleByUserId(
       user.id,
     );
-    if (roleResult.isFailure) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'role_resolution_failed',
-      });
+    if (isFailure(roleResult)) {
       return ErrorFactory.UseCaseError(
         'Failed to resolve user role',
         roleResult.error,
@@ -132,9 +150,6 @@ export class LoginUserUseCase extends UseCase<
     }
 
     if (!roleResult.value) {
-      this.domainEventPublisher.publish('auth.login.failure', {
-        reason: 'role_not_found',
-      });
       return ErrorFactory.UseCaseError(
         'User role not found',
         null,
@@ -142,24 +157,20 @@ export class LoginUserUseCase extends UseCase<
       );
     }
 
-    // 5. Generate Access Token
     const accessToken = await this.jwtSignerService.signAccessToken({
       sub: user.id.toString(),
       email: user.email,
       role: roleResult.value.code,
-      mustChangePassword: credential.mustChangePassword,
     });
 
-    // 6. Generate Refresh Token
     const {
       token: refreshToken,
       sessionId,
       expiresAt,
     } = await this.jwtSignerService.signRefreshTokenWithSession({
-      sub: user.id.toString(),
+      sub: user.id,
     });
 
-    // 7. Save Session
     const session = SessionToken.create(
       user.id,
       refreshToken,
@@ -169,18 +180,19 @@ export class LoginUserUseCase extends UseCase<
 
     const saveResult = await this.sessionTokenRepository.save(session);
     if (saveResult.isFailure) {
-      return ErrorFactory.UseCaseError('Failed to create session');
+      return ErrorFactory.UseCaseError(
+        'Failed to create session',
+        saveResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
-    this.logger.log(`User ${command.email} logged in successfully`);
-    this.domainEventPublisher.publish('auth.login.success', {
-      userId: user.id,
-    });
+    this.logger.log(`User ${user.id} changed password successfully`);
 
     return Result.success<AuthTokensResult>({
       accessToken,
       refreshToken,
-      mustChangePassword: credential.mustChangePassword,
+      mustChangePassword: false,
     });
   }
 }

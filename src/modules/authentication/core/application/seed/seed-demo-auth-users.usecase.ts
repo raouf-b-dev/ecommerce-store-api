@@ -17,6 +17,7 @@ export interface SeededDemoAuthUser {
 }
 
 export interface SeedDemoAuthUsersResult {
+  superAdmin: SeededDemoAuthUser;
   admin: SeededDemoAuthUser;
   customer: SeededDemoAuthUser;
 }
@@ -37,12 +38,22 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
   }
 
   async execute(): Promise<Result<SeedDemoAuthUsersResult, UseCaseError>> {
+    const superAdmin = await this.seedUser({
+      email: 'superadmin@store.local',
+      password: 'SuperAdmin123!',
+      roleCode: SystemRoleCode.SUPER_ADMIN,
+      firstName: 'Super',
+      lastName: 'Admin',
+      phone: '',
+    });
+    if (isFailure(superAdmin)) return superAdmin;
+
     const admin = await this.seedUser({
       email: 'admin@store.local',
       password: 'Admin123!',
       roleCode: SystemRoleCode.ADMIN,
-      firstName: 'Super',
-      lastName: 'Admin',
+      firstName: 'Store',
+      lastName: 'Administrator',
       phone: '',
     });
     if (isFailure(admin)) return admin;
@@ -58,6 +69,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(customer)) return customer;
 
     return Result.success({
+      superAdmin: superAdmin.value,
       admin: admin.value,
       customer: customer.value,
     });
@@ -82,6 +94,11 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     }
 
     if (existingResult.value) {
+      await this.resetExistingDemoCredential(
+        existingResult.value.id,
+        input.password,
+      );
+
       return Result.success({
         userId: existingResult.value.id,
         email: input.email,
@@ -137,5 +154,30 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       email: input.email,
       status: 'created',
     });
+  }
+
+  /**
+   * Re-applies demo credential defaults so local re-seed restores documented
+   * passwords and the forced-rotation flow without manual SQL.
+   */
+  private async resetExistingDemoCredential(
+    userId: number,
+    plainPassword: string,
+  ): Promise<void> {
+    const credentialResult =
+      await this.credentialRepository.findByUserId(userId);
+    if (isFailure(credentialResult) || !credentialResult.value) {
+      return;
+    }
+
+    const passwordHash = await this.passwordHasher.hash(plainPassword);
+    const credential = credentialResult.value;
+    credential.passwordHash = passwordHash;
+    credential.mustChangePassword = true;
+
+    const updateResult = await this.credentialRepository.update(credential);
+    if (isFailure(updateResult)) {
+      return;
+    }
   }
 }

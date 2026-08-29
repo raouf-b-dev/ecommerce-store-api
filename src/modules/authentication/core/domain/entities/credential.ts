@@ -44,6 +44,11 @@ export class Credential implements ICredential {
     this._mustChangePassword = mustChangePassword;
   }
 
+  changePassword(newPasswordHash: string): void {
+    this._passwordHash = newPasswordHash;
+    this._mustChangePassword = false;
+  }
+
   toPrimitives(): CredentialProps {
     return {
       id: this._id,

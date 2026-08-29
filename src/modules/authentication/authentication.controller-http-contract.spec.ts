@@ -7,6 +7,7 @@ import { LoginUserUseCase } from 'src/modules/authentication/core/application/us
 import { RefreshTokenUseCase } from 'src/modules/authentication/core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from 'src/modules/authentication/core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from 'src/modules/authentication/core/application/usecases/logout-all/logout-all.usecase';
+import { ChangePasswordUseCase } from 'src/modules/authentication/core/application/usecases/change-password/change-password.usecase';
 import { AuthenticationDtoFactory } from 'src/modules/authentication/testing/factories/authentication-dto.factory';
 import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
 import { EnvConfigService } from 'src/config/env-config.service';
@@ -46,6 +47,9 @@ describe('Authentication controller HTTP contract', () => {
   const logoutAllUseCase = {
     execute: jest.fn(),
   };
+  const changePasswordUseCase = {
+    execute: jest.fn(),
+  };
 
   beforeEach(async () => {
     registerUseCase.execute.mockResolvedValue(
@@ -55,16 +59,25 @@ describe('Authentication controller HTTP contract', () => {
       Result.success({
         accessToken: 'access-token-1',
         refreshToken: 'refresh-token-1',
+        mustChangePassword: false,
       }),
     );
     refreshTokenUseCase.execute.mockResolvedValue(
       Result.success({
         accessToken: 'access-token-2',
         refreshToken: 'refresh-token-2',
+        mustChangePassword: false,
       }),
     );
     logoutUseCase.execute.mockResolvedValue(Result.success(undefined));
     logoutAllUseCase.execute.mockResolvedValue(Result.success(undefined));
+    changePasswordUseCase.execute.mockResolvedValue(
+      Result.success({
+        accessToken: 'access-token-3',
+        refreshToken: 'refresh-token-3',
+        mustChangePassword: false,
+      }),
+    );
 
     moduleRef = await Test.createTestingModule({
       controllers: [AuthenticationController],
@@ -74,6 +87,7 @@ describe('Authentication controller HTTP contract', () => {
         { provide: RefreshTokenUseCase, useValue: refreshTokenUseCase },
         { provide: LogoutUseCase, useValue: logoutUseCase },
         { provide: LogoutAllUseCase, useValue: logoutAllUseCase },
+        { provide: ChangePasswordUseCase, useValue: changePasswordUseCase },
         { provide: JwksPort, useClass: MockJwksService },
         { provide: EnvConfigService, useClass: MockEnvConfigService },
       ],
@@ -118,6 +132,7 @@ describe('Authentication controller HTTP contract', () => {
     expect(loginResponse.body).toEqual({
       accessToken: 'access-token-1',
       refreshToken: 'refresh-token-1',
+      mustChangePassword: false,
     });
     expect(loginResponse.headers['set-cookie']?.[0]).toContain(
       'refresh_token=refresh-token-1',
@@ -139,6 +154,7 @@ describe('Authentication controller HTTP contract', () => {
     expect(refreshResponse.body).toEqual({
       accessToken: 'access-token-2',
       refreshToken: 'refresh-token-2',
+      mustChangePassword: false,
     });
     expect(refreshResponse.headers['set-cookie']?.[0]).toContain(
       'refresh_token=refresh-token-2',

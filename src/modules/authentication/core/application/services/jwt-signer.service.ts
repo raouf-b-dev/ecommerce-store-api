@@ -22,8 +22,12 @@ export class JwtSignerService implements JwtSignerPort {
     const privateKey = await importPKCS8(pem, 'RS256');
 
     // Transform domain types to JWT-compatible types (RFC 7519: sub is string)
-    const { sub, ...rest } = payload;
-    const jwtPayload = { ...rest, sub: String(sub) };
+    const { sub, mustChangePassword, ...rest } = payload;
+    const jwtPayload = {
+      ...rest,
+      sub: String(sub),
+      ...(mustChangePassword ? { mustChangePassword: true } : {}),
+    };
 
     return new SignJWT(jwtPayload)
       .setProtectedHeader({

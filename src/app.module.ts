@@ -20,6 +20,7 @@ import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
 import { AuthGuard } from './guards/auth.guard';
+import { MustChangePasswordGuard } from './guards/must-change-password.guard';
 
 const loadEnvFile = resolveEnvFilePath();
 
@@ -52,6 +53,10 @@ const loadEnvFile = resolveEnvFilePath();
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MustChangePasswordGuard,
     },
     {
       provide: APP_GUARD,

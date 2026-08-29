@@ -44,19 +44,20 @@
 
 ## 📋 Pending Work: Execution Sequence
 
-> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. Complete **Phase 15** before scaling to multiple application instances.
+> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. Complete **Phase 14b** when using the admin dashboard auth flow, then **Phase 15** before scaling to multiple application instances.
 
-| Phase  | Name                                              | Status | Target / Focus                                                                                    |
-| ------ | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
-| **10** | Security Hardening Phase 2 | `[x]` | **Security**: OWASP audit, Dependabot, user-scoped rate limits |
-| **11** | Data Integrity & Concurrency | `[x]` | **Data & Stock**: OCC version locking, inventory audit, cart TTL |
-| **12** | CQRS Read Path | `[x]` | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules |
-| **13** | Production Confidence & Integration Testing | `[x]` | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows |
-| **14** | Single-Instance Production Gate | `[x]` | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke |
-| **15** | Multi-Instance & Distributed Consistency | `[ ]` | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation |
-| **16** | Performance Engineering | `[ ]` | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules |
-| **17** | Product Ecosystem & Integrations | `[ ]` | **Features & Payments**: real email, cart recovery, webhooks, Stripe webhook dedup |
-| **18** | Conditional Enterprise & Infrastructure Evolution | `[ ]` | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups |
+| Phase   | Name                                              | Status | Target / Focus                                                                                          |
+| ------- | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
+| **10**  | Security Hardening Phase 2                        | `[x]`  | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                          |
+| **11**  | Data Integrity & Concurrency                      | `[x]`  | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                        |
+| **12**  | CQRS Read Path                                    | `[x]`  | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                       |
+| **13**  | Production Confidence & Integration Testing       | `[x]`  | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
+| **14**  | Single-Instance Production Gate                   | `[x]`  | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
+| **14b** | Forced Credential Rotation                        | `[x]`  | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
+| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
+| **16**  | Performance Engineering                           | `[ ]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
+| **17**  | Product Ecosystem & Integrations                  | `[ ]`  | **Features & Payments**: real email, cart recovery, webhooks, Stripe webhook dedup                      |
+| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                      |
 
 ---
 
@@ -66,14 +67,14 @@
 
 ### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Task / Item                                                                                                                                         | Phase  | Critical Purpose                                                                         |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                                | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + blocking `npm audit:check` + PR dependency review)                      | **10** | Prevents supply-chain vulnerabilities; high/critical prod deps block merge               |
-| [x] Production error stack masking & PII log audit verified                                                                                         | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                 | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
-| [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                    | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
-| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query |
+| Task / Item                                                                                                                                        | Phase  | Critical Purpose                                                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + blocking `npm audit:check` + PR dependency review)                     | **10** | Prevents supply-chain vulnerabilities; high/critical prod deps block merge               |
+| [x] Production error stack masking & PII log audit verified                                                                                        | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
+| [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                   | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
+| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
 
 | [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
@@ -86,16 +87,16 @@
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                                                         | Phase     | Critical Purpose                                                            |
-| --------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------- |
-| [x] E2E core flow tests: auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes | **13** | Pre-deploy verification via `supertest`; not post-deploy smoke probes |
-| [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories      |
-| [x] Checkout idempotency E2E: same key replay must not create a second checkout | **13** | Proves `@Idempotent()` on checkout; do after HTTP contracts exist |
-| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs) | **13** | Optional P2: does not block first deploy |
-| [x] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy             |
-| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                              |
-| [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)          |
-| [x] Concurrent checkout integration proof (pessimistic lock verification) | **13** | Repository-level reservation proof: parallel saves against last stock unit |
+| Task / Item                                                                                         | Phase     | Critical Purpose                                                           |
+| --------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------- |
+| [x] E2E core flow tests: auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes          | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes      |
+| [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories     |
+| [x] Checkout idempotency E2E: same key replay must not create a second checkout                     | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist          |
+| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2: does not block first deploy                                   |
+| [x] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy            |
+| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                             |
+| [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)         |
+| [x] Concurrent checkout integration proof (pessimistic lock verification)                           | **13**    | Repository-level reservation proof: parallel saves against last stock unit |
 
 ---
 
@@ -282,6 +283,25 @@
 
 ---
 
+## Phase 14b: Forced Credential Rotation (mustChangePassword)
+
+> **Goal**: Enforce bootstrap and demo password rotation in the API and unblock admin first-login UX.
+> **Prerequisite**: Phase 14 complete.
+
+**Scope:**
+
+- [x] Extend login/refresh/change-password responses with `mustChangePassword`
+- [x] `ChangePasswordUseCase` + `POST /v1/authentication/change-password` (revoke-all + new tokens)
+- [x] `Credential.changePassword()` domain method
+- [x] Global `MustChangePasswordGuard` with route allowlist
+- [x] Claim-gated guard: `mustChangePassword` embedded in the access token only when set, so the credential lookup runs only for flagged tokens
+- [x] Unit, guard, and E2E tests
+- [x] Update ADMIN-BOOTSTRAP, SEEDING, FEATURES docs
+
+**Done when:** User with `mustChangePassword: true` cannot call domain APIs until password change; change-password clears flag and reissues session; tests green.
+
+---
+
 ## 🛡️ Phase 15: Multi-Instance & Distributed Consistency
 
 > **Goal**: Prepare for multi-pod scaling behind a load balancer: distributed consistency for events, jobs, SAGA recovery, and derived search indexes. **Complete before deploying to 2+ application instances.**
@@ -362,6 +382,20 @@
 - [ ] Configure CI checks to fail only after SLO targets are established and agreed.
 
 **Location**: `test/load/`
+
+---
+
+### [x] Cache Role Permission Resolution
+
+**What**: `PermissionsGuard` runs on every authenticated request and calls `ResolveRolePermissionsService`, which issues two uncached Postgres queries: a `roles` lookup by code, then a `role_permissions` fetch joined to `permission`. Role-to-permission mappings change rarely, so this is the largest per-request database cost left in the guard chain.
+
+**Scope**:
+
+- [x] Cache resolved permission codes per role code in Redis with a bounded TTL.
+- [x] Invalidate on role and role-permission mutations so authorization changes take effect immediately.
+- [x] Fall back to Postgres when the cache is unavailable, matching the degradation behaviour used elsewhere.
+
+**Location**: `src/modules/authorization/core/application/services/resolve-role-permissions.service.ts`
 
 ---
 
@@ -577,4 +611,3 @@
 | Full Dual-Database CQRS     | CQRS Phase 2 (dedicated read methods, Phase 12) gives most performance benefit at fraction of complexity. Separate read/write DBs require eventual consistency and projection infrastructure. | Read traffic needs independent horizontal scaling from write traffic, or read latency SLOs cannot be met with a single database. |
 | gRPC Internal Communication | REST is sufficient for modular monolith. gRPC shines for inter-service communication with strict contracts and low latency.                                                                   | Microservice extraction happens and services need typed, low-latency internal APIs.                                              |
 | Redis Cluster / Sentinel    | Single Redis instance is sufficient until availability, memory, throughput, or failover requirements justify distributed Redis topology.                                                      | Redis becomes a production availability bottleneck or exceeds single-instance capacity.                                          |
-
