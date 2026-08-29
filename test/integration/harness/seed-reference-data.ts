@@ -2,12 +2,17 @@ import { DataSource } from 'typeorm';
 import { UserEntity } from 'src/modules/identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
+import { RoleEntity } from 'src/modules/authorization/secondary-adapter/orm/role.schema';
+import { UserRoleAssignmentEntity } from 'src/modules/authorization/secondary-adapter/orm/user-role-assignment.schema';
+import { SystemRoleCode } from 'src/shared-kernel/domain/value-objects/system-roles';
 
 export interface SeededData {
   customerUser: UserEntity;
   adminUser: UserEntity;
   product: ProductEntity;
   inventory: InventoryEntity;
+  customerRole: RoleEntity;
+  adminRole: RoleEntity;
 }
 
 export async function seedReferenceData(
@@ -16,6 +21,20 @@ export async function seedReferenceData(
   const userRepo = dataSource.getRepository(UserEntity);
   const productRepo = dataSource.getRepository(ProductEntity);
   const inventoryRepo = dataSource.getRepository(InventoryEntity);
+  const roleRepo = dataSource.getRepository(RoleEntity);
+  const assignmentRepo = dataSource.getRepository(UserRoleAssignmentEntity);
+
+  const customerRole = await roleRepo.save({
+    code: SystemRoleCode.CUSTOMER,
+    name: 'Customer',
+    isSystem: true,
+  });
+
+  const adminRole = await roleRepo.save({
+    code: SystemRoleCode.ADMIN,
+    name: 'Administrator',
+    isSystem: true,
+  });
 
   const customerUser = await userRepo.save({
     firstName: 'Customer',
@@ -35,6 +54,16 @@ export async function seedReferenceData(
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+  });
+
+  await assignmentRepo.save({
+    userId: customerUser.id,
+    roleId: customerRole.id,
+  });
+
+  await assignmentRepo.save({
+    userId: adminUser.id,
+    roleId: adminRole.id,
   });
 
   const product = await productRepo.save({
@@ -65,5 +94,7 @@ export async function seedReferenceData(
     adminUser,
     product,
     inventory,
+    customerRole,
+    adminRole,
   };
 }
