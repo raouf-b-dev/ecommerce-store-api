@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SystemRoleCode } from 'src/shared-kernel/domain/value-objects/system-roles';
 
 /** List read model for GET /v1/users (matches UserListItemDTO). */
 export class UserListItemResponseDto {
@@ -27,6 +28,15 @@ export class UserListItemResponseDto {
 
   @ApiProperty({ example: true, description: 'Whether the account is active' })
   isActive!: boolean;
+
+  @ApiPropertyOptional({
+    enum: SystemRoleCode,
+    example: SystemRoleCode.CUSTOMER,
+    description: 'Assigned role code',
+    nullable: true,
+    type: String,
+  })
+  roleCode!: string | null;
 
   @ApiProperty({
     example: '2025-10-31T10:00:00.000Z',

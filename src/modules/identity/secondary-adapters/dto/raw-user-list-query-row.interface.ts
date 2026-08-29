@@ -5,6 +5,7 @@ export interface RawUserListQueryRow {
   email: string;
   phone?: string | null;
   isActive: boolean | number | string;
+  roleCode?: string | null;
   createdAt: Date | string;
   updatedAt?: Date | string;
   addressCount?: number | string;

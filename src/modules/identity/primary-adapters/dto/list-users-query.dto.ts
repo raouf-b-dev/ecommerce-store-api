@@ -3,11 +3,13 @@ import {
   IsString,
   IsNumber,
   IsBoolean,
+  IsEnum,
   Min,
   Max,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SystemRoleCode } from 'src/shared-kernel/domain/value-objects/system-roles';
 
 export class ListUsersQueryDto {
   @ApiPropertyOptional({
@@ -31,6 +33,15 @@ export class ListUsersQueryDto {
   })
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    enum: SystemRoleCode,
+    description: 'Filter by assigned system role code',
+    example: SystemRoleCode.CUSTOMER,
+  })
+  @IsOptional()
+  @IsEnum(SystemRoleCode)
+  roleCode?: SystemRoleCode;
 
   @ApiPropertyOptional({
     example: 1,
