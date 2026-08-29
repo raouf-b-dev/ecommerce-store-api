@@ -1,32 +1,15 @@
-// src/modules/users/presentation/dto/user-response.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { AddressResponseDto } from 'src/modules/identity/primary-adapters/dto/address-response.dto';
 
-export class UserResponseDto {
-  @ApiProperty({
-    example: 123,
-    description: 'User ID',
-  })
+/** List read model for GET /v1/users (matches UserListItemDTO). */
+export class UserListItemResponseDto {
+  @ApiProperty({ example: 123, description: 'User ID' })
   id!: number;
 
-  @ApiProperty({
-    example: 'John',
-    description: 'User first name',
-  })
+  @ApiProperty({ example: 'John', description: 'User first name' })
   firstName!: string;
 
-  @ApiProperty({
-    example: 'Doe',
-    description: 'User last name',
-  })
+  @ApiProperty({ example: 'Doe', description: 'User last name' })
   lastName!: string;
-
-  @ApiProperty({
-    example: 'John Doe',
-    description: 'User full name',
-  })
-  fullName!: string;
 
   @ApiProperty({
     example: 'john.doe@example.com',
@@ -37,44 +20,50 @@ export class UserResponseDto {
   @ApiPropertyOptional({
     example: '+1234567890',
     description: 'User phone number',
+    nullable: true,
+    type: String,
   })
-  phone?: string;
+  phone!: string | null;
+
+  @ApiProperty({ example: true, description: 'Whether the account is active' })
+  isActive!: boolean;
 
   @ApiProperty({
-    type: [AddressResponseDto],
-    description: 'User addresses',
-  })
-  @Type(() => AddressResponseDto)
-  addresses!: AddressResponseDto[];
-
-  @ApiPropertyOptional({
-    type: AddressResponseDto,
-    description: 'Default address',
-  })
-  @Type(() => AddressResponseDto)
-  defaultAddress?: AddressResponseDto;
-
-  @ApiProperty({
-    example: 5,
-    description: 'Total number of orders',
-  })
-  totalOrders!: number;
-
-  @ApiProperty({
-    example: 1499.95,
-    description: 'Total amount spent',
-  })
-  totalSpent!: number;
-
-  @ApiProperty({
-    example: '2025-10-31T10:00:00Z',
+    example: '2025-10-31T10:00:00.000Z',
     description: 'User registration date',
   })
-  createdAt!: Date;
+  createdAt!: string;
+}
+
+/** Detail read model for GET /v1/users/:id (matches UserDetailDTO). */
+export class UserDetailResponseDto extends UserListItemResponseDto {
+  @ApiProperty({
+    example: 2,
+    description: 'Number of addresses on the account',
+  })
+  addressCount!: number;
 
   @ApiProperty({
-    example: '2025-10-31T12:30:00Z',
+    example: '2025-10-31T12:30:00.000Z',
     description: 'Last update date',
   })
-  updatedAt!: Date;
+  updatedAt!: string;
+}
+
+/** Paginated list envelope for GET /v1/users. */
+export class PaginatedUsersResponseDto {
+  @ApiProperty({ type: [UserListItemResponseDto] })
+  items!: UserListItemResponseDto[];
+
+  @ApiProperty({ example: 4 })
+  total!: number;
+
+  @ApiProperty({ example: 1 })
+  page!: number;
+
+  @ApiProperty({ example: 20 })
+  limit!: number;
+
+  @ApiProperty({ example: 1 })
+  totalPages!: number;
 }

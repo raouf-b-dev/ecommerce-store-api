@@ -1,6 +1,12 @@
-// src/modules/users/presentation/dto/list-users-query.dto.ts
-import { IsOptional, IsString, IsNumber, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ListUsersQueryDto {
@@ -13,20 +19,18 @@ export class ListUsersQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    example: 'john.doe@example.com',
-    description: 'Filter by email',
+    description: 'Filter by active status',
+    example: true,
   })
   @IsOptional()
-  @IsString()
-  email?: string;
-
-  @ApiPropertyOptional({
-    example: '+1234567890',
-    description: 'Filter by phone',
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    return value === 'true' || value === true;
   })
-  @IsOptional()
-  @IsString()
-  phone?: string;
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({
     example: 1,
