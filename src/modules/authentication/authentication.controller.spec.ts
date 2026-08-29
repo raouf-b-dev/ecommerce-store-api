@@ -60,6 +60,7 @@ describe('AuthController', () => {
                 accessToken: 'access-123',
                 refreshToken: 'refresh-456',
                 mustChangePassword: false,
+                permissions: ['access_admin'],
               }),
             ),
           },
@@ -72,6 +73,7 @@ describe('AuthController', () => {
                 accessToken: 'new-access-123',
                 refreshToken: 'new-refresh-456',
                 mustChangePassword: false,
+                permissions: ['access_admin'],
               }),
             ),
           },
@@ -96,6 +98,7 @@ describe('AuthController', () => {
                 accessToken: 'changed-access',
                 refreshToken: 'changed-refresh',
                 mustChangePassword: false,
+                permissions: ['access_admin'],
               }),
             ),
           },
@@ -147,6 +150,7 @@ describe('AuthController', () => {
         accessToken: 'access-123',
         refreshToken: 'refresh-456',
         mustChangePassword: false,
+        permissions: ['access_admin'],
       }),
     );
   });
@@ -165,6 +169,7 @@ describe('AuthController', () => {
         accessToken: 'changed-access',
         refreshToken: 'changed-refresh',
         mustChangePassword: false,
+        permissions: ['access_admin'],
       }),
     );
   });

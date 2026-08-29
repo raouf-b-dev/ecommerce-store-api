@@ -181,6 +181,7 @@ export class LoginUserUseCase extends UseCase<
       accessToken,
       refreshToken,
       mustChangePassword: credential.mustChangePassword,
+      permissions: roleResult.value.permissions,
     });
   }
 }
