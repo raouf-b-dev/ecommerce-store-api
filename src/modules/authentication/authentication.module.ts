@@ -30,6 +30,7 @@ import { CredentialEntity } from './secondary-adapters/orm/credential.schema';
 import { IdentityGateway } from './core/application/ports/identity.gateway';
 import { ModuleAuthorizationGateway } from './secondary-adapters/adapters/module-authorization.gateway';
 import { AuthorizationGateway } from './core/application/ports/authorization.gateway';
+import { ChangePasswordUseCase } from './core/application/usecases/change-password/change-password.usecase';
 import { SeedDemoAuthUsersUseCase } from './core/application/seed/seed-demo-auth-users.usecase';
 import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.usecase';
 @Module({
@@ -83,6 +84,7 @@ import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.
     RefreshTokenUseCase,
     LogoutUseCase,
     LogoutAllUseCase,
+    ChangePasswordUseCase,
     RefreshTokenCookieInterceptor,
     RevokeAllForUserUsecase,
     UserDeactivatedListener,
@@ -93,6 +95,7 @@ import { SeedSuperAdminUseCase } from './core/application/seed/seed-super-admin.
     RevokeAllForUserUsecase,
     PasswordHasher,
     JwtSignerPort,
+    CredentialRepository,
     SeedDemoAuthUsersUseCase,
     SeedSuperAdminUseCase,
   ],
