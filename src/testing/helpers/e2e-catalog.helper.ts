@@ -71,6 +71,11 @@ export class E2eCatalogHelper {
       });
 
     expect(createResponse.status).toBe(HttpStatus.CREATED);
+    if (createResponse.status !== HttpStatus.CREATED) {
+      throw new Error(
+        `Failed to create E2E product (${createResponse.status}): ${JSON.stringify(createResponse.body)}`,
+      );
+    }
     const productId = Number(createResponse.body.id);
     expect(productId).toBeGreaterThan(0);
 
