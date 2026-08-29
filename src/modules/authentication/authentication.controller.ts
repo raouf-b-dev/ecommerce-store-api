@@ -31,6 +31,10 @@ import { RefreshToken } from './primary-adapters/decorators/refresh-token.decora
 import { Public } from '../../guards/decorators/public.decorator';
 import { AllowDuringPasswordChange } from '../../guards/decorators/allow-during-password-change.decorator';
 import { CurrentUser } from '../identity/primary-adapters/decorators/current-user.decorator';
+import {
+  AUTH_REFRESH_THROTTLE,
+  AUTH_STRICT_THROTTLE,
+} from '../../infrastructure/throttler/throttle.constants';
 
 @ApiTags('Authentication')
 @Controller('authentication')
@@ -48,10 +52,7 @@ export class AuthenticationController {
 
   @Post('register')
   @Public()
-  @Throttle({
-    default: { limit: 10, ttl: 60000 },
-    strict: { limit: 10, ttl: 60000 },
-  })
+  @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -61,10 +62,7 @@ export class AuthenticationController {
 
   @Post('login')
   @Public()
-  @Throttle({
-    default: { limit: 10, ttl: 60000 },
-    strict: { limit: 10, ttl: 60000 },
-  })
+  @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Login user' })
   @ApiOkResponse({
     type: AuthTokensResponseDto,
@@ -80,10 +78,7 @@ export class AuthenticationController {
   @Public()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.OK)
-  @Throttle({
-    default: { limit: 20, ttl: 60000 },
-    strict: { limit: 20, ttl: 60000 },
-  })
+  @Throttle(AUTH_REFRESH_THROTTLE)
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiOkResponse({
     type: AuthTokensResponseDto,
@@ -126,10 +121,7 @@ export class AuthenticationController {
 
   @Post('change-password')
   @AllowDuringPasswordChange()
-  @Throttle({
-    default: { limit: 10, ttl: 60000 },
-    strict: { limit: 10, ttl: 60000 },
-  })
+  @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Change password for the authenticated user' })
   @ApiOkResponse({
     type: AuthTokensResponseDto,

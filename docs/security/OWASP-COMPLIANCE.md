@@ -192,7 +192,7 @@ export class UserThrottlerGuard extends ThrottlerGuard {
 }
 ```
 
-High-risk endpoints (`/authentication/login`, `/orders/checkout`) are protected by strict throttler profiles limiting requests per minute.
+High-risk endpoints (`/authentication/login`, `/authentication/register`, `/authentication/change-password`) tighten the global `default` throttler via `@Throttle` (see `throttle.constants.ts`). Refresh uses a slightly higher override. Checkout relies on idempotency locks rather than a separate throttle profile.
 
 ---
 

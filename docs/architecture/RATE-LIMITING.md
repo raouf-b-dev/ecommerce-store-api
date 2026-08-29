@@ -138,18 +138,17 @@ Not all endpoints carry equal risk. A product listing endpoint can tolerate high
 ### 4.3 Implementation Pattern (NestJS)
 
 ```typescript
-// Global: applied automatically via APP_GUARD
+// Global: only the default profile — Nest applies every forRoot named
+// throttler to all routes, so do not register a second "strict" profile here.
 ThrottlerModule.forRoot({
   throttlers: [
     { name: 'default', ttl: seconds(60), limit: 100 },
-    { name: 'strict',  ttl: seconds(60), limit: 10  },
   ],
 });
 
-// Per-endpoint override: stricter than global
+// Per-endpoint override: tighten the default profile on credential routes
 @Throttle({
   default: { limit: 10, ttl: 60000 },
-  strict:  { limit: 10, ttl: 60000 },
 })
 @Post('login')
 async login(@Body() dto: LoginDto) { ... }
@@ -159,6 +158,10 @@ async login(@Body() dto: LoginDto) { ... }
 @Get('health')
 async healthCheck() { ... }
 ```
+
+In this codebase, auth overrides live in `src/infrastructure/throttler/throttle.constants.ts`
+(`AUTH_STRICT_THROTTLE` = 10/min, `AUTH_REFRESH_THROTTLE` = 20/min). Nest `@Throttle`
+values are fixed at import time (not read from `THROTTLE_STRICT_LIMIT` in `.env`).
 
 ---
 

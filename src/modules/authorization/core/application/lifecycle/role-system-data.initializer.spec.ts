@@ -16,6 +16,7 @@ import {
 import { AuthorizationDtoFactory } from 'src/modules/authorization/testing/factories/authorization.dto.factory';
 import { ApplicationLifecyclePort } from '../../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
 import { Logger } from '@nestjs/common';
+import { PermissionSystemDataInitializer } from './permission-system-data.initializer';
 
 describe('RoleSystemDataInitializer', () => {
   let initializer: RoleSystemDataInitializer;
@@ -23,6 +24,7 @@ describe('RoleSystemDataInitializer', () => {
   let mockPermissionRepo: MockPermissionRepository;
   let lifecycle: MockApplicationLifecycle;
   let role: Role;
+  let permissionInitializer: { ensureInitialized: jest.Mock };
 
   beforeEach(async () => {
     role = AuthorizationDtoFactory.buildEntity({
@@ -38,6 +40,9 @@ describe('RoleSystemDataInitializer', () => {
     mockRoleRepo = new MockRoleRepository();
     mockPermissionRepo = new MockPermissionRepository();
     lifecycle = new MockApplicationLifecycle();
+    permissionInitializer = {
+      ensureInitialized: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,6 +58,10 @@ describe('RoleSystemDataInitializer', () => {
         {
           provide: ApplicationLifecyclePort,
           useValue: lifecycle,
+        },
+        {
+          provide: PermissionSystemDataInitializer,
+          useValue: permissionInitializer,
         },
       ],
     }).compile();
@@ -73,6 +82,7 @@ describe('RoleSystemDataInitializer', () => {
 
     await initializer.onApplicationBootstrap();
 
+    expect(permissionInitializer.ensureInitialized).toHaveBeenCalled();
     expect(mockRoleRepo.findByCode).toHaveBeenCalled();
     expect(mockRoleRepo.save).toHaveBeenCalled();
     expect(mockRoleRepo.update).not.toHaveBeenCalled();
@@ -199,6 +209,7 @@ describe('RoleSystemDataInitializer', () => {
 
     await initializer.onApplicationBootstrap();
 
+    expect(permissionInitializer.ensureInitialized).not.toHaveBeenCalled();
     expect(mockRoleRepo.findByCode).not.toHaveBeenCalled();
   });
 

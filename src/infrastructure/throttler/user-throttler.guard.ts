@@ -6,7 +6,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 export class UserThrottlerGuard extends ThrottlerGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Full-app E2E shares one client IP across many suites; Redis-backed
-    // auth @Throttle limits (10/min) otherwise cause cascading 429s.
+    // auth @Throttle overrides (10/min) otherwise cause cascading 429s.
     if (process.env.NODE_ENV === 'test') {
       return true;
     }
