@@ -11,6 +11,7 @@ export class UserQueryMapper {
       email: String(row.email || ''),
       phone: row.phone || null,
       isActive: Boolean(row.isActive),
+      roleCode: row.roleCode ? String(row.roleCode) : null,
       createdAt:
         row.createdAt instanceof Date
           ? row.createdAt.toISOString()

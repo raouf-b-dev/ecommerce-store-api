@@ -64,6 +64,7 @@ describe('LoginUserUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 2,
       code: 'CUSTOMER',
+      permissions: ['view_own_profile', 'view_own_orders'],
     });
     passwordHasher.compare.mockResolvedValue(true);
   });
@@ -93,6 +94,10 @@ describe('LoginUserUseCase', () => {
     expect(result.value.accessToken).toBeTruthy();
     expect(result.value.refreshToken).toBeTruthy();
     expect(result.value.mustChangePassword).toBe(false);
+    expect(result.value.permissions).toEqual([
+      'view_own_profile',
+      'view_own_orders',
+    ]);
   });
 
   it('should return failure if user is not found', async () => {

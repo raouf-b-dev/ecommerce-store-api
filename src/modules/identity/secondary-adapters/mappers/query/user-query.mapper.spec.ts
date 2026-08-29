@@ -15,6 +15,7 @@ describe('UserQueryMapper', () => {
       email: 'john.doe@example.com',
       phone: '+1234567890',
       isActive: true,
+      roleCode: 'CUSTOMER',
       createdAt: '2024-01-01T00:00:00.000Z',
     });
 

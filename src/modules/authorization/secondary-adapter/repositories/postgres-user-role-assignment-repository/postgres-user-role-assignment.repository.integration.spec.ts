@@ -1,9 +1,5 @@
-import { Role } from '../../../core/domain/entities/role';
 import { UserRoleAssignment } from '../../../core/domain/entities/user-role-assignment';
-import { PostgresRoleRepository } from '../postgres-role-repository/postgres-role.repository';
 import { PostgresUserRoleAssignmentRepository } from './postgres-user-role-assignment.repository';
-import { RoleEntity } from '../../orm/role.schema';
-import { RolePermissionEntity } from '../../orm/role-permission.schema';
 import { UserRoleAssignmentEntity } from '../../orm/user-role-assignment.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
@@ -11,7 +7,6 @@ import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresUserRoleAssignmentRepository (Integration - Real DB)', () => {
   let assignmentRepository: PostgresUserRoleAssignmentRepository;
-  let roleRepository: PostgresRoleRepository;
   let seededData: SeededData;
   let roleId: number;
 
@@ -20,20 +15,17 @@ describe('PostgresUserRoleAssignmentRepository (Integration - Real DB)', () => {
     seededData = await IntegrationTestHelper.seedReferenceData();
 
     const dataSource = IntegrationTestHelper.getDataSource();
-    roleRepository = new PostgresRoleRepository(
-      dataSource.getRepository(RoleEntity),
-      dataSource.getRepository(RolePermissionEntity),
-      dataSource,
-    );
     assignmentRepository = new PostgresUserRoleAssignmentRepository(
       dataSource.getRepository(UserRoleAssignmentEntity),
     );
 
-    const roleResult = await roleRepository.save(
-      Role.create('CUSTOMER', 'Customer', []),
+    roleId = seededData.customerRole.id;
+
+    // Seed creates a customer assignment; remove it so save tests start from a clean slate.
+    const deleteResult = await assignmentRepository.deleteByUserId(
+      seededData.customerUser.id,
     );
-    ResultAssertionHelper.assertResultSuccess(roleResult);
-    roleId = roleResult.value.id;
+    ResultAssertionHelper.assertResultSuccess(deleteResult);
   });
 
   it('save persists an assignment and findByUserId returns it', async () => {

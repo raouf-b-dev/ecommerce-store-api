@@ -5,5 +5,6 @@ export interface UserListItemDTO {
   email: string;
   phone: string | null;
   isActive: boolean;
+  roleCode: string | null;
   createdAt: string;
 }

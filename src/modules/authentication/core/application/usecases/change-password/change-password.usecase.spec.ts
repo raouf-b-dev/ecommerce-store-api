@@ -65,6 +65,7 @@ describe('ChangePasswordUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 1,
       code: 'ADMIN',
+      permissions: ['access_admin', 'view_all_users'],
     });
     passwordHasher.compare
       .mockResolvedValueOnce(true)
@@ -92,6 +93,10 @@ describe('ChangePasswordUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.mustChangePassword).toBe(false);
     expect(result.value.accessToken).toBe('access-token');
+    expect(result.value.permissions).toEqual([
+      'access_admin',
+      'view_all_users',
+    ]);
     expect(revokeAllForUserUsecase.execute).toHaveBeenCalledWith(userId);
     expect(credentialRepository.update).toHaveBeenCalled();
     expect(credential.mustChangePassword).toBe(false);

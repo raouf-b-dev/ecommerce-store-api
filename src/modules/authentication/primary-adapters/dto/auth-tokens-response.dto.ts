@@ -20,4 +20,12 @@ export class AuthTokensResponseDto {
       'When true, the client must complete password rotation before calling domain APIs',
   })
   mustChangePassword!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    example: ['access_admin', 'view_all_users'],
+    description:
+      'Permission codes for the authenticated role (live from DB; use for SPA chrome)',
+  })
+  permissions!: string[];
 }

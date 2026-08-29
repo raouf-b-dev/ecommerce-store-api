@@ -27,7 +27,10 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
 import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/delete-user.usecase';
 import { ListUsersQueryDto } from './primary-adapters/dto/list-users-query.dto';
 import { UpdateUserDto } from './primary-adapters/dto/update-user.dto';
-import { UserResponseDto } from './primary-adapters/dto/user-response.dto';
+import {
+  PaginatedUsersResponseDto,
+  UserDetailResponseDto,
+} from './primary-adapters/dto/user-response.dto';
 import { CallerCtx } from './primary-adapters/decorators';
 
 @ApiTags('Users')
@@ -47,7 +50,7 @@ export class UsersController {
   @Get()
   @RequirePermissions('view_all_users')
   @ApiOperation({ summary: 'List all users with pagination' })
-  @ApiResponse({ status: 200, type: [UserResponseDto] })
+  @ApiResponse({ status: 200, type: PaginatedUsersResponseDto })
   async listUsers(@Query() query: ListUsersQueryDto) {
     return await this.listUsersUseCase.execute(query);
   }
@@ -55,7 +58,7 @@ export class UsersController {
   @Get(':id')
   @RequirePermissions('view_all_users', 'view_own_profile')
   @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiResponse({ status: 200, type: UserDetailResponseDto })
   async getUser(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,
@@ -68,8 +71,9 @@ export class UsersController {
 
   @Patch(':id')
   @RequirePermissions('manage_users')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update user information' })
-  @ApiResponse({ status: 200, type: UserResponseDto })
+  @ApiResponse({ status: 204, description: 'User updated' })
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,

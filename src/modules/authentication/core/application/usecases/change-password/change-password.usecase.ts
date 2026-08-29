@@ -193,6 +193,7 @@ export class ChangePasswordUseCase extends UseCase<
       accessToken,
       refreshToken,
       mustChangePassword: false,
+      permissions: roleResult.value.permissions,
     });
   }
 }

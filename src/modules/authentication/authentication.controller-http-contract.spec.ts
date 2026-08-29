@@ -60,6 +60,7 @@ describe('Authentication controller HTTP contract', () => {
         accessToken: 'access-token-1',
         refreshToken: 'refresh-token-1',
         mustChangePassword: false,
+        permissions: ['access_admin', 'view_all_orders'],
       }),
     );
     refreshTokenUseCase.execute.mockResolvedValue(
@@ -67,6 +68,7 @@ describe('Authentication controller HTTP contract', () => {
         accessToken: 'access-token-2',
         refreshToken: 'refresh-token-2',
         mustChangePassword: false,
+        permissions: ['access_admin', 'view_all_orders'],
       }),
     );
     logoutUseCase.execute.mockResolvedValue(Result.success(undefined));
@@ -76,6 +78,7 @@ describe('Authentication controller HTTP contract', () => {
         accessToken: 'access-token-3',
         refreshToken: 'refresh-token-3',
         mustChangePassword: false,
+        permissions: ['access_admin', 'view_all_orders'],
       }),
     );
 
@@ -133,6 +136,7 @@ describe('Authentication controller HTTP contract', () => {
       accessToken: 'access-token-1',
       refreshToken: 'refresh-token-1',
       mustChangePassword: false,
+      permissions: ['access_admin', 'view_all_orders'],
     });
     expect(loginResponse.headers['set-cookie']?.[0]).toContain(
       'refresh_token=refresh-token-1',
@@ -155,6 +159,7 @@ describe('Authentication controller HTTP contract', () => {
       accessToken: 'access-token-2',
       refreshToken: 'refresh-token-2',
       mustChangePassword: false,
+      permissions: ['access_admin', 'view_all_orders'],
     });
     expect(refreshResponse.headers['set-cookie']?.[0]).toContain(
       'refresh_token=refresh-token-2',

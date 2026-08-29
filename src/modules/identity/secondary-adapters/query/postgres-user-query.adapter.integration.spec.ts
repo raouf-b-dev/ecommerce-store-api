@@ -29,6 +29,25 @@ describe('PostgresUserQueryAdapter (Integration - Real DB)', () => {
     expect(result.value.items[0].email).toBe(
       'customer.integration@example.com',
     );
+    expect(result.value.items[0].roleCode).toBe('CUSTOMER');
+  });
+
+  it('filters users by roleCode', async () => {
+    const result = await queryAdapter.list({
+      page: 1,
+      limit: 10,
+      roleCode: 'CUSTOMER',
+    });
+
+    expect(result.isSuccess).toBe(true);
+    if (!result.isSuccess) return;
+
+    expect(result.value.total).toBe(1);
+    expect(result.value.items).toHaveLength(1);
+    expect(result.value.items[0].email).toBe(
+      'customer.integration@example.com',
+    );
+    expect(result.value.items[0].roleCode).toBe('CUSTOMER');
   });
 
   it('fetches detailed user DTO by ID with address count', async () => {
@@ -40,6 +59,7 @@ describe('PostgresUserQueryAdapter (Integration - Real DB)', () => {
     expect(result.value).not.toBeNull();
     expect(result.value?.id).toBe(seededData.customerUser.id);
     expect(result.value?.email).toBe('customer.integration@example.com');
+    expect(result.value?.roleCode).toBe('CUSTOMER');
   });
 
   it('returns null when querying non-existent user ID', async () => {

@@ -4,6 +4,7 @@ import { InfrastructureError } from '../../../../../shared-kernel/domain/excepti
 export interface RoleRecord {
   id: number;
   code: string;
+  permissions: string[];
 }
 
 export abstract class AuthorizationGateway {

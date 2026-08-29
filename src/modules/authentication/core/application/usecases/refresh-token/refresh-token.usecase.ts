@@ -149,6 +149,7 @@ export class RefreshTokenUseCase extends UseCase<
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
         mustChangePassword,
+        permissions: roleResult.value.permissions,
       });
     } catch {
       return ErrorFactory.UseCaseError(
