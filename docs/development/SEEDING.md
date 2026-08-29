@@ -101,3 +101,14 @@ The seeder inserts **15 products** across **5 categories** with specified initia
 | **Books**                           |                |         |               |                     |              |
 | The Art of Clean Code               | `BOOK-ACC-001` | $28.50  |      30       |          5          | Medium Stock |
 | Designing Data-Intensive Systems    | `BOOK-DDS-002` | $42.00  |       4       |          5          | Low Stock    |
+
+### 4. Seeded Demo Orders (for `customer@store.local`)
+
+The seeder creates **4 demo orders** for the customer account (idempotent: skips if that user already has any orders). Useful for admin order list/detail and status-transition smoke tests.
+
+| Reference name | Target status | Safe admin transitions |
+| :------------- | :------------ | :--------------------- |
+| Confirmed Electronics Order | `confirmed` | Process or Cancel |
+| Shipped Apparel Order | `shipped` | Deliver or Cancel |
+| Delivered Home & Books Order | `delivered` | (no order PATCH; refund is payment-side) |
+| Pending Payment Order | `pending_payment` | Cancel (Confirm needs a completed payment) |

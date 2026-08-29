@@ -20,7 +20,11 @@ import { CallerCtx } from '../identity/primary-adapters/decorators/caller-contex
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
-import { OrderResponseDto } from './primary-adapters/dto/order-response.dto';
+import {
+  OrderDetailResponseDto,
+  OrderMutationResponseDto,
+} from './primary-adapters/dto/order-detail-response.dto';
+import { PaginatedOrdersResponseDto } from './primary-adapters/dto/order-list-response.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 import { DeliverOrderDto } from './primary-adapters/dto/deliver-order.dto';
 import { Idempotent } from '../../infrastructure/decorators/idempotent.decorator';
@@ -105,6 +109,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'List of orders retrieved successfully.',
+    type: PaginatedOrdersResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findAll(
@@ -120,7 +125,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order found.',
-    type: OrderResponseDto,
+    type: OrderDetailResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
@@ -144,7 +149,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order confirmed successfully.',
-    type: OrderResponseDto,
+    type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be confirmed.' })
@@ -161,7 +166,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order processing started.',
-    type: OrderResponseDto,
+    type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async processOrder(@Param('id', ParseIntPipe) id: number) {
@@ -174,7 +179,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order marked as shipped.',
-    type: OrderResponseDto,
+    type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async shipOrder(@Param('id', ParseIntPipe) id: number) {
@@ -190,7 +195,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order marked as delivered.',
-    type: OrderResponseDto,
+    type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   async deliverOrder(
@@ -212,7 +217,7 @@ export class OrdersController {
   @ApiResponse({
     status: 200,
     description: 'Order cancelled successfully.',
-    type: OrderResponseDto,
+    type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })

@@ -23,6 +23,7 @@ import { Public } from '../../guards/decorators/public.decorator';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
+import { PaymentDetailResponseDto } from './primary-adapters/dto/payment-detail-response.dto';
 import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
 import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
@@ -82,21 +83,6 @@ export class PaymentsController {
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
-  @Get(':id')
-  @RequirePermissions('view_all_payments', 'view_own_payments')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get payment by ID' })
-  @ApiResponse({ status: 200 })
-  async getPayment(
-    @Param('id', ParseIntPipe) id: number,
-    @CallerCtx() callerContext: CallerContext,
-  ) {
-    return await this.getPaymentUseCase.execute({
-      paymentId: id,
-      callerContext,
-    });
-  }
-
   @Get()
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
@@ -108,6 +94,36 @@ export class PaymentsController {
   ) {
     return await this.listPaymentsUseCase.execute({
       query,
+      callerContext,
+    });
+  }
+
+  @Get('orders/:orderId')
+  @RequirePermissions('view_all_payments', 'view_own_payments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment for an order' })
+  @ApiResponse({ status: 200, type: PaymentDetailResponseDto })
+  async getOrderPayments(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.getPaymentByOrderIdUseCase.execute({
+      orderId,
+      callerContext,
+    });
+  }
+
+  @Get(':id')
+  @RequirePermissions('view_all_payments', 'view_own_payments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment by ID' })
+  @ApiResponse({ status: 200 })
+  async getPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.getPaymentUseCase.execute({
+      paymentId: id,
       callerContext,
     });
   }
@@ -156,20 +172,5 @@ export class PaymentsController {
     });
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
-  }
-
-  @Get('orders/:orderId')
-  @RequirePermissions('view_all_payments', 'view_own_payments')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get payment for an order' })
-  @ApiResponse({ status: 200 })
-  async getOrderPayments(
-    @Param('orderId', ParseIntPipe) orderId: number,
-    @CallerCtx() callerContext: CallerContext,
-  ) {
-    return await this.getPaymentByOrderIdUseCase.execute({
-      orderId,
-      callerContext,
-    });
   }
 }
