@@ -30,13 +30,20 @@ export class E2eCatalogHelper {
     }
 
     const tokens = await AuthTestHelper.login(http, { email, password });
+    const rotated = await AuthTestHelper.changePassword(
+      http,
+      tokens.accessToken,
+      password,
+    );
+
     return {
       email,
-      password,
+      password: AuthTestHelper.rotatedPassword,
       firstName: 'Super',
       lastName: 'Admin',
       userId: 0,
-      ...tokens,
+      accessToken: rotated.accessToken,
+      refreshToken: rotated.refreshToken || tokens.refreshToken,
     };
   }
 
