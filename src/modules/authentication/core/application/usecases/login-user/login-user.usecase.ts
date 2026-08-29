@@ -147,6 +147,7 @@ export class LoginUserUseCase extends UseCase<
       sub: user.id.toString(),
       email: user.email,
       role: roleResult.value.code,
+      mustChangePassword: credential.mustChangePassword,
     });
 
     // 6. Generate Refresh Token
@@ -176,6 +177,10 @@ export class LoginUserUseCase extends UseCase<
       userId: user.id,
     });
 
-    return Result.success<AuthTokensResult>({ accessToken, refreshToken });
+    return Result.success<AuthTokensResult>({
+      accessToken,
+      refreshToken,
+      mustChangePassword: credential.mustChangePassword,
+    });
   }
 }
