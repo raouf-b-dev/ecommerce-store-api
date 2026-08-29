@@ -54,9 +54,9 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 
 | Role                    | Email                    | Password         | Details                                                                   |
 | :---------------------- | :----------------------- | :--------------- | :------------------------------------------------------------------------ |
-| **Super Administrator** | `superadmin@store.local` | `SuperAdmin123!` | All permissions, including `manage_roles` (can open `/settings/roles`).   |
-| **Administrator**       | `admin@store.local`      | `Admin123!`      | Full admin permissions except `manage_roles`.                             |
-| **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; linked to a profile with a default shipping address. |
+| **Super Administrator** | `superadmin@store.local` | `SuperAdmin123!` | All permissions (including `access_admin`, `manage_roles`).   |
+| **Administrator**       | `admin@store.local`      | `Admin123!`      | Full admin permissions except `manage_roles` (includes `access_admin`). |
+| **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; no `access_admin` (cannot use admin SPA). |
 
 ### 2. Seeded Shipping Address (for `customer@store.local`)
 
