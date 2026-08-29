@@ -7,6 +7,8 @@ import { SeedDemoCartUseCase } from '../src/modules/carts/core/application/seed/
 import { SeedDemoOrdersUseCase } from '../src/modules/orders/core/application/seed/seed-demo-orders.usecase';
 import { maskEmail, statusLabel } from './utils/log-helpers';
 
+const authOnly = process.argv.includes('--auth-only');
+
 async function bootstrap() {
   if (process.env.NODE_ENV === 'production') {
     console.error(
@@ -28,13 +30,21 @@ async function bootstrap() {
     const seedCartUseCase = app.get(SeedDemoCartUseCase);
     const seedOrdersUseCase = app.get(SeedDemoOrdersUseCase);
 
-    console.log('\n--- Starting Local Database Seeding ---');
+    console.log(
+      authOnly
+        ? '\n--- Re-seeding demo auth users (e2e prep) ---'
+        : '\n--- Starting Local Database Seeding ---',
+    );
 
-    // 1. Seed Auth Users
     const authUsersResult = await seedAuthUsersUseCase.execute();
     if (authUsersResult.isFailure) {
       throw authUsersResult.error;
     }
+    console.log(
+      `Super admin user ${statusLabel(
+        authUsersResult.value.superAdmin.status,
+      )}: ${maskEmail(authUsersResult.value.superAdmin.email)}`,
+    );
     console.log(
       `Admin user ${statusLabel(authUsersResult.value.admin.status)}: ${maskEmail(
         authUsersResult.value.admin.email,
@@ -46,9 +56,13 @@ async function bootstrap() {
       )}: ${maskEmail(authUsersResult.value.customer.email)}`,
     );
 
+    if (authOnly) {
+      console.log('\nAuth seed completed successfully.\n');
+      return;
+    }
+
     const customerUserId = authUsersResult.value.customer.userId;
 
-    // 2. Seed Catalog & Inventory
     const catalogResult = await seedCatalogUseCase.execute();
     if (catalogResult.isFailure) {
       throw catalogResult.error;
@@ -80,7 +94,6 @@ async function bootstrap() {
 
     const products = catalogResult.value;
 
-    // 3. Seed Cart for customer
     const cartResult = await seedCartUseCase.execute({
       userId: customerUserId,
       products,
@@ -94,7 +107,6 @@ async function bootstrap() {
       )}).`,
     );
 
-    // 4. Seed Orders for customer
     const ordersResult = await seedOrdersUseCase.execute({
       userId: customerUserId,
       products,
@@ -103,7 +115,7 @@ async function bootstrap() {
       throw ordersResult.error;
     }
     const createdOrdersCount = ordersResult.value.filter(
-      (o) => o.seedStatus === 'created',
+      (order) => order.seedStatus === 'created',
     ).length;
     console.log(
       `Orders ready: ${ordersResult.value.length} total (${createdOrdersCount} created).`,
@@ -111,11 +123,16 @@ async function bootstrap() {
 
     console.log('\nSeeding completed successfully.\n');
   } catch (error) {
-    console.error('\nUnexpected error during database seeding:', error);
+    console.error(
+      authOnly
+        ? '\nUnexpected error during auth seeding:'
+        : '\nUnexpected error during database seeding:',
+      error,
+    );
     process.exitCode = 1;
   } finally {
     if (app) await app.close();
   }
 }
 
-bootstrap();
+void bootstrap();
