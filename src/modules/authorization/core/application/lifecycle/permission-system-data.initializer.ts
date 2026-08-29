@@ -7,6 +7,7 @@ import { ApplicationLifecyclePort } from '../../../../../shared-kernel/domain/in
 @Injectable()
 export class PermissionSystemDataInitializer implements OnApplicationBootstrap {
   private readonly logger = new Logger(PermissionSystemDataInitializer.name);
+  private initPromise: Promise<void> | null = null;
 
   constructor(
     private readonly permissionRepo: PermissionRepository,
@@ -14,6 +15,22 @@ export class PermissionSystemDataInitializer implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    await this.ensureInitialized();
+  }
+
+  /**
+   * Idempotent: role bootstrap must wait for the permission catalog so
+   * `syncRolePermissions` can resolve codes to rows (otherwise SUPER_ADMIN
+   * is created with an empty permission set → 403 on admin writes).
+   */
+  ensureInitialized(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.initializePermissions();
+    }
+    return this.initPromise;
+  }
+
+  private async initializePermissions(): Promise<void> {
     if (this.lifecycle.isShuttingDown) {
       this.logger.debug('Skipping system permission init during shutdown');
       return;

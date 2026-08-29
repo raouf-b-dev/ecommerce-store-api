@@ -4,6 +4,7 @@ import { SYSTEM_ROLES } from '../../domain/reference-data/system-roles';
 import { Role } from '../../domain/entities/role';
 import { RolePermissionsVO } from '../../domain/value-objects/role-permissions';
 import { ApplicationLifecyclePort } from '../../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
+import { PermissionSystemDataInitializer } from './permission-system-data.initializer';
 
 @Injectable()
 export class RoleSystemDataInitializer implements OnApplicationBootstrap {
@@ -12,6 +13,7 @@ export class RoleSystemDataInitializer implements OnApplicationBootstrap {
   constructor(
     private readonly roleRepo: RoleRepository,
     private readonly lifecycle: ApplicationLifecyclePort,
+    private readonly permissionInitializer: PermissionSystemDataInitializer,
   ) {}
 
   async onApplicationBootstrap() {
@@ -19,6 +21,10 @@ export class RoleSystemDataInitializer implements OnApplicationBootstrap {
       this.logger.debug('Skipping system role init during shutdown');
       return;
     }
+
+    // Role→permission links resolve by permission code. Permissions must exist
+    // first or SUPER_ADMIN/ADMIN are stored with an empty grant set (HTTP 403).
+    await this.permissionInitializer.ensureInitialized();
 
     this.logger.log('Initializing system roles...');
 
