@@ -14,7 +14,6 @@ describe('PostgresRoleRepository (Integration - Real DB)', () => {
 
   beforeEach(async () => {
     await IntegrationTestHelper.clearDatabase();
-    await IntegrationTestHelper.seedReferenceData();
 
     const dataSource = IntegrationTestHelper.getDataSource();
     permissionRepository = new PostgresPermissionRepository(
