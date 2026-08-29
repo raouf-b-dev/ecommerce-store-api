@@ -46,10 +46,17 @@ The seeder initializes the database with the following test credentials and prod
 
 ### 1. Seeded User Accounts
 
-| Role              | Email                  | Password       | Details                                                       |
-| :---------------- | :--------------------- | :------------- | :------------------------------------------------------------ |
-| **Administrator** | `admin@store.local`    | `Admin123!`    | Has full administrative permissions (except `manage_roles`).  |
-| **Customer**      | `customer@store.local` | `Customer123!` | Linked to a Customer Profile with a default shipping address. |
+Local development only (`npm run db:seed` refuses to run when `NODE_ENV=production`).
+
+Seeded accounts are created with `mustChangePassword: true`. On first login, clients should route to a mandatory password-change flow before normal admin use (see [`ADMIN-BOOTSTRAP.md`](../security/ADMIN-BOOTSTRAP.md)).
+
+The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo credentials to the documented passwords below and sets `must_change_password = true` again, so you can re-test forced rotation without manual SQL. This only applies to the three demo accounts in this table (local dev; seeding is blocked in production).
+
+| Role                    | Email                    | Password         | Details                                                                   |
+| :---------------------- | :----------------------- | :--------------- | :------------------------------------------------------------------------ |
+| **Super Administrator** | `superadmin@store.local` | `SuperAdmin123!` | All permissions, including `manage_roles` (can open `/settings/roles`).   |
+| **Administrator**       | `admin@store.local`      | `Admin123!`      | Full admin permissions except `manage_roles`.                             |
+| **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; linked to a profile with a default shipping address. |
 
 ### 2. Seeded Shipping Address (for `customer@store.local`)
 

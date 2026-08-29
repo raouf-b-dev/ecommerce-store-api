@@ -177,9 +177,11 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 ### Forced Credential Rotation (mustChangePassword)
 
-Admin accounts from CLI bootstrap set `mustChangePassword = true` so the first login forces a password change (NIST SP 800-63B style).
+Seeded and bootstrap credentials set `mustChangePassword = true`. Login and refresh return the flag; `POST /v1/authentication/change-password` clears it, revokes other sessions, and reissues tokens. `MustChangePasswordGuard` returns HTTP 403 (`MUST_CHANGE_PASSWORD`) on other authenticated routes until rotation.
 
-**Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+The access token carries a `mustChangePassword` claim, but only when the flag is set. Clean tokens omit it, so the guard short-circuits without a database read on virtually all traffic; a token that does carry the claim is still checked against `credentials` so the gate can never outlive the flag.
+
+**Location**: `src/modules/authentication/`, `src/guards/must-change-password.guard.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
 ### Rate Limiting and Throttling
 
@@ -295,56 +297,56 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 ### Development
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run start:dev` | Start in watch mode |
-| `npm run start:debug` | Start with debugging |
-| `npm run build` | Build for production |
-| `npm run lint` | Run ESLint with auto-fix |
+| Script                | Description              |
+| :-------------------- | :----------------------- |
+| `npm run start:dev`   | Start in watch mode      |
+| `npm run start:debug` | Start with debugging     |
+| `npm run build`       | Build for production     |
+| `npm run lint`        | Run ESLint with auto-fix |
 
 ### Testing
 
-| Script | Description |
-| :----- | :---------- |
-| `npm test` | Unit tests |
-| `npm run test:watch` | Watch mode |
-| `npm run test:cov` | Coverage |
-| `npm run test:integration` | Real DB / Redis integration |
-| `npm run test:e2e` | End-to-end HTTP flows |
-| `npm run test:arch` | Architecture boundary rules |
+| Script                     | Description                   |
+| :------------------------- | :---------------------------- |
+| `npm test`                 | Unit tests                    |
+| `npm run test:watch`       | Watch mode                    |
+| `npm run test:cov`         | Coverage                      |
+| `npm run test:integration` | Real DB / Redis integration   |
+| `npm run test:e2e`         | End-to-end HTTP flows         |
+| `npm run test:arch`        | Architecture boundary rules   |
 | `npm run test:redis:chaos` | Redis reconnect / degradation |
-| `npm run smoke-test` | Live-process smoke probes |
-| `npm run test:ci` | CI mode |
+| `npm run smoke-test`       | Live-process smoke probes     |
+| `npm run test:ci`          | CI mode                       |
 
 ### Database Migrations
 
-| Script | Description |
-| :----- | :---------- |
+| Script                           | Description                            |
+| :------------------------------- | :------------------------------------- |
 | `npm run migration:generate:dev` | Generate migration from entity changes |
-| `npm run migration:create:dev` | Create empty migration |
-| `npm run migration:run:dev` | Run pending migrations |
-| `npm run migration:revert:dev` | Revert last migration |
-| `npm run migration:show:dev` | Show migration status |
+| `npm run migration:create:dev`   | Create empty migration                 |
+| `npm run migration:run:dev`      | Run pending migrations                 |
+| `npm run migration:revert:dev`   | Revert last migration                  |
+| `npm run migration:show:dev`     | Show migration status                  |
 
 > Replace `:dev` with `:prod`, `:staging`, or `:test` for other environments.
 
 ### Docker and Ops
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run d:up:dev` | Start Postgres + Redis |
-| `npm run d:down:dev` | Stop infrastructure |
-| `npm run d:reset:dev` | Reset infrastructure (wipes data) |
-| `npm run d:build:image` | Build production Docker image |
-| `npm run d:up:full:prod` | Start full production stack |
-| `npm run db:backup` | PostgreSQL backup |
-| `npm run db:restore` | PostgreSQL restore |
-| `npm run db:restore:drill` | Backup then restore drill |
+| Script                     | Description                       |
+| :------------------------- | :-------------------------------- |
+| `npm run d:up:dev`         | Start Postgres + Redis            |
+| `npm run d:down:dev`       | Stop infrastructure               |
+| `npm run d:reset:dev`      | Reset infrastructure (wipes data) |
+| `npm run d:build:image`    | Build production Docker image     |
+| `npm run d:up:full:prod`   | Start full production stack       |
+| `npm run db:backup`        | PostgreSQL backup                 |
+| `npm run db:restore`       | PostgreSQL restore                |
+| `npm run db:restore:drill` | Backup then restore drill         |
 
 ### Utilities
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run db:seed` | Seed development database |
+| Script             | Description                |
+| :----------------- | :------------------------- |
+| `npm run db:seed`  | Seed development database  |
 | `npm run env:init` | Generate environment files |
-| `npm run clean` | Remove build artifacts |
+| `npm run clean`    | Remove build artifacts     |
