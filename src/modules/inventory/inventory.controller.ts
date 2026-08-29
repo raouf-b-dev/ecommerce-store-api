@@ -17,7 +17,11 @@ import { RequirePermissions } from '../authorization/primary-adapter/decorators/
 import { Public } from '../../guards/decorators/public.decorator';
 import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
-import { InventoryResponseDto } from './primary-adapters/dto/inventory-response.dto';
+import {
+  InventoryListItemResponseDto,
+  InventoryStockResponseDto,
+  PaginatedInventoryResponseDto,
+} from './primary-adapters/dto/inventory-response.dto';
 import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
 import { ListInventoryQueryDto } from './primary-adapters/dto/list-inventory-query.dto';
 import { GetInventoryUseCase } from './core/application/usecases/get-inventory/get-inventory.usecase';
@@ -47,6 +51,7 @@ export class InventoryController {
   @Get()
   @Public()
   @ApiOperation({ summary: 'List inventory items' })
+  @ApiResponse({ status: 200, type: PaginatedInventoryResponseDto })
   async findAll(@Query() query: ListInventoryQueryDto) {
     return await this.listInventoryUseCase.execute(query);
   }
@@ -54,7 +59,7 @@ export class InventoryController {
   @Get('products/:productId')
   @Public()
   @ApiOperation({ summary: 'Get inventory details for a product' })
-  @ApiResponse({ status: 200, type: InventoryResponseDto })
+  @ApiResponse({ status: 200, type: InventoryListItemResponseDto })
   async getInventory(@Param('productId', ParseIntPipe) productId: number) {
     return await this.getInventoryUseCase.execute(productId);
   }
@@ -63,7 +68,7 @@ export class InventoryController {
   @ApiBearerAuth()
   @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Adjust stock quantity (add or subtract)' })
-  @ApiResponse({ status: 200, type: InventoryResponseDto })
+  @ApiResponse({ status: 200, type: InventoryStockResponseDto })
   async adjustStock(
     @Param('productId', ParseIntPipe) productId: number,
     @Body() dto: AdjustStockDto,
@@ -122,7 +127,7 @@ export class InventoryController {
   @ApiBearerAuth()
   @RequirePermissions('view_all_inventory')
   @ApiOperation({ summary: 'List products with low stock' })
-  @ApiResponse({ status: 200, type: [InventoryResponseDto] })
+  @ApiResponse({ status: 200, type: [InventoryStockResponseDto] })
   async listLowStock(@Query() query: LowStockQueryDto) {
     return await this.listLowStockUseCase.execute(query);
   }
