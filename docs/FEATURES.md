@@ -185,7 +185,7 @@ The access token carries a `mustChangePassword` claim, but only when the flag is
 
 ### Rate Limiting and Throttling
 
-`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated `sub`) in addition to IP-based keys.
+`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated user id) or IP for anonymous requests. A single global `default` profile (`THROTTLE_GLOBAL_LIMIT` / 60s) applies to all routes; auth credential routes tighten that profile via `@Throttle` (`throttle.constants.ts`). Do not register a second named profile in `forRoot` — Nest would apply it to every route.
 
 **Location**: `src/infrastructure/throttler/`
 
