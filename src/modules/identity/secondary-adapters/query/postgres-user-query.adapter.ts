@@ -47,11 +47,7 @@ export class PostgresUserQueryAdapter implements UserQueryService {
 
       const qb = this.userRepo
         .createQueryBuilder('user')
-        .leftJoin(
-          UserRoleAssignmentEntity,
-          'ura',
-          'ura.userId = user.id',
-        )
+        .leftJoin(UserRoleAssignmentEntity, 'ura', 'ura.userId = user.id')
         .leftJoin(RoleEntity, 'role', 'role.id = ura.roleId')
         .select([
           'user.id AS "id"',
@@ -73,11 +69,7 @@ export class PostgresUserQueryAdapter implements UserQueryService {
 
       const totalCountQb = this.userRepo
         .createQueryBuilder('user')
-        .leftJoin(
-          UserRoleAssignmentEntity,
-          'ura',
-          'ura.userId = user.id',
-        )
+        .leftJoin(UserRoleAssignmentEntity, 'ura', 'ura.userId = user.id')
         .leftJoin(RoleEntity, 'role', 'role.id = ura.roleId');
 
       this.applyListFilters(totalCountQb, {
@@ -117,11 +109,7 @@ export class PostgresUserQueryAdapter implements UserQueryService {
       const qb = this.userRepo
         .createQueryBuilder('user')
         .leftJoin('user.addresses', 'address')
-        .leftJoin(
-          UserRoleAssignmentEntity,
-          'ura',
-          'ura.userId = user.id',
-        )
+        .leftJoin(UserRoleAssignmentEntity, 'ura', 'ura.userId = user.id')
         .leftJoin(RoleEntity, 'role', 'role.id = ura.roleId')
         .select([
           'user.id AS "id"',

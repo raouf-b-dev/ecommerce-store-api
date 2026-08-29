@@ -3,13 +3,12 @@ import {
   IsString,
   IsNumber,
   IsBoolean,
-  IsEnum,
   Min,
   Max,
+  Matches,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { SystemRoleCode } from 'src/shared-kernel/domain/value-objects/system-roles';
 
 export class ListUsersQueryDto {
   @ApiPropertyOptional({
@@ -35,13 +34,20 @@ export class ListUsersQueryDto {
   isActive?: boolean;
 
   @ApiPropertyOptional({
-    enum: SystemRoleCode,
-    description: 'Filter by assigned system role code',
-    example: SystemRoleCode.CUSTOMER,
+    description: 'Filter by assigned role code',
+    example: 'CUSTOMER',
   })
   @IsOptional()
-  @IsEnum(SystemRoleCode)
-  roleCode?: SystemRoleCode;
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim()
+      ? value.trim().toUpperCase()
+      : undefined,
+  )
+  @IsString()
+  @Matches(/^[A-Z][A-Z0-9_]*$/, {
+    message: 'roleCode must be an uppercase role code',
+  })
+  roleCode?: string;
 
   @ApiPropertyOptional({
     example: 1,
