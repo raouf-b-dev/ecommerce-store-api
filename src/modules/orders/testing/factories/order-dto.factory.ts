@@ -203,7 +203,7 @@ export class OrderDtoTestFactory {
       userId: 2,
       userName: 'John Customer',
       userEmail: 'john@example.com',
-      status: 'PENDING_PAYMENT',
+      status: 'pending_payment',
       shippingAddress: '123 Main St',
       items: [this.createOrderItemDetailDTO()],
       totalAmount: 100,
