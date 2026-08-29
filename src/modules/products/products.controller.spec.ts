@@ -111,8 +111,9 @@ describe('ProductsController', () => {
   });
 
   it('should call ListProductsUseCase.execute when findAll is called', async () => {
-    await controller.findAll();
-    expect(listProductsUseCase.execute).toHaveBeenCalledWith();
+    const query = { page: 1, limit: 10 };
+    await controller.findAll(query);
+    expect(listProductsUseCase.execute).toHaveBeenCalledWith(query);
   });
 
   it('should call CreateProductUseCase.execute when createProduct is called', async () => {
