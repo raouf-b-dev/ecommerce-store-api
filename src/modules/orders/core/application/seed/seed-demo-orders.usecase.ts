@@ -7,6 +7,7 @@ import { OrderRepository } from '../../domain/repositories/order-repository';
 import { Order } from '../../domain/entities/order';
 import { OrderItemProps } from '../../domain/entities/order-items';
 import { OrderStatus } from '../../domain/value-objects/order-status';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { DEMO_SEED_ORDERS } from './demo-orders';
 
 export interface SeedDemoOrderProductItem {
@@ -21,11 +22,20 @@ export interface SeedDemoOrdersInput {
   products: SeedDemoOrderProductItem[];
 }
 
+export interface SeededDemoOrderLine {
+  productId: number;
+  quantity: number;
+}
+
 export interface SeededDemoOrder {
   id: number;
   referenceName: string;
   status: OrderStatus;
   seedStatus: 'created' | 'existing';
+  totalPrice: number;
+  currency: string;
+  paymentMethod: PaymentMethodType;
+  items: SeededDemoOrderLine[];
 }
 
 @Injectable()
@@ -50,13 +60,7 @@ export class SeedDemoOrdersUseCase extends UseCase<
       existingOrdersResult.value.length > 0
     ) {
       const seeded: SeededDemoOrder[] = existingOrdersResult.value.map(
-        (o, idx) => ({
-          id: o.id!,
-          referenceName:
-            DEMO_SEED_ORDERS[idx]?.referenceName ?? `Order #${o.id}`,
-          status: o.status,
-          seedStatus: 'existing' as const,
-        }),
+        (o, idx) => this.toSeededSummary(o, idx, 'existing'),
       );
       return Result.success(seeded);
     }
@@ -113,15 +117,42 @@ export class SeedDemoOrdersUseCase extends UseCase<
         );
       }
 
-      seededOrders.push({
-        id: saveResult.value.id!,
-        referenceName: seedDef.referenceName,
-        status: saveResult.value.status,
-        seedStatus: 'created',
-      });
+      seededOrders.push(
+        this.toSeededSummary(
+          saveResult.value,
+          seededOrders.length,
+          'created',
+          seedDef.referenceName,
+        ),
+      );
     }
 
     return Result.success(seededOrders);
+  }
+
+  private toSeededSummary(
+    order: Order,
+    index: number,
+    seedStatus: 'created' | 'existing',
+    referenceName?: string,
+  ): SeededDemoOrder {
+    const primitives = order.toPrimitives();
+    return {
+      id: order.id!,
+      referenceName:
+        referenceName ??
+        DEMO_SEED_ORDERS[index]?.referenceName ??
+        `Order #${order.id}`,
+      status: order.status,
+      seedStatus,
+      totalPrice: primitives.totalPrice,
+      currency: primitives.currency,
+      paymentMethod: primitives.paymentMethod,
+      items: order.getItems().map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    };
   }
 
   private applyStatusTransition(order: Order, targetStatus: OrderStatus): void {

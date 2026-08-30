@@ -79,6 +79,7 @@ import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund
 import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-checkout/finalize-checkout.usecase';
 import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.usecase';
+import { LinkDemoOrderPaymentsUseCase } from './core/application/seed/link-demo-order-payments.usecase';
 
 @Module({
   imports: [
@@ -195,6 +196,7 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
     ClearCheckoutCartUseCase,
     FinalizeCheckoutUseCase,
     SeedDemoOrdersUseCase,
+    LinkDemoOrderPaymentsUseCase,
 
     // Job Handlers
     PaymentCompletedStep,
@@ -229,6 +231,11 @@ import { SeedDemoOrdersUseCase } from './core/application/seed/seed-demo-orders.
     PaymentEventsProcessor,
     OrdersProcessor,
   ],
-  exports: [OrderRepository, OrderQueryService, SeedDemoOrdersUseCase],
+  exports: [
+    OrderRepository,
+    OrderQueryService,
+    SeedDemoOrdersUseCase,
+    LinkDemoOrderPaymentsUseCase,
+  ],
 })
 export class OrdersModule {}
