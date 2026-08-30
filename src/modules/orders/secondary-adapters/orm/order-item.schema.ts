@@ -2,6 +2,7 @@
 import {
   Column,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   JoinColumn,
@@ -11,6 +12,7 @@ import { OrderEntity } from './order.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
 @Entity({ name: 'order_items' })
+@Index('idx_order_items_product_id', ['productId'])
 export class OrderItemEntity {
   @PrimaryGeneratedColumn('increment')
   id!: number;
