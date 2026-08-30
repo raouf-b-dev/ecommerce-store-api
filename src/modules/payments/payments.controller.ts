@@ -101,8 +101,17 @@ export class PaymentsController {
   @Get('orders/:orderId')
   @RequirePermissions('view_all_payments', 'view_own_payments')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get payment for an order' })
-  @ApiResponse({ status: 200, type: PaymentDetailResponseDto })
+  @ApiOperation({
+    summary: 'Get payment for an order',
+    description:
+      'Returns the payment detail when one exists. Returns `null` (HTTP 200) when the order has no payment yet (e.g. pending payment).',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Payment detail, or null when no payment is associated with the order',
+    type: PaymentDetailResponseDto,
+  })
   async getOrderPayments(
     @Param('orderId', ParseIntPipe) orderId: number,
     @CallerCtx() callerContext: CallerContext,
