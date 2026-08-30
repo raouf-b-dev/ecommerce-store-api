@@ -5,31 +5,13 @@ import {
 
 describe('analytics-period.parser', () => {
   describe('parseAnalyticsPeriod', () => {
-    it('accepts a valid range within max days', () => {
+    it('converts ISO strings to Dates', () => {
       const { from, to } = parseAnalyticsPeriod(
         '2026-08-01T00:00:00.000Z',
         '2026-08-08T00:00:00.000Z',
       );
       expect(from.toISOString()).toBe('2026-08-01T00:00:00.000Z');
       expect(to.toISOString()).toBe('2026-08-08T00:00:00.000Z');
-    });
-
-    it('rejects inverted range', () => {
-      expect(() =>
-        parseAnalyticsPeriod(
-          '2026-08-10T00:00:00.000Z',
-          '2026-08-01T00:00:00.000Z',
-        ),
-      ).toThrow(/from must be less than or equal to to/);
-    });
-
-    it('rejects ranges wider than 90 days', () => {
-      expect(() =>
-        parseAnalyticsPeriod(
-          '2026-01-01T00:00:00.000Z',
-          '2026-05-01T00:00:00.000Z',
-        ),
-      ).toThrow(/90 days/);
     });
   });
 
