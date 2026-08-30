@@ -23,6 +23,8 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 @Index('idx_orders_user_id', ['userId'])
 @Index('idx_orders_payment_id', ['paymentId'])
 @Index('idx_orders_user_status', ['userId', 'status'])
+@Index('idx_orders_created_at', ['createdAt'])
+@Index('idx_orders_status_created_at', ['status', 'createdAt'])
 export class OrderEntity {
   @PrimaryGeneratedColumn('increment')
   id!: number;

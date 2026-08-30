@@ -33,6 +33,7 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 | **Payments** | Generic | Payment intents and gateway abstraction. Provider adapter is a mock today. |
 | **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
 | **Notifications** | Generic | Real-time and background alerts. |
+| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see ADR-0007. |
 | **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
 
 ### Bounded Contexts and Context Mapping
@@ -50,6 +51,7 @@ graph TD
  SK --> Payments[Payments]
  SK --> Authentication[Authentication]
  SK --> Notifications[Notifications]
+ SK --> Analytics[Analytics]
  SK --> Health[Health]
 
  subgraph ACL_Orders["ACL Gateways in Orders"]
@@ -83,7 +85,14 @@ graph TD
  Authentication -->|"ACL / IdentityGateway"| Identity
  Authentication -->|"ACL / AuthorizationGateway"| Authorization
  Orders -->|"Event"| Notifications
+
+ Orders -.->|"SQL read composition"| Analytics
+ Payments -.->|"SQL read composition"| Analytics
+ Inventory -.->|"SQL read composition"| Analytics
+ Products -.->|"SQL read composition"| Analytics
 ```
+
+> **Analytics (ADR-0007):** Query-only composition BC. Reads Orders/Payments/Inventory/Products tables via Postgres query adapters — no ACL gateways and no write aggregates.
 
 > **Anti-Corruption Layer (ACL):** Downstream contexts define their own ports (gateway interfaces) with only the data they need. Adapters in the secondary layer translate upstream models into the downstream domain language. If Identity changes its user entity, only the Orders `ModuleUserGateway` adapter needs updating, not Orders use cases.
 

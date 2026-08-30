@@ -28,6 +28,7 @@ import { POSTGRES_RESERVATION_REPOSITORY } from './inventory.token';
 import { PostgresReservationRepository } from './secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository';
 import { ReservationRepository } from './core/domain/repositories/reservation.repository';
 import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inventory.usecase';
+import { SeedDemoInventoryFromOrdersUseCase } from './core/application/seed/seed-demo-inventory-from-orders.usecase';
 import { ReconcileInventoryUseCase } from './core/application/usecases/reconcile-inventory/reconcile-inventory.usecase';
 import { InventoryReconciliationJob } from './primary-adapters/jobs/inventory-reconciliation.job';
 import { InventoryScheduler } from './core/domain/schedulers/inventory.scheduler';
@@ -103,6 +104,7 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
     SeedDemoInventoryUseCase,
+    SeedDemoInventoryFromOrdersUseCase,
     ReconcileInventoryUseCase,
     ListInventoryUseCase,
 
@@ -125,6 +127,8 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
     ReconcileInventoryUseCase,
+    SeedDemoInventoryUseCase,
+    SeedDemoInventoryFromOrdersUseCase,
   ],
 })
 export class InventoryModule {}

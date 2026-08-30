@@ -75,6 +75,7 @@
 | [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
 | [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                   | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
 | [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| [x] Admin analytics query module (`/v1/admin/analytics/*`) + indexes | **CQRS read** | Operational dashboard aggregates (UTC, 90-day cap); ADR-0007; not Prometheus |
 
 | [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |

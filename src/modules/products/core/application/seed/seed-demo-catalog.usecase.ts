@@ -31,7 +31,12 @@ export class SeedDemoCatalogUseCase extends UseCase<
   }
 
   async execute(): Promise<Result<SeededDemoProduct[], UseCaseError>> {
-    const existingProductsResult = await this.listProductsUseCase.execute();
+    // Default list limit is 10; demo catalog has more SKUs — must load enough
+    // pages worth so idempotency does not try to recreate existing products.
+    const existingProductsResult = await this.listProductsUseCase.execute({
+      page: 1,
+      limit: Math.max(100, DEMO_SEED_PRODUCTS.length),
+    });
     if (existingProductsResult.isFailure) {
       return ErrorFactory.UseCaseError(
         'Failed to load existing products',

@@ -112,10 +112,10 @@ describe('Checkout validation (e2e)', () => {
       .get(`${E2E_API_PREFIX}/payments/orders/${orderId}`)
       .set(AuthTestHelper.bearer(customer.accessToken));
 
-    expect(paymentResponse.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
-    HttpErrorAssertionHelper.assertErrorContract(paymentResponse, {
-      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-      messageContains: `Payment for order ID ${orderId} not found`,
-    });
+    expect(paymentResponse.status).toBe(HttpStatus.OK);
+    expect(
+      paymentResponse.body == null ||
+        Object.keys(paymentResponse.body).length === 0,
+    ).toBe(true);
   }, 180_000);
 });

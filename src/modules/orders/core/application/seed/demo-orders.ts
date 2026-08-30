@@ -21,7 +21,7 @@ export const DEMO_SEED_ORDERS: DemoSeedOrder[] = [
     referenceName: 'Confirmed Electronics Order',
     items: [
       { sku: 'ELEC-ANC-001', quantity: 1 },
-      { sku: 'ELEC-EWM-005', quantity: 1 },
+      { sku: 'ELEC-MBK-004', quantity: 1 },
     ],
     shippingAddress: {
       firstName: 'Jane',

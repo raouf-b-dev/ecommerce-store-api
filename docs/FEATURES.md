@@ -47,7 +47,7 @@ Ten bounded contexts communicate through **eight gateway ports**. There are no d
 
 ### Modular Monolith
 
-All ten modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
+All eleven modules (Analytics, Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
 
 **Location**: `src/modules/`
 

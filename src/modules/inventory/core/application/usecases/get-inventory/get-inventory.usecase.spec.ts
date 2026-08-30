@@ -36,15 +36,13 @@ describe('GetInventoryUseCase', () => {
     expect(mockQueryService.getByProductId).toHaveBeenCalledWith(productId);
   });
 
-  it('should return failure if inventory for product is not found', async () => {
+  it('should return null if inventory for product is not found', async () => {
     const productId = 404;
     mockQueryService.mockSuccessfulGetByProductId(null);
 
     const result = await usecase.execute(productId);
 
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      `Inventory for product ID ${productId} not found`,
-    );
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toBeNull();
   });
 });

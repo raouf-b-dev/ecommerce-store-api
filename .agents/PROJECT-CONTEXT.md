@@ -41,6 +41,7 @@ The application is a Modular Monolith split into 10 strictly isolated **Bounded 
 8. **Orders** (`order`, `order-item`, `payment-details`): Core Domain. Orchestrates the checkout SAGA with `CheckoutFailureListener` compensation (stock release, refund, order cancellation).
 9. **Payments** (`payment-intent`, `transaction`): Handles payment processing and gateway abstractions.
 10. **Products** (`product`, `category`): Manages product catalog with RedisSearch fast querying and category hierarchies.
+11. **Analytics** (query-only): Admin operational reporting (`/v1/admin/analytics/*`) — revenue KPIs, payments time series, top products, inventory alerts. No domain aggregates or commands; Postgres SQL projections per [ADR-0007](../docs/architecture/adr/ADR-0007-admin-analytics-query-composition.md) and [domains/ANALYTICS.md](../docs/architecture/domains/ANALYTICS.md).
 
 ### Infrastructure & Core Components (`src/infrastructure/` & `src/shared-kernel/`)
 

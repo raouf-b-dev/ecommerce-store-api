@@ -2,7 +2,7 @@
 
 This guide describes how to populate the local development database with sample/test data.
 
-The seeder script provides a convenient, repeatable way to initialize your local development database with test accounts, a product catalog, and varying stock levels.
+The seeder script provides a convenient, repeatable way to initialize your local development database with test accounts, a product catalog, inventory levels, demo orders, payments, and inventory aligned to those orders.
 
 Architecturally, `scripts/seed.ts` is a thin CLI primary adapter. The actual seed behavior is owned by module application-layer seed use cases under `src/modules/*/core/application/seed/`.
 
@@ -104,7 +104,9 @@ The seeder inserts **15 products** across **5 categories** with specified initia
 
 ### 4. Seeded Demo Orders (for `customer@store.local`)
 
-The seeder creates **4 demo orders** for the customer account (idempotent: skips if that user already has any orders). Useful for admin order list/detail and status-transition smoke tests.
+The seeder creates **4 demo orders** for the customer account (idempotent: skips create if that user already has any orders; re-runs still refresh payment/order timestamps and rebuild inventory). Useful for admin order list/detail, dashboard revenue, and status-transition smoke tests.
+
+Order timestamps and linked payments use **relative UTC dates** from seed time (`now − 6d` / `−3d` / `0d` noon UTC) so the default 7-day analytics window stays populated after every `db:seed`.
 
 | Reference name | Target status | Safe admin transitions |
 | :------------- | :------------ | :--------------------- |
@@ -112,3 +114,28 @@ The seeder creates **4 demo orders** for the customer account (idempotent: skips
 | Shipped Apparel Order | `shipped` | Deliver or Cancel |
 | Delivered Home & Books Order | `delivered` | (no order PATCH; refund is payment-side) |
 | Pending Payment Order | `pending_payment` | Cancel (Confirm needs a completed payment) |
+
+### 5. Seeded Demo Payments (Orders ↔ Payments)
+
+After orders, the **payments** BC seed creates `CAPTURED` payment rows for paid demo orders (not `pending_payment`), then the **orders** BC links the real `paymentId` and refreshes order dates.
+
+| Order reference | Relative date | Notes |
+| :-------------- | :------------ | :---- |
+| Confirmed Electronics Order | `now − 6 days` | CAPTURED |
+| Shipped Apparel Order | `now − 3 days` | CAPTURED |
+| Delivered Home & Books Order | `now` (today noon UTC) | CAPTURED + **$20** completed partial refund (`PARTIALLY_REFUNDED`) |
+| Pending Payment Order | — | No payment row |
+
+Re-seed refreshes payment `created_at` / `completed_at` and order `"createdAt"` so dashboard KPIs stay in range.
+
+### 6. Seeded Inventory Sync (Orders ↔ Inventory)
+
+After payments, inventory is **rebuilt** from catalog baselines using domain `reserveStock` / `confirmReservation` (no BullMQ checkout SAGA, no `reservations` table rows in v1):
+
+| Order status | Effect | Stock outcome |
+| :----------- | :----- | :------------ |
+| `pending_payment` | hold | available ↓, reserved ↑ |
+| `confirmed` / `processing` / `shipped` / `delivered` | consume | available ↓, reserved 0 |
+
+Every `db:seed` resets touched demo SKUs to catalog `initialStock` with `reserved = 0`, then re-applies line effects (idempotent; no stacking).
+
