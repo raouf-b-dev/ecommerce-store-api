@@ -44,8 +44,8 @@ describe('LinkDemoOrderPaymentsUseCase', () => {
     order.confirmPayment(1);
 
     mockOrderRepository.mockSuccessfulFind(order.toPrimitives());
-    mockOrderRepository.save.mockImplementation(async (o: Order) =>
-      Result.success(o),
+    mockOrderRepository.save.mockImplementation((o: Order) =>
+      Promise.resolve(Result.success(o)),
     );
 
     const result = await useCase.execute([

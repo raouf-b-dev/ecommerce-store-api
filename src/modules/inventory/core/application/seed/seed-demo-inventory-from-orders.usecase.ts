@@ -65,9 +65,8 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
         continue;
       }
 
-      const locked = await this.inventoryRepository.findByProductIdForUpdate(
-        productId,
-      );
+      const locked =
+        await this.inventoryRepository.findByProductIdForUpdate(productId);
       if (locked.isFailure) {
         if (locked.error.statusCode === HttpStatus.NOT_FOUND) {
           continue;

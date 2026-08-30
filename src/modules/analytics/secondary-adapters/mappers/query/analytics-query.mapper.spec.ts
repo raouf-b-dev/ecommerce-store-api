@@ -119,15 +119,15 @@ describe('AnalyticsQueryMapper', () => {
           low_stock_threshold: 5,
         },
       ];
-      expect(AnalyticsQueryMapper.toInventoryAlertsResult(rows).items[0]).toEqual(
-        {
-          productId: 1,
-          productTitle: 'Socks',
-          sku: 'CLOT-1',
-          availableQuantity: 2,
-          lowStockThreshold: 5,
-        },
-      );
+      expect(
+        AnalyticsQueryMapper.toInventoryAlertsResult(rows).items[0],
+      ).toEqual({
+        productId: 1,
+        productTitle: 'Socks',
+        sku: 'CLOT-1',
+        availableQuantity: 2,
+        lowStockThreshold: 5,
+      });
     });
   });
 });

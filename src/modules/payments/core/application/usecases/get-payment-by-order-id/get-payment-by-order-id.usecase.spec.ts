@@ -50,7 +50,8 @@ describe('GetPaymentByOrderIdUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(123);
+    expect(result.value).not.toBeNull();
+    expect(result.value!.id).toBe(123);
     expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, undefined);
   });
 
@@ -63,7 +64,8 @@ describe('GetPaymentByOrderIdUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(123);
+    expect(result.value).not.toBeNull();
+    expect(result.value!.id).toBe(123);
     expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, 2);
   });
 

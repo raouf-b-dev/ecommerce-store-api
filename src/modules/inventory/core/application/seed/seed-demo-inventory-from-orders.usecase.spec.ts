@@ -20,7 +20,7 @@ describe('SeedDemoInventoryFromOrdersUseCase', () => {
 
   it('resets to baseline then holds and consumes via domain methods', async () => {
     mockInventoryRepository.findByProductIdForUpdate.mockImplementation(
-      async (productId: number) => {
+      (productId: number) => {
         const withId = Inventory.fromPrimitives({
           id: productId,
           productId,
@@ -31,7 +31,9 @@ describe('SeedDemoInventoryFromOrdersUseCase', () => {
           updatedAt: new Date(),
           lastRestockDate: null,
         });
-        return Result.success({ entity: withId, expectedVersion: 1 });
+        return Promise.resolve(
+          Result.success({ entity: withId, expectedVersion: 1 }),
+        );
       },
     );
 

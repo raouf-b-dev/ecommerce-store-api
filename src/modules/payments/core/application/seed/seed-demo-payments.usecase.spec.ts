@@ -24,13 +24,15 @@ describe('SeedDemoPaymentsUseCase', () => {
 
   it('creates CAPTURED payments and a partial refund when requested', async () => {
     mockPaymentRepository.mockSuccessfulFindByOrderId([]);
-    mockPaymentRepository.save.mockImplementation(async (payment: Payment) =>
-      Result.success(
-        Payment.fromPrimitives({ ...payment.toPrimitives(), id: 42 }),
+    mockPaymentRepository.save.mockImplementation((payment: Payment) =>
+      Promise.resolve(
+        Result.success(
+          Payment.fromPrimitives({ ...payment.toPrimitives(), id: 42 }),
+        ),
       ),
     );
-    mockPaymentRepository.update.mockImplementation(async (payment: Payment) =>
-      Result.success(payment),
+    mockPaymentRepository.update.mockImplementation((payment: Payment) =>
+      Promise.resolve(Result.success(payment)),
     );
 
     const result = await useCase.execute([
@@ -67,8 +69,8 @@ describe('SeedDemoPaymentsUseCase', () => {
       createdAt: new Date('2020-01-01T00:00:00.000Z'),
     });
     mockPaymentRepository.mockSuccessfulFindByOrderId([existing]);
-    mockPaymentRepository.update.mockImplementation(async (payment: Payment) =>
-      Result.success(payment),
+    mockPaymentRepository.update.mockImplementation((payment: Payment) =>
+      Promise.resolve(Result.success(payment)),
     );
 
     const result = await useCase.execute([

@@ -156,7 +156,7 @@ describe('PostgresAnalyticsQueryAdapter (Integration - Real DB)', () => {
     expect(result.value.previous.grossRevenue).toBe(40);
     expect(
       result.value.ordersNeedingAttention.some(
-        (row) => row.status === OrderStatus.PENDING_PAYMENT && row.count === 1,
+        (row) => row.status === 'pending_payment' && row.count === 1,
       ),
     ).toBe(true);
   });
