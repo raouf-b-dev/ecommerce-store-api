@@ -3,6 +3,10 @@
  * Values mirror Orders/Payments persisted status strings — do not import foreign domain enums here.
  */
 
+import { ATTENTION_ORDER_STATUSES } from '../../core/application/analytics.policy';
+
+export { ATTENTION_ORDER_STATUSES };
+
 /** Successful payment statuses counted toward revenue (gross / refunded / net). */
 export const REVENUE_PAYMENT_STATUSES: readonly string[] = [
   'CAPTURED',
@@ -20,13 +24,6 @@ export const TOP_PRODUCT_ORDER_STATUSES: readonly string[] = [
   'processing',
   'shipped',
   'delivered',
-] as const;
-
-/** Statuses that need operator action on the ops home. */
-export const ATTENTION_ORDER_STATUSES: readonly string[] = [
-  'pending_payment',
-  'confirmed',
-  'processing',
 ] as const;
 
 /** PostgreSQL statement_timeout for analytics queries (milliseconds). */

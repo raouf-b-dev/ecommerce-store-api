@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderStatus } from '../../../orders/core/domain/value-objects/order-status';
+import {
+  ATTENTION_ORDER_STATUSES,
+  type AttentionOrderStatus,
+} from '../../core/application/analytics.policy';
 
 export class AnalyticsKpiSnapshotDto {
   @ApiProperty()
@@ -28,8 +31,8 @@ export class AnalyticsKpiSnapshotDto {
 }
 
 export class OrderAttentionCountDto {
-  @ApiProperty({ enum: OrderStatus })
-  status!: OrderStatus;
+  @ApiProperty({ enum: ATTENTION_ORDER_STATUSES })
+  status!: AttentionOrderStatus;
 
   @ApiProperty()
   count!: number;
