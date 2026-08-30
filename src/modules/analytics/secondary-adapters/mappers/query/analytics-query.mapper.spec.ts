@@ -6,8 +6,6 @@ import type {
   RawAnalyticsSeriesRow,
   RawAnalyticsTopProductRow,
 } from '../../dto/raw-analytics-query-row.interface';
-import { OrderStatus } from '../../../../orders/core/domain/value-objects/order-status';
-
 describe('AnalyticsQueryMapper', () => {
   describe('money helpers', () => {
     it('computeAov returns 0 when paidOrderCount is 0', () => {
@@ -45,11 +43,11 @@ describe('AnalyticsQueryMapper', () => {
   describe('toAttentionCounts', () => {
     it('fills known statuses and drops zeros', () => {
       const rows: RawAnalyticsAttentionRow[] = [
-        { status: OrderStatus.PENDING_PAYMENT, count: 2 },
-        { status: OrderStatus.CONFIRMED, count: 0 },
+        { status: 'pending_payment', count: 2 },
+        { status: 'confirmed', count: 0 },
       ];
       expect(AnalyticsQueryMapper.toAttentionCounts(rows)).toEqual([
-        { status: OrderStatus.PENDING_PAYMENT, count: 2 },
+        { status: 'pending_payment', count: 2 },
       ]);
     });
   });

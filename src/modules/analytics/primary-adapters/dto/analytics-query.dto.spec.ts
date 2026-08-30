@@ -4,6 +4,15 @@ import { AnalyticsPeriodQueryDto } from './analytics-period-query.dto';
 import { PaymentsTimeSeriesQueryDto } from './payments-time-series-query.dto';
 
 describe('Analytics query DTOs', () => {
+  it('rejects inverted ranges', async () => {
+    const dto = plainToInstance(AnalyticsPeriodQueryDto, {
+      from: '2026-08-10T00:00:00.000Z',
+      to: '2026-08-01T00:00:00.000Z',
+    });
+    const errors = await validate(dto);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
   it('rejects ranges wider than 90 days', async () => {
     const dto = plainToInstance(AnalyticsPeriodQueryDto, {
       from: '2026-01-01T00:00:00.000Z',
