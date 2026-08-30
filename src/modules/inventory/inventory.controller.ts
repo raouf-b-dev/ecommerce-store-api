@@ -58,8 +58,16 @@ export class InventoryController {
 
   @Get('products/:productId')
   @Public()
-  @ApiOperation({ summary: 'Get inventory details for a product' })
-  @ApiResponse({ status: 200, type: InventoryListItemResponseDto })
+  @ApiOperation({
+    summary: 'Get inventory details for a product',
+    description:
+      'Returns inventory for the product, or `null` (HTTP 200) when no inventory row exists yet.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Inventory detail, or null when none exists for the product',
+    type: InventoryListItemResponseDto,
+  })
   async getInventory(@Param('productId', ParseIntPipe) productId: number) {
     return await this.getInventoryUseCase.execute(productId);
   }
@@ -101,7 +109,11 @@ export class InventoryController {
 
   @Get('check/:productId')
   @Public()
-  @ApiOperation({ summary: 'Check if product is in stock' })
+  @ApiOperation({
+    summary: 'Check if product is in stock',
+    description:
+      'Returns availability. Missing inventory is treated as unavailable (qty 0), not an error.',
+  })
   @ApiResponse({ status: 200, description: 'Stock availability status' })
   async checkStock(
     @Param('productId', ParseIntPipe) productId: number,
