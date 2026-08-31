@@ -130,7 +130,7 @@ Use the configured values from `.env.development` when you remap locally.
 | Check                | Command / URL                              |
 | :------------------- | :----------------------------------------- |
 | API                  | `http://localhost:<PORT>`                  |
-| Swagger              | `http://localhost:<PORT>/api`              |
+| Swagger              | `http://localhost:<PORT>/api/docs`         |
 | Liveness             | `GET /health/liveness`                     |
 | Readiness (Postgres) | `GET /health/readiness`                    |
 | Prometheus           | `http://localhost:<PROMETHEUS_HOST_PORT>`  |

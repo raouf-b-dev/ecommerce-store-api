@@ -16,7 +16,7 @@
 
 ## System Architecture
 
-The application is a Modular Monolith split into 10 strictly isolated **Bounded Contexts** (Modules) under `src/modules/`. Modules communicate _only_ via ACL Gateways and Domain Events.
+The application is a Modular Monolith with **11 modules** under `src/modules/`. Write-side contexts communicate via ACL Gateways and Domain Events. Analytics is query-only: it reads other contexts' tables in SQL, not through ACL gateways. Health is probes only.
 
 ### IDOR Prevention & Access Control Subsystem (`src/shared-kernel/domain/policies/`)
 
@@ -41,7 +41,7 @@ The application is a Modular Monolith split into 10 strictly isolated **Bounded 
 8. **Orders** (`order`, `order-item`, `payment-details`): Core Domain. Orchestrates the checkout SAGA with `CheckoutFailureListener` compensation (stock release, refund, order cancellation).
 9. **Payments** (`payment-intent`, `transaction`): Handles payment processing and gateway abstractions.
 10. **Products** (`product`, `category`): Manages product catalog with RedisSearch fast querying and category hierarchies.
-11. **Analytics** (query-only): Admin operational reporting (`/v1/admin/analytics/*`) — revenue KPIs, payments time series, top products, inventory alerts. No domain aggregates or commands; Postgres SQL projections per [ADR-0007](../docs/architecture/adr/ADR-0007-admin-analytics-query-composition.md) and [domains/ANALYTICS.md](../docs/architecture/domains/ANALYTICS.md).
+11. **Analytics** (query-only): Admin operational reporting (`/v1/admin/analytics/*`): revenue KPIs, payments time series, top products, inventory alerts. No domain aggregates or commands; Postgres SQL projections. Details: [domains/ANALYTICS.md](../docs/architecture/domains/ANALYTICS.md).
 
 ### Infrastructure & Core Components (`src/infrastructure/` & `src/shared-kernel/`)
 
@@ -52,7 +52,7 @@ The application is a Modular Monolith split into 10 strictly isolated **Bounded 
 - **Throttler**: `@nestjs/throttler` setup backed by Redis.
 - **Shutdown**: Graceful shutdown hook handlers draining HTTP traffic and closing DB/Redis pools on `SIGTERM`.
 - **Logging**: Winston logger configured for JSON output with correlation ID propagation (`X-Request-Id`).
-- **Metrics**: Prometheus metrics via `prom-client` (`GET /metrics`) — HTTP auto-instrumentation, domain counters, infrastructure gauges.
+- **Metrics**: Prometheus metrics via `prom-client` (`GET /metrics`): HTTP auto-instrumentation, domain counters, infrastructure gauges.
 - **Tracing**: OpenTelemetry auto-instrumentation with OTLP gRPC export to Tempo.
 - **Events**: `DomainEventPublisher` interface (shared-kernel) backed by `EventEmitter2DomainEventPublisher` adapter.
 - **Testing Helpers**: `src/testing/helpers/` (`auth-test.helper.ts`, `e2e-test-app.helper.ts`, `e2e-checkout.helper.ts`, `http-error-assertion.helper.ts`, …).
