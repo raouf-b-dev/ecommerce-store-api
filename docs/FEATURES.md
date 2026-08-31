@@ -41,7 +41,7 @@ The domain core does not depend on infrastructure. Databases, caches, and queues
 
 ### ACL Gateway Pattern
 
-Ten bounded contexts communicate through **eight gateway ports**. There are no direct executable imports of another module's domain. Each consumer defines the interface it needs.
+Eleven modules live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)); Health has no gateways. There are no direct executable imports of another module's domain.
 
 **Location**: `src/modules/*/secondary-adapters/adapters/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md), [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
@@ -59,7 +59,7 @@ All eleven modules (Analytics, Authentication, Authorization, Carts, Health, Ide
 
 ### CQRS Read Path
 
-List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, and Notifications.
+List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition).
 
 **Location**: `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/` · **Deep-dive**: [CQRS.md](architecture/CQRS.md)
 
@@ -185,7 +185,7 @@ The access token carries a `mustChangePassword` claim, but only when the flag is
 
 ### Rate Limiting and Throttling
 
-`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated user id) or IP for anonymous requests. A single global `default` profile (`THROTTLE_GLOBAL_LIMIT` / 60s) applies to all routes; auth credential routes tighten that profile via `@Throttle` (`throttle.constants.ts`). Do not register a second named profile in `forRoot` — Nest would apply it to every route.
+`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated user id) or IP for anonymous requests. A single global `default` profile (`THROTTLE_GLOBAL_LIMIT` / 60s) applies to all routes; auth credential routes tighten that profile via `@Throttle` (`throttle.constants.ts`). Do not register a second named profile in `forRoot`: Nest would apply it to every route.
 
 **Location**: `src/infrastructure/throttler/`
 

@@ -7,7 +7,7 @@ description: Reduce AI agent token consumption and tool call overhead. Apply aut
 
 Minimize token burning and tool call waste while maintaining high architectural and code quality. Enforce disciplined context loading, efficient file access patterns, and clear task boundaries.
 
-# Rules — Always Active
+# Rules: Always Active
 
 These rules apply to **every agent session** in this repository, regardless of task type.
 
@@ -20,7 +20,7 @@ Before opening any file, confirm it contains the exact symbols or logic you need
 - When calling `view_file`, request only the relevant line range using `StartLine`/`EndLine`.
 - **Single-Pass Reading**: Do not re-read a file in the same session unless it has been modified since it was last read.
 
-## 2. Context Acceleration — Load PROJECT-CONTEXT.md First
+## 2. Context Acceleration: Load PROJECT-CONTEXT.md First
 
 Always read [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) first (see `AGENT.md` §Context Acceleration). It provides a compact overview of the architecture, security policy, modules, key patterns, and feature status.
 

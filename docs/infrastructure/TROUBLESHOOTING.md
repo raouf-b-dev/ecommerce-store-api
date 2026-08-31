@@ -129,7 +129,7 @@ Core-only boot avoids Grafana/Loki/Tempo bind failures until you need the monito
 
 - Confirm the API is running on the `PORT` value from `.env.development`.
 - Recreate Prometheus after changing `PORT` so `entrypoint.sh` re-renders the scrape target (`npm run d:up:obs:dev` or `docker compose ... up -d --force-recreate prometheus`).
-- Check Prometheus targets at `http://localhost:<PROMETHEUS_HOST_PORT>/targets` — scrape URL should be `host.docker.internal:<PORT>/metrics`.
+- Check Prometheus targets at `http://localhost:<PROMETHEUS_HOST_PORT>/targets`: scrape URL should be `host.docker.internal:<PORT>/metrics`.
 - Confirm `METRICS_API_KEY` matches the API env.
 
 ---

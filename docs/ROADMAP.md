@@ -38,13 +38,13 @@
 | **12b** | CI/CD Pipeline (GitHub Actions)             | ✅ Done | Fan-out/fan-in CI (`lint`, `typecheck`, `unit`, `arch`, `audit`, `build`, `integration`, `e2e`, `smoke`) · **CI Status Check** aggregator · `prepare-test-env` composite action · blocking `npm audit --omit=dev --audit-level=high` · PR dependency review · Docker validate (PR) · GHCR publish (`master` + semver tags) · `scripts/smoke-test.js` · `start:test` · liveness/readiness probes · Bitbucket Pipelines removed · `PROJECT-PIPELINE.md` updated                                                  | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
 | **13**  | Production Confidence & Integration Testing | ✅ Done | Typed gateway/repo mocks & testing barrels · Domain entity GWT specs + `OrderWorkflow` / shipping-address · Real-DB repository integration + concurrent checkout lock proof · Atomic OCC `save` predicates (Product/Order/User/Cart) · E2E auth lifecycle, IDOR, checkout SAGA, CQRS shapes · HTTP cart/payment/refresh-cookie contracts · HTTP-only E2E · Checkout idempotency E2E · E2E suite quality + optional business specs · Domain test polish (dead VO removal, `order-items`/`payment-status` specs) | `src/modules/*/core/domain/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/testing/`, `src/testing/`, `test/e2e/`, `docs/testing/` |
 
-> **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14.
+> **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14. Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`.
 
 ---
 
 ## 📋 Pending Work: Execution Sequence
 
-> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. Complete **Phase 14b** when using the admin dashboard auth flow, then **Phase 15** before scaling to multiple application instances.
+> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. **Phase 14c** and **Phase 14d** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
 
 | Phase   | Name                                              | Status | Target / Focus                                                                                          |
 | ------- | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
@@ -54,6 +54,8 @@
 | **13**  | Production Confidence & Integration Testing       | `[x]`  | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
 | **14**  | Single-Instance Production Gate                   | `[x]`  | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
 | **14b** | Forced Credential Rotation                        | `[x]`  | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
+| **14c** | OpenAPI truthfulness                              | `[ ]`  | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                            |
+| **14d** | Operator HTTP gaps                                | `[ ]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                  |
 | **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
 | **16**  | Performance Engineering                           | `[ ]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
 | **17**  | Product Ecosystem & Integrations                  | `[ ]`  | **Features & Payments**: real email, cart recovery, webhooks, Stripe webhook dedup                      |
@@ -300,6 +302,49 @@
 - [x] Update ADMIN-BOOTSTRAP, SEEDING, FEATURES docs
 
 **Done when:** User with `mustChangePassword: true` cannot call domain APIs until password change; change-password clears flag and reissues session; tests green.
+
+---
+
+## Phase 14c: OpenAPI truthfulness
+
+> **Goal**: Make the published OpenAPI document match runtime handlers so generated clients stay accurate. **No new HTTP.** Does **not** block Phase 15.
+>
+> **Prerequisite**: Phase 14b complete.
+
+**What**: Defect **classes**, not a frozen path inventory. On start, fetch live `/api/docs-json` and fix what is still wrong.
+
+**Scope:**
+
+- [ ] Nullable `@ApiPropertyOptional` / `@ApiProperty` without an explicit `type` (generated clients get `object` / `Record<string, never>` instead of string/number)
+- [ ] Handler return vs documented DTO (example found: low-stock documented as `InventoryStockResponseDto` while the handler returns `IInventory` primitives)
+- [ ] Operations in the spec with empty summary and/or no 200/201 body schema
+- [ ] 200 + `null` described in prose but not in the schema
+- [ ] Stale copy (order confirm still mentioning COD; COD is not an active checkout path)
+- [ ] Auth refresh/logout documented as a JSON body while the HttpOnly cookie is the real token
+- [x] [`docs/development/LOCAL-SETUP.md`](development/LOCAL-SETUP.md) Swagger URL (`/api/docs`)
+- [ ] Probe endpoint Swagger (moved here from Phase 14 health probes)
+
+Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpoint` is correct).
+
+**Location**: controller/DTO Swagger decorators, `src/main.ts` document setup, `docs/development/LOCAL-SETUP.md`
+
+**Done when:** Regenerating an OpenAPI client does not invent `object` for nullable scalars; documented response shapes match handlers for the operations you touch. LOCAL-SETUP already documents `/api/docs`.
+
+---
+
+## Phase 14d: Operator HTTP gaps
+
+> **Goal**: Expose operator actions the domain already has but HTTP does not (product activate/deactivate, assign/replace user role). Does **not** block Phase 15.
+
+**Scope:**
+
+- [ ] Product activate / deactivate HTTP (dedicated actions, same idea as users, e.g. `POST /v1/products/{id}/activate` and `deactivate`, `manage_products`). Do **not** silently add `isActive` to PATCH if the domain treats catalog status as a dedicated action
+- [ ] Assign or replace a user's role over HTTP (`AssignRoleUseCase` exists today with no controller)
+- [ ] OpenAPI + tests for those operations
+
+**Location**: `src/modules/products/`, `src/modules/identity/` (or authorization), matching use-case tests / HTTP e2e
+
+**Done when:** An authenticated caller with the right permission can take a product off the catalog and change a user's role over HTTP without SQL or seed scripts; OpenAPI documents the new operations.
 
 ---
 

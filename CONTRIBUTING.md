@@ -60,7 +60,7 @@ npm run migration:run:dev
 npm run start:dev
 ```
 
-The API will be available at `http://localhost:3000` with Swagger docs at `http://localhost:3000/api`.
+The API will be available at `http://localhost:3000` with Swagger docs at `http://localhost:3000/api/docs`.
 
 ## Making Changes
 
