@@ -44,22 +44,28 @@
 
 ## 📋 Pending Work: Execution Sequence
 
-> **Execution guide**: Pick tasks strictly in order from top to bottom. Phase 14 (single-instance production deploy gate) is complete. **Phase 14c** and **Phase 14d** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
+> **Execution guide**: Pick tasks in priority order. Phase 14 (single-instance production deploy gate) is complete.
+>
+> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14c, 14d, or Phase 15** and can be run immediately in parallel.
+> - **Phase 14c** and **Phase 14d** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
 
-| Phase   | Name                                              | Status | Target / Focus                                                                                          |
-| ------- | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| **10**  | Security Hardening Phase 2                        | `[x]`  | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                          |
-| **11**  | Data Integrity & Concurrency                      | `[x]`  | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                        |
-| **12**  | CQRS Read Path                                    | `[x]`  | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                       |
-| **13**  | Production Confidence & Integration Testing       | `[x]`  | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
-| **14**  | Single-Instance Production Gate                   | `[x]`  | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
-| **14b** | Forced Credential Rotation                        | `[x]`  | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
-| **14c** | OpenAPI truthfulness                              | `[ ]`  | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                            |
-| **14d** | Operator HTTP gaps                                | `[ ]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                  |
-| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
-| **16**  | Performance Engineering                           | `[ ]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
-| **17**  | Product Ecosystem & Integrations                  | `[ ]`  | **Features & Payments**: real email, cart recovery, webhooks, Stripe webhook dedup                      |
-| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                      |
+| Phase   | Name                                              | Status | Priority | Target / Focus                                                                                          |
+| ------- | ------------------------------------------------- | ------ | :------: | ------------------------------------------------------------------------------------------------------- |
+| **10**  | Security Hardening Phase 2                        | `[x]`  |    -     | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                          |
+| **11**  | Data Integrity & Concurrency                      | `[x]`  |    -     | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                        |
+| **12**  | CQRS Read Path                                    | `[x]`  |    -     | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                       |
+| **13**  | Production Confidence & Integration Testing       | `[x]`  |    -     | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
+| **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
+| **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
+| **14c** | OpenAPI truthfulness                              | `[ ]`  |  `[P1]`  | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
+| **14d** | Operator HTTP gaps                                | `[ ]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
+| **14e** | Developer Onboarding & 60s Time-to-Value          | `[ ]`  |  `[P0]`  | **Instant DX**: 1-command quickstart (`docker-compose.quickstart.yml`), value matrix, C4 assets, Bruno  |
+| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
+| **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
+| **17a** | Customer Catalog Read Path & Notifications        | `[ ]`  |  `[P1]`  | **Storefront Read**: `@Public()` catalog queries, real email providers, abandoned cart recovery         |
+| **17b** | Real Stripe SDK Integration & Webhooks            | `[ ]`  |  `[P1]`  | **Payments**: Stripe SDK adapter, signed webhook handler, Redis event idempotency deduplication         |
+| **17c** | Commercial Loop Integration (`store-web`)         | `[ ]`  |  `[P1]`  | **Ecosystem**: Storefront checkout -> SAGA -> Admin Dashboard live WebSocket toast verification         |
+| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                      |
 
 ---
 
@@ -69,15 +75,15 @@
 
 ### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
 
-| Task / Item                                                                                                                                        | Phase  | Critical Purpose                                                                         |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10** | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + blocking `npm audit:check` + PR dependency review)                     | **10** | Prevents supply-chain vulnerabilities; high/critical prod deps block merge               |
-| [x] Production error stack masking & PII log audit verified                                                                                        | **10** | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                | **11** | Prevents lost updates during concurrent edits by multiple users or admins                |
-| [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                   | **11** | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
-| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12** | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
-| [x] Admin analytics query module (`/v1/admin/analytics/*`) + indexes | **CQRS read** | Operational dashboard aggregates (UTC, 90-day cap); ADR-0007; not Prometheus |
+| Task / Item                                                                                                                                        | Phase         | Critical Purpose                                                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10**        | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
+| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + blocking `npm audit:check` + PR dependency review)                     | **10**        | Prevents supply-chain vulnerabilities; high/critical prod deps block merge               |
+| [x] Production error stack masking & PII log audit verified                                                                                        | **10**        | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
+| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                | **11**        | Prevents lost updates during concurrent edits by multiple users or admins                |
+| [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                   | **11**        | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
+| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12**        | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
+| [x] Admin analytics query module (`/v1/admin/analytics/*`) + indexes                                                                               | **CQRS read** | Operational dashboard aggregates (UTC, 90-day cap); ADR-0007; not Prometheus             |
 
 | [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
 | [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
@@ -348,6 +354,62 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ---
 
+## ⚡ Phase 14e: Developer Onboarding, Architecture Storytelling & 60s Time-to-Value [P0]
+
+> **Goal**: Reduce developer time-to-first-run from 10 minutes to 60 seconds, provide optional 1-command ecosystem orchestration, and visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
+>
+> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14c/14d and Phase 15)._
+
+### [ ] 1-Command Unified Quickstart (`docker-compose.quickstart.yml`)
+
+**What**: Single Docker Compose file orchestrating PostgreSQL, Redis, the NestJS API, automatic migrations, seeding, and optionally serving the Admin Dashboard SPA if cloned alongside the API.
+
+**Standalone vs Ecosystem Policy**:
+
+- **API is 100% Standalone by Default**: Anyone cloning only `ecommerce-store-api` uses `npm run d:up:dev && npm run start:dev` with zero frontend dependency.
+- **Multi-App Workspace Layout (Optional)**: If cloned as siblings under a parent directory (e.g. `ES/ecommerce-store-api` and `ES/ecommerce-admin-dashboard`), `npm run quickstart` mounts the sibling dashboard.
+- **Graceful Fallback**: If the sibling dashboard directory is missing, `docker-compose.quickstart.yml` falls back gracefully to running the backend + database + Redis + Swagger with a helpful log notice.
+
+**Scope**:
+
+- [ ] Create `docker-compose.quickstart.yml` at repository root.
+- [ ] Configure sibling build context for Admin Dashboard (`ADMIN_DASHBOARD_PATH=${ADMIN_DASHBOARD_PATH:-../ecommerce-admin-dashboard}`).
+- [ ] Add single-command boot script: `npm run quickstart` (or `docker compose -f docker-compose.quickstart.yml up -d`).
+- [ ] Include container healthchecks ensuring the API waits for PostgreSQL and Redis readiness before running migrations and seeding.
+- [ ] Provide reverse proxy routing `/` to the Admin Dashboard and `/api` to the backend when the dashboard profile is active.
+      **Location**: `docker-compose.quickstart.yml`, `package.json`
+
+### [ ] Architecture Value Matrix & "Why Choose This Engine?" in README
+
+**What**: Top-level decision matrix comparing this codebase against basic Node.js tutorials, MedusaJS, and monolithic SaaS platforms.
+**Scope**:
+
+- [ ] Document key guarantees: Zero Overselling (pessimistic lock), SAGA Compensation (automatic refunds/stock release on failure), OCC Update Contracts (HTTP 409 lost update prevention), Audit-Ready Security (JWKS RSA + rotation runbooks).
+- [ ] Embed 30-second elevator pitch for CTOs, Full-Stack Engineers, and E-Commerce Businesses.
+      **Location**: `README.md`, `docs/README.md`
+
+### [ ] Visual Architecture Diagrams & Media Assets
+
+**What**: Export publication-quality SVG/PNG diagrams for the README and docs.
+**Scope**:
+
+- [ ] Export high-res C4 System Context & Container diagrams to `docs/assets/c4-architecture.svg`.
+- [ ] Create annotated SAGA Checkout Sequence diagram (`docs/assets/saga-checkout-sequence.svg`).
+- [ ] Create Swagger UI screenshot with highlighted DDD module tags (`docs/assets/swagger-overview.png`).
+- [ ] (Optional) Record a 3-minute video/GIF architectural walkthrough explaining ACL gateways, SAGA failure compensation, and CQRS read adapters.
+      **Location**: `docs/assets/`, `README.md`
+
+### [ ] Interactive API Playground & Client Collection
+
+**What**: Make trying endpoints zero-friction.
+**Scope**:
+
+- [ ] Provide exportable Bruno and Postman collections in `docs/data/collections/` with pre-configured environment variables (token refresh, admin login).
+- [ ] Enhance Swagger UI documentation with curl request/response examples for all 11 modules.
+      **Location**: `docs/data/collections/`, `src/main.ts`
+
+---
+
 ## 🛡️ Phase 15: Multi-Instance & Distributed Consistency
 
 > **Goal**: Prepare for multi-pod scaling behind a load balancer: distributed consistency for events, jobs, SAGA recovery, and derived search indexes. **Complete before deploying to 2+ application instances.**
@@ -479,11 +541,13 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ## 📦 Phase 17: Product Ecosystem, Webhooks & Real Integrations
 
-> **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, and production Stripe payments with webhook deduplication.
+> **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, production Stripe payments with webhook deduplication, and verifying the end-to-end commercial loop with the customer storefront.
 
 ---
 
-### [ ] Customer Catalog Read Path (Storefront API)
+### Phase 17a: Customer Catalog Read Path & Notifications [P1]
+
+#### [ ] Customer Catalog Read Path (Storefront API)
 
 **What**: Let a `CUSTOMER` (or public shopper) list and get products for shopping without admin catalog permissions.
 
@@ -497,9 +561,7 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 **Location**: `src/modules/products/`, `src/modules/authorization/core/domain/reference-data/`
 
----
-
-### [ ] Real Email and Notification Providers
+#### [ ] Real Email and Notification Providers
 
 **What**: Integrate real email delivery gateways (SendGrid/Resend) behind the existing notification gateway port.
 
@@ -511,9 +573,7 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 **Location**: `src/modules/notifications/secondary-adapters/mail/`
 
----
-
-### [ ] Automated Abandoned Cart Recovery & Shipping Notification Engine
+#### [ ] Automated Abandoned Cart Recovery & Shipping Notification Engine
 
 **What**: Implement background job schedulers that scan for inactive carts and dispatch recovery emails.
 
@@ -525,9 +585,7 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 **Location**: `src/modules/carts/primary-adapters/jobs/`
 
----
-
-### [ ] Outbound Webhook Subscription System
+#### [ ] Outbound Webhook Subscription System
 
 **What**: Build a secure webhook subscription framework that allows external merchant applications to receive real-time order and payment event payloads.
 
@@ -542,9 +600,12 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ---
 
-### [ ] Real Stripe Integration & Webhook Idempotency
+### Phase 17b: Real Stripe SDK Integration & Webhook Idempotency [P1]
+
+#### [ ] Real Stripe Integration & Webhook Idempotency
 
 **What**: Replace mock payment gateway with production Stripe SDK integration and explicit webhook event deduplication.
+_(Note: End-to-end commercial loop and WebSocket notifications function with the built-in mock payment adapter; Phase 17b provides production payment gateway hardening)._
 
 **Scope**:
 
@@ -553,6 +614,25 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 - [ ] **Stripe Webhook Idempotency**: Persist processed `event.id` values to Redis/DB with TTL to prevent duplicate processing of replayed webhook events.
 
 **Location**: `src/modules/payments/secondary-adapters/stripe/`
+
+---
+
+### Phase 17c: End-to-End Storefront Commercial Loop (`ecommerce-store-web`) [P1]
+
+#### [ ] Commercial Loop Verification & Cross-Repo Push
+
+**What**: Connect customer checkout on `ecommerce-store-web` to the API SAGA and push live WebSocket notifications to `ecommerce-admin-dashboard`.
+
+**Scope**:
+
+- [ ] Document and verify the 4-step cross-repo loop:
+  1. Customer adds item to cart and executes checkout on Storefront (`ecommerce-store-web`).
+  2. API locks inventory and executes SAGA orchestration with BullMQ.
+  3. API WebSocket gateway broadcasts `orders.created` event.
+  4. Admin Dashboard (`ecommerce-admin-dashboard`) displays real-time toast and updates order table live.
+- [ ] Add cross-repo integration runbook: `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`.
+
+**Location**: `src/modules/orders/`, `src/modules/notifications/`, `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`
 
 ---
 
