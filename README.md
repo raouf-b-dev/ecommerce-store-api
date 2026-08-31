@@ -13,7 +13,7 @@
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a>
 </p>
 
-> NestJS modular-monolith e-commerce API built with Domain-Driven Design and Hexagonal Architecture.
+> NestJS modular-monolith ecommerce API with compensating checkout, inventory locking, RBAC, and architecture-enforced module boundaries.
 
 ## Table of Contents
 
@@ -32,9 +32,9 @@
 
 ## What this is
 
-A **modular monolith** e-commerce backend: ten bounded contexts under `src/modules/`, NestJS, TypeScript, PostgreSQL, Redis Stack, and BullMQ. Contexts communicate only through ACL gateways and domain events.
+A NestJS ecommerce backend structured as a modular monolith. Eleven modules under `src/modules/` communicate through ACL gateways and domain events, not by importing each other's internals.
 
-It is a **reference implementation** you can run, test, and read chapter by chapter in [`docs/`](docs/README.md). Checkout SAGA, CQRS reads, concurrency controls, auth/RBAC, and ops foundations are implemented with tests and linked runbooks.
+The codebase includes checkout SAGA with compensation, concurrency controls, auth/RBAC, CQRS read adapters, and CI covering unit, integration, e2e, and architecture tests. Design rationale and runbooks live in [`docs/`](docs/README.md).
 
 **Current limits**
 
@@ -86,7 +86,7 @@ First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LO
 | Endpoint        | URL                                                                  |
 | :-------------- | :------------------------------------------------------------------- |
 | API             | `http://localhost:<PORT>`                                            |
-| Swagger         | `http://localhost:<PORT>/api`                                        |
+| Swagger         | `http://localhost:<PORT>/api/docs`                                   |
 | Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md)         |
 | Local env setup | [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) |
 
@@ -134,7 +134,7 @@ Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`do
 
 ## Architecture
 
-Ten bounded contexts live in one deployable unit. Orders orchestrate checkout through ACL gateways and BullMQ jobs. Authentication reaches Identity and Authorization through ACL gateways. Full C4, ACL maps, SAGA sequences, and infrastructure wiring live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
+Eleven modules live in one deployable unit. Orders orchestrate checkout through ACL gateways and BullMQ jobs. Authentication reaches Identity and Authorization through ACL gateways. Analytics is a read-only composition module (no write aggregates). Full C4, ACL maps, SAGA sequences, and infrastructure wiring live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
 
 ```mermaid
 graph TD
@@ -150,6 +150,7 @@ graph TD
         API --> Carts["Carts"]
         API --> Payments["Payments"]
         API --> Inventory["Inventory"]
+        API --> Analytics["Analytics"]
         API --> Health["Health"]
         WS --> Notifications["Notifications"]
         Auth -->|ACL| Identity
@@ -211,7 +212,7 @@ Start with the full index: [`docs/README.md`](docs/README.md). These chapters ar
 
 Full catalog with locations: [`docs/FEATURES.md`](docs/FEATURES.md).
 
-- **Modular monolith** with ten bounded contexts and ACL gateway isolation
+- **Modular monolith** with eleven modules and ACL gateway isolation
 - **Checkout SAGA** with BullMQ orchestration and compensation on failure
 - **CQRS read path** with JOIN query adapters across core modules
 - **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation
