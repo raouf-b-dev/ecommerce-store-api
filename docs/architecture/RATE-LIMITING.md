@@ -138,7 +138,7 @@ Not all endpoints carry equal risk. A product listing endpoint can tolerate high
 ### 4.3 Implementation Pattern (NestJS)
 
 ```typescript
-// Global: only the default profile — Nest applies every forRoot named
+// Global: only the default profile: Nest applies every forRoot named
 // throttler to all routes, so do not register a second "strict" profile here.
 ThrottlerModule.forRoot({
   throttlers: [

@@ -47,7 +47,7 @@ We needed a place for **cross-table read aggregates** without:
 ## 3. Consequences
 
 - **Positive**: One overview round-trip shape; stable ports for future MVs; clear Grafana vs in-app split.
-- **Trade-off**: Query adapter couples to foreign table schemas (documented pragmatic monolith compromise). Microservice extraction would replace the adapter with batched reads or a projected store—ports stay stable.
+- **Trade-off**: Query adapter couples to foreign table schemas (documented pragmatic monolith compromise). Microservice extraction would replace the adapter with batched reads or a projected store - ports stay stable.
 - **Note**: [ARCHITECTURE-PRINCIPLES.md](../ARCHITECTURE-PRINCIPLES.md) §4 “no cross-domain JOINs” applies to the **write** path; this ADR + CQRS.md govern analytics reads.
 - **Revenue statuses**: Gross/net include `CAPTURED`, `COMPLETED`, `PARTIALLY_REFUNDED`, and `REFUNDED` (net still subtracts `refunded_amount`). See [domains/ANALYTICS.md](../domains/ANALYTICS.md).
 

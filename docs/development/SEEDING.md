@@ -56,7 +56,7 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 | :---------------------- | :----------------------- | :--------------- | :------------------------------------------------------------------------ |
 | **Super Administrator** | `superadmin@store.local` | `SuperAdmin123!` | All permissions (including `access_admin`, `manage_roles`).   |
 | **Administrator**       | `admin@store.local`      | `Admin123!`      | Full admin permissions except `manage_roles` (includes `access_admin`). |
-| **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; no `access_admin` (cannot use admin SPA). |
+| **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; no `access_admin`. |
 
 ### 2. Seeded Shipping Address (for `customer@store.local`)
 
@@ -124,7 +124,7 @@ After orders, the **payments** BC seed creates `CAPTURED` payment rows for paid 
 | Confirmed Electronics Order | `now − 6 days` | CAPTURED |
 | Shipped Apparel Order | `now − 3 days` | CAPTURED |
 | Delivered Home & Books Order | `now` (today noon UTC) | CAPTURED + **$20** completed partial refund (`PARTIALLY_REFUNDED`) |
-| Pending Payment Order | — | No payment row |
+| Pending Payment Order | - | No payment row |
 
 Re-seed refreshes payment `created_at` / `completed_at` and order `"createdAt"` so dashboard KPIs stay in range.
 

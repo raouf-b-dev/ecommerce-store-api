@@ -33,12 +33,12 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 | **Payments** | Generic | Payment intents and gateway abstraction. Provider adapter is a mock today. |
 | **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
 | **Notifications** | Generic | Real-time and background alerts. |
-| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see ADR-0007. |
+| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
 | **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
 
 ### Bounded Contexts and Context Mapping
 
-Each NestJS module is a bounded context. Context mapping keeps boundaries explicit and avoids a tangled dependency graph.
+Each NestJS module under `src/modules/` is treated as a context. Health is an ops module (probes). Analytics is a query-only composition module, not a write aggregate. Context mapping keeps write-side boundaries explicit and avoids a tangled dependency graph.
 
 ```mermaid
 graph TD
@@ -92,7 +92,7 @@ graph TD
  Products -.->|"SQL read composition"| Analytics
 ```
 
-> **Analytics (ADR-0007):** Query-only composition BC. Reads Orders/Payments/Inventory/Products tables via Postgres query adapters — no ACL gateways and no write aggregates.
+> **Analytics:** Query-only composition BC. Reads Orders/Payments/Inventory/Products tables via Postgres query adapters: no ACL gateways and no write aggregates. Details: [domains/ANALYTICS.md](domains/ANALYTICS.md).
 
 > **Anti-Corruption Layer (ACL):** Downstream contexts define their own ports (gateway interfaces) with only the data they need. Adapters in the secondary layer translate upstream models into the downstream domain language. If Identity changes its user entity, only the Orders `ModuleUserGateway` adapter needs updating, not Orders use cases.
 

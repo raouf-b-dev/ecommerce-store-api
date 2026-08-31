@@ -24,7 +24,7 @@ Technical reference for this repository, organised by layer.
 ### Domain Architecture (System-Specific Domain Design)
 
 - [domains/INVENTORY.md](architecture/domains/INVENTORY.md): Inventory domain architecture, aggregate boundaries, reservation lifecycle, consistency models, and invariants.
-- [domains/ANALYTICS.md](architecture/domains/ANALYTICS.md): Admin analytics read models — revenue definition, UTC periods, permissions (see also ADR-0007).
+- [domains/ANALYTICS.md](architecture/domains/ANALYTICS.md): Admin analytics read models: revenue definition, UTC periods, permissions.
 
 ---
 
