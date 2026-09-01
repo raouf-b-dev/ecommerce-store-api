@@ -144,7 +144,7 @@ export class OrdersController {
   @ApiOperation({
     summary: 'Confirm a pending order',
     description:
-      'Confirms a pending order. COD orders require manual phone call confirmation.',
+      'Confirms a pending order after payment authorization (mock gateway or Stripe payment intent checkout flow).',
   })
   @ApiResponse({
     status: 200,

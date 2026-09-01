@@ -26,10 +26,11 @@ export class ProductResponseDto {
   @ApiPropertyOptional({
     example: 'https://example.com/laptop.jpg',
     nullable: true,
+    type: String,
   })
   imageUrl?: string | null;
 
-  @ApiPropertyOptional({ example: 1, nullable: true })
+  @ApiPropertyOptional({ example: 1, nullable: true, type: Number })
   categoryId?: number | null;
 
   @ApiProperty({ example: true })
@@ -65,10 +66,11 @@ export class ProductListItemResponseDto {
   @ApiPropertyOptional({
     example: 'https://example.com/laptop.jpg',
     nullable: true,
+    type: String,
   })
   imageUrl!: string | null;
 
-  @ApiPropertyOptional({ example: 1, nullable: true })
+  @ApiPropertyOptional({ example: 1, nullable: true, type: Number })
   categoryId!: number | null;
 
   @ApiProperty({ example: true })
@@ -83,6 +85,7 @@ export class ProductDetailResponseDto extends ProductListItemResponseDto {
   @ApiPropertyOptional({
     example: 'High-end gaming laptop',
     nullable: true,
+    type: String,
   })
   description!: string | null;
 

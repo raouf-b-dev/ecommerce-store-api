@@ -89,7 +89,10 @@ export class AddressesController {
   @Patch(':id/addresses/:addressId/set-default')
   @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Set address as default' })
-  @ApiResponse({ status: 200 })
+  @ApiResponse({
+    status: 200,
+    description: 'Default address updated (empty body)',
+  })
   async setDefaultAddress(
     @Param('id', ParseIntPipe) id: number,
     @Param('addressId', ParseIntPipe) addressId: number,

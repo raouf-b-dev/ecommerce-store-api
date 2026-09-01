@@ -215,6 +215,20 @@ Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on N
 
 **Location**: `src/modules/health/`
 
+### OpenAPI Truthfulness
+
+Swagger at `/api/docs` is the published contract. Decorators on controllers and DTOs must match runtime handler shapes so generated clients stay accurate.
+
+- **`npm run generate:openapi`**: bootstraps `AppModule`, writes `openapi.json` (gitignored) via `SwaggerModule.createDocument()`
+- **`npm run audit:openapi`**: generates the spec and runs `scripts/audit-openapi.js` (nullable scalars without `type`, missing 200/201 schemas, empty summaries, nullable prose mismatches)
+- **Shared config**: `src/infrastructure/swagger/swagger-document.config.ts` (used by `main.ts` and the generate script)
+- **Nullable responses**: OAS 3.0 `nullable` + `allOf` via `nullableResponseSchema()` in `src/infrastructure/swagger/nullable-response.schema.ts` (requires `@ApiExtraModels()` on handlers)
+- **SWC rule**: every `@ApiProperty` / `@ApiPropertyOptional` on scalar fields needs an explicit `type`, or clients get `object`
+
+Stripe webhook stays `@ApiExcludeEndpoint()` (not in the public spec).
+
+**Location**: `scripts/generate-openapi-spec.ts`, `scripts/audit-openapi.js`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`
+
 ### Backup, Restore, and Smoke
 
 Ops scripts: `db:backup`, `db:restore`, `db:restore:drill`, `smoke-test`. Runbook: [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md).
@@ -317,6 +331,8 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 | `npm run test:redis:chaos` | Redis reconnect / degradation |
 | `npm run smoke-test`       | Live-process smoke probes     |
 | `npm run test:ci`          | CI mode                       |
+| `npm run generate:openapi` | Write `openapi.json` from decorators |
+| `npm run audit:openapi`    | Generate spec + contract audit |
 
 ### Database Migrations
 

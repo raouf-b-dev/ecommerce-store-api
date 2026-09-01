@@ -12,9 +12,13 @@ import {
   ApiResponse,
   ApiOperation,
   ApiBearerAuth,
+  ApiOkResponse,
+  ApiExtraModels,
+  ApiBody,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { Public } from '../../guards/decorators/public.decorator';
+import { nullableResponseSchema } from '../../infrastructure/swagger/nullable-response.schema';
 import { AdjustStockDto } from './primary-adapters/dto/adjust-stock.dto';
 import { ReserveStockDto } from './primary-adapters/dto/reserve-stock.dto';
 import {
@@ -22,6 +26,9 @@ import {
   InventoryStockResponseDto,
   PaginatedInventoryResponseDto,
 } from './primary-adapters/dto/inventory-response.dto';
+import { CheckStockResponseDto } from './primary-adapters/dto/check-stock-response.dto';
+import { BulkCheckStockItemDto } from './primary-adapters/dto/bulk-check-stock.dto';
+import { ReservationResponseDto } from './primary-adapters/dto/reservation-response.dto';
 import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
 import { ListInventoryQueryDto } from './primary-adapters/dto/list-inventory-query.dto';
 import { GetInventoryUseCase } from './core/application/usecases/get-inventory/get-inventory.usecase';
@@ -58,15 +65,15 @@ export class InventoryController {
 
   @Get('products/:productId')
   @Public()
+  @ApiExtraModels(InventoryListItemResponseDto)
   @ApiOperation({
     summary: 'Get inventory details for a product',
     description:
       'Returns inventory for the product, or `null` (HTTP 200) when no inventory row exists yet.',
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'Inventory detail, or null when none exists for the product',
-    type: InventoryListItemResponseDto,
+    schema: nullableResponseSchema(InventoryListItemResponseDto),
   })
   async getInventory(@Param('productId', ParseIntPipe) productId: number) {
     return await this.getInventoryUseCase.execute(productId);
@@ -91,7 +98,10 @@ export class InventoryController {
   @ApiBearerAuth()
   @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Reserve stock for an order (temporary hold)' })
-  @ApiResponse({ status: 200, description: 'Stock reserved successfully' })
+  @ApiOkResponse({
+    type: ReservationResponseDto,
+    description: 'Stock reserved successfully',
+  })
   async reserveStock(@Body() dto: ReserveStockDto) {
     return await this.reserveStockUseCase.execute(dto);
   }
@@ -100,7 +110,10 @@ export class InventoryController {
   @ApiBearerAuth()
   @RequirePermissions('manage_inventory')
   @ApiOperation({ summary: 'Release reserved stock (if order cancelled)' })
-  @ApiResponse({ status: 200, description: 'Stock released successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Stock released successfully (empty body)',
+  })
   async releaseStock(
     @Param('reservationId', ParseIntPipe) reservationId: number,
   ) {
@@ -114,7 +127,10 @@ export class InventoryController {
     description:
       'Returns availability. Missing inventory is treated as unavailable (qty 0), not an error.',
   })
-  @ApiResponse({ status: 200, description: 'Stock availability status' })
+  @ApiOkResponse({
+    type: CheckStockResponseDto,
+    description: 'Stock availability status',
+  })
   async checkStock(
     @Param('productId', ParseIntPipe) productId: number,
     @Query('quantity') quantity?: number,
@@ -128,10 +144,12 @@ export class InventoryController {
   @Post('check/bulk')
   @Public()
   @ApiOperation({ summary: 'Check stock for multiple products' })
-  @ApiResponse({ status: 200, description: 'Bulk stock availability status' })
-  async bulkCheckStock(
-    @Body() dto: { productId: number; quantity?: number }[],
-  ) {
+  @ApiBody({ type: [BulkCheckStockItemDto] })
+  @ApiOkResponse({
+    type: [CheckStockResponseDto],
+    description: 'Bulk stock availability status',
+  })
+  async bulkCheckStock(@Body() dto: BulkCheckStockItemDto[]) {
     return await this.bulkCheckStockUseCase.execute(dto);
   }
 
@@ -139,7 +157,11 @@ export class InventoryController {
   @ApiBearerAuth()
   @RequirePermissions('view_all_inventory')
   @ApiOperation({ summary: 'List products with low stock' })
-  @ApiResponse({ status: 200, type: [InventoryStockResponseDto] })
+  @ApiOkResponse({
+    type: [InventoryStockResponseDto],
+    description:
+      'Inventory primitives for rows at or below the low-stock threshold',
+  })
   async listLowStock(@Query() query: LowStockQueryDto) {
     return await this.listLowStockUseCase.execute(query);
   }

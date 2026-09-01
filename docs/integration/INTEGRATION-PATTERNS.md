@@ -196,7 +196,7 @@ Checkout flow: Validate Cart → Reserve Stock → Process Payment (gateway port
 Compensation: Release Stock → Refund Payment (if paid) → Cancel Order
 ```
 
-`PaymentMethodType` is Stripe-only today. COD is not an active checkout path.
+`PaymentMethodType` is Stripe-only.
 
 The `CheckoutFailureListener` monitors BullMQ job failures and triggers compensation automatically.
 

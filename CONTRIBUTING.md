@@ -119,7 +119,7 @@ This project follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture
 
 - **Core** (`core/domain/`): Pure business logic: entities, value objects, repository interfaces. Zero external dependencies.
 - **Core** (`core/application/`): Use cases that orchestrate domain logic. Depends only on Domain.
-- **Primary Adapters** (`primary-adapters/`): Driving adapters: DTOs, job handlers, event listeners. NestJS Controllers live at the module root and inject Use Cases directly (no intermediate controller classes).
+- **Primary Adapters** (`primary-adapters/`): Driving adapters: DTOs, job handlers, event listeners. NestJS Controllers live at the module root and inject Use Cases directly (no intermediate controller classes). When changing controllers or Swagger DTOs, run `npm run audit:openapi` so the published spec stays aligned with handlers.
 - **Secondary Adapters** (`secondary-adapters/`): Driven adapters: repository implementations, ORM entities, mappers, external service integrations.
 - **Shared Kernel** (`src/shared-kernel/`): Cross-cutting infrastructure (database, Redis, jobs, error types, interceptors).
 
@@ -136,6 +136,9 @@ npm run test:watch
 
 # Check coverage
 npm run test:cov
+
+# After controller or Swagger DTO changes
+npm run audit:openapi
 ```
 
 ### Test Location

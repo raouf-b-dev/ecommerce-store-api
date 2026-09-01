@@ -93,6 +93,7 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 - ✅ Pessimistic Stock Reservation (`SELECT ... FOR UPDATE`)
 - ✅ Idempotency (`@Idempotent()` Redis Interceptor)
 - ✅ API Versioning (URI-based, NestJS `VersioningType.URI`)
+- ✅ OpenAPI Truthfulness (`npm run audit:openapi`, handler-aligned Swagger decorators)
 - ✅ Prometheus Metrics (`GET /metrics`, API-key protected)
 - ✅ OpenTelemetry Distributed Tracing (OTLP gRPC → Tempo)
 - ✅ Grafana Monitoring Stack (Loki, Tempo, Dashboards)

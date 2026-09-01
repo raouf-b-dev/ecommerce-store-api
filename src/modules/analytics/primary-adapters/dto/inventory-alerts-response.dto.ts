@@ -1,19 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class InventoryAlertItemDto {
-  @ApiProperty()
+  @ApiProperty({ type: Number, example: 1 })
   productId!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: String, example: 'Wireless Headphones' })
   productTitle!: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'SKU-001' })
   sku!: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number, example: 2 })
   availableQuantity!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: Number, example: 10 })
   lowStockThreshold!: number;
 }
 

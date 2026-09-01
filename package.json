@@ -105,6 +105,8 @@
     "seed:admin": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed-admin.ts",
     "db:seed": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed.ts",
     "db:seed:auth": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register scripts/seed.ts --auth-only",
+    "generate:openapi": "cross-env NODE_ENV=test ts-node -r tsconfig-paths/register scripts/generate-openapi-spec.ts",
+    "audit:openapi": "npm run generate:openapi && node scripts/audit-openapi.js",
     "db:backup": "node scripts/db-backup.js",
     "db:restore": "node scripts/db-restore.js",
     "db:restore:drill": "node scripts/db-restore-drill.js --yes",
