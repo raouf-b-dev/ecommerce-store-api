@@ -53,11 +53,15 @@ export class RolesController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a custom role' })
+  @ApiResponse({ status: 201, type: RoleResponseDto })
   async create(@Body() dto: CreateRoleDto) {
     return this.createRoleUseCase.execute(dto);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a custom role' })
+  @ApiResponse({ status: 200, type: RoleResponseDto })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRoleDto,
@@ -66,6 +70,8 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a custom role' })
+  @ApiResponse({ status: 204, description: 'Role deleted' })
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.deleteRoleUseCase.execute(id);
   }

@@ -1,7 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { RequirePermissions } from './primary-adapter/decorators/require-permissions.decorator';
 import { FindAllPermissionsUseCase } from './core/application/usecases/permissions/find-all-permissions/find-all-permissions.usecase';
+import { PermissionResponseDto } from './primary-adapter/dto/permission-response.dto';
 
 @ApiTags('Permissions')
 @ApiBearerAuth()
@@ -13,6 +19,8 @@ export class PermissionsController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'List all permission definitions' })
+  @ApiOkResponse({ type: [PermissionResponseDto] })
   async findAll() {
     return this.findAllPermissionsUseCase.execute();
   }

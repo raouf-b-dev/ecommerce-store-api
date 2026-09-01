@@ -60,45 +60,65 @@ export class PaginatedInventoryResponseDto {
  * Does not include product title/SKU.
  */
 export class InventoryStockResponseDto {
-  @ApiProperty({ example: 1, description: 'Inventory record ID' })
-  id!: number;
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Inventory record ID',
+    nullable: true,
+    type: Number,
+  })
+  id!: number | null;
 
-  @ApiProperty({ example: 1, description: 'Product ID' })
+  @ApiProperty({ example: 1, description: 'Product ID', type: Number })
   productId!: number;
 
-  @ApiProperty({ example: 150, description: 'Available quantity' })
+  @ApiProperty({
+    example: 150,
+    description: 'Available quantity',
+    type: Number,
+  })
   availableQuantity!: number;
 
-  @ApiProperty({ example: 10, description: 'Reserved quantity' })
+  @ApiProperty({ example: 10, description: 'Reserved quantity', type: Number })
   reservedQuantity!: number;
 
   @ApiProperty({
     example: 160,
     description: 'Total quantity (available + reserved)',
+    type: Number,
   })
   totalQuantity!: number;
 
-  @ApiProperty({ example: 10, description: 'Low stock threshold' })
+  @ApiProperty({
+    example: 10,
+    description: 'Low stock threshold',
+    type: Number,
+  })
   lowStockThreshold!: number;
 
   @ApiPropertyOptional({
     example: '2025-10-31T10:00:00.000Z',
     description: 'Last restock date',
     nullable: true,
+    type: String,
+    format: 'date-time',
   })
-  lastRestockDate?: Date | null;
+  lastRestockDate!: string | null;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00.000Z',
     description: 'Created at',
+    type: String,
+    format: 'date-time',
   })
-  createdAt!: Date;
+  createdAt!: string;
 
   @ApiProperty({
     example: '2025-10-31T12:30:00.000Z',
     description: 'Last update date',
+    type: String,
+    format: 'date-time',
   })
-  updatedAt!: Date;
+  updatedAt!: string;
 }
 
 /**

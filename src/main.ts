@@ -3,7 +3,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { EnvConfigService } from './config/env-config.service';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import { buildSwaggerDocumentConfig } from './infrastructure/swagger/swagger-document.config';
 import { ResultInterceptor } from './interceptors/result.interceptor';
 import { SanitizeInterceptor } from './interceptors/sanitize.interceptor';
 import { RedisIoAdapter } from './infrastructure/websocket/adapters/redis-io.adapter';
@@ -60,14 +61,10 @@ async function bootstrap() {
   });
 
   if (nodeEnv !== 'production') {
-    const swaggerConfig = new DocumentBuilder()
-      .setTitle('E-Commerce API')
-      .setDescription('API documentation for E-Commerce API modules')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    const document = SwaggerModule.createDocument(
+      app,
+      buildSwaggerDocumentConfig(),
+    );
     SwaggerModule.setup('api/docs', app, document);
 
     Logger.log(

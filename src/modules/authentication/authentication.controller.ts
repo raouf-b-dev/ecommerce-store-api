@@ -13,12 +13,16 @@ import {
   ApiOperation,
   ApiResponse,
   ApiOkResponse,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { LoginDto } from './primary-adapters/dto/login.dto';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { RefreshTokenDto } from './primary-adapters/dto/refresh-token.dto';
 import { ChangePasswordDto } from './primary-adapters/dto/change-password.dto';
 import { AuthTokensResponseDto } from './primary-adapters/dto/auth-tokens-response.dto';
+import { RegisterResponseDto } from './primary-adapters/dto/register-response.dto';
+import { JwksResponseDto } from './primary-adapters/dto/jwks-response.dto';
+import { REFRESH_COOKIE_NAME } from './primary-adapters/interceptors/refresh-token-cookie.interceptor';
 import { LoginUserUseCase } from './core/application/usecases/login-user/login-user.usecase';
 import { RegisterUserUseCase } from './core/application/usecases/register-user/register-user.usecase';
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
@@ -54,7 +58,7 @@ export class AuthenticationController {
   @Public()
   @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 201, type: RegisterResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async register(@Body() dto: RegisterDto) {
     return this.registerUseCase.execute(dto);
@@ -66,7 +70,14 @@ export class AuthenticationController {
   @ApiOperation({ summary: 'Login user' })
   @ApiOkResponse({
     type: AuthTokensResponseDto,
-    description: 'User successfully logged in',
+    description:
+      'User successfully logged in. Also sets an HttpOnly `refresh_token` cookie for browser clients.',
+    headers: {
+      'Set-Cookie': {
+        description: `HttpOnly ${REFRESH_COOKIE_NAME} cookie (path-scoped to /v1/authentication)`,
+        schema: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @HttpCode(HttpStatus.OK)
@@ -79,10 +90,27 @@ export class AuthenticationController {
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.OK)
   @Throttle(AUTH_REFRESH_THROTTLE)
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      `Reads the refresh token from the HttpOnly \`${REFRESH_COOKIE_NAME}\` cookie when present. ` +
+      'JSON body `refreshToken` is an optional fallback for non-browser API clients.',
+  })
+  @ApiHeader({
+    name: 'Cookie',
+    required: false,
+    description: `HttpOnly ${REFRESH_COOKIE_NAME} cookie (preferred transport)`,
+  })
   @ApiOkResponse({
     type: AuthTokensResponseDto,
-    description: 'Token successfully refreshed',
+    description:
+      'Token successfully refreshed. Rotates the HttpOnly refresh cookie when the request used cookie transport.',
+    headers: {
+      'Set-Cookie': {
+        description: `Updated HttpOnly ${REFRESH_COOKIE_NAME} cookie`,
+        schema: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refresh(
@@ -95,8 +123,22 @@ export class AuthenticationController {
   @Post('logout')
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Logout current session' })
-  @ApiResponse({ status: 204, description: 'Successfully logged out' })
+  @ApiOperation({
+    summary: 'Logout current session',
+    description:
+      `Revokes the session identified by the HttpOnly \`${REFRESH_COOKIE_NAME}\` cookie ` +
+      'or optional JSON body `refreshToken`. Clears the cookie on success.',
+  })
+  @ApiHeader({
+    name: 'Cookie',
+    required: false,
+    description: `HttpOnly ${REFRESH_COOKIE_NAME} cookie (preferred transport)`,
+  })
+  @ApiResponse({
+    status: 204,
+    description:
+      'Successfully logged out (no response body). Clears the refresh cookie.',
+  })
   async logout(
     @RefreshToken() refreshToken: string,
     @Body() _dto: RefreshTokenDto,
@@ -107,10 +149,21 @@ export class AuthenticationController {
   @Post('logout-all')
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Logout all sessions for user' })
+  @ApiOperation({
+    summary: 'Logout all sessions for user',
+    description:
+      `Revokes every session for the user identified by the HttpOnly \`${REFRESH_COOKIE_NAME}\` cookie ` +
+      'or optional JSON body `refreshToken`. Clears the cookie on success.',
+  })
+  @ApiHeader({
+    name: 'Cookie',
+    required: false,
+    description: `HttpOnly ${REFRESH_COOKIE_NAME} cookie (preferred transport)`,
+  })
   @ApiResponse({
     status: 204,
-    description: 'Successfully logged out all sessions',
+    description:
+      'Successfully logged out all sessions (no response body). Clears the refresh cookie.',
   })
   async logoutAll(
     @RefreshToken() refreshToken: string,
@@ -125,7 +178,14 @@ export class AuthenticationController {
   @ApiOperation({ summary: 'Change password for the authenticated user' })
   @ApiOkResponse({
     type: AuthTokensResponseDto,
-    description: 'Password changed; new tokens issued',
+    description:
+      'Password changed; new tokens issued and HttpOnly refresh cookie rotated.',
+    headers: {
+      'Set-Cookie': {
+        description: `Updated HttpOnly ${REFRESH_COOKIE_NAME} cookie`,
+        schema: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({
     status: 400,
@@ -147,8 +207,8 @@ export class AuthenticationController {
   @Get('.well-known/jwks.json')
   @Public()
   @ApiOperation({ summary: 'Get JWKS (JSON Web Key Set)' })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
+    type: JwksResponseDto,
     description: 'Returns public keys for JWT verification',
   })
   getJwks() {
