@@ -323,8 +323,6 @@ flowchart TD
 
 `PaymentMethodType` currently includes **Stripe only**. The Stripe gateway adapter is a **mock** suitable for local and CI checkout proofs. A real provider SDK is not wired yet.
 
-Leftover COD-oriented use cases or Swagger text may still exist in the tree. They are not part of the active checkout payment-method enum. Treat them as legacy until removed or reintroduced on the roadmap.
-
 ## Payment Event Handling (Async)
 
 Orders can react to payment-completed jobs on the payment-events queue.
