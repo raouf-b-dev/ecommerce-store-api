@@ -177,8 +177,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
       // Header list query: JOIN orders -> users + aggregate item counts to avoid 1:N pagination duplication
       const qb = this.orderRepo.createQueryBuilder('order');
       applyOrderListFilters(qb, listFilters, { joinUser: true });
-      qb
-        .leftJoin('order.items', 'item')
+      qb.leftJoin('order.items', 'item')
         .select([
           'order.id AS "id"',
           'order.userId AS "userId"',
