@@ -113,6 +113,7 @@ npm test                      # Unit tests (domain, use cases, adapters)
 npm run test:integration      # Real Postgres / Redis (Testcontainers)
 npm run test:e2e              # Full-app HTTP flows (auth, checkout, IDOR, idempotency)
 npm run test:arch             # Hexagonal and module boundary rules
+npm run audit:openapi         # Swagger contract matches handlers (run after controller/DTO changes)
 npm run test:redis:chaos      # Redis reconnect and degradation behavior
 npm run smoke-test            # Live-process probes (health, auth) when API is running
 npm run test:cov              # Coverage report
@@ -124,6 +125,7 @@ npm run test:cov              # Coverage report
 | Integration  | Write repositories, cache-aside, CQRS query adapters against real databases |
 | E2E          | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay           |
 | Architecture | No illegal imports across bounded contexts                                  |
+| OpenAPI      | Published spec matches handler DTOs; no nullable scalars typed as `object`  |
 | Smoke        | Liveness, readiness, and authenticated endpoints on a running process       |
 
 Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`docs/infrastructure/cicd/PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md).
@@ -217,7 +219,7 @@ Full catalog with locations: [`docs/FEATURES.md`](docs/FEATURES.md).
 - **CQRS read path** with JOIN query adapters across core modules
 - **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation
 - **Auth and security**: RSA JWT (JWKS), refresh rotation, RBAC, user-scoped rate limiting, HTTP idempotency on checkout
-- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, full CI fan-out (unit, integration, E2E, arch, restore drill)
+- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, OpenAPI contract audit, full CI fan-out (unit, integration, E2E, arch, restore drill)
 
 ---
 
