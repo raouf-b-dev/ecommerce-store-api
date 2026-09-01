@@ -37,6 +37,7 @@
 | **12**  | CQRS Read Path                              | ✅ Done | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                                                                                                                                      | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/`                             |
 | **12b** | CI/CD Pipeline (GitHub Actions)             | ✅ Done | Fan-out/fan-in CI (`lint`, `typecheck`, `unit`, `arch`, `audit`, `build`, `integration`, `e2e`, `smoke`) · **CI Status Check** aggregator · `prepare-test-env` composite action · blocking `npm audit --omit=dev --audit-level=high` · PR dependency review · Docker validate (PR) · GHCR publish (`master` + semver tags) · `scripts/smoke-test.js` · `start:test` · liveness/readiness probes · Bitbucket Pipelines removed · `PROJECT-PIPELINE.md` updated                                                  | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
 | **13**  | Production Confidence & Integration Testing | ✅ Done | Typed gateway/repo mocks & testing barrels · Domain entity GWT specs + `OrderWorkflow` / shipping-address · Real-DB repository integration + concurrent checkout lock proof · Atomic OCC `save` predicates (Product/Order/User/Cart) · E2E auth lifecycle, IDOR, checkout SAGA, CQRS shapes · HTTP cart/payment/refresh-cookie contracts · HTTP-only E2E · Checkout idempotency E2E · E2E suite quality + optional business specs · Domain test polish (dead VO removal, `order-items`/`payment-status` specs) | `src/modules/*/core/domain/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/testing/`, `src/testing/`, `test/e2e/`, `docs/testing/` |
+| **14c** | OpenAPI Truthfulness                      | ✅ Done | `generate:openapi` + `audit:openapi` tooling · explicit scalar `@ApiProperty` types (SWC) · handler-aligned response DTOs · OAS 3.0 nullable `allOf` schemas · auth cookie-first docs · health probe Swagger · stale COD copy removed                                                                                                                                                                                                                                                                    | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
 
 > **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14. Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`.
 
@@ -46,8 +47,8 @@
 
 > **Execution guide**: Pick tasks in priority order. Phase 14 (single-instance production deploy gate) is complete.
 >
-> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14c, 14d, or Phase 15** and can be run immediately in parallel.
-> - **Phase 14c** and **Phase 14d** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
+> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14d or Phase 15** and can be run immediately in parallel.
+> - **Phase 14d** does not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
 
 | Phase   | Name                                              | Status | Priority | Target / Focus                                                                                          |
 | ------- | ------------------------------------------------- | ------ | :------: | ------------------------------------------------------------------------------------------------------- |
@@ -57,7 +58,7 @@
 | **13**  | Production Confidence & Integration Testing       | `[x]`  |    -     | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
 | **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
 | **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
-| **14c** | OpenAPI truthfulness                              | `[ ]`  |  `[P1]`  | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
+| **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
 | **14d** | Operator HTTP gaps                                | `[ ]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
 | **14e** | Developer Onboarding & 60s Time-to-Value          | `[ ]`  |  `[P0]`  | **Instant DX**: 1-command quickstart (`docker-compose.quickstart.yml`), value matrix, C4 assets, Bruno  |
 | **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
@@ -216,7 +217,7 @@
 - [x] Implement `/health/liveness` returning process viability.
 - [x] Implement `/health/readiness` checking required dependencies (PostgreSQL only: Redis degradation is reported via `/health` and metrics).
 - [x] Expose probes in HealthController; Dockerfile uses liveness, Compose prod uses readiness.
-- [ ] Update Swagger documentation for probe endpoints.
+- [x] Update Swagger documentation for probe endpoints.
 
 **Location**: `src/modules/health/`
 
@@ -321,18 +322,19 @@
 
 **Scope:**
 
-- [ ] Nullable `@ApiPropertyOptional` / `@ApiProperty` without an explicit `type` (generated clients get `object` / `Record<string, never>` instead of string/number)
-- [ ] Handler return vs documented DTO (example found: low-stock documented as `InventoryStockResponseDto` while the handler returns `IInventory` primitives)
-- [ ] Operations in the spec with empty summary and/or no 200/201 body schema
-- [ ] 200 + `null` described in prose but not in the schema
-- [ ] Stale copy (order confirm still mentioning COD; COD is not an active checkout path)
-- [ ] Auth refresh/logout documented as a JSON body while the HttpOnly cookie is the real token
+- [x] Nullable `@ApiPropertyOptional` / `@ApiProperty` without an explicit `type` (generated clients get `object` / `Record<string, never>` instead of string/number)
+- [x] Handler return vs documented DTO (example found: low-stock documented as `InventoryStockResponseDto` while the handler returns `IInventory` primitives)
+- [x] Operations in the spec with empty summary and/or no 200/201 body schema
+- [x] 200 + `null` described in prose but not in the schema
+- [x] Stale copy (order confirm still mentioning COD; COD is not an active checkout path)
+- [x] Auth refresh/logout documented as a JSON body while the HttpOnly cookie is the real token
 - [x] [`docs/development/LOCAL-SETUP.md`](development/LOCAL-SETUP.md) Swagger URL (`/api/docs`)
-- [ ] Probe endpoint Swagger (moved here from Phase 14 health probes)
+- [x] Probe endpoint Swagger (moved here from Phase 14 health probes)
+- [x] `scripts/generate-openapi-spec.ts` + `scripts/audit-openapi.js` (`npm run generate:openapi`, `npm run audit:openapi`)
 
 Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpoint` is correct).
 
-**Location**: controller/DTO Swagger decorators, `src/main.ts` document setup, `docs/development/LOCAL-SETUP.md`
+**Location**: controller/DTO Swagger decorators, `src/infrastructure/swagger/`, `scripts/`, `src/main.ts` document setup, `docs/development/LOCAL-SETUP.md`
 
 **Done when:** Regenerating an OpenAPI client does not invent `object` for nullable scalars; documented response shapes match handlers for the operations you touch. LOCAL-SETUP already documents `/api/docs`.
 
@@ -358,7 +360,7 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 > **Goal**: Reduce developer time-to-first-run from 10 minutes to 60 seconds, provide optional 1-command ecosystem orchestration, and visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
 >
-> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14c/14d and Phase 15)._
+> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14d and Phase 15)._
 
 ### [ ] 1-Command Unified Quickstart (`docker-compose.quickstart.yml`)
 
