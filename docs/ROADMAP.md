@@ -59,7 +59,7 @@
 | **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
 | **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
 | **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
-| **14d** | Operator HTTP gaps                                | `[ ]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
+| **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
 | **14e** | Developer Onboarding & 60s Time-to-Value          | `[ ]`  |  `[P0]`  | **Instant DX**: 1-command quickstart (`docker-compose.quickstart.yml`), value matrix, C4 assets, Bruno  |
 | **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
 | **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
@@ -346,9 +346,9 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 **Scope:**
 
-- [ ] Product activate / deactivate HTTP (dedicated actions, same idea as users, e.g. `POST /v1/products/{id}/activate` and `deactivate`, `manage_products`). Do **not** silently add `isActive` to PATCH if the domain treats catalog status as a dedicated action
-- [ ] Assign or replace a user's role over HTTP (`AssignRoleUseCase` exists today with no controller)
-- [ ] OpenAPI + tests for those operations
+- [x] Product activate / deactivate HTTP (dedicated actions, same idea as users, e.g. `POST /v1/products/{id}/activate` and `deactivate`, `manage_products`). Do **not** silently add `isActive` to PATCH if the domain treats catalog status as a dedicated action
+- [x] Assign or replace a user's role over HTTP (`AssignUserRoleUseCase` + `PUT /v1/users/{id}/role`, `manage_roles`)
+- [x] OpenAPI + tests for those operations
 
 **Location**: `src/modules/products/`, `src/modules/identity/` (or authorization), matching use-case tests / HTTP e2e
 
