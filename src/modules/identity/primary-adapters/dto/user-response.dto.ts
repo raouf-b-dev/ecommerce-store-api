@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AddressResponseDto } from './address-response.dto';
 
 /** List read model for GET /v1/users (matches UserListItemDTO). */
 export class UserListItemResponseDto {
@@ -50,6 +51,12 @@ export class UserDetailResponseDto extends UserListItemResponseDto {
     description: 'Number of addresses on the account',
   })
   addressCount!: number;
+
+  @ApiProperty({
+    type: [AddressResponseDto],
+    description: 'Addresses on the account',
+  })
+  addresses!: AddressResponseDto[];
 
   @ApiProperty({
     example: '2025-10-31T12:30:00.000Z',
