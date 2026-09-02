@@ -47,8 +47,8 @@
 
 > **Execution guide**: Pick tasks in priority order. Phase 14 (single-instance production deploy gate) is complete.
 >
-> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14d or Phase 15** and can be run immediately in parallel.
-> - **Phase 14d** does not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
+> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14d, Phase 14f, or Phase 15** and can be run immediately in parallel.
+> - **Phase 14d** and **Phase 14f** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
 
 | Phase   | Name                                              | Status | Priority | Target / Focus                                                                                          |
 | ------- | ------------------------------------------------- | ------ | :------: | ------------------------------------------------------------------------------------------------------- |
@@ -60,6 +60,7 @@
 | **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
 | **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
 | **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
+| **14f** | User detail address projection                    | `[x]`  |  `[P1]`  | **Read model**: `GET /v1/users/{id}` returns `addresses[]` (no new collection route)                    |
 | **14e** | Developer Onboarding & 60s Time-to-Value          | `[ ]`  |  `[P0]`  | **Instant DX**: 1-command quickstart (`docker-compose.quickstart.yml`), value matrix, C4 assets, Bruno  |
 | **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
 | **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
@@ -356,11 +357,27 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ---
 
+## Phase 14f: User detail address projection
+
+> **Goal**: Return the customer's address book on `GET /v1/users/{id}` so admin (and later storefront) can list addresses without a new collection route. Does **not** block Phase 14e or Phase 15.
+
+**Scope:**
+
+- [x] Project required `addresses[]` on user detail (second `AddressEntity` query; do not instantiate the User aggregate)
+- [x] Align `UserAddressDTO` / `UserDetailResponseDto` with `AddressResponseDto` (ISO date strings on the read model)
+- [x] OpenAPI + mapper/integration tests (empty book and N addresses, default first)
+
+**Location**: `src/modules/identity/` query adapter, mapper, and `UserDetailResponseDto`
+
+**Done when:** `GET /v1/users/{id}` returns the address book; Swagger matches the handler.
+
+---
+
 ## ⚡ Phase 14e: Developer Onboarding, Architecture Storytelling & 60s Time-to-Value [P0]
 
 > **Goal**: Reduce developer time-to-first-run from 10 minutes to 60 seconds, provide optional 1-command ecosystem orchestration, and visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
 >
-> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14d and Phase 15)._
+> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14d, Phase 14f, and Phase 15)._
 
 ### [ ] 1-Command Unified Quickstart (`docker-compose.quickstart.yml`)
 
