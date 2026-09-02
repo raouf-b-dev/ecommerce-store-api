@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from 'src/infrastructure/redis/redis.module';
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { AddressEntity } from './secondary-adapters/orm/address.schema';
 import { UserEntity } from './secondary-adapters/orm/user.schema';
 import { UsersController } from './users.controller';
@@ -26,11 +27,18 @@ import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/
 import { GetUserUseCase } from './core/application/usecases/user/get-user/get-user.usecase';
 import { ListUsersUseCase } from './core/application/usecases/user/list-users/list-users.usecase';
 import { UpdateUserUseCase } from './core/application/usecases/user/update-user/update-user.usecase';
+import { AssignUserRoleUseCase } from './core/application/usecases/user/assign-user-role/assign-user-role.usecase';
 import { UserQueryService } from './core/application/ports/user-query.service';
+import { AuthorizationGateway } from './core/application/ports/authorization.gateway';
+import { ModuleAuthorizationGateway } from './secondary-adapters/adapters/module-authorization.gateway';
 import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-user-query.adapter';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, AddressEntity]), RedisModule],
+  imports: [
+    TypeOrmModule.forFeature([UserEntity, AddressEntity]),
+    RedisModule,
+    AuthorizationModule,
+  ],
   controllers: [UsersController, AddressesController],
   providers: [
     {
@@ -64,6 +72,7 @@ import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-us
     GetUserUseCase,
     ListUsersUseCase,
     UpdateUserUseCase,
+    AssignUserRoleUseCase,
     CheckEmailExistsUseCase,
     GetUserByEmailUseCase,
 
@@ -71,6 +80,10 @@ import { PostgresUserQueryAdapter } from './secondary-adapters/query/postgres-us
     {
       provide: UserQueryService,
       useClass: PostgresUserQueryAdapter,
+    },
+    {
+      provide: AuthorizationGateway,
+      useClass: ModuleAuthorizationGateway,
     },
   ],
   exports: [
