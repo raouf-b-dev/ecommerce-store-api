@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -29,6 +31,8 @@ import { GetProductUseCase } from './core/application/usecases/get-product/get-p
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
+import { ActivateProductUseCase } from './core/application/usecases/activate-product/activate-product.usecase';
+import { DeactivateProductUseCase } from './core/application/usecases/deactivate-product/deactivate-product.usecase';
 
 @ApiTags('products')
 @Controller('products')
@@ -39,6 +43,8 @@ export class ProductsController {
     private readonly listProductsUseCase: ListProductsUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly deleteProductUseCase: DeleteProductUseCase,
+    private readonly activateProductUseCase: ActivateProductUseCase,
+    private readonly deactivateProductUseCase: DeactivateProductUseCase,
   ) {}
 
   @Post()
@@ -155,5 +161,52 @@ export class ProductsController {
   })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return await this.deleteProductUseCase.execute(id);
+  }
+
+  @Post(':id/activate')
+  @ApiBearerAuth()
+  @RequirePermissions('manage_products')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Activate a product in the catalog (Admin)' })
+  @ApiResponse({ status: 204, description: 'Product activated successfully.' })
+  @ApiResponse({ status: 400, description: 'Product is already active.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflict — product was modified concurrently. Reload and retry.',
+  })
+  async activate(@Param('id', ParseIntPipe) id: number) {
+    return this.activateProductUseCase.execute(id);
+  }
+
+  @Post(':id/deactivate')
+  @ApiBearerAuth()
+  @RequirePermissions('manage_products')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Deactivate a product in the catalog (Admin)' })
+  @ApiResponse({
+    status: 204,
+    description: 'Product deactivated successfully.',
+  })
+  @ApiResponse({ status: 400, description: 'Product is already inactive.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflict — product was modified concurrently. Reload and retry.',
+  })
+  async deactivate(@Param('id', ParseIntPipe) id: number) {
+    return this.deactivateProductUseCase.execute(id);
   }
 }

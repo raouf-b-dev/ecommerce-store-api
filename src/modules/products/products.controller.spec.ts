@@ -7,6 +7,8 @@ import { Product } from './core/domain/entities/product';
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
+import { ActivateProductUseCase } from './core/application/usecases/activate-product/activate-product.usecase';
+import { DeactivateProductUseCase } from './core/application/usecases/deactivate-product/deactivate-product.usecase';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { Result } from '../../shared-kernel/domain/result';
 
@@ -18,6 +20,8 @@ describe('ProductsController', () => {
   let listProductsUseCase: ListProductsUseCase;
   let updateProductUseCase: UpdateProductUseCase;
   let deleteProductUseCase: DeleteProductUseCase;
+  let activateProductUseCase: ActivateProductUseCase;
+  let deactivateProductUseCase: DeactivateProductUseCase;
 
   let product: Product;
   let productsList: Product[];
@@ -86,6 +90,18 @@ describe('ProductsController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
+        {
+          provide: ActivateProductUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
+        {
+          provide: DeactivateProductUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
       ],
     }).compile();
 
@@ -99,6 +115,12 @@ describe('ProductsController', () => {
       module.get<UpdateProductUseCase>(UpdateProductUseCase);
     deleteProductUseCase =
       module.get<DeleteProductUseCase>(DeleteProductUseCase);
+    activateProductUseCase = module.get<ActivateProductUseCase>(
+      ActivateProductUseCase,
+    );
+    deactivateProductUseCase = module.get<DeactivateProductUseCase>(
+      DeactivateProductUseCase,
+    );
   });
 
   it('should be defined', () => {
@@ -132,5 +154,15 @@ describe('ProductsController', () => {
   it('should call DeleteProductUseCase.execute when remove is called', async () => {
     await controller.remove(id);
     expect(deleteProductUseCase.execute).toHaveBeenCalledWith(id);
+  });
+
+  it('should call ActivateProductUseCase.execute when activate is called', async () => {
+    await controller.activate(id);
+    expect(activateProductUseCase.execute).toHaveBeenCalledWith(id);
+  });
+
+  it('should call DeactivateProductUseCase.execute when deactivate is called', async () => {
+    await controller.deactivate(id);
+    expect(deactivateProductUseCase.execute).toHaveBeenCalledWith(id);
   });
 });
