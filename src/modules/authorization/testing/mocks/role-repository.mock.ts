@@ -24,6 +24,22 @@ export class MockRoleRepository implements RoleRepository {
     this.findByCode.mockResolvedValue(Result.success(null));
   }
 
+  mockSuccessfulFindByCode(role: Role | null): void {
+    this.findByCode.mockResolvedValue(Result.success(role));
+  }
+
+  mockFailedFindByCode(message: string): void {
+    this.findByCode.mockResolvedValue(
+      Result.failure(new RepositoryError(message)),
+    );
+  }
+
+  mockPassthroughSave(): void {
+    this.save.mockImplementation((role: Role) =>
+      Promise.resolve(Result.success(role)),
+    );
+  }
+
   verifyNoUnexpectedCalls(): void {
     expect(this.findById).not.toHaveBeenCalled();
     expect(this.findByCode).not.toHaveBeenCalled();
