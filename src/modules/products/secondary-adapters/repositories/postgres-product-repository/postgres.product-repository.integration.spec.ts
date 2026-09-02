@@ -121,7 +121,7 @@ describe('PostgresProductRepository (Integration - Real DB)', () => {
       imageUrl: 'https://cdn.example.com/parity.png',
       categoryId: 7,
     });
-    product.deactivate();
+    ResultAssertionHelper.assertResultSuccess(product.deactivate());
 
     const result = await repository.save(
       product,

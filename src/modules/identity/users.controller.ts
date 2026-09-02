@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Param,
   ParseIntPipe,
   HttpCode,
@@ -19,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { ActivateUserUseCase } from './core/application/usecases/user/activate-user/activate-user.usecase';
 import { DeactivateUserUseCase } from './core/application/usecases/user/deactivate-user/deactivate-user.usecase';
+import { AssignUserRoleUseCase } from './core/application/usecases/user/assign-user-role/assign-user-role.usecase';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerContext } from 'src/shared-kernel/domain/interfaces/caller-context.interface';
 import { GetUserUseCase } from './core/application/usecases/user/get-user/get-user.usecase';
@@ -27,6 +29,7 @@ import { UpdateUserUseCase } from './core/application/usecases/user/update-user/
 import { DeleteUserUseCase } from './core/application/usecases/user/delete-user/delete-user.usecase';
 import { ListUsersQueryDto } from './primary-adapters/dto/list-users-query.dto';
 import { UpdateUserDto } from './primary-adapters/dto/update-user.dto';
+import { AssignRoleDto } from './primary-adapters/dto/assign-role.dto';
 import {
   PaginatedUsersResponseDto,
   UserDetailResponseDto,
@@ -45,6 +48,7 @@ export class UsersController {
     private readonly deleteUserUseCase: DeleteUserUseCase,
     private readonly activateUserUseCase: ActivateUserUseCase,
     private readonly deactivateUserUseCase: DeactivateUserUseCase,
+    private readonly assignUserRoleUseCase: AssignUserRoleUseCase,
   ) {}
 
   @Get()
@@ -120,5 +124,26 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.deactivateUserUseCase.execute(id);
+  }
+
+  @Put(':id/role')
+  @RequirePermissions('manage_roles')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Assign or replace a user role (Admin)' })
+  @ApiResponse({ status: 204, description: 'Role assigned successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid role code' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Requires manage_roles permission',
+  })
+  @ApiResponse({ status: 404, description: 'User or role not found' })
+  async assignRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AssignRoleDto,
+  ) {
+    return this.assignUserRoleUseCase.execute({
+      userId: id,
+      roleCode: dto.roleCode,
+    });
   }
 }

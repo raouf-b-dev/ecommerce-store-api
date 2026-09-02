@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { UseCase } from 'src/shared-kernel/domain/interfaces/base.usecase';
 import { Result } from 'src/shared-kernel/domain/result';
@@ -38,7 +38,11 @@ export class AssignRoleUseCase implements UseCase<
     const role = roleResult.value;
 
     if (!role) {
-      return ErrorFactory.UseCaseError(`Role ${command.roleCode} not found`);
+      return ErrorFactory.UseCaseError(
+        `Role ${command.roleCode} not found`,
+        null,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     let userRole: UserRoleAssignment;
