@@ -16,6 +16,8 @@ import { CreateProductUseCase } from './core/application/usecases/create-product
 import { DeleteProductUseCase } from './core/application/usecases/delete-product/delete-product.usecase';
 import { ListProductsUseCase } from './core/application/usecases/list-products/list-products.usecase';
 import { UpdateProductUseCase } from './core/application/usecases/update-product/update-product.usecase';
+import { ActivateProductUseCase } from './core/application/usecases/activate-product/activate-product.usecase';
+import { DeactivateProductUseCase } from './core/application/usecases/deactivate-product/deactivate-product.usecase';
 import { SeedDemoCatalogUseCase } from './core/application/seed/seed-demo-catalog.usecase';
 
 import { ProductQueryService } from './core/application/ports/product-query.service';
@@ -56,6 +58,8 @@ import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres
     DeleteProductUseCase,
     ListProductsUseCase,
     UpdateProductUseCase,
+    ActivateProductUseCase,
+    DeactivateProductUseCase,
     SeedDemoCatalogUseCase,
 
     // CQRS Presentation Query Service
