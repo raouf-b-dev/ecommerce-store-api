@@ -105,9 +105,7 @@ describe('PostgresUserQueryAdapter (Integration - Real DB)', () => {
     expect(result.value?.addresses[0].street).toBe('100 Main Street');
     expect(result.value?.addresses[0].isDefault).toBe(true);
     expect(result.value?.addresses[0].type).toBe(AddressType.HOME);
-    expect(result.value?.addresses[0].createdAt).toMatch(
-      /^\d{4}-\d{2}-\d{2}T/,
-    );
+    expect(result.value?.addresses[0].createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     expect(result.value?.addresses[1].street).toBe('200 Oak Ave');
     expect(result.value?.addresses[1].isDefault).toBe(false);
   });

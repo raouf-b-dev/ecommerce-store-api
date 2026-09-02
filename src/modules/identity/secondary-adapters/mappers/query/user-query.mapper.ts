@@ -46,7 +46,9 @@ export class UserQueryMapper {
     addressEntities: AddressEntity[] = [],
   ): UserDetailDTO {
     const base = this.toListItemDto(row);
-    const addresses = addressEntities.map((entity) => this.toAddressDto(entity));
+    const addresses = addressEntities.map((entity) =>
+      this.toAddressDto(entity),
+    );
 
     return {
       ...base,

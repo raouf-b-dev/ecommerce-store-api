@@ -3,9 +3,7 @@ import { UserDtoTestFactory } from 'src/modules/identity/testing';
 import { AddressEntity } from '../../orm/address.schema';
 import { UserQueryMapper } from './user-query.mapper';
 
-function addressEntity(
-  overrides: Partial<AddressEntity> = {},
-): AddressEntity {
+function addressEntity(overrides: Partial<AddressEntity> = {}): AddressEntity {
   return {
     id: 10,
     street: '100 Main Street',
