@@ -6,6 +6,7 @@ import { ListUsersQuery } from '../../core/application/queries/list-users.query'
 import { UserListItemDTO } from '../../core/application/queries/results/user-list-item.result';
 import { UserDetailDTO } from '../../core/application/queries/results/user-detail.result';
 import { UserEntity } from '../orm/user.schema';
+import { AddressEntity } from '../orm/address.schema';
 import { RawUserListQueryRow } from '../dto/raw-user-list-query-row.interface';
 import { UserQueryMapper } from '../mappers/query/user-query.mapper';
 import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
@@ -135,7 +136,16 @@ export class PostgresUserQueryAdapter implements UserQueryService {
         return Result.success(null);
       }
 
-      return Result.success(UserQueryMapper.toDetailDto(rawRow));
+      const addressEntities = await this.userRepo.manager
+        .createQueryBuilder(AddressEntity, 'address')
+        .where('address.userId = :id', { id })
+        .orderBy('address.isDefault', 'DESC')
+        .addOrderBy('address.id', 'ASC')
+        .getMany();
+
+      return Result.success(
+        UserQueryMapper.toDetailDto(rawRow, addressEntities),
+      );
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch user details for ID ${id}: ${(error as Error).message}`,

@@ -44,6 +44,7 @@ export class UserDtoTestFactory {
     return {
       ...base,
       addressCount: 2,
+      addresses: [],
       updatedAt: base.createdAt,
       ...overrides,
     };
