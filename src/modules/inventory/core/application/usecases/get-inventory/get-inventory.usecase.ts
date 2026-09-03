@@ -6,29 +6,27 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { InventoryQueryService } from '../../ports/inventory-query.service';
 import { InventoryListItemDTO } from '../../queries/results/inventory-list-item.result';
 
+/**
+ * Returns inventory for a product, or `null` when no stock row exists yet
+ * (product without seeded/created inventory). Absence is data, not an error.
+ */
 @Injectable()
 export class GetInventoryUseCase implements UseCase<
   number,
-  InventoryListItemDTO,
+  InventoryListItemDTO | null,
   UseCaseError
 > {
   constructor(private readonly inventoryQueryService: InventoryQueryService) {}
 
   async execute(
     productId: number,
-  ): Promise<Result<InventoryListItemDTO, UseCaseError>> {
+  ): Promise<Result<InventoryListItemDTO | null, UseCaseError>> {
     const queryResult =
       await this.inventoryQueryService.getByProductId(productId);
     if (queryResult.isFailure) {
       return ErrorFactory.UseCaseError(
         queryResult.error.message,
         queryResult.error,
-      );
-    }
-
-    if (!queryResult.value) {
-      return ErrorFactory.UseCaseError(
-        `Inventory for product ID ${productId} not found`,
       );
     }
 

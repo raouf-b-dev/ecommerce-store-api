@@ -8,6 +8,7 @@ export interface VerifiedAccessTokenPayload extends JWTPayload {
   sub: string;
   email: string;
   role: string;
+  mustChangePassword?: boolean;
   typ?: string;
   iss: string;
   iat: number;

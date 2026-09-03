@@ -12,6 +12,7 @@ import { NotificationScheduler } from '../../core/domain/schedulers/notification
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { toError } from '../../../../shared-kernel/infra/lang/error.utils';
+import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
 
 @Injectable()
 export class BullMqNotificationScheduler
@@ -25,6 +26,7 @@ export class BullMqNotificationScheduler
     @InjectQueue('notifications')
     private readonly notificationQueue: Queue,
     private readonly correlation: CorrelationService,
+    private readonly lifecycle: ApplicationLifecyclePort,
   ) {}
 
   async onModuleInit() {
@@ -34,6 +36,13 @@ export class BullMqNotificationScheduler
   private async scheduleCleanupJob(): Promise<
     Result<{ jobId: string }, InfrastructureError>
   > {
+    if (this.lifecycle.isShuttingDown) {
+      this.logger.debug('Skipping cleanup job schedule during shutdown');
+      return ErrorFactory.InfrastructureError(
+        'Skipped cleanup job schedule during shutdown',
+      );
+    }
+
     const jobName = JobNames.CLEANUP_NOTIFICATIONS;
     const cron = '0 3 * * *';
     const jobId = 'cleanup-expired-notifications-job';
@@ -50,7 +59,13 @@ export class BullMqNotificationScheduler
       this.logger.log('Cleanup job scheduled successfully');
       return Result.success({ jobId });
     } catch (error) {
-      this.logger.error('Failed to schedule cleanup job', error);
+      if (this.lifecycle.isShuttingDown) {
+        this.logger.debug(
+          'Failed to schedule cleanup job (ignored during shutdown)',
+        );
+      } else {
+        this.logger.error('Failed to schedule cleanup job', error);
+      }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule cleanup job',
         error,

@@ -130,17 +130,21 @@ describe('CheckStockUseCase', () => {
     });
   });
 
-  it('should return a failure if the inventory is not found', async () => {
+  it('should return unavailable when inventory is not found', async () => {
     // Arrange
     const productId = 404;
-    const repoError = ErrorFactory.RepositoryError('Inventory not found');
-    mockRepo.findByProductId.mockResolvedValue(repoError);
+    mockRepo.mockInventoryNotFoundForProduct(productId);
 
     // Act
     const result = await usecase.execute({ productId, quantity: 1 });
 
     // Assert
-    ResultAssertionHelper.assertResultFailureWithError(result, repoError.error);
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual({
+      isAvailable: false,
+      availableQuantity: 0,
+      requestedQuantity: 1,
+    });
     expect(mockRepo.findByProductId).toHaveBeenCalledWith(productId);
   });
 

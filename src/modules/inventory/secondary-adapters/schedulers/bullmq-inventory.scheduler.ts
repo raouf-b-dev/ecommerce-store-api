@@ -6,6 +6,7 @@ import { InventoryScheduler } from '../../core/domain/schedulers/inventory.sched
 import { Result } from 'src/shared-kernel/domain/result';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
+import { ApplicationLifecyclePort } from 'src/shared-kernel/domain/interfaces/application-lifecycle.port';
 
 @Injectable()
 export class BullMqInventoryScheduler
@@ -16,6 +17,7 @@ export class BullMqInventoryScheduler
   constructor(
     @InjectQueue('inventory')
     private readonly inventoryQueue: Queue,
+    private readonly lifecycle: ApplicationLifecyclePort,
   ) {}
 
   async onModuleInit() {
@@ -25,6 +27,15 @@ export class BullMqInventoryScheduler
   async scheduleReconciliationJob(): Promise<
     Result<{ jobId: string }, InfrastructureError>
   > {
+    if (this.lifecycle.isShuttingDown) {
+      this.logger.debug(
+        'Skipping inventory reconciliation schedule during shutdown',
+      );
+      return ErrorFactory.InfrastructureError(
+        'Skipped inventory reconciliation schedule during shutdown',
+      );
+    }
+
     const jobName = JobNames.INVENTORY_RECONCILIATION;
     const cron = '0 4 * * *'; // Daily at 4:00 AM
     const jobId = 'inventory-reconciliation-job';
@@ -43,10 +54,16 @@ export class BullMqInventoryScheduler
       );
       return Result.success({ jobId });
     } catch (error) {
-      this.logger.error(
-        'Failed to schedule inventory reconciliation audit job',
-        error,
-      );
+      if (this.lifecycle.isShuttingDown) {
+        this.logger.debug(
+          'Failed to schedule inventory reconciliation audit job (ignored during shutdown)',
+        );
+      } else {
+        this.logger.error(
+          'Failed to schedule inventory reconciliation audit job',
+          error,
+        );
+      }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule inventory reconciliation audit job',
         error,

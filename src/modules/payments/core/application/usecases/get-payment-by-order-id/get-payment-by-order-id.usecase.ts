@@ -19,10 +19,15 @@ export interface GetPaymentByOrderIdInput {
   callerContext: CallerContext;
 }
 
+/**
+ * Returns the payment for an order, or `null` when none exists yet
+ * (e.g. pending_payment / cancelled before capture). Absence is data, not an error.
+ * Unauthorized callers still get a not-found style failure (no existence leak).
+ */
 @Injectable()
 export class GetPaymentByOrderIdUseCase extends UseCase<
   GetPaymentByOrderIdInput,
-  PaymentDetailDTO,
+  PaymentDetailDTO | null,
   UseCaseError
 > {
   constructor(private readonly paymentQueryService: PaymentQueryService) {
@@ -31,7 +36,7 @@ export class GetPaymentByOrderIdUseCase extends UseCase<
 
   async execute(
     input: GetPaymentByOrderIdInput,
-  ): Promise<Result<PaymentDetailDTO, UseCaseError>> {
+  ): Promise<Result<PaymentDetailDTO | null, UseCaseError>> {
     const { orderId, callerContext } = input;
 
     const scope = OwnedResourceAccessPolicy.resolveResourceScope(
@@ -50,9 +55,10 @@ export class GetPaymentByOrderIdUseCase extends UseCase<
       scope.authorizedUserId,
     );
 
-    if (isFailure(result) || !result.value) {
+    if (isFailure(result)) {
       return ErrorFactory.UseCaseError(
-        `Payment for order ID ${orderId} not found`,
+        `Failed to load payment for order ID ${orderId}`,
+        result.error,
       );
     }
 

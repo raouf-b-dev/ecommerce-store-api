@@ -6,6 +6,7 @@ import { LoginUserUseCase } from './core/application/usecases/login-user/login-u
 import { RefreshTokenUseCase } from './core/application/usecases/refresh-token/refresh-token.usecase';
 import { LogoutUseCase } from './core/application/usecases/logout/logout.usecase';
 import { LogoutAllUseCase } from './core/application/usecases/logout-all/logout-all.usecase';
+import { ChangePasswordUseCase } from './core/application/usecases/change-password/change-password.usecase';
 import { UserTestFactory } from 'src/modules/identity/testing';
 import { Result } from '../../shared-kernel/domain/result';
 import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
@@ -25,6 +26,7 @@ describe('AuthController', () => {
   let refreshTokenUseCase: RefreshTokenUseCase;
   let logoutUseCase: LogoutUseCase;
   let logoutAllUseCase: LogoutAllUseCase;
+  let changePasswordUseCase: ChangePasswordUseCase;
   let jwksService: MockJwksService;
 
   let mockUser: IUser;
@@ -57,6 +59,8 @@ describe('AuthController', () => {
               Result.success({
                 accessToken: 'access-123',
                 refreshToken: 'refresh-456',
+                mustChangePassword: false,
+                permissions: ['access_admin'],
               }),
             ),
           },
@@ -68,6 +72,8 @@ describe('AuthController', () => {
               Result.success({
                 accessToken: 'new-access-123',
                 refreshToken: 'new-refresh-456',
+                mustChangePassword: false,
+                permissions: ['access_admin'],
               }),
             ),
           },
@@ -82,6 +88,19 @@ describe('AuthController', () => {
           provide: LogoutAllUseCase,
           useValue: {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
+        {
+          provide: ChangePasswordUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(
+              Result.success({
+                accessToken: 'changed-access',
+                refreshToken: 'changed-refresh',
+                mustChangePassword: false,
+                permissions: ['access_admin'],
+              }),
+            ),
           },
         },
         {
@@ -101,6 +120,9 @@ describe('AuthController', () => {
     refreshTokenUseCase = module.get<RefreshTokenUseCase>(RefreshTokenUseCase);
     logoutUseCase = module.get<LogoutUseCase>(LogoutUseCase);
     logoutAllUseCase = module.get<LogoutAllUseCase>(LogoutAllUseCase);
+    changePasswordUseCase = module.get<ChangePasswordUseCase>(
+      ChangePasswordUseCase,
+    );
     jwksService = module.get(JwksPort);
   });
 
@@ -127,6 +149,27 @@ describe('AuthController', () => {
       Result.success({
         accessToken: 'access-123',
         refreshToken: 'refresh-456',
+        mustChangePassword: false,
+        permissions: ['access_admin'],
+      }),
+    );
+  });
+
+  it('should change password for authenticated user', async () => {
+    const dto = { currentPassword: 'Old123!', newPassword: 'New456!' };
+    const res = await controller.changePassword(99, dto);
+
+    expect(changePasswordUseCase.execute).toHaveBeenCalledWith({
+      userId: 99,
+      currentPassword: dto.currentPassword,
+      newPassword: dto.newPassword,
+    });
+    expect(res).toEqual(
+      Result.success({
+        accessToken: 'changed-access',
+        refreshToken: 'changed-refresh',
+        mustChangePassword: false,
+        permissions: ['access_admin'],
       }),
     );
   });

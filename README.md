@@ -13,7 +13,7 @@
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24%2B-green?style=flat&logo=node.js" alt="Node.js Version"></a>
 </p>
 
-> NestJS modular-monolith e-commerce API built with Domain-Driven Design and Hexagonal Architecture.
+> NestJS modular-monolith ecommerce API with compensating checkout, inventory locking, RBAC, and architecture-enforced module boundaries.
 
 ## Table of Contents
 
@@ -32,18 +32,18 @@
 
 ## What this is
 
-A **modular monolith** e-commerce backend: ten bounded contexts under `src/modules/`, NestJS, TypeScript, PostgreSQL, Redis Stack, and BullMQ. Contexts communicate only through ACL gateways and domain events.
+A NestJS ecommerce backend structured as a modular monolith. Eleven modules under `src/modules/` communicate through ACL gateways and domain events, not by importing each other's internals.
 
-It is a **reference implementation** you can run, test, and read chapter by chapter in [`docs/`](docs/README.md). Checkout SAGA, CQRS reads, concurrency controls, auth/RBAC, and ops foundations are implemented with tests and linked runbooks.
+The codebase includes checkout SAGA with compensation, concurrency controls, auth/RBAC, CQRS read adapters, and CI covering unit, integration, e2e, and architecture tests. Design rationale and runbooks live in [`docs/`](docs/README.md).
 
 **Current limits**
 
-| Topic | Status |
-| :---- | :----- |
-| Payment gateway | Mock adapter only. The port is ready for a real provider. |
+| Topic           | Status                                                                                                        |
+| :-------------- | :------------------------------------------------------------------------------------------------------------ |
+| Payment gateway | Mock adapter only. The port is ready for a real provider.                                                     |
 | Deploy topology | Single-instance ops foundation (migrations, health probes, backup/smoke). Not multi-instance consistency yet. |
-| Product scope | Reference backend, not a hosted storefront or finished public ecommerce product. |
-| Hosted demo | No public staging environment. Run locally with Docker. |
+| Product scope   | Reference backend, not a hosted storefront or finished public ecommerce product.                              |
+| Hosted demo     | No public staging environment. Run locally with Docker.                                                       |
 
 What is done and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -55,48 +55,69 @@ What is done and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ### Prerequisites
 
-- **Node.js** ≥ 24
-- **npm** ≥ 11
-- **Docker Desktop** ≥ 28
+- **Node.js** ≥ 24 and **npm** ≥ 11
+- **Docker Desktop** ≥ 28 (orchestrates PostgreSQL and Redis Stack)
 - **Git** ≥ 2.47
 
-### Run locally
+### Environment Bootstrap (Automated Setup)
+
+A single command bootstraps your local development environment: auto-generates configuration (`.env.development`), boots PostgreSQL and Redis Stack in Docker (with healthcheck wait), applies TypeORM database migrations, and seeds demo accounts/catalog fixtures.
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install dependencies
 git clone https://github.com/raouf-b-dev/ecommerce-store-api.git
 cd ecommerce-store-api
 npm install
 
-# 2. Generate environment files (JWT and metrics keys are auto-generated)
-npm run env:init
-# Verify DB_* and REDIS_* in .env.development match Compose defaults (see LOCAL-SETUP.md)
+# 2. Bootstrap environment (Postgres + Redis + migrations + demo seed)
+npm run setup
 
-# 3. Start PostgreSQL + Redis and run migrations
-npm run d:up:dev
-npm run migration:run:dev
-
-# 4. Start the API (first boot initializes roles/permissions), then seed
+# 3. Start the API with hot reloading (SWC watch mode)
 npm run start:dev
-npm run db:seed
+```
+
+| Service | URL |
+| :--- | :--- |
+| **API Base** | `http://localhost:3000` |
+| **Swagger UI** | `http://localhost:3000/api/docs` |
+| **Redis Insight** | `http://localhost:8001` |
+| **Demo Credentials** | See [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+
+Useful Commands:
+- `npm run start:dev` — Start NestJS API with live SWC watch mode on `:3000`
+- `npm run setup:down` — Stop PostgreSQL and Redis containers (preserves data)
+- `npm run setup:reset` — Wipe database volumes and re-bootstrap clean fixtures from scratch
+
+### Manual Step-by-Step Setup
+
+If you prefer running each step individually:
+
+```bash
+npm run env:init             # 1. Generate environment files
+npm run d:up:dev             # 2. Start PostgreSQL + Redis
+npm run migration:run:dev    # 3. Run migrations
+npm run db:seed              # 4. Seed demo accounts & products
+npm run start:dev            # 5. Start the API
 ```
 
 First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md). Seeded accounts: [`docs/development/SEEDING.md`](docs/development/SEEDING.md).
 
-| Endpoint | URL |
-| :------- | :-- |
-| API | `http://localhost:3000` |
-| Swagger | `http://localhost:3000/api` |
-| Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+| Endpoint        | URL                                                                  |
+| :-------------- | :------------------------------------------------------------------- |
+| API             | `http://localhost:<PORT>`                                            |
+| Swagger         | `http://localhost:<PORT>/api/docs`                                   |
+| Seeded accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md)         |
 | Local env setup | [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) |
+
+Canonical local default is `3000`, but use the value from `.env.development` if you remap it.
 
 ### Optional: monitoring stack
 
 ```bash
-npm run d:up:full:prod
+npm run d:up:obs:dev
 ```
 
-Grafana is on **`http://localhost:3001`**. The API stays on port 3000.
+Grafana is on **`http://localhost:<GRAFANA_HOST_PORT>`**. See [`docs/observability/MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) for the full port map and extraction criteria.
 
 ---
 
@@ -111,18 +132,20 @@ npm test                      # Unit tests (domain, use cases, adapters)
 npm run test:integration      # Real Postgres / Redis (Testcontainers)
 npm run test:e2e              # Full-app HTTP flows (auth, checkout, IDOR, idempotency)
 npm run test:arch             # Hexagonal and module boundary rules
+npm run audit:openapi         # Swagger contract matches handlers (run after controller/DTO changes)
 npm run test:redis:chaos      # Redis reconnect and degradation behavior
 npm run smoke-test            # Live-process probes (health, auth) when API is running
 npm run test:cov              # Coverage report
 ```
 
-| Layer | What it proves |
-| :---- | :------------- |
-| Unit | Domain rules, use cases, and adapter logic in isolation |
-| Integration | Write repositories, cache-aside, CQRS query adapters against real databases |
-| E2E | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay |
-| Architecture | No illegal imports across bounded contexts |
-| Smoke | Liveness, readiness, and authenticated endpoints on a running process |
+| Layer        | What it proves                                                              |
+| :----------- | :-------------------------------------------------------------------------- |
+| Unit         | Domain rules, use cases, and adapter logic in isolation                     |
+| Integration  | Write repositories, cache-aside, CQRS query adapters against real databases |
+| E2E          | Auth lifecycle, checkout SAGA, HTTP contracts, idempotency replay           |
+| Architecture | No illegal imports across bounded contexts                                  |
+| OpenAPI      | Published spec matches handler DTOs; no nullable scalars typed as `object`  |
+| Smoke        | Liveness, readiness, and authenticated endpoints on a running process       |
 
 Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`docs/infrastructure/cicd/PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md).
 
@@ -132,7 +155,7 @@ Pipeline detail: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) and [`do
 
 ## Architecture
 
-Ten bounded contexts live in one deployable unit. Orders orchestrate checkout through ACL gateways and BullMQ jobs. Authentication reaches Identity and Authorization through ACL gateways. Full C4, ACL maps, SAGA sequences, and infrastructure wiring live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
+Eleven modules live in one deployable unit. Orders orchestrate checkout through ACL gateways and BullMQ jobs. Authentication reaches Identity and Authorization through ACL gateways. Analytics is a read-only composition module (no write aggregates). Full C4, ACL maps, SAGA sequences, and infrastructure wiring live in [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
 
 ```mermaid
 graph TD
@@ -148,6 +171,7 @@ graph TD
         API --> Carts["Carts"]
         API --> Payments["Payments"]
         API --> Inventory["Inventory"]
+        API --> Analytics["Analytics"]
         API --> Health["Health"]
         WS --> Notifications["Notifications"]
         Auth -->|ACL| Identity
@@ -162,14 +186,14 @@ graph TD
 
 ### Where to look in the code
 
-| Topic | Why it matters | Where |
-| :---- | :------------- | :---- |
-| Checkout orchestration | Multi-step purchase flow | [`src/modules/orders/core/application/usecases/checkout/`](src/modules/orders/core/application/usecases/checkout/) |
-| SAGA compensation | Stock release, refund, cancel after failure | [`checkout-failure.listener.ts`](src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts) |
-| CQRS read adapters | Flat list/detail reads without N+1 | `src/modules/*/secondary-adapters/query/` |
-| HTTP idempotency | Retry-safe checkout command | [`src/infrastructure/idempotency/`](src/infrastructure/idempotency/) |
-| Auth and RBAC | RSA JWT, refresh rotation, permissions | [`authentication/`](src/modules/authentication/), [`authorization/`](src/modules/authorization/) |
-| Hexagonal boundaries | Domain isolated from infrastructure | [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) |
+| Topic                  | Why it matters                              | Where                                                                                                              |
+| :--------------------- | :------------------------------------------ | :----------------------------------------------------------------------------------------------------------------- |
+| Checkout orchestration | Multi-step purchase flow                    | [`src/modules/orders/core/application/usecases/checkout/`](src/modules/orders/core/application/usecases/checkout/) |
+| SAGA compensation      | Stock release, refund, cancel after failure | [`checkout-failure.listener.ts`](src/modules/orders/primary-adapters/listeners/checkout-failure.listener.ts)       |
+| CQRS read adapters     | Flat list/detail reads without N+1          | `src/modules/*/secondary-adapters/query/`                                                                          |
+| HTTP idempotency       | Retry-safe checkout command                 | [`src/infrastructure/idempotency/`](src/infrastructure/idempotency/)                                               |
+| Auth and RBAC          | RSA JWT, refresh rotation, permissions      | [`authentication/`](src/modules/authentication/), [`authorization/`](src/modules/authorization/)                   |
+| Hexagonal boundaries   | Domain isolated from infrastructure         | [`docs/architecture/DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md)                                         |
 
 Shortest path through the tree: **auth/RBAC → checkout → compensation → CQRS query adapter → idempotency → tests**.
 
@@ -181,25 +205,25 @@ Shortest path through the tree: **auth/RBAC → checkout → compensation → CQ
 
 Start with the full index: [`docs/README.md`](docs/README.md). These chapters are the main entry points:
 
-| Document | Description |
-| :------- | :---------- |
-| [`FEATURES.md`](docs/FEATURES.md) | Implemented features with code locations |
-| [`ROADMAP.md`](docs/ROADMAP.md) | Completed work and planned phases |
-| [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) | System context, bounded contexts, diagrams |
-| [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) | Layer rules and module boundaries |
-| [`CQRS.md`](docs/architecture/CQRS.md) | Read path design and query adapters |
-| [`INTEGRATION-PATTERNS.md`](docs/integration/INTEGRATION-PATTERNS.md) | ACL gateways, SAGA, domain events |
-| [`OWASP-COMPLIANCE.md`](docs/security/OWASP-COMPLIANCE.md) | Security control mapping |
-| [`JWT-RSA-JWKS.md`](docs/security/JWT-RSA-JWKS.md) | RSA JWT and JWKS |
-| [`SECRET-ROTATION.md`](docs/security/SECRET-ROTATION.md) | Production secret rotation |
-| [`RELEASE-BACKUP-RECOVERY.md`](docs/infrastructure/RELEASE-BACKUP-RECOVERY.md) | Backup, restore, smoke, rollback |
-| [`PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md) | CI/CD workflow |
-| [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md) | Grafana, Prometheus, Loki, Tempo |
-| [`architecture/adr/`](docs/architecture/adr/README.md) | Architecture decision records |
-| [`SEEDING.md`](docs/development/SEEDING.md) | Local seed accounts and catalog |
-| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md) | Environment files and first boot order |
-| [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md) | Common local issues |
-| [`AGENT.md`](AGENT.md) | Contributor and agent conventions |
+| Document                                                                       | Description                                |
+| :----------------------------------------------------------------------------- | :----------------------------------------- |
+| [`FEATURES.md`](docs/FEATURES.md)                                              | Implemented features with code locations   |
+| [`ROADMAP.md`](docs/ROADMAP.md)                                                | Completed work and planned phases          |
+| [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md)                         | System context, bounded contexts, diagrams |
+| [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md)                       | Layer rules and module boundaries          |
+| [`CQRS.md`](docs/architecture/CQRS.md)                                         | Read path design and query adapters        |
+| [`INTEGRATION-PATTERNS.md`](docs/integration/INTEGRATION-PATTERNS.md)          | ACL gateways, SAGA, domain events          |
+| [`OWASP-COMPLIANCE.md`](docs/security/OWASP-COMPLIANCE.md)                     | Security control mapping                   |
+| [`JWT-RSA-JWKS.md`](docs/security/JWT-RSA-JWKS.md)                             | RSA JWT and JWKS                           |
+| [`SECRET-ROTATION.md`](docs/security/SECRET-ROTATION.md)                       | Production secret rotation                 |
+| [`RELEASE-BACKUP-RECOVERY.md`](docs/infrastructure/RELEASE-BACKUP-RECOVERY.md) | Backup, restore, smoke, rollback           |
+| [`PROJECT-PIPELINE.md`](docs/infrastructure/cicd/PROJECT-PIPELINE.md)          | CI/CD workflow                             |
+| [`MONITORING-STACK-GUIDE.md`](docs/observability/MONITORING-STACK-GUIDE.md)    | Grafana, Prometheus, Loki, Tempo           |
+| [`architecture/adr/`](docs/architecture/adr/README.md)                         | Architecture decision records              |
+| [`SEEDING.md`](docs/development/SEEDING.md)                                    | Local seed accounts and catalog            |
+| [`LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md)                            | Environment files and first boot order     |
+| [`TROUBLESHOOTING.md`](docs/infrastructure/TROUBLESHOOTING.md)                 | Common local issues                        |
+| [`AGENT.md`](AGENT.md)                                                         | Contributor and agent conventions          |
 
 ---
 
@@ -209,12 +233,12 @@ Start with the full index: [`docs/README.md`](docs/README.md). These chapters ar
 
 Full catalog with locations: [`docs/FEATURES.md`](docs/FEATURES.md).
 
-- **Modular monolith** with ten bounded contexts and ACL gateway isolation
+- **Modular monolith** with eleven modules and ACL gateway isolation
 - **Checkout SAGA** with BullMQ orchestration and compensation on failure
 - **CQRS read path** with JOIN query adapters across core modules
 - **Concurrency**: optimistic version locking (HTTP 409) and pessimistic inventory reservation
 - **Auth and security**: RSA JWT (JWKS), refresh rotation, RBAC, user-scoped rate limiting, HTTP idempotency on checkout
-- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, full CI fan-out (unit, integration, E2E, arch, restore drill)
+- **Ops and quality**: Docker, health probes, backup/restore/smoke, structured observability, OpenAPI contract audit, full CI fan-out (unit, integration, E2E, arch, restore drill)
 
 ---
 

@@ -116,6 +116,26 @@ describe('Role Entity', () => {
     );
   });
 
+  it('should create a custom role with isSystem false via create', () => {
+    const role = Role.create('manager', 'Manager', ['manage_products']);
+
+    expect(role.id).toBe(0);
+    expect(role.code).toBe('MANAGER');
+    expect(role.name).toBe('Manager');
+    expect(role.isSystem).toBe(false);
+    expect(role.permissions.has('manage_products')).toBe(true);
+  });
+
+  it('should create a system role with isSystem true via createSystem', () => {
+    const role = Role.createSystem('admin', 'Admin', ['manage_users']);
+
+    expect(role.id).toBe(0);
+    expect(role.code).toBe('ADMIN');
+    expect(role.name).toBe('Admin');
+    expect(role.isSystem).toBe(true);
+    expect(role.permissions.has('manage_users')).toBe(true);
+  });
+
   it('should round-trip to and from primitives without data loss', () => {
     const originalDate = new Date();
     const role = new Role({

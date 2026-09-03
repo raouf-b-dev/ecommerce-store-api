@@ -13,6 +13,7 @@ export class UserDtoTestFactory {
       email: 'john.doe@example.com',
       phone: '+1234567890',
       isActive: true,
+      roleCode: 'CUSTOMER',
       createdAt: new Date('2024-01-01T00:00:00.000Z'),
       updatedAt: new Date('2024-01-01T00:00:00.000Z'),
       addressCount: 2,
@@ -30,6 +31,7 @@ export class UserDtoTestFactory {
       email: 'john.doe@example.com',
       phone: '+1234567890',
       isActive: true,
+      roleCode: 'CUSTOMER',
       createdAt: '2024-01-01T00:00:00.000Z',
       ...overrides,
     };
@@ -42,6 +44,7 @@ export class UserDtoTestFactory {
     return {
       ...base,
       addressCount: 2,
+      addresses: [],
       updatedAt: base.createdAt,
       ...overrides,
     };

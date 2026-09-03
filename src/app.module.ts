@@ -15,11 +15,13 @@ import { InfrastructureModule } from './infrastructure/infrastructure.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WebsocketModule } from './infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { HealthModule } from './modules/health/health.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
 import { AuthGuard } from './guards/auth.guard';
+import { MustChangePasswordGuard } from './guards/must-change-password.guard';
 
 const loadEnvFile = resolveEnvFilePath();
 
@@ -38,6 +40,7 @@ const loadEnvFile = resolveEnvFilePath();
     AuthenticationModule,
     WebsocketModule,
     NotificationsModule,
+    AnalyticsModule,
     HealthModule,
     ShutdownModule,
 
@@ -52,6 +55,10 @@ const loadEnvFile = resolveEnvFilePath();
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MustChangePasswordGuard,
     },
     {
       provide: APP_GUARD,

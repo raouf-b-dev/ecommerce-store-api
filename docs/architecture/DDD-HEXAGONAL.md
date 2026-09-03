@@ -98,7 +98,7 @@ src/modules/[module]/
 
 | Pattern | Definition | Example Application |
 | ------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context** | A boundary within which a domain model is defined and applicable | Each folder in `src/modules/` is a Bounded Context |
+| **Bounded Context** | A boundary within which a domain model is defined and applicable | Each folder in `src/modules/` is treated as a context. Health is probes only. Analytics is query-only composition, not a write aggregate. |
 | **Shared Kernel** | A subset of the domain model shared between multiple contexts. Must be pure domain: no infrastructure | `src/shared-kernel/domain/`: contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore` |
 | **Context Map** | Documents the relationships between Bounded Contexts | Orders imports from Identity (ACL via UserGateway), Carts (ACL via CartGateway) |
 | **Upstream/Downstream** | One context provides, another consumes | Orders (downstream) consumes Identity, Carts, Inventory, Payments (upstream) |
@@ -266,7 +266,7 @@ Does it have its own controller + use case?
 | **Use case imports infrastructure** | A use case directly imports a TypeORM repository, Redis client, or HTTP client. Couples the core to frameworks. | Use cases depend on **ports** (abstract interfaces). Adapters implement the ports. |
 | **Domain entity depends on ORM** | Entity class extends `TypeORM.BaseEntity` or uses ORM decorators. The domain is permanently coupled to the persistence framework. | Domain entities are plain classes. ORM schemas are separate mapper/schema classes in the adapter layer. |
 | **Bidirectional module dependency** | Module A calls Module B, and Module B calls back to Module A. Creates circular dependencies and violates the direction of the context map. | Use domain events for the reverse direction. The Core Domain orchestrates; supporting contexts never call back. |
-| **Shared database tables across contexts** | Two bounded contexts directly query each other's tables. Creates hidden coupling that breaks when either schema evolves. | Each context owns its tables exclusively. Cross-context data flows through ACL Gateways or domain events. |
+| **Shared database tables across contexts** | Two write-side contexts query each other's tables as if they owned them. Hidden coupling when either schema evolves. | Each write context owns its tables. Commands flow through ACL gateways or domain events. CQRS query adapters and Analytics may JOIN for reads in this monolith. |
 | **Anemic domain model** | Entities are data bags with only getters/setters. All logic lives in services. | Entities encapsulate behaviour (Evans, 2003). Services orchestrate entities, not replace them. |
 | **Leaking domain types to the API** | Returning domain entities directly from controllers. Couples the public API contract to internal domain structure. | Map domain entities to presentation DTOs at the controller/adapter boundary. |
 

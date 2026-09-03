@@ -19,6 +19,12 @@ export class MockUserRoleAssignmentRepository implements UserRoleAssignmentRepos
     this.save.mockResolvedValue(Result.success(assignment));
   }
 
+  mockPassthroughSave(): void {
+    this.save.mockImplementation((assignment: UserRoleAssignment) =>
+      Promise.resolve(Result.success(assignment)),
+    );
+  }
+
   mockFailedSave(message: string) {
     this.save.mockResolvedValue(ErrorFactory.RepositoryError(message));
   }

@@ -174,14 +174,22 @@ export class Product implements IProduct {
     this._updatedAt = new Date();
   }
 
-  activate(): void {
+  activate(): Result<void, DomainError> {
+    if (this._isActive) {
+      return ErrorFactory.DomainError('Product is already active');
+    }
     this._isActive = true;
     this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
-  deactivate(): void {
+  deactivate(): Result<void, DomainError> {
+    if (!this._isActive) {
+      return ErrorFactory.DomainError('Product is already inactive');
+    }
     this._isActive = false;
     this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
   updateProduct(updates: UpdateProductDomainProps): void {

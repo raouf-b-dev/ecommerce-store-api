@@ -147,16 +147,16 @@ describe('Security IDOR (e2e)', () => {
       });
     });
 
-    it('returns not found when listing payments for another users order', async () => {
+    it('returns null when no payment exists for the requested order', async () => {
       const response = await http
         .get(`${E2E_API_PREFIX}/payments/orders/999999`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
-      HttpErrorAssertionHelper.assertErrorContract(response, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-        messageContains: 'Payment for order ID 999999 not found',
-      });
+      expect(response.status).toBe(HttpStatus.OK);
+      // Nest serializes JSON null; some clients may surface it as empty body.
+      expect(
+        response.body == null || Object.keys(response.body).length === 0,
+      ).toBe(true);
     });
 
     it('scopes order list to the authenticated user', async () => {

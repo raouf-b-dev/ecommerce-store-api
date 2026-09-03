@@ -66,6 +66,7 @@ describe('AuthGuard', () => {
       userId: 1,
       email: 'test@example.com',
       role: 'ADMIN',
+      mustChangePassword: false,
     });
   });
 
@@ -133,6 +134,29 @@ describe('AuthGuard', () => {
       userId: 2,
       email: 'customer@example.com',
       role: 'CUSTOMER',
+      mustChangePassword: false,
     });
+  });
+
+  it('should propagate the mustChangePassword claim onto the request user', async () => {
+    reflector.getAllAndOverride.mockImplementation(() => false);
+    jwtVerifierService.verifyAccessToken.mockResolvedValue({
+      sub: '3',
+      email: 'seeded@example.com',
+      role: 'ADMIN',
+      mustChangePassword: true,
+      iss: 'test-issuer',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+
+    const request = createMockRequest({
+      headers: { authorization: 'Bearer test-token' },
+    });
+
+    expect(await guard.canActivate(createMockExecutionContext(request))).toBe(
+      true,
+    );
+    expect((request as any).user.mustChangePassword).toBe(true);
   });
 });

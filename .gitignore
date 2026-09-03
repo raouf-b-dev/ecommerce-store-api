@@ -1,5 +1,8 @@
 # compiled output
 /dist
+openapi.json
+openapitools.json
+
 /node_modules
 /build
 
@@ -51,6 +54,7 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+/tmp
 
 # Runtime data
 pids

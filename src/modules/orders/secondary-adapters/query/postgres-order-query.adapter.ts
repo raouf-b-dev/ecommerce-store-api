@@ -14,6 +14,112 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
 import { UserEntity } from '../../../identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
+import type { SelectQueryBuilder } from 'typeorm';
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function toCreatedAfterBound(value: string): Date {
+  if (DATE_ONLY_PATTERN.test(value)) {
+    return new Date(`${value}T00:00:00.000Z`);
+  }
+  return new Date(value);
+}
+
+/** Inclusive end-of-day for date-only values; exclusive upper bound for the query. */
+function toCreatedBeforeExclusiveUpperBound(value: string): Date {
+  if (DATE_ONLY_PATTERN.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0));
+  }
+  return new Date(value);
+}
+
+function applyOrderListFilters(
+  qb: SelectQueryBuilder<OrderEntity>,
+  filters: {
+    authorizedUserId?: number;
+    status?: string;
+    userEmail?: string;
+    userName?: string;
+    firstName?: string;
+    lastName?: string;
+    createdAfter?: string;
+    createdBefore?: string;
+    minAmount?: number;
+    maxAmount?: number;
+  },
+  options: { joinUser: boolean },
+): void {
+  const {
+    authorizedUserId,
+    status,
+    userEmail,
+    userName,
+    firstName,
+    lastName,
+    createdAfter,
+    createdBefore,
+    minAmount,
+    maxAmount,
+  } = filters;
+
+  if (options.joinUser) {
+    qb.leftJoin(UserEntity, 'user', 'user.id = order.userId');
+  }
+
+  if (authorizedUserId) {
+    qb.andWhere('order.userId = :authorizedUserId', { authorizedUserId });
+  }
+
+  if (status) {
+    qb.andWhere('order.status = :status', { status });
+  }
+
+  if (userEmail) {
+    qb.andWhere('user.email ILIKE :userEmail', {
+      userEmail: `%${userEmail}%`,
+    });
+  }
+
+  if (firstName) {
+    qb.andWhere('user.firstName ILIKE :firstName', {
+      firstName: `%${firstName}%`,
+    });
+  }
+
+  if (lastName) {
+    qb.andWhere('user.lastName ILIKE :lastName', {
+      lastName: `%${lastName}%`,
+    });
+  }
+
+  if (userName) {
+    qb.andWhere(
+      '(user.firstName ILIKE :userName OR user.lastName ILIKE :userName)',
+      { userName: `%${userName}%` },
+    );
+  }
+
+  if (createdAfter) {
+    qb.andWhere('order.createdAt >= :createdAfter', {
+      createdAfter: toCreatedAfterBound(createdAfter),
+    });
+  }
+
+  if (createdBefore) {
+    qb.andWhere('order.createdAt < :createdBeforeExclusive', {
+      createdBeforeExclusive: toCreatedBeforeExclusiveUpperBound(createdBefore),
+    });
+  }
+
+  if (minAmount !== undefined) {
+    qb.andWhere('order.totalPrice >= :minAmount', { minAmount });
+  }
+
+  if (maxAmount !== undefined) {
+    qb.andWhere('order.totalPrice <= :maxAmount', { maxAmount });
+  }
+}
 
 /**
  * Cross-Context CQRS Read Adapter — Orders
@@ -46,17 +152,32 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
         userName,
         firstName,
         lastName,
+        createdAfter,
+        createdBefore,
+        minAmount,
+        maxAmount,
         sortBy = 'createdAt',
-        sortDirection = 'desc',
+        sortDirection,
       } = query;
 
       const offset = (page - 1) * limit;
+      const listFilters = {
+        authorizedUserId,
+        status,
+        userEmail,
+        userName,
+        firstName,
+        lastName,
+        createdAfter,
+        createdBefore,
+        minAmount,
+        maxAmount,
+      };
 
       // Header list query: JOIN orders -> users + aggregate item counts to avoid 1:N pagination duplication
-      const qb = this.orderRepo
-        .createQueryBuilder('order')
-        .leftJoin(UserEntity, 'user', 'user.id = order.userId')
-        .leftJoin('order.items', 'item')
+      const qb = this.orderRepo.createQueryBuilder('order');
+      applyOrderListFilters(qb, listFilters, { joinUser: true });
+      qb.leftJoin('order.items', 'item')
         .select([
           'order.id AS "id"',
           'order.userId AS "userId"',
@@ -70,83 +191,20 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
         .groupBy('order.id')
         .addGroupBy('user.id');
 
-      if (authorizedUserId) {
-        qb.andWhere('order.userId = :authorizedUserId', { authorizedUserId });
-      }
-
-      if (status) {
-        qb.andWhere('order.status = :status', { status });
-      }
-
-      if (userEmail) {
-        qb.andWhere('user.email ILIKE :userEmail', {
-          userEmail: `%${userEmail}%`,
-        });
-      }
-
-      if (firstName) {
-        qb.andWhere('user.firstName ILIKE :firstName', {
-          firstName: `%${firstName}%`,
-        });
-      }
-
-      if (lastName) {
-        qb.andWhere('user.lastName ILIKE :lastName', {
-          lastName: `%${lastName}%`,
-        });
-      }
-
-      if (userName) {
-        qb.andWhere(
-          '(user.firstName ILIKE :userName OR user.lastName ILIKE :userName)',
-          { userName: `%${userName}%` },
-        );
-      }
-
-      // Total count query for pagination
       const totalCountQb = this.orderRepo.createQueryBuilder('order');
       const needsUserJoin = Boolean(
         userEmail || userName || firstName || lastName,
       );
-
-      if (authorizedUserId) {
-        totalCountQb.andWhere('order.userId = :authorizedUserId', {
-          authorizedUserId,
-        });
-      }
-      if (status) {
-        totalCountQb.andWhere('order.status = :status', { status });
-      }
-
-      if (needsUserJoin) {
-        totalCountQb.leftJoin(UserEntity, 'user', 'user.id = order.userId');
-        if (userEmail) {
-          totalCountQb.andWhere('user.email ILIKE :userEmail', {
-            userEmail: `%${userEmail}%`,
-          });
-        }
-        if (firstName) {
-          totalCountQb.andWhere('user.firstName ILIKE :firstName', {
-            firstName: `%${firstName}%`,
-          });
-        }
-        if (lastName) {
-          totalCountQb.andWhere('user.lastName ILIKE :lastName', {
-            lastName: `%${lastName}%`,
-          });
-        }
-        if (userName) {
-          totalCountQb.andWhere(
-            '(user.firstName ILIKE :userName OR user.lastName ILIKE :userName)',
-            { userName: `%${userName}%` },
-          );
-        }
-      }
+      applyOrderListFilters(totalCountQb, listFilters, {
+        joinUser: needsUserJoin,
+      });
 
       const total = await totalCountQb.getCount();
 
       const validSortColumns: Record<string, string> = {
         createdAt: 'order.createdAt',
+        updatedAt: 'order.updatedAt',
+        totalPrice: 'order.totalPrice',
         totalAmount: 'order.totalPrice',
         status: 'order.status',
         id: 'order.id',
@@ -154,7 +212,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
 
       const sortCol =
         validSortColumns[sortBy || 'createdAt'] || 'order.createdAt';
-      const rawDirection = sortDirection || query.sortOrder || 'desc';
+      const rawDirection = sortDirection ?? query.sortOrder ?? 'desc';
       const orderDirection =
         rawDirection.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 

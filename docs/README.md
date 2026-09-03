@@ -24,6 +24,7 @@ Technical reference for this repository, organised by layer.
 ### Domain Architecture (System-Specific Domain Design)
 
 - [domains/INVENTORY.md](architecture/domains/INVENTORY.md): Inventory domain architecture, aggregate boundaries, reservation lifecycle, consistency models, and invariants.
+- [domains/ANALYTICS.md](architecture/domains/ANALYTICS.md): Admin analytics read models: revenue definition, UTC periods, permissions.
 
 ---
 
@@ -32,6 +33,7 @@ Technical reference for this repository, organised by layer.
 - [adr/ADR-0004-inventory-integrity-and-concurrency.md](architecture/adr/ADR-0004-inventory-integrity-and-concurrency.md): Rationale for removing persisted `totalQuantity`, CQRS read ports, enforcing atomic OCC, and read-only reconciliation.
 - [adr/ADR-0005-typed-atomic-occ-update-contract.md](architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md): Why every versioned aggregate uses QueryBuilder OCC, `UpdateFromEntity` payloads, and persistence-owned `version` / `updatedAt` stamps.
 - [adr/ADR-0006-redis-fail-open-cache-aside.md](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md): Why Redis cache-aside fails open, idempotency fails closed, and generation-based invalidation drops prior indexes.
+- [adr/ADR-0007-admin-analytics-query-composition.md](architecture/adr/ADR-0007-admin-analytics-query-composition.md): Why admin analytics is a query-only composition module (SQL projections, not ACL/Prometheus).
 
 ---
 

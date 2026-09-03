@@ -10,6 +10,7 @@ import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfac
 import { IdentityGateway } from '../../ports/identity.gateway';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
+import { CredentialRepository } from '../../../domain/repositories/credential.repository';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -25,6 +26,7 @@ export class RefreshTokenUseCase extends UseCase<
     private readonly sessionTokenRepository: SessionTokenRepository,
     private readonly identityGateway: IdentityGateway,
     private readonly authorizationGateway: AuthorizationGateway,
+    private readonly credentialRepository: CredentialRepository,
   ) {
     super();
   }
@@ -102,11 +104,27 @@ export class RefreshTokenUseCase extends UseCase<
         );
       }
 
-      // 7. Generate new tokens
+      // 7. Load the credential flag so it can ride along in the access token
+      const credentialResult = await this.credentialRepository.findByUserId(
+        user.id,
+      );
+      if (credentialResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'Failed to retrieve credential information',
+          credentialResult.error,
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const mustChangePassword =
+        credentialResult.value?.mustChangePassword ?? false;
+
+      // 8. Generate new tokens
       const newAccessToken = await this.jwtSignerService.signAccessToken({
         sub: user.id.toString(),
         email: user.email,
         role: roleResult.value.code,
+        mustChangePassword,
       });
 
       const {
@@ -117,7 +135,7 @@ export class RefreshTokenUseCase extends UseCase<
         sub: user.id,
       });
 
-      // 7. Save new session
+      // 9. Save new session
       const newSession = SessionToken.create(
         user.id,
         newRefreshToken,
@@ -130,6 +148,8 @@ export class RefreshTokenUseCase extends UseCase<
       return Result.success<AuthTokensResult>({
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
+        mustChangePassword,
+        permissions: roleResult.value.permissions,
       });
     } catch {
       return ErrorFactory.UseCaseError(

@@ -48,4 +48,18 @@ describe('RolePermissionsVO', () => {
     const reconstructed = RolePermissionsVO.fromPrimitives(primitives);
     expect(reconstructed.codes).toEqual(codes);
   });
+
+  it('should equal when codes match regardless of order', () => {
+    const a = RolePermissionsVO.fromCodes(['manage_products', 'view_roles']);
+    const b = RolePermissionsVO.fromCodes(['view_roles', 'manage_products']);
+
+    expect(a.equals(b)).toBe(true);
+  });
+
+  it('should not equal when codes differ', () => {
+    const a = RolePermissionsVO.fromCodes(['manage_products']);
+    const b = RolePermissionsVO.fromCodes(['manage_products', 'view_roles']);
+
+    expect(a.equals(b)).toBe(false);
+  });
 });

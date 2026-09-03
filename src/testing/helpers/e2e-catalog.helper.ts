@@ -30,13 +30,20 @@ export class E2eCatalogHelper {
     }
 
     const tokens = await AuthTestHelper.login(http, { email, password });
+    const rotated = await AuthTestHelper.changePassword(
+      http,
+      tokens.accessToken,
+      password,
+    );
+
     return {
       email,
-      password,
+      password: AuthTestHelper.rotatedPassword,
       firstName: 'Super',
       lastName: 'Admin',
       userId: 0,
-      ...tokens,
+      accessToken: rotated.accessToken,
+      refreshToken: rotated.refreshToken || tokens.refreshToken,
     };
   }
 
@@ -63,7 +70,11 @@ export class E2eCatalogHelper {
         description: 'E2E catalog fixture',
       });
 
-    expect(createResponse.status).toBe(HttpStatus.CREATED);
+    if (createResponse.status !== Number(HttpStatus.CREATED)) {
+      throw new Error(
+        `Failed to create E2E product (${createResponse.status}): ${JSON.stringify(createResponse.body)}`,
+      );
+    }
     const productId = Number(createResponse.body.id);
     expect(productId).toBeGreaterThan(0);
 

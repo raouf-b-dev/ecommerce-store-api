@@ -19,8 +19,8 @@ services:
     restart: always
 
   redis:
-    image: redis/redis-stack:latest
-    container_name: redis-stack
+    image: ${REDIS_IMAGE}
+    container_name: ${REDIS_CONTAINER_NAME}
 
     ports:
       - '${REDIS_PORT}:6379'
@@ -38,18 +38,19 @@ services:
 
   # ─── Monitoring Stack ──────────────────────────────────────────
   prometheus:
+    profiles: ['observability']
     image: prom/prometheus:v3.4.0
     container_name: ecom-prometheus
+    environment:
+      # Host-run API listen port (npm run start:dev). Must match .env PORT.
+      PORT: ${PORT:-3000}
     volumes:
-      - ./docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/monitoring/prometheus/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
+      - ./docker/monitoring/prometheus/entrypoint.sh:/etc/prometheus/entrypoint.sh:ro
       - prometheus_data:/prometheus
     ports:
-      - '9090:9090'
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-remote-write-receiver'
+      - '${PROMETHEUS_HOST_PORT:-9090}:9090'
+    entrypoint: ['/bin/sh', '/etc/prometheus/entrypoint.sh']
     healthcheck:
       test:
         [
@@ -68,13 +69,15 @@ services:
       - metrics_api_key
 
   loki:
+    profiles: ['observability']
     image: grafana/loki:3.5.0
     container_name: ecom-loki
     volumes:
       - ./docker/monitoring/loki/loki-config.yml:/etc/loki/config.yml:ro
       - loki_data:/loki
     ports:
-      - '3100:3100'
+      # Host port is configurable. On some Windows hosts, 3000-3199 are reserved by Hyper-V/WSL.
+      - '${LOKI_HOST_PORT:-3100}:3100'
     command: -config.file=/etc/loki/config.yml
     healthcheck:
       test:
@@ -92,6 +95,7 @@ services:
     restart: unless-stopped
 
   promtail:
+    profiles: ['observability']
     image: grafana/promtail:3.5.0
     container_name: ecom-promtail
     volumes:
@@ -105,15 +109,16 @@ services:
     restart: unless-stopped
 
   tempo:
+    profiles: ['observability']
     image: grafana/tempo:2.7.2
     container_name: ecom-tempo
     volumes:
       - ./docker/monitoring/tempo/tempo-config.yml:/etc/tempo/config.yml:ro
       - tempo_data:/var/tempo
     ports:
-      - '3200:3200' # Tempo HTTP API
-      - '4317:4317' # OTLP gRPC receiver
-      - '4318:4318' # OTLP HTTP receiver
+      - '${TEMPO_HOST_PORT:-3200}:3200' # Tempo HTTP API
+      - '${OTLP_GRPC_HOST_PORT:-4317}:4317' # OTLP gRPC receiver
+      - '${OTLP_HTTP_HOST_PORT:-4318}:4318' # OTLP HTTP receiver
     command: -config.file=/etc/tempo/config.yml
     healthcheck:
       test:
@@ -131,6 +136,7 @@ services:
     restart: unless-stopped
 
   grafana:
+    profiles: ['observability']
     image: grafana/grafana:11.6.0
     container_name: ecom-grafana
     environment:
@@ -143,7 +149,8 @@ services:
       - grafana_data:/var/lib/grafana
     entrypoint: /entrypoint.sh
     ports:
-      - '3001:3000'
+      # Host port is configurable. On some Windows hosts, 3000-3199 are reserved by Hyper-V/WSL.
+      - '${GRAFANA_HOST_PORT:-3001}:3000'
     healthcheck:
       test:
         [

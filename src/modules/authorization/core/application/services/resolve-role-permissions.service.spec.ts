@@ -40,7 +40,7 @@ describe('ResolveRolePermissionsService', () => {
     }
   });
 
-  it('should return empty RolePermissionsVO if roleRepository fails', async () => {
+  it('should return failure if roleRepository fails', async () => {
     mockRoleRepository.findPermissionCodesByRoleCode.mockResolvedValue(
       ErrorFactory.RepositoryError('DB error'),
     );
@@ -49,7 +49,7 @@ describe('ResolveRolePermissionsService', () => {
     expect(result.isFailure).toBe(true);
   });
 
-  it('should return RolePermissionsVO with correct codes', async () => {
+  it('should return RolePermissionsVO with correct codes from repository', async () => {
     mockRoleRepository.findPermissionCodesByRoleCode.mockResolvedValue(
       Result.success(['manage_products', 'manage_users']),
     );
@@ -60,5 +60,8 @@ describe('ResolveRolePermissionsService', () => {
       expect(result.value.has('manage_products')).toBe(true);
       expect(result.value.has('manage_users')).toBe(true);
     }
+    expect(
+      mockRoleRepository.findPermissionCodesByRoleCode,
+    ).toHaveBeenCalledWith('ADMIN');
   });
 });

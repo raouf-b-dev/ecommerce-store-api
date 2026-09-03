@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';
 import { CheckStockResult } from '../../../domain/interfaces/check-stock-result.interface';
 
+/**
+ * Stock availability for a product. Missing inventory row = unavailable (qty 0),
+ * matching BulkCheckStockUseCase — not a client error.
+ */
 @Injectable()
 export class CheckStockUseCase implements UseCase<
   { productId: number; quantity?: number },
@@ -22,7 +26,16 @@ export class CheckStockUseCase implements UseCase<
     const inventoryResult = await this.inventoryRepository.findByProductId(
       input.productId,
     );
-    if (inventoryResult.isFailure) return inventoryResult;
+    if (inventoryResult.isFailure) {
+      if (inventoryResult.error.statusCode === HttpStatus.NOT_FOUND) {
+        return Result.success({
+          isAvailable: false,
+          availableQuantity: 0,
+          requestedQuantity,
+        });
+      }
+      return inventoryResult;
+    }
 
     const inventory = inventoryResult.value;
 

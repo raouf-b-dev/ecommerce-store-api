@@ -1,6 +1,8 @@
 import {
+  AuthenticationDtoFactory,
   AuthorizationGatewayDtoFactory,
   AuthorizationGatewayMock,
+  CredentialRepositoryMock,
   IdentityAccessGatewayDtoFactory,
   IdentityAccessGatewayMock,
   MockSessionTokenRepository,
@@ -25,6 +27,7 @@ describe('RefreshTokenUseCase', () => {
   let sessionTokenRepository: MockSessionTokenRepository;
   let accessGateway: IdentityAccessGatewayMock;
   let authorizationGateway: AuthorizationGatewayMock;
+  let credentialRepository: CredentialRepositoryMock;
   let userRecord: UserRecord;
   let roleRecord: RoleRecord;
 
@@ -45,6 +48,7 @@ describe('RefreshTokenUseCase', () => {
     sessionTokenRepository = new MockSessionTokenRepository();
     accessGateway = new IdentityAccessGatewayMock();
     authorizationGateway = new AuthorizationGatewayMock();
+    credentialRepository = new CredentialRepositoryMock();
 
     usecase = new RefreshTokenUseCase(
       jwtVerifierService,
@@ -52,12 +56,14 @@ describe('RefreshTokenUseCase', () => {
       sessionTokenRepository,
       accessGateway,
       authorizationGateway,
+      credentialRepository,
     );
   });
 
   afterEach(() => {
     sessionTokenRepository.reset();
     accessGateway.reset();
+    credentialRepository.reset();
     jest.restoreAllMocks();
   });
 
@@ -85,6 +91,13 @@ describe('RefreshTokenUseCase', () => {
 
     accessGateway.mockFindUserById(userRecord);
     authorizationGateway.mockSuccessfulFindRoleByUserId(roleRecord);
+    credentialRepository.mockSuccessfulFindByUserId(
+      AuthenticationDtoFactory.buildPersistedCredentialEntity({
+        userId: 1,
+        passwordHash: 'hash',
+        mustChangePassword: false,
+      }),
+    );
 
     const newAccessToken = 'new-access-token';
     const newRefreshToken = 'new-refresh-token';
@@ -101,6 +114,7 @@ describe('RefreshTokenUseCase', () => {
     expect(session.isRevoked).toBe(true);
     expect(result.value.accessToken).toBe(newAccessToken);
     expect(result.value.refreshToken).toBe(newRefreshToken);
+    expect(result.value.mustChangePassword).toBe(false);
   });
 
   it('should return failure if session is revoked', async () => {

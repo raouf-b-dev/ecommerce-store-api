@@ -98,7 +98,7 @@ describe('SeedDemoCatalogUseCase', () => {
         items: existing,
         total: existing.length,
         page: 1,
-        limit: 10,
+        limit: 100,
         totalPages: 1,
       }),
     );
@@ -111,6 +111,10 @@ describe('SeedDemoCatalogUseCase', () => {
       expect(result.value[0].status).toBe('existing');
       expect(result.value[0].id).toBe(500);
     }
+    expect(listProductsUseCase.execute).toHaveBeenCalledWith({
+      page: 1,
+      limit: Math.max(100, DEMO_SEED_PRODUCTS.length),
+    });
     expect(createProductUseCase.execute).not.toHaveBeenCalled();
   });
 

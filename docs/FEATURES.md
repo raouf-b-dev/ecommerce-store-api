@@ -41,13 +41,13 @@ The domain core does not depend on infrastructure. Databases, caches, and queues
 
 ### ACL Gateway Pattern
 
-Ten bounded contexts communicate through **eight gateway ports**. There are no direct executable imports of another module's domain. Each consumer defines the interface it needs.
+Eleven modules live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)); Health has no gateways. There are no direct executable imports of another module's domain.
 
 **Location**: `src/modules/*/secondary-adapters/adapters/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md), [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Modular Monolith
 
-All ten modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
+All eleven modules (Analytics, Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
 
 **Location**: `src/modules/`
 
@@ -59,7 +59,7 @@ All ten modules (Authentication, Authorization, Carts, Health, Identity, Invento
 
 ### CQRS Read Path
 
-List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, and Notifications.
+List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition).
 
 **Location**: `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/` · **Deep-dive**: [CQRS.md](architecture/CQRS.md)
 
@@ -177,13 +177,15 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 ### Forced Credential Rotation (mustChangePassword)
 
-Admin accounts from CLI bootstrap set `mustChangePassword = true` so the first login forces a password change (NIST SP 800-63B style).
+Seeded and bootstrap credentials set `mustChangePassword = true`. Login and refresh return the flag; `POST /v1/authentication/change-password` clears it, revokes other sessions, and reissues tokens. `MustChangePasswordGuard` returns HTTP 403 (`MUST_CHANGE_PASSWORD`) on other authenticated routes until rotation.
 
-**Location**: `src/modules/identity/core/domain/entities/user.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
+The access token carries a `mustChangePassword` claim, but only when the flag is set. Clean tokens omit it, so the guard short-circuits without a database read on virtually all traffic; a token that does carry the claim is still checked against `credentials` so the gate can never outlive the flag.
+
+**Location**: `src/modules/authentication/`, `src/guards/must-change-password.guard.ts`, `docs/security/ADMIN-BOOTSTRAP.md`
 
 ### Rate Limiting and Throttling
 
-`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated `sub`) in addition to IP-based keys.
+`@nestjs/throttler` backed by Redis, with **user-scoped** limiting via `UserThrottlerGuard` (authenticated user id) or IP for anonymous requests. A single global `default` profile (`THROTTLE_GLOBAL_LIMIT` / 60s) applies to all routes; auth credential routes tighten that profile via `@Throttle` (`throttle.constants.ts`). Do not register a second named profile in `forRoot`: Nest would apply it to every route.
 
 **Location**: `src/infrastructure/throttler/`
 
@@ -212,6 +214,20 @@ Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on N
 - `GET /health/readiness`: PostgreSQL required (Redis degradation is reported on `/health` and metrics)
 
 **Location**: `src/modules/health/`
+
+### OpenAPI Truthfulness
+
+Swagger at `/api/docs` is the published contract. Decorators on controllers and DTOs must match runtime handler shapes so generated clients stay accurate.
+
+- **`npm run generate:openapi`**: bootstraps `AppModule`, writes `openapi.json` (gitignored) via `SwaggerModule.createDocument()`
+- **`npm run audit:openapi`**: generates the spec and runs `scripts/audit-openapi.js` (nullable scalars without `type`, missing 200/201 schemas, empty summaries, nullable prose mismatches)
+- **Shared config**: `src/infrastructure/swagger/swagger-document.config.ts` (used by `main.ts` and the generate script)
+- **Nullable responses**: OAS 3.0 `nullable` + `allOf` via `nullableResponseSchema()` in `src/infrastructure/swagger/nullable-response.schema.ts` (requires `@ApiExtraModels()` on handlers)
+- **SWC rule**: every `@ApiProperty` / `@ApiPropertyOptional` on scalar fields needs an explicit `type`, or clients get `object`
+
+Stripe webhook stays `@ApiExcludeEndpoint()` (not in the public spec).
+
+**Location**: `scripts/generate-openapi-spec.ts`, `scripts/audit-openapi.js`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`
 
 ### Backup, Restore, and Smoke
 
@@ -295,56 +311,58 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 ### Development
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run start:dev` | Start in watch mode |
-| `npm run start:debug` | Start with debugging |
-| `npm run build` | Build for production |
-| `npm run lint` | Run ESLint with auto-fix |
+| Script                | Description              |
+| :-------------------- | :----------------------- |
+| `npm run start:dev`   | Start in watch mode      |
+| `npm run start:debug` | Start with debugging     |
+| `npm run build`       | Build for production     |
+| `npm run lint`        | Run ESLint with auto-fix |
 
 ### Testing
 
-| Script | Description |
-| :----- | :---------- |
-| `npm test` | Unit tests |
-| `npm run test:watch` | Watch mode |
-| `npm run test:cov` | Coverage |
-| `npm run test:integration` | Real DB / Redis integration |
-| `npm run test:e2e` | End-to-end HTTP flows |
-| `npm run test:arch` | Architecture boundary rules |
+| Script                     | Description                   |
+| :------------------------- | :---------------------------- |
+| `npm test`                 | Unit tests                    |
+| `npm run test:watch`       | Watch mode                    |
+| `npm run test:cov`         | Coverage                      |
+| `npm run test:integration` | Real DB / Redis integration   |
+| `npm run test:e2e`         | End-to-end HTTP flows         |
+| `npm run test:arch`        | Architecture boundary rules   |
 | `npm run test:redis:chaos` | Redis reconnect / degradation |
-| `npm run smoke-test` | Live-process smoke probes |
-| `npm run test:ci` | CI mode |
+| `npm run smoke-test`       | Live-process smoke probes     |
+| `npm run test:ci`          | CI mode                       |
+| `npm run generate:openapi` | Write `openapi.json` from decorators |
+| `npm run audit:openapi`    | Generate spec + contract audit |
 
 ### Database Migrations
 
-| Script | Description |
-| :----- | :---------- |
+| Script                           | Description                            |
+| :------------------------------- | :------------------------------------- |
 | `npm run migration:generate:dev` | Generate migration from entity changes |
-| `npm run migration:create:dev` | Create empty migration |
-| `npm run migration:run:dev` | Run pending migrations |
-| `npm run migration:revert:dev` | Revert last migration |
-| `npm run migration:show:dev` | Show migration status |
+| `npm run migration:create:dev`   | Create empty migration                 |
+| `npm run migration:run:dev`      | Run pending migrations                 |
+| `npm run migration:revert:dev`   | Revert last migration                  |
+| `npm run migration:show:dev`     | Show migration status                  |
 
 > Replace `:dev` with `:prod`, `:staging`, or `:test` for other environments.
 
 ### Docker and Ops
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run d:up:dev` | Start Postgres + Redis |
-| `npm run d:down:dev` | Stop infrastructure |
-| `npm run d:reset:dev` | Reset infrastructure (wipes data) |
-| `npm run d:build:image` | Build production Docker image |
-| `npm run d:up:full:prod` | Start full production stack |
-| `npm run db:backup` | PostgreSQL backup |
-| `npm run db:restore` | PostgreSQL restore |
-| `npm run db:restore:drill` | Backup then restore drill |
+| Script                     | Description                       |
+| :------------------------- | :-------------------------------- |
+| `npm run d:up:dev`         | Start Postgres + Redis            |
+| `npm run d:down:dev`       | Stop infrastructure               |
+| `npm run d:reset:dev`      | Reset infrastructure (wipes data) |
+| `npm run d:build:image`    | Build production Docker image     |
+| `npm run d:up:full:prod`   | Start full production stack       |
+| `npm run db:backup`        | PostgreSQL backup                 |
+| `npm run db:restore`       | PostgreSQL restore                |
+| `npm run db:restore:drill` | Backup then restore drill         |
 
 ### Utilities
 
-| Script | Description |
-| :----- | :---------- |
-| `npm run db:seed` | Seed development database |
+| Script             | Description                |
+| :----------------- | :------------------------- |
+| `npm run db:seed`  | Seed development database  |
 | `npm run env:init` | Generate environment files |
-| `npm run clean` | Remove build artifacts |
+| `npm run clean`    | Remove build artifacts     |
