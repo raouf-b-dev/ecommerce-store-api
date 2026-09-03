@@ -55,30 +55,49 @@ What is done and what comes next: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ### Prerequisites
 
-- **Node.js** ≥ 24
-- **npm** ≥ 11
-- **Docker Desktop** ≥ 28
+- **Node.js** ≥ 24 and **npm** ≥ 11
+- **Docker Desktop** ≥ 28 (orchestrates PostgreSQL and Redis Stack)
 - **Git** ≥ 2.47
 
-### Run locally
+### Environment Bootstrap (Automated Setup)
+
+A single command bootstraps your local development environment: auto-generates configuration (`.env.development`), boots PostgreSQL and Redis Stack in Docker (with healthcheck wait), applies TypeORM database migrations, and seeds demo accounts/catalog fixtures.
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install dependencies
 git clone https://github.com/raouf-b-dev/ecommerce-store-api.git
 cd ecommerce-store-api
 npm install
 
-# 2. Generate environment files (JWT and metrics keys are auto-generated)
-npm run env:init
-# Verify DB_* and REDIS_* in .env.development match Compose defaults (see LOCAL-SETUP.md)
+# 2. Bootstrap environment (Postgres + Redis + migrations + demo seed)
+npm run setup
 
-# 3. Start PostgreSQL + Redis and run migrations
-npm run d:up:dev
-npm run migration:run:dev
-
-# 4. Start the API (first boot initializes roles/permissions), then seed
+# 3. Start the API with hot reloading (SWC watch mode)
 npm run start:dev
-npm run db:seed
+```
+
+| Service | URL |
+| :--- | :--- |
+| **API Base** | `http://localhost:3000` |
+| **Swagger UI** | `http://localhost:3000/api/docs` |
+| **Redis Insight** | `http://localhost:8001` |
+| **Demo Credentials** | See [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+
+Useful Commands:
+- `npm run start:dev` — Start NestJS API with live SWC watch mode on `:3000`
+- `npm run setup:down` — Stop PostgreSQL and Redis containers (preserves data)
+- `npm run setup:reset` — Wipe database volumes and re-bootstrap clean fixtures from scratch
+
+### Manual Step-by-Step Setup
+
+If you prefer running each step individually:
+
+```bash
+npm run env:init             # 1. Generate environment files
+npm run d:up:dev             # 2. Start PostgreSQL + Redis
+npm run migration:run:dev    # 3. Run migrations
+npm run db:seed              # 4. Seed demo accounts & products
+npm run start:dev            # 5. Start the API
 ```
 
 First-time setup detail: [`docs/development/LOCAL-SETUP.md`](docs/development/LOCAL-SETUP.md). Seeded accounts: [`docs/development/SEEDING.md`](docs/development/SEEDING.md).

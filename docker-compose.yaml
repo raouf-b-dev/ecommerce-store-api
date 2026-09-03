@@ -19,8 +19,8 @@ services:
     restart: always
 
   redis:
-    image: redis/redis-stack:latest
-    container_name: redis-stack
+    image: ${REDIS_IMAGE}
+    container_name: ${REDIS_CONTAINER_NAME}
 
     ports:
       - '${REDIS_PORT}:6379'

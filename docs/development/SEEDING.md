@@ -18,19 +18,22 @@ Before seeding, ensure that:
    ```bash
    npm run migration:run:dev
    ```
-3. The NestJS application has booted at least once in development mode:
-   ```bash
-   npm run start:dev
-   ```
-   > [!IMPORTANT]
-   > Booting the application at least once is required because Role and Permission system data is automatically initialized on application bootstrap (`OnApplicationBootstrap` hooks). The seeder script expects these system roles to already exist.
+
+> [!NOTE]
+> When `npm run db:seed` executes, it initializes the full NestJS application context (`NestFactory.createApplicationContext(AppModule)`), which automatically executes all `OnApplicationBootstrap` hooks. System roles and permissions are initialized automatically as part of the seeding process.
 
 ## How to Run Seeding
 
-To run the seeder, execute the following npm script:
+To run the seeder manually:
 
 ```bash
 npm run db:seed
+```
+
+Or as part of the automated 1-command environment setup:
+
+```bash
+npm run setup
 ```
 
 ### Script Features

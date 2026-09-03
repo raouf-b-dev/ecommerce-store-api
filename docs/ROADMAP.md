@@ -61,7 +61,7 @@
 | **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
 | **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
 | **14f** | User detail address projection                    | `[x]`  |  `[P1]`  | **Read model**: `GET /v1/users/{id}` returns `addresses[]` (no new collection route)                    |
-| **14e** | Developer Onboarding & 60s Time-to-Value          | `[ ]`  |  `[P0]`  | **Instant DX**: 1-command quickstart (`docker-compose.quickstart.yml`), value matrix, C4 assets, Bruno  |
+| **14e** | Developer Onboarding & Time-to-First-Run          | `[/]`  |  `[P0]`  | **Bootstrap DX**: 1-command environment bootstrap slice done; value matrix, C4 assets, Bruno deferred     |
 | **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
 | **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
 | **17a** | Customer Catalog Read Path & Notifications        | `[ ]`  |  `[P1]`  | **Storefront Read**: `@Public()` catalog queries, real email providers, abandoned cart recovery         |
@@ -373,30 +373,27 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ---
 
-## ⚡ Phase 14e: Developer Onboarding, Architecture Storytelling & 60s Time-to-Value [P0]
+## ⚡ Phase 14e: Developer Onboarding, Architecture Storytelling & Time-to-First-Run [P0]
 
-> **Goal**: Reduce developer time-to-first-run from 10 minutes to 60 seconds, provide optional 1-command ecosystem orchestration, and visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
+> **Goal**: Collapse environment initialization, infrastructure health checks, migrations, and demo seeding into a single command; run the API on the host with `start:dev`. Visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
 >
 > _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14d, Phase 14f, and Phase 15)._
 
-### [ ] 1-Command Unified Quickstart (`docker-compose.quickstart.yml`)
+### [x] 1-Command Environment Bootstrap (`npm run setup`)
 
-**What**: Single Docker Compose file orchestrating PostgreSQL, Redis, the NestJS API, automatic migrations, seeding, and optionally serving the Admin Dashboard SPA if cloned alongside the API.
+**What**: Single-command orchestrator preparing the local development environment: boots PostgreSQL and Redis Stack in Docker with healthcheck wait (`docker compose up -d --wait`), applies TypeORM migrations, and runs demo database seeding (`scripts/seed.ts`).
 
-**Standalone vs Ecosystem Policy**:
+**Standalone Headless Policy**:
 
-- **API is 100% Standalone by Default**: Anyone cloning only `ecommerce-store-api` uses `npm run d:up:dev && npm run start:dev` with zero frontend dependency.
-- **Multi-App Workspace Layout (Optional)**: If cloned as siblings under a parent directory (e.g. `ES/ecommerce-store-api` and `ES/ecommerce-admin-dashboard`), `npm run quickstart` mounts the sibling dashboard.
-- **Graceful Fallback**: If the sibling dashboard directory is missing, `docker-compose.quickstart.yml` falls back gracefully to running the backend + database + Redis + Swagger with a helpful log notice.
+- `npm run setup` bootstraps the database and cache infrastructure; the NestJS API runs natively on host with SWC watch mode via `npm run start:dev`.
+- Clients (admin SPA, mobile apps, storefront) attach separately via standard HTTP to `http://localhost:3000`.
 
 **Scope**:
 
-- [ ] Create `docker-compose.quickstart.yml` at repository root.
-- [ ] Configure sibling build context for Admin Dashboard (`ADMIN_DASHBOARD_PATH=${ADMIN_DASHBOARD_PATH:-../ecommerce-admin-dashboard}`).
-- [ ] Add single-command boot script: `npm run quickstart` (or `docker compose -f docker-compose.quickstart.yml up -d`).
-- [ ] Include container healthchecks ensuring the API waits for PostgreSQL and Redis readiness before running migrations and seeding.
-- [ ] Provide reverse proxy routing `/` to the Admin Dashboard and `/api` to the backend when the dashboard profile is active.
-      **Location**: `docker-compose.quickstart.yml`, `package.json`
+- [x] Multi-stage bootstrap script: `scripts/setup.js` (env init $\rightarrow$ infra boot with `--wait` $\rightarrow$ migrations $\rightarrow$ demo seed).
+- [x] Clean down & reset scripts: `npm run setup:down` (preserves data) and `npm run setup:reset` (wipes volumes and re-bootstraps).
+- [x] Eliminated duplicate compose and seeder files (`docker-compose.quickstart.yml`, `scripts/docker-seed.js`).
+      **Location**: `scripts/setup.js`, `docker-compose.yaml`, `package.json`
 
 ### [ ] Architecture Value Matrix & "Why Choose This Engine?" in README
 
