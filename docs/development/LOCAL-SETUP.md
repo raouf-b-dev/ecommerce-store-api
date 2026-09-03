@@ -4,9 +4,39 @@ Short guide for first-time local setup: environment files, what is auto-generate
 
 ---
 
-## 1. Generate environment files
+## ⚡ Automated Environment Bootstrap
 
-From the repository root:
+For the fastest time-to-first-run with zero manual database, Redis, migration, or seeding steps:
+
+```bash
+# From ecommerce-store-api root:
+npm run setup
+```
+
+This single command orchestrates:
+1. Auto-generates local development environment files (`.env.development`) with fresh 4096-bit RSA keys if missing.
+2. Starts **PostgreSQL 18.4** (`:5432`) and **Redis Stack** (`:6379`, `:8001` Redis Insight) in Docker with native healthcheck waiting (`--wait`).
+3. Automatically applies all pending TypeORM database migrations (`migration:run:dev`).
+4. Automatically seeds the database with demo accounts, catalog, orders, and inventory (`db:seed`).
+
+After the bootstrap completes, start the API:
+
+```bash
+npm run start:dev
+```
+
+### Useful Commands
+
+```bash
+npm run setup:down     # Stop PostgreSQL and Redis containers (keeps data)
+npm run setup:reset    # Destroy database volumes and re-bootstrap clean fixtures
+```
+
+---
+
+## 1. Manual Host Development Setup
+
+If you prefer running the NestJS API directly on your host machine with TypeScript watch mode:
 
 ```bash
 npm run env:init
