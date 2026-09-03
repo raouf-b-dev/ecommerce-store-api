@@ -1,5 +1,5 @@
 export const INTEGRATION_TEST_DB_CONSTANTS = {
-  POSTGRES_IMAGE: 'postgres:18.4-alpine',
+  POSTGRES_IMAGE: process.env.POSTGRES_IMAGE || 'postgres:18.4-alpine',
   DB_NAME: 'ecommerce_store_test_integration',
   DB_USER: 'test_user',
   DB_PASS: 'test_pass',

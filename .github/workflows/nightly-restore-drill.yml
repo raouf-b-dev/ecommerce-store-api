@@ -20,6 +20,8 @@ jobs:
     outputs:
       postgres_image: ${{ steps.resolve.outputs.postgres_image }}
       postgres_container_name: ${{ steps.resolve.outputs.postgres_container_name }}
+      redis_image: ${{ steps.resolve.outputs.redis_image }}
+      redis_container_name: ${{ steps.resolve.outputs.redis_container_name }}
       cors_allowed_origins: ${{ steps.resolve.outputs.cors_allowed_origins }}
     steps:
       - name: Checkout
@@ -142,7 +144,7 @@ jobs:
           --health-retries=5
 
       redis:
-        image: redis/redis-stack:7.2.0-v18
+        image: ${{ needs.resolve-env.outputs.redis_image }}
         ports: ['6379:6379', '8001:8001']
         env:
           REDIS_ARGS: ${{ secrets.CI_REDIS_PASSWORD && format('--requirepass {0}', secrets.CI_REDIS_PASSWORD) || '' }}
@@ -151,6 +153,8 @@ jobs:
       NODE_ENV: test
       POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
       POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
+      REDIS_IMAGE: ${{ needs.resolve-env.outputs.redis_image }}
+      REDIS_CONTAINER_NAME: ${{ needs.resolve-env.outputs.redis_container_name }}
       CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
 
     steps:
