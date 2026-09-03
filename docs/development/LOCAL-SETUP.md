@@ -15,7 +15,7 @@ npm run setup
 
 This single command orchestrates:
 1. Auto-generates local development environment files (`.env.development`) with fresh 4096-bit RSA keys if missing.
-2. Starts **PostgreSQL 18.4** (`:5432`) and **Redis Stack** (`:6379`, `:8001` Redis Insight) in Docker with native healthcheck waiting (`--wait`).
+2. Starts **PostgreSQL** (`:5432`) and **Redis Stack** (`:6379`, `:8001` Redis Insight) in Docker with native healthcheck waiting (`--wait`).
 3. Automatically applies all pending TypeORM database migrations (`migration:run:dev`).
 4. Automatically seeds the database with demo accounts, catalog, orders, and inventory (`db:seed`).
 
