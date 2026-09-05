@@ -48,6 +48,7 @@ describe('ProductsController', () => {
       description: 'A fast red sports car',
       price: 35000,
       sku: 'CAR-001',
+      categoryId: 1,
     };
 
     updateProductDto = {
