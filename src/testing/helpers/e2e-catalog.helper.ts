@@ -16,7 +16,37 @@ export interface E2eCatalogProduct {
   name: string;
 }
 
+interface E2eCategoryListItem {
+  id: number;
+  slug: string;
+  isActive: boolean;
+}
+
 export class E2eCatalogHelper {
+  private static async resolveCategoryIdForFixture(
+    http: E2eHttpClient,
+    accessToken: string,
+  ): Promise<number | undefined> {
+    const listResponse = await http
+      .get(`${E2E_API_PREFIX}/categories`)
+      .set(AuthTestHelper.bearer(accessToken));
+
+    if (listResponse.status !== Number(HttpStatus.OK)) {
+      return undefined;
+    }
+
+    const categories = listResponse.body as E2eCategoryListItem[];
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return undefined;
+    }
+
+    const active = categories.filter((category) => category.isActive);
+    const preferred =
+      active.find((category) => category.slug === 'electronics') ?? active[0];
+
+    return preferred?.id;
+  }
+
   static async seedAdminSession(
     moduleRef: TestingModule,
     http: E2eHttpClient,
@@ -59,6 +89,11 @@ export class E2eCatalogHelper {
       .slice(2, 6)}`.toUpperCase();
     const name = `E2E ${label} ${sku}`;
 
+    const categoryId = await this.resolveCategoryIdForFixture(
+      http,
+      admin.accessToken,
+    );
+
     const createResponse = await http
       .post(`${E2E_API_PREFIX}/products`)
       .set(AuthTestHelper.bearer(admin.accessToken))
@@ -68,6 +103,7 @@ export class E2eCatalogHelper {
         price: 25,
         currency: 'USD',
         description: 'E2E catalog fixture',
+        ...(categoryId != null ? { categoryId } : {}),
       });
 
     if (createResponse.status !== Number(HttpStatus.CREATED)) {
