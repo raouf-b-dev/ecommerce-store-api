@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { UserEntity } from 'src/modules/identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
+import { CategoryEntity } from 'src/modules/products/secondary-adapters/orm/category.schema';
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
 import { RoleEntity } from 'src/modules/authorization/secondary-adapter/orm/role.schema';
 import { UserRoleAssignmentEntity } from 'src/modules/authorization/secondary-adapter/orm/user-role-assignment.schema';
@@ -19,6 +20,7 @@ export async function seedReferenceData(
   dataSource: DataSource,
 ): Promise<SeededData> {
   const userRepo = dataSource.getRepository(UserEntity);
+  const categoryRepo = dataSource.getRepository(CategoryEntity);
   const productRepo = dataSource.getRepository(ProductEntity);
   const inventoryRepo = dataSource.getRepository(InventoryEntity);
   const roleRepo = dataSource.getRepository(RoleEntity);
@@ -65,6 +67,44 @@ export async function seedReferenceData(
     userId: adminUser.id,
     roleId: adminRole.id,
   });
+
+  await categoryRepo.insert([
+    {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 2,
+      name: 'Clothing',
+      slug: 'clothing',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 3,
+      name: 'Home & Garden',
+      slug: 'home-garden',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 4,
+      name: 'Sports',
+      slug: 'sports',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 5,
+      name: 'Books',
+      slug: 'books',
+      description: null,
+      isActive: true,
+    },
+  ]);
 
   const product = await productRepo.save({
     sku: 'INT-LAPTOP-01',
