@@ -48,7 +48,7 @@ function toDotenvEscaped(pem) {
   return `"${pem.replace(/\r?\n/g, '\\n')}"`;
 }
 
-// Base64 of raw PEM — paste verbatim into GitHub Secrets; CI decodes before writing .env.test
+// Base64 of raw PEM - paste verbatim into GitHub Secrets; CI decodes before writing .env.test
 function toPortableSecret(pem) {
   return Buffer.from(pem, 'utf8').toString('base64');
 }

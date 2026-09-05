@@ -122,7 +122,7 @@ function applyOrderListFilters(
 }
 
 /**
- * Cross-Context CQRS Read Adapter — Orders
+ * Cross-Context CQRS Read Adapter - Orders
  *
  * Query-side implementation returning presentation-ready read DTOs directly from persistence.
  * Delegates raw row mapping to OrderQueryMapper.

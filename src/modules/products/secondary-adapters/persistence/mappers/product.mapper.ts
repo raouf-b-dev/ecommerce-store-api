@@ -7,8 +7,8 @@ type ProductCreate = Omit<ProductEntity, 'version'>;
 
 export type ProductUpdate = UpdateFromEntity<
   ProductEntity,
-  'id' | 'version' | 'createdAt' | 'updatedAt'
->; // persistence-owned: identity, OCC, @CreateDateColumn, @UpdateDateColumn
+  'id' | 'version' | 'createdAt' | 'updatedAt' | 'category'
+>; // persistence-owned: identity, OCC, timestamps, relation loaded separately
 
 export class ProductMapper {
   static toDomain(entity: ProductEntity): Product {

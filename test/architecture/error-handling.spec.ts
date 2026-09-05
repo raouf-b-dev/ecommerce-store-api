@@ -64,7 +64,7 @@ describe('Error handling conventions', () => {
           if (isCommentLine(line)) return;
           if (pattern.regex.test(line)) {
             violations.push(
-              `${relativePath}:${index + 1} — banned ${pattern.name}: ${line.trim()}`,
+              `${relativePath}:${index + 1} - banned ${pattern.name}: ${line.trim()}`,
             );
           }
         });

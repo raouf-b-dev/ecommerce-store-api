@@ -78,7 +78,7 @@ export class CachedOrderRepository implements OrderRepository {
               return Result.success(orders);
             }
             this.logger.warn(
-              'Order list cache payload had unreadable entries — falling back to Postgres',
+              'Order list cache payload had unreadable entries - falling back to Postgres',
             );
           }
         } catch (cacheError) {

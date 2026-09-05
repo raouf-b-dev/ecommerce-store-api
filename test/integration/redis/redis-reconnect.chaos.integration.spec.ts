@@ -51,7 +51,7 @@ describe('Redis reconnect chaos (Testcontainers)', () => {
     const port = Number(process.env.CHAOS_REDIS_PORT);
     if (!host || !Number.isFinite(port)) {
       throw new Error(
-        'Chaos Redis env is missing — globalSetup did not start the container',
+        'Chaos Redis env is missing - globalSetup did not start the container',
       );
     }
     chaosHost = host;

@@ -132,7 +132,7 @@ export class ProductsController {
   @ApiResponse({
     status: 409,
     description:
-      'Conflict — product was modified concurrently. Reload and retry.',
+      'Conflict - product was modified concurrently. Reload and retry.',
   })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -179,7 +179,7 @@ export class ProductsController {
   @ApiResponse({
     status: 409,
     description:
-      'Conflict — product was modified concurrently. Reload and retry.',
+      'Conflict - product was modified concurrently. Reload and retry.',
   })
   async activate(@Param('id', ParseIntPipe) id: number) {
     return this.activateProductUseCase.execute(id);
@@ -204,7 +204,7 @@ export class ProductsController {
   @ApiResponse({
     status: 409,
     description:
-      'Conflict — product was modified concurrently. Reload and retry.',
+      'Conflict - product was modified concurrently. Reload and retry.',
   })
   async deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.deactivateProductUseCase.execute(id);

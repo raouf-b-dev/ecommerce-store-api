@@ -59,7 +59,7 @@ export const VERSIONED_SEARCH_INDEXES = [
   PAYMENT_REDIS.INDEX,
 ] as const;
 
-/** Env prefix only — meta / idempotency keys must not rotate with cache generation. */
+/** Env prefix only - meta / idempotency keys must not rotate with cache generation. */
 export function buildStableFullKey(envPrefix: string, key: string): string {
   return `${envPrefix}${key}`;
 }

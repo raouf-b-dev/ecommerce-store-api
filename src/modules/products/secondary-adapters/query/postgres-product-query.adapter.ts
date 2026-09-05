@@ -6,6 +6,7 @@ import { ListProductsQuery } from '../../core/application/queries/list-products.
 import { ProductListItemDTO } from '../../core/application/queries/results/product-list-item.result';
 import { ProductDetailDTO } from '../../core/application/queries/results/product-detail.result';
 import { ProductEntity } from '../orm/product.schema';
+import { CategoryEntity } from '../orm/category.schema';
 import { RawProductListQueryRow } from '../dto/raw-product-list-query-row.interface';
 import { ProductQueryMapper } from '../mappers/query/product-query.mapper';
 import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
@@ -40,6 +41,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
 
       const qb = this.productRepo
         .createQueryBuilder('product')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',
@@ -49,6 +55,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
           'product.currency AS "currency"',
           'product.imageUrl AS "imageUrl"',
           'product.categoryId AS "categoryId"',
+          'category.name AS "categoryName"',
           'product.isActive AS "isActive"',
           'product.createdAt AS "createdAt"',
         ]);
@@ -138,6 +145,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     try {
       const qb = this.productRepo
         .createQueryBuilder('product')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',
@@ -148,6 +160,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
           'product.currency AS "currency"',
           'product.imageUrl AS "imageUrl"',
           'product.categoryId AS "categoryId"',
+          'category.name AS "categoryName"',
           'product.isActive AS "isActive"',
           'product.createdAt AS "createdAt"',
           'product.updatedAt AS "updatedAt"',
@@ -174,6 +187,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     try {
       const qb = this.productRepo
         .createQueryBuilder('product')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',
@@ -184,6 +202,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
           'product.currency AS "currency"',
           'product.imageUrl AS "imageUrl"',
           'product.categoryId AS "categoryId"',
+          'category.name AS "categoryName"',
           'product.isActive AS "isActive"',
           'product.createdAt AS "createdAt"',
           'product.updatedAt AS "updatedAt"',

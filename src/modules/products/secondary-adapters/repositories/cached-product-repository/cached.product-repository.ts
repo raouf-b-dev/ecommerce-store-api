@@ -154,7 +154,7 @@ export class CachedProductRepository implements ProductRepository {
           return Result.success(products);
         }
         this.logger.warn(
-          'Product list cache payload had unreadable entries — falling back to Postgres',
+          'Product list cache payload had unreadable entries - falling back to Postgres',
         );
       }
 

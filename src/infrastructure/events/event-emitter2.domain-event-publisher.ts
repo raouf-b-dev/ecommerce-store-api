@@ -4,7 +4,7 @@ import { DomainEventPublisher } from '../../shared-kernel/domain/interfaces/doma
 import { toError } from '../../shared-kernel/infra/lang/error.utils';
 
 /**
- * Infrastructure adapter — wraps @nestjs/event-emitter for
+ * Infrastructure adapter - wraps @nestjs/event-emitter for
  * in-process domain event delivery.
  *
  * Swap this adapter to switch to Kafka, RabbitMQ, etc.,

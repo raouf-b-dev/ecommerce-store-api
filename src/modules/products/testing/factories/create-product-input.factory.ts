@@ -11,6 +11,7 @@ export class CreateProductInputFactory {
       description: 'A test product description',
       price: 100,
       sku: 'TEST-001',
+      categoryId: 1,
     };
 
     return { ...baseDto, ...overrides };
@@ -42,6 +43,7 @@ export class CreateProductInputFactory {
     return {
       name: 'Minimal Product',
       price: 50,
+      categoryId: 1,
     };
   }
 

@@ -71,7 +71,7 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
       inject: [CachePort, POSTGRES_INVENTORY_REPOSITORY],
     },
 
-    // Default Repository Binding — cache-aside fails open via CachePort
+    // Default Repository Binding - cache-aside fails open via CachePort
     {
       provide: InventoryRepository,
       useExisting: CACHED_INVENTORY_REPOSITORY,
