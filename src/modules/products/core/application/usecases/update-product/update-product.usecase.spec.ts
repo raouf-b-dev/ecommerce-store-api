@@ -1,4 +1,6 @@
+import { HttpStatus } from '@nestjs/common';
 import {
+  MockCategoryRepository,
   MockProductRepository,
   ProductTestFactory,
   UpdateProductInputFactory,
@@ -11,14 +13,18 @@ import { Product } from '../../../domain/entities/product';
 describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let mockRepository: MockProductRepository;
+  let mockCategoryRepository: MockCategoryRepository;
 
   beforeEach(() => {
     mockRepository = new MockProductRepository();
-    useCase = new UpdateProductUseCase(mockRepository);
+    mockCategoryRepository = new MockCategoryRepository();
+    mockCategoryRepository.mockSuccessfulFindById();
+    useCase = new UpdateProductUseCase(mockRepository, mockCategoryRepository);
   });
 
   afterEach(() => {
     mockRepository.reset();
+    mockCategoryRepository.reset();
   });
 
   describe('execute', () => {
@@ -45,6 +51,7 @@ describe('UpdateProductUseCase', () => {
       expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(productId);
       expect(mockRepository.save).toHaveBeenCalledWith(existingProduct, 1);
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
     });
 
     it('should return Failure(UseCaseError) if product is not found', async () => {
@@ -79,6 +86,44 @@ describe('UpdateProductUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.price).toBe(200);
       expect(mockRepository.save).toHaveBeenCalledWith(existingProduct, 2);
+    });
+
+    it('should return BAD_REQUEST when categoryId is explicitly null', async () => {
+      const command = UpdateProductInputFactory.createMockDto({
+        categoryId: null,
+      });
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'categoryId cannot be null',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
+      expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when categoryId is unknown', async () => {
+      const command = UpdateProductInputFactory.createMockDto({
+        categoryId: 99,
+      });
+      mockCategoryRepository.mockMissingCategory();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Category with id 99 not found',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
   });
 });
