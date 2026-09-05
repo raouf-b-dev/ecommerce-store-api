@@ -91,8 +91,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
   ): Promise<Result<boolean, RepositoryError>> {
     try {
       const found = await this.ormRepo.findOne({
-        where:
-          excludeId != null ? { name, id: Not(excludeId) } : { name },
+        where: excludeId != null ? { name, id: Not(excludeId) } : { name },
       });
       return Result.success(found != null);
     } catch (error) {
@@ -109,8 +108,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
   ): Promise<Result<boolean, RepositoryError>> {
     try {
       const found = await this.ormRepo.findOne({
-        where:
-          excludeId != null ? { slug, id: Not(excludeId) } : { slug },
+        where: excludeId != null ? { slug, id: Not(excludeId) } : { slug },
       });
       return Result.success(found != null);
     } catch (error) {

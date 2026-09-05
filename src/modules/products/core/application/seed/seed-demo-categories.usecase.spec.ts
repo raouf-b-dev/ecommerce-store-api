@@ -57,9 +57,9 @@ describe('SeedDemoCategoriesUseCase', () => {
       }),
     );
 
-    categoryRepository.findBySlug.mockImplementation(async (slug) => {
+    categoryRepository.findBySlug.mockImplementation((slug) => {
       const found = existing.find((c) => c.slug === slug) ?? null;
-      return Result.success(found);
+      return Promise.resolve(Result.success(found));
     });
 
     const result = await useCase.execute();
@@ -94,12 +94,12 @@ describe('SeedDemoCategoriesUseCase', () => {
       }),
     );
 
-    categoryRepository.findBySlug.mockImplementation(async (slug) => {
+    categoryRepository.findBySlug.mockImplementation((slug) => {
       if (slug === 'electronics') {
-        return Result.success(inactive);
+        return Promise.resolve(Result.success(inactive));
       }
       const found = others.find((c) => c.slug === slug) ?? null;
-      return Result.success(found);
+      return Promise.resolve(Result.success(found));
     });
     categoryRepository.mockSuccessfulSave();
 

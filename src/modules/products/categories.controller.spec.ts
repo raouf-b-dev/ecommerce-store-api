@@ -119,7 +119,9 @@ describe('CategoriesController', () => {
 
   it('calls CreateCategoryUseCase on create', async () => {
     await controller.create(createCategoryDto);
-    expect(createCategoryUseCase.execute).toHaveBeenCalledWith(createCategoryDto);
+    expect(createCategoryUseCase.execute).toHaveBeenCalledWith(
+      createCategoryDto,
+    );
   });
 
   it('calls UpdateCategoryUseCase on update', async () => {

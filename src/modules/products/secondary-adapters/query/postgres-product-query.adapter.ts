@@ -41,7 +41,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
 
       const qb = this.productRepo
         .createQueryBuilder('product')
-        .leftJoin(CategoryEntity, 'category', 'category.id = product.categoryId')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',
@@ -141,7 +145,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     try {
       const qb = this.productRepo
         .createQueryBuilder('product')
-        .leftJoin(CategoryEntity, 'category', 'category.id = product.categoryId')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',
@@ -179,7 +187,11 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     try {
       const qb = this.productRepo
         .createQueryBuilder('product')
-        .leftJoin(CategoryEntity, 'category', 'category.id = product.categoryId')
+        .leftJoin(
+          CategoryEntity,
+          'category',
+          'category.id = product.categoryId',
+        )
         .select([
           'product.id AS "id"',
           'product.name AS "name"',

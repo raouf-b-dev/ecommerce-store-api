@@ -44,7 +44,10 @@ describe('Category', () => {
     });
 
     it('rejects deactivate when already inactive', () => {
-      const category = Category.create({ name: 'Electronics', isActive: false });
+      const category = Category.create({
+        name: 'Electronics',
+        isActive: false,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         category.deactivate(),

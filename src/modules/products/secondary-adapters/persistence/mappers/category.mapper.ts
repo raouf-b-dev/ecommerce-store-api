@@ -1,4 +1,7 @@
-import { Category, CategoryProps } from '../../../core/domain/entities/category';
+import {
+  Category,
+  CategoryProps,
+} from '../../../core/domain/entities/category';
 import { CategoryEntity } from '../../orm/category.schema';
 
 export class CategoryMapper {

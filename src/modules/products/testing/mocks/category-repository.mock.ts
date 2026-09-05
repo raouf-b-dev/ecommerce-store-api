@@ -49,11 +49,11 @@ export class MockCategoryRepository implements CategoryRepository {
   }
 
   mockSuccessfulSave(category?: Category): void {
-    this.save.mockImplementation(async (incoming) => {
+    this.save.mockImplementation((incoming) => {
       if (incoming.id == null) {
         incoming.setId(category?.id ?? 10);
       }
-      return Result.success(incoming);
+      return Promise.resolve(Result.success(incoming));
     });
   }
 

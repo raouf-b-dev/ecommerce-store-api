@@ -26,10 +26,7 @@ export class GetCategoryUseCase extends UseCase<
     const result = await this.categoryRepository.findById(id);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to find category',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to find category', result.error);
     }
 
     if (!result.value) {
