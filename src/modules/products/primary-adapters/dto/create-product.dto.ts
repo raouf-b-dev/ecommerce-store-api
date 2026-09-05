@@ -43,8 +43,8 @@ export class CreateProductDto {
   @IsString()
   imageUrl?: string;
 
-  @ApiPropertyOptional({ example: 1 })
-  @IsOptional()
+  @ApiProperty({ example: 1, description: 'Active category id' })
   @IsInt()
-  categoryId?: number;
+  @IsPositive()
+  categoryId!: number;
 }
