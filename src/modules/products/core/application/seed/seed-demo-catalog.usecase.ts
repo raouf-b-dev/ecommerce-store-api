@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { Result } from '../../../../../shared-kernel/domain/result';
+import {
+  isFailure,
+  Result,
+} from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CreateProductUseCase } from '../usecases/create-product/create-product.usecase';
-import { ListProductsUseCase } from '../usecases/list-products/list-products.usecase';
+import { UpdateProductUseCase } from '../usecases/update-product/update-product.usecase';
+import { CategoryRepository } from '../../domain/repositories/category-repository';
+import { ProductRepository } from '../../domain/repositories/product-repository';
 import { DEMO_SEED_PRODUCTS } from './demo-products';
 
 export interface SeededDemoProduct {
@@ -24,35 +29,62 @@ export class SeedDemoCatalogUseCase extends UseCase<
   UseCaseError
 > {
   constructor(
-    private readonly listProductsUseCase: ListProductsUseCase,
+    private readonly productRepository: ProductRepository,
+    private readonly categoryRepository: CategoryRepository,
     private readonly createProductUseCase: CreateProductUseCase,
+    private readonly updateProductUseCase: UpdateProductUseCase,
   ) {
     super();
   }
 
   async execute(): Promise<Result<SeededDemoProduct[], UseCaseError>> {
-    // Default list limit is 10; demo catalog has more SKUs — must load enough
-    // pages worth so idempotency does not try to recreate existing products.
-    const existingProductsResult = await this.listProductsUseCase.execute({
-      page: 1,
-      limit: Math.max(100, DEMO_SEED_PRODUCTS.length),
-    });
-    if (existingProductsResult.isFailure) {
+    const categoriesResult = await this.categoryRepository.findAll();
+    if (isFailure(categoriesResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to load categories for catalog seed',
+        categoriesResult.error,
+      );
+    }
+
+    const categoryIdBySlug = new Map<string, number>();
+    for (const category of categoriesResult.value) {
+      if (category.id == null || !category.isActive) {
+        continue;
+      }
+      categoryIdBySlug.set(category.slug, category.id);
+    }
+
+    for (const seed of DEMO_SEED_PRODUCTS) {
+      if (!categoryIdBySlug.has(seed.categorySlug)) {
+        return ErrorFactory.UseCaseError(
+          `Demo category slug ${seed.categorySlug} is missing or inactive`,
+        );
+      }
+    }
+
+    const existingProductsResult = await this.productRepository.findAll();
+    if (isFailure(existingProductsResult)) {
       return ErrorFactory.UseCaseError(
         'Failed to load existing products',
         existingProductsResult.error,
       );
     }
 
-    const productSkuToIdMap = new Map<string, number>();
-    for (const product of existingProductsResult.value.items) {
-      if (product.sku && product.id) {
-        productSkuToIdMap.set(product.sku, product.id);
+    const existingBySku = new Map<
+      string,
+      { id: number; categoryId: number | null }
+    >();
+    for (const product of existingProductsResult.value) {
+      if (product.sku && product.id != null) {
+        existingBySku.set(product.sku, {
+          id: product.id,
+          categoryId: product.categoryId ?? null,
+        });
       }
     }
 
     const missingProducts = DEMO_SEED_PRODUCTS.filter(
-      (s) => !productSkuToIdMap.has(s.sku),
+      (s) => !existingBySku.has(s.sku),
     );
 
     const createResults = await Promise.all(
@@ -62,6 +94,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
           description: seed.description,
           sku: seed.sku,
           price: seed.price,
+          categoryId: categoryIdBySlug.get(seed.categorySlug)!,
         }),
       ),
     );
@@ -71,6 +104,31 @@ export class SeedDemoCatalogUseCase extends UseCase<
       if (result.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to seed product ${missingProducts[i].sku}`,
+          result.error,
+        );
+      }
+    }
+
+    const toBackfill = DEMO_SEED_PRODUCTS.filter((seed) => {
+      const existing = existingBySku.get(seed.sku);
+      return existing != null && existing.categoryId == null;
+    });
+
+    const updateResults = await Promise.all(
+      toBackfill.map((seed) => {
+        const existing = existingBySku.get(seed.sku)!;
+        return this.updateProductUseCase.execute({
+          id: existing.id,
+          categoryId: categoryIdBySlug.get(seed.categorySlug)!,
+        });
+      }),
+    );
+
+    for (let i = 0; i < updateResults.length; i++) {
+      const result = updateResults[i];
+      if (result.isFailure) {
+        return ErrorFactory.UseCaseError(
+          `Failed to backfill category for product ${toBackfill[i].sku}`,
           result.error,
         );
       }
@@ -89,16 +147,16 @@ export class SeedDemoCatalogUseCase extends UseCase<
 
     const seededProducts: SeededDemoProduct[] = DEMO_SEED_PRODUCTS.map(
       (seed) => {
-        const existingId = productSkuToIdMap.get(seed.sku);
+        const existing = existingBySku.get(seed.sku);
         const createdId = createdProductMap.get(seed.sku);
         return {
-          id: (existingId ?? createdId)!,
+          id: (existing?.id ?? createdId)!,
           sku: seed.sku,
           name: seed.name,
           price: seed.price,
           initialStock: seed.initialStock,
           lowStockThreshold: seed.lowStockThreshold,
-          status: existingId ? ('existing' as const) : ('created' as const),
+          status: existing ? ('existing' as const) : ('created' as const),
         };
       },
     );
