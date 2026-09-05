@@ -1,7 +1,7 @@
 import { IRolePermissions } from '../../../../../shared-kernel/domain/interfaces/role-permissions.interface';
 export type { IRolePermissions };
 
-/** Plain serialized form — no behaviour, safe to cross module boundaries. */
+/** Plain serialized form - no behaviour, safe to cross module boundaries. */
 
 export class RolePermissionsVO implements IRolePermissions {
   private readonly _permissions: Set<string>;

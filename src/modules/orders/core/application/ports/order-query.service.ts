@@ -6,7 +6,7 @@ import { OrderListItemDTO } from '../queries/results/order-list-item.result';
 import { OrderDetailDTO } from '../queries/results/order-detail.result';
 
 /**
- * Query Port — read-only presentation projections for Orders.
+ * Query Port - read-only presentation projections for Orders.
  *
  * This port is an APPLICATION-LAYER contract (NOT a domain aggregate repository).
  * It returns presentation DTOs (OrderListItemDTO, OrderDetailDTO)

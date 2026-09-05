@@ -66,7 +66,7 @@ export class HealthController {
   @ApiOperation({
     summary: 'Readiness probe',
     description:
-      'PostgreSQL connectivity only. Redis is intentionally excluded — degraded Redis is reported via GET /health and metrics, not by blocking readiness.',
+      'PostgreSQL connectivity only. Redis is intentionally excluded - degraded Redis is reported via GET /health and metrics, not by blocking readiness.',
   })
   @ApiOkResponse({
     type: HealthCheckResponseDto,

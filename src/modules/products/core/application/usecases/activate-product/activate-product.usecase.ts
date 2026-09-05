@@ -34,6 +34,14 @@ export class ActivateProductUseCase extends UseCase<
 
     const { entity: product, expectedVersion } = productResult.value;
 
+    if (product.categoryId == null) {
+      return ErrorFactory.UseCaseError(
+        'Cannot activate a product without a category',
+        undefined,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const activateResult = product.activate();
     if (activateResult.isFailure) {
       return activateResult;

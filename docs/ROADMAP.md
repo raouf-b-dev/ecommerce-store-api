@@ -652,6 +652,23 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 
 ---
 
+### Phase 17d: Analytics Attention & Operational Facts [P2]
+
+#### [ ] Operational Pulse & Inventory Sell-Through Facts
+
+**What**: Enrich read-path analytics queries with operational signals (failed checkout visibility, payment mix, and inventory velocity) without domain forecasting or artificial SLA models.
+
+**Trigger**: Parked after Phase 17b (real Stripe payments) and Phase 17c (live storefront traffic) when failed payment volume and inventory sell-through are real.
+
+**Scope**:
+- [ ] **Attention Policy**: Add `payment_failed` to `ATTENTION_ORDER_STATUSES`. Expose raw operational timestamps (`oldestCreatedAt`, `oldestUpdatedAt`) on attention items for truthful order age visibility.
+- [ ] **Overview Period Payment Mix**: Add `failedPaymentCount` and `pendingPaymentCount` to the overview KPI snapshot using an index on `(status, created_at)`.
+- [ ] **Inventory Alert Facts**: Add `unitsSold7d` (aggregate from `order_items` across confirmed/processing/shipped/delivered orders) and expose `reservedQuantity` (already stored on `inventory`) on the low-stock alerts response.
+
+**Location**: `src/modules/analytics/`
+
+---
+
 ## 🌐 Phase 18: Conditional Enterprise & Infrastructure Evolution
 
 > **Goal**: Optional enterprise capabilities and infrastructure: only when product or operational requirements justify them. Message broker adapters build on Phase 15 outbox (outbox = durable handoff; broker = cross-process transport when needed).

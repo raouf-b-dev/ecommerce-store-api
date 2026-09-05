@@ -172,7 +172,7 @@ export class PostgresRoleRepository implements RoleRepository {
 
   /**
    * Idempotent join sync (same idea as UserRepository.syncAddresses):
-   * delete removed links, insert missing ones — never delete-all + reinsert.
+   * delete removed links, insert missing ones - never delete-all + reinsert.
    */
   private async syncRolePermissions(
     manager: EntityManager,

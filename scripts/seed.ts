@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { SeedDemoAuthUsersUseCase } from '../src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase';
+import { SeedDemoCategoriesUseCase } from '../src/modules/products/core/application/seed/seed-demo-categories.usecase';
 import { SeedDemoCatalogUseCase } from '../src/modules/products/core/application/seed/seed-demo-catalog.usecase';
 import { SeedDemoInventoryUseCase } from '../src/modules/inventory/core/application/seed/seed-demo-inventory.usecase';
 import { SeedDemoInventoryFromOrdersUseCase } from '../src/modules/inventory/core/application/seed/seed-demo-inventory-from-orders.usecase';
@@ -49,6 +50,7 @@ async function bootstrap() {
     app = await NestFactory.createApplicationContext(AppModule);
 
     const seedAuthUsersUseCase = app.get(SeedDemoAuthUsersUseCase);
+    const seedCategoriesUseCase = app.get(SeedDemoCategoriesUseCase);
     const seedCatalogUseCase = app.get(SeedDemoCatalogUseCase);
     const seedInventoryUseCase = app.get(SeedDemoInventoryUseCase);
     const seedCartUseCase = app.get(SeedDemoCartUseCase);
@@ -92,6 +94,17 @@ async function bootstrap() {
 
     const customerUserId = authUsersResult.value.customer.userId;
     const seedNow = new Date();
+
+    const categoriesResult = await seedCategoriesUseCase.execute();
+    if (categoriesResult.isFailure) {
+      throw categoriesResult.error;
+    }
+    const createdCategories = categoriesResult.value.filter(
+      (category) => category.status === 'created',
+    ).length;
+    console.log(
+      `Categories ready: ${categoriesResult.value.length} total (${createdCategories} created).`,
+    );
 
     const catalogResult = await seedCatalogUseCase.execute();
     if (catalogResult.isFailure) {

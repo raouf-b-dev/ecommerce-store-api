@@ -13,6 +13,7 @@ export class ProductQueryMapper {
       currency: row.currency || 'USD',
       imageUrl: row.imageUrl || null,
       categoryId: row.categoryId ? Number(row.categoryId) : null,
+      categoryName: row.categoryName != null ? String(row.categoryName) : null,
       isActive: Boolean(row.isActive),
       createdAt:
         row.createdAt instanceof Date

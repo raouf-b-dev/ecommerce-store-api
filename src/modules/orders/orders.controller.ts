@@ -76,7 +76,7 @@ export class OrdersController {
   })
   @ApiResponse({
     status: 409,
-    description: `Conflict — a request with this idempotency key is already in progress. Response includes Retry-After: ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}.`,
+    description: `Conflict - a request with this idempotency key is already in progress. Response includes Retry-After: ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}.`,
   })
   @ApiHeader({
     name: 'Idempotency-Key',

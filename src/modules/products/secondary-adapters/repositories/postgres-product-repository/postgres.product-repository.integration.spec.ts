@@ -111,6 +111,10 @@ describe('PostgresProductRepository (Integration - Real DB)', () => {
     const forUpdate = await repository.findByIdForUpdate(seededData.product.id);
     ResultAssertionHelper.assertResultSuccess(forUpdate);
 
+    await IntegrationTestHelper.getDataSource().query(
+      `INSERT INTO "categories" ("id", "name", "slug", "description", "is_active") VALUES (7, 'Parity Fixture', 'parity-fixture', NULL, true)`,
+    );
+
     const product = forUpdate.value.entity;
     product.updateProduct({
       name: 'Parity Renamed Laptop',

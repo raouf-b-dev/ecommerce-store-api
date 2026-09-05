@@ -62,7 +62,7 @@ export class RefreshTokenUseCase extends UseCase<
         );
       }
 
-      // 3b. Reuse detection — token hash mismatch on a valid session means
+      // 3b. Reuse detection - token hash mismatch on a valid session means
       //     a previously rotated token is being replayed (stolen token attack)
       if (!session.isTokenMatch(refreshToken)) {
         this.logger.warn(

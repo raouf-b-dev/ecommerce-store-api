@@ -73,7 +73,7 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
   ): Promise<Result<PaymentsTimeSeriesResult, QueryError>> {
     try {
       return await this.withStatementTimeout(async (queryFn) => {
-        // Whitelist only — never interpolate raw client strings into date_trunc.
+        // Whitelist only - never interpolate raw client strings into date_trunc.
         const bucketExpr =
           query.bucket === 'week'
             ? `date_trunc('week', COALESCE(p.completed_at, p.created_at))`

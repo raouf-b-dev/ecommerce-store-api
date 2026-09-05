@@ -18,7 +18,10 @@ describe('ActivateProductUseCase', () => {
   });
 
   it('should activate an inactive product', async () => {
-    const product = ProductTestFactory.createDomainProduct({ isActive: false });
+    const product = ProductTestFactory.createDomainProduct({
+      isActive: false,
+      categoryId: 1,
+    });
     productRepository.mockSuccessfulFindByIdForUpdate(product);
     productRepository.mockSuccessfulSave();
 
@@ -28,8 +31,31 @@ describe('ActivateProductUseCase', () => {
     expect(productRepository.save).toHaveBeenCalled();
   });
 
+  it('should return BAD_REQUEST if product has no category', async () => {
+    const product = ProductTestFactory.createDomainProduct({
+      isActive: false,
+      categoryId: null,
+    });
+    productRepository.mockSuccessfulFindByIdForUpdate(product);
+
+    const result = await usecase.execute(1);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Cannot activate a product without a category',
+      UseCaseError,
+    );
+    expect(result.isFailure && result.error.statusCode).toBe(
+      HttpStatus.BAD_REQUEST,
+    );
+    expect(productRepository.save).not.toHaveBeenCalled();
+  });
+
   it('should return failure if product is already active', async () => {
-    const product = ProductTestFactory.createDomainProduct({ isActive: true });
+    const product = ProductTestFactory.createDomainProduct({
+      isActive: true,
+      categoryId: 1,
+    });
     productRepository.mockSuccessfulFindByIdForUpdate(product);
 
     const result = await usecase.execute(1);

@@ -157,7 +157,7 @@ import { LinkDemoOrderPaymentsUseCase } from './core/application/seed/link-demo-
       useExisting: PAYMENT_GATEWAY,
     },
 
-    // Default Repository Binding — cache-aside fails open via CachePort
+    // Default Repository Binding - cache-aside fails open via CachePort
     {
       provide: OrderRepository,
       useExisting: CACHED_ORDER_REPOSITORY,

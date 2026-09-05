@@ -2,7 +2,7 @@ import { OrderStatus } from '../value-objects/order-status';
 import { OrderWorkflow } from './order-workflow';
 
 /**
- * Expected transition specification — intentionally independent from
+ * Expected transition specification - intentionally independent from
  * production OrderWorkflow.TRANSITIONS. Tests assert production against
  * this matrix; do not derive expected values from OrderWorkflow.
  */

@@ -15,7 +15,7 @@ async function runSuite(checks) {
       passedCount++;
     } catch (err) {
       const duration = Date.now() - startTime;
-      console.error(`  ❌ [FAIL] ${name} (${duration}ms) — ${err.message}`);
+      console.error(`  ❌ [FAIL] ${name} (${duration}ms) - ${err.message}`);
       console.log(`\n──────────────────────────────────────────────────`);
       console.log(
         `📊 Smoke Test Summary: ${passedCount} Passed, 1 Failed (fail-fast)`,

@@ -7,10 +7,10 @@
  */
 export const THROTTLE_WINDOW_MS = 60_000;
 
-/** Login, register, change-password — brute-force protection. */
+/** Login, register, change-password - brute-force protection. */
 export const AUTH_STRICT_LIMIT = 10;
 
-/** Silent refresh — slightly higher than login (clients refresh more often). */
+/** Silent refresh - slightly higher than login (clients refresh more often). */
 export const AUTH_REFRESH_LIMIT = 20;
 
 export const AUTH_STRICT_THROTTLE = {

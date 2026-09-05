@@ -122,7 +122,7 @@ describe('PostgresAnalyticsQueryAdapter (Integration - Real DB)', () => {
       status: PaymentStatusType.COMPLETED,
       completedAt: new Date('2026-08-11T12:00:00.000Z'),
     });
-    // Outside current window — previous period
+    // Outside current window - previous period
     await createPayment({
       amount: 40,
       refundedAmount: 0,

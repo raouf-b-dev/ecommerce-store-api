@@ -17,7 +17,7 @@ import { UserRoleAssignmentEntity } from '../../../authorization/secondary-adapt
 import { RoleEntity } from '../../../authorization/secondary-adapter/orm/role.schema';
 
 /**
- * Cross-Context CQRS Read Adapter — Identity users
+ * Cross-Context CQRS Read Adapter - Identity users
  *
  * Cross-Context JOIN Rationale:
  * - JOIN users → user_role_assignments → roles (Authorization context):

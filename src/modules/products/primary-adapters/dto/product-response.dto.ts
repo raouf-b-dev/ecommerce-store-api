@@ -73,6 +73,9 @@ export class ProductListItemResponseDto {
   @ApiPropertyOptional({ example: 1, nullable: true, type: Number })
   categoryId!: number | null;
 
+  @ApiPropertyOptional({ example: 'Electronics', nullable: true, type: String })
+  categoryName!: string | null;
+
   @ApiProperty({ example: true })
   isActive!: boolean;
 

@@ -24,6 +24,7 @@ describe('PostgresProductQueryAdapter (Integration - Real DB)', () => {
     expect(result.value.total).toBe(1);
     expect(result.value.items[0].sku).toBe('INT-LAPTOP-01');
     expect(result.value.items[0].categoryId).toBe(1);
+    expect(result.value.items[0].categoryName).toBe('Electronics');
   });
 
   it('fetches detailed product DTO by ID', async () => {

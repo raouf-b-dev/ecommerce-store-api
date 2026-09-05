@@ -4,12 +4,16 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
   UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
 
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
+import { CategoryEntity } from './category.schema';
 
 @Entity({ name: 'products' })
 @Index('idx_products_slug', ['slug'], { unique: true })
@@ -48,6 +52,10 @@ export class ProductEntity {
 
   @Column({ nullable: true, name: 'category_id', type: 'int' })
   categoryId?: number;
+
+  @ManyToOne(() => CategoryEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category?: Relation<CategoryEntity>;
 
   @Column({ default: true, name: 'is_active' })
   isActive!: boolean;

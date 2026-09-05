@@ -61,7 +61,7 @@ export const IDEMPOTENCY_REDIS = {
 /** Role-permission resolution cache (PermissionsGuard hot path). */
 export const AUTHORIZATION_REDIS = {
   ROLE_PERMISSIONS_PREFIX: 'auth:role-permissions',
-  /** 1 hour — invalidated on role mutations and boot sync. */
+  /** 1 hour - invalidated on role mutations and boot sync. */
   EXPIRATION: 3600,
 } as const;
 
