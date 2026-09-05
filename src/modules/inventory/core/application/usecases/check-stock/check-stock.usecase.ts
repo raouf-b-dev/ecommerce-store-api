@@ -7,7 +7,7 @@ import { CheckStockResult } from '../../../domain/interfaces/check-stock-result.
 
 /**
  * Stock availability for a product. Missing inventory row = unavailable (qty 0),
- * matching BulkCheckStockUseCase — not a client error.
+ * matching BulkCheckStockUseCase - not a client error.
  */
 @Injectable()
 export class CheckStockUseCase implements UseCase<

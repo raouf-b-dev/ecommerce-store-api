@@ -45,7 +45,7 @@ function toFtSearchOptions(searchOptions: CacheSearchOptions): FtSearchOptions {
 
 /**
  * Fail-open cache adapter implementing {@link CachePort}.
- * Redis outages return empty/false/null — callers fall back to PostgreSQL.
+ * Redis outages return empty/false/null - callers fall back to PostgreSQL.
  */
 @Injectable()
 export class CacheService implements CachePort {

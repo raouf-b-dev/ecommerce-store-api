@@ -90,7 +90,7 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
       inject: [CachePort, POSTGRES_PAYMENT_REPOSITORY],
     },
 
-    // Default Repository Binding — cache-aside fails open via CachePort
+    // Default Repository Binding - cache-aside fails open via CachePort
     {
       provide: PaymentRepository,
       useExisting: CACHED_PAYMENT_REPOSITORY,

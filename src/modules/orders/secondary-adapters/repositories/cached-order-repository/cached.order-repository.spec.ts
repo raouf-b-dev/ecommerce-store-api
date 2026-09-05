@@ -216,7 +216,7 @@ describe('CachedOrderRepository', () => {
       if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
       expect(postgresRepo.listOrders).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
-        'Order list cache payload had unreadable entries — falling back to Postgres',
+        'Order list cache payload had unreadable entries - falling back to Postgres',
       );
     });
 

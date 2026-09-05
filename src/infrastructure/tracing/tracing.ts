@@ -23,7 +23,7 @@ if (isTracingEnabled) {
     }),
     instrumentations: [
       getNodeAutoInstrumentations({
-        // Disable fs instrumentation — too noisy, no value for this API
+        // Disable fs instrumentation - too noisy, no value for this API
         '@opentelemetry/instrumentation-fs': { enabled: false },
         // Configure HTTP to ignore health/metrics polling
         '@opentelemetry/instrumentation-http': {
@@ -40,7 +40,7 @@ if (isTracingEnabled) {
 
   let isShuttingDown = false;
 
-  // Graceful shutdown — flush pending spans before process exits
+  // Graceful shutdown - flush pending spans before process exits
   const shutdown = () => {
     if (isShuttingDown) return;
     isShuttingDown = true;

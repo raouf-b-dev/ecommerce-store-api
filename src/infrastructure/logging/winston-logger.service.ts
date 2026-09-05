@@ -64,9 +64,9 @@ export class WinstonLoggerService
     });
 
     // Build transports based on LOG_TRANSPORT env var:
-    // 'file'    — file transports only (VM/bare-metal deployments)
-    // 'console' — console only (Docker/K8s — platform log driver collects stdout)
-    // 'both'    — both file and console (default)
+    // 'file'    - file transports only (VM/bare-metal deployments)
+    // 'console' - console only (Docker/K8s - platform log driver collects stdout)
+    // 'both'    - both file and console (default)
     const logTransport = this.config.logTransport;
     const fileTransports = [errorRotate, combinedRotate, httpRotate];
     const transports: winston.transport[] = [];
@@ -170,7 +170,7 @@ export class WinstonLoggerService
   }
 
   setLogLevels?(_levels: LogLevel[]): void {
-    // Not used — Winston manages its own levels.
+    // Not used - Winston manages its own levels.
   }
 
   async onApplicationShutdown(signal?: string) {

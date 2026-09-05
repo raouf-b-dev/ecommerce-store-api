@@ -32,7 +32,7 @@ export class RedisCacheRecoveryService implements OnModuleInit {
   }
 
   private async handleReconnection(): Promise<void> {
-    this.logger.log('Redis reconnected — bumping cache generation...');
+    this.logger.log('Redis reconnected - bumping cache generation...');
 
     try {
       const { previousGeneration, generation } =
@@ -44,7 +44,7 @@ export class RedisCacheRecoveryService implements OnModuleInit {
       await this.indexInitializer.onModuleInit();
 
       this.logger.log(
-        `Cache recovery complete — generation=${generation} (was ${previousGeneration}); cache-aside will repopulate on demand`,
+        `Cache recovery complete - generation=${generation} (was ${previousGeneration}); cache-aside will repopulate on demand`,
       );
     } catch (error) {
       const err = toError(error);

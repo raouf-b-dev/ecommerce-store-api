@@ -83,7 +83,7 @@ export class CachedUserRepository implements UserRepository {
     limit?: number,
   ): Promise<Result<User[], RepositoryError>> {
     try {
-      // Paginated lists are not a complete RediSearch result set — always query Postgres.
+      // Paginated lists are not a complete RediSearch result set - always query Postgres.
       const dbResult = await this.postgresRepo.findAll(page, limit);
       if (dbResult.isFailure) return dbResult;
 

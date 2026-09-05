@@ -13,7 +13,7 @@ export abstract class RoleRepository {
   abstract update(role: Role): Promise<Result<void, RepositoryError>>;
   abstract delete(id: number): Promise<Result<void, RepositoryError>>;
 
-  /** Lean query — returns only permission codes for a role, without hydrating the full aggregate */
+  /** Lean query - returns only permission codes for a role, without hydrating the full aggregate */
   abstract findPermissionCodesByRoleCode(
     roleCode: string,
   ): Promise<Result<string[] | null, RepositoryError>>;

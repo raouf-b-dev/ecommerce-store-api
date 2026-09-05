@@ -20,7 +20,7 @@ export function toErrorMessage(err: unknown): string {
   return 'Unknown error';
 }
 
-/** Always returns an Error — use for logging, wrapping, or rethrowing. */
+/** Always returns an Error - use for logging, wrapping, or rethrowing. */
 export function toError(err: unknown): Error {
   if (err instanceof Error) return err;
   const message = toErrorMessage(err);
@@ -30,7 +30,7 @@ export function toError(err: unknown): Error {
   return new Error(message);
 }
 
-/** Returns undefined for falsy values — use when an optional cause is allowed. */
+/** Returns undefined for falsy values - use when an optional cause is allowed. */
 export function toOptionalError(err: unknown): Error | undefined {
   if (!err) return undefined;
   return toError(err);

@@ -84,7 +84,7 @@ describe('RedisIndexInitializerService', () => {
 
     expect(redisService.createIndex).not.toHaveBeenCalled();
     expect(loggerWarnSpy).toHaveBeenCalledWith(
-      'Redis unavailable — skipping RediSearch index initialization',
+      'Redis unavailable - skipping RediSearch index initialization',
     );
   });
 });

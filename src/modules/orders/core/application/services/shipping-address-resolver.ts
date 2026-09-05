@@ -16,7 +16,7 @@ export interface ShippingAddressInput {
 }
 
 /**
- * Application Service — Resolves shipping address from either an explicit DTO
+ * Application Service - Resolves shipping address from either an explicit DTO
  * or the user's default address.
  *
  * Lives in the application layer because it coordinates between:
@@ -24,7 +24,7 @@ export interface ShippingAddressInput {
  *  - A gateway DTO (CheckoutUserInfo from UserGateway port)
  *  - A domain value object (ShippingAddressProps)
  *
- * The domain layer only ever sees ShippingAddressProps — it has no knowledge
+ * The domain layer only ever sees ShippingAddressProps - it has no knowledge
  * of how it was constructed.
  */
 @Injectable()

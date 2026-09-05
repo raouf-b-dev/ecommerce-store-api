@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { CorrelationService } from '../correlation/correlation.service';
 
 /**
- * HTTP Middleware — creates a correlation context for every inbound request.
+ * HTTP Middleware - creates a correlation context for every inbound request.
  *
  * 1. Reads `X-Request-Id` from the request header (client-provided).
  * 2. Falls back to a newly generated UUID if not present.

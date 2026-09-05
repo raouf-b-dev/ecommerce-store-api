@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { randomUUID } from 'crypto';
 
 /**
- * Correlation store — the shape stored in AsyncLocalStorage.
+ * Correlation store - the shape stored in AsyncLocalStorage.
  */
 export interface CorrelationStore {
   correlationId: string;

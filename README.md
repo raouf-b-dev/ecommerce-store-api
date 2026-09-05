@@ -84,9 +84,9 @@ npm run start:dev
 | **Demo Credentials** | See [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
 
 Useful Commands:
-- `npm run start:dev` — Start NestJS API with live SWC watch mode on `:3000`
-- `npm run setup:down` — Stop PostgreSQL and Redis containers (preserves data)
-- `npm run setup:reset` — Wipe database volumes and re-bootstrap clean fixtures from scratch
+- `npm run start:dev` - Start NestJS API with live SWC watch mode on `:3000`
+- `npm run setup:down` - Stop PostgreSQL and Redis containers (preserves data)
+- `npm run setup:reset` - Wipe database volumes and re-bootstrap clean fixtures from scratch
 
 ### Manual Step-by-Step Setup
 

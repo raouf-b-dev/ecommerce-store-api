@@ -70,7 +70,7 @@ import { PostgresCartQueryAdapter } from './secondary-adapters/query/postgres-ca
       useClass: ModuleProductGateway,
     },
 
-    // Default Repository Binding — cache-aside fails open via CachePort
+    // Default Repository Binding - cache-aside fails open via CachePort
     {
       provide: CartRepository,
       useExisting: CACHED_CART_REPOSITORY,

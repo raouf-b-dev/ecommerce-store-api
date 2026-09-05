@@ -36,7 +36,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
       switchMap((result) => {
         if (result.unavailable) {
           throw new ServiceUnavailableException(
-            'Idempotency store unavailable — retry the request later',
+            'Idempotency store unavailable - retry the request later',
           );
         }
 
@@ -61,7 +61,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
             } catch {
               await this.idempotencyStore.release(scopedKey);
               throw new ServiceUnavailableException(
-                'Idempotency result could not be persisted — retry the request later',
+                'Idempotency result could not be persisted - retry the request later',
               );
             }
           }),

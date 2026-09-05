@@ -64,7 +64,7 @@ export class ResilientThrottlerStorage implements ThrottlerStorage {
     this.degraded = degraded;
     if (degraded) {
       this.logger.warn(
-        'Throttler storage degraded — using in-memory fallback (per-instance limits)',
+        'Throttler storage degraded - using in-memory fallback (per-instance limits)',
       );
     }
     this.onDegradedChange?.(degraded);

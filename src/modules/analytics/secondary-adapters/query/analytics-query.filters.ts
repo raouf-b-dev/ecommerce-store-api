@@ -1,6 +1,6 @@
 /**
  * SQL filter vocabulary for analytics reads.
- * Values mirror Orders/Payments persisted status strings — do not import foreign domain enums here.
+ * Values mirror Orders/Payments persisted status strings - do not import foreign domain enums here.
  */
 
 import { ATTENTION_ORDER_STATUSES } from '../../core/application/analytics.policy';

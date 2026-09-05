@@ -3,7 +3,7 @@ import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/in
 
 /**
  * Sets explicit absolute inventory state for concurrency scenarios.
- * Default seed uses availableQuantity: 50, reservedQuantity: 5 — avoid relative assertions.
+ * Default seed uses availableQuantity: 50, reservedQuantity: 5 - avoid relative assertions.
  */
 export async function seedSingleUnitInventory(
   dataSource: DataSource,
