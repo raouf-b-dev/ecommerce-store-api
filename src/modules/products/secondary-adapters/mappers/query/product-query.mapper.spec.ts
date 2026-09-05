@@ -17,6 +17,7 @@ describe('ProductQueryMapper', () => {
       currency: 'USD',
       imageUrl: 'https://example.com/mouse.jpg',
       categoryId: 2,
+      categoryName: 'Clothing',
       isActive: true,
       createdAt: '2024-01-01T00:00:00.000Z',
     });
