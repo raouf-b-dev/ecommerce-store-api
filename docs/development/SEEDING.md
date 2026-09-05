@@ -73,37 +73,39 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 - **Default**: Yes
 - **Instructions**: Leave packages at front door.
 
-### 3. Seeded Product Catalog & Inventory Levels
+### 3. Seeded Categories & Product Catalog
 
-The seeder inserts **15 products** across **5 categories** with specified initial stock levels to cover all testing scenarios:
+Categories are seeded **before** products. `SeedDemoCategoriesUseCase` ensures the five canonical rows by **slug** (`electronics`, `clothing`, `home-garden`, `sports`, `books`). Missing rows are created; inactive ones are reactivated; active rows are left alone (names are not overwritten). The migration still inserts ids 1–5 on a fresh database; the seed step makes re-runs safe even if that insert was skipped or categories were deactivated.
+
+The seeder then inserts **15 products** across those **5 categories** with specified initial stock levels. Each demo SKU references a category by **slug** (resolved to id at seed time). Re-running `db:seed` creates missing SKUs and backfills `categoryId` only when a demo SKU still has a null category. It does not overwrite a category you already set, and it does not assign categories to leftover `E2E-*` rows from API e2e runs. Search `ELEC-`, `CLOT-`, `HOME-`, `SPOR-`, or `BOOK-` to find the demo catalog.
 
 - **5 High Stock** (Quantity > low stock threshold, e.g. 80-250 units)
 - **5 Medium Stock** (Quantity > low stock threshold, e.g. 25-45 units)
 - **3 Low Stock** (Quantity <= low stock threshold, e.g. 3-8 units)
 - **2 Out of Stock** (Quantity = 0 units)
 
-| Product Name                        | SKU            | Price   | Initial Stock | Low Stock Threshold | Status       |
-| :---------------------------------- | :------------- | :------ | :-----------: | :-----------------: | :----------- |
-| **Electronics**                     |                |         |               |                     |              |
-| Wireless Noise-Canceling Headphones | `ELEC-ANC-001` | $199.99 |      150      |         15          | High Stock   |
-| Smart Fitness Watch v2              | `ELEC-SFW-002` | $129.50 |      45       |         10          | Medium Stock |
-| 4K Ultra HD Portable Projector      | `ELEC-PRJ-003` | $349.00 |       8       |         10          | Low Stock    |
-| Mechanical Backlit Keyboard         | `ELEC-MBK-004` | $79.99  |      120      |         15          | High Stock   |
-| Ergonomic Wireless Mouse            | `ELEC-EWM-005` | $24.95  |       0       |          5          | Out of Stock |
-| **Clothing**                        |                |         |               |                     |              |
-| Unisex Organic Cotton Hoodie        | `CLOT-OCH-001` | $55.00  |      250      |         20          | High Stock   |
-| Classic Denim Jacket                | `CLOT-CDJ-002` | $68.00  |      35       |         10          | Medium Stock |
-| Breathable Running Socks (3-Pack)   | `CLOT-BRS-003` | $14.99  |       3       |          5          | Low Stock    |
-| **Home & Garden**                   |                |         |               |                     |              |
-| Self-Watering Ceramic Planter       | `HOME-SCP-001` | $32.50  |      80       |         12          | High Stock   |
-| Stainless Steel French Press        | `HOME-SFP-002` | $39.99  |      25       |          8          | Medium Stock |
-| Ultrasonic Cool Mist Humidifier     | `HOME-UCH-003` | $45.90  |       0       |          5          | Out of Stock |
-| **Sports**                          |                |         |               |                     |              |
-| Eco-Friendly TPE Yoga Mat           | `SPOR-EYM-001` | $29.99  |      110      |         15          | High Stock   |
-| Insulated Sports Water Bottle       | `SPOR-IWB-002` | $19.99  |      40       |         10          | Medium Stock |
-| **Books**                           |                |         |               |                     |              |
-| The Art of Clean Code               | `BOOK-ACC-001` | $28.50  |      30       |          5          | Medium Stock |
-| Designing Data-Intensive Systems    | `BOOK-DDS-002` | $42.00  |       4       |          5          | Low Stock    |
+| Product Name                        | SKU            | Category        | Price   | Initial Stock | Low Stock Threshold | Status       |
+| :---------------------------------- | :------------- | :-------------- | :------ | :-----------: | :-----------------: | :----------- |
+| **Electronics**                     |                |                 |         |               |                     |              |
+| Wireless Noise-Canceling Headphones | `ELEC-ANC-001` | Electronics     | $199.99 |      150      |         15          | High Stock   |
+| Smart Fitness Watch v2              | `ELEC-SFW-002` | Electronics     | $129.50 |      45       |         10          | Medium Stock |
+| 4K Ultra HD Portable Projector      | `ELEC-PRJ-003` | Electronics     | $349.00 |       8       |         10          | Low Stock    |
+| Mechanical Backlit Keyboard         | `ELEC-MBK-004` | Electronics     | $79.99  |      120      |         15          | High Stock   |
+| Ergonomic Wireless Mouse            | `ELEC-EWM-005` | Electronics     | $24.95  |       0       |          5          | Out of Stock |
+| **Clothing**                        |                |                 |         |               |                     |              |
+| Unisex Organic Cotton Hoodie        | `CLOT-OCH-001` | Clothing        | $55.00  |      250      |         20          | High Stock   |
+| Classic Denim Jacket                | `CLOT-CDJ-002` | Clothing        | $68.00  |      35       |         10          | Medium Stock |
+| Breathable Running Socks (3-Pack)   | `CLOT-BRS-003` | Clothing        | $14.99  |       3       |          5          | Low Stock    |
+| **Home & Garden**                   |                |                 |         |               |                     |              |
+| Self-Watering Ceramic Planter       | `HOME-SCP-001` | Home & Garden   | $32.50  |      80       |         12          | High Stock   |
+| Stainless Steel French Press        | `HOME-SFP-002` | Home & Garden   | $39.99  |      25       |          8          | Medium Stock |
+| Ultrasonic Cool Mist Humidifier     | `HOME-UCH-003` | Home & Garden   | $45.90  |       0       |          5          | Out of Stock |
+| **Sports**                          |                |                 |         |               |                     |              |
+| Eco-Friendly TPE Yoga Mat           | `SPOR-EYM-001` | Sports          | $29.99  |      110      |         15          | High Stock   |
+| Insulated Sports Water Bottle       | `SPOR-IWB-002` | Sports          | $19.99  |      40       |         10          | Medium Stock |
+| **Books**                           |                |                 |         |               |                     |              |
+| The Art of Clean Code               | `BOOK-ACC-001` | Books           | $28.50  |      30       |          5          | Medium Stock |
+| Designing Data-Intensive Systems    | `BOOK-DDS-002` | Books           | $42.00  |       4       |          5          | Low Stock    |
 
 ### 4. Seeded Demo Orders (for `customer@store.local`)
 
