@@ -83,6 +83,7 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 - ✅ JWT Auth + Refresh Tokens (RS256 + Refresh Rotation)
 - ✅ RBAC (Normalized, Role & Permission matrices)
 - ✅ IDOR Prevention & Resource Access Control (`CallerContext`, `OwnedResourceAccessPolicy`, `CartOwnershipValidator`, `@CallerCtx()`)
+- ✅ Shopper Catalog Reads (`@OptionalAuth()` + `CatalogVisibilityPolicy`; active-only for shoppers)
 - ✅ Customer Scoped Permissions (`view_own_orders`, `view_own_payments`, `manage_own_cart`, `view_own_profile`)
 - ✅ Admin CLI Seeder (`npm run seed:admin`)
 - ✅ Local DB Seeder (`npm run db:seed`)

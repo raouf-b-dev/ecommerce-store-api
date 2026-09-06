@@ -37,7 +37,7 @@
 | **12**  | CQRS Read Path                              | ✅ Done | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                                                                                                                                      | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/`                             |
 | **12b** | CI/CD Pipeline (GitHub Actions)             | ✅ Done | Fan-out/fan-in CI (`lint`, `typecheck`, `unit`, `arch`, `audit`, `build`, `integration`, `e2e`, `smoke`) · **CI Status Check** aggregator · `prepare-test-env` composite action · blocking `npm audit --omit=dev --audit-level=high` · PR dependency review · Docker validate (PR) · GHCR publish (`master` + semver tags) · `scripts/smoke-test.js` · `start:test` · liveness/readiness probes · Bitbucket Pipelines removed · `PROJECT-PIPELINE.md` updated                                                  | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
 | **13**  | Production Confidence & Integration Testing | ✅ Done | Typed gateway/repo mocks & testing barrels · Domain entity GWT specs + `OrderWorkflow` / shipping-address · Real-DB repository integration + concurrent checkout lock proof · Atomic OCC `save` predicates (Product/Order/User/Cart) · E2E auth lifecycle, IDOR, checkout SAGA, CQRS shapes · HTTP cart/payment/refresh-cookie contracts · HTTP-only E2E · Checkout idempotency E2E · E2E suite quality + optional business specs · Domain test polish (dead VO removal, `order-items`/`payment-status` specs) | `src/modules/*/core/domain/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/testing/`, `src/testing/`, `test/e2e/`, `docs/testing/` |
-| **14c** | OpenAPI Truthfulness                      | ✅ Done | `generate:openapi` + `audit:openapi` tooling · explicit scalar `@ApiProperty` types (SWC) · handler-aligned response DTOs · OAS 3.0 nullable `allOf` schemas · auth cookie-first docs · health probe Swagger · stale payment-method copy removed                                                                                                                                                                                                                                                                    | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
+| **14c** | OpenAPI Truthfulness                        | ✅ Done | `generate:openapi` + `audit:openapi` tooling · explicit scalar `@ApiProperty` types (SWC) · handler-aligned response DTOs · OAS 3.0 nullable `allOf` schemas · auth cookie-first docs · health probe Swagger · stale payment-method copy removed                                                                                                                                                                                                                                                               | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
 
 > **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14. Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`.
 
@@ -50,24 +50,24 @@
 > - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14d, Phase 14f, or Phase 15** and can be run immediately in parallel.
 > - **Phase 14d** and **Phase 14f** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
 
-| Phase   | Name                                              | Status | Priority | Target / Focus                                                                                          |
-| ------- | ------------------------------------------------- | ------ | :------: | ------------------------------------------------------------------------------------------------------- |
-| **10**  | Security Hardening Phase 2                        | `[x]`  |    -     | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                          |
-| **11**  | Data Integrity & Concurrency                      | `[x]`  |    -     | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                        |
-| **12**  | CQRS Read Path                                    | `[x]`  |    -     | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                       |
-| **13**  | Production Confidence & Integration Testing       | `[x]`  |    -     | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                    |
-| **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke        |
-| **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke |
-| **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                              |
-| **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                 |
-| **14f** | User detail address projection                    | `[x]`  |  `[P1]`  | **Read model**: `GET /v1/users/{id}` returns `addresses[]` (no new collection route)                    |
-| **14e** | Developer Onboarding & Time-to-First-Run          | `[/]`  |  `[P0]`  | **Bootstrap DX**: 1-command environment bootstrap slice done; value matrix, C4 assets, Bruno deferred     |
-| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                      |
-| **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                |
-| **17a** | Customer Catalog Read Path & Notifications        | `[ ]`  |  `[P1]`  | **Storefront Read**: `@Public()` catalog queries, real email providers, abandoned cart recovery         |
-| **17b** | Real Stripe SDK Integration & Webhooks            | `[ ]`  |  `[P1]`  | **Payments**: Stripe SDK adapter, signed webhook handler, Redis event idempotency deduplication         |
-| **17c** | Commercial Loop Integration (`store-web`)         | `[ ]`  |  `[P1]`  | **Ecosystem**: Storefront checkout -> SAGA -> Admin Dashboard live WebSocket toast verification         |
-| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                      |
+| Phase   | Name                                              | Status | Priority | Target / Focus                                                                                           |
+| ------- | ------------------------------------------------- | ------ | :------: | -------------------------------------------------------------------------------------------------------- |
+| **10**  | Security Hardening Phase 2                        | `[x]`  |    -     | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                           |
+| **11**  | Data Integrity & Concurrency                      | `[x]`  |    -     | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                         |
+| **12**  | CQRS Read Path                                    | `[x]`  |    -     | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                        |
+| **13**  | Production Confidence & Integration Testing       | `[x]`  |    -     | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                     |
+| **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke         |
+| **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke  |
+| **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                               |
+| **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                  |
+| **14f** | User detail address projection                    | `[x]`  |  `[P1]`  | **Read model**: `GET /v1/users/{id}` returns `addresses[]` (no new collection route)                     |
+| **14e** | Developer Onboarding & Time-to-First-Run          | `[/]`  |  `[P0]`  | **Bootstrap DX**: 1-command environment bootstrap slice done; value matrix, C4 assets, Bruno deferred    |
+| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                       |
+| **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                 |
+| **17a** | Customer Catalog Read Path & Notifications        | `[/]`  |  `[P1]`  | **Storefront Read**: catalog GETs shipped (active-only shoppers); emails/webhooks/cart recovery deferred |
+| **17b** | Real Stripe SDK Integration & Webhooks            | `[ ]`  |  `[P1]`  | **Payments**: Stripe SDK adapter, signed webhook handler, Redis event idempotency deduplication          |
+| **17c** | Commercial Loop Integration (`store-web`)         | `[ ]`  |  `[P1]`  | **Ecosystem**: Storefront checkout -> SAGA -> Admin Dashboard live WebSocket toast verification          |
+| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                       |
 
 ---
 
@@ -563,7 +563,7 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ### Phase 17a: Customer Catalog Read Path & Notifications [P1]
 
-#### [ ] Customer Catalog Read Path (Storefront API)
+#### [x] Customer Catalog Read Path (Storefront API)
 
 **What**: Let a `CUSTOMER` (or public shopper) list and get products for shopping without admin catalog permissions.
 
@@ -571,11 +571,15 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 **Scope**:
 
-- [ ] Introduce customer-scoped (or `@Public()` read) product list/detail permissions distinct from admin `manage_products`.
-- [ ] Keep mutations (`POST`/`PATCH`/`DELETE` products) admin-only.
-- [ ] E2E or API contract: registered customer can list a product created by admin and add it to a cart without `manage_products`.
+- [x] Introduce customer-scoped (or `@Public()` read) product list/detail permissions distinct from admin `manage_products`.
+- [x] Keep mutations (`POST`/`PATCH`/`DELETE` products) admin-only.
+- [x] E2E or API contract: registered customer can list a product created by admin and add it to a cart without `manage_products`.
 
-**Location**: `src/modules/products/`, `src/modules/authorization/core/domain/reference-data/`
+**Shipped as:** `@OptionalAuth()` on product and category list/detail (not `@Public()`, so an operator bearer token still attaches). `CatalogVisibilityPolicy` forces `isActive: true` for shoppers and 404s inactive detail; `view_all_products` keeps the operator catalog. Mutations stay `manage_products`. CUSTOMER is not granted `view_all_products`.
+
+**Location**: `src/modules/products/`, `src/guards/decorators/optional-auth.decorator.ts`
+
+**Done when:** A shopper can browse active catalog without `view_all_products`; inactive items stay operator-only; mutations remain `manage_products`.
 
 #### [ ] Real Email and Notification Providers
 
@@ -661,6 +665,7 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 **Trigger**: Parked after Phase 17b (real Stripe payments) and Phase 17c (live storefront traffic) when failed payment volume and inventory sell-through are real.
 
 **Scope**:
+
 - [ ] **Attention Policy**: Add `payment_failed` to `ATTENTION_ORDER_STATUSES`. Expose raw operational timestamps (`oldestCreatedAt`, `oldestUpdatedAt`) on attention items for truthful order age visibility.
 - [ ] **Overview Period Payment Mix**: Add `failedPaymentCount` and `pendingPaymentCount` to the overview KPI snapshot using an index on `(status, created_at)`.
 - [ ] **Inventory Alert Facts**: Add `unitsSold7d` (aggregate from `order_items` across confirmed/processing/shipped/delivered orders) and expose `reservedQuantity` (already stored on `inventory`) on the low-stock alerts response.

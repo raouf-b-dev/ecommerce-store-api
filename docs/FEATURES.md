@@ -175,6 +175,12 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 **Location**: `src/modules/authorization/`
 
+### Shopper Catalog Reads
+
+`GET /v1/products`, `GET /v1/products/:id`, and the matching category reads are `@OptionalAuth()`. Anonymous and `CUSTOMER` callers only see active items (`CatalogVisibilityPolicy`). `isActive=false` is ignored for shoppers; inactive detail is HTTP 404. Operators with `view_all_products` keep the full catalog. Product and category mutations stay `manage_products`.
+
+**Location**: `src/modules/products/core/domain/policies/catalog-visibility.policy.ts`, `src/modules/products/products.controller.ts`, `src/modules/products/categories.controller.ts`
+
 ### Forced Credential Rotation (mustChangePassword)
 
 Seeded and bootstrap credentials set `mustChangePassword = true`. Login and refresh return the flag; `POST /v1/authentication/change-password` clears it, revokes other sessions, and reissues tokens. `MustChangePasswordGuard` returns HTTP 403 (`MUST_CHANGE_PASSWORD`) on other authenticated routes until rotation.
@@ -320,19 +326,19 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 ### Testing
 
-| Script                     | Description                   |
-| :------------------------- | :---------------------------- |
-| `npm test`                 | Unit tests                    |
-| `npm run test:watch`       | Watch mode                    |
-| `npm run test:cov`         | Coverage                      |
-| `npm run test:integration` | Real DB / Redis integration   |
-| `npm run test:e2e`         | End-to-end HTTP flows         |
-| `npm run test:arch`        | Architecture boundary rules   |
-| `npm run test:redis:chaos` | Redis reconnect / degradation |
-| `npm run smoke-test`       | Live-process smoke probes     |
-| `npm run test:ci`          | CI mode                       |
+| Script                     | Description                          |
+| :------------------------- | :----------------------------------- |
+| `npm test`                 | Unit tests                           |
+| `npm run test:watch`       | Watch mode                           |
+| `npm run test:cov`         | Coverage                             |
+| `npm run test:integration` | Real DB / Redis integration          |
+| `npm run test:e2e`         | End-to-end HTTP flows                |
+| `npm run test:arch`        | Architecture boundary rules          |
+| `npm run test:redis:chaos` | Redis reconnect / degradation        |
+| `npm run smoke-test`       | Live-process smoke probes            |
+| `npm run test:ci`          | CI mode                              |
 | `npm run generate:openapi` | Write `openapi.json` from decorators |
-| `npm run audit:openapi`    | Generate spec + contract audit |
+| `npm run audit:openapi`    | Generate spec + contract audit       |
 
 ### Database Migrations
 

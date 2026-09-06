@@ -6,6 +6,8 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
 import { ListCategoriesQuery } from '../../queries/list-categories.query';
 import {
@@ -25,9 +27,14 @@ export class ListCategoriesUseCase extends UseCase<
 
   async execute(
     query: ListCategoriesQuery = {},
+    caller: CallerContext | null = null,
   ): Promise<Result<CategoryResult[], UseCaseError>> {
+    const scopedQuery = CatalogVisibilityPolicy.constrainListFilter(
+      query,
+      caller,
+    );
     const result = await this.categoryRepository.findAll({
-      isActive: query.isActive,
+      isActive: scopedQuery.isActive,
     });
 
     if (isFailure(result)) {

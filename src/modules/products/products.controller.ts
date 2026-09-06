@@ -18,6 +18,9 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
+import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CreateProductDto } from './primary-adapters/dto/create-product.dto';
 import { UpdateProductDto } from './primary-adapters/dto/update-product.dto';
 import { ListProductsQueryDto } from './primary-adapters/dto/list-products-query.dto';
@@ -71,44 +74,52 @@ export class ProductsController {
   }
 
   @Get()
+  @OptionalAuth()
   @ApiBearerAuth()
-  @RequirePermissions('view_all_products')
   @ApiOperation({
     summary: 'List products',
     description:
-      'Retrieves a paginated list of products with optional filters and sorting.',
+      'Paginated catalog. Anonymous and customer callers only see active products (`isActive` is forced to true). Operators with `view_all_products` may include inactive items.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of products retrieved successfully.',
     type: PaginatedProductsResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Admin access required.',
+    status: 401,
+    description: 'Invalid or expired authentication token.',
   })
-  async findAll(@Query() query: ListProductsQueryDto) {
-    return await this.listProductsUseCase.execute(query);
+  async findAll(
+    @Query() query: ListProductsQueryDto,
+    @CallerCtx() caller: CallerContext | null,
+  ) {
+    return await this.listProductsUseCase.execute(query, caller);
   }
 
   @Get(':id')
+  @OptionalAuth()
   @ApiBearerAuth()
-  @RequirePermissions('view_all_products')
-  @ApiOperation({ summary: 'Get product by ID' })
+  @ApiOperation({
+    summary: 'Get product by ID',
+    description:
+      'Returns a product. Shoppers receive HTTP 404 for inactive products. Operators with `view_all_products` can load inactive items.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Product found.',
     type: ProductDetailResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Admin access required.',
+    status: 401,
+    description: 'Invalid or expired authentication token.',
   })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.getProductUseCase.execute(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() caller: CallerContext | null,
+  ) {
+    return await this.getProductUseCase.execute(id, caller);
   }
 
   @Patch(':id')

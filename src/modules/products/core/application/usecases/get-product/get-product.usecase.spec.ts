@@ -5,10 +5,23 @@ import {
 import { GetProductUseCase } from './get-product.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { VIEW_ALL_PRODUCTS_PERMISSION } from '../../../domain/policies/catalog-visibility.policy';
 
 describe('GetProductUseCase', () => {
   let useCase: GetProductUseCase;
   let mockQueryService: MockProductQueryService;
+
+  const operator = createUserCallerContext({
+    userId: 1,
+    role: 'ADMIN',
+    permissions: new Set([VIEW_ALL_PRODUCTS_PERMISSION]),
+  });
+  const customer = createUserCallerContext({
+    userId: 2,
+    role: 'CUSTOMER',
+    permissions: new Set(['manage_own_cart']),
+  });
 
   beforeEach(() => {
     mockQueryService = new MockProductQueryService();
@@ -43,6 +56,38 @@ describe('GetProductUseCase', () => {
         'Product with id 999 not found',
         UseCaseError,
       );
+      expect(result.isFailure && result.error.statusCode).toBe(404);
+    });
+
+    it('hides inactive products from shoppers as not found', async () => {
+      mockQueryService.mockSuccessfulGetById(
+        ProductDtoTestFactory.createProductDetailDTO({
+          id: 4,
+          isActive: false,
+        }),
+      );
+
+      const result = await useCase.execute(4, customer);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Product with id 4 not found',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(404);
+    });
+
+    it('returns inactive products to operators with view_all_products', async () => {
+      const inactive = ProductDtoTestFactory.createProductDetailDTO({
+        id: 4,
+        isActive: false,
+      });
+      mockQueryService.mockSuccessfulGetById(inactive);
+
+      const result = await useCase.execute(4, operator);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual(inactive);
     });
   });
 });
