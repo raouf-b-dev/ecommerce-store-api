@@ -6,6 +6,8 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
 import {
   CategoryResult,
@@ -22,7 +24,10 @@ export class GetCategoryUseCase extends UseCase<
     super();
   }
 
-  async execute(id: number): Promise<Result<CategoryResult, AppError>> {
+  async execute(
+    id: number,
+    caller: CallerContext | null = null,
+  ): Promise<Result<CategoryResult, AppError>> {
     const result = await this.categoryRepository.findById(id);
 
     if (isFailure(result)) {
@@ -35,6 +40,13 @@ export class GetCategoryUseCase extends UseCase<
       );
     }
 
-    return Result.success(toCategoryResult(result.value));
+    const category = toCategoryResult(result.value);
+    if (!CatalogVisibilityPolicy.isVisible(category.isActive, caller)) {
+      return ErrorFactory.QueryNotFoundError(
+        `Category with id ${id} not found`,
+      );
+    }
+
+    return Result.success(category);
   }
 }

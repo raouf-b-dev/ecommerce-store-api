@@ -8,6 +8,8 @@ import { QueryNotFoundError } from '../../../../../../shared-kernel/domain/excep
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { VIEW_ALL_PRODUCTS_PERMISSION } from '../../../domain/policies/catalog-visibility.policy';
 
 describe('GetCategoryUseCase', () => {
   let useCase: GetCategoryUseCase;
@@ -53,6 +55,53 @@ describe('GetCategoryUseCase', () => {
       'Category with id 99 not found',
     );
     expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+  });
+
+  it('hides inactive categories from shoppers as not found', async () => {
+    mockRepository.mockSuccessfulFindById(
+      CategoryTestFactory.createDomainCategory({
+        id: 8,
+        isActive: false,
+      }),
+    );
+
+    const result = await useCase.execute(
+      8,
+      createUserCallerContext({
+        userId: 2,
+        role: 'CUSTOMER',
+        permissions: new Set(['manage_own_cart']),
+      }),
+    );
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Category with id 8 not found',
+    );
+    expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+  });
+
+  it('returns inactive categories to operators with view_all_products', async () => {
+    mockRepository.mockSuccessfulFindById(
+      CategoryTestFactory.createDomainCategory({
+        id: 8,
+        name: 'Archive',
+        slug: 'archive',
+        isActive: false,
+      }),
+    );
+
+    const result = await useCase.execute(
+      8,
+      createUserCallerContext({
+        userId: 1,
+        role: 'ADMIN',
+        permissions: new Set([VIEW_ALL_PRODUCTS_PERMISSION]),
+      }),
+    );
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.isActive).toBe(false);
   });
 
   it('returns UseCaseError when the repository fails', async () => {

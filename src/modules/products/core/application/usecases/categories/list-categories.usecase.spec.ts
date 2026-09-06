@@ -7,10 +7,23 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { VIEW_ALL_PRODUCTS_PERMISSION } from '../../../domain/policies/catalog-visibility.policy';
 
 describe('ListCategoriesUseCase', () => {
   let useCase: ListCategoriesUseCase;
   let mockRepository: MockCategoryRepository;
+
+  const operator = createUserCallerContext({
+    userId: 1,
+    role: 'ADMIN',
+    permissions: new Set([VIEW_ALL_PRODUCTS_PERMISSION]),
+  });
+  const customer = createUserCallerContext({
+    userId: 2,
+    role: 'CUSTOMER',
+    permissions: new Set(['manage_own_cart']),
+  });
 
   beforeEach(() => {
     mockRepository = new MockCategoryRepository();
@@ -39,6 +52,22 @@ describe('ListCategoriesUseCase', () => {
       },
     ]);
     expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true });
+  });
+
+  it('forces isActive true for shoppers even when they request inactive', async () => {
+    mockRepository.mockSuccessfulFindAll([]);
+
+    await useCase.execute({ isActive: false }, customer);
+
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true });
+  });
+
+  it('leaves operator isActive filter unchanged', async () => {
+    mockRepository.mockSuccessfulFindAll([]);
+
+    await useCase.execute({ isActive: false }, operator);
+
+    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: false });
   });
 
   it('returns UseCaseError when the repository fails', async () => {
