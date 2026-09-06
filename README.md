@@ -57,12 +57,12 @@ npm run start:dev
 
 ### Local endpoints
 
-| Service | URL |
-| :------ | :-- |
-| API | `http://localhost:3000` |
-| Swagger | `http://localhost:3000/api/docs` |
-| Redis Insight | `http://localhost:8001` |
-| Accounts | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
+| Service       | URL                                                          |
+| :------------ | :----------------------------------------------------------- |
+| API           | `http://localhost:3000`                                      |
+| Swagger       | `http://localhost:3000/api/docs`                             |
+| Redis Insight | `http://localhost:8001`                                      |
+| Accounts      | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
 
 If you remapped the API port, use the value in `.env.development`.
 
@@ -147,14 +147,14 @@ npm run test:redis:chaos      # Redis reconnect / degradation
 npm run smoke-test            # live process: health, auth
 ```
 
-| Layer | What it proves |
-| :---- | :------------- |
-| Unit | Domain rules and use cases in isolation |
-| Integration | Repositories and query adapters against real databases |
-| E2E | Auth, checkout SAGA, HTTP contracts, idempotency replay |
-| Architecture | No illegal imports across modules |
-| OpenAPI | Published spec matches handler DTOs |
-| Smoke | Liveness, readiness, and authenticated routes on a running process |
+| Layer        | What it proves                                                     |
+| :----------- | :----------------------------------------------------------------- |
+| Unit         | Domain rules and use cases in isolation                            |
+| Integration  | Repositories and query adapters against real databases             |
+| E2E          | Auth, checkout SAGA, HTTP contracts, idempotency replay            |
+| Architecture | No illegal imports across modules                                  |
+| OpenAPI      | Published spec matches handler DTOs                                |
+| Smoke        | Liveness, readiness, and authenticated routes on a running process |
 
 CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
