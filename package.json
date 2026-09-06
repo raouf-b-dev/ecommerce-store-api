@@ -1,6 +1,6 @@
 {
   "name": "ecommerce-store-api",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "NestJS modular-monolith ecommerce API with compensating checkout, inventory locking, and RBAC.",
   "author": "Abderaouf .B <https://github.com/raouf-b-dev>",
   "private": false,
