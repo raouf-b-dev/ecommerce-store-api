@@ -129,14 +129,14 @@ describe('ProductsController', () => {
   });
 
   it('should call GetProductUseCase.execute when findOne is called', async () => {
-    await controller.findOne(id);
-    expect(getProductUseCase.execute).toHaveBeenCalledWith(id);
+    await controller.findOne(id, null);
+    expect(getProductUseCase.execute).toHaveBeenCalledWith(id, null);
   });
 
   it('should call ListProductsUseCase.execute when findAll is called', async () => {
     const query = { page: 1, limit: 10 };
-    await controller.findAll(query);
-    expect(listProductsUseCase.execute).toHaveBeenCalledWith(query);
+    await controller.findAll(query, null);
+    expect(listProductsUseCase.execute).toHaveBeenCalledWith(query, null);
   });
 
   it('should call CreateProductUseCase.execute when createProduct is called', async () => {

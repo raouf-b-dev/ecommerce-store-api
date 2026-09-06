@@ -18,6 +18,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
+import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
+import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CategoryResponseDto } from './primary-adapters/dto/category-response.dto';
 import { CreateCategoryDto } from './primary-adapters/dto/create-category.dto';
 import { ListCategoriesQueryDto } from './primary-adapters/dto/list-categories-query.dto';
@@ -71,43 +74,52 @@ export class CategoriesController {
   }
 
   @Get()
+  @OptionalAuth()
   @ApiBearerAuth()
-  @RequirePermissions('view_all_products')
   @ApiOperation({
     summary: 'List categories',
-    description: 'Returns the catalog category reference list.',
+    description:
+      'Catalog category list. Anonymous and customer callers only see active categories. Operators with `view_all_products` may include inactive items.',
   })
   @ApiResponse({
     status: 200,
     description: 'Categories retrieved successfully.',
     type: [CategoryResponseDto],
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Admin access required.',
+    status: 401,
+    description: 'Invalid or expired authentication token.',
   })
-  async findAll(@Query() query: ListCategoriesQueryDto) {
-    return this.listCategoriesUseCase.execute(query);
+  async findAll(
+    @Query() query: ListCategoriesQueryDto,
+    @CallerCtx() caller: CallerContext | null,
+  ) {
+    return this.listCategoriesUseCase.execute(query, caller);
   }
 
   @Get(':id')
+  @OptionalAuth()
   @ApiBearerAuth()
-  @RequirePermissions('view_all_products')
-  @ApiOperation({ summary: 'Get category by ID' })
+  @ApiOperation({
+    summary: 'Get category by ID',
+    description:
+      'Returns a category. Shoppers receive HTTP 404 for inactive categories. Operators with `view_all_products` can load inactive items.',
+  })
   @ApiResponse({
     status: 200,
     description: 'Category found.',
     type: CategoryResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Category not found.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Admin access required.',
+    status: 401,
+    description: 'Invalid or expired authentication token.',
   })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.getCategoryUseCase.execute(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() caller: CallerContext | null,
+  ) {
+    return this.getCategoryUseCase.execute(id, caller);
   }
 
   @Patch(':id')

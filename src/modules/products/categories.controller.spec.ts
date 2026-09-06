@@ -108,13 +108,13 @@ describe('CategoriesController', () => {
 
   it('calls ListCategoriesUseCase on findAll', async () => {
     const query = { isActive: true };
-    await controller.findAll(query);
-    expect(listCategoriesUseCase.execute).toHaveBeenCalledWith(query);
+    await controller.findAll(query, null);
+    expect(listCategoriesUseCase.execute).toHaveBeenCalledWith(query, null);
   });
 
   it('calls GetCategoryUseCase on findOne', async () => {
-    await controller.findOne(id);
-    expect(getCategoryUseCase.execute).toHaveBeenCalledWith(id);
+    await controller.findOne(id, null);
+    expect(getCategoryUseCase.execute).toHaveBeenCalledWith(id, null);
   });
 
   it('calls CreateCategoryUseCase on create', async () => {
