@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { CorrelationService } from './correlation.service';
 
 /**
- * Global module — makes CorrelationService available everywhere
+ * Global module - makes CorrelationService available everywhere
  * without explicit imports in every module.
  */
 @Global()

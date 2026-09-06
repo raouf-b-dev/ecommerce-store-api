@@ -1,9 +1,16 @@
 import { Controller, Get, Patch, Param, Query } from '@nestjs/common';
 import { CurrentUser } from '../identity/primary-adapters/decorators/current-user.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
 import { GetUserNotificationsDto } from './primary-adapters/dto/get-user-notifications.dto';
+import { UserNotificationsResponseDto } from './primary-adapters/dto/notification-response.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -16,6 +23,7 @@ export class NotificationsController {
 
   @Get()
   @ApiOperation({ summary: 'Get user notifications' })
+  @ApiOkResponse({ type: UserNotificationsResponseDto })
   async getUserNotifications(
     @CurrentUser('userId') userId: string,
     @Query() query: GetUserNotificationsDto,
@@ -30,6 +38,10 @@ export class NotificationsController {
 
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification marked as read (empty body)',
+  })
   async markAsRead(
     @CurrentUser('userId') userId: string,
     @Param('id') id: string,

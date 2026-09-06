@@ -18,7 +18,7 @@ export class UserRoleAssignmentEntity {
   id!: number;
 
   @Column({ name: 'user_id', type: 'int' })
-  userId!: number; // opaque reference to Identity's User.id — no FK, no relation
+  userId!: number; // opaque reference to Identity's User.id - no FK, no relation
 
   @Column({ name: 'role_id' })
   roleId!: number;

@@ -136,7 +136,7 @@ function buildProbes({ baseUrl, timeoutMs, metricsApiKey }) {
         }
         if (!state.registeredUserId) {
           throw new Error(
-            'Skipping authenticated probe — registered user id missing',
+            'Skipping authenticated probe - registered user id missing',
           );
         }
 

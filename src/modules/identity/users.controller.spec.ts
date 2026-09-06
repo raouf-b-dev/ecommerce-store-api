@@ -7,6 +7,7 @@ import { ListUsersUseCase } from './core/application/usecases/user/list-users/li
 import { UpdateUserUseCase } from './core/application/usecases/user/update-user/update-user.usecase';
 import { ActivateUserUseCase } from './core/application/usecases/user/activate-user/activate-user.usecase';
 import { DeactivateUserUseCase } from './core/application/usecases/user/deactivate-user/deactivate-user.usecase';
+import { AssignUserRoleUseCase } from './core/application/usecases/user/assign-user-role/assign-user-role.usecase';
 import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
 import { ListUsersQueryDto } from './primary-adapters/dto/list-users-query.dto';
 
@@ -18,6 +19,7 @@ describe('UsersController', () => {
   let deleteUserUseCase: jest.Mocked<DeleteUserUseCase>;
   let activateUserUseCase: jest.Mocked<ActivateUserUseCase>;
   let deactivateUserUseCase: jest.Mocked<DeactivateUserUseCase>;
+  let assignUserRoleUseCase: jest.Mocked<AssignUserRoleUseCase>;
   const callerContext = AuthPayloadFactory.createCustomerContext();
 
   beforeEach(async () => {
@@ -60,6 +62,12 @@ describe('UsersController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
+        {
+          provide: AssignUserRoleUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
       ],
     }).compile();
 
@@ -70,6 +78,7 @@ describe('UsersController', () => {
     deleteUserUseCase = module.get(DeleteUserUseCase);
     activateUserUseCase = module.get(ActivateUserUseCase);
     deactivateUserUseCase = module.get(DeactivateUserUseCase);
+    assignUserRoleUseCase = module.get(AssignUserRoleUseCase);
   });
 
   it('should delegate listUsers to ListUsersUseCase', async () => {
@@ -105,5 +114,13 @@ describe('UsersController', () => {
   it('should delegate deactivate to DeactivateUserUseCase', async () => {
     await controller.deactivate(1);
     expect(deactivateUserUseCase.execute).toHaveBeenCalledWith(1);
+  });
+
+  it('should delegate assignRole to AssignUserRoleUseCase', async () => {
+    await controller.assignRole(1, { roleCode: 'ADMIN' });
+    expect(assignUserRoleUseCase.execute).toHaveBeenCalledWith({
+      userId: 1,
+      roleCode: 'ADMIN',
+    });
   });
 });

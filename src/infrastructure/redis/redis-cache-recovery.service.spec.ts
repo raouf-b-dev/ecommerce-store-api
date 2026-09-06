@@ -45,7 +45,7 @@ describe('RedisCacheRecoveryService', () => {
     expect(redisService.onReconnect).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it('bumps generation, drops prior indexes, clears flags, re-inits — without SCAN', async () => {
+  it('bumps generation, drops prior indexes, clears flags, re-inits - without SCAN', async () => {
     redisService.bumpCacheGeneration.mockResolvedValue({
       previousGeneration: 1,
       generation: 2,

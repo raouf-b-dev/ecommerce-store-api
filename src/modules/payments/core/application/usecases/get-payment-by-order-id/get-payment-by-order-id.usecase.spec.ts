@@ -50,7 +50,8 @@ describe('GetPaymentByOrderIdUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(123);
+    expect(result.value).not.toBeNull();
+    expect(result.value!.id).toBe(123);
     expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, undefined);
   });
 
@@ -63,11 +64,12 @@ describe('GetPaymentByOrderIdUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.id).toBe(123);
+    expect(result.value).not.toBeNull();
+    expect(result.value!.id).toBe(123);
     expect(mockQueryService.getByOrderId).toHaveBeenCalledWith(10, 2);
   });
 
-  it('should return failure error if payment for order is not found', async () => {
+  it('should return null when no payment exists for the order', async () => {
     mockQueryService.mockSuccessfulGetByOrderId(null);
 
     const result = await useCase.execute({
@@ -75,10 +77,27 @@ describe('GetPaymentByOrderIdUseCase', () => {
       callerContext: customerContext,
     });
 
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toBeNull();
+  });
+
+  it('should return failure when caller is not allowed to view payments', async () => {
+    const stranger: CallerContext = createUserCallerContext({
+      userId: 99,
+      role: 'CUSTOMER',
+      permissions: new Set(),
+    });
+
+    const result = await useCase.execute({
+      orderId: 10,
+      callerContext: stranger,
+    });
+
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment for order ID 999 not found',
+      'Payment for order ID 10 not found',
       UseCaseError,
     );
+    expect(mockQueryService.getByOrderId).not.toHaveBeenCalled();
   });
 });

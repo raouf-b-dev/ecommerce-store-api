@@ -63,26 +63,42 @@ This dual-seeder + forced rotation pattern is standard across enterprise SaaS:
 - **Grafana:** Uses `GF_SECURITY_ADMIN_PASSWORD` and forces a change on first login.
 - **GitLab:** Uses `GITLAB_ROOT_PASSWORD` for initial setup.
 
-## 5. Implementation: `mustChangePassword` Property
+## 5. Implementation: `mustChangePassword` on Credential
 
-The `User` domain entity implements a `mustChangePassword` boolean flag:
+The flag lives on the `Credential` entity (not `User`):
 
-- **Bootstrap Flow:** The seeder creates the super-admin with `mustChangePassword: true`.
-- **Change Flow:** The `User.changePassword()` method automatically sets `mustChangePassword = false` as a domain invariant.
+- **Bootstrap / seed flow:** Demo and super-admin seeds create credentials with `mustChangePassword: true`.
+- **Change flow:** `Credential.changePassword()` sets a new hash and clears the flag.
+- **Session hardening:** `ChangePasswordUseCase` revokes all refresh sessions, then mints a new token pair.
 
-## 6. Login Response Contract
+## 6. Login and refresh response contract
 
-When a user authenticates successfully via `/authentication/login`, the response body explicitly includes the `mustChangePassword` flag:
+Successful `POST /v1/authentication/login` and `POST /v1/authentication/refresh` include `mustChangePassword`:
 
-- `mustChangePassword: true` → The frontend must immediately route the user to a mandatory password-change form. No other API actions are permitted.
-- `mustChangePassword: false` → The frontend proceeds to the dashboard.
+- `true` → clients route to mandatory password change; domain routes return 403 (`MUST_CHANGE_PASSWORD`) except the auth allowlist.
+- `false` → normal access.
 
-## 7. Implementation Checklist
+Allowlist while the flag is set: `change-password`, `logout`, `logout-all`, `refresh`.
 
-When testing or building the bootstrap flow:
+### How the gate resolves the flag
 
-1. Initialize the system data (roles, permissions).
-2. Run `npm run seed:admin` locally.
-3. Authenticate to receive `mustChangePassword: true`.
-4. Submit a password change request.
-5. Verify `mustChangePassword` is cleared and access is granted.
+`signAccessToken` embeds a `mustChangePassword` claim **only** when the credential is flagged at issue time, so an ordinary token carries no claim at all. `MustChangePasswordGuard` reads that claim first and returns immediately when it is absent, which keeps the common request path free of database work. When the claim is present the guard loads the credential and **fails closed**: domain access is allowed only when the database positively confirms `mustChangePassword === false`. Lookup failures, missing credentials, or a flag still set all return HTTP 403 (`MUST_CHANGE_PASSWORD`). Users with a flagged token can still reach `@AllowDuringPasswordChange()` routes (`change-password`, `refresh`, `logout`, `logout-all`).
+
+The deliberate trade-off: flipping `must_change_password` to `true` out of band does not affect tokens already in circulation. Those keep working until they expire (`JWT_ACCESS_TOKEN_TTL`, 15m by default), and the next `/refresh` re-reads the credential and mints a token carrying the claim. Revoking refresh sessions alone would not close that window either, since it does not invalidate issued access tokens. If an immediate cut-off is ever required, that needs a per-request revocation check rather than a change to this guard.
+
+## 7. Change-password endpoint
+
+`POST /v1/authentication/change-password` (authenticated):
+
+- Validates current password and `@MinLength(6)` on the new password.
+- Returns new `accessToken`, `refreshToken`, and `mustChangePassword: false`.
+
+## 8. Implementation checklist
+
+When testing the bootstrap flow:
+
+1. Initialize system data (roles, permissions) and seed demo accounts ([`SEEDING.md`](../development/SEEDING.md)).
+2. Log in and confirm `mustChangePassword: true` in the response.
+3. Confirm a domain route (for example `GET /v1/users/:id`) returns 403 with `MUST_CHANGE_PASSWORD`.
+4. Submit change-password with current and new passwords.
+5. Confirm the flag is false, domain routes succeed, and the previous refresh token no longer works.

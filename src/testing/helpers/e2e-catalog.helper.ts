@@ -16,7 +16,37 @@ export interface E2eCatalogProduct {
   name: string;
 }
 
+interface E2eCategoryListItem {
+  id: number;
+  slug: string;
+  isActive: boolean;
+}
+
 export class E2eCatalogHelper {
+  private static async resolveCategoryIdForFixture(
+    http: E2eHttpClient,
+    accessToken: string,
+  ): Promise<number | undefined> {
+    const listResponse = await http
+      .get(`${E2E_API_PREFIX}/categories`)
+      .set(AuthTestHelper.bearer(accessToken));
+
+    if (listResponse.status !== Number(HttpStatus.OK)) {
+      return undefined;
+    }
+
+    const categories = listResponse.body as E2eCategoryListItem[];
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return undefined;
+    }
+
+    const active = categories.filter((category) => category.isActive);
+    const preferred =
+      active.find((category) => category.slug === 'electronics') ?? active[0];
+
+    return preferred?.id;
+  }
+
   static async seedAdminSession(
     moduleRef: TestingModule,
     http: E2eHttpClient,
@@ -30,13 +60,20 @@ export class E2eCatalogHelper {
     }
 
     const tokens = await AuthTestHelper.login(http, { email, password });
+    const rotated = await AuthTestHelper.changePassword(
+      http,
+      tokens.accessToken,
+      password,
+    );
+
     return {
       email,
-      password,
+      password: AuthTestHelper.rotatedPassword,
       firstName: 'Super',
       lastName: 'Admin',
       userId: 0,
-      ...tokens,
+      accessToken: rotated.accessToken,
+      refreshToken: rotated.refreshToken || tokens.refreshToken,
     };
   }
 
@@ -52,6 +89,11 @@ export class E2eCatalogHelper {
       .slice(2, 6)}`.toUpperCase();
     const name = `E2E ${label} ${sku}`;
 
+    const categoryId = await this.resolveCategoryIdForFixture(
+      http,
+      admin.accessToken,
+    );
+
     const createResponse = await http
       .post(`${E2E_API_PREFIX}/products`)
       .set(AuthTestHelper.bearer(admin.accessToken))
@@ -61,9 +103,14 @@ export class E2eCatalogHelper {
         price: 25,
         currency: 'USD',
         description: 'E2E catalog fixture',
+        ...(categoryId != null ? { categoryId } : {}),
       });
 
-    expect(createResponse.status).toBe(HttpStatus.CREATED);
+    if (createResponse.status !== Number(HttpStatus.CREATED)) {
+      throw new Error(
+        `Failed to create E2E product (${createResponse.status}): ${JSON.stringify(createResponse.body)}`,
+      );
+    }
     const productId = Number(createResponse.body.id);
     expect(productId).toBeGreaterThan(0);
 

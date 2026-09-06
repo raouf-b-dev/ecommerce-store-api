@@ -60,6 +60,13 @@ const hiddenQuestion = (query: string): Promise<string> =>
   });
 
 async function bootstrap() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      'SEEDING BLOCKED: Database seeding is not permitted in production (NODE_ENV=production).',
+    );
+    process.exit(1);
+  }
+
   let app:
     | Awaited<ReturnType<typeof NestFactory.createApplicationContext>>
     | undefined;
@@ -102,4 +109,4 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+void bootstrap();

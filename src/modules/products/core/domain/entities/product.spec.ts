@@ -69,11 +69,35 @@ describe('Product', () => {
         isActive: true,
       });
 
-      product.deactivate();
+      ResultAssertionHelper.assertResultSuccess(product.deactivate());
       expect(product.isActive).toBe(false);
 
-      product.activate();
+      ResultAssertionHelper.assertResultSuccess(product.activate());
       expect(product.isActive).toBe(true);
+    });
+
+    it('rejects activate when already active', () => {
+      const product = ProductTestFactory.createDomainProduct({
+        isActive: true,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        product.activate(),
+        'Product is already active',
+        DomainError,
+      );
+    });
+
+    it('rejects deactivate when already inactive', () => {
+      const product = ProductTestFactory.createDomainProduct({
+        isActive: false,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        product.deactivate(),
+        'Product is already inactive',
+        DomainError,
+      );
     });
   });
 

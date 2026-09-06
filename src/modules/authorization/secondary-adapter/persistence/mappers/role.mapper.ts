@@ -1,8 +1,19 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
+import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { RoleEntity } from '../../orm/role.schema';
 import { Role } from '../../../../authorization/core/domain/entities/role';
 
-type RoleCreate = CreateFromEntity<RoleEntity, 'rolePermissions'>;
+/** Columns for insert; id and timestamps are persistence-owned. */
+export type RoleInsert = CreateFromEntity<
+  RoleEntity,
+  'id' | 'rolePermissions' | 'createdAt' | 'updatedAt'
+>;
+
+/** Parent columns written on update; join rows synced separately. */
+export type RoleUpdate = UpdateFromEntity<
+  RoleEntity,
+  'id' | 'code' | 'rolePermissions' | 'createdAt' | 'updatedAt'
+>;
 
 export class RoleMapper {
   static toDomain(entity: RoleEntity): Role {
@@ -19,26 +30,18 @@ export class RoleMapper {
     });
   }
 
-  static toEntity(domain: Role): RoleEntity {
-    const primitives = domain.toPrimitives();
-
-    const payload: RoleCreate = {
-      id: primitives.id ?? 0,
-      code: primitives.code,
-      name: primitives.name,
-      isSystem: primitives.isSystem,
-      createdAt: primitives.createdAt,
-      updatedAt: primitives.updatedAt,
+  static toInsertPayload(domain: Role): RoleInsert {
+    return {
+      code: domain.code,
+      name: domain.name,
+      isSystem: domain.isSystem,
     };
-
-    return Object.assign(new RoleEntity(), payload);
   }
 
-  static toDomainArray(entities: RoleEntity[]): Role[] {
-    return entities.map((entity) => RoleMapper.toDomain(entity));
-  }
-
-  static toEntityArray(domains: Role[]): RoleEntity[] {
-    return domains.map((domain) => RoleMapper.toEntity(domain));
+  static toUpdatePayload(domain: Role): RoleUpdate {
+    return {
+      name: domain.name,
+      isSystem: domain.isSystem,
+    };
   }
 }

@@ -1,10 +1,13 @@
-import { Result } from 'src/shared-kernel/domain/result';
+import { HttpStatus } from '@nestjs/common';
 import { AssignRoleUseCase } from './assign-role.usecase';
-import { UserRoleAssignment } from '../../../domain/entities/user-role-assignment';
 import { Role } from '../../../domain/entities/role';
-import { MockRoleRepository } from 'src/modules/authorization/testing/mocks/role-repository.mock';
-import { MockUserRoleAssignmentRepository } from 'src/modules/authorization/testing/mocks/user-role-assignment.repository.mock';
-import { AuthorizationDtoFactory } from 'src/modules/authorization/testing/factories/authorization.dto.factory';
+import {
+  AuthorizationDtoFactory,
+  MockRoleRepository,
+  MockUserRoleAssignmentRepository,
+} from 'src/modules/authorization/testing';
+import { ResultAssertionHelper } from 'src/testing';
+import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 
 describe('AssignRoleUseCase', () => {
   let usecase: AssignRoleUseCase;
@@ -19,8 +22,6 @@ describe('AssignRoleUseCase', () => {
       name: 'Super Admin',
       isSystem: true,
       permissions: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     userRoleAssignmentRepository = new MockUserRoleAssignmentRepository();
@@ -32,14 +33,15 @@ describe('AssignRoleUseCase', () => {
     );
   });
 
+  afterEach(() => {
+    userRoleAssignmentRepository.reset();
+    roleRepository.reset();
+  });
+
   it('should assign specified role when assignment does not exist', async () => {
-    userRoleAssignmentRepository.findByUserId.mockResolvedValue(
-      Result.success(null),
-    );
-    roleRepository.findByCode.mockResolvedValue(Result.success(role));
-    userRoleAssignmentRepository.save.mockImplementation((assignment) =>
-      Promise.resolve(Result.success(assignment)),
-    );
+    userRoleAssignmentRepository.mockSuccessfulFindByUserId(null);
+    roleRepository.mockSuccessfulFindByCode(role);
+    userRoleAssignmentRepository.mockPassthroughSave();
 
     const result = await usecase.execute({
       userId: 123,
@@ -51,30 +53,23 @@ describe('AssignRoleUseCase', () => {
   });
 
   it('should update existing assignment if user already has a role', async () => {
-    const existingAssignment = UserRoleAssignment.fromPersistence({
-      id: 1,
-      userId: 123,
-      roleId: 2,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    const newRole = new Role({
+    const existingAssignment =
+      AuthorizationDtoFactory.buildUserRoleAssignmentEntity({
+        id: 1,
+        userId: 123,
+        roleId: 2,
+      });
+    const newRole = AuthorizationDtoFactory.buildEntity({
       id: 10,
       code: 'ADMIN',
       name: 'Admin',
       isSystem: true,
       permissions: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
-    userRoleAssignmentRepository.findByUserId.mockResolvedValue(
-      Result.success(existingAssignment),
-    );
-    roleRepository.findByCode.mockResolvedValue(Result.success(newRole));
-    userRoleAssignmentRepository.save.mockImplementation((assignment) =>
-      Promise.resolve(Result.success(assignment)),
-    );
+    userRoleAssignmentRepository.mockSuccessfulFindByUserId(existingAssignment);
+    roleRepository.mockSuccessfulFindByCode(newRole);
+    userRoleAssignmentRepository.mockPassthroughSave();
 
     const result = await usecase.execute({ userId: 123, roleCode: 'ADMIN' });
 
@@ -82,5 +77,24 @@ describe('AssignRoleUseCase', () => {
     expect(userRoleAssignmentRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ roleId: 10 }),
     );
+  });
+
+  it('should return 404 when role code does not exist', async () => {
+    userRoleAssignmentRepository.mockSuccessfulFindByUserId(null);
+    roleRepository.mockSuccessfulFindByCode(null);
+
+    const result = await usecase.execute({
+      userId: 123,
+      roleCode: 'UNKNOWN',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Role UNKNOWN not found',
+      UseCaseError,
+    );
+    if (result.isFailure)
+      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(userRoleAssignmentRepository.save).not.toHaveBeenCalled();
   });
 });

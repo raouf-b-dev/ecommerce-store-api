@@ -13,6 +13,7 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
@@ -24,6 +25,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     private readonly correlation: CorrelationService,
     @InjectQueue('checkout')
     private readonly checkoutQueue: Queue,
+    private readonly lifecycle: ApplicationLifecyclePort,
   ) {}
 
   async onModuleInit() {
@@ -210,6 +212,15 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
   async schedulePendingOrdersExpiration(): Promise<
     Result<string, InfrastructureError>
   > {
+    if (this.lifecycle.isShuttingDown) {
+      this.logger.debug(
+        'Skipping pending orders expiration schedule during shutdown',
+      );
+      return ErrorFactory.InfrastructureError(
+        'Skipped pending orders expiration schedule during shutdown',
+      );
+    }
+
     const jobName = JobNames.EXPIRE_PENDING_ORDERS;
     const cron = '*/5 * * * *'; // Every 5 minutes
     const jobId = 'expire-pending-orders-job';
@@ -228,10 +239,16 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
       );
       return Result.success(jobId);
     } catch (error) {
-      this.logger.error(
-        'Failed to schedule pending orders expiration job',
-        error,
-      );
+      if (this.lifecycle.isShuttingDown) {
+        this.logger.debug(
+          'Failed to schedule pending orders expiration job (ignored during shutdown)',
+        );
+      } else {
+        this.logger.error(
+          'Failed to schedule pending orders expiration job',
+          error,
+        );
+      }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule pending orders expiration job',
         error,

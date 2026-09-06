@@ -15,7 +15,7 @@ if (isTracingEnabled) {
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'ecommerce-store-api',
-      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '0.6.0',
+      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '0.7.0',
       ['deployment.environment']: process.env.NODE_ENV || 'development',
     }),
     traceExporter: new OTLPTraceExporter({
@@ -23,7 +23,7 @@ if (isTracingEnabled) {
     }),
     instrumentations: [
       getNodeAutoInstrumentations({
-        // Disable fs instrumentation — too noisy, no value for this API
+        // Disable fs instrumentation - too noisy, no value for this API
         '@opentelemetry/instrumentation-fs': { enabled: false },
         // Configure HTTP to ignore health/metrics polling
         '@opentelemetry/instrumentation-http': {
@@ -40,7 +40,7 @@ if (isTracingEnabled) {
 
   let isShuttingDown = false;
 
-  // Graceful shutdown — flush pending spans before process exits
+  // Graceful shutdown - flush pending spans before process exits
   const shutdown = () => {
     if (isShuttingDown) return;
     isShuttingDown = true;

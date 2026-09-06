@@ -17,5 +17,5 @@ set -e
 echo "▶ [entrypoint] Running database migrations..."
 node scripts/docker-migrate.js
 
-echo "▶ [entrypoint] Migrations complete. Starting E-Commerce API..."
+echo "▶ [entrypoint] Startup tasks complete. Starting E-Commerce API..."
 exec "$@"

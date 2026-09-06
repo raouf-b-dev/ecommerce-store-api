@@ -6,17 +6,24 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Permission } from '../../domain/entities/permission';
 import { SYSTEM_PERMISSIONS } from '../../domain/reference-data/permission-definitions';
-import { LoggerTestHelper } from '../../../../../testing';
+import {
+  LoggerTestHelper,
+  MockApplicationLifecycle,
+} from '../../../../../testing';
+import { ApplicationLifecyclePort } from '../../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
+import { Logger } from '@nestjs/common';
 
 describe('PermissionSystemDataInitializer', () => {
   let initializer: PermissionSystemDataInitializer;
   let mockPermissionRepo: MockPermissionRepository;
+  let lifecycle: MockApplicationLifecycle;
 
   beforeEach(async () => {
     // Silence logs during tests
     LoggerTestHelper.silence();
 
     mockPermissionRepo = new MockPermissionRepository();
+    lifecycle = new MockApplicationLifecycle();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -24,6 +31,10 @@ describe('PermissionSystemDataInitializer', () => {
         {
           provide: PermissionRepository,
           useValue: mockPermissionRepo,
+        },
+        {
+          provide: ApplicationLifecyclePort,
+          useValue: lifecycle,
         },
       ],
     }).compile();
@@ -92,5 +103,30 @@ describe('PermissionSystemDataInitializer', () => {
     expect(mockPermissionRepo.saveMany).toHaveBeenCalled();
     const saveArgs = mockPermissionRepo.saveMany.mock.calls[0][0];
     expect(saveArgs.length).toBe(SYSTEM_PERMISSIONS.length - 1); // Should save all except the first one
+  });
+
+  it('should skip init when already shutting down', async () => {
+    lifecycle.isShuttingDown = true;
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockPermissionRepo.findAll).not.toHaveBeenCalled();
+  });
+
+  it('should demote findAll failure to debug when shutting down mid-init', async () => {
+    const errorSpy = jest.spyOn(Logger.prototype, 'error');
+    const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+
+    mockPermissionRepo.findAll.mockImplementation(() => {
+      lifecycle.isShuttingDown = true;
+      return Promise.resolve(ErrorFactory.RepositoryError('connection closed'));
+    });
+
+    await initializer.onApplicationBootstrap();
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(debugSpy).toHaveBeenCalledWith(
+      expect.stringContaining('ignored during shutdown'),
+    );
   });
 });

@@ -1,6 +1,6 @@
 name: Resolve env example
 description: >
-  Read non-secret POSTGRES_* keys from .env.example into step/job outputs.
+  Read non-secret config keys from .env.example into step/job outputs.
   Never add secrets here — job outputs are visible in public Actions logs/UI and are not masked.
 
 outputs:
@@ -10,6 +10,15 @@ outputs:
   postgres_container_name:
     description: POSTGRES_CONTAINER_NAME from .env.example
     value: ${{ steps.parse.outputs.postgres_container_name }}
+  redis_image:
+    description: REDIS_IMAGE from .env.example
+    value: ${{ steps.parse.outputs.redis_image }}
+  redis_container_name:
+    description: REDIS_CONTAINER_NAME from .env.example
+    value: ${{ steps.parse.outputs.redis_container_name }}
+  cors_allowed_origins:
+    description: CORS_ALLOWED_ORIGINS from .env.example
+    value: ${{ steps.parse.outputs.cors_allowed_origins }}
 
 runs:
   using: composite
@@ -38,7 +47,20 @@ runs:
         }
         image="$(get_kv POSTGRES_IMAGE)"
         name="$(get_kv POSTGRES_CONTAINER_NAME)"
+        redis_image="$(get_kv REDIS_IMAGE)"
+        redis_name="$(get_kv REDIS_CONTAINER_NAME)"
+        cors="$(get_kv CORS_ALLOWED_ORIGINS)"
         echo "postgres_image=${image}" >> "$GITHUB_OUTPUT"
         echo "postgres_container_name=${name}" >> "$GITHUB_OUTPUT"
+        echo "redis_image=${redis_image}" >> "$GITHUB_OUTPUT"
+        echo "redis_container_name=${redis_name}" >> "$GITHUB_OUTPUT"
+        {
+          echo "cors_allowed_origins<<EOF"
+          printf '%s\n' "$cors"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
         echo "Resolved POSTGRES_IMAGE=${image}"
         echo "Resolved POSTGRES_CONTAINER_NAME=${name}"
+        echo "Resolved REDIS_IMAGE=${redis_image}"
+        echo "Resolved REDIS_CONTAINER_NAME=${redis_name}"
+        echo "Resolved CORS_ALLOWED_ORIGINS=${cors}"

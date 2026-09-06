@@ -11,7 +11,7 @@ import { ResultAssertionHelper } from 'src/testing';
  * Pre-flight (concurrency proof):
  * - PostgresReservationRepository.save() calls dataSource.transaction('REPEATABLE READ', ...)
  * - Inventory rows locked with pessimistic_write (SELECT ... FOR UPDATE)
- * - Integration DataSource uses default TypeORM pool (no max: 1) — concurrent saves use independent transactions
+ * - Integration DataSource uses default TypeORM pool (no max: 1) - concurrent saves use independent transactions
  * - Jest maxWorkers: 1 serializes files, not in-spec Promise.all parallelism
  */
 describe('PostgresReservationRepository (Integration - Real DB)', () => {
@@ -163,7 +163,7 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
     });
   });
 
-  describe('concurrent checkout inventory invariant — repository-level reservation proof', () => {
+  describe('concurrent checkout inventory invariant - repository-level reservation proof', () => {
     it('serializes parallel saves: 1 available unit → exactly 1 reservation succeeds', async () => {
       const dataSource = IntegrationTestHelper.getDataSource();
       await seedSingleUnitInventory(dataSource, seededData.product.id);

@@ -4,19 +4,27 @@ import {
   BeforeApplicationShutdown,
   OnApplicationShutdown,
 } from '@nestjs/common';
+import { ApplicationLifecyclePort } from '../../shared-kernel/domain/interfaces/application-lifecycle.port';
 
 @Injectable()
 export class ShutdownService
-  implements BeforeApplicationShutdown, OnApplicationShutdown
+  implements
+    ApplicationLifecyclePort,
+    BeforeApplicationShutdown,
+    OnApplicationShutdown
 {
   private readonly logger = new Logger(ShutdownService.name);
   private readonly GRACEFUL_SHUTDOWN_TIMEOUT = 15000;
-  private isShuttingDown = false;
+  private shuttingDown = false;
   private shutdownTimeout: NodeJS.Timeout | null = null;
 
+  get isShuttingDown(): boolean {
+    return this.shuttingDown;
+  }
+
   beforeApplicationShutdown(signal?: string) {
-    if (this.isShuttingDown) return;
-    this.isShuttingDown = true;
+    if (this.shuttingDown) return;
+    this.shuttingDown = true;
 
     this.logger.log(`Received ${signal}. Starting graceful shutdown...`);
 

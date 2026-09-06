@@ -6,6 +6,7 @@ import { PermissionEntity } from 'src/modules/authorization/secondary-adapter/or
 import { RolePermissionEntity } from 'src/modules/authorization/secondary-adapter/orm/role-permission.schema';
 import { UserRoleAssignmentEntity } from 'src/modules/authorization/secondary-adapter/orm/user-role-assignment.schema';
 import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
+import { CategoryEntity } from 'src/modules/products/secondary-adapters/orm/category.schema';
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
 import { ReservationEntity } from 'src/modules/inventory/secondary-adapters/orm/reservation.schema';
 import { ReservationItemEntity } from 'src/modules/inventory/secondary-adapters/orm/reservation-item.schema';
@@ -44,6 +45,7 @@ beforeAll(async () => {
         RolePermissionEntity,
         UserRoleAssignmentEntity,
         ProductEntity,
+        CategoryEntity,
         InventoryEntity,
         ReservationEntity,
         ReservationItemEntity,

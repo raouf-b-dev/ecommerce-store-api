@@ -1,21 +1,42 @@
 import { DataSource } from 'typeorm';
 import { UserEntity } from 'src/modules/identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
+import { CategoryEntity } from 'src/modules/products/secondary-adapters/orm/category.schema';
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
+import { RoleEntity } from 'src/modules/authorization/secondary-adapter/orm/role.schema';
+import { UserRoleAssignmentEntity } from 'src/modules/authorization/secondary-adapter/orm/user-role-assignment.schema';
+import { SystemRoleCode } from 'src/shared-kernel/domain/value-objects/system-roles';
 
 export interface SeededData {
   customerUser: UserEntity;
   adminUser: UserEntity;
   product: ProductEntity;
   inventory: InventoryEntity;
+  customerRole: RoleEntity;
+  adminRole: RoleEntity;
 }
 
 export async function seedReferenceData(
   dataSource: DataSource,
 ): Promise<SeededData> {
   const userRepo = dataSource.getRepository(UserEntity);
+  const categoryRepo = dataSource.getRepository(CategoryEntity);
   const productRepo = dataSource.getRepository(ProductEntity);
   const inventoryRepo = dataSource.getRepository(InventoryEntity);
+  const roleRepo = dataSource.getRepository(RoleEntity);
+  const assignmentRepo = dataSource.getRepository(UserRoleAssignmentEntity);
+
+  const customerRole = await roleRepo.save({
+    code: SystemRoleCode.CUSTOMER,
+    name: 'Customer',
+    isSystem: true,
+  });
+
+  const adminRole = await roleRepo.save({
+    code: SystemRoleCode.ADMIN,
+    name: 'Administrator',
+    isSystem: true,
+  });
 
   const customerUser = await userRepo.save({
     firstName: 'Customer',
@@ -36,6 +57,54 @@ export async function seedReferenceData(
     createdAt: new Date(),
     updatedAt: new Date(),
   });
+
+  await assignmentRepo.save({
+    userId: customerUser.id,
+    roleId: customerRole.id,
+  });
+
+  await assignmentRepo.save({
+    userId: adminUser.id,
+    roleId: adminRole.id,
+  });
+
+  await categoryRepo.insert([
+    {
+      id: 1,
+      name: 'Electronics',
+      slug: 'electronics',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 2,
+      name: 'Clothing',
+      slug: 'clothing',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 3,
+      name: 'Home & Garden',
+      slug: 'home-garden',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 4,
+      name: 'Sports',
+      slug: 'sports',
+      description: null,
+      isActive: true,
+    },
+    {
+      id: 5,
+      name: 'Books',
+      slug: 'books',
+      description: null,
+      isActive: true,
+    },
+  ]);
 
   const product = await productRepo.save({
     sku: 'INT-LAPTOP-01',
@@ -65,5 +134,7 @@ export async function seedReferenceData(
     adminUser,
     product,
     inventory,
+    customerRole,
+    adminRole,
   };
 }

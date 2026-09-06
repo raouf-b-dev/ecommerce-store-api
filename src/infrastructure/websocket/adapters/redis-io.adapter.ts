@@ -35,7 +35,7 @@ export class RedisIoAdapter extends IoAdapter {
       this.logger.log('RedisIoAdapter connected to Redis');
     } catch (err) {
       this.logger.warn(
-        `Redis unavailable for WebSocket adapter — using in-memory adapter: ${toErrorMessage(err)}`,
+        `Redis unavailable for WebSocket adapter - using in-memory adapter: ${toErrorMessage(err)}`,
       );
       this.useRedis = false;
     }
@@ -51,7 +51,7 @@ export class RedisIoAdapter extends IoAdapter {
 
   /**
    * Called by NestJS SocketModule during application shutdown.
-   * Idempotent — safe to call multiple times (quit on a closed client is caught).
+   * Idempotent - safe to call multiple times (quit on a closed client is caught).
    */
   async close(): Promise<void> {
     await Promise.all([

@@ -16,7 +16,7 @@ When the OS starts a program (e.g. `node dist/main.js`), it creates a **process*
 | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **PID**    | Unique integer assigned to every running process by the kernel.                                                                                                           |
 | **PID 1**  | The first user-space process started at boot (`init` or `systemd`). All other processes descend from it. Inside a Docker container, the entrypoint process becomes PID 1. |
-| **PPID** | Parent Process ID: the PID of the process that spawned the current one. Viewable via `ps -o pid,ppid` or `process.ppid` in Node.js. |
+| **PPID**   | Parent Process ID: the PID of the process that spawned the current one. Viewable via `ps -o pid,ppid` or `process.ppid` in Node.js.                                       |
 | **Orphan** | A child process whose parent has exited. The kernel re-parents orphans to PID 1 (the init process).                                                                       |
 | **Zombie** | A terminated child whose exit status has not yet been collected by its parent via `wait()`. It occupies a slot in the process table but consumes no CPU or memory.        |
 
@@ -107,7 +107,7 @@ When a process terminates, it returns an integer **exit code** (0-255) to the pa
 
 | Exit Code | Meaning                                                                                                                         |
 | :-------: | :------------------------------------------------------------------------------------------------------------------------------ |
-| `0` | Success: clean exit. |
+|    `0`    | Success: clean exit.                                                                                                            |
 |    `1`    | General error / uncaught fatal exception (Node.js).                                                                             |
 |    `2`    | Reserved by Bash for builtin misuse.                                                                                            |
 | `128 + N` | Process was killed by signal `N`. For example: `128 + 9 = 137` (SIGKILL), `128 + 15 = 143` (SIGTERM), `128 + 2 = 130` (SIGINT). |
@@ -167,25 +167,27 @@ This project implements graceful shutdown via NestJS lifecycle hooks. The shutdo
 ```typescript
 // Enable NestJS shutdown hooks (listens for SIGTERM/SIGINT)
 app.enableShutdownHooks();
-
-// Safety net: force exit after 15s if graceful shutdown stalls
-setTimeout(() => process.exit(1), 15_000).unref();
 ```
 
-When `enableShutdownHooks()` is active and a termination signal arrives, NestJS calls `onApplicationShutdown()` on all registered providers in reverse dependency order, then closes the HTTP server.
+`ShutdownService` owns the 15s force-exit safety net via `beforeApplicationShutdown`. Do not register a second competing SIGINT/SIGTERM timeout in `main.ts`.
+
+When `enableShutdownHooks()` is active and a termination signal arrives, NestJS runs `beforeApplicationShutdown` / `onApplicationShutdown` on registered providers in reverse dependency order, then closes the HTTP server.
+
+Init hooks that touch Redis/DB (system role/permission seeders, BullMQ repeatable schedulers) depend on `ApplicationLifecyclePort` (`isShuttingDown`) and skip or demote failures when shutting down, so watch restarts and Ctrl+C do not spam false errors. `ShutdownService` implements that port in infrastructure.
 
 ### Shutdown hook implementations
 
-| Service                      | Hook                      | Action                                                                                                   |
-| :--------------------------- | :------------------------ | :------------------------------------------------------------------------------------------------------- |
-| `WebsocketConnectionGateway` | `onApplicationShutdown()` | Disconnects all connected WebSocket clients via `server.disconnectSockets(true)`.                        |
-| `OrdersProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new checkout jobs, waits for in-flight jobs to complete. |
-| `NotificationsProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new notification jobs. |
-| `PaymentEventsProcessor` | `onApplicationShutdown()` | Calls `this.worker.close()`: stops polling for new payment event jobs. |
-| `FlowProducerService` | `onApplicationShutdown()` | Calls `flowProducer.close()`: closes the BullMQ flow producer connection. |
-| `QueueEventsService`         | `onApplicationShutdown()` | Closes all `QueueEvents` listener instances.                                                             |
-| `RedisService` | `onApplicationShutdown()` | Calls `client.quit()`: sends the Redis `QUIT` command for a clean disconnect. |
-| `RedisIoAdapter` | `server.on('close')` | Calls `pubClient.quit()` and `subClient.quit()`: closes the Socket.IO Redis adapter connections. |
+| Service                      | Hook                          | Action                                                                                                  |
+| :--------------------------- | :---------------------------- | :------------------------------------------------------------------------------------------------------ |
+| `ShutdownService`            | `beforeApplicationShutdown()` | Sets `isShuttingDown`, starts 15s force-exit timeout.                                                   |
+| `WebsocketConnectionGateway` | `beforeApplicationShutdown()` | Disconnects all connected WebSocket clients via `server.disconnectSockets(true)`.                       |
+| `OrdersProcessor`            | `onApplicationShutdown()`     | Calls `this.worker.close()`: stops polling for new checkout jobs, waits for in-flight jobs to complete. |
+| `NotificationsProcessor`     | `onApplicationShutdown()`     | Calls `this.worker.close()`: stops polling for new notification jobs.                                   |
+| `PaymentEventsProcessor`     | `onApplicationShutdown()`     | Calls `this.worker.close()`: stops polling for new payment event jobs.                                  |
+| `FlowProducerService`        | `onApplicationShutdown()`     | Calls `flowProducer.close()`: closes the BullMQ flow producer connection.                               |
+| `QueueEventsService`         | `onApplicationShutdown()`     | Closes all `QueueEvents` listener instances.                                                            |
+| `RedisService`               | `onApplicationShutdown()`     | Calls `client.quit()`: sends the Redis `QUIT` command for a clean disconnect.                           |
+| `RedisIoAdapter`             | `server.on('close')`          | Calls `pubClient.quit()` and `subClient.quit()`: closes the Socket.IO Redis adapter connections.        |
 
 ---
 
@@ -202,13 +204,12 @@ When `enableShutdownHooks()` is active and a termination signal arrives, NestJS 
 
 ## References
 
-|  #  | Source                                                                      | URL                                                                               |
-| :-: | :-------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-| 1 | `signal(7)`: Linux Programmer's Manual | https://man7.org/linux/man-pages/man7/signal.7.html |
-| 2 | POSIX.1-2017 `<signal.h>`: The Open Group | https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html |
-| 3 | Node.js `process`: Signal Events | https://nodejs.org/docs/latest/api/process.html#signal-events |
-| 4 | Node.js `process`: Exit Codes | https://nodejs.org/docs/latest/api/process.html#exit-codes |
-| 5 | Kubernetes: Pod Lifecycle (Termination) | https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination |
-| 6 | Docker: `docker stop` Reference | https://docs.docker.com/reference/cli/docker/container/stop/ |
-| 7 | Kerrisk, M.: _The Linux Programming Interface_ (2010), Ch. 20-22 (Signals) | ISBN 978-1-59327-220-3 |
-
+|  #  | Source                                                                     | URL                                                                               |
+| :-: | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+|  1  | `signal(7)`: Linux Programmer's Manual                                     | https://man7.org/linux/man-pages/man7/signal.7.html                               |
+|  2  | POSIX.1-2017 `<signal.h>`: The Open Group                                  | https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html           |
+|  3  | Node.js `process`: Signal Events                                           | https://nodejs.org/docs/latest/api/process.html#signal-events                     |
+|  4  | Node.js `process`: Exit Codes                                              | https://nodejs.org/docs/latest/api/process.html#exit-codes                        |
+|  5  | Kubernetes: Pod Lifecycle (Termination)                                    | https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination |
+|  6  | Docker: `docker stop` Reference                                            | https://docs.docker.com/reference/cli/docker/container/stop/                      |
+|  7  | Kerrisk, M.: _The Linux Programming Interface_ (2010), Ch. 20-22 (Signals) | ISBN 978-1-59327-220-3                                                            |

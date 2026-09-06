@@ -17,6 +17,7 @@ describe('SeedDemoOrdersUseCase', () => {
     { id: 5, name: 'Planter', sku: 'HOME-SCP-001', price: 32.5 },
     { id: 6, name: 'Book', sku: 'BOOK-ACC-001', price: 28.5 },
     { id: 7, name: 'Yoga Mat', sku: 'SPOR-EYM-001', price: 29.99 },
+    { id: 8, name: 'Keyboard', sku: 'ELEC-MBK-004', price: 79.99 },
   ];
 
   beforeEach(() => {

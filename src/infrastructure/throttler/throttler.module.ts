@@ -50,16 +50,14 @@ class ThrottlerRedisModule {}
         );
 
         return {
+          // Only `default` is global. Nest runs every named forRoot profile on
+          // every route; a second "strict" profile here would cap the whole API
+          // at THROTTLE_STRICT_LIMIT. Auth routes tighten `default` via @Throttle.
           throttlers: [
             {
               name: 'default',
               ttl: seconds(60),
               limit: config.throttle.globalLimit,
-            },
-            {
-              name: 'strict',
-              ttl: seconds(60),
-              limit: config.throttle.strictLimit,
             },
           ],
           storage,

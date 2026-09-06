@@ -4,6 +4,7 @@ import {
   Credential,
   CredentialProps,
 } from '../../core/domain/entities/credential';
+import { SessionToken } from '../../core/domain/entities/session-token';
 import { ICredential } from '../../core/domain/interfaces/credential.interface';
 
 export class AuthenticationDtoFactory {
@@ -58,6 +59,35 @@ export class AuthenticationDtoFactory {
     };
 
     return Credential.create({ ...baseCredential, ...overrides });
+  }
+
+  static buildPersistedCredentialEntity(
+    overrides?: Partial<CredentialProps & { id: number }>,
+  ): Credential {
+    const baseCredential = {
+      id: 1,
+      userId: 1,
+      passwordHash: 'passwordHash',
+      mustChangePassword: true,
+    };
+
+    return Credential.fromPersistence({ ...baseCredential, ...overrides });
+  }
+
+  static buildSessionToken(
+    overrides?: Partial<{
+      userId: number;
+      rawToken: string;
+      expiresAt: Date;
+      id: string;
+    }>,
+  ): SessionToken {
+    const userId = overrides?.userId ?? 1;
+    const rawToken = overrides?.rawToken ?? 'refresh-token';
+    const expiresAt = overrides?.expiresAt ?? new Date(Date.now() + 3600_000);
+    const id = overrides?.id ?? 'session-id';
+
+    return SessionToken.create(userId, rawToken, expiresAt, id);
   }
 
   static buildCredentialPremitives(

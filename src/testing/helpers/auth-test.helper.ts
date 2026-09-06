@@ -28,6 +28,7 @@ export interface AuthSession {
 
 export class AuthTestHelper {
   static readonly password = 'Password123!';
+  static readonly rotatedPassword = 'UpdatedPassword123!';
 
   static bearer(accessToken: string): { Authorization: string } {
     return { Authorization: `Bearer ${accessToken}` };
@@ -90,6 +91,40 @@ export class AuthTestHelper {
     }
 
     return { accessToken, refreshToken };
+  }
+
+  static async changePassword(
+    http: E2eHttpClient,
+    accessToken: string,
+    currentPassword: string,
+    newPassword: string = AuthTestHelper.rotatedPassword,
+    expectedStatus: number = HttpStatus.OK,
+  ): Promise<Pick<AuthSession, 'accessToken' | 'refreshToken'>> {
+    const response = await http
+      .post(`${E2E_API_PREFIX}/authentication/change-password`)
+      .set(this.bearer(accessToken))
+      .send({ currentPassword, newPassword })
+      .expect(expectedStatus);
+
+    if (expectedStatus !== 200) {
+      return { accessToken: '', refreshToken: '' };
+    }
+
+    const nextAccessToken =
+      response.body?.accessToken ?? response.body?.access_token;
+    const nextRefreshToken =
+      response.body?.refreshToken ?? response.body?.refresh_token;
+
+    if (!nextAccessToken) {
+      throw new Error(
+        'Expected change-password response to include accessToken.',
+      );
+    }
+
+    return {
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken ?? '',
+    };
   }
 
   static async registerAndLogin(

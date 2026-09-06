@@ -1,7 +1,7 @@
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { PaymentStatus, PaymentStatusType } from './payment-status';
 
-/** Independent expected specification — do not derive from PaymentStatus helpers. */
+/** Independent expected specification - do not derive from PaymentStatus helpers. */
 const allStatuses = Object.values(PaymentStatusType);
 
 const successfulStatuses: PaymentStatusType[] = [

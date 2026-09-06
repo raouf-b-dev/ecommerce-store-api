@@ -104,6 +104,10 @@ runs:
               console.error("POSTGRES_IMAGE is required (workflow env / .env.example)");
               process.exit(1);
             }
+            if (!process.env.CORS_ALLOWED_ORIGINS) {
+              console.error("CORS_ALLOWED_ORIGINS is required (workflow env / .env.example)");
+              process.exit(1);
+            }
             const lines = [
             "NODE_ENV=test",
             "PORT=3000",
@@ -122,6 +126,7 @@ runs:
             `JWT_PRIVATE_KEY=${jwtEscaped}`,
             `JWT_ACCESS_TOKEN_TTL=${JSON.stringify("15m")}`,
             `JWT_REFRESH_TOKEN_TTL=${JSON.stringify("7d")}`,
+            `CORS_ALLOWED_ORIGINS=${JSON.stringify(process.env.CORS_ALLOWED_ORIGINS)}`,
             `METRICS_API_KEY=${JSON.stringify(process.env.CI_METRICS_API_KEY || "restore-drill-ci")}`,
           ];
           fs.writeFileSync(".env.test", lines.join("\n") + "\n");

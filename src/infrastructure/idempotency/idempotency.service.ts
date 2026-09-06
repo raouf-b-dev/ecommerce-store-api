@@ -29,7 +29,7 @@ function parseIdempotencyRecord(raw: unknown): IdempotencyRecord | null {
 
 /**
  * Redis-backed idempotency adapter. Depends only on {@link CachePort}
- * (hexagonal driven port) — not on Redis connection details.
+ * (hexagonal driven port) - not on Redis connection details.
  */
 @Injectable()
 export class IdempotencyService extends IdempotencyStore {
@@ -47,7 +47,7 @@ export class IdempotencyService extends IdempotencyStore {
 
     if (!this.cache.isAvailable()) {
       this.logger.warn(
-        `Idempotency store unavailable for key ${key} — failing closed`,
+        `Idempotency store unavailable for key ${key} - failing closed`,
       );
       return { isNew: false, unavailable: true };
     }
@@ -83,7 +83,7 @@ export class IdempotencyService extends IdempotencyStore {
         }
 
         this.logger.warn(
-          `Idempotency key ${key} has unusable status ${existing.status} — failing closed`,
+          `Idempotency key ${key} has unusable status ${existing.status} - failing closed`,
         );
         return { isNew: false, unavailable: true };
       }
@@ -91,7 +91,7 @@ export class IdempotencyService extends IdempotencyStore {
       // SET NX lost and a non-null payload failed to parse (or unknown status).
       if (raw != null) {
         this.logger.warn(
-          `Idempotency key ${key} occupied with malformed record — failing closed`,
+          `Idempotency key ${key} occupied with malformed record - failing closed`,
         );
         return { isNew: false, unavailable: true };
       }
@@ -99,18 +99,18 @@ export class IdempotencyService extends IdempotencyStore {
       // SET NX failed and GET missed: backend blip mid-call, or TTL race.
       if (!this.cache.isAvailable()) {
         this.logger.warn(
-          `Idempotency store unavailable after lock miss for key ${key} — failing closed`,
+          `Idempotency store unavailable after lock miss for key ${key} - failing closed`,
         );
         return { isNew: false, unavailable: true };
       }
 
       this.logger.warn(
-        `Idempotency TTL/race miss for key ${key} — treating as new`,
+        `Idempotency TTL/race miss for key ${key} - treating as new`,
       );
       return { isNew: true };
     } catch (error) {
       this.logger.warn(
-        `Idempotency store error for key ${key} — failing closed`,
+        `Idempotency store error for key ${key} - failing closed`,
         error,
       );
       return { isNew: false, unavailable: true };

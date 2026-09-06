@@ -1,7 +1,7 @@
 import { IRolePermissions } from '../../../../../shared-kernel/domain/interfaces/role-permissions.interface';
 export type { IRolePermissions };
 
-/** Plain serialized form — no behaviour, safe to cross module boundaries. */
+/** Plain serialized form - no behaviour, safe to cross module boundaries. */
 
 export class RolePermissionsVO implements IRolePermissions {
   private readonly _permissions: Set<string>;
@@ -17,6 +17,19 @@ export class RolePermissionsVO implements IRolePermissions {
   /** Check if a specific permission is granted */
   has(code: string): boolean {
     return this._permissions.has(code);
+  }
+
+  /** Set equality on codes (order-independent). */
+  equals(other: RolePermissionsVO): boolean {
+    if (this._permissions.size !== other._permissions.size) {
+      return false;
+    }
+    for (const code of this._permissions) {
+      if (!other._permissions.has(code)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   toPrimitives(): IRolePermissions {

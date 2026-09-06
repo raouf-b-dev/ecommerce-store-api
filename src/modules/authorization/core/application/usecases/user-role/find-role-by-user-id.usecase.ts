@@ -9,6 +9,7 @@ import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory'
 export interface RoleRecord {
   id: number;
   code: string;
+  permissions: string[];
 }
 
 @Injectable()
@@ -53,6 +54,7 @@ export class FindRoleByUserIdUseCase implements UseCase<
     const roleRecord: RoleRecord = {
       id: role.id,
       code: role.code,
+      permissions: role.permissions.codes,
     };
 
     return Result.success(roleRecord);

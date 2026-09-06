@@ -6,6 +6,12 @@ export interface SignAccessTokenPayload {
   sub: string | null;
   email: string;
   role: string;
+  /**
+   * Only embedded when true. Absence of the claim means the credential was
+   * clean at issue time, which lets MustChangePasswordGuard skip its database
+   * lookup for the overwhelming majority of tokens.
+   */
+  mustChangePassword?: boolean;
 }
 
 export interface SignRefreshTokenPayload {

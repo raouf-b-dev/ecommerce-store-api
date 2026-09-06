@@ -5,6 +5,10 @@ export interface PermissionDefinition {
 
 export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   {
+    code: 'access_admin',
+    description: 'Access the operator admin dashboard SPA',
+  },
+  {
     code: 'manage_products',
     description: 'Create, update, and delete products',
   },

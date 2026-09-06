@@ -28,7 +28,7 @@ export class RedisIndexInitializerService implements OnModuleInit {
     const isReady = await this.redisService.waitUntilReady();
     if (!isReady) {
       this.logger.warn(
-        'Redis unavailable — skipping RediSearch index initialization',
+        'Redis unavailable - skipping RediSearch index initialization',
       );
       return;
     }

@@ -87,6 +87,75 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
     expect(result.value.items[0].userId).toBe(seededData.customerUser.id);
   });
 
+  it('filters orders by minAmount and maxAmount', async () => {
+    await createOrderRow({ totalPrice: 50 });
+    const inRange = await createOrderRow({ totalPrice: 150 });
+    await createOrderRow({ totalPrice: 500 });
+
+    const result = await queryAdapter.list({
+      page: 1,
+      limit: 10,
+      minAmount: 100,
+      maxAmount: 200,
+    });
+
+    expect(result.isSuccess).toBe(true);
+    if (!result.isSuccess) return;
+
+    expect(result.value.total).toBe(1);
+    expect(result.value.items[0].id).toBe(inRange.id);
+    expect(result.value.items[0].totalAmount).toBe(150);
+  });
+
+  it('filters orders by createdAfter and createdBefore with inclusive end-of-day for date-only values', async () => {
+    const orderRepo = IntegrationTestHelper.getRepository(OrderEntity);
+    const early = await createOrderRow({ totalPrice: 10 });
+    await orderRepo.update(early.id, {
+      createdAt: new Date('2026-01-10T08:00:00.000Z'),
+    });
+
+    const onLastDay = await createOrderRow({ totalPrice: 20 });
+    await orderRepo.update(onLastDay.id, {
+      createdAt: new Date('2026-01-15T18:30:00.000Z'),
+    });
+
+    const afterRange = await createOrderRow({ totalPrice: 30 });
+    await orderRepo.update(afterRange.id, {
+      createdAt: new Date('2026-01-16T01:00:00.000Z'),
+    });
+
+    const result = await queryAdapter.list({
+      page: 1,
+      limit: 10,
+      createdAfter: '2026-01-12',
+      createdBefore: '2026-01-15',
+    });
+
+    expect(result.isSuccess).toBe(true);
+    if (!result.isSuccess) return;
+
+    expect(result.value.total).toBe(1);
+    expect(result.value.items[0].id).toBe(onLastDay.id);
+  });
+
+  it('sorts orders by totalPrice when requested', async () => {
+    const low = await createOrderRow({ totalPrice: 50 });
+    const high = await createOrderRow({ totalPrice: 500 });
+
+    const result = await queryAdapter.list({
+      page: 1,
+      limit: 10,
+      sortBy: 'totalPrice',
+      sortOrder: 'asc',
+    });
+
+    expect(result.isSuccess).toBe(true);
+    if (!result.isSuccess) return;
+
+    expect(result.value.items[0].id).toBe(low.id);
+    expect(result.value.items[1].id).toBe(high.id);
+  });
+
   it('returns order detail DTO with line items and product SKU mapping', async () => {
     const order = await createOrderRow();
 

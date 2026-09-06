@@ -4,6 +4,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaginatedQueryResult } from '../../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
+import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
 import { ProductQueryService } from '../../ports/product-query.service';
 import { ListProductsQuery } from '../../queries/list-products.query';
 import { ProductListItemDTO } from '../../queries/results/product-list-item.result';
@@ -18,8 +20,13 @@ export class ListProductsUseCase implements UseCase<
 
   async execute(
     query: ListProductsQuery = {},
+    caller: CallerContext | null = null,
   ): Promise<Result<PaginatedQueryResult<ProductListItemDTO>, UseCaseError>> {
-    const result = await this.productQueryService.list(query);
+    const scopedQuery = CatalogVisibilityPolicy.constrainListFilter(
+      query,
+      caller,
+    );
+    const result = await this.productQueryService.list(scopedQuery);
     if (result.isFailure) {
       return ErrorFactory.UseCaseError(result.error.message, result.error);
     }

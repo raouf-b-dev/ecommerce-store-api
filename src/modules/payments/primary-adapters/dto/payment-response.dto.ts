@@ -52,6 +52,7 @@ export class PaymentResponseDto {
     example: 'pi_1234567890',
     description: 'Gateway payment intent ID',
     nullable: true,
+    type: String,
   })
   gatewayPaymentIntentId?: string | null;
 

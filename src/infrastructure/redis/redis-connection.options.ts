@@ -5,7 +5,7 @@ export type RedisConfig = IAppConfig['redis'];
 
 /**
  * Single source of truth for Redis host/port/password/db/reconnect.
- * Consumers (separate TCP sockets by design — see REDIS.md client inventory):
+ * Consumers (separate TCP sockets by design - see REDIS.md client inventory):
  * - buildNodeRedisClientOptions → RedisService, Socket.IO pub/sub
  * - buildIoRedisConnection → BullMQ (via BULLMQ_CONNECTION_OPTIONS), FlowProducer, QueueEvents
  * - buildThrottlerIoRedisOptions → throttler storage (fail-fast retries; not shared with BullMQ)

@@ -52,7 +52,7 @@ describe('GetOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.id).toBe(orderId);
-      expect(result.value.status).toBe('PENDING_PAYMENT');
+      expect(result.value.status).toBe('pending_payment');
       expect(mockQueryService.getById).toHaveBeenCalledWith(orderId, undefined);
     });
 

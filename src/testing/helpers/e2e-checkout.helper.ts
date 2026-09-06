@@ -7,7 +7,7 @@ import {
 } from './auth-test.helper';
 import { E2eHttpClient } from './e2e-test-app.helper';
 
-/** Matches Superagent `Response['headers']` — string values only. */
+/** Matches Superagent `Response['headers']` - string values only. */
 export type E2eResponseHeaders = { readonly [name: string]: string };
 
 export interface CheckoutHttpResult {

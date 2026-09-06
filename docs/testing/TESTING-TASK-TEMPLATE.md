@@ -141,7 +141,7 @@ npm run test:e2e -- <target>
 
 - Valid transition updates order status and `updatedAt`.
 - Invalid transition (e.g., finalizing cancelled order) returns `DomainError`.
-- Payment-method-specific rules are preserved (COD vs online).
+- Payment-method rules for the Stripe checkout path are preserved.
 - `toPrimitives()` -> `fromPrimitives()` round-trip retains core fields.
 - Timestamp assertions use controlled clock.
 

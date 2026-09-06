@@ -1,6 +1,13 @@
-// src/modules/users/presentation/dto/list-users-query.dto.ts
-import { IsOptional, IsString, IsNumber, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+  Matches,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ListUsersQueryDto {
@@ -13,20 +20,34 @@ export class ListUsersQueryDto {
   search?: string;
 
   @ApiPropertyOptional({
-    example: 'john.doe@example.com',
-    description: 'Filter by email',
+    description: 'Filter by active status',
+    example: true,
   })
   @IsOptional()
-  @IsString()
-  email?: string;
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    return value === 'true' || value === true;
+  })
+  @IsBoolean()
+  isActive?: boolean;
 
   @ApiPropertyOptional({
-    example: '+1234567890',
-    description: 'Filter by phone',
+    description: 'Filter by assigned role code',
+    example: 'CUSTOMER',
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim()
+      ? value.trim().toUpperCase()
+      : undefined,
+  )
   @IsString()
-  phone?: string;
+  @Matches(/^[A-Z][A-Z0-9_]*$/, {
+    message: 'roleCode must be an uppercase role code',
+  })
+  roleCode?: string;
 
   @ApiPropertyOptional({
     example: 1,

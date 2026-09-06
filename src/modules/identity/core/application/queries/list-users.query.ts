@@ -3,5 +3,6 @@ export interface ListUsersQuery {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  roleCode?: string;
   authorizedUserId?: number;
 }

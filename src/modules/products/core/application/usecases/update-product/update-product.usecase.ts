@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
+import { CategoryRepository } from '../../../domain/repositories/category-repository';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -16,7 +17,10 @@ export class UpdateProductUseCase extends UseCase<
   IProduct,
   UseCaseError
 > {
-  constructor(private readonly productRepository: ProductRepository) {
+  constructor(
+    private readonly productRepository: ProductRepository,
+    private readonly categoryRepository: CategoryRepository,
+  ) {
     super();
   }
 
@@ -24,6 +28,30 @@ export class UpdateProductUseCase extends UseCase<
     command: UpdateProductCommand,
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
+      if (command.categoryId === null) {
+        return ErrorFactory.UseCaseError(
+          'categoryId cannot be null',
+          undefined,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (command.categoryId != null) {
+        const categoryResult = await this.categoryRepository.findById(
+          command.categoryId,
+        );
+        if (isFailure(categoryResult)) {
+          return ErrorFactory.UseCaseError(categoryResult.error.message);
+        }
+        if (!categoryResult.value || !categoryResult.value.isActive) {
+          return ErrorFactory.UseCaseError(
+            `Category with id ${command.categoryId} not found`,
+            undefined,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
       const findResult = await this.productRepository.findByIdForUpdate(
         command.id,
       );

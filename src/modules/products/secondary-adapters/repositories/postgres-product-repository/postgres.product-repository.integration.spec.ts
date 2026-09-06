@@ -111,6 +111,10 @@ describe('PostgresProductRepository (Integration - Real DB)', () => {
     const forUpdate = await repository.findByIdForUpdate(seededData.product.id);
     ResultAssertionHelper.assertResultSuccess(forUpdate);
 
+    await IntegrationTestHelper.getDataSource().query(
+      `INSERT INTO "categories" ("id", "name", "slug", "description", "is_active") VALUES (7, 'Parity Fixture', 'parity-fixture', NULL, true)`,
+    );
+
     const product = forUpdate.value.entity;
     product.updateProduct({
       name: 'Parity Renamed Laptop',
@@ -121,7 +125,7 @@ describe('PostgresProductRepository (Integration - Real DB)', () => {
       imageUrl: 'https://cdn.example.com/parity.png',
       categoryId: 7,
     });
-    product.deactivate();
+    ResultAssertionHelper.assertResultSuccess(product.deactivate());
 
     const result = await repository.save(
       product,

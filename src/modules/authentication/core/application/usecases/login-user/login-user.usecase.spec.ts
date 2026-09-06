@@ -1,4 +1,5 @@
 import {
+  AuthenticationDtoFactory,
   AuthorizationGatewayMock,
   CredentialRepositoryMock,
   IdentityAccessGatewayDtoFactory,
@@ -8,8 +9,6 @@ import {
 } from 'src/modules/authentication/testing';
 import { MockJwtSignerService } from 'src/testing';
 import { LoginUserUseCase } from './login-user.usecase';
-import { Result } from '../../../../../../shared-kernel/domain/result';
-import { SessionToken } from '../../../domain/entities/session-token';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
@@ -34,12 +33,13 @@ describe('LoginUserUseCase', () => {
       email: 'test@example.com',
       isActive: true,
     });
-    defaultCredential = Credential.fromPersistence({
-      id: 1,
-      userId: 123,
-      passwordHash: 'hashed_password',
-      mustChangePassword: false,
-    });
+    defaultCredential = AuthenticationDtoFactory.buildPersistedCredentialEntity(
+      {
+        userId: 123,
+        passwordHash: 'hashed_password',
+        mustChangePassword: false,
+      },
+    );
     identityGateway = new IdentityAccessGatewayMock();
     authorizationGateway = new AuthorizationGatewayMock();
     credentialRepository = new CredentialRepositoryMock();
@@ -64,6 +64,7 @@ describe('LoginUserUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 2,
       code: 'CUSTOMER',
+      permissions: ['view_own_profile', 'view_own_orders'],
     });
     passwordHasher.compare.mockResolvedValue(true);
   });
@@ -76,14 +77,12 @@ describe('LoginUserUseCase', () => {
   });
 
   it('should login a user successfully', async () => {
-    sessionTokenRepository.save.mockResolvedValue(
-      Result.success(
-        SessionToken.create(
-          defaultUserRecord.id,
-          'dummy-refresh-token',
-          new Date('2025-01-01T12:00:00Z'),
-        ),
-      ),
+    sessionTokenRepository.mockSuccessfulSave(
+      AuthenticationDtoFactory.buildSessionToken({
+        userId: defaultUserRecord.id,
+        rawToken: 'dummy-refresh-token',
+        expiresAt: new Date('2025-01-01T12:00:00Z'),
+      }),
     );
 
     const result = await usecase.execute({
@@ -94,6 +93,11 @@ describe('LoginUserUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.accessToken).toBeTruthy();
     expect(result.value.refreshToken).toBeTruthy();
+    expect(result.value.mustChangePassword).toBe(false);
+    expect(result.value.permissions).toEqual([
+      'view_own_profile',
+      'view_own_orders',
+    ]);
   });
 
   it('should return failure if user is not found', async () => {

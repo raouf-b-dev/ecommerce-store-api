@@ -63,7 +63,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       this.wasConnected = true;
 
       if (isReconnect) {
-        this.logger.log('Redis reconnected — triggering recovery');
+        this.logger.log('Redis reconnected - triggering recovery');
         this.notifyReconnectListeners();
       } else {
         this.logger.log('Redis connected');
@@ -88,7 +88,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
       await this.dropVersionedIndexesForGeneration(previousGeneration);
     } catch (err) {
       this.logger.warn(
-        `Redis unavailable at startup — app continues without cache: ${toErrorMessage(err)}`,
+        `Redis unavailable at startup - app continues without cache: ${toErrorMessage(err)}`,
       );
     }
   }

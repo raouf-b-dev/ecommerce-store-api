@@ -23,10 +23,7 @@ export class RoleEntity {
   @Column({ type: 'boolean', default: false, name: 'is_system' })
   isSystem!: boolean;
 
-  @OneToMany(() => RolePermissionEntity, (rp) => rp.role, {
-    eager: true,
-    cascade: true,
-  })
+  @OneToMany(() => RolePermissionEntity, (rp) => rp.role)
   rolePermissions!: Relation<RolePermissionEntity>[];
 
   @CreateDateColumn({ name: 'created_at' })

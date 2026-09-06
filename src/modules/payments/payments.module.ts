@@ -23,6 +23,7 @@ import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-s
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
 
+import { SeedDemoPaymentsUseCase } from './core/application/seed/seed-demo-payments.usecase';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
 import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
@@ -89,7 +90,7 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
       inject: [CachePort, POSTGRES_PAYMENT_REPOSITORY],
     },
 
-    // Default Repository Binding — cache-aside fails open via CachePort
+    // Default Repository Binding - cache-aside fails open via CachePort
     {
       provide: PaymentRepository,
       useExisting: CACHED_PAYMENT_REPOSITORY,
@@ -106,6 +107,7 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
     HandleStripeWebhookUseCase,
     CreatePaymentIntentUseCase,
     GetPaymentByOrderIdUseCase,
+    SeedDemoPaymentsUseCase,
     // CQRS Presentation Query Service
     {
       provide: PaymentQueryService,
@@ -120,6 +122,7 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
     PaymentGatewayResolver,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,
+    SeedDemoPaymentsUseCase,
   ],
 })
 export class PaymentsModule {}

@@ -32,7 +32,12 @@ export interface IAppConfig {
     allowedOrigins: string[];
   };
   throttle: {
+    /** Global default profile (all routes). */
     globalLimit: number;
+    /**
+     * Documented target for auth @Throttle overrides (not a second forRoot profile).
+     * Keep in sync with AUTH_STRICT_LIMIT in throttle.constants.ts.
+     */
     strictLimit: number;
   };
   http: {

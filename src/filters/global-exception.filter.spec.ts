@@ -86,6 +86,34 @@ describe('GlobalExceptionFilter', () => {
     expect(mockResponse.json.mock.calls[0][0]).toHaveProperty('timestamp');
   });
 
+  it('should expose machine-readable code in production for HttpException', () => {
+    process.env.NODE_ENV = 'production';
+    const exception = new HttpException(
+      {
+        statusCode: 403,
+        message: 'Password change required before accessing this resource',
+        error: 'MUST_CHANGE_PASSWORD',
+      },
+      403,
+    );
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(403);
+    const jsonResponse = mockResponse.json.mock.calls[0][0];
+
+    expect(jsonResponse).toEqual(
+      expect.objectContaining({
+        success: false,
+        statusCode: 403,
+        message: 'Password change required before accessing this resource',
+        code: 'MUST_CHANGE_PASSWORD',
+      }),
+    );
+    expect(jsonResponse).not.toHaveProperty('stack');
+    expect(jsonResponse).not.toHaveProperty('error');
+  });
+
   it('should handle HttpException with code (e.g., from ResultInterceptor)', () => {
     const exception = new HttpException(
       {

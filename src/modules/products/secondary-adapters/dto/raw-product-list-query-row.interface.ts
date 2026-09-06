@@ -8,6 +8,7 @@ export interface RawProductListQueryRow {
   currency: string;
   imageUrl?: string | null;
   categoryId?: number | string | null;
+  categoryName?: string | null;
   isActive: boolean | number | string;
   createdAt: Date | string;
   updatedAt?: Date | string;

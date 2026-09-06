@@ -1,5 +1,6 @@
 import { IUser } from '../../core/domain/interfaces/user.interface';
 import { UserProps } from '../../core/domain/entities/user';
+import { AssignUserRoleCommand } from '../../core/application/usecases/user/assign-user-role/assign-user-role.usecase';
 import { CreateUserCommand } from '../../core/application/usecases/user/create-user/create-user.usecase';
 import { AddAddressCommand } from '../../core/application/commands/add-address.command';
 import { UpdateAddressCommand } from '../../core/application/commands/update-address.command';
@@ -76,6 +77,16 @@ export class UserTestFactory {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
+      ...overrides,
+    };
+  }
+
+  static createAssignUserRoleCommand(
+    overrides?: Partial<AssignUserRoleCommand>,
+  ): AssignUserRoleCommand {
+    return {
+      userId: 1,
+      roleCode: 'ADMIN',
       ...overrides,
     };
   }

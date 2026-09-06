@@ -7,7 +7,9 @@ scrape_configs:
     scrape_interval: 10s
     metrics_path: /metrics
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      # Rendered at container start from Compose env PORT (see entrypoint.sh).
+      # Must match the host-run API listen port from .env / .env.development.
+      - targets: ['host.docker.internal:__API_HOST_PORT__']
     authorization:
       type: Bearer
       credentials_file: /run/secrets/metrics_api_key

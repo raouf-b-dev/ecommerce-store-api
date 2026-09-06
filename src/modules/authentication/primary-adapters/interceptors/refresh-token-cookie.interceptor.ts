@@ -16,7 +16,11 @@ export const REFRESH_COOKIE_NAME = 'refresh_token';
 export const REFRESH_COOKIE_PATH = `${DEFAULT_API_PREFIX}/authentication`;
 
 /** Unversioned routes where the refresh token cookie should be set on success. */
-const SET_COOKIE_ROUTES = ['/authentication/login', '/authentication/refresh'];
+const SET_COOKIE_ROUTES = [
+  '/authentication/login',
+  '/authentication/refresh',
+  '/authentication/change-password',
+];
 
 /** Unversioned routes where the refresh token cookie should be cleared on success. */
 const CLEAR_COOKIE_ROUTES = [

@@ -2,7 +2,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type';
 
-// Downstream-specific DTO — Orders never sees the full User entity
+// Downstream-specific DTO - Orders never sees the full User entity
 export interface CheckoutUserAddress {
   id: number | null;
   street: string;
