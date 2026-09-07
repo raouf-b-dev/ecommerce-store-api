@@ -41,7 +41,7 @@ Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Quick start
 
-Tested against Node.js 24, npm 11, and Docker Desktop 28.
+Needs Node.js 24, npm 11, and Docker Desktop **running** (tested with Desktop 28). After installing Docker, wait until it is idle, then open a new terminal.
 
 ### Bootstrap
 
@@ -64,7 +64,7 @@ npm run start:dev
 | Redis Insight | `http://localhost:8001`                                      |
 | Accounts      | [`docs/development/SEEDING.md`](docs/development/SEEDING.md) |
 
-If you remapped the API port, use the value in `.env.development`.
+If you remapped `PORT` or `REDIS_INSIGHT_PORT`, use the values in `.env.development`.
 
 `npm run setup:down` stops containers and keeps data. `npm run setup:reset` wipes volumes and re-seeds.
 
@@ -138,7 +138,7 @@ src/
 ## Verify
 
 ```bash
-npm test                      # unit
+npm test                      # unit (app + setup scripts)
 npm run test:integration      # Postgres / Redis (Testcontainers)
 npm run test:e2e              # HTTP: auth, checkout, IDOR, idempotency
 npm run test:arch             # module boundary rules
@@ -149,7 +149,7 @@ npm run smoke-test            # live process: health, auth
 
 | Layer        | What it proves                                                     |
 | :----------- | :----------------------------------------------------------------- |
-| Unit         | Domain rules and use cases in isolation                            |
+| Unit         | Domain rules, use cases, and local setup preflight                 |
 | Integration  | Repositories and query adapters against real databases             |
 | E2E          | Auth, checkout SAGA, HTTP contracts, idempotency replay            |
 | Architecture | No illegal imports across modules                                  |
