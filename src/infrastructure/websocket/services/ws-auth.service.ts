@@ -27,17 +27,38 @@ export class WsAuthService {
     }
   }
 
+  /**
+   * Prefer Socket.IO handshake `auth.token` (not in the URL). Then Bearer
+   * header (Node clients). `query.token` remains a legacy fallback.
+   */
   private extractToken(client: Socket): string | undefined {
+    const authToken = readStringToken(client.handshake.auth?.token);
+    if (authToken) {
+      return authToken;
+    }
+
     const authHeader = client.handshake.headers.authorization;
-    if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
-      return authHeader.split(' ')[1];
+    if (typeof authHeader === 'string') {
+      const [scheme, credentials] = authHeader.split(' ');
+      if (scheme === 'Bearer' && credentials) {
+        return credentials;
+      }
     }
 
-    const queryToken = client.handshake.query.token as string;
-    if (queryToken) {
-      return queryToken;
-    }
-
-    return undefined;
+    return readStringToken(client.handshake.query.token);
   }
+}
+
+function readStringToken(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+  if (
+    Array.isArray(value) &&
+    typeof value[0] === 'string' &&
+    value[0].length > 0
+  ) {
+    return value[0];
+  }
+  return undefined;
 }
