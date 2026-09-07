@@ -31,4 +31,11 @@ function parseArgs(argv = process.argv.slice(2)) {
   }, {});
 }
 
-module.exports = { loadEnv, parseArgs };
+function printFailure(result, { log = console, label = 'setup' } = {}) {
+  log.error(`❌ [${label}] ${result.message}`);
+  for (const hint of result.hints || []) {
+    log.error(`   ${hint}`);
+  }
+}
+
+module.exports = { loadEnv, parseArgs, printFailure };

@@ -38,7 +38,7 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 - **Node.js** ≥ 24
 - **npm** ≥ 11
-- **Docker Desktop** ≥ 28
+- **Docker Desktop** ≥ 28, with the engine running (open a new terminal after install)
 - **Git** ≥ 2.47
 
 ### Installation
