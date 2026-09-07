@@ -4,9 +4,15 @@ Common issues and solutions for the E-Commerce Store API.
 
 ---
 
-## Docker services will not start
+## Docker / `npm run setup` will not start
 
-**Symptom**: Compose fails to bind ports or a container never becomes healthy.
+**Symptom**: Setup says Docker is missing or the engine is not running; or Compose fails to bind ports / never becomes healthy.
+
+Docker Desktop must be fully running. After installing it, open a **new** terminal (PATH does not update in old sessions). Confirm with `docker info`.
+
+Port conflicts: something already bound to `5432`, `6379`, or `8001`. Remap `DB_PORT`, `REDIS_PORT`, or `REDIS_INSIGHT_PORT` in `.env.development`.
+
+If a container stays unhealthy after a previous run (stale volume), `npm run setup:reset` wipes volumes and re-bootstraps.
 
 ```bash
 npm run d:down:dev

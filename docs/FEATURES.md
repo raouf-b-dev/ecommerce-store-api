@@ -328,7 +328,8 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 | Script                     | Description                          |
 | :------------------------- | :----------------------------------- |
-| `npm test`                 | Unit tests                           |
+| `npm test`                 | Unit tests (app + setup scripts)     |
+| `npm run test:scripts`     | Setup / Docker preflight unit tests  |
 | `npm run test:watch`       | Watch mode                           |
 | `npm run test:cov`         | Coverage                             |
 | `npm run test:integration` | Real DB / Redis integration          |

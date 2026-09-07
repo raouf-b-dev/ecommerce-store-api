@@ -60,7 +60,7 @@ All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with
 | ----------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- |
 | **lint**                | `lint:check`, `format:check`                                                         | ESLint + Prettier                              |
 | **typecheck**           | `typecheck`                                                                          | TypeScript compile check                       |
-| **unit-tests**          | `test:ci`                                                                            | Jest unit tests                                |
+| **unit-tests**          | `test:ci`                                                                            | Jest unit tests + setup script tests           |
 | **arch**                | `test:arch`                                                                          | Hexagonal architecture boundaries              |
 | **audit**               | `npm audit --omit=dev --audit-level=high`                                            | Blocks high/critical vulnerabilities           |
 | **dependency-review**   | `dependency-review-action`                                                           | PR supply-chain review (PRs only)              |

@@ -6,7 +6,9 @@ Short guide for first-time local setup: environment files, what is auto-generate
 
 ## ⚡ Automated Environment Bootstrap
 
-For the fastest time-to-first-run with zero manual database, Redis, migration, or seeding steps:
+For the fastest time-to-first-run with zero manual database, Redis, migration, or seeding steps.
+
+Docker Desktop must be running. After a fresh install, wait until it is idle and open a new terminal before `npm run setup`.
 
 ```bash
 # From ecommerce-store-api root:
@@ -15,7 +17,7 @@ npm run setup
 
 This single command orchestrates:
 1. Auto-generates local development environment files (`.env.development`) with fresh 4096-bit RSA keys if missing.
-2. Starts **PostgreSQL** (`:5432`) and **Redis Stack** (`:6379`, `:8001` Redis Insight) in Docker with native healthcheck waiting (`--wait`).
+2. Starts **PostgreSQL** (`DB_PORT`, default `:5432`) and **Redis Stack** (`REDIS_PORT` / `REDIS_INSIGHT_PORT`, defaults `:6379` and `:8001`) in Docker with native healthcheck waiting (`--wait`).
 3. Automatically applies all pending TypeORM database migrations (`migration:run:dev`).
 4. Automatically seeds the database with demo accounts, catalog, orders, and inventory (`db:seed`).
 
@@ -97,9 +99,10 @@ For local development, confirm **`.env.development`** matches what Compose expec
 | `DB_USERNAME`    | `postgres`          |
 | `DB_PASSWORD`    | `your_password`     |
 | `DB_DATABASE`    | `my_database`       |
-| `REDIS_HOST`     | `localhost`         |
-| `REDIS_PORT`     | `6379`              |
-| `REDIS_PASSWORD` | `secret`            |
+| `REDIS_HOST`         | `localhost`         |
+| `REDIS_PORT`         | `6379`              |
+| `REDIS_INSIGHT_PORT` | `8001`              |
+| `REDIS_PASSWORD`     | `secret`            |
 
 Docker Compose reads the same `.env.development` via the local Docker scripts.
 
