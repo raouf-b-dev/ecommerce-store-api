@@ -8,11 +8,8 @@ import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
-import { CategoryRepository } from '../../../domain/repositories/category-repository';
-import {
-  CategoryResult,
-  toCategoryResult,
-} from '../../queries/results/category.result';
+import { CategoryQueryService } from '../../ports/category-query.service';
+import { CategoryResult } from '../../queries/results/category.result';
 
 @Injectable()
 export class GetCategoryUseCase extends UseCase<
@@ -20,7 +17,7 @@ export class GetCategoryUseCase extends UseCase<
   CategoryResult,
   AppError
 > {
-  constructor(private readonly categoryRepository: CategoryRepository) {
+  constructor(private readonly categoryQueryService: CategoryQueryService) {
     super();
   }
 
@@ -28,7 +25,7 @@ export class GetCategoryUseCase extends UseCase<
     id: number,
     caller: CallerContext | null = null,
   ): Promise<Result<CategoryResult, AppError>> {
-    const result = await this.categoryRepository.findById(id);
+    const result = await this.categoryQueryService.getById(id);
 
     if (isFailure(result)) {
       return ErrorFactory.UseCaseError('Failed to find category', result.error);
@@ -40,7 +37,7 @@ export class GetCategoryUseCase extends UseCase<
       );
     }
 
-    const category = toCategoryResult(result.value);
+    const category = result.value;
     if (!CatalogVisibilityPolicy.isVisible(category.isActive, caller)) {
       return ErrorFactory.QueryNotFoundError(
         `Category with id ${id} not found`,

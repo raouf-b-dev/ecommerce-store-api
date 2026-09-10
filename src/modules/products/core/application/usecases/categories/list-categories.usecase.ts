@@ -8,12 +8,9 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
-import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { CategoryQueryService } from '../../ports/category-query.service';
 import { ListCategoriesQuery } from '../../queries/list-categories.query';
-import {
-  CategoryResult,
-  toCategoryResult,
-} from '../../queries/results/category.result';
+import { CategoryResult } from '../../queries/results/category.result';
 
 @Injectable()
 export class ListCategoriesUseCase extends UseCase<
@@ -21,7 +18,7 @@ export class ListCategoriesUseCase extends UseCase<
   CategoryResult[],
   UseCaseError
 > {
-  constructor(private readonly categoryRepository: CategoryRepository) {
+  constructor(private readonly categoryQueryService: CategoryQueryService) {
     super();
   }
 
@@ -33,7 +30,7 @@ export class ListCategoriesUseCase extends UseCase<
       query,
       caller,
     );
-    const result = await this.categoryRepository.findAll({
+    const result = await this.categoryQueryService.list({
       isActive: scopedQuery.isActive,
     });
 
@@ -44,6 +41,6 @@ export class ListCategoriesUseCase extends UseCase<
       );
     }
 
-    return Result.success(result.value.map(toCategoryResult));
+    return Result.success(result.value);
   }
 }

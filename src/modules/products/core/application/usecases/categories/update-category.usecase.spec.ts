@@ -1,6 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
 import {
+  CategoryResult,
   CategoryTestFactory,
+  MockCategoryQueryService,
   MockCategoryRepository,
 } from 'src/modules/products/testing';
 import { UpdateCategoryUseCase } from './update-category.usecase';
@@ -14,22 +16,34 @@ import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptio
 describe('UpdateCategoryUseCase', () => {
   let useCase: UpdateCategoryUseCase;
   let mockRepository: MockCategoryRepository;
+  let mockQueryService: MockCategoryQueryService;
 
   beforeEach(() => {
     mockRepository = new MockCategoryRepository();
+    mockQueryService = new MockCategoryQueryService();
     mockRepository.mockNameExists(false);
     mockRepository.mockSlugExists(false);
     mockRepository.mockSuccessfulSave();
-    useCase = new UpdateCategoryUseCase(mockRepository);
+    useCase = new UpdateCategoryUseCase(mockRepository, mockQueryService);
   });
 
   afterEach(() => {
     mockRepository.reset();
+    mockQueryService.reset();
   });
 
   it('updates name and regenerates slug', async () => {
     const category = CategoryTestFactory.createDomainCategory();
     mockRepository.mockSuccessfulFindById(category);
+    const readModel: CategoryResult = {
+      id: 1,
+      name: 'Home & Garden',
+      slug: 'home-garden',
+      description: null,
+      isActive: true,
+      productCount: 4,
+    };
+    mockQueryService.mockSuccessfulGetById(readModel);
 
     const result = await useCase.execute({
       id: 1,
@@ -37,13 +51,13 @@ describe('UpdateCategoryUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.name).toBe('Home & Garden');
-    expect(result.value.slug).toBe('home-garden');
+    expect(result.value).toEqual(readModel);
     expect(mockRepository.existsByName).toHaveBeenCalledWith(
       'Home & Garden',
       1,
     );
     expect(mockRepository.existsBySlug).toHaveBeenCalledWith('home-garden', 1);
+    expect(mockQueryService.getById).toHaveBeenCalledWith(1);
   });
 
   it('returns QueryNotFoundError when missing', async () => {

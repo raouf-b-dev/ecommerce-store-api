@@ -35,6 +35,7 @@ describe('CreateCategoryUseCase', () => {
       slug: 'home-garden',
       description: 'Household goods',
       isActive: true,
+      productCount: 0,
     });
     expect(mockRepository.save).toHaveBeenCalled();
   });
