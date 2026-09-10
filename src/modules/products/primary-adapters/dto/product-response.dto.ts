@@ -81,6 +81,9 @@ export class ProductListItemResponseDto {
 
   @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
   createdAt!: string;
+
+  @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
+  updatedAt!: string;
 }
 
 /** Detail read model. */
@@ -91,9 +94,6 @@ export class ProductDetailResponseDto extends ProductListItemResponseDto {
     type: String,
   })
   description!: string | null;
-
-  @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
-  updatedAt!: string;
 }
 
 /** Paginated list envelope. */

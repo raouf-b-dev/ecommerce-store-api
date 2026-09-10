@@ -7,11 +7,9 @@ import {
 import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { CategoryQueryService } from '../../ports/category-query.service';
 import { UpdateCategoryCommand } from '../../commands/update-category.command';
-import {
-  CategoryResult,
-  toCategoryResult,
-} from '../../queries/results/category.result';
+import { CategoryResult } from '../../queries/results/category.result';
 
 @Injectable()
 export class UpdateCategoryUseCase extends UseCase<
@@ -19,7 +17,10 @@ export class UpdateCategoryUseCase extends UseCase<
   CategoryResult,
   AppError
 > {
-  constructor(private readonly categoryRepository: CategoryRepository) {
+  constructor(
+    private readonly categoryRepository: CategoryRepository,
+    private readonly categoryQueryService: CategoryQueryService,
+  ) {
     super();
   }
 
@@ -93,6 +94,19 @@ export class UpdateCategoryUseCase extends UseCase<
       );
     }
 
-    return Result.success(toCategoryResult(saveResult.value));
+    const readModel = await this.categoryQueryService.getById(command.id);
+    if (isFailure(readModel)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to load updated category',
+        readModel.error,
+      );
+    }
+    if (!readModel.value) {
+      return ErrorFactory.QueryNotFoundError(
+        `Category with id ${command.id} not found`,
+      );
+    }
+
+    return Result.success(readModel.value);
   }
 }

@@ -58,6 +58,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
           'category.name AS "categoryName"',
           'product.isActive AS "isActive"',
           'product.createdAt AS "createdAt"',
+          'product.updatedAt AS "updatedAt"',
         ]);
 
       if (isActive !== undefined) {

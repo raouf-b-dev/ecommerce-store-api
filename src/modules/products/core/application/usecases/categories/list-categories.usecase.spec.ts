@@ -1,18 +1,18 @@
 import {
-  CategoryTestFactory,
-  MockCategoryRepository,
+  CategoryResult,
+  MockCategoryQueryService,
 } from 'src/modules/products/testing';
 import { ListCategoriesUseCase } from './list-categories.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { VIEW_ALL_PRODUCTS_PERMISSION } from '../../../domain/policies/catalog-visibility.policy';
 
 describe('ListCategoriesUseCase', () => {
   let useCase: ListCategoriesUseCase;
-  let mockRepository: MockCategoryRepository;
+  let mockQueryService: MockCategoryQueryService;
 
   const operator = createUserCallerContext({
     userId: 1,
@@ -25,54 +25,53 @@ describe('ListCategoriesUseCase', () => {
     permissions: new Set(['manage_own_cart']),
   });
 
+  const sampleCategory: CategoryResult = {
+    id: 1,
+    name: 'Electronics',
+    slug: 'electronics',
+    description: null,
+    isActive: true,
+    productCount: 3,
+  };
+
   beforeEach(() => {
-    mockRepository = new MockCategoryRepository();
-    useCase = new ListCategoriesUseCase(mockRepository);
+    mockQueryService = new MockCategoryQueryService();
+    useCase = new ListCategoriesUseCase(mockQueryService);
   });
 
   afterEach(() => {
-    mockRepository.reset();
+    mockQueryService.reset();
   });
 
   it('returns category read models', async () => {
-    mockRepository.mockSuccessfulFindAll([
-      CategoryTestFactory.createDomainCategory(),
-    ]);
+    mockQueryService.mockSuccessfulList([sampleCategory]);
 
     const result = await useCase.execute({ isActive: true });
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value).toEqual([
-      {
-        id: 1,
-        name: 'Electronics',
-        slug: 'electronics',
-        description: null,
-        isActive: true,
-      },
-    ]);
-    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true });
+    expect(result.value).toEqual([sampleCategory]);
+    expect(mockQueryService.list).toHaveBeenCalledWith({ isActive: true });
   });
 
   it('forces isActive true for shoppers even when they request inactive', async () => {
-    mockRepository.mockSuccessfulFindAll([]);
+    mockQueryService.mockSuccessfulList([]);
 
     await useCase.execute({ isActive: false }, customer);
 
-    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: true });
+    expect(mockQueryService.list).toHaveBeenCalledWith({ isActive: true });
   });
 
   it('leaves operator isActive filter unchanged', async () => {
-    mockRepository.mockSuccessfulFindAll([]);
+    mockQueryService.mockSuccessfulList([]);
 
     await useCase.execute({ isActive: false }, operator);
 
-    expect(mockRepository.findAll).toHaveBeenCalledWith({ isActive: false });
+    expect(mockQueryService.list).toHaveBeenCalledWith({ isActive: false });
   });
 
-  it('returns UseCaseError when the repository fails', async () => {
-    mockRepository.findAll.mockResolvedValue(
-      Result.failure(new RepositoryError('DB Error')),
+  it('returns UseCaseError when the query service fails', async () => {
+    mockQueryService.list.mockResolvedValue(
+      Result.failure(new QueryError('DB Error')),
     );
 
     const result = await useCase.execute();
