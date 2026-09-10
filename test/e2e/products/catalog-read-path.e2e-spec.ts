@@ -109,10 +109,15 @@ describe('Catalog read path (e2e)', () => {
       search: activeProduct.sku,
     });
     expect(listed.status).toBe(HttpStatus.OK);
-    const listedIds = (listed.body.items as Array<{ id: number }>).map(
-      (item) => item.id,
-    );
+    const listedItems = listed.body.items as Array<{
+      id: number;
+      updatedAt: string;
+    }>;
+    const listedIds = listedItems.map((item) => item.id);
     expect(listedIds).toContain(activeProduct.id);
+    const listedActive = listedItems.find((item) => item.id === activeProduct.id);
+    expect(listedActive?.updatedAt).toEqual(expect.any(String));
+    expect(Date.parse(listedActive!.updatedAt)).not.toBeNaN();
   });
 
   it('returns 404 to shoppers for inactive product detail and 200 to operators', async () => {
@@ -158,11 +163,24 @@ describe('Catalog read path (e2e)', () => {
       isActive: false,
     });
     expect(shopperList.status).toBe(HttpStatus.OK);
-    const shopperIds = (shopperList.body as Array<{ id: number }>).map(
-      (item) => item.id,
-    );
+    const shopperCategories = shopperList.body as Array<{
+      id: number;
+      productCount: number;
+    }>;
+    const shopperIds = shopperCategories.map((item) => item.id);
     expect(shopperIds).toContain(activeCategoryId);
     expect(shopperIds).not.toContain(inactiveCategoryId);
+    expect(
+      shopperCategories.every(
+        (item) =>
+          typeof item.productCount === 'number' && item.productCount >= 0,
+      ),
+    ).toBe(true);
+
+    const emptyActive = shopperCategories.find(
+      (item) => item.id === activeCategoryId,
+    );
+    expect(emptyActive?.productCount).toBe(0);
 
     const operatorList = await http
       .get(`${E2E_API_PREFIX}/categories`)
@@ -184,6 +202,13 @@ describe('Catalog read path (e2e)', () => {
       .set(AuthTestHelper.bearer(admin.accessToken));
     expect(operatorDetail.status).toBe(HttpStatus.OK);
     expect(operatorDetail.body.isActive).toBe(false);
+    expect(operatorDetail.body.productCount).toBe(0);
+
+    const activeDetail = await http.get(
+      `${E2E_API_PREFIX}/categories/${activeCategoryId}`,
+    );
+    expect(activeDetail.status).toBe(HttpStatus.OK);
+    expect(activeDetail.body.productCount).toBe(0);
   });
 
   it('keeps product and category mutations operator-only', async () => {
