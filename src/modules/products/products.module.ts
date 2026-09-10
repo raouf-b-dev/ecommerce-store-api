@@ -35,6 +35,8 @@ import { SeedDemoCategoriesUseCase } from './core/application/seed/seed-demo-cat
 
 import { ProductQueryService } from './core/application/ports/product-query.service';
 import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres-product-query.adapter';
+import { CategoryQueryService } from './core/application/ports/category-query.service';
+import { PostgresCategoryQueryAdapter } from './secondary-adapters/query/postgres-category-query.adapter';
 
 @Module({
   imports: [
@@ -100,7 +102,16 @@ import { PostgresProductQueryAdapter } from './secondary-adapters/query/postgres
       provide: ProductQueryService,
       useClass: PostgresProductQueryAdapter,
     },
+    {
+      provide: CategoryQueryService,
+      useClass: PostgresCategoryQueryAdapter,
+    },
   ],
-  exports: [ProductRepository, GetProductUseCase, ProductQueryService],
+  exports: [
+    ProductRepository,
+    GetProductUseCase,
+    ProductQueryService,
+    CategoryQueryService,
+  ],
 })
 export class ProductsModule {}
