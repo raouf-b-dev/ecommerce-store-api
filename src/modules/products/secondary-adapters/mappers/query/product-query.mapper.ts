@@ -14,10 +14,7 @@ function toIsoTimestamp(
 
 export class ProductQueryMapper {
   static toListItemDto(row: RawProductListQueryRow): ProductListItemDTO {
-    const createdAt = toIsoTimestamp(
-      row.createdAt,
-      new Date(0).toISOString(),
-    );
+    const createdAt = toIsoTimestamp(row.createdAt, new Date(0).toISOString());
 
     return {
       id: Number(row.id),

@@ -115,7 +115,9 @@ describe('Catalog read path (e2e)', () => {
     }>;
     const listedIds = listedItems.map((item) => item.id);
     expect(listedIds).toContain(activeProduct.id);
-    const listedActive = listedItems.find((item) => item.id === activeProduct.id);
+    const listedActive = listedItems.find(
+      (item) => item.id === activeProduct.id,
+    );
     expect(listedActive?.updatedAt).toEqual(expect.any(String));
     expect(Date.parse(listedActive!.updatedAt)).not.toBeNaN();
   });
