@@ -39,6 +39,7 @@ export class ProductDtoTestFactory {
       categoryName: 'Clothing',
       isActive: true,
       createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
       ...overrides,
     };
   }
@@ -50,7 +51,6 @@ export class ProductDtoTestFactory {
     return {
       ...base,
       description: 'High precision optical sensor mouse.',
-      updatedAt: base.createdAt,
       ...overrides,
     };
   }
