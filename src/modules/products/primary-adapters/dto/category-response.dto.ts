@@ -19,4 +19,10 @@ export class CategoryResponseDto {
 
   @ApiProperty({ example: true })
   isActive!: boolean;
+
+  @ApiProperty({
+    example: 12,
+    description: 'Number of active products in this category',
+  })
+  productCount!: number;
 }
