@@ -212,6 +212,9 @@
   "overrides": {
     "multer": "^2.3.0",
     "qs": "^6.16.0",
+    "sanitize-html": {
+      "htmlparser2": "10.1.0"
+    },
     "js-yaml": "5.2.3",
     "@eslint/eslintrc": {
       "minimatch": {
