@@ -20,12 +20,22 @@ describe('ProductQueryMapper', () => {
       categoryName: 'Clothing',
       isActive: true,
       createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
     });
 
     expect(detail).toEqual({
       ...listItem,
       description: 'High precision optical sensor mouse.',
-      updatedAt: '2024-01-01T00:00:00.000Z',
     });
+  });
+
+  it('falls back updatedAt to createdAt when updatedAt is missing', () => {
+    const rawRow = ProductDtoTestFactory.createRawProductListQueryRow({
+      updatedAt: undefined,
+    });
+
+    const listItem = ProductQueryMapper.toListItemDto(rawRow);
+
+    expect(listItem.updatedAt).toBe(listItem.createdAt);
   });
 });

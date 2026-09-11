@@ -2,8 +2,20 @@ import { ProductListItemDTO } from '../../../core/application/queries/results/pr
 import { ProductDetailDTO } from '../../../core/application/queries/results/product-detail.result';
 import { RawProductListQueryRow } from '../../dto/raw-product-list-query-row.interface';
 
+function toIsoTimestamp(
+  value: Date | string | undefined,
+  fallback: string,
+): string {
+  if (!value) {
+    return fallback;
+  }
+  return value instanceof Date ? value.toISOString() : String(value);
+}
+
 export class ProductQueryMapper {
   static toListItemDto(row: RawProductListQueryRow): ProductListItemDTO {
+    const createdAt = toIsoTimestamp(row.createdAt, new Date(0).toISOString());
+
     return {
       id: Number(row.id),
       name: String(row.name || ''),
@@ -15,23 +27,15 @@ export class ProductQueryMapper {
       categoryId: row.categoryId ? Number(row.categoryId) : null,
       categoryName: row.categoryName != null ? String(row.categoryName) : null,
       isActive: Boolean(row.isActive),
-      createdAt:
-        row.createdAt instanceof Date
-          ? row.createdAt.toISOString()
-          : String(row.createdAt),
+      createdAt,
+      updatedAt: toIsoTimestamp(row.updatedAt, createdAt),
     };
   }
 
   static toDetailDto(row: RawProductListQueryRow): ProductDetailDTO {
-    const base = this.toListItemDto(row);
     return {
-      ...base,
+      ...this.toListItemDto(row),
       description: row.description || null,
-      updatedAt: row.updatedAt
-        ? row.updatedAt instanceof Date
-          ? row.updatedAt.toISOString()
-          : String(row.updatedAt)
-        : base.createdAt,
     };
   }
 }
