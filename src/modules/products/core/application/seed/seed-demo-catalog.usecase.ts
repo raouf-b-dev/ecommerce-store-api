@@ -14,6 +14,8 @@ export interface SeededDemoProduct {
   sku: string;
   name: string;
   price: number;
+  currency: string;
+  imageUrl: string | null;
   initialStock: number;
   lowStockThreshold: number;
   status: 'created' | 'existing';
@@ -69,13 +71,20 @@ export class SeedDemoCatalogUseCase extends UseCase<
 
     const existingBySku = new Map<
       string,
-      { id: number; categoryId: number | null }
+      {
+        id: number;
+        categoryId: number | null;
+        currency: string;
+        imageUrl: string | null;
+      }
     >();
     for (const product of existingProductsResult.value) {
       if (product.sku && product.id != null) {
         existingBySku.set(product.sku, {
           id: product.id,
           categoryId: product.categoryId ?? null,
+          currency: product.currency,
+          imageUrl: product.imageUrl ?? null,
         });
       }
     }
@@ -151,6 +160,8 @@ export class SeedDemoCatalogUseCase extends UseCase<
           sku: seed.sku,
           name: seed.name,
           price: seed.price,
+          currency: existing?.currency ?? 'USD',
+          imageUrl: existing?.imageUrl ?? null,
           initialStock: seed.initialStock,
           lowStockThreshold: seed.lowStockThreshold,
           status: existing ? ('existing' as const) : ('created' as const),
