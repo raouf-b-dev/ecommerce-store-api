@@ -29,6 +29,8 @@ export class ModuleProductGateway implements CartProductGateway {
       id: product.id,
       name: product.name,
       price: product.price,
+      currency: product.currency,
+      imageUrl: product.imageUrl,
     });
   }
 }

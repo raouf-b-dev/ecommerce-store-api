@@ -16,34 +16,50 @@ export class CartQueryMapper {
     const items: CartItemPresentationDTO[] = [];
     let totalQuantity = 0;
     let grandTotal = 0;
+    let currency: string | null = null;
 
     for (const row of rows) {
       if (row.itemId) {
         const qty = Number(row.quantity || 0);
         const unitPrice = Number(row.price || 0);
         const itemTotal = Number((qty * unitPrice).toFixed(2));
+        const itemCurrency = (row.currency || 'USD').trim().toUpperCase();
 
         totalQuantity += qty;
         grandTotal += itemTotal;
+        if (!currency) {
+          currency = itemCurrency;
+        }
 
         items.push({
           id: Number(row.itemId),
           productId: Number(row.productId || 0),
           productName: row.productName || 'Unknown Product',
           price: unitPrice,
+          currency: itemCurrency,
           quantity: qty,
-          itemTotal,
+          subtotal: itemTotal,
           imageUrl: row.imageUrl || null,
         });
       }
     }
 
+    const createdAt = firstRow.cartCreatedAt
+      ? firstRow.cartCreatedAt instanceof Date
+        ? firstRow.cartCreatedAt.toISOString()
+        : String(firstRow.cartCreatedAt)
+      : firstRow.cartUpdatedAt instanceof Date
+        ? firstRow.cartUpdatedAt.toISOString()
+        : String(firstRow.cartUpdatedAt);
+
     return {
       id: Number(firstRow.cartId),
       userId: Number(firstRow.userId),
       items,
-      totalQuantity,
-      grandTotal: Number(grandTotal.toFixed(2)),
+      itemCount: totalQuantity,
+      totalAmount: Number(grandTotal.toFixed(2)),
+      currency,
+      createdAt,
       updatedAt:
         firstRow.cartUpdatedAt instanceof Date
           ? firstRow.cartUpdatedAt.toISOString()
