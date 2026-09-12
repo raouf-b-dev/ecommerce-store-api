@@ -5,6 +5,8 @@ export interface ProductData {
   id: number | null;
   name: string;
   price: number;
+  currency: string;
+  imageUrl: string | null;
 }
 
 export interface CartProductGateway {

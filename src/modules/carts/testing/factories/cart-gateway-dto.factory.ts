@@ -6,6 +6,8 @@ export class CartGatewayDtoFactory {
       id: 1,
       name: 'Test Product',
       price: 29.99,
+      currency: 'USD',
+      imageUrl: null,
     };
 
     return { ...baseProduct, ...overrides };

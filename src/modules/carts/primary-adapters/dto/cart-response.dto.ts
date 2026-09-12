@@ -1,26 +1,21 @@
-// src/modules/carts/presentation/dto/cart-response.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CartItemResponseDto } from './cart-item-response.dto';
 
 export class CartResponseDto {
   @ApiProperty({
-    example: 'cart-123',
+    example: 1,
     description: 'Cart ID',
+    type: Number,
   })
-  id!: string;
+  id!: number;
 
   @ApiPropertyOptional({
     example: 123,
     description: 'User ID',
+    type: Number,
   })
-  userId?: string;
-
-  @ApiPropertyOptional({
-    example: 'session-abc-xyz',
-    description: 'Session ID',
-  })
-  sessionId?: string;
+  userId?: number;
 
   @ApiProperty({
     type: [CartItemResponseDto],
@@ -32,24 +27,37 @@ export class CartResponseDto {
   @ApiProperty({
     example: 3,
     description: 'Total number of items',
+    type: Number,
   })
   itemCount!: number;
 
   @ApiProperty({
     example: 299.97,
     description: 'Cart total amount',
+    type: Number,
   })
   totalAmount!: number;
 
   @ApiProperty({
-    example: '2025-10-31T10:00:00Z',
-    description: 'Cart creation date',
+    example: 'USD',
+    description:
+      'ISO 4217 currency for cart totals. Null when the cart has no items.',
+    type: String,
+    nullable: true,
   })
-  createdAt!: Date;
+  currency!: string | null;
 
   @ApiProperty({
-    example: '2025-10-31T12:30:00Z',
-    description: 'Last update date',
+    example: '2025-10-31T10:00:00.000Z',
+    description: 'Cart creation date (ISO 8601)',
+    type: String,
   })
-  updatedAt!: Date;
+  createdAt!: string;
+
+  @ApiProperty({
+    example: '2025-10-31T12:30:00.000Z',
+    description: 'Last update date (ISO 8601)',
+    type: String,
+  })
+  updatedAt!: string;
 }

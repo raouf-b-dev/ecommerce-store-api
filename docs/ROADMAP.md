@@ -67,6 +67,7 @@
 | **17a** | Customer Catalog Read Path & Notifications        | `[/]`  |  `[P1]`  | **Storefront Read**: catalog GETs shipped (active-only shoppers); emails/webhooks/cart recovery deferred |
 | **17b** | Real Stripe SDK Integration & Webhooks            | `[ ]`  |  `[P1]`  | **Payments**: Stripe SDK adapter, signed webhook handler, Redis event idempotency deduplication          |
 | **17c** | Commercial Loop Integration (`store-web`)         | `[ ]`  |  `[P1]`  | **Ecosystem**: Storefront checkout -> SAGA -> Admin Dashboard live WebSocket toast verification          |
+| **17e** | Money & Currency Domain Alignment                 | `[ ]`  |  `[P1]`  | **Pricing truth**: cart/order Money VO, single-currency MVP done; multi-currency / FX later              |
 | **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                       |
 
 ---
@@ -671,6 +672,42 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 - [ ] **Inventory Alert Facts**: Add `unitsSold7d` (aggregate from `order_items` across confirmed/processing/shipped/delivered orders) and expose `reservedQuantity` (already stored on `inventory`) on the low-stock alerts response.
 
 **Location**: `src/modules/analytics/`
+
+---
+
+### Phase 17e: Money & Currency Domain Alignment [P1]
+
+> **MVP foundation**: Cart lines snapshot ISO 4217 `currency` from the product ACL at add time; carts reject mixed currencies; `CartResponseDto` / presentation expose cart + line `currency` so all consuming clients receive explicit monetary data without guessing.
+
+#### [ ] Align Cart/Order Lines on Shared-Kernel `Money`
+
+**What**: Replace raw `price: number` + sibling `currency: string` on cart (and eventually product write models) with the existing `Money` value object already used by orders/payments.
+
+**Why**: Architecture docs list `Money` in the Shared Kernel. Products and carts still use parallel primitives; orders default `Money.from(amount)` to USD. That drifts pricing truth across bounded contexts.
+
+**Scope**:
+
+- [ ] Cart `CartItem` stores unit price as `Money` (amount + currency) instead of separate fields.
+- [ ] Checkout / order factory maps cart line `Money` into order line `Money` without inventing USD defaults.
+- [ ] Product write path optionally adopts `Money` (or keeps price+currency DTO with explicit mapping) so ACL `ProductData.currency` stays truthful.
+- [ ] OpenAPI remains amount + currency fields (DTO mapping), not a nested Money schema unless clients need it.
+
+**Location**: `src/shared-kernel/domain/value-objects/money.ts`, `src/modules/carts/`, `src/modules/orders/`, `src/modules/products/`
+
+#### [ ] Multi-Currency Catalog & FX (Production)
+
+**What**: Support more than one catalog currency with explicit FX policy.
+
+**Trigger**: Only when the business domain requires non-USD (or multi-market) pricing. Client applications must never perform FX conversion.
+
+**Scope**:
+
+- [ ] Store-level default currency configuration (domain/config port, not client-side assumptions).
+- [ ] Cart remains single-currency per basket (already enforced); convert or reject at add-item according to policy ADR.
+- [ ] Document FX source (provider adapter), rounding, and settlement currency for Stripe.
+- [ ] ADR for money representation (major units vs minor units / cents) before changing persisted types.
+
+**Location**: `docs/architecture/adr/`, `src/modules/carts/`, `src/modules/payments/`
 
 ---
 

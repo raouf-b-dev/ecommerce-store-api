@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -64,8 +66,9 @@ export class CartsController {
   }
 
   @Post(':id/items')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Add item to cart' })
-  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({ status: 204, description: 'Item added to cart successfully.' })
   async addItem(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCartItemDto,
@@ -80,8 +83,12 @@ export class CartsController {
   }
 
   @Patch(':id/items/:itemId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update cart item quantity' })
-  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Cart item quantity updated successfully.',
+  })
   async updateItem(
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
@@ -97,8 +104,12 @@ export class CartsController {
   }
 
   @Delete(':id/items/:itemId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove item from cart' })
-  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Item removed from cart successfully.',
+  })
   async removeItem(
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
@@ -112,8 +123,9 @@ export class CartsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Clear cart (remove all items)' })
-  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({ status: 204, description: 'Cart cleared successfully.' })
   async clearCart(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext | null,

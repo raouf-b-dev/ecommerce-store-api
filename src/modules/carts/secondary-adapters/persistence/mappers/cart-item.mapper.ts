@@ -15,6 +15,7 @@ export class CartItemMapper {
       productId: entity.productId,
       productName: entity.productName,
       price: entity.price,
+      currency: entity.currency,
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
     };
@@ -29,6 +30,7 @@ export class CartItemMapper {
       productId: primitives.productId,
       productName: primitives.productName,
       price: primitives.price,
+      currency: primitives.currency,
       quantity: primitives.quantity,
       imageUrl: primitives.imageUrl,
     };

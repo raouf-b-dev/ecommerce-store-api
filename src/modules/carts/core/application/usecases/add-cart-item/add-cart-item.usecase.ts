@@ -84,6 +84,8 @@ export class AddCartItemUseCase extends UseCase<
       product.name,
       product.price,
       quantity,
+      product.currency,
+      product.imageUrl ?? undefined,
     );
     if (isFailure(addResult)) return addResult;
 

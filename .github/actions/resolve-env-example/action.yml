@@ -1,7 +1,7 @@
 name: Resolve env example
 description: >
   Read non-secret config keys from .env.example into step/job outputs.
-  Never add secrets here — job outputs are visible in public Actions logs/UI and are not masked.
+  Never add secrets here - job outputs are visible in public Actions logs/UI and are not masked.
 
 outputs:
   postgres_image:

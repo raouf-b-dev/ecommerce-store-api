@@ -29,6 +29,9 @@ export class CartItemEntity {
   })
   price!: number;
 
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  currency!: string;
+
   @Column({ type: 'int' })
   quantity!: number;
 
