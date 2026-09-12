@@ -32,8 +32,8 @@ export class CartTestFactory {
       productId: i + 1,
       productName: `Product ${i + 1}`,
       price: 10 * (i + 1),
+      currency: 'USD',
       quantity: 1,
-      subtotal: 10 * (i + 1),
       imageUrl: `http://example.com/image-${i + 1}.jpg`,
     }));
 
