@@ -7,7 +7,7 @@ RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
 RUN npm ci --ignore-scripts
-# Rebuild only native addons (bcrypt) — skips husky/prepare hooks
+# Rebuild only native addons (bcrypt) - skips husky/prepare hooks
 RUN npm rebuild bcrypt
 
 # ── Stage 2: build ──────────────────────────────────────────────
@@ -35,7 +35,7 @@ RUN npm rebuild bcrypt
 FROM node:24-alpine AS production
 WORKDIR /app
 
-# tini: proper PID 1 init — forwards SIGTERM to Node.js for graceful shutdown
+# tini: proper PID 1 init - forwards SIGTERM to Node.js for graceful shutdown
 RUN apk add --no-cache tini wget
 
 ENV NODE_ENV=production
@@ -62,7 +62,7 @@ USER appuser
 
 EXPOSE $PORT
 
-# Liveness check — process viability only
+# Liveness check - process viability only
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:${PORT}/health/liveness || exit 1
 
