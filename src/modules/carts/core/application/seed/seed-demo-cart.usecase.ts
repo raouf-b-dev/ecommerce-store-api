@@ -12,6 +12,8 @@ export interface SeedDemoCartProductItem {
   sku: string;
   name: string;
   price: number;
+  currency: string;
+  imageUrl: string | null;
 }
 
 export interface SeedDemoCartInput {
@@ -69,6 +71,8 @@ export class SeedDemoCartUseCase extends UseCase<
           product.name,
           product.price,
           seedItem.quantity,
+          product.currency,
+          product.imageUrl ?? undefined,
         );
       }
     }

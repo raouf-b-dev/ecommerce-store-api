@@ -37,23 +37,19 @@ export class CreateCartUseCase extends UseCase<
     const userId = callerContext.userId;
     const existingResult = await this.cartRepository.findByuserId(userId);
     if (existingResult.isSuccess) {
-      return this.toWriteModel(existingResult.value);
+      return Result.success<ICart>(existingResult.value.toPrimitives());
     }
 
     const cart = Cart.createUserCart(userId);
     const saveResult = await this.cartRepository.save(cart);
     if (isFailure(saveResult)) return saveResult;
 
-    return this.toWriteModel(saveResult.value);
-  }
-
-  private toWriteModel(cart: Cart): Result<ICart, UseCaseError> {
-    const primitives = cart.toPrimitives();
-    if (primitives.id === null) {
+    if (saveResult.value.id === null) {
       return ErrorFactory.UseCaseError(
-        `Cart for user ${cart.userId} not found after persist`,
+        `Cart for user ${userId} not found after persist`,
       );
     }
-    return Result.success(primitives);
+
+    return Result.success<ICart>(saveResult.value.toPrimitives());
   }
 }
