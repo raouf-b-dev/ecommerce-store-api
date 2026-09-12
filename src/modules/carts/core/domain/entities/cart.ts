@@ -1,4 +1,3 @@
-// src/modules/carts/domain/entities/cart.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -70,6 +69,11 @@ export class Cart implements ICart {
     return this.roundPrice(total);
   }
 
+  /** Single-currency MVP: derived from line snapshots; null when empty. */
+  get currency(): string | null {
+    return this._items[0]?.currency ?? null;
+  }
+
   get createdAt(): Date {
     return new Date(this._createdAt);
   }
@@ -100,11 +104,31 @@ export class Cart implements ICart {
     productName: string,
     price: number,
     quantity: number,
+    currency: string,
     imageUrl?: string,
   ): Result<void, DomainError> {
+    const normalizedCurrency = currency?.trim().toUpperCase();
+    if (!normalizedCurrency || normalizedCurrency.length !== 3) {
+      return ErrorFactory.DomainError(
+        'Currency must be a 3-letter code (ISO 4217)',
+      );
+    }
+
+    const cartCurrency = this.currency;
+    if (cartCurrency && cartCurrency !== normalizedCurrency) {
+      return ErrorFactory.DomainError(
+        `Cannot mix currencies in one cart (${cartCurrency} vs ${normalizedCurrency})`,
+      );
+    }
+
     const existingItem = this.findItem(productId);
 
     if (existingItem) {
+      if (existingItem.currency !== normalizedCurrency) {
+        return ErrorFactory.DomainError(
+          `Cannot mix currencies in one cart (${existingItem.currency} vs ${normalizedCurrency})`,
+        );
+      }
       const increaseResult = existingItem.increaseQuantity(quantity);
       if (increaseResult.isFailure) return increaseResult;
     } else {
@@ -114,6 +138,7 @@ export class Cart implements ICart {
           productName,
           price,
           quantity,
+          normalizedCurrency,
           imageUrl,
         );
         this._items.push(newItem);
@@ -191,6 +216,7 @@ export class Cart implements ICart {
       items: this._items.map((item) => item.toPrimitives()),
       itemCount: this.itemCount,
       totalAmount: this.totalAmount,
+      currency: this.currency,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
     };
