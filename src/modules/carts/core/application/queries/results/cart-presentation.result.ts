@@ -3,8 +3,9 @@ export interface CartItemPresentationDTO {
   productId: number;
   productName: string;
   price: number;
+  currency: string;
   quantity: number;
-  itemTotal: number;
+  subtotal: number;
   imageUrl: string | null;
 }
 
@@ -12,7 +13,9 @@ export interface CartPresentationDTO {
   id: number;
   userId: number;
   items: CartItemPresentationDTO[];
-  totalQuantity: number;
-  grandTotal: number;
+  itemCount: number;
+  totalAmount: number;
+  currency: string | null;
+  createdAt: string;
   updatedAt: string;
 }
