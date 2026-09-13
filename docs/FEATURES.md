@@ -91,8 +91,9 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook signature verification are not wired yet. The architecture is ready for a real provider when you add one.
 
-- **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → Confirm Order
+- **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
 - **Webhooks**: Handler and job path exist; signature verification is stubbed for testing
+- **Local storefront UX**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
