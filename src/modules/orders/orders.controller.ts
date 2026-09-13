@@ -59,7 +59,7 @@ export class OrdersController {
   @ApiOperation({
     summary: 'Initiate checkout process',
     description:
-      'Starts the asynchronous checkout process. Returns a jobId to track progress via the checkout queue.',
+      'Starts the asynchronous checkout process. Returns an orderId and jobId. Order progress is tracked via order polling (GET /v1/orders/{id}).',
   })
   @ApiResponse({
     status: 201,
@@ -77,6 +77,10 @@ export class OrdersController {
   @ApiResponse({
     status: 409,
     description: `Conflict - a request with this idempotency key is already in progress. Response includes Retry-After: ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}.`,
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Service unavailable - idempotency store unavailable.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',

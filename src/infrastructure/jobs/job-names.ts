@@ -23,6 +23,7 @@ export const JobNames = {
   // Payment Events
   PAYMENT_COMPLETED: 'payment-completed',
   PAYMENT_FAILED: 'payment-failed',
+  SIMULATE_MOCK_PAYMENT_WEBHOOK: 'simulate-mock-payment-webhook',
 
   // Inventory Jobs
   INVENTORY_RECONCILIATION: 'inventory-reconciliation',

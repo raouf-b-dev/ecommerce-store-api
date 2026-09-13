@@ -48,6 +48,9 @@ export interface IAppConfig {
     tracingEnabled: boolean;
     exporterEndpoint: string;
   };
+  payments: {
+    mockAutoComplete: boolean;
+  };
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -102,6 +105,9 @@ export default (): IAppConfig => {
     otel: {
       tracingEnabled: env.OTEL_TRACING_ENABLED !== 'false',
       exporterEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    },
+    payments: {
+      mockAutoComplete: env.PAYMENT_MOCK_AUTO_COMPLETE === 'true',
     },
   };
 };

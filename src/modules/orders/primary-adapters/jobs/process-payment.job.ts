@@ -76,8 +76,9 @@ export class ProcessPaymentStep extends BaseJobHandler<
       paymentMethod,
       userId,
       metadata: {
-        orderId,
-        reservationId,
+        orderId: String(orderId),
+        reservationId: String(reservationId),
+        cartId: String(job.data.cartId),
       },
     });
 

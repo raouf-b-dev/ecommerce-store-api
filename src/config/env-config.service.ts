@@ -70,4 +70,8 @@ export class EnvConfigService {
   get otel() {
     return this.get('otel');
   }
+
+  get payments() {
+    return this.get('payments');
+  }
 }
