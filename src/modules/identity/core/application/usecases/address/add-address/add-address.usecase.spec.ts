@@ -87,7 +87,7 @@ describe('AddAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const savedUser = mockUserRepository.save.mock.calls[0]![0];
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
       const added = savedUser.addresses.find(
         (addr: { street: string }) => addr.street === '999 New Ave',
       );
@@ -112,7 +112,7 @@ describe('AddAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const savedUser = mockUserRepository.save.mock.calls[0]![0];
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
       const added = savedUser.addresses.find(
         (addr: { street: string }) => addr.street === '999 New Ave',
       );
@@ -137,7 +137,7 @@ describe('AddAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const savedUser = mockUserRepository.save.mock.calls[0]![0];
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
       const added = savedUser.addresses.find(
         (addr: { street: string }) => addr.street === '999 New Ave',
       );

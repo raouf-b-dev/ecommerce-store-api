@@ -91,7 +91,7 @@ describe('UpdateAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const savedUser = mockUserRepository.save.mock.calls[0]![0];
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
       const updated = savedUser.addresses.find(
         (addr: { id: number | null }) => addr.id === addressId,
       );
