@@ -36,6 +36,7 @@ export class AddAddressUseCase extends UseCase<
       state,
       postalCode,
       country,
+      type,
       isDefault,
       deliveryInstructions,
     } = command;
@@ -73,7 +74,7 @@ export class AddAddressUseCase extends UseCase<
       state,
       postalCode,
       country,
-      type: AddressType.SHIPPING,
+      type: type ?? AddressType.SHIPPING,
       street2: street2 ?? null,
       deliveryInstructions: deliveryInstructions ?? null,
       isDefault: isDefault ?? false,

@@ -87,6 +87,11 @@ describe('AddAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
+      const added = savedUser.addresses.find(
+        (addr: { street: string }) => addr.street === '999 New Ave',
+      );
+      expect(added?.type).toBe(AddressType.HOME);
     });
 
     it('should add work address', async () => {
@@ -107,6 +112,36 @@ describe('AddAddressUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
+      const added = savedUser.addresses.find(
+        (addr: { street: string }) => addr.street === '999 New Ave',
+      );
+      expect(added?.type).toBe(AddressType.WORK);
+    });
+
+    it('should default to shipping when type is omitted', async () => {
+      const userId = 123;
+      const command = AddressTestFactory.createAddAddressCommand({
+        userId,
+        street: '999 New Ave',
+        type: undefined,
+      });
+      const mockUserData = UserTestFactory.createMockUser({ id: userId });
+
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({
+        ...command,
+        callerContext: adminCallerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
+      const added = savedUser.addresses.find(
+        (addr: { street: string }) => addr.street === '999 New Ave',
+      );
+      expect(added?.type).toBe(AddressType.SHIPPING);
     });
 
     it('should add address with delivery instructions', async () => {
