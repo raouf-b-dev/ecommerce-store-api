@@ -85,6 +85,13 @@ describe('CartsController', () => {
     });
   });
 
+  it('should delegate getCurrentCart to GetCartUseCase without cartId', async () => {
+    await controller.getCurrentCart(callerContext);
+    expect(getCartUseCase.execute).toHaveBeenCalledWith({
+      callerContext,
+    });
+  });
+
   it('should delegate addItem to AddCartItemUseCase', async () => {
     const dto = CartDtoTestFactory.createAddCartItemDto();
     await controller.addItem(10, dto, callerContext);

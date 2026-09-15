@@ -14,6 +14,8 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
 import { ListInventoryQueryDto } from './primary-adapters/dto/list-inventory-query.dto';
 import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
 import { StockAdjustmentType } from './core/domain/value-objects/stock-adjustment-type';
+import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { IS_PUBLIC_KEY } from '../../guards/decorators/public.decorator';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
@@ -102,6 +104,28 @@ describe('InventoryController', () => {
     checkStockUseCase = module.get(CheckStockUseCase);
     listLowStockUseCase = module.get(ListLowStockUseCase);
     bulkCheckStockUseCase = module.get(BulkCheckStockUseCase);
+  });
+
+  it('requires view_all_inventory for list and product detail (not Public)', () => {
+    expect(
+      Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.findAll),
+    ).toEqual(['view_all_inventory']);
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.findAll),
+    ).toBeUndefined();
+
+    expect(
+      Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.getInventory),
+    ).toEqual(['view_all_inventory']);
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.getInventory),
+    ).toBeUndefined();
+  });
+
+  it('keeps checkStock Public for shoppers', () => {
+    expect(Reflect.getMetadata(IS_PUBLIC_KEY, controller.checkStock)).toBe(
+      true,
+    );
   });
 
   it('should delegate getInventory to GetInventoryUseCase', async () => {

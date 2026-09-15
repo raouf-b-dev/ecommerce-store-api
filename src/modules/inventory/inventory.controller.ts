@@ -56,24 +56,38 @@ export class InventoryController {
   ) {}
 
   @Get()
-  @Public()
-  @ApiOperation({ summary: 'List inventory items' })
+  @ApiBearerAuth()
+  @RequirePermissions('view_all_inventory')
+  @ApiOperation({
+    summary: 'List inventory items',
+    description:
+      'Operator inventory list (includes reservedQuantity / totalQuantity). Shoppers should use GET /v1/inventory/check/:productId.',
+  })
   @ApiResponse({ status: 200, type: PaginatedInventoryResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Requires view_all_inventory permission',
+  })
   async findAll(@Query() query: ListInventoryQueryDto) {
     return await this.listInventoryUseCase.execute(query);
   }
 
   @Get('products/:productId')
-  @Public()
+  @ApiBearerAuth()
+  @RequirePermissions('view_all_inventory')
   @ApiExtraModels(InventoryListItemResponseDto)
   @ApiOperation({
     summary: 'Get inventory details for a product',
     description:
-      'Returns inventory for the product, or `null` (HTTP 200) when no inventory row exists yet.',
+      'Operator inventory detail (includes reservedQuantity / totalQuantity), or `null` (HTTP 200) when no inventory row exists yet. Shoppers should use GET /v1/inventory/check/:productId.',
   })
   @ApiOkResponse({
     description: 'Inventory detail, or null when none exists for the product',
     schema: nullableResponseSchema(InventoryListItemResponseDto),
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Requires view_all_inventory permission',
   })
   async getInventory(@Param('productId', ParseIntPipe) productId: number) {
     return await this.getInventoryUseCase.execute(productId);

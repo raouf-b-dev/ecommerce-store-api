@@ -59,6 +59,27 @@ export class UsersController {
     return await this.listUsersUseCase.execute(query);
   }
 
+  /** Registered before `:id` so `me` is not parsed as a numeric id. */
+  @Get('me')
+  @RequirePermissions('view_own_profile')
+  @ApiOperation({
+    summary: 'Get the authenticated caller profile',
+    description:
+      'Returns UserDetailResponseDto for the caller from CallerContext.userId. Requires view_own_profile (handler decorator overrides class-level manage_users via getAllAndOverride).',
+  })
+  @ApiResponse({ status: 200, type: UserDetailResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Requires view_own_profile permission',
+  })
+  async getMe(@CallerCtx() callerContext: CallerContext) {
+    return await this.getUserUseCase.execute({
+      userId: callerContext.userId,
+      callerContext,
+    });
+  }
+
   @Get(':id')
   @RequirePermissions('view_all_users', 'view_own_profile')
   @ApiOperation({ summary: 'Get user by ID' })

@@ -52,6 +52,26 @@ export class CartsController {
     return await this.createCartUseCase.execute(callerContext);
   }
 
+  /** Registered before `:id` so `current` is not parsed as a numeric id. */
+  @Get('current')
+  @ApiOperation({
+    summary: "Get the authenticated caller's current cart",
+    description:
+      'Idempotent read via GetCartUseCase user scope (getByUserId). Does not create a cart. Create-on-add remains POST /v1/carts.',
+  })
+  @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({
+    status: 404,
+    description:
+      'No cart yet for this user. Clients should treat as empty (null), not an error banner.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getCurrentCart(@CallerCtx() callerContext: CallerContext | null) {
+    return await this.getCartUseCase.execute({
+      callerContext,
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get cart by ID' })
   @ApiResponse({ status: 200, type: CartResponseDto })
