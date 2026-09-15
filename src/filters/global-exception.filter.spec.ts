@@ -114,6 +114,27 @@ describe('GlobalExceptionFilter', () => {
     expect(jsonResponse).not.toHaveProperty('error');
   });
 
+  it('should prefer explicit code over Nest error field for MUST_CHANGE_PASSWORD', () => {
+    process.env.NODE_ENV = 'production';
+    const exception = new HttpException(
+      {
+        statusCode: 403,
+        message: 'Password change required before accessing this resource',
+        code: 'MUST_CHANGE_PASSWORD',
+        error: 'Forbidden',
+      },
+      403,
+    );
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.json.mock.calls[0][0]).toEqual(
+      expect.objectContaining({
+        code: 'MUST_CHANGE_PASSWORD',
+      }),
+    );
+  });
+
   it('should handle HttpException with code (e.g., from ResultInterceptor)', () => {
     const exception = new HttpException(
       {
