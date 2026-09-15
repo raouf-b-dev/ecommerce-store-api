@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 
-const path = require('node:path');
 const { lintRepo, formatFinding } = require('./ascii-prose.cjs');
 
 const fix = process.argv.includes('--fix');
