@@ -224,6 +224,22 @@ The file `.agents/PROJECT-CONTEXT.md` is a compact project snapshot designed for
 3. A significant feature ships (new domain entity, new infrastructure component).
 4. The tech stack changes (new dependency, version bump).
 
+### 10.7 ASCII prose (docs and comments)
+
+Docs, Markdown, OpenAPI descriptions, and source comments must read like a human typed them in a plain editor. Do not use typography that chat models insert by default.
+
+`npm run lint:check` runs `scripts/lint-ascii-prose.cjs` on Markdown (except immutable `docs/architecture/adr/`) and on comments in `ts`/`js`. ESLint `ascii-prose/no-smart-punctuation` flags the same marks in comments.
+
+| Avoid | Use |
+| ----- | --- |
+| Em dash (U+2014) | `-`, `:`, or a new sentence |
+| En dash (U+2013) | ASCII `-` in ranges (`15-A` through `15-D`, `400-499`) |
+| Curly quotes (U+2018/2019/201C/201D) | `'` and `"` |
+| Ellipsis character (U+2026) | `...` |
+| Non-breaking space or hyphen | Normal space / `-` |
+
+Do not decorate comments with emoji. Existing ADR bodies stay immutable; the linter skips `docs/architecture/adr/`.
+
 ## 11. Entity and Relation Conventions
 
 To resolve circular module dependencies and Temporal Dead Zone (TDZ) initialization crashes under fast compiler engines like SWC:

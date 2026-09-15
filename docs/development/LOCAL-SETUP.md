@@ -86,7 +86,7 @@ Implementation: [`scripts/generate-envs.js`](../../scripts/generate-envs.js).
 | `APP_VERSION`            | From `package.json`                                                                                                                                                                                                                                                                                      |
 | `REDIS_KEYPREFIX`        | `ecom:<env>:`                                                                                                                                                                                                                                                                                            |
 | `LOG_LEVEL`              | `debug` in development                                                                                                                                                                                                                                                                                   |
-| Host ports, CORS, OTEL   | Copied from [`.env.example`](../../.env.example). If Windows cannot bind `3000–3199`, edit the generated file (see [`TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md)).                                                                                                                        |
+| Host ports, CORS, OTEL   | Copied from [`.env.example`](../../.env.example). If Windows cannot bind `3000-3199`, edit the generated file (see [`TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md)).                                                                                                                        |
 
 ### Verify against Compose defaults
 

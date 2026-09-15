@@ -30,7 +30,7 @@ Always read [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md) 
 
 ## 3. Loop and Blocker Guardrail
 
-If you reach 15–20 consecutive tool calls without producing output or resolving the task:
+If you reach 15-20 consecutive tool calls without producing output or resolving the task:
 
 - Stop immediately.
 - Explain the blocker clearly to the user instead of looping.
