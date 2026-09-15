@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { InventoryRepository } from 'src/modules/inventory/core/domain/repositories/inventory.repository';
-import { E2E_API_PREFIX } from './auth-test.helper';
+import { AuthTestHelper, E2E_API_PREFIX } from './auth-test.helper';
 import { E2eHttpClient } from './e2e-test-app.helper';
 import { isHttpStatus } from './http-status.helper';
 import { pollUntil } from './poll.helper';
@@ -12,13 +12,17 @@ export interface InventorySnapshot {
 }
 
 export class E2eInventoryHelper {
+  /**
+   * Operator inventory detail (reservedQuantity). Requires view_all_inventory.
+   */
   static async getProductStock(
     http: E2eHttpClient,
+    accessToken: string,
     productId: number,
   ): Promise<InventorySnapshot> {
-    const response = await http.get(
-      `${E2E_API_PREFIX}/inventory/products/${productId}`,
-    );
+    const response = await http
+      .get(`${E2E_API_PREFIX}/inventory/products/${productId}`)
+      .set(AuthTestHelper.bearer(accessToken));
     expect(response.status).toBe(HttpStatus.OK);
     return {
       availableQuantity: Number(response.body.availableQuantity),
@@ -27,20 +31,21 @@ export class E2eInventoryHelper {
   }
 
   /**
-   * Slow poll for post-SAGA stock settlement. Avoids tight-looping the public
-   * inventory endpoint (global IP throttler → 429).
+   * Slow poll for post-SAGA stock settlement. Avoids tight-looping the
+   * operator inventory endpoint (global IP throttler → 429).
    */
   static async waitForProductStock(
     http: E2eHttpClient,
+    accessToken: string,
     productId: number,
     expected: InventorySnapshot,
     description: string,
   ): Promise<InventorySnapshot> {
     return pollUntil(
       async () => {
-        const response = await http.get(
-          `${E2E_API_PREFIX}/inventory/products/${productId}`,
-        );
+        const response = await http
+          .get(`${E2E_API_PREFIX}/inventory/products/${productId}`)
+          .set(AuthTestHelper.bearer(accessToken));
         if (!isHttpStatus(response.status, HttpStatus.OK)) {
           return null;
         }

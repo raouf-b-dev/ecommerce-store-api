@@ -1,4 +1,3 @@
-// src/modules/inventory/presentation/dto/inventory-response.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** List / get-by-product read model (joined with product SKU + title). */
@@ -56,7 +55,7 @@ export class PaginatedInventoryResponseDto {
 }
 
 /**
- * Stock entity primitives after adjust (and legacy low-stock list items).
+ * Stock entity primitives after adjust and low-stock list items.
  * Does not include product title/SKU.
  */
 export class InventoryStockResponseDto {
@@ -119,76 +118,4 @@ export class InventoryStockResponseDto {
     format: 'date-time',
   })
   updatedAt!: string;
-}
-
-/**
- * @deprecated Prefer InventoryListItemResponseDto or InventoryStockResponseDto.
- * Kept for backward-compatible Swagger references on low-stock until that endpoint is reshaped.
- */
-export class InventoryResponseDto {
-  @ApiProperty({
-    example: 1,
-    description: 'Inventory record ID',
-  })
-  id!: number;
-
-  @ApiProperty({
-    example: 1,
-    description: 'Product ID',
-  })
-  productId!: number;
-
-  @ApiProperty({
-    example: 'Wireless Headphones',
-    description: 'Product name',
-  })
-  productName!: string;
-
-  @ApiProperty({
-    example: 150,
-    description: 'Available quantity',
-  })
-  availableQuantity!: number;
-
-  @ApiProperty({
-    example: 10,
-    description: 'Reserved quantity',
-  })
-  reservedQuantity!: number;
-
-  @ApiProperty({
-    example: 160,
-    description: 'Total quantity (available + reserved)',
-  })
-  totalQuantity!: number;
-
-  @ApiProperty({
-    example: 10,
-    description: 'Low stock threshold',
-  })
-  lowStockThreshold!: number;
-
-  @ApiProperty({
-    example: false,
-    description: 'Whether stock is low',
-  })
-  isLowStock!: boolean;
-
-  @ApiProperty({
-    example: true,
-    description: 'Whether product is in stock',
-  })
-  inStock!: boolean;
-
-  @ApiPropertyOptional({
-    example: '2025-10-31T10:00:00Z',
-    description: 'Last restock date',
-  })
-  lastRestockDate?: Date;
-
-  @ApiProperty({
-    example: '2025-10-31T12:30:00Z',
-    description: 'Last update date',
-  })
-  updatedAt!: Date;
 }

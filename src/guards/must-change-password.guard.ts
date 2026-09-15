@@ -58,6 +58,7 @@ export class MustChangePasswordGuard implements CanActivate {
     if (credentialResult.isFailure || !credentialResult.value) {
       throw new ForbiddenException({
         message: 'Password change required before accessing this resource',
+        code: 'MUST_CHANGE_PASSWORD',
         error: 'MUST_CHANGE_PASSWORD',
       });
     }
@@ -65,6 +66,7 @@ export class MustChangePasswordGuard implements CanActivate {
     if (credentialResult.value.mustChangePassword) {
       throw new ForbiddenException({
         message: 'Password change required before accessing this resource',
+        code: 'MUST_CHANGE_PASSWORD',
         error: 'MUST_CHANGE_PASSWORD',
       });
     }

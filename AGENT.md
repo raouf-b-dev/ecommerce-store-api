@@ -35,6 +35,7 @@ Before starting any task, read `.agents/PROJECT-CONTEXT.md` for a compact projec
 6. Treat security-sensitive changes as high-risk by default.
 7. Require verification evidence for behavior changes.
 8. Never execute the following operations without explicit user confirmation: `git push`, `git push --force`, `npm publish`, database migrations (`migration:run`, `migration:revert`), destructive file operations (`rm -rf`, bulk deletes), or any command that modifies production configuration files.
+9. Docs and comments use ASCII punctuation only (hyphens, straight quotes, `...`). No em dashes, curly quotes, or other smart typography. See [docs/ai/CONVENTIONS.md](docs/ai/CONVENTIONS.md) §10.7.
 
 ## 4. Conventions Application Rule
 
@@ -48,6 +49,7 @@ This includes, at minimum:
 - Notifications/socket usage boundaries
 - Testing and Redis conventions
 - Unknown error normalization (`toErrorMessage`, `toError`, `toOptionalError`: see [CONVENTIONS §14](docs/ai/CONVENTIONS.md#14-unknown-error-normalization))
+- ASCII punctuation in docs and comments ([CONVENTIONS §10.7](docs/ai/CONVENTIONS.md#107-ascii-prose-docs-and-comments))
 
 ## 5. Skills and Mirrors
 

@@ -75,7 +75,7 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 
 ### 3. Seeded Categories & Product Catalog
 
-Categories are seeded **before** products. `SeedDemoCategoriesUseCase` ensures the five canonical rows by **slug** (`electronics`, `clothing`, `home-garden`, `sports`, `books`). Missing rows are created; inactive ones are reactivated; active rows are left alone (names are not overwritten). The migration still inserts ids 1–5 on a fresh database; the seed step makes re-runs safe even if that insert was skipped or categories were deactivated.
+Categories are seeded **before** products. `SeedDemoCategoriesUseCase` ensures the five canonical rows by **slug** (`electronics`, `clothing`, `home-garden`, `sports`, `books`). Missing rows are created; inactive ones are reactivated; active rows are left alone (names are not overwritten). The migration still inserts ids 1-5 on a fresh database; the seed step makes re-runs safe even if that insert was skipped or categories were deactivated.
 
 The seeder then inserts **15 products** across those **5 categories** with specified initial stock levels. Each demo SKU references a category by **slug** (resolved to id at seed time). Re-running `db:seed` creates missing SKUs and backfills `categoryId` only when a demo SKU still has a null category. It does not overwrite a category you already set, and it does not assign categories to leftover `E2E-*` rows from API e2e runs. Search `ELEC-`, `CLOT-`, `HOME-`, `SPOR-`, or `BOOK-` to find the demo catalog.
 

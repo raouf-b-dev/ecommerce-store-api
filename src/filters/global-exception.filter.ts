@@ -14,6 +14,8 @@ import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 interface ValidationErrorResponse {
   message: string | string[];
   error?: string;
+  /** Preferred machine-readable code when present (e.g. MUST_CHANGE_PASSWORD). */
+  code?: string;
   statusCode?: number;
 }
 
@@ -60,8 +62,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             ? exceptionResponse.message[0]
             : exceptionResponse.message || exception.message;
 
-      if (typeof exceptionResponse === 'object' && exceptionResponse.error) {
-        code = exceptionResponse.error;
+      if (typeof exceptionResponse === 'object') {
+        code = exceptionResponse.code || exceptionResponse.error;
       }
 
       this.logger.warn(

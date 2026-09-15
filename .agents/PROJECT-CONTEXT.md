@@ -55,7 +55,7 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 - **Metrics**: Prometheus metrics via `prom-client` (`GET /metrics`): HTTP auto-instrumentation, domain counters, infrastructure gauges.
 - **Tracing**: OpenTelemetry auto-instrumentation with OTLP gRPC export to Tempo.
 - **Events**: `DomainEventPublisher` interface (shared-kernel) backed by `EventEmitter2DomainEventPublisher` adapter.
-- **Testing Helpers**: `src/testing/helpers/` (`auth-test.helper.ts`, `e2e-test-app.helper.ts`, `e2e-checkout.helper.ts`, `http-error-assertion.helper.ts`, …).
+- **Testing Helpers**: `src/testing/helpers/` (`auth-test.helper.ts`, `e2e-test-app.helper.ts`, `e2e-checkout.helper.ts`, `http-error-assertion.helper.ts`, ...).
 - **Test suites**: `test/e2e/` (full-app HTTP), `test/integration/` (harness + DB verification; adapter specs stay co-located under `src/modules/**`), `test/architecture/` (boundary rules).
 
 ## Key Implementation Patterns
@@ -95,6 +95,7 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 - ✅ Idempotency (`@Idempotent()` Redis Interceptor)
 - ✅ API Versioning (URI-based, NestJS `VersioningType.URI`)
 - ✅ OpenAPI Truthfulness (`npm run audit:openapi`, handler-aligned Swagger decorators)
+- ✅ Shopper HTTP contract (`GET /v1/users/me`, `GET /v1/carts/current`, inventory ACL, `MUST_CHANGE_PASSWORD`)
 - ✅ Prometheus Metrics (`GET /metrics`, API-key protected)
 - ✅ OpenTelemetry Distributed Tracing (OTLP gRPC → Tempo)
 - ✅ Grafana Monitoring Stack (Loki, Tempo, Dashboards)
@@ -104,3 +105,7 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 - ❌ User-Level Permission Overrides (Planned)
 - ❌ Outbound Webhook Framework (Planned)
 - ❌ Production Stripe SDK Integration (Mock active)
+
+## Next up
+
+See [`docs/ROADMAP.md`](../docs/ROADMAP.md) **Next up**. Live queue: Phase **15** (platform hygiene `15-A`...`15-D`), then **16**. **15b** is done and is required before Phase **20**. Do not renumber 15-24.

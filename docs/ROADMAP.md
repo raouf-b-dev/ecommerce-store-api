@@ -1,8 +1,8 @@
-# 🗺️ E-Commerce Store API: Feature Roadmap
+# E-Commerce Store API: Feature Roadmap
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
 >
-> **Companion docs**: `[AGENT.md](../AGENT.md)` (coding guidelines), `[docs/architecture/DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)` (strict DDD reference), `[docs/architecture/CQRS.md](architecture/CQRS.md)` (CQRS read-path analysis), `[docs/integration/INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md)` (cross-context communication), `[docs/security/SECRETS-MANAGEMENT.md](security/SECRETS-MANAGEMENT.md)` (secrets & env management)
+> **Companion docs**: [`AGENT.md`](../AGENT.md) (coding guidelines), [`docs/architecture/DDD-HEXAGONAL.md`](architecture/DDD-HEXAGONAL.md) (strict DDD reference), [`docs/architecture/CQRS.md`](architecture/CQRS.md) (CQRS read-path analysis), [`docs/integration/INTEGRATION-PATTERNS.md`](integration/INTEGRATION-PATTERNS.md) (cross-context communication), [`docs/security/SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) (secrets & env management)
 
 ---
 
@@ -12,438 +12,301 @@
 - `[/]`: In progress
 - `[x]`: Completed
 - Open a new chat, reference this file, and pick the next unchecked task in top-to-bottom order.
-- Complete work sequentially by following the priority order below.
+- **Across phases**: work sequentially unless a track is marked non-blocking / parallel.
+- **Within a phase**: **Parallel tracks** (e.g. `15-A`, `15-B`) may run in any order; the phase is not done until every track is `[x]`.
 
 ---
 
-## ✅ Completed Phases: Summary
+## Next up
+
+Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are stable IDs - do not renumber them.
+
+1. **Phase 15** - Platform hygiene & supply-chain (`15-A`...`15-D` may run in parallel).
+2. **Phase 16** - Onboarding DX remainder (value matrix, C4, Bruno).
+3. Then **17 → 24** in the pending table. Finish **19** before 2+ application instances. **15b** is done and is required before **20**.
+
+---
+
+## Completed Phases: Summary
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
 | Phase   | Name                                        | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Location                                                                                                                                               |
 | ------- | ------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **0**   | Foundation                                  | ✅ Done | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                                                                                                                                                                  | `src/modules/`, `src/infrastructure/`                                                                                                                  |
-| **1**   | ACL Gateway & SAGA                          | ✅ Done | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                                                                                                                                                               | `src/modules/orders/`, `src/modules/carts/`                                                                                                            |
-| **2**   | Result Pattern & Idempotency                | ✅ Done | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis `SET NX` store for checkout protection · idempotency **fail-closed** on Redis errors (HTTP 503)                                                                                                                                                                                                                                                                                                                             | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                                                                                |
-| **3**   | Decorator-based Caching                     | ✅ Done | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                                                                                                                                     | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                                              |
-| **4**   | Test Suite Foundation                       | ✅ Done | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                                                                                                                                                           | `src/modules/*/`, `src/testing/`, `test/architecture/`                                                                                                 |
-| **5**   | Code Quality (v0.2.0)                       | ✅ Done | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                                                                                                                                      | `data-source.ts`, `package.json`                                                                                                                       |
-| **6**   | Deployment Blockers                         | ✅ Done | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                                                                                                                          | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                                                    |
-| **7**   | Security & Authentication                   | ✅ Done | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                                                                                                                                       | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                                                |
-| **8**   | Observability & SaaS                        | ✅ Done | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                                                                                                                                                       | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md`                                                         |
-| **9**   | Local DB Seeding                            | ✅ Done | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                                                                                                                                   | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                                                |
-| **10**  | Security Hardening Phase 2                  | ✅ Done | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                                                                                                                                                                | `.github/`, `docs/security/`, `src/infrastructure/`                                                                                                    |
-| **11**  | Data Integrity & Concurrency                | ✅ Done | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · Redis-backed cart TTL (30 days) with RedisJSON storage & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization                                                                                                          | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                                                                         |
-| **12**  | CQRS Read Path                              | ✅ Done | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                                                                                                                                      | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/`                             |
-| **12b** | CI/CD Pipeline (GitHub Actions)             | ✅ Done | Fan-out/fan-in CI (`lint`, `typecheck`, `unit`, `arch`, `audit`, `build`, `integration`, `e2e`, `smoke`) · **CI Status Check** aggregator · `prepare-test-env` composite action · blocking `npm audit --omit=dev --audit-level=high` · PR dependency review · Docker validate (PR) · GHCR publish (`master` + semver tags) · `scripts/smoke-test.js` · `start:test` · liveness/readiness probes · Bitbucket Pipelines removed · `PROJECT-PIPELINE.md` updated                                                  | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
-| **13**  | Production Confidence & Integration Testing | ✅ Done | Typed gateway/repo mocks & testing barrels · Domain entity GWT specs + `OrderWorkflow` / shipping-address · Real-DB repository integration + concurrent checkout lock proof · Atomic OCC `save` predicates (Product/Order/User/Cart) · E2E auth lifecycle, IDOR, checkout SAGA, CQRS shapes · HTTP cart/payment/refresh-cookie contracts · HTTP-only E2E · Checkout idempotency E2E · E2E suite quality + optional business specs · Domain test polish (dead VO removal, `order-items`/`payment-status` specs) | `src/modules/*/core/domain/`, `src/modules/*/secondary-adapters/repositories/`, `src/modules/*/testing/`, `src/testing/`, `test/e2e/`, `docs/testing/` |
-| **14c** | OpenAPI Truthfulness                        | ✅ Done | `generate:openapi` + `audit:openapi` tooling · explicit scalar `@ApiProperty` types (SWC) · handler-aligned response DTOs · OAS 3.0 nullable `allOf` schemas · auth cookie-first docs · health probe Swagger · stale payment-method copy removed                                                                                                                                                                                                                                                               | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
+| **0**   | Foundation                                  | Done    | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                                                                                                                                                                  | `src/modules/`, `src/infrastructure/`                                                                                                                  |
+| **1**   | ACL Gateway & SAGA                          | Done    | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                                                                                                                                                               | `src/modules/orders/`, `src/modules/carts/`                                                                                                            |
+| **2**   | Result Pattern & Idempotency                | Done    | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis `SET NX` store for checkout protection · idempotency **fail-closed** on Redis errors (HTTP 503)                                                                                                                                                                                                                                                                                                                             | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                                                                                |
+| **3**   | Decorator-based Caching                     | Done    | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                                                                                                                                     | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                                              |
+| **4**   | Test Suite Foundation                       | Done    | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                                                                                                                                                           | `src/modules/*/`, `src/testing/`, `test/architecture/`                                                                                                 |
+| **5**   | Code Quality (v0.2.0)                       | Done    | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                                                                                                                                      | `data-source.ts`, `package.json`                                                                                                                       |
+| **6**   | Deployment Blockers                         | Done    | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                                                                                                                          | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                                                    |
+| **7**   | Security & Authentication                   | Done    | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                                                                                                                                       | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                                                |
+| **8**   | Observability & SaaS                        | Done    | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                                                                                                                                                       | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md`                                                         |
+| **9**   | Local DB Seeding                            | Done    | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                                                                                                                                   | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                                                |
+| **10**  | Security Hardening Phase 2                  | Done    | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                                                                                                                                                                | `.github/`, `docs/security/`, `src/infrastructure/`                                                                                                    |
+| **11**  | Data Integrity & Concurrency                | Done    | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · Redis-backed cart TTL (30 days) with RedisJSON storage & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization                                                                                                          | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                                                                         |
+| **12**  | CQRS Read Path                              | Done    | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                                                                                                                                      | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/`                             |
+| **12b** | CI/CD Pipeline (GitHub Actions)             | Done    | Fan-out/fan-in CI · CI Status Check aggregator · blocking `npm audit` · PR dependency review · Docker validate (PR) · GHCR publish · smoke · liveness/readiness                                                                                                                                                                                                                                                                                                                                                | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
+| **13**  | Production Confidence & Integration Testing | Done    | Typed mocks · domain GWT specs · real-DB repos · concurrent checkout lock proof · E2E auth/IDOR/SAGA/idempotency/cookies                                                                                                                                                                                                                                                                                                                                                                                       | `src/modules/*/`, `src/testing/`, `test/e2e/`, `docs/testing/`                                                                                          |
+| **14**  | Single-Instance Production Gate             | Done    | Baseline migration · Redis cleanup + degradation · probes · backup/restore/smoke · secret rotation docs                                                                                                                                                                                                                                                                                                                                                                                                        | `src/migrations/`, `scripts/`, `docs/infrastructure/`                                                                                                  |
+| **14b** | Forced Credential Rotation                  | Done    | `mustChangePassword` · change-password endpoint · global guard · session revoke                                                                                                                                                                                                                                                                                                                                                                                                                                | `src/modules/authentication/`, `src/guards/`                                                                                                           |
+| **14c** | OpenAPI Truthfulness                        | Done    | `generate:openapi` + `audit:openapi` · handler-aligned DTOs · cookie-first auth docs                                                                                                                                                                                                                                                                                                                                                                                                                           | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
+| **14d** | Operator HTTP Gaps                          | Done    | Product activate/deactivate HTTP · assign/replace user role over HTTP                                                                                                                                                                                                                                                                                                                                                                                                                                          | `src/modules/products/`, `src/modules/identity/`                                                                                                       |
+| **14e** | Developer Onboarding (bootstrap slice)      | Done    | `npm run setup` / `setup:down` / `setup:reset` (env → infra wait → migrations → seed). Value matrix, C4 assets, Bruno deferred to **Phase 16**                                                                                                                                                                                                                                                                                                                                                                 | `scripts/setup.js`, `package.json`                                                                                                                     |
+| **14f** | User Detail Address Projection              | Done    | `GET /v1/users/{id}` returns `addresses[]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `src/modules/identity/`                                                                                                                                |
+| **15b** | Shopper HTTP contract                       | Done    | `GET /v1/users/me` · `GET /v1/carts/current` (404 = no cart) · lock public inventory to `view_all_inventory` · `MUST_CHANGE_PASSWORD` code · checkout default-shipping + typed `Retry-After` OpenAPI. **Required before Phase 20.** Detail in git.                                                                                                                                                                                                                                                              | `src/modules/identity/`, `carts/`, `inventory/`, `orders/`, `src/guards/`                                                                              |
+| **17a** | Customer Catalog Read Path (slice)          | Done    | Shopper catalog list/detail via `@OptionalAuth` + `CatalogVisibilityPolicy`. Emails/webhooks/cart recovery deferred to **Phase 21**                                                                                                                                                                                                                                                                                                                                                                            | `src/modules/products/`                                                                                                                                |
 
-> **Note**: Health probes, smoke runner, backup/restore scripts, and release runbook shipped with Phase 14. Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`.
+> **Note**: Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`. Cache role-permission resolution shipped under former Phase 16 tooling and is complete.
 
 ---
 
-## 📋 Pending Work: Execution Sequence
+## Pending Work: Execution Sequence
 
-> **Execution guide**: Pick tasks in priority order. Phase 14 (single-instance production deploy gate) is complete.
+> **Execution guide**: Phase 14 ship gate and **15b** are complete. Pick the next unchecked phase top-to-bottom. Complete **Phase 19** before deploying to 2+ application instances.
 >
-> - **Parallel Work Exception**: **Phase 14e** (developer onboarding, 1-command quickstart, architecture assets) is a `[P0]` DX enabler that **does not block Phase 14d, Phase 14f, or Phase 15** and can be run immediately in parallel.
-> - **Phase 14d** and **Phase 14f** do not block Phase 15. Complete **Phase 15** before scaling to multiple application instances.
+> - **Parallel**: Tracks inside Phase **15** (`15-A`...`15-D`) may run concurrently.
+> - **15b** does not block 16-19; it **is required before Phase 20** (already satisfied).
+> - Catalog GETs (old 17a) are done; remaining notifications work is Phase **21**.
 
 | Phase   | Name                                              | Status | Priority | Target / Focus                                                                                           |
 | ------- | ------------------------------------------------- | ------ | :------: | -------------------------------------------------------------------------------------------------------- |
-| **10**  | Security Hardening Phase 2                        | `[x]`  |    -     | **Security**: OWASP audit, Dependabot, user-scoped rate limits                                           |
-| **11**  | Data Integrity & Concurrency                      | `[x]`  |    -     | **Data & Stock**: OCC version locking, inventory audit, cart TTL                                         |
-| **12**  | CQRS Read Path                                    | `[x]`  |    -     | **Read Path**: flat read DTOs, cross-context SQL JOIN adapters across all modules                        |
-| **13**  | Production Confidence & Integration Testing       | `[x]`  |    -     | **Integration confidence**: real DB repos, concurrent checkout proof, E2E core flows                     |
-| **14**  | Single-Instance Production Gate                   | `[x]`  |    -     | **First Production Ship**: baseline migration, Redis cleanup + degradation, probes, backup/smoke         |
-| **14b** | Forced Credential Rotation                        | `[x]`  |    -     | **Auth hardening**: `mustChangePassword` signal, change-password endpoint, global guard, session revoke  |
-| **14c** | OpenAPI truthfulness                              | `[x]`  |    -     | **Contract**: Swagger matches handlers (types, schemas, copy); no new HTTP                               |
-| **14d** | Operator HTTP gaps                                | `[x]`  |  `[P1]`  | **Operator contract**: product activate/deactivate + assign/replace user role over HTTP                  |
-| **14f** | User detail address projection                    | `[x]`  |  `[P1]`  | **Read model**: `GET /v1/users/{id}` returns `addresses[]` (no new collection route)                     |
-| **14e** | Developer Onboarding & Time-to-First-Run          | `[/]`  |  `[P0]`  | **Bootstrap DX**: 1-command environment bootstrap slice done; value matrix, C4 assets, Bruno deferred    |
-| **15**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | **Horizontal scale**: outbox, singleton jobs, SAGA recovery, search reconciliation                       |
-| **16**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | **Performance**: k6 baselines, V8 profiling, RED/USE Grafana alert rules                                 |
-| **17a** | Customer Catalog Read Path & Notifications        | `[/]`  |  `[P1]`  | **Storefront Read**: catalog GETs shipped (active-only shoppers); emails/webhooks/cart recovery deferred |
-| **17b** | Real Stripe SDK Integration & Webhooks            | `[ ]`  |  `[P1]`  | **Payments**: Stripe SDK adapter, signed webhook handler, Redis event idempotency deduplication          |
-| **17c** | Commercial Loop Integration (`store-web`)         | `[ ]`  |  `[P1]`  | **Ecosystem**: Storefront checkout -> SAGA -> Admin Dashboard live WebSocket toast verification          |
-| **17e** | Money & Currency Domain Alignment                 | `[ ]`  |  `[P1]`  | **Pricing truth**: cart/order Money VO, single-currency MVP done; multi-currency / FX later              |
-| **18**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | **When justified**: message broker, multi-tenancy, K8s, encrypted off-site backups                       |
+| **15**  | Platform Hygiene & Supply-Chain Alignment         | `[ ]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts      |
+| **16**  | Complete Onboarding DX & Architecture Assets      | `[ ]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track                    |
+| **17**  | Money & Currency Domain Alignment                 | `[ ]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe                                                     |
+| **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                              |
+| **19**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                                 |
+| **20**  | Storefront Commercial Loop (`store-web`)          | `[ ]`  |  `[P1]`  | Former 17c - **before** email; works with mock or real Stripe                                            |
+| **21**  | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                           |
+| **22**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                         |
+| **23**  | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                                    |
+| **24**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                                  |
+
+### Old → New Mapping
+
+| Old item | New phase / track | Rationale |
+| -------- | ----------------- | --------- |
+| Platform hygiene backports | **15** | engines, CI OpenAPI, Action pins, webhook fail-closed |
+| Pin Actions SHAs / `timeout-minutes` / redis chaos `forceExit` (tooling backlog) | **15-B** | Pulled into P0 hygiene |
+| 14e remainder (value matrix, C4, Bruno) | **16** | Finish onboarding showcase |
+| Staging / production-like env (old 14 recommended) | **16** track or **19** | Explicit; not lost |
+| Money VO (old 17e) | **17** | Before real Stripe |
+| Real Stripe (old 17b) | **18** | After Money; mock fail-closed in 15 |
+| Multi-instance (old 15) | **19** | After pricing/payments correctness |
+| Commercial loop (old 17c) | **20** | Before email/webhooks |
+| Email / cart recovery / webhooks (old 17a remainder) | **21** | After commercial loop |
+| Performance (old 16) | **22** | Preserved |
+| Analytics attention (old 17d) | **23** | Gated on traffic |
+| Enterprise / K8s (old 18) | **24** | Preserved |
+| Catalog GETs (old 17a) | **Completed** | Already shipped |
+| Staff-audit shopper contract gaps (GET /me, current cart, inventory ACL, 403 code) | **15b** (done) | Unblocked storefront 9d and commercial loop 20 |
 
 ---
 
-## 🚧 Pre-Production Checklist
+## Pre-Production Checklist
 
----
-
-### Step 1: Single-Instance Production Ship Blockers (Must complete before first deploy)
+### Step 1: Single-Instance Production Ship Blockers
 
 | Task / Item                                                                                                                                        | Phase         | Critical Purpose                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10**        | Resolved via `CallerContext`, `CartOwnershipValidator` & `OwnedResourceAccessPolicy`     |
-| [x] OWASP audit doc + dependency scanning in CI (`.github/dependabot.yml` + blocking `npm audit:check` + PR dependency review)                     | **10**        | Prevents supply-chain vulnerabilities; high/critical prod deps block merge               |
-| [x] Production error stack masking & PII log audit verified                                                                                        | **10**        | Verifies `GlobalExceptionFilter` & Winston do not leak sensitive payloads/stacks in prod |
-| [x] Optimistic concurrency (schema @VersionColumn + 409 on conflict + pure domain isolation per CONVENTIONS.md §13)                                | **11**        | Prevents lost updates during concurrent edits by multiple users or admins                |
-| [x] Shopping Cart Expiration & Redis-backed cart TTL enforcement                                                                                   | **11**        | Automatically cleans up stale cart instances (RedisJSON storage, key TTL)                |
-| [x] CQRS read path: query ports, JOIN adapters, flat list/detail DTOs (Orders, Inventory, Payments, Products, Carts, Identity, Notifications done) | **12**        | Solves UI N+1 queries by returning resolved customer names/SKUs in a single SQL query    |
-| [x] Admin analytics query module (`/v1/admin/analytics/*`) + indexes                                                                               | **CQRS read** | Operational dashboard aggregates (UTC, 90-day cap); ADR-0007; not Prometheus             |
-
-| [x] Initial database baseline migration generated & verified | **14** | `src/migrations/*InitialBaseline*` · clean run + revert verified · CI uses `migration:run` only |
-| [x] Redis graceful degradation & `trust proxy` hardening | **14** | Prevents 5xx HTTP drops on Redis disconnects & captures real client IP behind proxy |
-| [x] Redis infrastructure cleanup (layering, one fail-open path, key-space recovery) | **14** | Ship a clean Redis model with the first production instance: not a later refactor |
-| [x] Liveness, Readiness & `ProcessHealthIndicator` probes | **14** | `/health/liveness` (process) and `/health/readiness` (PostgreSQL required; Redis via `/health`) |
-| [x] Backup, restore, rollback runbook & smoke test runner | **14** | `db:backup` / `db:restore` / `db:restore:drill` · `scripts/smoke/` · [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md) |
-| [x] Production secret rotation procedures documented | **14** | Rotate JWT, DB, Redis, and third-party secrets without breaking production |
-
----
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10**        | `CallerContext`, ownership validators, `OwnedResourceAccessPolicy`                       |
+| [x] OWASP audit + Dependabot + blocking `npm audit` + PR dependency review                                                                         | **10** / **12b** | Supply-chain gate                                                                     |
+| [x] Production error masking & PII log redaction                                                                                                   | **10**        | Filter + Winston                                                                         |
+| [x] OCC + inventory pessimistic lock + cart TTL                                                                                                    | **11**        | Data integrity                                                                           |
+| [x] CQRS read path + admin analytics                                                                                                               | **12**        | N+1 / dashboard reads                                                                    |
+| [x] Baseline migration · Redis degradation · probes · backup/smoke · secret rotation                                                               | **14**        | First private production instance                                                        |
+| [x] Forced credential rotation                                                                                                                     | **14b**       | Bootstrap password change                                                                |
+| [x] OpenAPI truthfulness tooling                                                                                                                   | **14c**       | Contract honesty                                                                         |
+| [x] Shopper HTTP contract (`/me`, `/carts/current`, inventory ACL, `MUST_CHANGE_PASSWORD`)                                                         | **15b**       | Unblocks storefront 9d and Phase 20                                                      |
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                                                         | Phase     | Critical Purpose                                                           |
-| --------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------- |
-| [x] E2E core flow tests: auth lifecycle + IDOR denial + SAGA happy path + CQRS list shapes          | **13**    | Pre-deploy verification via `supertest`; not post-deploy smoke probes      |
-| [x] HTTP checkout/auth contract completeness (cart id, payment intent id, versioned refresh cookie) | **13**    | Lets clients and E2E drive checkout without reaching into repositories     |
-| [x] Checkout idempotency E2E: same key replay must not create a second checkout                     | **13**    | Proves `@Idempotent()` on checkout; do after HTTP contracts exist          |
-| [x] E2E suite quality polish (error bodies, spec naming, remaining optional specs)                  | **13**    | Optional P2: does not block first deploy                                   |
-| [x] HTTP idempotency hardening (namespace, dual headers, persist-on-complete)                       | **14 P2** | After checkout idempotency E2E; does **not** block first deploy            |
-| [x] Order lifecycle domain policy (`OrderWorkflow`, shipping-address validation)                    | **13**    | Centralized transition policy and domain specs                             |
-| [x] Repository integration tests (Testcontainers / real DB)                                         | **13**    | All postgres write adapters + cached wrappers (except cached cart)         |
-| [x] Concurrent checkout integration proof (pessimistic lock verification)                           | **13**    | Repository-level reservation proof: parallel saves against last stock unit |
+| Task / Item                                                                                         | Phase  | Critical Purpose                                              |
+| --------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------- |
+| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies                                    | **13** | Pre-deploy HTTP confidence                                    |
+| [x] Repository integration + concurrent checkout lock proof                                         | **13** | Real DB + stock race                                          |
 
----
-
-### Step 3: Multi-Instance & Distributed Consistency (Before scaling to 2+ pods)
+### Step 3: Multi-Instance (Before 2+ pods)
 
 | Task / Item                                                          | Phase  | Critical Purpose                                                                     |
 | -------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
-| [ ] Transactional Outbox Pattern for domain events                   | **15** | Durable, at-least-once event publication across process crashes                      |
-| [ ] Singleton background jobs & distributed locks (BullMQ / Redlock) | **15** | Only one pod executes a singleton scheduled job at a time                            |
-| [ ] Checkout SAGA Timeout & Dead-Letter Queue (DLQ) Recovery Engine  | **15** | Recovers stuck checkout transactions and dispatches alerts on unrecoverable failures |
-| [ ] Product Search Index Reconciliation Job                          | **15** | Reconciles RedisSearch catalog indexes with PostgreSQL source of truth               |
-| [x] User-scoped adaptive rate limiting                               | **10** | Scopes rate limiting per authenticated user ID (`sub`) to stop targeted user abuse   |
+| [ ] Transactional Outbox                                             | **19** | At-least-once events across crashes                                                  |
+| [ ] Singleton jobs & distributed locks                               | **19** | One pod runs singleton schedulers                                                    |
+| [ ] Checkout SAGA timeout & DLQ recovery                             | **19** | Stuck checkout compensation                                                          |
+| [ ] Product search index reconciliation                              | **19** | RedisSearch vs Postgres                                                              |
+| [x] User-scoped adaptive rate limiting                               | **10** | Already shipped                                                                      |
 
 ---
 
-## 🚀 Phase 14: Single-Instance Production Deploy Gate
+## Phase 15: Platform Hygiene & Supply-Chain Alignment `[P0]`
 
-> **Goal**: Prove you can **operate** a single application instance without being reckless (migrations, Redis/proxy, backup/restore, secrets, smoke). This is the **first private production deployment gate**, not a claim that the API is a production-grade ecommerce platform. Phases 15-17 still contain major capabilities.
+> **Goal**: Backport hygiene gaps and close the forgeable public Stripe webhook hole. Full Stripe SDK stays Phase 18.
 >
-> **Required for the ship gate:** baseline migration, Redis/proxy behavior, Redis infrastructure cleanup, backup/restore/rollback, secret rotation, smoke.
->
-> **Optional (do not block first deploy):** Redis polish (post-ship gate); HTTP idempotency hardening; staging environment.
+> **Parallel tracks**: `15-A` through `15-D` may run concurrently.
 
----
+### [ ] Track 15-A: Node Engines & Migration Script Hygiene
 
-### [x] Initial Database Baseline Migration
-
-**What**: Generate the initial database schema baseline migration from the current TypeORM entities to enable safe production schema updates.
+**What**: Align package metadata and TypeORM create scripts.
 
 **Scope**:
 
-- [x] Generate the baseline database migration script utilizing TypeORM CLI (`npm run migration:generate:prod`).
-- [x] Run forward migrations on a **clean** PostgreSQL database (schema from scratch).
-- [x] Run forward migrations against an **existing** database (upgrade path).
-- [x] Verify migration **rollback** scripts function properly.
-- [x] Document and verify **migration failure** behavior (startup abort, no partial corrupt state).
-- [x] Confirm **`synchronize: true` is never enabled in production**.
-- [x] Update deployment configurations to execute migrations automatically on server startup via `docker-entrypoint.sh`.
+- Add `"engines": { "node": ">=24.0.0" }` to `package.json` (README already claims Node 24).
+- Fix `migration:create:prod` / `:staging` / `:test` forcing `NODE_ENV=development` (copy-paste).
 
-**Location**: `src/migrations/`, `scripts/docker-migrate.js`
-
-> **Existing local DBs** that already have tables from Nest `synchronize` (non-production): either reset the volume, or stamp the baseline as applied (`INSERT INTO typeorm_migrations ...`) after verifying the schema matches: do not re-run `InitialBaseline` against a populated synchronized schema.
+**Location**: `package.json`
 
 ---
 
-### [x] Graceful Degradation & Reverse Proxy Hardening (`trust proxy` & Redis)
+### [ ] Track 15-B: CI Automation Hardening
 
-**What**: Configure reverse proxy compatibility and ensure caching, rate limiting, and session layers degrade gracefully if Redis goes offline.
+**What**: Enforce OpenAPI audit and runner hygiene.
 
 **Scope**:
 
-- [x] Configure Express `trust proxy` in NestJS bootstrap (`src/main.ts`) to match the **actual production proxy topology** (CDN / load balancer / reverse proxy hop count). `trust proxy = 1` is only correct for a single trusted hop: verify client-IP and rate-limit behavior; do not assume `1` is always right.
-- [x] Harden central Redis client configuration with connection retry strategies and drop event handlers.
-- [x] Refactor cache-aside repository wrappers to query the database directly on cache misses when Redis is offline.
-- [x] Treat Redis-down as **per-concern**, not one policy: cache → DB fallback; throttler → documented degraded/fallback; idempotency → **fail-closed** (HTTP 503); session/refresh → as designed; carts → RedisJSON persistence behavior; BullMQ → operational impact (jobs stop). Catch disconnects with logged warnings instead of unexplained 5xx HTTP drops for cache paths.
+- Wire `npm run audit:openapi` into GitHub Actions CI.
+- Pin GitHub Actions to full commit SHAs + version comments (former tooling backlog).
+- Add `timeout-minutes` to long jobs (integration, e2e, redis-chaos).
+- Drop Jest `forceExit` from `jest-redis-chaos.json` once open handles are proven clean.
 
-**Location**: `src/main.ts`, `src/infrastructure/redis/`, `src/infrastructure/idempotency/`
+**Location**: `.github/workflows/ci.yml`, `test/integration/redis/jest-redis-chaos.json`
 
 ---
 
-### [x] Redis Infrastructure Cleanup (Ship Gate)
+### [ ] Track 15-C: Fail-Closed Stripe Webhook Signature (Mock Era)
 
-**What**: Simplify the Redis stack so first production ships with one clear degradation model: not overlapping resilience layers that grew during Phase 14 hardening.
-
-> **Blocks the Phase 14 ship gate.** Behavior already degrades safely; this pass cleans structure so the production baseline is maintainable.
+**What**: `POST /v1/payments/webhooks/stripe` is `@Public()` and `StripeSignatureService.verify()` currently returns `true` always - forgeable in any environment that exposes the route.
 
 **Scope**:
 
-- [x] Collapse Redis layering to a **connection/lifecycle owner** + **`CachePort` adapter**. Remove thin pass-through clients (`RedisJsonClient`, `RedisKeyClient`, and equivalents that only forward to `RedisService`) unless a real second implementation needs them.
-- [x] Remove `createHealthAwareProxy` from module DI. Cache-aside repositories always sit behind `CachePort`; when Redis is down, the adapter fails open to DB without a second DI switch.
-- [x] Keep **one** fail-open policy in the cache/Redis adapter (`isReady` + try/catch safe returns). Do not duplicate the same guards across `RedisService` methods, the Proxy, and every cached repository.
-- [x] Document Redis **roles** explicitly (cache-aside vs cart RedisJSON SoR vs idempotency locks vs throttler vs BullMQ vs Socket.IO pub/sub) in infrastructure docs or module README: different concerns, different failure modes.
-- [x] Replace reconnect `SCAN` domain-key flush with **key-space versioning** (bump generation/prefix so stale keys expire naturally) or an equivalent cheap invalidation; keep index re-init on reconnect.
-- [x] Prefer **atomic JSON write + TTL** where the client API allows (avoid `json.set` then separate `expire` races).
-- [x] Type the Redis client (drop `client: any`).
-- [x] Centralize shared Redis connection options (host/port/password/db/reconnect). Separate library clients (`ioredis` throttler, BullMQ, Socket.IO) may remain, but must share config: do not invent a fourth ad-hoc connection setup.
-- [x] Update unit/integration specs and module factories after the DI simplification; keep existing per-concern degradation contracts (cache → DB, throttler → memory, idempotency → fail-closed).
+- In production (and staging): reject unless a real secret verifies the signature (or disable the route until Phase 18).
+- Keep local/test paths explicit (documented bypass only when `NODE_ENV=test` or equivalent).
+- Do **not** treat full Stripe SDK / PaymentIntent adapter as P0 - that is Phase 18.
+- Optionally rename/clarify mock `StripeGateway` vs real adapter to reduce confusion.
 
-**Location**: `src/infrastructure/redis/`, `src/infrastructure/resilience/`, `src/modules/*/…module.ts`, `docs/infrastructure/REDIS.md`
+**Location**: `src/modules/payments/secondary-adapters/services/stripe-signature.service.ts`, `payments.controller.ts`, env docs
 
 ---
 
-### [x] Redis Polish (Post-Ship Gate)
+### [ ] Track 15-D: Docs Cross-Pollination & CQRS Status Refresh
 
-**What**: Close remaining Redis polish gaps after Infrastructure Cleanup: options/DI consistency, slimmer hexagonal ports, typed cache reads, keep `CacheService` as the port adapter (do not merge into `RedisService`), split oversized `RedisService` into helpers, and prove reconnect under load with Redis Stack Testcontainers.
-
-> **Does not block the Phase 14 ship gate.** Do this **after** [Redis Infrastructure Cleanup (Ship Gate)](#x-redis-infrastructure-cleanup-ship-gate). Separate TCP clients remain (library constraints); polish the shared options contract and docs, not a single-socket merge.
+**What**: Import useful CRM docs; fix stale CQRS current-status text.
 
 **Scope**:
 
-- [x] Share BullMQ connection options via one DI token / provider (`queue.module`, `FlowProducer`, `QueueEvents`); document a **client inventory** in [`REDIS.md`](infrastructure/REDIS.md) (role → library → why separate sockets).
-- [x] Slim `CachePort` to KV + RediSearch (`isAvailable`, `get`/`getMany`, `set`/`setAll`, `delete`, `search`); drop unused Redis-shaped APIs (`path`, `scanKeys`, `deletePattern`, `merge`/`mergeAll`, `getAll`, unused `exists`/`ttl`).
-- [x] Port reads use typed `get<T>` / `search<T>`; `*CacheMapper.fromCache` maps `*ForCache` wire DTOs (epoch-ms dates) to domain (bad payload → `null` → miss → Postgres). Idempotency narrows locally after `get`.
-- [x] **Keep `CacheService`** as the `CachePort` adapter. Keep `RedisService` as one Nest injectable (key builders live in `cache-key-space.ts`). Prune methods that only served removed port passthroughs.
-- [x] Redis Stack Testcontainers chaos suite: restart under concurrent get/set; assert fail-open during outage, generation bump + flag clears after recovery, stable idempotency keys. Script `test:redis:chaos` + short note in the integration testing guide.
+- Copy/adapt `GRAPHQL-EVALUATION.md` and UTC frontend guide from CRM into ecommerce docs.
+- Update `docs/architecture/CQRS.md` §2.2 to Phase 2 query adapters (not legacy `toPrimitives()` reads).
 
-**Location**: `src/shared-kernel/domain/interfaces/cache.port.ts`, `src/infrastructure/redis/`, `src/infrastructure/queue/`, `src/modules/*/secondary-adapters/`, `test/integration/redis/`, `docs/infrastructure/REDIS.md`, ADR-0006
+**Location**: `docs/architecture/`, `docs/frontend-guides/` (or equivalent)
 
 ---
 
-### [x] Liveness, Readiness & Process Health Probes
+## Phase 16: Complete Developer Onboarding & Architecture Assets `[P0]`
 
-**What**: Expose dedicated health check endpoints for container runtime orchestrators, including V8 runtime process checks.
+> **Goal**: Finish former Phase 14e remainder so the repo is a showcase reference. Bootstrap (`npm run setup`) is already done.
 
-**Scope**:
+### [ ] Architecture Value Matrix & "Why Choose This Engine?" in README
 
-- [x] Implement `ProcessHealthIndicator` measuring event loop lag and RSS memory limits.
-- [x] Implement `/health/liveness` returning process viability.
-- [x] Implement `/health/readiness` checking required dependencies (PostgreSQL only: Redis degradation is reported via `/health` and metrics).
-- [x] Expose probes in HealthController; Dockerfile uses liveness, Compose prod uses readiness.
-- [x] Update Swagger documentation for probe endpoints.
+**What**: Decision matrix vs tutorials / Medusa / SaaS monoliths; elevator pitch for CTOs and full-stack engineers.
 
-**Location**: `src/modules/health/`
+**Location**: `README.md`, `docs/README.md`
 
 ---
 
-### [x] Release, Rollback, Backup Procedures & Smoke Test Runner
+### [ ] Visual Architecture Diagrams & Media Assets
 
-**What**: Build deployment pipeline smoke tests, database backup scripts, and disaster recovery runbooks.
+**What**: C4 context/container SVG; annotated SAGA checkout sequence; Swagger overview screenshot; optional short walkthrough GIF.
 
-**Scope**:
-
-- [x] Write Node.js scripts to automate PG database backups (`db-backup.js`) and restore procedures (`db-restore.js`).
-- [x] Build a post-deploy smoke test runner (`smoke-test.js`) targeting liveness/readiness, `/metrics`, register/login, and authenticated profile access.
-- [x] Wire smoke runner into GitHub Actions CI (Postgres + Redis services, `dist` artifact, migrations).
-- [x] Refactor `scripts/smoke-test.js` into small HTTP helpers under `scripts/smoke/`: **not** Nest use cases. Smoke runs against a deployed process; it cannot `app.get()` module ports.
-- [x] Keep smoke as process-alive probes only (no checkout SAGA, queues, or Stripe). That remains `npm run test:e2e`.
-- [x] Soften the success log so it does not claim “production deployment verified”; it verifies probes answered.
-- [x] Document comprehensive release, rollback, disaster recovery procedures in `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`.
-- [x] **Restore drill (definition of done)**: backup → destroy/clean disposable DB → restore → migrate if needed → app starts → smoke tests pass.
-
-**Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
+**Location**: `docs/assets/`, `README.md`
 
 ---
 
-### [x] Production Secret Rotation Procedures
+### [ ] Interactive API Playground & Client Collection
 
-**What**: Document how to rotate production secrets without breaking running sessions or deployments.
+**What**: Bruno and/or Postman collections under `docs/data/collections/` with token refresh + admin login env; enhance Swagger examples.
 
-**Scope**:
-
-- [x] Document rotation procedure for JWT signing keys (consider active session impact).
-- [x] Document rotation for database and Redis credentials.
-- [x] Document rotation for metrics/API keys and third-party secrets (Stripe, webhooks, email providers).
-- [x] Cross-reference [`SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) where procedures already exist.
-
-**Location**: `docs/security/SECRET-ROTATION.md`
-
----
-
-### [x] HTTP Idempotency Hardening (Optional: P2)
-
-> **Does not block the Phase 14 ship gate.** Do this **after** checkout idempotency E2E exists. Do **not** open a design/plan workstream. Current `@Idempotent()` + Redis `SET NX` is good enough to ship; this is a short implementation pass.
-
-**What**: Tighten HTTP command idempotency without changing SAGA/outbox semantics.
-
-**Scope**:
-
-- [x] Namespace Redis keys with authenticated `userId` + HTTP method + route (stop cross-user / cross-route key collisions).
-- [x] Accept `Idempotency-Key` as well as `x-idempotency-key` (body `idempotencyKey` remains fallback).
-- [x] If `SET NX` fails and `GET` misses (TTL race), retry as a new lock: do not 409.
-- [x] If `complete()` cannot persist the cached body, fail the request (logged error); do not succeed HTTP and then allow a retry to create a second checkout.
-- [x] Optional: `Retry-After` on in-progress **409**.
-- [x] Align docs with the store: Redis `SET NX` (not Redlock); **fail-closed** on Redis errors (HTTP 503); interceptor covers the HTTP checkout command, not the worker chain (`FEATURES.md`, `OWASP-COMPLIANCE.md`, README).
-- [x] Update checkout idempotency E2E to the hardened contract (dual headers, namespaced keys). Do **not** add payload fingerprinting, Redlock, or SAGA-wide idempotency here (Phase 15/17).
-
-**Location**: `src/infrastructure/idempotency/`, `src/infrastructure/interceptors/idempotency.interceptor.ts`, `test/`
+**Location**: `docs/data/collections/`, `src/main.ts`
 
 ---
 
 ### [ ] Staging / Production-Like Environment (Recommended)
 
-> Recommended before public demo or stakeholder review. **Not required** to ship the first private production instance.
-
-**What**: Deploy a constrained staging environment mirroring production topology.
+**What**: Constrained staging mirroring production topology (former Phase 14 recommended item - not lost).
 
 **Scope**:
 
-- [ ] Deploy API + managed PostgreSQL/Redis to hosting platform (Railway/Render/Fly.io).
-- [ ] Expose Swagger/OpenAPI publicly; protect `/metrics` via API key.
-- [ ] Execute seed data script (`npm run db:seed`).
+- Deploy API + managed Postgres/Redis (Railway/Render/Fly.io or equivalent).
+- Public Swagger; protect `/metrics` via API key.
+- Run `npm run db:seed`.
 
 **Location**: `scripts/`, `docs/infrastructure/`
 
----
-
-## Phase 14b: Forced Credential Rotation (mustChangePassword)
-
-> **Goal**: Enforce bootstrap and demo password rotation in the API and unblock admin first-login UX.
-> **Prerequisite**: Phase 14 complete.
-
-**Scope:**
-
-- [x] Extend login/refresh/change-password responses with `mustChangePassword`
-- [x] `ChangePasswordUseCase` + `POST /v1/authentication/change-password` (revoke-all + new tokens)
-- [x] `Credential.changePassword()` domain method
-- [x] Global `MustChangePasswordGuard` with route allowlist
-- [x] Claim-gated guard: `mustChangePassword` embedded in the access token only when set, so the credential lookup runs only for flagged tokens
-- [x] Unit, guard, and E2E tests
-- [x] Update ADMIN-BOOTSTRAP, SEEDING, FEATURES docs
-
-**Done when:** User with `mustChangePassword: true` cannot call domain APIs until password change; change-password clears flag and reissues session; tests green.
+> May alternatively land as a track under Phase 19 if staging is only needed before multi-instance demos.
 
 ---
 
-## Phase 14c: OpenAPI truthfulness
+## Phase 17: Money & Currency Domain Alignment `[P1]`
 
-> **Goal**: Make the published OpenAPI document match runtime handlers so generated clients stay accurate. **No new HTTP.** Does **not** block Phase 15.
+> **Goal**: Pricing truth across carts/orders **before** real Stripe. (Bumped from old 17e.)
 >
-> **Prerequisite**: Phase 14b complete.
-
-**What**: Defect **classes**, not a frozen path inventory. On start, fetch live `/api/docs-json` and fix what is still wrong.
-
-**Scope:**
-
-- [x] Nullable `@ApiPropertyOptional` / `@ApiProperty` without an explicit `type` (generated clients get `object` / `Record<string, never>` instead of string/number)
-- [x] Handler return vs documented DTO (example found: low-stock documented as `InventoryStockResponseDto` while the handler returns `IInventory` primitives)
-- [x] Operations in the spec with empty summary and/or no 200/201 body schema
-- [x] 200 + `null` described in prose but not in the schema
-- [x] Stale copy on order confirm (outdated payment-method prose removed)
-- [x] Auth refresh/logout documented as a JSON body while the HttpOnly cookie is the real token
-- [x] [`docs/development/LOCAL-SETUP.md`](development/LOCAL-SETUP.md) Swagger URL (`/api/docs`)
-- [x] Probe endpoint Swagger (moved here from Phase 14 health probes)
-- [x] `scripts/generate-openapi-spec.ts` + `scripts/audit-openapi.js` (`npm run generate:openapi`, `npm run audit:openapi`)
-
-Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpoint` is correct).
-
-**Location**: controller/DTO Swagger decorators, `src/infrastructure/swagger/`, `scripts/`, `src/main.ts` document setup, `docs/development/LOCAL-SETUP.md`
-
-**Done when:** Regenerating an OpenAPI client does not invent `object` for nullable scalars; documented response shapes match handlers for the operations you touch. LOCAL-SETUP already documents `/api/docs`.
-
----
-
-## Phase 14d: Operator HTTP gaps
-
-> **Goal**: Expose operator actions the domain already has but HTTP does not (product activate/deactivate, assign/replace user role). Does **not** block Phase 15.
-
-**Scope:**
-
-- [x] Product activate / deactivate HTTP (dedicated actions, same idea as users, e.g. `POST /v1/products/{id}/activate` and `deactivate`, `manage_products`). Do **not** silently add `isActive` to PATCH if the domain treats catalog status as a dedicated action
-- [x] Assign or replace a user's role over HTTP (`AssignUserRoleUseCase` + `PUT /v1/users/{id}/role`, `manage_roles`)
-- [x] OpenAPI + tests for those operations
-
-**Location**: `src/modules/products/`, `src/modules/identity/` (or authorization), matching use-case tests / HTTP e2e
-
-**Done when:** An authenticated caller with the right permission can take a product off the catalog and change a user's role over HTTP without SQL or seed scripts; OpenAPI documents the new operations.
-
----
-
-## Phase 14f: User detail address projection
-
-> **Goal**: Return the customer's address book on `GET /v1/users/{id}` so admin (and later storefront) can list addresses without a new collection route. Does **not** block Phase 14e or Phase 15.
-
-**Scope:**
-
-- [x] Project required `addresses[]` on user detail (second `AddressEntity` query; do not instantiate the User aggregate)
-- [x] Align `UserAddressDTO` / `UserDetailResponseDto` with `AddressResponseDto` (ISO date strings on the read model)
-- [x] OpenAPI + mapper/integration tests (empty book and N addresses, default first)
-
-**Location**: `src/modules/identity/` query adapter, mapper, and `UserDetailResponseDto`
-
-**Done when:** `GET /v1/users/{id}` returns the address book; Swagger matches the handler.
-
----
-
-## ⚡ Phase 14e: Developer Onboarding, Architecture Storytelling & Time-to-First-Run [P0]
-
-> **Goal**: Collapse environment initialization, infrastructure health checks, migrations, and demo seeding into a single command; run the API on the host with `start:dev`. Visually articulate the architectural superpowers (SAGA, OCC, Hexagonal DDD).
+> **MVP foundation already**: cart lines snapshot ISO 4217 currency; mixed currencies rejected; DTOs expose currency.
 >
-> _(Note: Non-blocking DX enabler. Can be executed immediately in parallel with Phase 14d, Phase 14f, and Phase 15)._
+> **Storefront note**: shipping/tax/discount line items and structured shipping address for honest totals UI belong here (not in 15b). Until this ships, storefront must not invent "Free" shipping.
 
-### [x] 1-Command Environment Bootstrap (`npm run setup`)
+### [ ] Align Cart/Order Lines on Shared-Kernel `Money`
 
-**What**: Single-command orchestrator preparing the local development environment: boots PostgreSQL and Redis Stack in Docker with healthcheck wait (`docker compose up -d --wait`), applies TypeORM migrations, and runs demo database seeding (`scripts/seed.ts`).
-
-**Standalone Headless Policy**:
-
-- `npm run setup` bootstraps the database and cache infrastructure; the NestJS API runs natively on host with SWC watch mode via `npm run start:dev`.
-- Clients (admin SPA, mobile apps, storefront) attach separately via standard HTTP to `http://localhost:3000`.
+**What**: Replace raw `price: number` + sibling `currency` on cart (and eventually product write models) with shared-kernel `Money`.
 
 **Scope**:
 
-- [x] Multi-stage bootstrap script: `scripts/setup.js` (env init $\rightarrow$ infra boot with `--wait` $\rightarrow$ migrations $\rightarrow$ demo seed).
-- [x] Clean down & reset scripts: `npm run setup:down` (preserves data) and `npm run setup:reset` (wipes volumes and re-bootstraps).
-- [x] Eliminated duplicate compose and seeder files (`docker-compose.quickstart.yml`, `scripts/docker-seed.js`).
-      **Location**: `scripts/setup.js`, `docker-compose.yaml`, `package.json`
+- `CartItem` stores unit price as `Money`.
+- Checkout / order factory maps cart line `Money` without inventing USD defaults.
+- Product write path adopts `Money` or keeps explicit DTO mapping so ACL currency stays truthful.
+- OpenAPI remains amount + currency fields.
 
-### [ ] Architecture Value Matrix & "Why Choose This Engine?" in README
-
-**What**: Top-level decision matrix comparing this codebase against basic Node.js tutorials, MedusaJS, and monolithic SaaS platforms.
-**Scope**:
-
-- [ ] Document key guarantees: Zero Overselling (pessimistic lock), SAGA Compensation (automatic refunds/stock release on failure), OCC Update Contracts (HTTP 409 lost update prevention), Audit-Ready Security (JWKS RSA + rotation runbooks).
-- [ ] Embed 30-second elevator pitch for CTOs, Full-Stack Engineers, and E-Commerce Businesses.
-      **Location**: `README.md`, `docs/README.md`
-
-### [ ] Visual Architecture Diagrams & Media Assets
-
-**What**: Export publication-quality SVG/PNG diagrams for the README and docs.
-**Scope**:
-
-- [ ] Export high-res C4 System Context & Container diagrams to `docs/assets/c4-architecture.svg`.
-- [ ] Create annotated SAGA Checkout Sequence diagram (`docs/assets/saga-checkout-sequence.svg`).
-- [ ] Create Swagger UI screenshot with highlighted DDD module tags (`docs/assets/swagger-overview.png`).
-- [ ] (Optional) Record a 3-minute video/GIF architectural walkthrough explaining ACL gateways, SAGA failure compensation, and CQRS read adapters.
-      **Location**: `docs/assets/`, `README.md`
-
-### [ ] Interactive API Playground & Client Collection
-
-**What**: Make trying endpoints zero-friction.
-**Scope**:
-
-- [ ] Provide exportable Bruno and Postman collections in `docs/data/collections/` with pre-configured environment variables (token refresh, admin login).
-- [ ] Enhance Swagger UI documentation with curl request/response examples for all 11 modules.
-      **Location**: `docs/data/collections/`, `src/main.ts`
+**Location**: `src/shared-kernel/domain/value-objects/money.ts`, `src/modules/carts/`, `src/modules/orders/`, `src/modules/products/`
 
 ---
 
-## 🛡️ Phase 15: Multi-Instance & Distributed Consistency
+### [ ] Multi-Currency Catalog & FX (Production)
 
-> **Goal**: Prepare for multi-pod scaling behind a load balancer: distributed consistency for events, jobs, SAGA recovery, and derived search indexes. **Complete before deploying to 2+ application instances.**
+**What**: Multi-market pricing with explicit FX policy.
+
+**Trigger**: Only when business requires non-USD / multi-market.
+
+**Scope**: Store default currency port; cart single-currency policy ADR; FX source/rounding/settlement for Stripe; ADR for major vs minor units.
+
+**Location**: `docs/architecture/adr/`, `src/modules/carts/`, `src/modules/payments/`
 
 ---
 
-### [ ] Transactional Outbox Pattern (Cross-Instance Event Backbone)
+## Phase 18: Real Stripe SDK Integration & Webhook Idempotency `[P1]`
 
-**What**: Store domain events in an `outbox_events` table within the same database transaction as aggregate mutations to provide durable, at-least-once event publication across process crashes.
+> **Goal**: Replace mock payment gateway with production Stripe processing. (Bumped from old 17b.)
+>
+> **Prerequisite**: Phase 15 webhook fail-closed; Phase 17 Money alignment preferred.
+
+### [ ] Real Stripe Integration & Webhook Idempotency
+
+**What**: Stripe SDK adapter + authentic signature verification + event.id dedupe.
 
 **Scope**:
 
-- [ ] Create `outbox_events` table schema: `id`, `eventName`, `payload` (JSON), `status`, `retries`, `correlationId`, timestamps.
-- [ ] Ensure aggregate mutation and outbox record commit atomically in one DB transaction.
-- [ ] Implement outbox processor to claim pending rows (e.g. PostgreSQL `SKIP LOCKED`) and publish to subscribers.
-- [ ] Schedule/trigger processing (BullMQ or equivalent: implementation detail, not the guarantee).
-- [ ] Audit domain event listeners to ensure they are **idempotent**.
+- Stripe SDK secondary adapter for PaymentIntent create/capture/refund.
+- Resolve TODO in `stripe-signature.service.ts` with real HMAC verification using webhook secret.
+- Persist processed Stripe `event.id` (Redis/DB + TTL) to ignore replays.
+- Commercial loop (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
+
+**Location**: `src/modules/payments/secondary-adapters/stripe/`, `src/modules/payments/secondary-adapters/services/`
+
+---
+
+## Phase 19: Multi-Instance & Distributed Consistency `[P1]`
+
+> **Goal**: Former Phase 15. **Complete before deploying to 2+ application instances.**
+
+### [ ] Transactional Outbox Pattern
+
+**What**: `outbox_events` in the same DB transaction as aggregate mutations; processor with `SKIP LOCKED` / BullMQ; idempotent listeners.
 
 **Location**: `src/infrastructure/events/outbox/`
 
@@ -451,26 +314,15 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ### [ ] Singleton Background Jobs & Distributed Locking
 
-**What**: Implement distributed locking so only one pod executes a singleton scheduled job at a time in multi-instance deployments.
-
-**Scope**:
-
-- [ ] Configure BullMQ repeatable job locks / Redis Redlock wrappers for recurring tasks.
-- [ ] Prevent duplicate execution of background scheduled jobs (outbox processor, cart recovery, inventory audit) across concurrent API pods.
+**What**: BullMQ repeatable locks / Redlock so only one pod runs singleton schedulers (outbox, cart recovery, inventory audit).
 
 **Location**: `src/infrastructure/jobs/`
 
 ---
 
-### [ ] Checkout SAGA Timeout & Dead-Letter Queue (DLQ) Recovery Engine
+### [ ] Checkout SAGA Timeout & DLQ Recovery Engine
 
-**What**: Implement max-duration timeouts and automated compensation trigger for hanging or orphaned checkout SAGA executions.
-
-**Scope**:
-
-- [ ] Add SAGA step execution timeout monitor (e.g. 5 minutes max per checkout session).
-- [ ] Automatically trigger `CheckoutFailureListener` compensation handlers if a SAGA step crashes without resolving.
-- [ ] Route unrecoverable SAGA failures to a dedicated BullMQ Dead-Letter Queue (DLQ) and fire Prometheus alert counters.
+**What**: Max-duration monitor; trigger compensation on orphaned steps; DLQ + Prometheus counters for unrecoverable failures.
 
 **Location**: `src/modules/orders/primary-adapters/jobs/`
 
@@ -478,65 +330,82 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ### [ ] Product Search Index Reconciliation Job
 
-**What**: Build a scheduled background worker to reconcile RedisSearch product catalog indexes with PostgreSQL canonical data.
-
-**Scope**:
-
-- [ ] Implement a BullMQ job that periodically scans PostgreSQL products and re-indexes missing or modified items into RedisSearch.
-- [ ] Fix catalog search drift caused by direct DB updates or cache flushes.
+**What**: Periodic Postgres → RedisSearch reconciliation for catalog drift.
 
 **Location**: `src/modules/products/primary-adapters/jobs/`
 
 ---
 
-## 📈 Phase 16: Performance Engineering & Observability Maturity
+## Phase 20: Storefront Commercial Loop (`ecommerce-store-web`) `[P1]`
 
-> **Goal**: Define reliability metrics, establish automated performance test baselines, profile the runtime, and provision alert dashboards.
+> **Goal**: Former 17c. Verify checkout → SAGA → admin WebSocket toast. Placed **before** email/webhooks; works with mock or real Stripe.
+>
+> **Hard prerequisite:** Phase **15b** (done - storefront can call `GET /me`, `GET /carts/current`, shopper inventory check, and rely on `MUST_CHANGE_PASSWORD` code).
+>
+> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens, remove unused body `idempotencyKey` `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
+
+### [ ] Commercial Loop Verification & Cross-Repo Push
+
+**What**: Document and verify:
+
+1. Customer cart + checkout on `ecommerce-store-web`.
+2. API inventory lock + BullMQ SAGA.
+3. WebSocket `orders.created` broadcast.
+4. Admin dashboard live toast / order table update.
+
+**New documentation**: `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`
+
+**Location**: `src/modules/orders/`, `src/modules/notifications/`, related frontends
 
 ---
 
+## Phase 21: Notifications, Webhooks & Abandoned Cart Engine `[P2]`
+
+> **Goal**: Former 17a remainder (catalog GETs already shipped).
+>
+> **Storefront note**: do not claim "we emailed a receipt" until order-confirmation email from this phase exists.
+
+### [ ] Real Email and Notification Providers
+
+**What**: Resend/SendGrid adapters; BullMQ outbound mail; order confirmations, password resets, shipping updates.
+
+**Location**: `src/modules/notifications/secondary-adapters/mail/`
+
+---
+
+### [ ] Automated Abandoned Cart Recovery & Shipping Notification Engine
+
+**What**: Cron scan of inactive carts; recovery email links; WebSocket/email on shipping status changes.
+
+**Location**: `src/modules/carts/primary-adapters/jobs/`
+
+---
+
+### [ ] Outbound Webhook Subscription System
+
+**What**: `WebhookSubscription` aggregate; admin CRUD; BullMQ HMAC delivery; `WebhookDeliveryLog`.
+
+**Location**: `src/modules/webhooks/`
+
+---
+
+## Phase 22: Performance Engineering & Observability Maturity `[P2]`
+
+> **Goal**: Former Phase 16. (Role-permission cache already shipped.)
+
 ### [ ] k6 Load Testing Baseline
 
-**What**: Build and run k6 load testing suites to discover bottlenecks and establish baseline API latency metrics under stress.
-
-**Scope**:
-
-- [ ] Write k6 scripts targeting auth lifecycles, catalog searches, cart operations, and concurrent checkout SAGA.
-- [ ] Run load profiles (smoke, stress, spike) and capture measured latency/reliability baselines per endpoint.
-- [ ] Define endpoint-specific SLO targets from baseline data before enforcing thresholds in CI.
-- [ ] Configure CI checks to fail only after SLO targets are established and agreed.
+**What**: Auth, catalog, cart, concurrent checkout SAGA; smoke/stress/spike; baselines before CI SLO fails.
 
 **Location**: `test/load/`
 
 ---
 
-### [x] Cache Role Permission Resolution
-
-**What**: `PermissionsGuard` runs on every authenticated request and calls `ResolveRolePermissionsService`, which issues two uncached Postgres queries: a `roles` lookup by code, then a `role_permissions` fetch joined to `permission`. Role-to-permission mappings change rarely, so this is the largest per-request database cost left in the guard chain.
-
-**Scope**:
-
-- [x] Cache resolved permission codes per role code in Redis with a bounded TTL.
-- [x] Invalidate on role and role-permission mutations so authorization changes take effect immediately.
-- [x] Fall back to Postgres when the cache is unavailable, matching the degradation behaviour used elsewhere.
-
-**Location**: `src/modules/authorization/core/application/services/resolve-role-permissions.service.ts`
-
----
-
 ### [ ] Node.js Runtime Profiling & Performance Tuning
 
-**What**: Profile Node's V8 engine and event loop performance under heavy loads to find memory leaks and CPU-heavy hot paths.
+**What**: Event loop lag metric; heap dumps; flame graphs under k6.
 
-**Scope**:
-
-- [ ] Implement Prometheus metrics tracking Event Loop Lag (`nodejs_eventloop_lag_seconds`).
-- [ ] Document heap-dump capture procedures.
-- [ ] Generate CPU flame graphs using `clinic.js` or `0x` under simulated k6 load tests.
-
-**New documentation**:
-
-- [ ] `docs/infrastructure/PERFORMANCE-ENGINEERING.md`: Performance engineering guide covering k6, capacity planning, profiling, and caching.
+**New documentation**: `docs/infrastructure/PERFORMANCE-ENGINEERING.md`
 
 **Location**: `test/load/results/`, `docs/infrastructure/`
 
@@ -544,193 +413,37 @@ Do **not** add `POST /v1/payments/webhooks/stripe` to Swagger (`@ApiExcludeEndpo
 
 ### [ ] Alert Rules, RED/USE Dashboards, and SLOs
 
-**What**: Formulate actionable alerting rules, provision custom Grafana dashboards, and document operational runbooks.
-
-**Scope**:
-
-- [ ] Define endpoint-specific SLIs/SLOs (latency, checkout success, queue lag) from measured baselines.
-- [ ] Build RED dashboards for the API and USE dashboards for PostgreSQL/Redis/BullMQ.
-- [ ] Setup Prometheus Alertmanager rules for 5xx spikes, high latency, queue backlog depths, and failed background jobs.
+**What**: Endpoint SLIs/SLOs; RED/USE dashboards; Alertmanager for 5xx, latency, queue lag, failed jobs.
 
 **Location**: `docker/monitoring/`, `docs/observability/`
 
 ---
 
-## 📦 Phase 17: Product Ecosystem, Webhooks & Real Integrations
+## Phase 23: Analytics Attention & Operational Facts `[P2]`
 
-> **Goal**: Elevate store value by integrating real communication providers, automated cart recovery, outbound webhook subscriptions, production Stripe payments with webhook deduplication, and verifying the end-to-end commercial loop with the customer storefront.
+> **Goal**: Former 17d. **Trigger**: after real Stripe (18) and live storefront traffic (20).
 
----
+### [ ] Operational Pulse & Inventory Sell-Through Facts
 
-### Phase 17a: Customer Catalog Read Path & Notifications [P1]
+**What**:
 
-#### [x] Customer Catalog Read Path (Storefront API)
-
-**What**: Let a `CUSTOMER` (or public shopper) list and get products for shopping without admin catalog permissions.
-
-**Why**: `GET /v1/products` currently requires `view_all_products` / create requires `manage_products`. A storefront cannot browse the catalog with the default customer role. This is a store API gap, not a SAGA design gap.
-
-**Scope**:
-
-- [x] Introduce customer-scoped (or `@Public()` read) product list/detail permissions distinct from admin `manage_products`.
-- [x] Keep mutations (`POST`/`PATCH`/`DELETE` products) admin-only.
-- [x] E2E or API contract: registered customer can list a product created by admin and add it to a cart without `manage_products`.
-
-**Shipped as:** `@OptionalAuth()` on product and category list/detail (not `@Public()`, so an operator bearer token still attaches). `CatalogVisibilityPolicy` forces `isActive: true` for shoppers and 404s inactive detail; `view_all_products` keeps the operator catalog. Mutations stay `manage_products`. CUSTOMER is not granted `view_all_products`.
-
-**Location**: `src/modules/products/`, `src/guards/decorators/optional-auth.decorator.ts`
-
-**Done when:** A shopper can browse active catalog without `view_all_products`; inactive items stay operator-only; mutations remain `manage_products`.
-
-#### [ ] Real Email and Notification Providers
-
-**What**: Integrate real email delivery gateways (SendGrid/Resend) behind the existing notification gateway port.
-
-**Scope**:
-
-- [ ] Implement Resend or SendGrid secondary adapters for the notification gateway port.
-- [ ] Build BullMQ queues to handle outbound email sending asynchronously with retry policies.
-- [ ] Wire up order confirmations, password resets, and shipping updates to trigger real emails.
-
-**Location**: `src/modules/notifications/secondary-adapters/mail/`
-
-#### [ ] Automated Abandoned Cart Recovery & Shipping Notification Engine
-
-**What**: Implement background job schedulers that scan for inactive carts and dispatch recovery emails.
-
-**Scope**:
-
-- [ ] Implement a BullMQ scheduler job scanning inactive carts (e.g. 12+ hours).
-- [ ] Generate recovery email templates with single-click checkout restoration links.
-- [ ] Dispatch real-time WebSocket events and emails when order shipping status changes.
-
-**Location**: `src/modules/carts/primary-adapters/jobs/`
-
-#### [ ] Outbound Webhook Subscription System
-
-**What**: Build a secure webhook subscription framework that allows external merchant applications to receive real-time order and payment event payloads.
-
-**Scope**:
-
-- [ ] Create `WebhookSubscription` aggregate: `id`, `targetUrl`, `secret`, `events` (e.g. `order.created`, `payment.captured`), `isActive`, `createdAt`.
-- [ ] Implement admin CRUD endpoints under RBAC.
-- [ ] Build BullMQ webhook delivery queue signing payloads with HMAC-SHA256 signatures in headers.
-- [ ] Maintain `WebhookDeliveryLog` table recording delivery status, HTTP status codes, and latencies.
-
-**Location**: `src/modules/webhooks/`
-
----
-
-### Phase 17b: Real Stripe SDK Integration & Webhook Idempotency [P1]
-
-#### [ ] Real Stripe Integration & Webhook Idempotency
-
-**What**: Replace mock payment gateway with production Stripe SDK integration and explicit webhook event deduplication.
-_(Note: End-to-end commercial loop and WebSocket notifications function with the built-in mock payment adapter; Phase 17b provides production payment gateway hardening)._
-
-**Scope**:
-
-- [ ] Implement Stripe SDK secondary adapter for `PaymentIntent` creation, capture, and refunds.
-- [ ] Implement signed Stripe webhook controller verifying `stripe-signature` header.
-- [ ] **Stripe Webhook Idempotency**: Persist processed `event.id` values to Redis/DB with TTL to prevent duplicate processing of replayed webhook events.
-
-**Location**: `src/modules/payments/secondary-adapters/stripe/`
-
----
-
-### Phase 17c: End-to-End Storefront Commercial Loop (`ecommerce-store-web`) [P1]
-
-#### [ ] Commercial Loop Verification & Cross-Repo Push
-
-**What**: Connect customer checkout on `ecommerce-store-web` to the API SAGA and push live WebSocket notifications to `ecommerce-admin-dashboard`.
-
-**Scope**:
-
-- [ ] Document and verify the 4-step cross-repo loop:
-  1. Customer adds item to cart and executes checkout on Storefront (`ecommerce-store-web`).
-  2. API locks inventory and executes SAGA orchestration with BullMQ.
-  3. API WebSocket gateway broadcasts `orders.created` event.
-  4. Admin Dashboard (`ecommerce-admin-dashboard`) displays real-time toast and updates order table live.
-- [ ] Add cross-repo integration runbook: `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`.
-
-**Location**: `src/modules/orders/`, `src/modules/notifications/`, `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`
-
----
-
-### Phase 17d: Analytics Attention & Operational Facts [P2]
-
-#### [ ] Operational Pulse & Inventory Sell-Through Facts
-
-**What**: Enrich read-path analytics queries with operational signals (failed checkout visibility, payment mix, and inventory velocity) without domain forecasting or artificial SLA models.
-
-**Trigger**: Parked after Phase 17b (real Stripe payments) and Phase 17c (live storefront traffic) when failed payment volume and inventory sell-through are real.
-
-**Scope**:
-
-- [ ] **Attention Policy**: Add `payment_failed` to `ATTENTION_ORDER_STATUSES`. Expose raw operational timestamps (`oldestCreatedAt`, `oldestUpdatedAt`) on attention items for truthful order age visibility.
-- [ ] **Overview Period Payment Mix**: Add `failedPaymentCount` and `pendingPaymentCount` to the overview KPI snapshot using an index on `(status, created_at)`.
-- [ ] **Inventory Alert Facts**: Add `unitsSold7d` (aggregate from `order_items` across confirmed/processing/shipped/delivered orders) and expose `reservedQuantity` (already stored on `inventory`) on the low-stock alerts response.
+- Add `payment_failed` to attention statuses; expose oldest timestamps.
+- Overview KPIs: failed/pending payment counts.
+- Low-stock alerts: `unitsSold7d`, expose `reservedQuantity`.
 
 **Location**: `src/modules/analytics/`
 
 ---
 
-### Phase 17e: Money & Currency Domain Alignment [P1]
+## Phase 24: Conditional Enterprise & Infrastructure Evolution `[P2]`
 
-> **MVP foundation**: Cart lines snapshot ISO 4217 `currency` from the product ACL at add time; carts reject mixed currencies; `CartResponseDto` / presentation expose cart + line `currency` so all consuming clients receive explicit monetary data without guessing.
-
-#### [ ] Align Cart/Order Lines on Shared-Kernel `Money`
-
-**What**: Replace raw `price: number` + sibling `currency: string` on cart (and eventually product write models) with the existing `Money` value object already used by orders/payments.
-
-**Why**: Architecture docs list `Money` in the Shared Kernel. Products and carts still use parallel primitives; orders default `Money.from(amount)` to USD. That drifts pricing truth across bounded contexts.
-
-**Scope**:
-
-- [ ] Cart `CartItem` stores unit price as `Money` (amount + currency) instead of separate fields.
-- [ ] Checkout / order factory maps cart line `Money` into order line `Money` without inventing USD defaults.
-- [ ] Product write path optionally adopts `Money` (or keeps price+currency DTO with explicit mapping) so ACL `ProductData.currency` stays truthful.
-- [ ] OpenAPI remains amount + currency fields (DTO mapping), not a nested Money schema unless clients need it.
-
-**Location**: `src/shared-kernel/domain/value-objects/money.ts`, `src/modules/carts/`, `src/modules/orders/`, `src/modules/products/`
-
-#### [ ] Multi-Currency Catalog & FX (Production)
-
-**What**: Support more than one catalog currency with explicit FX policy.
-
-**Trigger**: Only when the business domain requires non-USD (or multi-market) pricing. Client applications must never perform FX conversion.
-
-**Scope**:
-
-- [ ] Store-level default currency configuration (domain/config port, not client-side assumptions).
-- [ ] Cart remains single-currency per basket (already enforced); convert or reject at add-item according to policy ADR.
-- [ ] Document FX source (provider adapter), rounding, and settlement currency for Stripe.
-- [ ] ADR for money representation (major units vs minor units / cents) before changing persisted types.
-
-**Location**: `docs/architecture/adr/`, `src/modules/carts/`, `src/modules/payments/`
-
----
-
-## 🌐 Phase 18: Conditional Enterprise & Infrastructure Evolution
-
-> **Goal**: Optional enterprise capabilities and infrastructure: only when product or operational requirements justify them. Message broker adapters build on Phase 15 outbox (outbox = durable handoff; broker = cross-process transport when needed).
-
----
+> **Goal**: Former Phase 18. Only when product/ops requirements justify it. Builds on Phase 19 outbox.
 
 ### [ ] Message Broker Adapter (Kafka or RabbitMQ)
 
-**What**: Broker adapter for cross-process event streaming when the outbox processor needs external transport. Builds on Phase 15 transactional outbox: the outbox remains the durable handoff from DB writes; the broker is the transport layer when justified.
+**What**: Broker transport for outbox processor; consumer groups; DLX; schema versioning.
 
-**Trigger**: Implement only when cross-process throughput, independent consumer scaling, durability, or organizational boundaries require a dedicated broker.
-
-**Scope**:
-
-- [ ] Implement broker adapter implementing `DomainEventPublisher` port.
-- [ ] Enable consumer group scaling, dead-letter exchanges, and schema versioning.
-
-**New documentation**:
-
-- [ ] `docs/integration/MESSAGE-BROKER-PATTERNS.md`
+**New documentation**: `docs/integration/MESSAGE-BROKER-PATTERNS.md`
 
 **Location**: `src/infrastructure/events/broker/`
 
@@ -738,14 +451,7 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 
 ### [ ] Enterprise SaaS Readiness (Multi-Tenancy, Audit Log & Data Exchange)
 
-**What**: Multi-merchant SaaS scaling, user permission overrides, immutable admin audit trails, and bulk CSV/Excel import/export.
-
-**Scope**:
-
-- [ ] Implement schema-per-tenant or row-level tenant data isolation.
-- [ ] Implement user-level permission overrides merging role permissions with explicit user exceptions.
-- [ ] Implement append-only `AuditLog` entity recording sensitive admin actions.
-- [ ] Build background CSV/Excel import/export processors with dry-run support.
+**What**: Tenant isolation; user permission overrides (if not already sufficient); append-only audit log; CSV/Excel import/export.
 
 **Location**: `src/infrastructure/database/multi-tenancy/`, `src/modules/audit/`, `src/modules/data-exchange/`
 
@@ -753,18 +459,9 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 
 ### [ ] Kubernetes Deployment Configuration & Zero-Downtime Rollouts
 
-**What**: Package the API monolith using production-grade Kubernetes resource manifests and Canary deployment rollouts.
+**What**: Deployments, Services, Ingress, HPA; canary with SLO rollback.
 
-**Trigger**: Implement only when deployment needs pod orchestration, HPA, or multi-region rollout beyond Docker + managed DB/Redis + load balancer.
-
-**Scope**:
-
-- [ ] Write Pod Deployments, Service routes, Ingress gateways, and HPA templates.
-- [ ] Configure Canary routing configurations in Kubernetes Ingress controllers with automated SLO rollback.
-
-**New documentation**:
-
-- [ ] `docs/infrastructure/CONTAINER-ORCHESTRATION.md`
+**New documentation**: `docs/infrastructure/CONTAINER-ORCHESTRATION.md`
 
 **Location**: `k8s/`, `docs/infrastructure/`
 
@@ -772,18 +469,15 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 
 ### [ ] Backup Encryption & Off-Site Cloud Storage
 
-**What**: Encrypt database backup dumps and automate off-site storage to cloud object stores for disaster recovery.
+**What**: GPG-encrypt dumps; S3/GCS upload + retention.
 
-**Scope**:
-
-- [ ] Wrap `db-backup.js` with GPG asymmetric encryption.
-- [ ] Automate upload of encrypted backups to cloud object stores (AWS S3 / GCS) with retention policies.
+**Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
 
 ---
 
-## 🛠️ Engineering Platform & Tooling Backlog
+## Engineering Platform & Tooling Backlog
 
-> Future tooling only: completed CI/CD and supply-chain work lives in Phases 10 and 12b.
+> Future tooling only. Items moved into Phase **15** (Action SHA pins, job timeouts, redis chaos `forceExit`) are tracked there - do not duplicate as pending here once Phase 15 closes them.
 
 - [ ] **Dependency upgrade policy**: `docs/security/DEPENDENCY-UPGRADE-POLICY.md`.
 - [/] **Automated architecture linting**: extend `npm run test:arch` with dependency-cruiser and additional layer rules.
@@ -791,16 +485,13 @@ _(Note: End-to-end commercial loop and WebSocket notifications function with the
 - [ ] **Living architecture dependency graphs**: auto-generate directional dependency maps in CI.
 - [ ] **Module architecture scorecards**: per-bounded-context health metrics (entities, repos, events, tests).
 - [ ] **ADR validation in CI**: require linked ADR when core architectural policies change.
-- [ ] **Pin GitHub Actions to full commit SHAs**: replace mutable `@vN` tags in `.github/workflows/ci.yml` (and composite actions) with verified full-length SHAs + release-version comments. Dedicated hardening PR across all jobs: do not mix into feature work.
-- [ ] **Bounded CI job timeouts**: add `timeout-minutes` to long-running jobs (especially `redis-chaos-tests`, integration, e2e) so hung runners fail closed instead of burning minutes.
-- [ ] **Redis chaos: drop Jest `forceExit`**: after open-handle cleanup is proven (`detectOpenHandles`, quit/disconnect Testcontainers clients), remove `forceExit` from `test/integration/redis/jest-redis-chaos.json` so leaked Redis handles surface again.
 - [ ] **Modularize CONVENTIONS.md**: split when file exceeds ~500-700 lines.
 - [ ] **Property-based domain testing**: evaluate `fast-check` for value-object validation.
 - [ ] **Mutation testing**: evaluate Stryker on domain layer.
 
 ---
 
-## ❌ Skipped (Premature)
+## Skipped (Premature)
 
 | Task                        | Reason                                                                                                                                                                                        | Reconsider When                                                                                                                  |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |

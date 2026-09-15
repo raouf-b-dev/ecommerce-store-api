@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { MustChangePasswordGuard } from './must-change-password.guard';
 import { CredentialRepository } from '../modules/authentication/core/domain/repositories/credential.repository';
@@ -76,7 +75,13 @@ describe('MustChangePasswordGuard', () => {
 
     await expect(
       guard.canActivate(createMockExecutionContext(request)),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'MUST_CHANGE_PASSWORD',
+        error: 'MUST_CHANGE_PASSWORD',
+        message: 'Password change required before accessing this resource',
+      }),
+    });
   });
 
   it('blocks domain routes when credential is missing and the claim is set', async () => {
@@ -93,7 +98,11 @@ describe('MustChangePasswordGuard', () => {
 
     await expect(
       guard.canActivate(createMockExecutionContext(request)),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'MUST_CHANGE_PASSWORD',
+      }),
+    });
   });
 
   it('blocks domain routes when the claim is set and the credential confirms it', async () => {
@@ -114,7 +123,12 @@ describe('MustChangePasswordGuard', () => {
 
     await expect(
       guard.canActivate(createMockExecutionContext(request)),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'MUST_CHANGE_PASSWORD',
+        error: 'MUST_CHANGE_PASSWORD',
+      }),
+    });
     expect(credentialRepository.findByUserId).toHaveBeenCalledWith(1);
   });
 
@@ -169,7 +183,11 @@ describe('MustChangePasswordGuard', () => {
 
     await expect(
       guard.canActivate(createMockExecutionContext(request)),
-    ).rejects.toThrow(ForbiddenException);
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'MUST_CHANGE_PASSWORD',
+      }),
+    });
     expect(credentialRepository.findByUserId).toHaveBeenCalledWith(42);
   });
 });
