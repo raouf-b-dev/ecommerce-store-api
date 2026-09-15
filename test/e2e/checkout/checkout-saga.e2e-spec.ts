@@ -30,6 +30,7 @@ describe('Checkout SAGA (e2e)', () => {
   let app: INestApplication;
   let moduleRef: TestingModule;
   let http: E2eHttpClient;
+  let admin: AuthSession;
   let customer: AuthSession;
   let happyProduct: E2eCatalogProduct;
   let failProduct: E2eCatalogProduct;
@@ -40,7 +41,7 @@ describe('Checkout SAGA (e2e)', () => {
     moduleRef = context.moduleRef;
     http = E2eTestAppHelper.getHttp(app);
 
-    const admin = await E2eCatalogHelper.seedAdminSession(moduleRef, http);
+    admin = await E2eCatalogHelper.seedAdminSession(moduleRef, http);
     happyProduct = await E2eCatalogHelper.createProductWithStock(
       moduleRef,
       http,
@@ -77,6 +78,7 @@ describe('Checkout SAGA (e2e)', () => {
   it('completes purchase, confirms stock, and returns CQRS userName plus sku', async () => {
     const before = await E2eInventoryHelper.getProductStock(
       http,
+      admin.accessToken,
       happyProduct.id,
     );
     expect(before).toEqual({
@@ -97,7 +99,11 @@ describe('Checkout SAGA (e2e)', () => {
       orderId,
     );
     expect(
-      await E2eInventoryHelper.getProductStock(http, happyProduct.id),
+      await E2eInventoryHelper.getProductStock(
+        http,
+        admin.accessToken,
+        happyProduct.id,
+      ),
     ).toEqual({
       availableQuantity: 0,
       reservedQuantity: STARTING_STOCK,
@@ -140,6 +146,7 @@ describe('Checkout SAGA (e2e)', () => {
 
     await E2eInventoryHelper.waitForProductStock(
       http,
+      admin.accessToken,
       happyProduct.id,
       { availableQuantity: 0, reservedQuantity: 0 },
       'reservation confirmed after payment success',
@@ -149,6 +156,7 @@ describe('Checkout SAGA (e2e)', () => {
   it('marks the order payment_failed and restores available stock', async () => {
     const before = await E2eInventoryHelper.getProductStock(
       http,
+      admin.accessToken,
       failProduct.id,
     );
     expect(before).toEqual({
@@ -169,7 +177,11 @@ describe('Checkout SAGA (e2e)', () => {
       orderId,
     );
     expect(
-      await E2eInventoryHelper.getProductStock(http, failProduct.id),
+      await E2eInventoryHelper.getProductStock(
+        http,
+        admin.accessToken,
+        failProduct.id,
+      ),
     ).toEqual({
       availableQuantity: 0,
       reservedQuantity: STARTING_STOCK,
@@ -194,6 +206,7 @@ describe('Checkout SAGA (e2e)', () => {
 
     await E2eInventoryHelper.waitForProductStock(
       http,
+      admin.accessToken,
       failProduct.id,
       { availableQuantity: STARTING_STOCK, reservedQuantity: 0 },
       'stock released after payment failure',
