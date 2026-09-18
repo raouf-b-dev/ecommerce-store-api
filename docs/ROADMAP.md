@@ -31,31 +31,31 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 > Full implementation detail has been collapsed for readability. The history and decisions are preserved in git.
 
-| Phase   | Name                                        | Status  | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Location                                                                                                                                               |
-| ------- | ------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **0**   | Foundation                                  | Done    | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                                                                                                                                                                  | `src/modules/`, `src/infrastructure/`                                                                                                                  |
-| **1**   | ACL Gateway & SAGA                          | Done    | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                                                                                                                                                               | `src/modules/orders/`, `src/modules/carts/`                                                                                                            |
-| **2**   | Result Pattern & Idempotency                | Done    | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis `SET NX` store for checkout protection · idempotency **fail-closed** on Redis errors (HTTP 503)                                                                                                                                                                                                                                                                                                                             | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                                                                                |
-| **3**   | Decorator-based Caching                     | Done    | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                                                                                                                                     | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                                              |
-| **4**   | Test Suite Foundation                       | Done    | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                                                                                                                                                           | `src/modules/*/`, `src/testing/`, `test/architecture/`                                                                                                 |
-| **5**   | Code Quality (v0.2.0)                       | Done    | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                                                                                                                                      | `data-source.ts`, `package.json`                                                                                                                       |
-| **6**   | Deployment Blockers                         | Done    | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                                                                                                                          | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                                                    |
-| **7**   | Security & Authentication                   | Done    | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                                                                                                                                       | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                                                |
-| **8**   | Observability & SaaS                        | Done    | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                                                                                                                                                       | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md`                                                         |
-| **9**   | Local DB Seeding                            | Done    | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                                                                                                                                   | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                                                |
-| **10**  | Security Hardening Phase 2                  | Done    | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                                                                                                                                                                | `.github/`, `docs/security/`, `src/infrastructure/`                                                                                                    |
-| **11**  | Data Integrity & Concurrency                | Done    | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · Redis-backed cart TTL (30 days) with RedisJSON storage & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization                                                                                                          | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                                                                         |
-| **12**  | CQRS Read Path                              | Done    | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                                                                                                                                      | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/`                             |
-| **12b** | CI/CD Pipeline (GitHub Actions)             | Done    | Fan-out/fan-in CI · CI Status Check aggregator · blocking `npm audit` · PR dependency review · Docker validate (PR) · GHCR publish · smoke · liveness/readiness                                                                                                                                                                                                                                                                                                                                                | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`                                  |
-| **13**  | Production Confidence & Integration Testing | Done    | Typed mocks · domain GWT specs · real-DB repos · concurrent checkout lock proof · E2E auth/IDOR/SAGA/idempotency/cookies                                                                                                                                                                                                                                                                                                                                                                                       | `src/modules/*/`, `src/testing/`, `test/e2e/`, `docs/testing/`                                                                                          |
-| **14**  | Single-Instance Production Gate             | Done    | Baseline migration · Redis cleanup + degradation · probes · backup/restore/smoke · secret rotation docs                                                                                                                                                                                                                                                                                                                                                                                                        | `src/migrations/`, `scripts/`, `docs/infrastructure/`                                                                                                  |
-| **14b** | Forced Credential Rotation                  | Done    | `mustChangePassword` · change-password endpoint · global guard · session revoke                                                                                                                                                                                                                                                                                                                                                                                                                                | `src/modules/authentication/`, `src/guards/`                                                                                                           |
-| **14c** | OpenAPI Truthfulness                        | Done    | `generate:openapi` + `audit:openapi` · handler-aligned DTOs · cookie-first auth docs                                                                                                                                                                                                                                                                                                                                                                                                                           | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                                                           |
-| **14d** | Operator HTTP Gaps                          | Done    | Product activate/deactivate HTTP · assign/replace user role over HTTP                                                                                                                                                                                                                                                                                                                                                                                                                                          | `src/modules/products/`, `src/modules/identity/`                                                                                                       |
-| **14e** | Developer Onboarding (bootstrap slice)      | Done    | `npm run setup` / `setup:down` / `setup:reset` (env → infra wait → migrations → seed). Value matrix, C4 assets, Bruno deferred to **Phase 16**                                                                                                                                                                                                                                                                                                                                                                 | `scripts/setup.js`, `package.json`                                                                                                                     |
-| **14f** | User Detail Address Projection              | Done    | `GET /v1/users/{id}` returns `addresses[]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `src/modules/identity/`                                                                                                                                |
-| **15b** | Shopper HTTP contract                       | Done    | `GET /v1/users/me` · `GET /v1/carts/current` (404 = no cart) · lock public inventory to `view_all_inventory` · `MUST_CHANGE_PASSWORD` code · checkout default-shipping + typed `Retry-After` OpenAPI. **Required before Phase 20.** Detail in git.                                                                                                                                                                                                                                                              | `src/modules/identity/`, `carts/`, `inventory/`, `orders/`, `src/guards/`                                                                              |
-| **17a** | Customer Catalog Read Path (slice)          | Done    | Shopper catalog list/detail via `@OptionalAuth` + `CatalogVisibilityPolicy`. Emails/webhooks/cart recovery deferred to **Phase 21**                                                                                                                                                                                                                                                                                                                                                                            | `src/modules/products/`                                                                                                                                |
+| Phase   | Name                                        | Status | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                      | Location                                                                                                                   |
+| ------- | ------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **0**   | Foundation                                  | Done   | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                                                         | `src/modules/`, `src/infrastructure/`                                                                                      |
+| **1**   | ACL Gateway & SAGA                          | Done   | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                                                      | `src/modules/orders/`, `src/modules/carts/`                                                                                |
+| **2**   | Result Pattern & Idempotency                | Done   | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis `SET NX` store for checkout protection · idempotency **fail-closed** on Redis errors (HTTP 503)                                                                                                                                                                                                                    | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                                                    |
+| **3**   | Decorator-based Caching                     | Done   | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                            | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                  |
+| **4**   | Test Suite Foundation                       | Done   | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                                                  | `src/modules/*/`, `src/testing/`, `test/architecture/`                                                                     |
+| **5**   | Code Quality (v0.2.0)                       | Done   | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                             | `data-source.ts`, `package.json`                                                                                           |
+| **6**   | Deployment Blockers                         | Done   | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                 | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                        |
+| **7**   | Security & Authentication                   | Done   | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                              | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                    |
+| **8**   | Observability & SaaS                        | Done   | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                                              | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md`                             |
+| **9**   | Local DB Seeding                            | Done   | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                          | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                    |
+| **10**  | Security Hardening Phase 2                  | Done   | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                                                       | `.github/`, `docs/security/`, `src/infrastructure/`                                                                        |
+| **11**  | Data Integrity & Concurrency                | Done   | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · Redis-backed cart TTL (30 days) with RedisJSON storage & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                                             |
+| **12**  | CQRS Read Path                              | Done   | Query ports & flat read DTOs (7 modules) · TypeORM JOIN query adapters & mappers · read use case refactor · controller presentation updates · application command contracts · Testcontainers integration specs · `EXPLAIN ANALYZE` index verification · 18/18 architecture boundary rules                                                                                                             | `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/`, `test/integration/`, `docs/testing/` |
+| **12b** | CI/CD Pipeline (GitHub Actions)             | Done   | Fan-out/fan-in CI · CI Status Check aggregator · blocking `npm audit` · PR dependency review · Docker validate (PR) · GHCR publish · smoke · liveness/readiness                                                                                                                                                                                                                                       | `.github/workflows/ci.yml`, `.github/actions/prepare-test-env/`, `scripts/smoke-test.js`, `docs/infrastructure/cicd/`      |
+| **13**  | Production Confidence & Integration Testing | Done   | Typed mocks · domain GWT specs · real-DB repos · concurrent checkout lock proof · E2E auth/IDOR/SAGA/idempotency/cookies                                                                                                                                                                                                                                                                              | `src/modules/*/`, `src/testing/`, `test/e2e/`, `docs/testing/`                                                             |
+| **14**  | Single-Instance Production Gate             | Done   | Baseline migration · Redis cleanup + degradation · probes · backup/restore/smoke · secret rotation docs                                                                                                                                                                                                                                                                                               | `src/migrations/`, `scripts/`, `docs/infrastructure/`                                                                      |
+| **14b** | Forced Credential Rotation                  | Done   | `mustChangePassword` · change-password endpoint · global guard · session revoke                                                                                                                                                                                                                                                                                                                       | `src/modules/authentication/`, `src/guards/`                                                                               |
+| **14c** | OpenAPI Truthfulness                        | Done   | `generate:openapi` + `audit:openapi` · handler-aligned DTOs · cookie-first auth docs                                                                                                                                                                                                                                                                                                                  | `scripts/`, `src/infrastructure/swagger/`, `src/modules/*/primary-adapters/`                                               |
+| **14d** | Operator HTTP Gaps                          | Done   | Product activate/deactivate HTTP · assign/replace user role over HTTP                                                                                                                                                                                                                                                                                                                                 | `src/modules/products/`, `src/modules/identity/`                                                                           |
+| **14e** | Developer Onboarding (bootstrap slice)      | Done   | `npm run setup` / `setup:down` / `setup:reset` (env → infra wait → migrations → seed). Value matrix, C4 assets, Bruno deferred to **Phase 16**                                                                                                                                                                                                                                                        | `scripts/setup.js`, `package.json`                                                                                         |
+| **14f** | User Detail Address Projection              | Done   | `GET /v1/users/{id}` returns `addresses[]`                                                                                                                                                                                                                                                                                                                                                            | `src/modules/identity/`                                                                                                    |
+| **15b** | Shopper HTTP contract                       | Done   | `GET /v1/users/me` · `GET /v1/carts/current` (404 = no cart) · lock public inventory to `view_all_inventory` · `MUST_CHANGE_PASSWORD` code · checkout default-shipping + typed `Retry-After` OpenAPI. Required for checkout-capable HTTP clients. Detail in git.                                                                                                                                      | `src/modules/identity/`, `carts/`, `inventory/`, `orders/`, `src/guards/`                                                  |
+| **17a** | Customer Catalog Read Path (slice)          | Done   | Shopper catalog list/detail via `@OptionalAuth` + `CatalogVisibilityPolicy`. Emails/webhooks/cart recovery deferred to **Phase 21**                                                                                                                                                                                                                                                                   | `src/modules/products/`                                                                                                    |
 
 > **Note**: Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`. Cache role-permission resolution shipped under former Phase 16 tooling and is complete.
 
@@ -69,37 +69,37 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 > - **15b** does not block 16-19; it **is required before Phase 20** (already satisfied).
 > - Catalog GETs (old 17a) are done; remaining notifications work is Phase **21**.
 
-| Phase   | Name                                              | Status | Priority | Target / Focus                                                                                           |
-| ------- | ------------------------------------------------- | ------ | :------: | -------------------------------------------------------------------------------------------------------- |
-| **15**  | Platform Hygiene & Supply-Chain Alignment         | `[ ]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts      |
-| **16**  | Complete Onboarding DX & Architecture Assets      | `[ ]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track                    |
-| **17**  | Money & Currency Domain Alignment                 | `[ ]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe                                                     |
-| **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                              |
-| **19**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                                 |
-| **20**  | Storefront Commercial Loop (`store-web`)          | `[ ]`  |  `[P1]`  | Former 17c - **before** email; works with mock or real Stripe                                            |
-| **21**  | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                           |
-| **22**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                         |
-| **23**  | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                                    |
-| **24**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                                  |
+| Phase  | Name                                              | Status | Priority | Target / Focus                                                                                      |
+| ------ | ------------------------------------------------- | ------ | :------: | --------------------------------------------------------------------------------------------------- |
+| **15** | Platform Hygiene & Supply-Chain Alignment         | `[x]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts |
+| **16** | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track               |
+| **17** | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)   |
+| **18** | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                        |
+| **19** | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                            |
+| **20** | Checkout SAGA & order events                      | `[x]`  |  `[P1]`  | Former 17c - HTTP checkout, BullMQ SAGA, `orders.created` WebSocket                                 |
+| **21** | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                      |
+| **22** | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                    |
+| **23** | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                               |
+| **24** | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                             |
 
 ### Old → New Mapping
 
-| Old item | New phase / track | Rationale |
-| -------- | ----------------- | --------- |
-| Platform hygiene backports | **15** | engines, CI OpenAPI, Action pins, webhook fail-closed |
-| Pin Actions SHAs / `timeout-minutes` / redis chaos `forceExit` (tooling backlog) | **15-B** | Pulled into P0 hygiene |
-| 14e remainder (value matrix, C4, Bruno) | **16** | Finish onboarding showcase |
-| Staging / production-like env (old 14 recommended) | **16** track or **19** | Explicit; not lost |
-| Money VO (old 17e) | **17** | Before real Stripe |
-| Real Stripe (old 17b) | **18** | After Money; mock fail-closed in 15 |
-| Multi-instance (old 15) | **19** | After pricing/payments correctness |
-| Commercial loop (old 17c) | **20** | Before email/webhooks |
-| Email / cart recovery / webhooks (old 17a remainder) | **21** | After commercial loop |
-| Performance (old 16) | **22** | Preserved |
-| Analytics attention (old 17d) | **23** | Gated on traffic |
-| Enterprise / K8s (old 18) | **24** | Preserved |
-| Catalog GETs (old 17a) | **Completed** | Already shipped |
-| Staff-audit shopper contract gaps (GET /me, current cart, inventory ACL, 403 code) | **15b** (done) | Unblocked storefront 9d and commercial loop 20 |
+| Old item                                                                           | New phase / track      | Rationale                                             |
+| ---------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------- |
+| Platform hygiene backports                                                         | **15**                 | engines, CI OpenAPI, Action pins, webhook fail-closed |
+| Pin Actions SHAs / `timeout-minutes` / redis chaos `forceExit` (tooling backlog)   | **15-B**               | Pulled into P0 hygiene                                |
+| 14e remainder (value matrix, C4, Bruno)                                            | **16**                 | Finish onboarding showcase                            |
+| Staging / production-like env (old 14 recommended)                                 | **16** track or **19** | Explicit; not lost                                    |
+| Money VO (old 17e)                                                                 | **17**                 | Before real Stripe                                    |
+| Real Stripe (old 17b)                                                              | **18**                 | After Money; mock fail-closed in 15                   |
+| Multi-instance (old 15)                                                            | **19**                 | After pricing/payments correctness                    |
+| Commercial loop (old 17c)                                                          | **20**                 | Before email/webhooks                                 |
+| Email / cart recovery / webhooks (old 17a remainder)                               | **21**                 | After commercial loop                                 |
+| Performance (old 16)                                                               | **22**                 | Preserved                                             |
+| Analytics attention (old 17d)                                                      | **23**                 | Gated on traffic                                      |
+| Enterprise / K8s (old 18)                                                          | **24**                 | Preserved                                             |
+| Catalog GETs (old 17a)                                                             | **Completed**          | Already shipped                                       |
+| Staff-audit shopper contract gaps (GET /me, current cart, inventory ACL, 403 code) | **15b** (done)         | Shopper HTTP contract for cart/checkout clients       |
 
 ---
 
@@ -107,34 +107,34 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ### Step 1: Single-Instance Production Ship Blockers
 
-| Task / Item                                                                                                                                        | Phase         | Critical Purpose                                                                         |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| [x] IDOR / object-level access control on carts, orders, payments & customer profile                                                               | **10**        | `CallerContext`, ownership validators, `OwnedResourceAccessPolicy`                       |
-| [x] OWASP audit + Dependabot + blocking `npm audit` + PR dependency review                                                                         | **10** / **12b** | Supply-chain gate                                                                     |
-| [x] Production error masking & PII log redaction                                                                                                   | **10**        | Filter + Winston                                                                         |
-| [x] OCC + inventory pessimistic lock + cart TTL                                                                                                    | **11**        | Data integrity                                                                           |
-| [x] CQRS read path + admin analytics                                                                                                               | **12**        | N+1 / dashboard reads                                                                    |
-| [x] Baseline migration · Redis degradation · probes · backup/smoke · secret rotation                                                               | **14**        | First private production instance                                                        |
-| [x] Forced credential rotation                                                                                                                     | **14b**       | Bootstrap password change                                                                |
-| [x] OpenAPI truthfulness tooling                                                                                                                   | **14c**       | Contract honesty                                                                         |
-| [x] Shopper HTTP contract (`/me`, `/carts/current`, inventory ACL, `MUST_CHANGE_PASSWORD`)                                                         | **15b**       | Unblocks storefront 9d and Phase 20                                                      |
+| Task / Item                                                                                | Phase            | Critical Purpose                                                   |
+| ------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------ |
+| [x] IDOR / object-level access control on carts, orders, payments & customer profile       | **10**           | `CallerContext`, ownership validators, `OwnedResourceAccessPolicy` |
+| [x] OWASP audit + Dependabot + blocking `npm audit` + PR dependency review                 | **10** / **12b** | Supply-chain gate                                                  |
+| [x] Production error masking & PII log redaction                                           | **10**           | Filter + Winston                                                   |
+| [x] OCC + inventory pessimistic lock + cart TTL                                            | **11**           | Data integrity                                                     |
+| [x] CQRS read path + admin analytics                                                       | **12**           | N+1 / dashboard reads                                              |
+| [x] Baseline migration · Redis degradation · probes · backup/smoke · secret rotation       | **14**           | First private production instance                                  |
+| [x] Forced credential rotation                                                             | **14b**          | Bootstrap password change                                          |
+| [x] OpenAPI truthfulness tooling                                                           | **14c**          | Contract honesty                                                   |
+| [x] Shopper HTTP contract (`/me`, `/carts/current`, inventory ACL, `MUST_CHANGE_PASSWORD`) | **15b**          | Required for checkout-capable HTTP clients                         |
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                                                         | Phase  | Critical Purpose                                              |
-| --------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------- |
-| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies                                    | **13** | Pre-deploy HTTP confidence                                    |
-| [x] Repository integration + concurrent checkout lock proof                                         | **13** | Real DB + stock race                                          |
+| Task / Item                                                      | Phase  | Critical Purpose           |
+| ---------------------------------------------------------------- | ------ | -------------------------- |
+| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies | **13** | Pre-deploy HTTP confidence |
+| [x] Repository integration + concurrent checkout lock proof      | **13** | Real DB + stock race       |
 
 ### Step 3: Multi-Instance (Before 2+ pods)
 
-| Task / Item                                                          | Phase  | Critical Purpose                                                                     |
-| -------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
-| [ ] Transactional Outbox                                             | **19** | At-least-once events across crashes                                                  |
-| [ ] Singleton jobs & distributed locks                               | **19** | One pod runs singleton schedulers                                                    |
-| [ ] Checkout SAGA timeout & DLQ recovery                             | **19** | Stuck checkout compensation                                                          |
-| [ ] Product search index reconciliation                              | **19** | RedisSearch vs Postgres                                                              |
-| [x] User-scoped adaptive rate limiting                               | **10** | Already shipped                                                                      |
+| Task / Item                              | Phase  | Critical Purpose                    |
+| ---------------------------------------- | ------ | ----------------------------------- |
+| [ ] Transactional Outbox                 | **19** | At-least-once events across crashes |
+| [ ] Singleton jobs & distributed locks   | **19** | One pod runs singleton schedulers   |
+| [ ] Checkout SAGA timeout & DLQ recovery | **19** | Stuck checkout compensation         |
+| [ ] Product search index reconciliation  | **19** | RedisSearch vs Postgres             |
+| [x] User-scoped adaptive rate limiting   | **10** | Already shipped                     |
 
 ---
 
@@ -144,7 +144,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 >
 > **Parallel tracks**: `15-A` through `15-D` may run concurrently.
 
-### [ ] Track 15-A: Node Engines & Migration Script Hygiene
+### [x] Track 15-A: Node Engines & Migration Script Hygiene
 
 **What**: Align package metadata and TypeORM create scripts.
 
@@ -157,7 +157,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-### [ ] Track 15-B: CI Automation Hardening
+### [x] Track 15-B: CI Automation Hardening
 
 **What**: Enforce OpenAPI audit and runner hygiene.
 
@@ -172,7 +172,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-### [ ] Track 15-C: Fail-Closed Stripe Webhook Signature (Mock Era)
+### [x] Track 15-C: Fail-Closed Stripe Webhook Signature (Mock Era)
 
 **What**: `POST /v1/payments/webhooks/stripe` is `@Public()` and `StripeSignatureService.verify()` currently returns `true` always - forgeable in any environment that exposes the route.
 
@@ -187,7 +187,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-### [ ] Track 15-D: Docs Cross-Pollination & CQRS Status Refresh
+### [x] Track 15-D: Docs Cross-Pollination & CQRS Status Refresh
 
 **What**: Import useful CRM docs; fix stale CQRS current-status text.
 
@@ -204,7 +204,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 > **Goal**: Finish former Phase 14e remainder so the repo is a showcase reference. Bootstrap (`npm run setup`) is already done.
 
-### [ ] Architecture Value Matrix & "Why Choose This Engine?" in README
+### [x] Architecture Value Matrix & "Why Choose This Engine?" in README
 
 **What**: Decision matrix vs tutorials / Medusa / SaaS monoliths; elevator pitch for CTOs and full-stack engineers.
 
@@ -212,7 +212,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-### [ ] Visual Architecture Diagrams & Media Assets
+### [x] Visual Architecture Diagrams & Media Assets
 
 **What**: C4 context/container SVG; annotated SAGA checkout sequence; Swagger overview screenshot; optional short walkthrough GIF.
 
@@ -220,7 +220,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-### [ ] Interactive API Playground & Client Collection
+### [x] Interactive API Playground & Client Collection
 
 **What**: Bruno and/or Postman collections under `docs/data/collections/` with token refresh + admin login env; enhance Swagger examples.
 
@@ -250,9 +250,9 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 >
 > **MVP foundation already**: cart lines snapshot ISO 4217 currency; mixed currencies rejected; DTOs expose currency.
 >
-> **Storefront note**: shipping/tax/discount line items and structured shipping address for honest totals UI belong here (not in 15b). Until this ships, storefront must not invent "Free" shipping.
+> **HTTP client note**: shipping/tax/discount line items and structured shipping address for honest totals belong here (not in 15b). Until this ships, clients must not invent "Free" shipping without API authority.
 
-### [ ] Align Cart/Order Lines on Shared-Kernel `Money`
+### [x] Align Cart/Order Lines on Shared-Kernel `Money`
 
 **What**: Replace raw `price: number` + sibling `currency` on cart (and eventually product write models) with shared-kernel `Money`.
 
@@ -294,7 +294,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 - Stripe SDK secondary adapter for PaymentIntent create/capture/refund.
 - Resolve TODO in `stripe-signature.service.ts` with real HMAC verification using webhook secret.
 - Persist processed Stripe `event.id` (Redis/DB + TTL) to ignore replays.
-- Commercial loop (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
+- Checkout SAGA (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
 
 **Location**: `src/modules/payments/secondary-adapters/stripe/`, `src/modules/payments/secondary-adapters/services/`
 
@@ -336,26 +336,26 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ---
 
-## Phase 20: Storefront Commercial Loop (`ecommerce-store-web`) `[P1]`
+## Phase 20: Checkout SAGA & Order Events `[P1]`
 
-> **Goal**: Former 17c. Verify checkout → SAGA → admin WebSocket toast. Placed **before** email/webhooks; works with mock or real Stripe.
+> **Goal**: Former 17c. Stable HTTP checkout command, BullMQ SAGA, and `orders.created` WebSocket broadcast. Placed **before** email/webhooks; works with mock or real Stripe.
 >
-> **Hard prerequisite:** Phase **15b** (done - storefront can call `GET /me`, `GET /carts/current`, shopper inventory check, and rely on `MUST_CHANGE_PASSWORD` code).
+> **Hard prerequisite:** Shopper HTTP contract **15b** (done).
 >
 > **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens, remove unused body `idempotencyKey` `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
 
-### [ ] Commercial Loop Verification & Cross-Repo Push
+### [x] Checkout SAGA & real-time order events
 
-**What**: Document and verify:
+**What**: Verify at the API boundary:
 
-1. Customer cart + checkout on `ecommerce-store-web`.
-2. API inventory lock + BullMQ SAGA.
-3. WebSocket `orders.created` broadcast.
-4. Admin dashboard live toast / order table update.
+1. `POST /v1/orders/checkout` returns 201 + `orderId`; idempotency and SAGA jobs run.
+2. Inventory lock, mock payment, compensation on failure.
+3. `GET /v1/orders/{id}` reflects lifecycle states through `confirmed` / `payment_failed` / `cancelled`.
+4. WebSocket `orders.created` emitted on successful order creation.
 
-**New documentation**: `docs/integration/COMMERCIAL-LOOP-INTEGRATION.md`
+**Client verification**: companion HTTP clients document their own end-to-end checks; this repository does not own app walkthroughs.
 
-**Location**: `src/modules/orders/`, `src/modules/notifications/`, related frontends
+**Location**: `src/modules/orders/`, `src/modules/notifications/`
 
 ---
 

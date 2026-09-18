@@ -89,11 +89,11 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 ### Payment Gateway (Mock Adapter)
 
-Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook signature verification are not wired yet. The architecture is ready for a real provider when you add one.
+Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook HMAC verification are Phase 18. In the mock era, `POST /v1/payments/webhooks/stripe` is fail-closed: signatures must verify, except a documented `NODE_ENV=test` bypass used by e2e helpers.
 
 - **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
 - **Webhooks**: Handler and job path exist; signature verification is stubbed for testing
-- **Local storefront UX**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -304,11 +304,9 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 `npm run db:seed` loads local accounts and a catalog. Blocked when `NODE_ENV=production`. Idempotent on reruns.
 
-- **Admin**: `admin@store.local` / `Admin123!`
-- **Customer**: `customer@store.local` / `Customer123!`
-- **Catalog**: 15 products across categories with varied stock levels
+Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING.md).
 
-**Location**: `scripts/seed.ts`, module seed use cases · **Deep-dive**: [SEEDING.md](development/SEEDING.md)
+**Location**: `scripts/seed.ts`, module seed use cases
 
 ---
 
