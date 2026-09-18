@@ -11,6 +11,7 @@ export interface OrderItemProps {
   imageUrl?: string | null;
   unitPrice: number;
   quantity: number;
+  currency?: string;
 }
 
 export class OrderItem implements IOrderItem {
@@ -36,9 +37,13 @@ export class OrderItem implements IOrderItem {
     this._productName = props.productName.trim();
     this._sku = props.sku?.trim() || null;
     this._imageUrl = props.imageUrl?.trim() || null;
-    this._unitPrice = Money.from(props.unitPrice);
+    this._unitPrice = Money.from(props.unitPrice, props.currency ?? 'USD');
     this._quantity = Quantity.from(props.quantity);
-    this._lineTotal = this._unitPrice.multiply(this._quantity.value);
+    const lineTotalResult = this._unitPrice.multiply(this._quantity.value);
+    if (lineTotalResult.isFailure) {
+      throw lineTotalResult.error;
+    }
+    this._lineTotal = lineTotalResult.value;
   }
 
   get id(): number | null {
@@ -71,6 +76,14 @@ export class OrderItem implements IOrderItem {
 
   get lineTotal(): number {
     return this._lineTotal.value;
+  }
+
+  get currency(): string {
+    return this._unitPrice.currency;
+  }
+
+  getLineTotalMoney(): Money {
+    return this._lineTotal;
   }
 
   // For persistence/serialization

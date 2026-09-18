@@ -44,6 +44,8 @@ describe('CartQueryMapper', () => {
         },
       ],
       itemCount: 3,
+      subtotal: 130,
+      shippingCost: 0,
       totalAmount: 130,
       currency: 'USD',
       createdAt: '2024-01-01T00:00:00.000Z',

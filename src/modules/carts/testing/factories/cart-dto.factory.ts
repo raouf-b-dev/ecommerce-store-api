@@ -60,6 +60,8 @@ export class CartDtoTestFactory {
         },
       ],
       itemCount: 2,
+      subtotal: 179.98,
+      shippingCost: 0,
       totalAmount: 179.98,
       currency: 'USD',
       createdAt: '2024-01-01T00:00:00.000Z',

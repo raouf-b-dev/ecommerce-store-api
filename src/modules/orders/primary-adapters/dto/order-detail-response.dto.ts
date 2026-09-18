@@ -63,6 +63,19 @@ export class OrderDetailResponseDto {
   @ApiProperty({ type: [OrderItemDetailResponseDto] })
   items!: OrderItemDetailResponseDto[];
 
+  @ApiProperty({
+    example: 199.99,
+    description: 'Order subtotal (sum of line items)',
+  })
+  subtotal!: number;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Shipping cost. MVP policy: explicit zero until a shipping engine ships.',
+  })
+  shippingCost!: number;
+
   @ApiProperty({ example: 224.94, description: 'Order total amount' })
   totalAmount!: number;
 

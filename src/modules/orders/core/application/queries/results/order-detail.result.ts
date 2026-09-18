@@ -9,6 +9,8 @@ export interface OrderDetailDTO {
   status: string;
   shippingAddress: string;
   items: OrderItemDetailDTO[];
+  subtotal: number;
+  shippingCost: number;
   totalAmount: number;
   totalPrice: number;
   currency: string;

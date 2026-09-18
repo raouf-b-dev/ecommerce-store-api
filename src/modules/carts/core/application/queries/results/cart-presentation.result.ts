@@ -14,6 +14,8 @@ export interface CartPresentationDTO {
   userId: number;
   items: CartItemPresentationDTO[];
   itemCount: number;
+  subtotal: number;
+  shippingCost: number;
   totalAmount: number;
   currency: string | null;
   createdAt: string;

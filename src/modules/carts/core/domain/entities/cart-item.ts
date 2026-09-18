@@ -2,6 +2,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Quantity } from '../../../../../shared-kernel/domain/value-objects/quantity';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { ICartItem } from '../interfaces/cart-item.interface';
 
 export interface CartItemProps {
@@ -18,8 +19,7 @@ export class CartItem implements ICartItem {
   private _id: number | null;
   private readonly _productId: number;
   private _productName: string;
-  private _price: number;
-  private readonly _currency: string;
+  private _unitPrice: Money;
   private _quantity: Quantity;
   private _imageUrl: string | null;
 
@@ -30,8 +30,7 @@ export class CartItem implements ICartItem {
     this._id = props.id || null;
     this._productId = props.productId;
     this._productName = props.productName.trim();
-    this._price = this.roundPrice(props.price);
-    this._currency = props.currency.trim().toUpperCase();
+    this._unitPrice = new Money(props.price, props.currency);
     this._quantity = Quantity.from(props.quantity);
     this._imageUrl = props.imageUrl?.trim() || null;
   }
@@ -62,10 +61,6 @@ export class CartItem implements ICartItem {
     return Result.success(undefined);
   }
 
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
-  }
-
   private createQuantity(value: number): Result<Quantity, DomainError> {
     try {
       return Result.success(Quantity.from(value));
@@ -90,11 +85,11 @@ export class CartItem implements ICartItem {
   }
 
   get price(): number {
-    return this._price;
+    return this._unitPrice.amount;
   }
 
   get currency(): string {
-    return this._currency;
+    return this._unitPrice.currency;
   }
 
   get quantity(): number {
@@ -106,7 +101,11 @@ export class CartItem implements ICartItem {
   }
 
   get subtotal(): number {
-    return this.roundPrice(this._price * this._quantity.value);
+    const lineTotal = this._unitPrice.multiply(this._quantity.value);
+    if (lineTotal.isFailure) {
+      throw lineTotal.error;
+    }
+    return lineTotal.value.amount;
   }
 
   updateQuantity(quantityNumber: number): Result<void, DomainError> {
@@ -148,11 +147,15 @@ export class CartItem implements ICartItem {
   }
 
   updatePrice(price: number): Result<void, DomainError> {
-    if (price < 0) {
-      return ErrorFactory.DomainError('Price cannot be negative');
+    try {
+      this._unitPrice = new Money(price, this._unitPrice.currency);
+      return Result.success(undefined);
+    } catch (error) {
+      if (error instanceof DomainError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.DomainError('Invalid price value');
     }
-    this._price = this.roundPrice(price);
-    return Result.success(undefined);
   }
 
   updateProductInfo(
@@ -168,7 +171,14 @@ export class CartItem implements ICartItem {
     }
 
     this._productName = name.trim();
-    this._price = this.roundPrice(price);
+    try {
+      this._unitPrice = new Money(price, this._unitPrice.currency);
+    } catch (error) {
+      if (error instanceof DomainError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.DomainError('Invalid price value');
+    }
     if (imageUrl !== undefined) {
       this._imageUrl = imageUrl?.trim() || null;
     }
@@ -185,8 +195,8 @@ export class CartItem implements ICartItem {
       id: this._id,
       productId: this._productId,
       productName: this._productName,
-      price: this._price,
-      currency: this._currency,
+      price: this._unitPrice.amount,
+      currency: this._unitPrice.currency,
       quantity: this._quantity.value,
       subtotal: this.subtotal,
       imageUrl: this._imageUrl,
@@ -198,8 +208,8 @@ export class CartItem implements ICartItem {
       id: this._id,
       productId: this._productId,
       productName: this._productName,
-      price: this._price,
-      currency: this._currency,
+      price: this._unitPrice.amount,
+      currency: this._unitPrice.currency,
       quantity: this._quantity.value,
       imageUrl: this._imageUrl,
     };

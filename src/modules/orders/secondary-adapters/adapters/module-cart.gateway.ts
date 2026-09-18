@@ -94,6 +94,7 @@ export class ModuleCartGateway implements CartGateway {
       productName: string;
       price: number;
       quantity: number;
+      currency?: string;
     }>;
   }): CheckoutCartInfo {
     return {
@@ -104,6 +105,7 @@ export class ModuleCartGateway implements CartGateway {
         productName: item.productName,
         price: item.price,
         quantity: item.quantity,
+        currency: (item.currency || 'USD').trim().toUpperCase(),
       })),
     };
   }
