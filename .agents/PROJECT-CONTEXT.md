@@ -108,4 +108,4 @@ The application is a Modular Monolith with **11 modules** under `src/modules/`. 
 
 ## Next up
 
-See [`docs/ROADMAP.md`](../docs/ROADMAP.md) **Next up**. Live queue: Phase **15** (platform hygiene `15-A`...`15-D`), then **16**. **15b** is done and is required before Phase **20**. Do not renumber 15-24.
+See [`docs/ROADMAP.md`](../docs/ROADMAP.md) **Next up**. Live queue: Phase **18** (real Stripe), then **19** (multi-instance; required before 2+ pods). Phases **15–17** and **20** are done. Phase **16** optional staging deploy is deferred. Do not renumber 15-24.

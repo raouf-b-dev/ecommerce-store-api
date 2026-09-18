@@ -21,9 +21,9 @@
 
 Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are stable IDs - do not renumber them.
 
-1. **Phase 15** - Platform hygiene & supply-chain (`15-A`...`15-D` may run in parallel).
-2. **Phase 16** - Onboarding DX remainder (value matrix, C4, Bruno).
-3. Then **17 → 24** in the pending table. Finish **19** before 2+ application instances. **15b** is done and is required before **20**.
+1. **Phase 18** - Real Stripe SDK and webhook idempotency (Money alignment in **17** is done).
+2. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
+3. Then **21 → 24** in the pending table. Phases **15–17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
 
 ---
 
@@ -63,10 +63,10 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phase 14 ship gate and **15b** are complete. Pick the next unchecked phase top-to-bottom. Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15–17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**18**). Complete **Phase 19** before deploying to 2+ application instances.
 >
-> - **Parallel**: Tracks inside Phase **15** (`15-A`...`15-D`) may run concurrently.
-> - **15b** does not block 16-19; it **is required before Phase 20** (already satisfied).
+> - **15b** is done and was required before Phase **20** (satisfied).
+> - Phase **16** optional staging deploy is deferred; it does not block **18**.
 > - Catalog GETs (old 17a) are done; remaining notifications work is Phase **21**.
 
 | Phase  | Name                                              | Status | Priority | Target / Focus                                                                                      |
@@ -203,6 +203,8 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 ## Phase 16: Complete Developer Onboarding & Architecture Assets `[P0]`
 
 > **Goal**: Finish former Phase 14e remainder so the repo is a showcase reference. Bootstrap (`npm run setup`) is already done.
+>
+> **Status**: Core deliverables are complete. The recommended staging track below is optional and may move to Phase **19** if only needed before multi-instance demos.
 
 ### [x] Architecture Value Matrix & "Why Choose This Engine?" in README
 
