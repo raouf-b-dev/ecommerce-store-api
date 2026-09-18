@@ -52,12 +52,17 @@ export class CartQueryMapper {
         ? firstRow.cartUpdatedAt.toISOString()
         : String(firstRow.cartUpdatedAt);
 
+    const subtotal = Number(grandTotal.toFixed(2));
+    const shippingCost = 0;
+
     return {
       id: Number(firstRow.cartId),
       userId: Number(firstRow.userId),
       items,
       itemCount: totalQuantity,
-      totalAmount: Number(grandTotal.toFixed(2)),
+      subtotal,
+      shippingCost,
+      totalAmount: Number((subtotal + shippingCost).toFixed(2)),
       currency,
       createdAt,
       updatedAt:

@@ -33,7 +33,22 @@ export class CartResponseDto {
 
   @ApiProperty({
     example: 299.97,
-    description: 'Cart total amount',
+    description: 'Cart subtotal (sum of line items)',
+    type: Number,
+  })
+  subtotal!: number;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Shipping cost for the cart. MVP policy: always 0 until a shipping engine ships.',
+    type: Number,
+  })
+  shippingCost!: number;
+
+  @ApiProperty({
+    example: 299.97,
+    description: 'Cart total amount (subtotal + shippingCost)',
     type: Number,
   })
   totalAmount!: number;

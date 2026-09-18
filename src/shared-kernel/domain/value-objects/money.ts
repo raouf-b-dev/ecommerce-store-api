@@ -54,13 +54,15 @@ export class Money {
     return this._currency;
   }
 
-  add(other: Money): Money {
+  add(other: Money): Result<Money, DomainError> {
     if (this._currency !== other._currency) {
-      throw new DomainError(
+      return ErrorFactory.DomainError(
         `Cannot add amounts in different currencies: ${this._currency} and ${other._currency}`,
       );
     }
-    return new Money(this._amount + other._amount, this._currency);
+    return Result.success(
+      new Money(this._amount + other._amount, this._currency),
+    );
   }
 
   subtract(other: Money): Result<Money, DomainError> {
@@ -80,18 +82,22 @@ export class Money {
     return Result.success(new Money(result, this._currency));
   }
 
-  multiply(quantity: number): Money {
+  multiply(quantity: number): Result<Money, DomainError> {
     if (quantity < 0) {
-      throw new DomainError('Cannot multiply money by negative quantity');
+      return ErrorFactory.DomainError(
+        'Cannot multiply money by negative quantity',
+      );
     }
-    return new Money(this._amount * quantity, this._currency);
+    return Result.success(new Money(this._amount * quantity, this._currency));
   }
 
-  divide(divisor: number): Money {
+  divide(divisor: number): Result<Money, DomainError> {
     if (divisor <= 0) {
-      throw new DomainError('Cannot divide by zero or negative number');
+      return ErrorFactory.DomainError(
+        'Cannot divide by zero or negative number',
+      );
     }
-    return new Money(this._amount / divisor, this._currency);
+    return Result.success(new Money(this._amount / divisor, this._currency));
   }
 
   // Comparison methods
@@ -173,13 +179,23 @@ export class Money {
   }
 
   // Utility methods for calculations
-  static sum(amounts: Money[]): Money {
-    if (amounts.length === 0) return Money.zero();
+  static sum(amounts: Money[]): Result<Money, DomainError> {
+    if (amounts.length === 0) {
+      return Result.success(Money.zero());
+    }
+
     const currency = amounts[0].currency;
-    return amounts.reduce(
-      (total, amount) => total.add(amount),
-      Money.zero(currency),
-    );
+    let total = Money.zero(currency);
+
+    for (const amount of amounts) {
+      const addResult = total.add(amount);
+      if (addResult.isFailure) {
+        return addResult;
+      }
+      total = addResult.value;
+    }
+
+    return Result.success(total);
   }
 
   static max(a: Money, b: Money): Money {

@@ -44,19 +44,23 @@ export class OrderPricing {
   }
 
   static calculate(items: OrderItem[]): OrderPricing {
-    const subtotal = items.reduce(
-      (total, item) => total.add(Money.from(item.lineTotal)),
-      Money.zero(),
-    );
+    const lineTotals = items.map((item) => item.getLineTotalMoney());
+    const subtotalResult = Money.sum(lineTotals);
+    if (subtotalResult.isFailure) {
+      throw subtotalResult.error;
+    }
 
-    const shippingCost = Money.zero();
-
-    const totalPrice = subtotal.add(shippingCost);
+    const subtotal = subtotalResult.value;
+    const shippingCost = Money.zero(subtotal.currency);
+    const totalPriceResult = subtotal.add(shippingCost);
+    if (totalPriceResult.isFailure) {
+      throw totalPriceResult.error;
+    }
 
     return new OrderPricing({
       subtotal,
       shippingCost,
-      totalPrice,
+      totalPrice: totalPriceResult.value,
     });
   }
 

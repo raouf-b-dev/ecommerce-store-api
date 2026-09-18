@@ -8,6 +8,7 @@ export interface CheckoutCartItem {
   productName: string;
   price: number;
   quantity: number;
+  currency: string;
 }
 
 export interface CheckoutCartInfo {

@@ -7,6 +7,7 @@ export interface OrderCartItemInput {
   productName: string;
   price: number;
   quantity: number;
+  currency: string;
 }
 
 export interface OrderCartInput {
@@ -29,6 +30,7 @@ export class OrderFactory {
         productName: item.productName,
         unitPrice: item.price,
         quantity: item.quantity,
+        currency: item.currency,
       };
       return prop;
     });
