@@ -23,7 +23,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 1. **Phase 18** - Real Stripe SDK and webhook idempotency (Money alignment in **17** is done).
 2. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
-3. Then **21 → 24** in the pending table. Phases **15–17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
+3. Then **21 → 24** in the pending table. Phases **15-17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
 
 ---
 
@@ -63,7 +63,7 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phases **15–17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**18**). Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**18**). Complete **Phase 19** before deploying to 2+ application instances.
 >
 > - **15b** is done and was required before Phase **20** (satisfied).
 > - Phase **16** optional staging deploy is deferred; it does not block **18**.
