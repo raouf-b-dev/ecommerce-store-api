@@ -10,6 +10,7 @@ import { DeactivateUserUseCase } from './core/application/usecases/user/deactiva
 import { AssignUserRoleUseCase } from './core/application/usecases/user/assign-user-role/assign-user-role.usecase';
 import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
 import { ListUsersQueryDto } from './primary-adapters/dto/list-users-query.dto';
+import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -93,6 +94,20 @@ describe('UsersController', () => {
       userId: 1,
       callerContext,
     });
+  });
+
+  it('should delegate getMe to GetUserUseCase with CallerContext.userId', async () => {
+    await controller.getMe(callerContext);
+    expect(getUserUseCase.execute).toHaveBeenCalledWith({
+      userId: callerContext.userId,
+      callerContext,
+    });
+  });
+
+  it('requires view_own_profile on getMe (handler overrides class manage_users)', () => {
+    expect(
+      Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.getMe),
+    ).toEqual(['view_own_profile']);
   });
 
   it('should delegate updateUser to UpdateUserUseCase', async () => {

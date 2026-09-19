@@ -14,6 +14,8 @@ describe('SeedDemoCartUseCase', () => {
     name: `Product ${item.sku}`,
     sku: item.sku,
     price: 50,
+    currency: 'USD',
+    imageUrl: null,
   }));
 
   beforeEach(() => {
@@ -28,7 +30,7 @@ describe('SeedDemoCartUseCase', () => {
   it('should skip seeding if cart already exists and has items', async () => {
     const existingCart = Cart.createUserCart(1);
     existingCart.setId(10);
-    existingCart.addItem(1, 'Headphones', 199.99, 1);
+    existingCart.addItem(1, 'Headphones', 199.99, 1, 'USD');
 
     mockCartRepository.findByuserId.mockResolvedValue(
       Result.success(existingCart),

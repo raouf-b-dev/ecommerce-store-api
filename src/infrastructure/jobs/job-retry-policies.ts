@@ -120,6 +120,11 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     maxDelay: 60000,
     multiplier: 2,
   },
+  [JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK]: {
+    maxAttempts: 3,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 1000,
+  },
   [JobNames.RELEASE_ORDER_STOCK]: {
     maxAttempts: 3,
     backoffStrategy: BackoffStrategy.EXPONENTIAL,

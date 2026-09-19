@@ -36,6 +36,7 @@ export class UpdateAddressUseCase extends UseCase<
       state,
       postalCode,
       country,
+      type,
       deliveryInstructions,
     } = command;
 
@@ -64,7 +65,7 @@ export class UpdateAddressUseCase extends UseCase<
       postalCode: postalCode ?? null,
       country: country ?? null,
       street2: street2 ?? null,
-      type: null,
+      type: type ?? null,
       deliveryInstructions: deliveryInstructions ?? null,
     });
 

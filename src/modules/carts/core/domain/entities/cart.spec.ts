@@ -9,12 +9,14 @@ describe('Cart', () => {
         const cart = CartTestFactory.createEmptyCart();
 
         ResultAssertionHelper.assertResultSuccess(
-          cart.addItem(1, 'Product A', 10, 2),
+          cart.addItem(1, 'Product A', 10, 2, 'USD'),
         );
 
         expect(cart.items).toHaveLength(1);
         expect(cart.items[0].productId).toBe(1);
         expect(cart.items[0].quantity).toBe(2);
+        expect(cart.items[0].currency).toBe('USD');
+        expect(cart.currency).toBe('USD');
       });
     });
 
@@ -27,6 +29,7 @@ describe('Cart', () => {
               productId: 5,
               productName: 'Existing',
               price: 20,
+              currency: 'USD',
               quantity: 1,
               imageUrl: null,
             },
@@ -34,12 +37,34 @@ describe('Cart', () => {
         });
 
         ResultAssertionHelper.assertResultSuccess(
-          cart.addItem(5, 'Existing', 20, 3),
+          cart.addItem(5, 'Existing', 20, 3, 'USD'),
         );
 
         expect(cart.items).toHaveLength(1);
         expect(cart.items[0].quantity).toBe(4);
       });
+    });
+
+    it('rejects mixed currencies', () => {
+      const cart = CartTestFactory.createMockCart({
+        items: [
+          {
+            id: 1,
+            productId: 1,
+            productName: 'A',
+            price: 10,
+            currency: 'USD',
+            quantity: 1,
+            imageUrl: null,
+          },
+        ],
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        cart.addItem(2, 'B', 10, 1, 'EUR'),
+        'Cannot mix currencies in one cart (USD vs EUR)',
+        DomainError,
+      );
     });
   });
 
@@ -83,6 +108,7 @@ describe('Cart', () => {
             productId: 1,
             productName: 'A',
             price: 10,
+            currency: 'USD',
             quantity: 2,
             imageUrl: null,
           },
@@ -91,6 +117,7 @@ describe('Cart', () => {
             productId: 2,
             productName: 'B',
             price: 5.5,
+            currency: 'USD',
             quantity: 1,
             imageUrl: null,
           },
@@ -99,6 +126,7 @@ describe('Cart', () => {
 
       expect(cart.itemCount).toBe(3);
       expect(cart.totalAmount).toBe(25.5);
+      expect(cart.currency).toBe('USD');
     });
 
     it('clearItems empties the cart', () => {
@@ -108,6 +136,7 @@ describe('Cart', () => {
 
       expect(cart.isEmpty()).toBe(true);
       expect(cart.itemCount).toBe(0);
+      expect(cart.currency).toBeNull();
     });
   });
 
@@ -117,6 +146,7 @@ describe('Cart', () => {
 
       expect(cart.userId).toBe(42);
       expect(cart.isEmpty()).toBe(true);
+      expect(cart.currency).toBeNull();
     });
   });
 });

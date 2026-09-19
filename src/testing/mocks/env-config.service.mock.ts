@@ -50,6 +50,9 @@ function createDefaultMockConfig(): IAppConfig {
       tracingEnabled: false,
       exporterEndpoint: 'http://localhost:4317',
     },
+    payments: {
+      mockAutoComplete: false,
+    },
   };
 }
 
@@ -119,6 +122,10 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get otel() {
     return this.configState.otel;
+  }
+
+  override get payments() {
+    return this.configState.payments;
   }
 
   setMockConfig(config: Partial<IAppConfig>) {

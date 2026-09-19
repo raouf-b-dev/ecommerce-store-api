@@ -160,7 +160,7 @@ Entrypoint: [`scripts/smoke-test.js`](../../scripts/smoke-test.js) → helpers u
 
 - **Fail-fast**: first failure exits `1`.
 - **Base URL**: `--base-url=` or `SMOKE_TEST_BASE_URL` or `http://localhost:$PORT`.
-- Success means probes answered: not “production fully certified.”
+- Success means probes answered: not "production fully certified."
 
 CI runs the same runner after `start:test` (see [PROJECT-PIPELINE.md](cicd/PROJECT-PIPELINE.md)).
 

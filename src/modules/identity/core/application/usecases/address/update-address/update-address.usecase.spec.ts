@@ -12,6 +12,7 @@ import {
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
+import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
 
 const adminCallerContext = createUserCallerContext({
   userId: 1,
@@ -67,6 +68,34 @@ describe('UpdateAddressUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockUserRepository.findByIdForUpdate).toHaveBeenCalledWith(userId);
       expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update address type when provided', async () => {
+      const userId = 123;
+      const addressId = 123;
+      const updateDto = AddressTestFactory.createUpdateAddressCommand({
+        userId,
+        addressId,
+        type: AddressType.WORK,
+      });
+      const mockUserData = UserTestFactory.createMockUser({
+        id: userId,
+      });
+
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(mockUserData);
+      mockUserRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({
+        ...updateDto,
+        callerContext: adminCallerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      const savedUser = mockUserRepository.save.mock.calls[0][0];
+      const updated = savedUser.addresses.find(
+        (addr: { id: number | null }) => addr.id === addressId,
+      );
+      expect(updated?.type).toBe(AddressType.WORK);
     });
 
     it('should return Failure(UseCaseError) if user not found', async () => {

@@ -8,6 +8,7 @@ export interface ICart {
   items: ICartItem[];
   itemCount: number;
   totalAmount: number;
+  currency: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

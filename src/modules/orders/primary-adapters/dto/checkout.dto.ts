@@ -16,7 +16,10 @@ export class CheckoutDto {
   @IsNumber()
   cartId!: number;
 
-  @ApiPropertyOptional({ description: 'Shipping address for the order' })
+  @ApiPropertyOptional({
+    description:
+      'Shipping address for the order. When omitted, the user default address is used; if the user has no default address, checkout returns 400.',
+  })
   @IsOptional()
   @ValidateNested()
   @Type(() => ShippingAddressDto)

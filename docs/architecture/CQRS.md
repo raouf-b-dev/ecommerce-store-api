@@ -50,7 +50,7 @@ The Command side is responsible for enforcing invariants, validating business ru
 
 | Layer                | Responsibility                                                                                                                     | This Project                                                                      |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **Controller** | Accepts HTTP POST/PATCH/DELETE requests. Thin adapter: no logic. | `[module].controller.ts`: mutation endpoints |
+| **Controller**       | Accepts HTTP POST/PATCH/DELETE requests. Thin adapter: no logic.                                                                   | `[module].controller.ts`: mutation endpoints                                      |
 | **Command Use Case** | Orchestrates the transaction. Validates input, coordinates domain objects and ports.                                               | `core/application/usecases/`                                                      |
 | **Domain Entity**    | Fully encapsulated class with private fields, getters, and behavioural methods. Never exposes direct setters. Enforces invariants. | `core/domain/entities/`                                                           |
 | **Repository**       | Standard DDD repository that deals exclusively with Domain Entities.                                                               | `core/domain/repositories/` (port) → `secondary-adapters/repositories/` (adapter) |
@@ -67,12 +67,12 @@ The Query side exists to fulfill UI projection requirements as simply and perfor
 
 **Academic model (Young, 2010; Vernon, 2013):**
 
-| Layer             | Responsibility                                                                                                                                        | Ideal Implementation                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Controller**    | Accepts HTTP GET requests.                                                                                                                            | Dedicated query controller or shared controller with query-only endpoints                |
-| **Query Handler** | Directly interacts with the database or read-optimised views. Bypasses the Domain layer **entirely**: no entity instantiation, no behavioural logic. | Thin use case that delegates to a read-specific repository or raw query |
-| **Read Model**    | Flat DTO or interface shaped strictly for what the client needs. No behavioural logic, no encapsulated private fields.                                | Purpose-built DTOs per screen/projection (e.g., `OrderListItemDTO`, `PaymentSummaryDTO`) |
-| **Execution**     | Can utilise raw SQL, `QueryBuilder` projections, database VIEWs, or Redis cache lookups to return data without instantiating rich Domain Entities.    | Read-optimised repository methods returning plain objects                                |
+| Layer             | Responsibility                                                                                                                                       | Ideal Implementation                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Controller**    | Accepts HTTP GET requests.                                                                                                                           | Dedicated query controller or shared controller with query-only endpoints                |
+| **Query Handler** | Directly interacts with the database or read-optimised views. Bypasses the Domain layer **entirely**: no entity instantiation, no behavioural logic. | Thin use case that delegates to a read-specific repository or raw query                  |
+| **Read Model**    | Flat DTO or interface shaped strictly for what the client needs. No behavioural logic, no encapsulated private fields.                               | Purpose-built DTOs per screen/projection (e.g., `OrderListItemDTO`, `PaymentSummaryDTO`) |
+| **Execution**     | Can utilise raw SQL, `QueryBuilder` projections, database VIEWs, or Redis cache lookups to return data without instantiating rich Domain Entities.   | Read-optimised repository methods returning plain objects                                |
 
 > **Why bypass the Domain layer?** (Young, 2010)
 >
@@ -116,18 +116,17 @@ Each additional query adds network round-trip latency (typically 0.5-2ms per Pos
 
 **The CQRS solution**: Dedicated query ports with infrastructure-optimised adapters that resolve all related data in a **single query**: either via SQL JOINs (monolith) or batched API calls (microservices). This eliminates the N+1 problem entirely while preserving bounded context integrity at the port level. See §5.3 and §6 Phase 2 for the full pattern.
 
-**Current implementation status:**
+**Current implementation status (Phase 2 query adapters):**
 
-Query use cases currently go through the same `OrderRepository` and hydrate full domain entities, then call `.toPrimitives()` to produce a serializable response:
+List and detail reads for the seven CQRS modules go through dedicated query ports and flat read DTOs. Adapters use TypeORM JOIN projections and return presentation DTOs without hydrating write-side aggregates:
 
 ```
-Controller (GET) → ListOrdersUseCase → OrderRepository.listOrders()
-  → Returns Order[]  (full domain entities with 549-line class)
-  → Use case maps: order.toPrimitives()
-  → Returns IOrder[]  (entity's own primitive interface)
+Controller (GET) → ListOrdersUseCase → OrderQueryService (port)
+  → PostgresOrderQueryAdapter → SQL JOIN projection
+  → Returns OrderListItemDTO[] / OrderDetailDTO
 ```
 
-This is a **pragmatic Phase 1 approach** that prioritises delivery speed. The architecture is designed to evolve toward dedicated read models without changing application-layer contracts (see §6).
+Command use cases still use domain repositories and ACL gateways exclusively. See §6 for the Phase 1 → Phase 2 evolution history.
 
 ### 2.3 Controller Organisation
 
@@ -239,7 +238,7 @@ For the evolution path from Phase 1 (shared repository) to Phase 4 (separate rea
 
 The current `toPrimitives()` approach is a Phase 1 pragmatic choice. The architecture supports a natural evolution toward stricter CQRS separation:
 
-### Phase 1: Current: Shared Repository (✅ Implemented)
+### Phase 1: Shared Repository (✅ Superseded)
 
 ```
 Query UseCase → Same Repository → Domain Entity → .toPrimitives() → Response
@@ -248,13 +247,13 @@ Query UseCase → Same Repository → Domain Entity → .toPrimitives() → Resp
 - **Advantage**: Fast to implement, no duplication
 - **Cost**: Read path hydrates full domain entities unnecessarily
 
-### Phase 2: Dedicated Query Ports
+### Phase 2: Dedicated Query Ports (✅ Implemented)
 
 ```
 Query UseCase → QueryService (port) → QueryAdapter → SQL projection → Plain DTO[] → Response
 ```
 
-Introduce a **dedicated query port** (`OrderQueryService`) in the application layer: separate from the domain `OrderRepository`. The query port returns flat, presentation-optimized DTOs (e.g., `OrderListItemDTO`). The adapter implements the port using `QueryBuilder().select([...]).getRawMany()`, bypassing domain entity hydration entirely.
+Dedicated query ports (`OrderQueryService`, and equivalents in six other modules) live in the application layer, separate from domain repositories. Query ports return flat, presentation-optimized DTOs (e.g., `OrderListItemDTO`). Adapters implement the port using `QueryBuilder().select([...]).getRawMany()`, bypassing domain entity hydration entirely.
 
 **Critical distinction**: The query port lives in `core/application/ports/`, NOT in `core/domain/repositories/`. The domain repository is a write-side concept: it manages aggregates and must never depend on presentation DTOs.
 
@@ -298,4 +297,3 @@ Full CQRS with separate read and write stores, connected via domain events and p
 6. Richardson, C. (2018). _Microservices Patterns_. Manning. ISBN 978-1617294549. (CQRS in the context of microservices, API Composition pattern for cross-service queries, and the N+1 problem in distributed systems: Ch. 7 §7.2).
 7. Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. ISBN 978-1449373320. (Data modelling trade-offs, N+1 query problem in ORM-backed applications, and the case for co-located data in monolithic architectures: Ch. 2, 12).
 8. Millett, S. & Tune, N. (2015). _Patterns, Principles, and Practices of Domain-Driven Design_. Wrox. ISBN 978-1118714706. (Read model projections in bounded context architectures, cross-context query strategies: Ch. 25).
-

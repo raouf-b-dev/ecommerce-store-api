@@ -1,8 +1,8 @@
-// src/modules/carts/domain/entities/cart-item.ts
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Quantity } from '../../../../../shared-kernel/domain/value-objects/quantity';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { ICartItem } from '../interfaces/cart-item.interface';
 
 export interface CartItemProps {
@@ -10,6 +10,7 @@ export interface CartItemProps {
   productId: number;
   productName: string;
   price: number;
+  currency: string;
   quantity: number;
   imageUrl: string | null;
 }
@@ -18,7 +19,7 @@ export class CartItem implements ICartItem {
   private _id: number | null;
   private readonly _productId: number;
   private _productName: string;
-  private _price: number;
+  private _unitPrice: Money;
   private _quantity: Quantity;
   private _imageUrl: string | null;
 
@@ -29,7 +30,7 @@ export class CartItem implements ICartItem {
     this._id = props.id || null;
     this._productId = props.productId;
     this._productName = props.productName.trim();
-    this._price = this.roundPrice(props.price);
+    this._unitPrice = new Money(props.price, props.currency);
     this._quantity = Quantity.from(props.quantity);
     this._imageUrl = props.imageUrl?.trim() || null;
   }
@@ -47,12 +48,17 @@ export class CartItem implements ICartItem {
     if (props.quantity <= 0) {
       return ErrorFactory.DomainError('Quantity must be greater than zero');
     }
+    const currency = props.currency?.trim();
+    if (!currency) {
+      return ErrorFactory.DomainError('Currency is required');
+    }
+    if (currency.length !== 3) {
+      return ErrorFactory.DomainError(
+        'Currency must be a 3-letter code (ISO 4217)',
+      );
+    }
 
     return Result.success(undefined);
-  }
-
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
   }
 
   private createQuantity(value: number): Result<Quantity, DomainError> {
@@ -66,7 +72,6 @@ export class CartItem implements ICartItem {
     }
   }
 
-  // Getters
   get id(): number | null {
     return this._id;
   }
@@ -80,7 +85,11 @@ export class CartItem implements ICartItem {
   }
 
   get price(): number {
-    return this._price;
+    return this._unitPrice.amount;
+  }
+
+  get currency(): string {
+    return this._unitPrice.currency;
   }
 
   get quantity(): number {
@@ -92,10 +101,13 @@ export class CartItem implements ICartItem {
   }
 
   get subtotal(): number {
-    return this.roundPrice(this._price * this._quantity.value);
+    const lineTotal = this._unitPrice.multiply(this._quantity.value);
+    if (lineTotal.isFailure) {
+      throw lineTotal.error;
+    }
+    return lineTotal.value.amount;
   }
 
-  // Business logic methods
   updateQuantity(quantityNumber: number): Result<void, DomainError> {
     if (quantityNumber <= 0) {
       return ErrorFactory.DomainError('Quantity must be greater than zero');
@@ -108,16 +120,13 @@ export class CartItem implements ICartItem {
     return Result.success(undefined);
   }
 
-  increaseQuantity(amount: number = 1): Result<void, DomainError> {
+  increaseQuantity(amount: number): Result<void, DomainError> {
     if (amount <= 0) {
-      return ErrorFactory.DomainError('Amount must be greater than zero');
+      return ErrorFactory.DomainError(
+        'Increase amount must be greater than zero',
+      );
     }
-
-    const amountQuantityResult = this.createQuantity(amount);
-    if (amountQuantityResult.isFailure) return amountQuantityResult;
-
-    this._quantity = this._quantity.add(amountQuantityResult.value);
-    return Result.success(undefined);
+    return this.updateQuantity(this._quantity.value + amount);
   }
 
   decreaseQuantity(amount: number = 1): Result<void, DomainError> {
@@ -138,11 +147,15 @@ export class CartItem implements ICartItem {
   }
 
   updatePrice(price: number): Result<void, DomainError> {
-    if (price < 0) {
-      return ErrorFactory.DomainError('Price cannot be negative');
+    try {
+      this._unitPrice = new Money(price, this._unitPrice.currency);
+      return Result.success(undefined);
+    } catch (error) {
+      if (error instanceof DomainError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.DomainError('Invalid price value');
     }
-    this._price = this.roundPrice(price);
-    return Result.success(undefined);
   }
 
   updateProductInfo(
@@ -158,7 +171,14 @@ export class CartItem implements ICartItem {
     }
 
     this._productName = name.trim();
-    this._price = this.roundPrice(price);
+    try {
+      this._unitPrice = new Money(price, this._unitPrice.currency);
+    } catch (error) {
+      if (error instanceof DomainError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.DomainError('Invalid price value');
+    }
     if (imageUrl !== undefined) {
       this._imageUrl = imageUrl?.trim() || null;
     }
@@ -170,13 +190,13 @@ export class CartItem implements ICartItem {
     return this._productId === productId;
   }
 
-  // Serialization
   toPrimitives(): ICartItem {
     return {
       id: this._id,
       productId: this._productId,
       productName: this._productName,
-      price: this._price,
+      price: this._unitPrice.amount,
+      currency: this._unitPrice.currency,
       quantity: this._quantity.value,
       subtotal: this.subtotal,
       imageUrl: this._imageUrl,
@@ -188,7 +208,8 @@ export class CartItem implements ICartItem {
       id: this._id,
       productId: this._productId,
       productName: this._productName,
-      price: this._price,
+      price: this._unitPrice.amount,
+      currency: this._unitPrice.currency,
       quantity: this._quantity.value,
       imageUrl: this._imageUrl,
     };
@@ -203,6 +224,7 @@ export class CartItem implements ICartItem {
     productName: string,
     price: number,
     quantity: number,
+    currency: string,
     imageUrl?: string,
   ): CartItem {
     return new CartItem({
@@ -210,6 +232,7 @@ export class CartItem implements ICartItem {
       productId,
       productName,
       price,
+      currency,
       quantity,
       imageUrl: imageUrl || null,
     });

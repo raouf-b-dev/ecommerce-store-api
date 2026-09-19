@@ -51,7 +51,7 @@ Versioned namespaces (domain `*_cache`, `*_index`, `*_list:isCached`) are stored
 
 `{REDIS_KEYPREFIX}c{generation}:{logicalKey}`
 
-- Generation is persisted at stable key `{REDIS_KEYPREFIX}meta:cache_generation` and **INCR**’d on:
+- Generation is persisted at stable key `{REDIS_KEYPREFIX}meta:cache_generation` and **INCR**'d on:
   - successful Redis connect at startup
   - reconnect recovery ([`RedisCacheRecoveryService`](../../src/infrastructure/redis/redis-cache-recovery.service.ts))
 - After a bump, new reads/writes use the new generation; previous **document** keys expire via TTL (no `SCAN` flush).

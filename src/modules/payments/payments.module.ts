@@ -35,15 +35,22 @@ import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
 import { PaymentQueryService } from './core/application/ports/payment-query.service';
 import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres-payment-query.adapter';
+import { SimulateMockPaymentWebhookJob } from './primary-adapters/jobs/simulate-mock-payment-webhook.job';
+import { PaymentsProcessor } from './primary-adapters/processors/payments.processor';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PaymentEntity, RefundEntity]),
     RedisModule,
     AuthenticationModule,
-    BullModule.registerQueue({
-      name: 'payment-events',
-    }),
+    BullModule.registerQueue(
+      {
+        name: 'payment-events',
+      },
+      {
+        name: 'payments',
+      },
+    ),
   ],
   controllers: [PaymentsController],
   providers: [
@@ -67,6 +74,10 @@ import { PostgresPaymentQueryAdapter } from './secondary-adapters/query/postgres
       provide: PaymentEventsScheduler,
       useClass: BullMqPaymentEventsScheduler,
     },
+
+    // BullMQ Handlers & Processors
+    SimulateMockPaymentWebhookJob,
+    PaymentsProcessor,
 
     // Postgres Repo
     {

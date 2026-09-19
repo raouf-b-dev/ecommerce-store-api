@@ -47,5 +47,10 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     METRICS_API_KEY: str({ default: '' }),
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
     OTEL_EXPORTER_OTLP_ENDPOINT: str({ default: 'http://localhost:4317' }),
+
+    PAYMENT_MOCK_AUTO_COMPLETE: str({
+      choices: ['true', 'false'],
+      default: 'false',
+    }),
   });
 }

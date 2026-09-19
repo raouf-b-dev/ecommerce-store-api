@@ -28,11 +28,13 @@ export class PostgresCartQueryAdapter implements CartQueryService {
         .select([
           'cart.id AS "cartId"',
           'cart.userId AS "userId"',
+          'cart.createdAt AS "cartCreatedAt"',
           'cart.updatedAt AS "cartUpdatedAt"',
           'item.id AS "itemId"',
           'item.productId AS "productId"',
           'item.productName AS "productName"',
           'item.price AS "price"',
+          'item.currency AS "currency"',
           'item.quantity AS "quantity"',
           'item.imageUrl AS "imageUrl"',
         ])
@@ -64,11 +66,13 @@ export class PostgresCartQueryAdapter implements CartQueryService {
         .select([
           'cart.id AS "cartId"',
           'cart.userId AS "userId"',
+          'cart.createdAt AS "cartCreatedAt"',
           'cart.updatedAt AS "cartUpdatedAt"',
           'item.id AS "itemId"',
           'item.productId AS "productId"',
           'item.productName AS "productName"',
           'item.price AS "price"',
+          'item.currency AS "currency"',
           'item.quantity AS "quantity"',
           'item.imageUrl AS "imageUrl"',
         ])

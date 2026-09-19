@@ -210,7 +210,7 @@ Prove cache-aside against persisted rows (miss → DB → set, hit skips a fresh
 Write a real-DB spec when the adapter has **persistence behavior that mocks cannot prove**:
 
 - Multi-statement transactions or a non-default isolation level
-- Row locks (`pessimistic_write` / `SELECT … FOR UPDATE`)
+- Row locks (`pessimistic_write` / `SELECT ... FOR UPDATE`)
 - Unique, check, or foreign-key constraints the mapper must survive
 - Optimistic updates that use `WHERE version = :expectedVersion` (stale version must fail; child rows must stay unchanged)
 - OCC column parity: one spec that writes **every application-owned column** from `toUpdatePayload()` through the atomic OCC path and asserts the persisted row (system-managed `id` / `version` / `createdAt` / `updatedAt` are excluded from that payload and stamped by SQL)
@@ -227,7 +227,7 @@ This proves the inventory adapter, not the HTTP checkout SAGA:
 
 Document the following in the spec (or a comment above it):
 
-1. `save()` uses `dataSource.transaction('REPEATABLE READ', …)`
+1. `save()` uses `dataSource.transaction('REPEATABLE READ', ...)`
 2. Inventory rows use `lock: { mode: 'pessimistic_write' }`
 3. The integration `DataSource` does not pin the pool to a single connection
 4. Jest `maxWorkers: 1` serializes **files**, not in-spec `Promise.all`

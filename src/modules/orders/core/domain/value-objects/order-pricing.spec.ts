@@ -67,5 +67,28 @@ describe('OrderPricing', () => {
       expect(a.equals(b)).toBe(true);
       expect(a.equals(c)).toBe(false);
     });
+
+    it('rejects mixed line currencies', () => {
+      const usd = OrderItem.fromProps({
+        id: null,
+        productId: 1,
+        productName: 'USD item',
+        unitPrice: 10,
+        quantity: 1,
+        currency: 'USD',
+      });
+      const eur = OrderItem.fromProps({
+        id: null,
+        productId: 2,
+        productName: 'EUR item',
+        unitPrice: 10,
+        quantity: 1,
+        currency: 'EUR',
+      });
+
+      expect(() => OrderPricing.calculate([usd, eur])).toThrow(
+        /different currencies/,
+      );
+    });
   });
 });

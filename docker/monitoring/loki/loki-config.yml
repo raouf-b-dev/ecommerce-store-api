@@ -30,7 +30,7 @@ limits_config:
   volume_enabled: true
   retention_period: 720h
 
-# Retention — keep logs for 30 days
+# Retention - keep logs for 30 days
 compactor:
   working_directory: /loki/compactor
   retention_enabled: true

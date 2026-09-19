@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { STRIPE_WEBHOOK_E2E_BYPASS_SIGNATURE } from 'src/modules/payments/secondary-adapters/services/stripe-signature.service';
 import { E2E_API_PREFIX } from './auth-test.helper';
 import { E2eHttpClient } from './e2e-test-app.helper';
 
@@ -14,7 +15,7 @@ export class E2eStripeWebhookHelper {
   ): Promise<{ status: number; body: unknown }> {
     const response = await http
       .post(`${E2E_API_PREFIX}/payments/webhooks/stripe`)
-      .set('stripe-signature', 'e2e-test')
+      .set('stripe-signature', STRIPE_WEBHOOK_E2E_BYPASS_SIGNATURE)
       .send({
         type: options.eventType,
         data: {

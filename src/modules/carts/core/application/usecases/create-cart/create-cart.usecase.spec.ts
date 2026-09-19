@@ -41,6 +41,7 @@ describe('CreateCartUseCase', () => {
       expect(result.value.userId).toBe(123);
       expect(result.value.items).toEqual([]);
       expect(result.value.itemCount).toBe(0);
+      expect(result.value.currency).toBeNull();
     });
 
     it('should return the existing cart if the user already has one', async () => {

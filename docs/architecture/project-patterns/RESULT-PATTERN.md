@@ -35,7 +35,7 @@ Controllers unwrap `Result` objects using shared kernel error utilities or direc
 
 ```typescript
 @Get(':id')
-async findOne(@Param('id', ParseIntPipe) id: number): Promise<InventoryResponseDto> {
+async findOne(@Param('id', ParseIntPipe) id: number): Promise<InventoryListItemResponseDto> {
   const result = await this.getInventoryUseCase.execute(id);
   if (result.isFailure) {
     throw result.error.toHttpException();

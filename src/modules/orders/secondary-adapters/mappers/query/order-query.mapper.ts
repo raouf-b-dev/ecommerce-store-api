@@ -70,6 +70,8 @@ export class OrderQueryMapper {
       status: orderEntity.status,
       shippingAddress: shippingAddrStr,
       items,
+      subtotal: orderEntity.subtotal,
+      shippingCost: orderEntity.shippingCost,
       totalAmount: orderEntity.totalPrice,
       totalPrice: orderEntity.totalPrice,
       currency: 'USD',

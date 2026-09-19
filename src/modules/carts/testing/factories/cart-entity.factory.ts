@@ -24,6 +24,7 @@ export class CartEntityTestFactory {
       productId: 123,
       productName: 'Test Product',
       price: 100,
+      currency: 'USD',
       quantity: 1,
       imageUrl: 'http://example.com/image.jpg',
       cart: null as unknown as CartEntity,

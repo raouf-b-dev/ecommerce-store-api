@@ -164,6 +164,7 @@ export class OrderDtoTestFactory {
       productName: 'productName',
       price: 10,
       quantity: 1,
+      currency: 'USD',
     };
     return { ...baseUser, ...overrides };
   }
@@ -206,6 +207,8 @@ export class OrderDtoTestFactory {
       status: 'pending_payment',
       shippingAddress: '123 Main St',
       items: [this.createOrderItemDetailDTO()],
+      subtotal: 100,
+      shippingCost: 0,
       totalAmount: 100,
       totalPrice: 100,
       currency: 'USD',

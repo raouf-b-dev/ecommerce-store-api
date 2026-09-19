@@ -28,7 +28,7 @@ jobs:
       cors_allowed_origins: ${{ steps.resolve.outputs.cors_allowed_origins }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
       - name: Resolve from .env.example
@@ -40,12 +40,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -64,12 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -85,12 +85,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -106,12 +106,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -127,12 +127,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -149,24 +149,92 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v5
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+
+  openapi-audit:
+    name: OpenAPI Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [resolve-env, build]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    services:
+      postgres:
+        image: ${{ needs.resolve-env.outputs.postgres_image }}
+        ports: ['5432:5432']
+        env:
+          POSTGRES_USER: ${{ secrets.CI_DB_USERNAME || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.CI_DB_DATABASE || 'test_db' }}
+        options: >-
+          --health-cmd="pg_isready -q"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: ${{ needs.resolve-env.outputs.redis_image }}
+        ports: ['6379:6379', '8001:8001']
+        env:
+          REDIS_ARGS: ${{ secrets.CI_REDIS_PASSWORD && format('--requirepass {0}', secrets.CI_REDIS_PASSWORD) || '' }}
+
+    env:
+      NODE_ENV: test
+      POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
+      POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
+      REDIS_IMAGE: ${{ needs.resolve-env.outputs.redis_image }}
+      REDIS_CONTAINER_NAME: ${{ needs.resolve-env.outputs.redis_container_name }}
+      CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare test environment
+        uses: ./.github/actions/prepare-test-env
+        with:
+          db-username: ${{ secrets.CI_DB_USERNAME }}
+          db-password: ${{ secrets.CI_DB_PASSWORD }}
+          db-database: ${{ secrets.CI_DB_DATABASE }}
+          redis-password: ${{ secrets.CI_REDIS_PASSWORD }}
+          redis-keyprefix: ${{ secrets.CI_REDIS_KEYPREFIX }}
+          jwt-private-key: ${{ secrets.CI_JWT_PRIVATE_KEY }}
+          metrics-api-key: ${{ secrets.CI_METRICS_API_KEY }}
+
+      - name: Run OpenAPI audit
+        run: npm run audit:openapi
+
+      - name: Cleanup .env.test
+        if: always()
+        run: rm -f .env.test || true
 
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -183,7 +251,7 @@ jobs:
           echo "dist/src/main.js exists"
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: dist-app
           path: dist/
@@ -193,6 +261,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [typecheck, unit-tests, build]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -201,12 +270,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -220,6 +289,7 @@ jobs:
   redis-chaos-tests:
     name: Redis Chaos Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [typecheck, unit-tests, build]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -228,12 +298,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -247,6 +317,7 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: [resolve-env, typecheck, unit-tests, build]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -280,12 +351,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -317,6 +388,7 @@ jobs:
   smoke-test:
     name: Smoke Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [resolve-env, typecheck, unit-tests, build]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -350,12 +422,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -364,7 +436,7 @@ jobs:
         run: npm ci
 
       - name: Download dist artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: dist-app
           path: dist/
@@ -454,12 +526,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -524,12 +596,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
@@ -538,7 +610,7 @@ jobs:
         run: npm ci
 
       - name: Download dist artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: dist-app
           path: dist/
@@ -621,6 +693,7 @@ jobs:
         arch,
         audit,
         build,
+        openapi-audit,
         integration-tests,
         e2e-tests,
         smoke-test,
@@ -637,6 +710,7 @@ jobs:
           arch_status="${{ needs.arch.result }}"
           audit_status="${{ needs.audit.result }}"
           build_status="${{ needs.build.result }}"
+          openapi_audit_status="${{ needs.openapi-audit.result }}"
           integration_status="${{ needs.integration-tests.result }}"
           e2e_status="${{ needs.e2e-tests.result }}"
           smoke_status="${{ needs.smoke-test.result }}"
@@ -649,13 +723,14 @@ jobs:
           echo "arch: $arch_status"
           echo "audit: $audit_status"
           echo "build: $build_status"
+          echo "openapi-audit: $openapi_audit_status"
           echo "integration-tests: $integration_status"
           echo "e2e-tests: $e2e_status"
           echo "smoke-test: $smoke_status"
           echo "restore-drill: $restore_drill_status"
           echo "restore-drill-smoke: $restore_drill_smoke_status"
 
-          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$audit_status" "$build_status"; do
+          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$audit_status" "$build_status" "$openapi_audit_status"; do
             if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
               echo "One of the required parallel jobs failed or was cancelled."
               exit 1
@@ -684,15 +759,15 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Build production image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           push: false
@@ -711,15 +786,15 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -727,7 +802,7 @@ jobs:
 
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ghcr.io/raouf-b-dev/ecommerce-store-api
           tags: |
@@ -735,7 +810,7 @@ jobs:
             type=semver,pattern={{version}}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           push: true

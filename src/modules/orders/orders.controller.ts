@@ -59,7 +59,10 @@ export class OrdersController {
   @ApiOperation({
     summary: 'Initiate checkout process',
     description:
-      'Starts the asynchronous checkout process. Returns a jobId to track progress via the checkout queue.',
+      'Starts the asynchronous checkout process. Returns an orderId and jobId. ' +
+      'Poll GET /v1/orders/{id} until the order reaches a terminal status (or client timeout). ' +
+      'The cart is cleared (consumed) only after checkout finalization succeeds - not on the HTTP 201 response. ' +
+      'If shippingAddress is omitted, the user default address is used; without a default address the request fails with 400.',
   })
   @ApiResponse({
     status: 201,
@@ -68,7 +71,8 @@ export class OrdersController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid checkout data or cart is empty.',
+    description:
+      'Invalid checkout data, empty cart, or omitted shippingAddress with no default address on the user profile.',
   })
   @ApiResponse({
     status: 401,
@@ -76,7 +80,22 @@ export class OrdersController {
   })
   @ApiResponse({
     status: 409,
-    description: `Conflict - a request with this idempotency key is already in progress. Response includes Retry-After: ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}.`,
+    description:
+      'Conflict - a request with this idempotency key is already in progress. ' +
+      `Clients must honor the Retry-After response header (${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds) before retrying.`,
+    headers: {
+      'Retry-After': {
+        description: `Seconds to wait before retrying (${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}).`,
+        schema: {
+          type: 'integer',
+          example: IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Service unavailable - idempotency store unavailable.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',
@@ -87,6 +106,11 @@ export class OrdersController {
   @ApiHeader({
     name: 'x-idempotency-key',
     description: 'Legacy alias for Idempotency-Key.',
+    required: false,
+  })
+  @ApiHeader({
+    name: 'Retry-After',
+    description: `Present on HTTP 409 when the idempotency key is still in progress. Value is ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds.`,
     required: false,
   })
   @Idempotent()

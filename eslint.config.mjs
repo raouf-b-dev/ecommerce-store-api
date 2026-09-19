@@ -4,6 +4,7 @@ import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import pluginSecurity from 'eslint-plugin-security';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import asciiProse from './scripts/ascii-prose.cjs';
 
 export default tseslint.config(
   {
@@ -34,6 +35,9 @@ export default tseslint.config(
     },
   },
   {
+    plugins: {
+      'ascii-prose': asciiProse.createEslintPlugin(),
+    },
     rules: {
       '@typescript-eslint/require-await': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
@@ -73,6 +77,7 @@ export default tseslint.config(
       'no-console': 'error',
       'no-debugger': 'error',
       'security/detect-object-injection': 'off',
+      'ascii-prose/no-smart-punctuation': 'error',
     },
   },
 

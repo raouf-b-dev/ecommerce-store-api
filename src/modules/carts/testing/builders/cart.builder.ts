@@ -25,6 +25,7 @@ export class CartBuilder {
       productId: i + 1,
       productName: `Product ${i + 1}`,
       price: 10 * (i + 1),
+      currency: 'USD',
       quantity: 1,
       subtotal: 10 * (i + 1),
       imageUrl: `http://example.com/image-${i + 1}.jpg`,
@@ -54,6 +55,7 @@ export class CartBuilder {
       (sum, item) => sum + item.subtotal,
       0,
     );
+    this.cart.currency = this.cart.items[0]?.currency ?? null;
   }
 
   build(): ICart {

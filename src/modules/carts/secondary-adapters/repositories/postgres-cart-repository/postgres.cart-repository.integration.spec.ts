@@ -71,6 +71,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         seededData.product.name,
         seededData.product.price,
         2,
+        seededData.product.currency,
         seededData.product.imageUrl,
       ),
     );
@@ -110,6 +111,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         seededData.product.name,
         seededData.product.price,
         1,
+        seededData.product.currency,
         seededData.product.imageUrl,
       ),
     );
@@ -154,6 +156,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         seededData.product.name,
         seededData.product.price,
         1,
+        seededData.product.currency,
         seededData.product.imageUrl,
       ),
     );
@@ -170,6 +173,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         seededData.product.name,
         seededData.product.price,
         1,
+        seededData.product.currency,
         seededData.product.imageUrl,
       ),
     );
