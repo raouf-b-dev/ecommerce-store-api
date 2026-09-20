@@ -56,4 +56,18 @@ describe('CartQueryMapper', () => {
   it('should return null if rows are empty', () => {
     expect(CartQueryMapper.toPresentationDto([])).toBeNull();
   });
+
+  it('includes cart lines when itemId is 0 (legacy persisted rows)', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 0,
+      price: '12.50',
+      quantity: 1,
+    });
+
+    const result = CartQueryMapper.toPresentationDto([row]);
+
+    expect(result?.items).toHaveLength(1);
+    expect(result?.items[0].id).toBe(0);
+    expect(result?.subtotal).toBe(12.5);
+  });
 });

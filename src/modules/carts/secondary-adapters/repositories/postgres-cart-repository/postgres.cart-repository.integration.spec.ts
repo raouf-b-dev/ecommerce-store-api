@@ -1,6 +1,7 @@
 import { CartTestFactory } from 'src/modules/carts/testing';
 import { PostgresCartRepository } from './postgres.cart-repository';
 import { CartEntity } from '../../orm/cart.schema';
+import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
@@ -18,6 +19,59 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       dataSource.getRepository(CartEntity),
       dataSource,
     );
+  });
+
+  it('saveNormally persists multiple new cart items with distinct ids', async () => {
+    const productRepo = IntegrationTestHelper.getRepository(ProductEntity);
+    const secondProduct = await productRepo.save(
+      productRepo.create({
+        sku: 'INT-MOUSE-01',
+        slug: 'int-mouse-01',
+        name: 'Integration Mouse',
+        description: 'Wireless mouse',
+        price: 25,
+        currency: 'USD',
+        categoryId: 1,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+
+    const cart = CartTestFactory.createEmptyCart({
+      id: null,
+      userId: seededData.customerUser.id,
+    });
+    ResultAssertionHelper.assertResultSuccess(
+      cart.addItem(
+        seededData.product.id,
+        seededData.product.name,
+        seededData.product.price,
+        1,
+        seededData.product.currency,
+        seededData.product.imageUrl,
+      ),
+    );
+    ResultAssertionHelper.assertResultSuccess(
+      cart.addItem(
+        secondProduct.id,
+        secondProduct.name,
+        secondProduct.price,
+        2,
+        secondProduct.currency,
+        secondProduct.imageUrl,
+      ),
+    );
+
+    const saveResult = await repository.save(cart);
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const loaded = await repository.findByuserId(seededData.customerUser.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value.getItems()).toHaveLength(2);
+    const ids = loaded.value.getItems().map((item) => item.id);
+    expect(ids.every((id) => id != null && id > 0)).toBe(true);
+    expect(new Set(ids).size).toBe(2);
   });
 
   it('save persists a cart and findByuserId returns it', async () => {

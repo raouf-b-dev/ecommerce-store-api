@@ -41,6 +41,9 @@ describe('CreateCartUseCase', () => {
       expect(result.value.userId).toBe(123);
       expect(result.value.items).toEqual([]);
       expect(result.value.itemCount).toBe(0);
+      expect(result.value.subtotal).toBe(0);
+      expect(result.value.shippingCost).toBe(0);
+      expect(result.value.totalAmount).toBe(0);
       expect(result.value.currency).toBeNull();
     });
 

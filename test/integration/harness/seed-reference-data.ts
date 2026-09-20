@@ -108,6 +108,7 @@ export async function seedReferenceData(
 
   const product = await productRepo.save({
     sku: 'INT-LAPTOP-01',
+    slug: 'int-laptop-01',
     name: 'Integration Laptop Pro',
     description: 'High performance integration laptop',
     price: 1200.0,

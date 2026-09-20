@@ -41,19 +41,17 @@ describe('CachedCartRepository', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('findByuserId', () => {
-    it('should auto-create a fresh cart if cart is expired/missing from both cache and postgres', async () => {
+    it('should return not found when cart is missing from both cache and postgres', async () => {
       cacheService.search.mockResolvedValue([]);
       postgresRepo.findByuserId.mockResolvedValue(
         Result.failure(new RepositoryError('Cart not found')),
       );
-      postgresRepo.mockSuccessfulSave();
-      cacheService.set.mockResolvedValue(true);
 
       const result = await repository.findByuserId(mockCart.userId);
 
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(postgresRepo.save).toHaveBeenCalled();
-      expect(cacheService.set).toHaveBeenCalled();
+      ResultAssertionHelper.assertResultFailure(result, 'Cart not found');
+      expect(postgresRepo.save).not.toHaveBeenCalled();
+      expect(cacheService.set).not.toHaveBeenCalled();
     });
   });
 

@@ -27,7 +27,7 @@ export class CartItem implements ICartItem {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    this._id = props.id || null;
+    this._id = props.id ?? null;
     this._productId = props.productId;
     this._productName = props.productName.trim();
     this._unitPrice = new Money(props.price, props.currency);

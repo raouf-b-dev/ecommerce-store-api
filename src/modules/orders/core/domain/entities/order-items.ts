@@ -32,7 +32,7 @@ export class OrderItem implements IOrderItem {
       throw new Error('Product name is required');
     }
 
-    this._id = props.id || null;
+    this._id = props.id ?? null;
     this._productId = props.productId;
     this._productName = props.productName.trim();
     this._sku = props.sku?.trim() || null;
