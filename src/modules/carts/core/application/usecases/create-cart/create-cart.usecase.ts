@@ -9,12 +9,13 @@ import {
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Cart } from '../../../domain/entities/cart';
-import { ICart } from '../../../domain/interfaces/cart.interface';
+import { CartPresentationMapper } from '../../mappers/cart-presentation.mapper';
+import { CartPresentationDTO } from '../../queries/results/cart-presentation.result';
 
 @Injectable()
 export class CreateCartUseCase extends UseCase<
   CallerContext | null,
-  ICart,
+  CartPresentationDTO,
   UseCaseError
 > {
   constructor(private readonly cartRepository: CartRepository) {
@@ -23,7 +24,7 @@ export class CreateCartUseCase extends UseCase<
 
   async execute(
     callerContext: CallerContext | null,
-  ): Promise<Result<ICart, UseCaseError>> {
+  ): Promise<Result<CartPresentationDTO, UseCaseError>> {
     if (
       !callerContext ||
       callerContext.userId === null ||
@@ -37,7 +38,9 @@ export class CreateCartUseCase extends UseCase<
     const userId = callerContext.userId;
     const existingResult = await this.cartRepository.findByuserId(userId);
     if (existingResult.isSuccess) {
-      return Result.success<ICart>(existingResult.value.toPrimitives());
+      return Result.success(
+        CartPresentationMapper.fromDomain(existingResult.value),
+      );
     }
 
     const cart = Cart.createUserCart(userId);
@@ -50,6 +53,6 @@ export class CreateCartUseCase extends UseCase<
       );
     }
 
-    return Result.success<ICart>(saveResult.value.toPrimitives());
+    return Result.success(CartPresentationMapper.fromDomain(saveResult.value));
   }
 }
