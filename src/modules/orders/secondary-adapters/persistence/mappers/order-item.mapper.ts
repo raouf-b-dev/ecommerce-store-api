@@ -3,6 +3,7 @@ import {
   OrderItem,
   OrderItemProps,
 } from '../../../core/domain/entities/order-items';
+import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 
 export type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order'>;
@@ -23,8 +24,7 @@ export class OrderItemMapper {
 
   static toEntity(domain: OrderItem): OrderItemEntity {
     const primitives = domain.toPrimitives();
-    const itemPayload: OrderItemCreate = {
-      id: primitives.id || 0,
+    const itemPayload: Omit<OrderItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,
       sku: primitives.sku || null,
@@ -33,7 +33,12 @@ export class OrderItemMapper {
       quantity: primitives.quantity,
       lineTotal: primitives.lineTotal,
     };
-    return Object.assign(new OrderItemEntity(), itemPayload);
+    const entity = Object.assign(new OrderItemEntity(), itemPayload);
+    const persistedId = persistedChildId(primitives.id);
+    if (persistedId !== undefined) {
+      entity.id = persistedId;
+    }
+    return entity;
   }
 
   static toDomainArray(entities: OrderItemEntity[]): OrderItem[] {

@@ -1,12 +1,18 @@
-import { OrderEntityTestFactory } from 'src/modules/orders/testing';
+import {
+  OrderEntityTestFactory,
+  OrderTestFactory,
+} from 'src/modules/orders/testing';
 import { PostgresOrderRepository } from './postgres.order-repository';
 import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { ShippingAddressEntity } from '../../orm/shipping-address.schema';
+import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
+import { Order } from '../../../core/domain/entities/order';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
+import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from 'src/testing';
 
 describe('PostgresOrderRepository (Integration - Real DB)', () => {
@@ -65,6 +71,65 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
       relations: ['items', 'shippingAddress'],
     });
   };
+
+  it('saveNormally persists all line items for a new order', async () => {
+    const productRepo = IntegrationTestHelper.getRepository(ProductEntity);
+    const secondProduct = await productRepo.save(
+      productRepo.create({
+        sku: 'INT-BOOK-01',
+        name: 'Integration Guide',
+        description: 'Technical book',
+        price: 28.5,
+        currency: 'USD',
+        categoryId: 5,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+
+    const order = Order.create({
+      id: null,
+      userId: seededData.customerUser.id,
+      paymentMethod: PaymentMethodType.STRIPE,
+      shippingAddress: OrderTestFactory.createShippingAddressProps({
+        id: null,
+      }),
+      customerNotes: null,
+      items: [
+        {
+          id: null,
+          productId: seededData.product.id,
+          productName: seededData.product.name,
+          sku: seededData.product.sku,
+          unitPrice: seededData.product.price,
+          quantity: 1,
+        },
+        {
+          id: null,
+          productId: secondProduct.id,
+          productName: secondProduct.name,
+          sku: secondProduct.sku,
+          unitPrice: secondProduct.price,
+          quantity: 1,
+        },
+      ],
+    });
+
+    const saveResult = await repository.save(order);
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const loaded = await repository.findById(saveResult.value.id!);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value.getItems()).toHaveLength(2);
+    expect(loaded.value.totalPrice).toBeCloseTo(
+      seededData.product.price + secondProduct.price,
+      2,
+    );
+    expect(
+      loaded.value.getItems().every((item) => item.id != null && item.id > 0),
+    ).toBe(true);
+  });
 
   it('findByIdForUpdate returns order with expectedVersion from database', async () => {
     const orderEntity = await persistOrder();
