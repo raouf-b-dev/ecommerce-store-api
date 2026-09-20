@@ -26,6 +26,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
     const secondProduct = await productRepo.save(
       productRepo.create({
         sku: 'INT-MOUSE-01',
+        slug: 'int-mouse-01',
         name: 'Integration Mouse',
         description: 'Wireless mouse',
         price: 25,

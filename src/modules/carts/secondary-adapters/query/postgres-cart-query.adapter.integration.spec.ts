@@ -76,6 +76,7 @@ describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
     const secondProduct = await productRepo.save(
       productRepo.create({
         sku: 'INT-KEYBOARD-01',
+        slug: 'int-keyboard-01',
         name: 'Integration Keyboard',
         description: 'Mechanical keyboard',
         price: 80,

@@ -77,6 +77,7 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
     const secondProduct = await productRepo.save(
       productRepo.create({
         sku: 'INT-BOOK-01',
+        slug: 'int-book-01',
         name: 'Integration Guide',
         description: 'Technical book',
         price: 28.5,
