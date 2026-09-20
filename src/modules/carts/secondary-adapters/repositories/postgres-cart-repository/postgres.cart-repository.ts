@@ -9,6 +9,7 @@ import { Cart } from '../../../core/domain/entities/cart';
 import { CartRepository } from '../../../core/domain/repositories/cart.repository';
 import { CartEntity } from '../../orm/cart.schema';
 import { CartItemEntity } from '../../orm/cart-item.schema';
+import { stripUnsetChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { CartMapper } from '../../persistence/mappers/cart.mapper';
 
 @Injectable()
@@ -113,6 +114,7 @@ export class PostgresCartRepository implements CartRepository {
     cart: Cart,
   ): Promise<Result<Cart, RepositoryError>> {
     const entity = CartMapper.toEntity(cart);
+    entity.items?.forEach((item) => stripUnsetChildId(item));
     const savedEntity = await this.repository.save(entity);
     cart.setId(savedEntity.id);
     return Result.success(cart);
@@ -178,11 +180,7 @@ export class PostgresCartRepository implements CartRepository {
       await manager.remove(CartItemEntity, toRemove);
     }
     if (items.length > 0) {
-      items.forEach((item) => {
-        if (!item.id) {
-          delete (item as { id?: number }).id;
-        }
-      });
+      items.forEach((item) => stripUnsetChildId(item));
       await manager.save(CartItemEntity, items);
     }
   }

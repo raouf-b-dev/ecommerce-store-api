@@ -77,18 +77,7 @@ export class CachedCartRepository implements CartRepository {
         return dbResult;
       }
 
-      // Transparent auto-creation if cart expired/missing
-      const freshCart = Cart.createUserCart(userId);
-      const createResult = await this.postgresRepo.save(freshCart);
-      if (createResult.isFailure) return createResult;
-
-      await this.cacheService.set(
-        `${CART_REDIS.CACHE_KEY}:${freshCart.id}`,
-        CartCacheMapper.toCache(freshCart),
-        { ttl: CART_REDIS.EXPIRATION },
-      );
-
-      return Result.success(freshCart);
+      return dbResult;
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find cart by user ID',

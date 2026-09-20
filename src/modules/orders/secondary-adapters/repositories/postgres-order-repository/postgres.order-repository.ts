@@ -8,6 +8,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Order } from '../../../core/domain/entities/order';
+import { stripUnsetChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { OrderMapper } from '../../persistence/mappers/order.mapper';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { ListOrdersQuery } from '../../../core/domain/repositories/order-repository';
@@ -110,6 +111,7 @@ export class PostgresOrderRepository implements OrderRepository {
     order: Order,
   ): Promise<Result<Order, RepositoryError>> {
     const orderEntity = OrderMapper.toEntity(order);
+    orderEntity.items?.forEach((item) => stripUnsetChildId(item));
     const savedOrder = await this.ormRepo.save(orderEntity);
     order.setId(savedOrder.id);
     return Result.success<Order>(order);
@@ -170,6 +172,7 @@ export class PostgresOrderRepository implements OrderRepository {
       await manager.save(ShippingAddressEntity, mapped.shippingAddress);
     }
     if (mapped.items?.length) {
+      mapped.items.forEach((item) => stripUnsetChildId(item));
       await manager.save(OrderItemEntity, mapped.items);
     }
   }

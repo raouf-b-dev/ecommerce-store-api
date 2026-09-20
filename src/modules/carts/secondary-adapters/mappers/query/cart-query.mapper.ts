@@ -19,7 +19,7 @@ export class CartQueryMapper {
     let currency: string | null = null;
 
     for (const row of rows) {
-      if (row.itemId) {
+      if (row.itemId != null) {
         const qty = Number(row.quantity || 0);
         const unitPrice = Number(row.price || 0);
         const itemTotal = Number((qty * unitPrice).toFixed(2));
