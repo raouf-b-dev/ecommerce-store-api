@@ -3,6 +3,7 @@ import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { PostgresCartQueryAdapter } from './postgres-cart-query.adapter';
 import { CartEntity } from '../orm/cart.schema';
 import { CartItemEntity } from '../orm/cart-item.schema';
+import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
 
 describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
   let queryAdapter: PostgresCartQueryAdapter;
@@ -57,6 +58,63 @@ describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
     expect(result.value?.id).toBe(cart.id);
     expect(result.value?.items).toHaveLength(1);
     expect(result.value?.items[0].productName).toBe('Integration Laptop Pro');
+  });
+
+  it('returns all items for a multi-line cart via getByUserId', async () => {
+    const cartRepo = IntegrationTestHelper.getRepository(CartEntity);
+    const itemRepo = IntegrationTestHelper.getRepository(CartItemEntity);
+    const productRepo = IntegrationTestHelper.getRepository(ProductEntity);
+
+    const cart = await cartRepo.save(
+      cartRepo.create({
+        userId: seededData.customerUser.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+
+    const secondProduct = await productRepo.save(
+      productRepo.create({
+        sku: 'INT-KEYBOARD-01',
+        name: 'Integration Keyboard',
+        description: 'Mechanical keyboard',
+        price: 80,
+        currency: 'USD',
+        categoryId: 1,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    );
+
+    await itemRepo.save([
+      itemRepo.create({
+        cart,
+        productId: seededData.product.id,
+        productName: seededData.product.name,
+        price: seededData.product.price,
+        quantity: 1,
+        currency: 'USD',
+        imageUrl: null,
+      }),
+      itemRepo.create({
+        cart,
+        productId: secondProduct.id,
+        productName: secondProduct.name,
+        price: secondProduct.price,
+        quantity: 2,
+        currency: 'USD',
+        imageUrl: null,
+      }),
+    ]);
+
+    const result = await queryAdapter.getByUserId(seededData.customerUser.id);
+
+    expect(result.isSuccess).toBe(true);
+    if (!result.isSuccess) return;
+
+    expect(result.value?.items).toHaveLength(2);
+    expect(result.value?.itemCount).toBe(3);
   });
 
   it('returns null when querying cart for non-existent user ID', async () => {

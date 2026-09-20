@@ -4,6 +4,7 @@ import {
   CartItem,
   CartItemProps,
 } from '../../../core/domain/entities/cart-item';
+import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { CartItemEntity } from '../../orm/cart-item.schema';
 
 export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
@@ -11,7 +12,7 @@ export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
 export class CartItemMapper {
   static toDomain(entity: CartItemEntity): CartItem {
     const props: CartItemProps = {
-      id: entity.id ? entity.id : null,
+      id: entity.id ?? null,
       productId: entity.productId,
       productName: entity.productName,
       price: entity.price,
@@ -25,8 +26,7 @@ export class CartItemMapper {
 
   static toEntity(domain: CartItem): CartItemEntity {
     const primitives = domain.toPrimitives();
-    const itemPayload: CartItemCreate = {
-      id: primitives.id || 0,
+    const itemPayload: Omit<CartItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,
       price: primitives.price,
@@ -34,7 +34,12 @@ export class CartItemMapper {
       quantity: primitives.quantity,
       imageUrl: primitives.imageUrl,
     };
-    return Object.assign(new CartItemEntity(), itemPayload);
+    const entity = Object.assign(new CartItemEntity(), itemPayload);
+    const persistedId = persistedChildId(primitives.id);
+    if (persistedId !== undefined) {
+      entity.id = persistedId;
+    }
+    return entity;
   }
 
   static toEntityArray(domains: CartItem[]): CartItemEntity[] {
