@@ -24,7 +24,9 @@ export class CartMapper {
     const props: CartProps = {
       id: entity.id || null,
       userId: entity.userId,
-      items: entity.items.map((item) => CartItemMapper.toDomain(item).props),
+      items: [...entity.items]
+        .sort((a, b) => a.id - b.id)
+        .map((item) => CartItemMapper.toDomain(item).props),
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
