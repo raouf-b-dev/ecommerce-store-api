@@ -93,6 +93,26 @@ describe('Inventory', () => {
       expect(inStock.canFulfillQuantity(50)).toBe(true);
     });
 
+    it('compares requested quantity numerically, not lexicographically', () => {
+      // Regression: Quantity.toString() made `"79" >= "8"` false via `>=`.
+      const inventory = InventoryTestFactory.createDomainInventory({
+        availableQuantity: 79,
+        reservedQuantity: 0,
+      });
+
+      const canTakeEight = inventory.isInStock(8);
+      ResultAssertionHelper.assertResultSuccess(canTakeEight);
+      expect(canTakeEight.value).toBe(true);
+
+      const canTakeSeventyNine = inventory.isInStock(79);
+      ResultAssertionHelper.assertResultSuccess(canTakeSeventyNine);
+      expect(canTakeSeventyNine.value).toBe(true);
+
+      const cannotTakeEighty = inventory.isInStock(80);
+      ResultAssertionHelper.assertResultSuccess(cannotTakeEighty);
+      expect(cannotTakeEighty.value).toBe(false);
+    });
+
     it('increaseStock and decreaseStock adjust available quantity', () => {
       const inventory = InventoryTestFactory.createDomainInventory({
         availableQuantity: 10,
