@@ -116,9 +116,11 @@ export class Inventory implements IInventory {
     if (quantityResult.isFailure) return quantityResult;
 
     const checkedQuantity = quantityResult.value;
+    // Must use Quantity comparators; relational ops coerce via toString()
+    // ("79" >= "8" is false lexicographically).
     const isAvailable =
       this._availableQuantity.isPositive() &&
-      this._availableQuantity >= checkedQuantity;
+      this._availableQuantity.isGreaterThanOrEqual(checkedQuantity);
 
     return Result.success(isAvailable);
   }

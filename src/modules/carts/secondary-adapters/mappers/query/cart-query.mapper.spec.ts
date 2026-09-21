@@ -57,6 +57,27 @@ describe('CartQueryMapper', () => {
     expect(CartQueryMapper.toPresentationDto([])).toBeNull();
   });
 
+  it('orders line items by id ascending when rows arrive out of order', () => {
+    const later = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 102,
+      productId: 7,
+      productName: 'Planter',
+      price: '32.50',
+      quantity: 1,
+    });
+    const earlier = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 100,
+      productId: 5,
+      productName: 'French Press',
+      price: '39.99',
+      quantity: 2,
+    });
+
+    const result = CartQueryMapper.toPresentationDto([later, earlier]);
+
+    expect(result?.items.map((item) => item.id)).toEqual([100, 102]);
+  });
+
   it('includes cart lines when itemId is 0 (legacy persisted rows)', () => {
     const row = CartDtoTestFactory.createRawCartQueryRow({
       itemId: 0,

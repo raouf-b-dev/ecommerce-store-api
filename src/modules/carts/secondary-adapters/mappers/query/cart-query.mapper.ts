@@ -44,6 +44,9 @@ export class CartQueryMapper {
       }
     }
 
+    // Stable shopper UX: keep add order even if the DB returns updated rows last.
+    items.sort((a, b) => a.id - b.id);
+
     const createdAt = firstRow.cartCreatedAt
       ? firstRow.cartCreatedAt instanceof Date
         ? firstRow.cartCreatedAt.toISOString()

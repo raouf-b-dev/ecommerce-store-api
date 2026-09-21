@@ -44,7 +44,9 @@ export class PostgresCartQueryAdapter implements CartQueryService {
         qb.andWhere('cart.userId = :authorizedUserId', { authorizedUserId });
       }
 
-      const rawRows: RawCartQueryRow[] = await qb.getRawMany();
+      const rawRows: RawCartQueryRow[] = await qb
+        .orderBy('item.id', 'ASC')
+        .getRawMany();
       const result = CartQueryMapper.toPresentationDto(rawRows);
       return Result.success(result);
     } catch (error) {
@@ -82,7 +84,9 @@ export class PostgresCartQueryAdapter implements CartQueryService {
         qb.andWhere('cart.userId = :authorizedUserId', { authorizedUserId });
       }
 
-      const rawRows: RawCartQueryRow[] = await qb.getRawMany();
+      const rawRows: RawCartQueryRow[] = await qb
+        .orderBy('item.id', 'ASC')
+        .getRawMany();
       const result = CartQueryMapper.toPresentationDto(rawRows);
       return Result.success(result);
     } catch (error) {
