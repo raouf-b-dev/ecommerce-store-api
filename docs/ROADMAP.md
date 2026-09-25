@@ -19,11 +19,12 @@
 
 ## Next up
 
-Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are stable IDs - do not renumber them.
+Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - do not renumber them.
 
-1. **Phase 18** - Real Stripe SDK and webhook idempotency (Money alignment in **17** is done).
-2. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
-3. Then **21 → 24** in the pending table. Phases **15-17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
+1. **Phase 16b** - Demo catalog media (small; any client gets a real-looking catalog from a fresh seed).
+2. **Phase 18** - Real Stripe SDK and webhook idempotency (Money alignment in **17** is done).
+3. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
+4. Then **21 → 25** in the pending table. Phases **15-17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
 
 ---
 
@@ -63,24 +64,27 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**18**). Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**16b**, then **18**). Complete **Phase 19** before deploying to 2+ application instances.
 >
 > - **15b** is done and was required before Phase **20** (satisfied).
 > - Phase **16** optional staging deploy is deferred; it does not block **18**.
 > - Catalog GETs (old 17a) are done; remaining notifications work is Phase **21**.
+> - **16b** is independent of **18**/**19** and can land first. Phase **25** items are demand-driven; pick one only when a client needs it.
 
-| Phase  | Name                                              | Status | Priority | Target / Focus                                                                                      |
-| ------ | ------------------------------------------------- | ------ | :------: | --------------------------------------------------------------------------------------------------- |
-| **15** | Platform Hygiene & Supply-Chain Alignment         | `[x]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts |
-| **16** | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track               |
-| **17** | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)   |
-| **18** | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                        |
-| **19** | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                            |
-| **20** | Checkout SAGA & order events                      | `[x]`  |  `[P1]`  | Former 17c - HTTP checkout, BullMQ SAGA, `orders.created` WebSocket                                 |
-| **21** | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                      |
-| **22** | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                    |
-| **23** | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                               |
-| **24** | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                             |
+| Phase   | Name                                              | Status | Priority | Target / Focus                                                                                      |
+| ------- | ------------------------------------------------- | ------ | :------: | --------------------------------------------------------------------------------------------------- |
+| **15**  | Platform Hygiene & Supply-Chain Alignment         | `[x]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts |
+| **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track               |
+| **16b** | Demo Catalog Media                                | `[ ]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
+| **17**  | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)   |
+| **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                        |
+| **19**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                            |
+| **20**  | Checkout SAGA & order events                      | `[x]`  |  `[P1]`  | Former 17c - HTTP checkout, BullMQ SAGA, `orders.created` WebSocket                                 |
+| **21**  | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                      |
+| **22**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                    |
+| **23**  | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                               |
+| **24**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                             |
+| **25**  | Catalog & Order Contract Extensions               | `[ ]`  |  `[P2]`  | Media upload, product gallery, category image, slug lookup, order status history, `inStock` filter  |
 
 ### Old → New Mapping
 
@@ -243,6 +247,26 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 **Location**: `scripts/`, `docs/infrastructure/`
 
 > May alternatively land as a track under Phase 19 if staging is only needed before multi-instance demos.
+
+---
+
+## Phase 16b: Demo Catalog Media `[P1]`
+
+> **Goal**: `npm run setup` produces a catalog whose products have images served by this API, so any client (admin, storefront, third-party) renders a realistic catalog without extra setup. The contract is unchanged: `imageUrl` already exists on products.
+
+### [ ] API-Served Demo Product Images
+
+**What**:
+
+- Commit a small set of optimized demo images (WebP, redistributable licence recorded next to them) in this repository and serve them from a versioned static path with long-lived cache headers.
+- Add a public base URL setting (the externally reachable origin of this API), validated in `src/config/validate-env.ts`. Seeded `imageUrl` values are absolute URLs built from it, never a hardcoded host.
+- `demo-products.ts` declares an image per demo product; the seed sets `imageUrl` when a product has none and refreshes URLs that point at the demo media path. It never overwrites an operator-set URL.
+- `helmet()` currently sends `Cross-Origin-Resource-Policy: same-origin`, which blocks images loaded from other origins. Allow cross-origin loading for the demo media path only.
+- No references to files in client repositories and no third-party image hosts.
+
+**Done when**: after a fresh `npm run setup`, `GET /v1/products` returns an `imageUrl` for every demo product and each URL loads in a page served from a different origin. Seeding docs mention the new setting.
+
+**Location**: `src/modules/products/core/application/seed/`, `src/main.ts`, `src/config/`, `docs/development/SEEDING.md`
 
 ---
 
@@ -474,6 +498,50 @@ Pick the first unchecked integer phase. Letter suffixes (`15b`, `14c`, ...) are 
 **What**: GPG-encrypt dumps; S3/GCS upload + retention.
 
 **Location**: `scripts/`, `docs/infrastructure/RELEASE-BACKUP-RECOVERY.md`
+
+---
+
+## Phase 25: Catalog & Order Contract Extensions `[P2]`
+
+> **Goal**: Capabilities clients need but the contract does not expose yet. Each item is a real API change: domain model, persistence, OpenAPI, tests. **Trigger**: a client is about to build the feature. Clients must not work around a missing item (no base64 fields, no client-side storage, no derived slugs).
+>
+> Rules for every item: design for any consumer, not a specific app; replace old shapes in the same change instead of adding compatibility fields; regenerate the OpenAPI snapshot.
+
+### [ ] Media Upload
+
+**What**: Multipart upload operation for product images behind a storage port (local-disk adapter for development, object-storage adapter for deployments). Validate type, size, and dimensions; strip metadata; return an API-served `imageUrl` that products reference. Admin-only permission.
+
+**Location**: `src/modules/media/` (new bounded context), `src/modules/products/`
+
+### [ ] Product Image Gallery
+
+**What**: Ordered image collection per product (primary image first) replacing the single `imageUrl` in one contract change. Depends on Media Upload.
+
+**Location**: `src/modules/products/`
+
+### [ ] Category Image
+
+**What**: Optional image on categories, exposed in category responses and editable through category write operations.
+
+**Location**: `src/modules/products/` (categories)
+
+### [ ] Product Lookup by Slug
+
+**What**: Unique, stable product slugs (generated on create, editable, with uniqueness enforced in the database) and a public read-by-slug operation for human-readable client routes.
+
+**Location**: `src/modules/products/`
+
+### [ ] Order Status History
+
+**What**: Append-only status transitions per order (status, timestamp, actor type) recorded by the order aggregate and exposed on order detail for both shopper and operator reads.
+
+**Location**: `src/modules/orders/`
+
+### [ ] Catalog `inStock` Filter
+
+**What**: Optional `inStock` query parameter on the product list, answered by the read model rather than per-product inventory calls.
+
+**Location**: `src/modules/products/`, catalog read adapters
 
 ---
 
