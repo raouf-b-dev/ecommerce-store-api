@@ -132,6 +132,7 @@ Technical reference for this repository, organised by layer.
 
 - [FEATURES.md](FEATURES.md): Detailed reference for every feature implemented in the API.
 - [ROADMAP.md](ROADMAP.md): Project-wide feature roadmap and phase tracking.
+- [ROADMAP-CHANGELOG.md](ROADMAP-CHANGELOG.md): Roadmap renumbering history and structural changes.
 
 ---
 
