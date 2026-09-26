@@ -17,14 +17,27 @@
 
 ---
 
-## Next up
+## Now / Next / Later
 
-Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - do not renumber them.
+Work top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - do not renumber them. Renumbering history lives in [`ROADMAP-CHANGELOG.md`](ROADMAP-CHANGELOG.md).
+
+**Now**
 
 1. **Phase 16b** - Demo catalog media (small; any client gets a real-looking catalog from a fresh seed).
-2. **Phase 18** - Real Stripe SDK and webhook idempotency (Money alignment in **17** is done).
-3. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
-4. Then **21 → 25** in the pending table. Phases **15-17** and **20** are done. Phase **16** optional staging deploy remains deferred (see Phase 16).
+
+**Next**
+
+2. **Phase 16c** - Hosted staging and public demo (single instance, demo data protected by RBAC).
+3. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki off `3100`, PR template).
+4. **Phase 16e** - Stable error codes (one documented error envelope).
+5. **Phase 18** - Real Stripe SDK and webhook idempotency.
+
+**Later**
+
+6. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
+7. **Phases 21 → 25** in the pending table. Phase **25** items are demand-driven.
+
+Phases **15-17** and **20** are done.
 
 ---
 
@@ -58,52 +71,38 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 | **15b** | Shopper HTTP contract                       | Done   | `GET /v1/users/me` · `GET /v1/carts/current` (404 = no cart) · lock public inventory to `view_all_inventory` · `MUST_CHANGE_PASSWORD` code · checkout default-shipping + typed `Retry-After` OpenAPI. Required for checkout-capable HTTP clients. Detail in git.                                                                                                                                      | `src/modules/identity/`, `carts/`, `inventory/`, `orders/`, `src/guards/`                                                  |
 | **17a** | Customer Catalog Read Path (slice)          | Done   | Shopper catalog list/detail via `@OptionalAuth` + `CatalogVisibilityPolicy`. Emails/webhooks/cart recovery deferred to **Phase 21**                                                                                                                                                                                                                                                                   | `src/modules/products/`                                                                                                    |
 
-> **Note**: Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`. Cache role-permission resolution shipped under former Phase 16 tooling and is complete.
+> **Note**: Phase 0 shipped 10 modules and Passport JWT; the tree now has **11 modules** (Analytics added later) and RS256 via `jose`. Cached role-permission resolution is complete.
 
 ---
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase top-to-bottom (**16b**, then **18**). Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase in this order: **16b → 16c → 16d → 16e → 18**. Complete **Phase 19** before deploying to 2+ application instances.
 >
-> - **15b** is done and was required before Phase **20** (satisfied).
-> - Phase **16** optional staging deploy is deferred; it does not block **18**.
-> - Catalog GETs (old 17a) are done; remaining notifications work is Phase **21**.
-> - **16b** is independent of **18**/**19** and can land first. Phase **25** items are demand-driven; pick one only when a client needs it.
+> - **16c** needs **16b** (seeded image URLs use the public base URL) and stays single-instance.
+> - **16d** and **16e** are independent of **16c** and can run in parallel with it.
+> - Remaining notifications work is Phase **21**.
+> - Phase **25** items are demand-driven; pick one only when a client needs it.
 
 | Phase   | Name                                              | Status | Priority | Target / Focus                                                                                      |
 | ------- | ------------------------------------------------- | ------ | :------: | --------------------------------------------------------------------------------------------------- |
 | **15**  | Platform Hygiene & Supply-Chain Alignment         | `[x]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts |
-| **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman; optional staging track               |
+| **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman                                       |
 | **16b** | Demo Catalog Media                                | `[ ]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
-| **17**  | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | **Bumped** old 17e - pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)   |
-| **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | **Bumped** old 17b - HMAC + event.id dedupe (mock fail-closed already in 15)                        |
-| **19**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Former Phase 15: outbox, singleton jobs, SAGA DLQ, search reconciliation                            |
-| **20**  | Checkout SAGA & order events                      | `[x]`  |  `[P1]`  | Former 17c - HTTP checkout, BullMQ SAGA, `orders.created` WebSocket                                 |
-| **21**  | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Former 17a remainder: email, abandoned cart, outbound webhooks                                      |
-| **22**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | Former Phase 16: k6, V8, RED/USE                                                                    |
-| **23**  | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Former 17d - gated on real payment/storefront traffic                                               |
-| **24**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Former Phase 18: broker, multi-tenancy, K8s, encrypted off-site backups                             |
+| **16c** | Hosted Staging & Public Demo                      | `[ ]`  |  `[P1]`  | Single-instance deploy; sibling-subdomain cookies; public Swagger flag; RBAC demo role; seed reset  |
+| **16d** | Full-Stack Local DX                               | `[ ]`  |  `[P1]`  | Run-the-stack guide + port table; Loki off `3100`; PR template                                      |
+| **16e** | Stable Error Codes                                | `[ ]`  |  `[P1]`  | Framework errors mapped to stable machine codes; one error schema in OpenAPI; ADR; e2e assertions   |
+| **17**  | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | Pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)                        |
+| **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | HMAC + event.id dedupe (mock fail-closed already in 15)                                             |
+| **19**  | Multi-Instance & Distributed Consistency          | `[ ]`  |  `[P1]`  | Outbox, singleton jobs, SAGA DLQ, search reconciliation                                             |
+| **20**  | Checkout SAGA & order events                      | `[x]`  |  `[P1]`  | HTTP checkout, BullMQ SAGA, `orders.created` WebSocket                                              |
+| **21**  | Notifications, Webhooks & Cart Recovery           | `[ ]`  |  `[P2]`  | Email, abandoned cart, outbound webhooks                                                            |
+| **22**  | Performance Engineering                           | `[ ]`  |  `[P2]`  | k6, V8, RED/USE                                                                                     |
+| **23**  | Analytics Attention & Operational Facts           | `[ ]`  |  `[P2]`  | Gated on real payment/storefront traffic                                                            |
+| **24**  | Conditional Enterprise & Infrastructure Evolution | `[ ]`  |  `[P2]`  | Broker, multi-tenancy, K8s, encrypted off-site backups                                              |
 | **25**  | Catalog & Order Contract Extensions               | `[ ]`  |  `[P2]`  | Media upload, product gallery, category image, slug lookup, order status history, `inStock` filter  |
 
-### Old → New Mapping
-
-| Old item                                                                           | New phase / track      | Rationale                                             |
-| ---------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------- |
-| Platform hygiene backports                                                         | **15**                 | engines, CI OpenAPI, Action pins, webhook fail-closed |
-| Pin Actions SHAs / `timeout-minutes` / redis chaos `forceExit` (tooling backlog)   | **15-B**               | Pulled into P0 hygiene                                |
-| 14e remainder (value matrix, C4, Bruno)                                            | **16**                 | Finish onboarding showcase                            |
-| Staging / production-like env (old 14 recommended)                                 | **16** track or **19** | Explicit; not lost                                    |
-| Money VO (old 17e)                                                                 | **17**                 | Before real Stripe                                    |
-| Real Stripe (old 17b)                                                              | **18**                 | After Money; mock fail-closed in 15                   |
-| Multi-instance (old 15)                                                            | **19**                 | After pricing/payments correctness                    |
-| Commercial loop (old 17c)                                                          | **20**                 | Before email/webhooks                                 |
-| Email / cart recovery / webhooks (old 17a remainder)                               | **21**                 | After commercial loop                                 |
-| Performance (old 16)                                                               | **22**                 | Preserved                                             |
-| Analytics attention (old 17d)                                                      | **23**                 | Gated on traffic                                      |
-| Enterprise / K8s (old 18)                                                          | **24**                 | Preserved                                             |
-| Catalog GETs (old 17a)                                                             | **Completed**          | Already shipped                                       |
-| Staff-audit shopper contract gaps (GET /me, current cart, inventory ACL, 403 code) | **15b** (done)         | Shopper HTTP contract for cart/checkout clients       |
+> Phase renumbering history (old → new mapping) is in [`ROADMAP-CHANGELOG.md`](ROADMAP-CHANGELOG.md).
 
 ---
 
@@ -168,7 +167,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 **Scope**:
 
 - Wire `npm run audit:openapi` into GitHub Actions CI.
-- Pin GitHub Actions to full commit SHAs + version comments (former tooling backlog).
+- Pin GitHub Actions to full commit SHAs + version comments.
 - Add `timeout-minutes` to long jobs (integration, e2e, redis-chaos).
 - Drop Jest `forceExit` from `jest-redis-chaos.json` once open handles are proven clean.
 
@@ -206,9 +205,9 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 16: Complete Developer Onboarding & Architecture Assets `[P0]`
 
-> **Goal**: Finish former Phase 14e remainder so the repo is a showcase reference. Bootstrap (`npm run setup`) is already done.
+> **Goal**: Finish the Phase 14e remainder so the repo is a showcase reference. Bootstrap (`npm run setup`) is already done.
 >
-> **Status**: Core deliverables are complete. The recommended staging track below is optional and may move to Phase **19** if only needed before multi-instance demos.
+> **Status**: Complete. The staging track moved to Phase **16c**.
 
 ### [x] Architecture Value Matrix & "Why Choose This Engine?" in README
 
@@ -234,19 +233,9 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ---
 
-### [ ] Staging / Production-Like Environment (Recommended)
+### Staging / Production-Like Environment
 
-**What**: Constrained staging mirroring production topology (former Phase 14 recommended item - not lost).
-
-**Scope**:
-
-- Deploy API + managed Postgres/Redis (Railway/Render/Fly.io or equivalent).
-- Public Swagger; protect `/metrics` via API key.
-- Run `npm run db:seed`.
-
-**Location**: `scripts/`, `docs/infrastructure/`
-
-> May alternatively land as a track under Phase 19 if staging is only needed before multi-instance demos.
+Moved to Phase **16c**.
 
 ---
 
@@ -263,6 +252,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 - `demo-products.ts` declares an image per demo product; the seed sets `imageUrl` when a product has none and refreshes URLs that point at the demo media path. It never overwrites an operator-set URL.
 - `helmet()` currently sends `Cross-Origin-Resource-Policy: same-origin`, which blocks images loaded from other origins. Allow cross-origin loading for the demo media path only.
 - No references to files in client repositories and no third-party image hosts.
+- Document for HTTP clients: the public base URL host must be added to their image allow-lists (framework remote-image patterns, CSP `img-src`); the demo media path sends `Cross-Origin-Resource-Policy: cross-origin`.
 
 **Done when**: after a fresh `npm run setup`, `GET /v1/products` returns an `imageUrl` for every demo product and each URL loads in a page served from a different origin. Seeding docs mention the new setting.
 
@@ -270,9 +260,99 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ---
 
+## Phase 16c: Hosted Staging & Public Demo `[P1]`
+
+> **Goal**: A public, seeded, read-mostly deployment any HTTP client can target, so evaluators can try the API without Docker. Single instance only; multi-instance stays Phase **19**.
+>
+> **Prerequisite**: Phase **16b** (seeded image URLs are built from the public base URL).
+
+### [ ] Single-Instance Hosted Deployment
+
+**What**: Deploy the API image with managed Postgres and Redis on one host (Railway or equivalent). Migrations run on deploy; health probes gate traffic.
+
+**Scope**:
+
+- Custom domain with sibling subdomains (for example `api.<domain>` for this API, clients on other subdomains of the same domain). The refresh cookie is `Secure`, `SameSite=Strict` and host-only (`refresh-token-cookie.interceptor.ts`). Platform default domains are separate sites, so the cookie would not reach the API from a client hosted on another platform domain.
+- `CORS_ALLOWED_ORIGINS` lists the exact client origins; credentials stay enabled. Document the refresh cookie attributes (`Secure`, `SameSite`, host-only, path) and why they work with sibling subdomains.
+- The public base URL setting from Phase **16b** points at the hosted origin.
+- Swagger: add an explicit env flag so `/api/docs` can be public in staging while production defaults stay closed. Today `src/main.ts` mounts Swagger only when `NODE_ENV !== 'production'`.
+- `/metrics` already rejects requests when `METRICS_API_KEY` is empty (`metrics-auth.guard.ts`). Add a boot-time check: env validation fails when the key is empty and either the public Swagger flag is on or `NODE_ENV=production`.
+
+**Done when**: a client on a sibling subdomain can log in, silently refresh, and read the catalog against the hosted API; `/api/docs` loads publicly; `/metrics` returns 401 without the key; booting with the Swagger flag on and no metrics key fails.
+
+**Location**: `src/main.ts`, `src/config/validate-env.ts`, `src/modules/authentication/primary-adapters/interceptors/`, `docs/infrastructure/`
+
+---
+
+### [ ] Demo Data Protection (RBAC)
+
+**What**: Keep the public demo usable for the next visitor by using the existing role and permission model. No route blocklist and no setting that changes authentication or authorization rules.
+
+**Scope**:
+
+- Seed a demo operator role that has read permissions and non-destructive catalog, inventory, and order operations, but no delete, user-management, or role-management permissions. Seed a demo operator account with that role and a demo shopper account.
+- Demo accounts are seeded with `mustChangePassword: false` (today the demo seed sets `true`). Their credentials are documented as demo-only. Bootstrap and production operator accounts keep forced rotation.
+- Scheduled reset: truncate and re-run the seed on a schedule (for example nightly), as a singleton job or a platform cron.
+- A demo setting that only drives the reset schedule and reporting. The existing public health response exposes `demoMode` and `nextResetAt` so any client can show a notice. No client-specific wording in the API.
+
+**Done when**: the demo operator gets 403 with the existing permission error code on delete and user/role writes; a reset restores the seed; the health response reports `demoMode` and `nextResetAt` and both are in OpenAPI.
+
+**Location**: `src/modules/authorization/`, `src/modules/authentication/core/application/seed/`, `src/modules/*/core/application/seed/`, `src/modules/health/`, `docs/development/SEEDING.md`
+
+---
+
+## Phase 16d: Full-Stack Local DX `[P1]`
+
+> **Goal**: A newcomer runs this API with companion HTTP clients locally without port clashes, and contributions follow one PR checklist.
+
+### [ ] Run-the-Stack Guide & Port Table
+
+**What**: `docs/development/FULL-STACK.md`: clone order, env steps, CORS origins for local clients, seeded accounts, and one port table (API `3000`, Redis Insight `8001`, Grafana `3001`, Loki, and the ports the companion clients use by default). Link it from `README.md` "Related repositories".
+
+**Location**: `docs/development/`, `README.md`
+
+---
+
+### [ ] Move Loki Off Port 3100
+
+**What**: `3100` is a common dev-server port for HTTP clients. Change the `LOKI_HOST_PORT` default (for example `3110`) in `.env.example`, the `docker-compose.yaml` port mapping and healthcheck URL, and the port tables in `docs/observability/MONITORING-STACK-GUIDE.md`, so the monitoring stack and a client on `3100` run together.
+
+**Location**: `.env.example`, `docker-compose.yaml`, `docs/observability/`
+
+---
+
+### [ ] Pull Request Template
+
+**What**: Add `.github/pull_request_template.md` (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates.
+
+**Location**: `.github/`
+
+---
+
+## Phase 16e: Stable Error Codes `[P1]`
+
+> **Goal**: Every error body has one documented shape, and `code` is always a stable machine-readable value that clients can branch on.
+
+### [ ] One Documented Error Envelope
+
+**What**: Today `GlobalExceptionFilter` copies Nest's `error` field into `code` for framework `HttpException`s (`code = exceptionResponse.code || exceptionResponse.error`), so `code` can be human text such as `Bad Request` or `Unauthorized`. Validation failures and unhandled errors return no `code`, and outside production the body also carries an `error` field with debug detail.
+
+**Scope**:
+
+- Map framework exceptions to stable codes (for example `VALIDATION_FAILED`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `RATE_LIMITED`, `INTERNAL_ERROR`); domain `AppError` codes stay as they are. `code` is always present.
+- One error schema (`success`, `statusCode`, `code`, `message`, optional `errors[]`, `timestamp`) published in OpenAPI and referenced by every documented error response. Non-production debug fields are renamed so they cannot be confused with `code`, and documented as development-only.
+- ADR recording the envelope and the code naming rule.
+- Release note: clients that branch on the old human-text `code` values must switch to the stable codes.
+
+**Done when**: `audit:openapi` covers the error schema and e2e specs assert the shape and code for 400/401/403/404/409/429.
+
+**Location**: `src/filters/global-exception.filter.ts`, `src/infrastructure/swagger/`, `docs/architecture/adr/`, `test/e2e/`
+
+---
+
 ## Phase 17: Money & Currency Domain Alignment `[P1]`
 
-> **Goal**: Pricing truth across carts/orders **before** real Stripe. (Bumped from old 17e.)
+> **Goal**: Pricing truth across carts/orders **before** real Stripe.
 >
 > **MVP foundation already**: cart lines snapshot ISO 4217 currency; mixed currencies rejected; DTOs expose currency.
 >
@@ -307,7 +387,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 18: Real Stripe SDK Integration & Webhook Idempotency `[P1]`
 
-> **Goal**: Replace mock payment gateway with production Stripe processing. (Bumped from old 17b.)
+> **Goal**: Replace mock payment gateway with production Stripe processing.
 >
 > **Prerequisite**: Phase 15 webhook fail-closed; Phase 17 Money alignment preferred.
 
@@ -328,7 +408,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 19: Multi-Instance & Distributed Consistency `[P1]`
 
-> **Goal**: Former Phase 15. **Complete before deploying to 2+ application instances.**
+> **Goal**: Consistent events, jobs, and search across instances. **Complete before deploying to 2+ application instances.**
 
 ### [ ] Transactional Outbox Pattern
 
@@ -364,7 +444,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 20: Checkout SAGA & Order Events `[P1]`
 
-> **Goal**: Former 17c. Stable HTTP checkout command, BullMQ SAGA, and `orders.created` WebSocket broadcast. Placed **before** email/webhooks; works with mock or real Stripe.
+> **Goal**: Stable HTTP checkout command, BullMQ SAGA, and `orders.created` WebSocket broadcast. Placed **before** email/webhooks; works with mock or real Stripe.
 >
 > **Hard prerequisite:** Shopper HTTP contract **15b** (done).
 >
@@ -387,7 +467,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 21: Notifications, Webhooks & Abandoned Cart Engine `[P2]`
 
-> **Goal**: Former 17a remainder (catalog GETs already shipped).
+> **Goal**: Outbound email, abandoned cart recovery, and webhook subscriptions (catalog GETs already shipped).
 >
 > **Storefront note**: do not claim "we emailed a receipt" until order-confirmation email from this phase exists.
 
@@ -417,7 +497,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 22: Performance Engineering & Observability Maturity `[P2]`
 
-> **Goal**: Former Phase 16. (Role-permission cache already shipped.)
+> **Goal**: Measured baselines, runtime profiling, and SLO alerting. (Role-permission cache already shipped.)
 
 ### [ ] k6 Load Testing Baseline
 
@@ -447,7 +527,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 23: Analytics Attention & Operational Facts `[P2]`
 
-> **Goal**: Former 17d. **Trigger**: after real Stripe (18) and live storefront traffic (20).
+> **Goal**: Operational facts for the admin analytics read path. **Trigger**: after real Stripe (18) and live storefront traffic (20).
 
 ### [ ] Operational Pulse & Inventory Sell-Through Facts
 
@@ -463,7 +543,7 @@ Work this list top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are sta
 
 ## Phase 24: Conditional Enterprise & Infrastructure Evolution `[P2]`
 
-> **Goal**: Former Phase 18. Only when product/ops requirements justify it. Builds on Phase 19 outbox.
+> **Goal**: Only when product/ops requirements justify it. Builds on Phase 19 outbox.
 
 ### [ ] Message Broker Adapter (Kafka or RabbitMQ)
 
