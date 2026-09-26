@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { isFailure, Result } from 'src/shared-kernel/domain/result';

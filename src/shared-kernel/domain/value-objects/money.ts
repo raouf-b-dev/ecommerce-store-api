@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/shared/domain/value-objects/money.ts
 import { Result } from '../../../shared-kernel/domain/result';
 import { DomainError } from '../../../shared-kernel/domain/exceptions/domain.error';

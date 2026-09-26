@@ -7,6 +7,7 @@ Whether it's a bug report, new feature, correction, or additional documentation,
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
+- [Contributor License Agreement](#contributor-license-agreement)
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
 - [Making Changes](#making-changes)
@@ -18,6 +19,24 @@ Whether it's a bug report, new feature, correction, or additional documentation,
 ## Code of Conduct
 
 This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+## Contributor License Agreement
+
+The project is dual-licensed. See [LICENSING.md](LICENSING.md) and [CLA.md](CLA.md).
+
+Before a first contribution can be merged, you sign the Contributor License Agreement. The agreement gives Abderaouf Bouzerara the right to sublicense and relicense your contributions under any terms, including proprietary and commercial licences.
+
+On your first pull request, the CLA check asks you to comment with this exact sentence:
+
+```
+I have read the CLA Document and I hereby sign the CLA
+```
+
+That comment is your signature. Signatures are stored in `signatures/version1/cla.json` on the `cla-signatures` branch, not on `master`.
+
+You only sign once. Later pull requests from the same GitHub account are recognized. If the check does not update, comment `recheck`.
+
+The repository owner (`raouf-b-dev`), `dependabot[bot]`, and other GitHub App bots (logins ending in `[bot]`) are allowlisted and do not sign.
 
 ## Getting Started
 
@@ -171,6 +190,7 @@ npm run audit:openapi
 ### PR Checklist
 
 - [ ] Code follows the project's style guidelines
+- [ ] Contributor License Agreement signed (first contribution only)
 - [ ] Tests pass locally (`npm test`)
 - [ ] New functionality includes appropriate tests
 - [ ] Documentation is updated if needed

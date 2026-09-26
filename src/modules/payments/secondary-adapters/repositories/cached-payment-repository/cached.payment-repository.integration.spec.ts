@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { PaymentTestFactory } from 'src/modules/payments/testing';
 import { CachedPaymentRepository } from './cached.payment-repository';
 import { PostgresPaymentRepository } from '../postgres-payment-repository/postgres.payment-repository';

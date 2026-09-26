@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { GetInventoryUseCase } from './get-inventory.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { InventoryDtoTestFactory } from 'src/modules/inventory/testing/factories/inventory-dto.factory';

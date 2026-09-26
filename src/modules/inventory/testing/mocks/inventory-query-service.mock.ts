@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { InventoryQueryService } from '../../core/application/ports/inventory-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { InventoryListItemDTO } from '../../core/application/queries/results/inventory-list-item.result';

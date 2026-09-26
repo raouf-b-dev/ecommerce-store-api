@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/orders/domain/entities/order.ts
 import { IOrder } from '../interfaces/order.interface';
 import { IOrderItem } from '../interfaces/order-item.interface';

@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { AddCartItemUseCase } from './add-cart-item.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { AddCartItemCommand } from '../../commands/add-cart-item.command';

@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 /**
  * Relative payment timestamps for demo seed (offsets from seed-time `now` UTC).
  * Pending-payment orders are omitted by the CLI (no payment row).

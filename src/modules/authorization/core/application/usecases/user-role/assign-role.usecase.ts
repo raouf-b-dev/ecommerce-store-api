@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { UseCase } from 'src/shared-kernel/domain/interfaces/base.usecase';

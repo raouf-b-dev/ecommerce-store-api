@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { MockInventoryRepository } from 'src/modules/inventory/testing';
 import { SeedDemoInventoryFromOrdersUseCase } from './seed-demo-inventory-from-orders.usecase';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';

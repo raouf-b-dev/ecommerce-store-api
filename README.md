@@ -10,7 +10,7 @@
   <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24-green?style=flat&logo=node.js" alt="Node.js 24"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
 </p>
 
 > NestJS ecommerce API. Checkout, stock, and auth live here. Reference backend, not a hosted store.
@@ -187,6 +187,12 @@ Each repository runs independently. Clone companions from the table when you nee
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE) (GNU Affero General Public License v3.0 only).
 
-Built by [Abderaouf .B](https://github.com/raouf-b-dev) · [Issues](https://github.com/raouf-b-dev/ecommerce-store-api/issues)
+Commercial licences are available from the author. Contact via https://github.com/raouf-b-dev.
+
+Releases up to and including [v0.8.0](https://github.com/raouf-b-dev/ecommerce-store-api/releases/tag/v0.8.0) remain under the MIT License.
+
+The dual-licence model is explained in [LICENSING.md](LICENSING.md).
+
+Built by [Abderaouf Bouzerara](https://github.com/raouf-b-dev) · [Issues](https://github.com/raouf-b-dev/ecommerce-store-api/issues)

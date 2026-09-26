@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { ListProductsQuery } from '../queries/list-products.query';
 import { ProductListItemDTO } from '../queries/results/product-list-item.result';
 import { ProductDetailDTO } from '../queries/results/product-detail.result';

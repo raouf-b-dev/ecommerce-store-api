@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/carts/testing/factories/cart-entity.factory.ts
 import { CartItemEntity } from '../../secondary-adapters/orm/cart-item.schema';
 import { CartEntity } from '../../secondary-adapters/orm/cart.schema';

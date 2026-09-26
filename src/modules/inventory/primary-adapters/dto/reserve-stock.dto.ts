@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/inventory/presentation/dto/reserve-stock.dto.ts
 import { IsArray, ValidateNested, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';

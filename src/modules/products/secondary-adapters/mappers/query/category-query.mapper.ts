@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { CategoryResult } from '../../../core/application/queries/results/category.result';
 import { RawCategoryQueryRow } from '../../dto/raw-category-query-row.interface';
 

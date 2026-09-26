@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { CachedUserRepository } from './cached-user.repository';
 import { PostgresUserRepository } from '../postgres-user-repository/postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';
