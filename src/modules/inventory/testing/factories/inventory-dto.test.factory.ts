@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { AdjustStockCommand } from '../../core/application/commands/adjust-stock.command';
 import { ReservationInput } from '../../core/domain/repositories/reservation.repository';
 import { LowStockQuery } from '../../core/domain/repositories/inventory.repository';

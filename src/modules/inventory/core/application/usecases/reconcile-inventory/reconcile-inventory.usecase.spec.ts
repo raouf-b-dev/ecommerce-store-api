@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { InventoryTestFactory } from 'src/modules/inventory/testing';
 import { ReconcileInventoryUseCase } from './reconcile-inventory.usecase';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';

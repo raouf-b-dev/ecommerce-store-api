@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';

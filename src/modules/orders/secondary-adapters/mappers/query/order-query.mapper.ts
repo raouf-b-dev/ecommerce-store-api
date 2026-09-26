@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderListItemDTO } from '../../../core/application/queries/results/order-list-item.result';

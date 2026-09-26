@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { SeedSuperAdminUseCase } from '../src/modules/authentication/core/application/seed/seed-super-admin.usecase';

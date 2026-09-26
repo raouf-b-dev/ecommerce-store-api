@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/carts/secondary-adapters/repositories/cached-cart-repository/cached.cart-repository.spec.ts
 import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
 import { MockCacheService, MockLogger } from 'src/testing';

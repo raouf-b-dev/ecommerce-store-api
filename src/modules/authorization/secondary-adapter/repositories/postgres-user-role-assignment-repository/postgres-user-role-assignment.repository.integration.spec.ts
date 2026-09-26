@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { UserRoleAssignment } from '../../../core/domain/entities/user-role-assignment';
 import { PostgresUserRoleAssignmentRepository } from './postgres-user-role-assignment.repository';
 import { UserRoleAssignmentEntity } from '../../orm/user-role-assignment.schema';

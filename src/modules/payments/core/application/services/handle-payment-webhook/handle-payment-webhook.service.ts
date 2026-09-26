@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/payments/application/usecases/handle-payment-webhook/handle-payment-webhook.usecase.ts
 import { Injectable, Logger } from '@nestjs/common';
 import {

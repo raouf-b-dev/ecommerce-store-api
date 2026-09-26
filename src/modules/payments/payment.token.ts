@@ -1,2 +1,5 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 export const POSTGRES_PAYMENT_REPOSITORY = 'POSTGRES_PAYMENT_REPOSITORY';
 export const CACHED_PAYMENT_REPOSITORY = 'CACHED_PAYMENT_REPOSITORY';

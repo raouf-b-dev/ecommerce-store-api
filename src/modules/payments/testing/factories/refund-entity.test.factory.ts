@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { RefundEntity } from '../../secondary-adapters/orm/refund.schema';
 import { RefundStatusType } from '../../core/domain/value-objects/refund-status';
 import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';

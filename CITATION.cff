@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+type: software
+title: E-commerce Store API
+version: 0.8.0
+date-released: "2026-09-20"
+license: AGPL-3.0-only
+repository-code: https://github.com/raouf-b-dev/ecommerce-store-api
+authors:
+  - given-names: Abderaouf
+    family-names: Bouzerara
+    website: https://github.com/raouf-b-dev

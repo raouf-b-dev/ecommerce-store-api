@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // Creates .env.development/.env.production/.env.staging/.env.test from .env.example
 // Also creates .secrets from .secrets.example with local/CI-ready dev defaults
 //

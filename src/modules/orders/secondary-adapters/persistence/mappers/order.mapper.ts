@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/orders/infrastructure/mappers/order.mapper.ts
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';

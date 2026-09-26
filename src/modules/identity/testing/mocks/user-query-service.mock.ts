@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { UserQueryService } from '../../core/application/ports/user-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { UserListItemDTO } from '../../core/application/queries/results/user-list-item.result';

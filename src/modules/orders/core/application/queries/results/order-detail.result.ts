@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 import { OrderItemDetailDTO } from './order-item-detail.result';
 
 export interface OrderDetailDTO {

@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src/modules/users/presentation/dto/update-user.dto.ts
 import { IsString, IsEmail, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';

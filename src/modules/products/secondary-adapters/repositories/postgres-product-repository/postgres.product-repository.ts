@@ -1,3 +1,6 @@
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
 import { HttpStatus } from '@nestjs/common';
 import { Repository, In } from 'typeorm';

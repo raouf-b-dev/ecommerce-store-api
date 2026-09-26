@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Copyright (c) 2025-2026 Abderaouf Bouzerara
+// SPDX-License-Identifier: AGPL-3.0-only
+
 // scripts/docker-migrate.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Self-contained migration runner for Docker production containers.
