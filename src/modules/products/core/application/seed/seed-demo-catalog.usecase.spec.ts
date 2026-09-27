@@ -15,6 +15,35 @@ import { Product } from '../../domain/entities/product';
 import { MockCategoryRepository } from '../../../testing/mocks/category-repository.mock';
 import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
 
+const input = { publicBaseUrl: 'http://localhost:3000' };
+const headphonesImage = 'http://localhost:3000/media/demo/v1/elec-anc-001.webp';
+
+function existingDemoProducts(
+  overrides: (idx: number) => {
+    categoryId?: number | null;
+    imageUrl?: string | null;
+  },
+): Product[] {
+  return DEMO_SEED_PRODUCTS.map((seed, idx) =>
+    Product.fromPrimitives({
+      id: 500 + idx,
+      sku: seed.sku,
+      name: seed.name,
+      slug: seed.sku.toLowerCase(),
+      price: seed.price,
+      currency: 'USD',
+      categoryId:
+        DEMO_SEED_CATEGORIES.find((c) => c.slug === seed.categorySlug)?.id ??
+        null,
+      imageUrl: `http://localhost:3000/media/demo/v1/${seed.sku.toLowerCase()}.webp`,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides(idx),
+    }),
+  );
+}
+
 function activeCategories(): Category[] {
   return DEMO_SEED_CATEGORIES.map((fixture) =>
     Category.fromPrimitives({
@@ -90,7 +119,7 @@ describe('SeedDemoCatalogUseCase', () => {
         ),
     );
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
 
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
@@ -118,27 +147,40 @@ describe('SeedDemoCatalogUseCase', () => {
     );
   });
 
-  it('should backfill null categoryId on existing demo SKUs only', async () => {
-    const existing = DEMO_SEED_PRODUCTS.map((seed, idx) =>
-      Product.fromPrimitives({
-        id: 500 + idx,
-        sku: seed.sku,
-        name: seed.name,
-        slug: seed.sku.toLowerCase(),
-        price: seed.price,
-        currency: 'USD',
-        categoryId: null,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+  it('should create missing products with demo image URLs and return them', async () => {
+    productRepository.mockSuccessfulList([]);
+    createProductUseCase.execute.mockImplementation(
+      (cmd: CreateProductCommand) =>
+        Promise.resolve(
+          Result.success({ id: 100, sku: cmd.sku ?? '' } as IProduct),
+        ),
+    );
+
+    const result = await useCase.execute({
+      publicBaseUrl: 'http://localhost:3000/',
+    });
+
+    expect(createProductUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sku: 'ELEC-ANC-001',
+        imageUrl: headphonesImage,
       }),
     );
-    productRepository.mockSuccessfulList(existing);
+    expect(result.isSuccess).toBe(true);
+    if (result.isSuccess) {
+      expect(result.value[0].imageUrl).toBe(headphonesImage);
+    }
+  });
+
+  it('should backfill null categoryId on existing demo SKUs only', async () => {
+    productRepository.mockSuccessfulList(
+      existingDemoProducts(() => ({ categoryId: null })),
+    );
     updateProductUseCase.execute.mockResolvedValue(
       Result.success({} as IProduct),
     );
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
 
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
@@ -160,27 +202,60 @@ describe('SeedDemoCatalogUseCase', () => {
     });
   });
 
-  it('should not update existing demo SKUs that already have a category', async () => {
-    const existing = DEMO_SEED_PRODUCTS.map((seed, idx) => {
-      const categoryId =
-        DEMO_SEED_CATEGORIES.find((c) => c.slug === seed.categorySlug)?.id ??
-        null;
-      return Product.fromPrimitives({
-        id: 500 + idx,
-        sku: seed.sku,
-        name: seed.name,
-        slug: seed.sku.toLowerCase(),
-        price: seed.price,
-        currency: 'USD',
-        categoryId,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    });
-    productRepository.mockSuccessfulList(existing);
+  it('should backfill a null imageUrl and refresh stale demo image URLs', async () => {
+    productRepository.mockSuccessfulList(
+      existingDemoProducts((idx) => {
+        if (idx === 0) return { imageUrl: null };
+        if (idx === 1)
+          return {
+            imageUrl:
+              'https://old-host.example/media/demo/v0/elec-sfw-002.webp',
+          };
+        return {};
+      }),
+    );
+    updateProductUseCase.execute.mockResolvedValue(
+      Result.success({} as IProduct),
+    );
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
+
+    expect(updateProductUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(updateProductUseCase.execute).toHaveBeenCalledWith({
+      id: 500,
+      imageUrl: headphonesImage,
+    });
+    expect(updateProductUseCase.execute).toHaveBeenCalledWith({
+      id: 501,
+      imageUrl: 'http://localhost:3000/media/demo/v1/elec-sfw-002.webp',
+    });
+    expect(result.isSuccess).toBe(true);
+    if (result.isSuccess) {
+      expect(result.value[0].imageUrl).toBe(headphonesImage);
+    }
+  });
+
+  it('should keep operator-provided image URLs on demo SKUs', async () => {
+    const operatorUrl = 'https://cdn.example.com/products/headphones.jpg';
+    productRepository.mockSuccessfulList(
+      existingDemoProducts((idx) =>
+        idx === 0 ? { imageUrl: operatorUrl } : {},
+      ),
+    );
+
+    const result = await useCase.execute(input);
+
+    expect(updateProductUseCase.execute).not.toHaveBeenCalled();
+    expect(result.isSuccess).toBe(true);
+    if (result.isSuccess) {
+      expect(result.value[0].imageUrl).toBe(operatorUrl);
+    }
+  });
+
+  it('should not update existing demo SKUs that already have a category and image', async () => {
+    productRepository.mockSuccessfulList(existingDemoProducts(() => ({})));
+
+    const result = await useCase.execute(input);
 
     expect(result.isSuccess).toBe(true);
     if (result.isSuccess) {
@@ -197,7 +272,7 @@ describe('SeedDemoCatalogUseCase', () => {
     categoryRepository.mockSuccessfulFindAll([]);
     productRepository.mockSuccessfulList([]);
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
 
     expect(result.isFailure).toBe(true);
     if (result.isFailure) {
@@ -210,7 +285,7 @@ describe('SeedDemoCatalogUseCase', () => {
   it('should propagate error if listing existing products fails', async () => {
     productRepository.mockListFailure('List failed');
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
 
     expect(result.isFailure).toBe(true);
     if (result.isFailure) {
@@ -226,7 +301,7 @@ describe('SeedDemoCatalogUseCase', () => {
       Result.failure(new UseCaseError('Creation error')),
     );
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(input);
 
     expect(result.isFailure).toBe(true);
     if (result.isFailure) {
