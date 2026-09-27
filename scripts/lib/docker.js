@@ -46,7 +46,9 @@ const FAILURES = {
   },
   composeTimeout: {
     message: 'Timed out waiting for Docker Compose to respond.',
-    hints: ['Restart Docker Desktop, wait until it is idle, then retry.'],
+    hints: [
+      'Restart Docker Desktop, wait until it is idle, then retry.',
+    ],
   },
   noCompose: {
     message: 'The Docker Compose plugin is not available.',

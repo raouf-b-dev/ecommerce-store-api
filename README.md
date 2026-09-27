@@ -10,7 +10,7 @@
   <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24-green?style=flat&logo=node.js" alt="Node.js 24"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
 </p>
 
 > NestJS ecommerce API. Checkout, stock, and auth live here. Reference backend, not a hosted store.
@@ -188,7 +188,5 @@ Each repository runs independently. Clone companions from the table when you nee
 ## License
 
 [MIT](LICENSE)
-
-Contributions require signing the [Contributor License Agreement](CLA.md).
 
 Built by [Abderaouf Bouzerara](https://github.com/raouf-b-dev) · [Issues](https://github.com/raouf-b-dev/ecommerce-store-api/issues)

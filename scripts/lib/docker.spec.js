@@ -78,10 +78,7 @@ describe('classifyComposeVersion', () => {
   });
 
   it('maps non-zero status to noCompose', () => {
-    assert.equal(
-      classifyComposeVersion(failed('plugin not found')),
-      'noCompose',
-    );
+    assert.equal(classifyComposeVersion(failed('plugin not found')), 'noCompose');
   });
 });
 
@@ -205,10 +202,7 @@ describe('compose up contract', () => {
   });
 
   it('keeps compose image defaults aligned with .env.example', () => {
-    const example = fs.readFileSync(
-      path.join(repoRoot, '.env.example'),
-      'utf8',
-    );
+    const example = fs.readFileSync(path.join(repoRoot, '.env.example'), 'utf8');
     const compose = fs.readFileSync(
       path.join(repoRoot, 'docker-compose.yaml'),
       'utf8',

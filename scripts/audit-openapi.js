@@ -123,8 +123,7 @@ for (const [route, methods] of Object.entries(spec.paths || {})) {
         continue;
       }
 
-      const description =
-        `${response.description || ''} ${operation.description || ''}`.toLowerCase();
+      const description = `${response.description || ''} ${operation.description || ''}`.toLowerCase();
       const mentionsNull =
         description.includes('null') ||
         description.includes('`null`') ||
