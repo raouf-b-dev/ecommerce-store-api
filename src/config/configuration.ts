@@ -42,6 +42,8 @@ export interface IAppConfig {
   };
   http: {
     trustProxy: string;
+    /** Origin clients use to reach this API; builds absolute demo media URLs. */
+    publicBaseUrl: string;
   };
   metricsApiKey: string;
   otel: {
@@ -100,6 +102,7 @@ export default (): IAppConfig => {
     },
     http: {
       trustProxy: env.TRUST_PROXY,
+      publicBaseUrl: env.PUBLIC_BASE_URL,
     },
     metricsApiKey: env.METRICS_API_KEY,
     otel: {

@@ -31,6 +31,7 @@ import { BulkCheckStockItemDto } from './primary-adapters/dto/bulk-check-stock.d
 import { ReservationResponseDto } from './primary-adapters/dto/reservation-response.dto';
 import { LowStockQueryDto } from './primary-adapters/dto/low-stock-query.dto';
 import { ListInventoryQueryDto } from './primary-adapters/dto/list-inventory-query.dto';
+import { CheckStockQueryDto } from './primary-adapters/dto/check-stock-query.dto';
 import { GetInventoryUseCase } from './core/application/usecases/get-inventory/get-inventory.usecase';
 import { ListInventoryUseCase } from './core/application/usecases/list-inventory/list-inventory.usecase';
 
@@ -147,11 +148,11 @@ export class InventoryController {
   })
   async checkStock(
     @Param('productId', ParseIntPipe) productId: number,
-    @Query('quantity') quantity?: number,
+    @Query() query: CheckStockQueryDto,
   ) {
     return await this.checkStockUseCase.execute({
-      productId: productId,
-      quantity: quantity ? Number(quantity) : undefined,
+      productId,
+      quantity: query.quantity,
     });
   }
 

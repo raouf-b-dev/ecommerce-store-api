@@ -1,7 +1,55 @@
-import { cleanEnv, str, port, num } from 'envalid';
+import { cleanEnv, str, port, num, makeValidator, EnvError } from 'envalid';
+
+const HTTP_ORIGIN_ERROR =
+  'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
+
+/** Parses an http(s) origin and returns it normalized (lowercase host, no trailing slash). */
+export function parseHttpOrigin(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    throw new EnvError(HTTP_ORIGIN_ERROR);
+  }
+  const isOrigin =
+    (url.protocol === 'http:' || url.protocol === 'https:') &&
+    url.pathname === '/' &&
+    url.search === '' &&
+    url.hash === '' &&
+    url.username === '' &&
+    url.password === '';
+  if (!isOrigin) {
+    throw new EnvError(HTTP_ORIGIN_ERROR);
+  }
+  return url.origin;
+}
+
+const httpOrigin = makeValidator<string>(parseHttpOrigin);
+
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * Deployed environments must publish an https origin so stored image URLs are
+ * not mixed content. Loopback stays allowed for local production-mode runs.
+ */
+export function assertSecurePublicOrigin(
+  nodeEnv: string,
+  origin: string,
+): void {
+  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+    return;
+  }
+  const { protocol, hostname } = new URL(origin);
+  if (protocol === 'https:' || LOOPBACK_HOSTS.has(hostname)) {
+    return;
+  }
+  throw new EnvError(
+    `PUBLIC_BASE_URL must use https in ${nodeEnv} (got ${origin})`,
+  );
+}
 
 export function validateEnv(env: NodeJS.ProcessEnv) {
-  return cleanEnv(env, {
+  const validated = cleanEnv(env, {
     NODE_ENV: str({
       choices: ['development', 'production', 'test', 'staging'],
     }),
@@ -43,6 +91,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     THROTTLE_STRICT_LIMIT: num({ default: 10 }),
 
     TRUST_PROXY: str({ default: 'false' }),
+    PUBLIC_BASE_URL: httpOrigin(),
 
     METRICS_API_KEY: str({ default: '' }),
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
@@ -53,4 +102,6 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
       default: 'false',
     }),
   });
+  assertSecurePublicOrigin(validated.NODE_ENV, validated.PUBLIC_BASE_URL);
+  return validated;
 }

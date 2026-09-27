@@ -23,21 +23,20 @@ Work top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - 
 
 **Now**
 
-1. **Phase 16b** - Demo catalog media (small; any client gets a real-looking catalog from a fresh seed).
+1. **Phase 16c** - Hosted staging and public demo (single instance, demo data protected by RBAC).
 
 **Next**
 
-2. **Phase 16c** - Hosted staging and public demo (single instance, demo data protected by RBAC).
-3. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki off `3100`, PR template).
-4. **Phase 16e** - Stable error codes (one documented error envelope).
-5. **Phase 18** - Real Stripe SDK and webhook idempotency.
+2. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki off `3100`, PR template).
+3. **Phase 16e** - Stable error codes (one documented error envelope).
+4. **Phase 18** - Real Stripe SDK and webhook idempotency.
 
 **Later**
 
-6. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
-7. **Phases 21 → 25** in the pending table. Phase **25** items are demand-driven.
+5. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
+6. **Phases 21 → 25** in the pending table. Phase **25** items are demand-driven.
 
-Phases **15-17** and **20** are done.
+Phases **15-17**, **16b**, and **20** are done.
 
 ---
 
@@ -77,7 +76,7 @@ Phases **15-17** and **20** are done.
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phases **15-17** and **20** are complete. Pick the next unchecked phase in this order: **16b → 16c → 16d → 16e → 18**. Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15-17**, **16b**, and **20** are complete. Pick the next unchecked phase in this order: **16c → 16d → 16e → 18**. Complete **Phase 19** before deploying to 2+ application instances.
 >
 > - **16c** needs **16b** (seeded image URLs use the public base URL) and stays single-instance.
 > - **16d** and **16e** are independent of **16c** and can run in parallel with it.
@@ -88,7 +87,7 @@ Phases **15-17** and **20** are done.
 | ------- | ------------------------------------------------- | ------ | :------: | --------------------------------------------------------------------------------------------------- |
 | **15**  | Platform Hygiene & Supply-Chain Alignment         | `[x]`  |  `[P0]`  | engines, migration script NODE_ENV, OpenAPI in CI, webhook fail-closed, Actions SHA pins / timeouts |
 | **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman                                       |
-| **16b** | Demo Catalog Media                                | `[ ]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
+| **16b** | Demo Catalog Media                                | `[x]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
 | **16c** | Hosted Staging & Public Demo                      | `[ ]`  |  `[P1]`  | Single-instance deploy; sibling-subdomain cookies; public Swagger flag; RBAC demo role; seed reset  |
 | **16d** | Full-Stack Local DX                               | `[ ]`  |  `[P1]`  | Run-the-stack guide + port table; Loki off `3100`; PR template                                      |
 | **16e** | Stable Error Codes                                | `[ ]`  |  `[P1]`  | Framework errors mapped to stable machine codes; one error schema in OpenAPI; ADR; e2e assertions   |
@@ -243,7 +242,7 @@ Moved to Phase **16c**.
 
 > **Goal**: `npm run setup` produces a catalog whose products have images served by this API, so any client (admin, storefront, third-party) renders a realistic catalog without extra setup. The contract is unchanged: `imageUrl` already exists on products.
 
-### [ ] API-Served Demo Product Images
+### [x] API-Served Demo Product Images
 
 **What**:
 

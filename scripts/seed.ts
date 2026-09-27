@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
+import { EnvConfigService } from '../src/config/env-config.service';
 import { SeedDemoAuthUsersUseCase } from '../src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase';
 import { SeedDemoCategoriesUseCase } from '../src/modules/products/core/application/seed/seed-demo-categories.usecase';
 import { SeedDemoCatalogUseCase } from '../src/modules/products/core/application/seed/seed-demo-catalog.usecase';
@@ -17,9 +18,7 @@ import { maskEmail, statusLabel } from './utils/log-helpers';
 
 const authOnly = process.argv.includes('--auth-only');
 
-function inventoryEffectForStatus(
-  status: string,
-): 'hold' | 'consume' | null {
+function inventoryEffectForStatus(status: string): 'hold' | 'consume' | null {
   if (status === 'pending_payment') {
     return 'hold';
   }
@@ -106,7 +105,9 @@ async function bootstrap() {
       `Categories ready: ${categoriesResult.value.length} total (${createdCategories} created).`,
     );
 
-    const catalogResult = await seedCatalogUseCase.execute();
+    const catalogResult = await seedCatalogUseCase.execute({
+      publicBaseUrl: app.get(EnvConfigService).http.publicBaseUrl,
+    });
     if (catalogResult.isFailure) {
       throw catalogResult.error;
     }

@@ -14,7 +14,15 @@ import cookieParser from 'cookie-parser';
 import { WinstonLoggerService } from './infrastructure/logging/winston-logger.service';
 import { DEFAULT_API_VERSION } from './infrastructure/http/api-version';
 import { parseTrustProxy } from './infrastructure/http/parse-trust-proxy';
+import {
+  DEMO_MEDIA_DIR,
+  serveDemoMedia,
+} from './infrastructure/http/serve-demo-media';
 import { ApplicationLifecyclePort } from './shared-kernel/domain/interfaces/application-lifecycle.port';
+import {
+  DEMO_MEDIA_ROUTE,
+  DEMO_MEDIA_VERSION,
+} from './modules/products/core/application/seed/demo-media';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -31,6 +39,12 @@ async function bootstrap() {
 
   app.use(helmet());
   app.use(cookieParser());
+
+  serveDemoMedia(app, {
+    rootDir: DEMO_MEDIA_DIR,
+    route: DEMO_MEDIA_ROUTE,
+    version: DEMO_MEDIA_VERSION,
+  });
 
   app.useGlobalInterceptors(new SanitizeInterceptor(), new ResultInterceptor());
   app.useGlobalFilters(new GlobalExceptionFilter());
