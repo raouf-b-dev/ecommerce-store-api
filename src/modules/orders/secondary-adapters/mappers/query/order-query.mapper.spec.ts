@@ -44,6 +44,7 @@ describe('OrderQueryMapper', () => {
         unitPrice: 120,
         quantity: 1,
         lineTotal: 120,
+        imageUrl: 'https://cdn.example.com/keyboard.webp',
       });
 
       const orderEntity = OrderEntityTestFactory.createOrderEntity({
@@ -82,6 +83,7 @@ describe('OrderQueryMapper', () => {
         unitPrice: 120,
         quantity: 1,
         subtotal: 120,
+        imageUrl: 'https://cdn.example.com/keyboard.webp',
       });
     });
   });

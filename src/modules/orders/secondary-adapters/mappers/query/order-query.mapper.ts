@@ -39,6 +39,7 @@ export class OrderQueryMapper {
       unitPrice: item.unitPrice,
       quantity: item.quantity,
       subtotal: item.lineTotal,
+      imageUrl: item.imageUrl ?? null,
     };
   }
 
