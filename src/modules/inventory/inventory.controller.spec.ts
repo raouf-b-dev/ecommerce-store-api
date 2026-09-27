@@ -159,7 +159,7 @@ describe('InventoryController', () => {
   });
 
   it('should delegate checkStock to CheckStockUseCase', async () => {
-    await controller.checkStock(42, 3);
+    await controller.checkStock(42, { quantity: 3 });
     expect(checkStockUseCase.execute).toHaveBeenCalledWith({
       productId: 42,
       quantity: 3,
