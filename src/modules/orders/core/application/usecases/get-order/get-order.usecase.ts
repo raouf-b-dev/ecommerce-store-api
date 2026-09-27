@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import { OrderQueryService } from '../../ports/order-query.service';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';

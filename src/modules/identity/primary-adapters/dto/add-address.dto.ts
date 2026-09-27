@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/users/presentation/dto/add-address.dto.ts
 import { IsString, IsOptional, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

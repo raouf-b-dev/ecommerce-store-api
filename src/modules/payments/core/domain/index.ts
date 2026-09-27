@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/payments/core/domain/index.ts
 // Export types for use by other modules (e.g., Orders)
 

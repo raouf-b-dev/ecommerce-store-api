@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler';

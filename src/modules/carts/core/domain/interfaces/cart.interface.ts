@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/carts/domain/interfaces/cart.interface.ts
 
 import { ICartItem } from './cart-item.interface';

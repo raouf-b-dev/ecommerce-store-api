@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { Result } from '../../shared-kernel/domain/result';
 import { AddAddressUseCase } from './core/application/usecases/address/add-address/add-address.usecase';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // shared-kernel/domain/value-objects/payment-method.ts
 // Both the enum and the value object class live in shared-kernel because
 // both Orders and Payments contexts depend on them.

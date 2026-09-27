@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressResponseDto } from './address-response.dto';
 

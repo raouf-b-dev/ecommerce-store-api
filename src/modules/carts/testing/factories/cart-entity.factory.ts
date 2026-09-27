@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/carts/testing/factories/cart-entity.factory.ts
 import { CartItemEntity } from '../../secondary-adapters/orm/cart-item.schema';
 import { CartEntity } from '../../secondary-adapters/orm/cart.schema';

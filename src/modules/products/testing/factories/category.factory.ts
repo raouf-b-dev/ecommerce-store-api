@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Category } from '../../core/domain/entities/category';
 import { CategoryProps } from '../../core/domain/entities/category';
 

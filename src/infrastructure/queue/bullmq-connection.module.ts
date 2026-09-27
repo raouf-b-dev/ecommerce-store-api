@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Module } from '@nestjs/common';
 import { EnvConfigModule } from 'src/config/config.module';
 import { EnvConfigService } from 'src/config/env-config.service';

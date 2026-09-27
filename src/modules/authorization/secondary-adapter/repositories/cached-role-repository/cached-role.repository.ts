@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger } from '@nestjs/common';
 import { RoleRepository } from '../../../core/domain/repositories/role.repository';
 import { Role } from '../../../core/domain/entities/role';

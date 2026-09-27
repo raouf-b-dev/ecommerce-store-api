@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { InventoryTestFactory } from 'src/modules/inventory/testing';
 import { ReconcileInventoryUseCase } from './reconcile-inventory.usecase';
 import { InventoryRepository } from '../../../domain/repositories/inventory.repository';

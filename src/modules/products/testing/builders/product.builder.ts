@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/products/testing/builders/product.builder.ts
 import { IProduct } from '../../core/domain/interfaces/product.interface';
 import { ProductTestFactory } from '../factories/product.factory';

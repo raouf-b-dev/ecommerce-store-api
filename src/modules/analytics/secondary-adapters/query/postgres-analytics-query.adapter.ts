@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Result } from '../../../../shared-kernel/domain/result';

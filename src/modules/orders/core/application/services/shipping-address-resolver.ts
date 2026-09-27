@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import { CheckoutUserInfoResult } from '../ports/user.gateway';
 import { ShippingAddressProps } from '../../domain/value-objects/shipping-address';

@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
 
 const fs = require('node:fs');
 const path = require('node:path');

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/Products/application/usecases/delete-product/delete-product.usecase.spec.ts
 import { MockProductRepository } from 'src/modules/products/testing';
 import { DeleteProductUseCase } from './delete-product.usecase';

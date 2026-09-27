@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IdempotencyService } from './idempotency.service';
 import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
 import { MockCacheService } from '../../testing';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IUserRoleAssignment } from '../interfaces/user-role-assignment.interface';
 
 export type UserRoleAssignmentProps = {

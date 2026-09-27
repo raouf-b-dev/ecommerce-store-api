@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IUser } from '../../core/domain/interfaces/user.interface';
 import { UserProps } from '../../core/domain/entities/user';
 import { AssignUserRoleCommand } from '../../core/application/usecases/user/assign-user-role/assign-user-role.usecase';

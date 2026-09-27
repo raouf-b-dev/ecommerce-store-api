@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Result } from 'src/shared-kernel/domain/result';
 import { AssignDefaultRoleUseCase } from './assign-default-role.usecase';
 import { Role } from '../../../domain/entities/role';

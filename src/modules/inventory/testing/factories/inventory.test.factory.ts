@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/inventory/testing/factories/inventory.test.factory.ts
 import { IInventory } from '../../core/domain/interfaces/inventory.interface';
 import {

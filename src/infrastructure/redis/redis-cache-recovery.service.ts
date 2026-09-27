@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { RedisService } from './redis.service';
 import { VERSIONED_IS_CACHED_FLAGS } from './cache-key-space';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export * from './builders/product.builder';
 export * from './factories/category.factory';
 export * from './factories/create-product-input.factory';

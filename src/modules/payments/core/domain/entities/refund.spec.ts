@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { RefundTestFactory } from 'src/modules/payments/testing';
 import { Refund } from './refund';
 import { RefundStatusType } from '../value-objects/refund-status';

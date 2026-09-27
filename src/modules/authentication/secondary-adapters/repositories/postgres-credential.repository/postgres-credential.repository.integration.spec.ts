@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Credential } from '../../../core/domain/entities/credential';
 import { PostgresCredentialRepository } from './postgres-credential.repository';
 import { CredentialEntity } from '../../orm/credential.schema';

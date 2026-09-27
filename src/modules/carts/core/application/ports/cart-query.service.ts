@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CartPresentationDTO } from '../queries/results/cart-presentation.result';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../../shared-kernel/domain/exceptions/query.error';

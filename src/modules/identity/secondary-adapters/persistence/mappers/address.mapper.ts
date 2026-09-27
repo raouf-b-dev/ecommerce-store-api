@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Address, AddressProps } from '../../../core/domain/entities/address';
 import { IAddress } from '../../../core/domain/interfaces/address.interface';

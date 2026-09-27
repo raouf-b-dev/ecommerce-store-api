@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Safe, lint-friendly helpers for normalizing unknown thrown/rejected values.
  * Use these instead of `err instanceof Error ? err : new Error(String(err))`.

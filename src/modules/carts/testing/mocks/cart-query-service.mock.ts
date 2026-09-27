@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CartQueryService } from '../../core/application/ports/cart-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { CartPresentationDTO } from '../../core/application/queries/results/cart-presentation.result';

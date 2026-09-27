@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CheckEmailExistsUseCase } from './check-user-by-email.usecase';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';

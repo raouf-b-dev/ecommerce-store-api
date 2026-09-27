@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ExpirePendingOrdersJob } from './expire-pending-orders.job';
 import { ExpirePendingOrdersUseCase } from '../../core/application/usecases/expire-pending-orders/expire-pending-orders.usecase';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HttpStatus } from '@nestjs/common';
 import { MockCategoryRepository } from 'src/modules/products/testing';
 import { CreateCategoryUseCase } from './create-category.usecase';

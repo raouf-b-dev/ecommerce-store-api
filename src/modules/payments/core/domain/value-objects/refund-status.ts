@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/payments/core/domain/value-objects/refund-status.ts
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 

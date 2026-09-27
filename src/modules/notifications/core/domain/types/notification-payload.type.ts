@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Strongly-typed payload for notifications.
  * Using Record<string, unknown> instead of `any` preserves

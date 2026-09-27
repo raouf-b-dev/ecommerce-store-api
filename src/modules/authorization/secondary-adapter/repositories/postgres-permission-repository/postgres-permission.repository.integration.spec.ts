@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Permission } from '../../../core/domain/entities/permission';
 import { PostgresPermissionRepository } from './postgres-permission.repository';
 import { PermissionEntity } from '../../orm/permission.schema';

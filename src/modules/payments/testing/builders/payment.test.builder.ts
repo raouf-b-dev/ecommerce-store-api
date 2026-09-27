@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
 import { PaymentTestFactory } from '../factories/payment.test.factory';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';

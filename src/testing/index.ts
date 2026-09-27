@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export * from './mocks/typeorm.mocks';
 export * from './helpers/auth-test.helper';
 export * from './helpers/clock-test.helper';

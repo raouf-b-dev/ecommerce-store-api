@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/orders/infrastructure/orm/shipping-address.schema.ts
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 

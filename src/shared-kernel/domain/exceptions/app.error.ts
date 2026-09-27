@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // core/errors/app.error.ts
 import { HttpStatus } from '@nestjs/common';
 

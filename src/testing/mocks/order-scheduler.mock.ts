@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Result } from '../../shared-kernel/domain/result';
 import { OrderScheduler } from '../../modules/orders/core/domain/schedulers/order.scheduler';
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * SQL filter vocabulary for analytics reads.
  * Values mirror Orders/Payments persisted status strings - do not import foreign domain enums here.

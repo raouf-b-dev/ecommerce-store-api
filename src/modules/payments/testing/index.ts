@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export * from './builders/payment.test.builder';
 export * from './factories/payment-dto.factory';
 export * from './factories/payment-entity.test.factory';

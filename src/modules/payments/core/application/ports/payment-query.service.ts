@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ListPaymentsQuery } from '../queries/list-payments.query';
 import { PaymentListItemDTO } from '../queries/results/payment-list-item.result';
 import { PaymentDetailDTO } from '../queries/results/payment-detail.result';

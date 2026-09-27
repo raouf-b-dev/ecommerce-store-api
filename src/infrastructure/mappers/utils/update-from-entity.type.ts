@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Application-controlled persistence shape of an ORM entity for atomic
  * optimistic-lock updates.

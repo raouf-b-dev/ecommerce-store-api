@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Pagination / sort options for cache search queries.
  * Kept free of Redis client types so driven ports stay tech-agnostic.

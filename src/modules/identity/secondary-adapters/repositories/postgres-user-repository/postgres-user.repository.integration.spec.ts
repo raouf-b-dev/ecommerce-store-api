@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { User } from '../../../core/domain/entities/user';
 import { PostgresUserRepository } from './postgres-user.repository';
 import { UserEntity } from '../../orm/user.schema';

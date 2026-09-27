@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /** Convert overview/series/top-products period query strings to Dates (UTC ISO).
  * Range validation is owned by AnalyticsPeriodQueryDto / IsAnalyticsPeriodRange.
  */

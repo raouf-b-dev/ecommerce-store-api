@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Module } from '@nestjs/common';
 import { ProductsController } from './products.controller';
 import { CategoriesController } from './categories.controller';

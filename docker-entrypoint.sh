@@ -1,6 +1,4 @@
 #!/bin/sh
-# Copyright (c) 2025-2026 Abderaouf Bouzerara
-# SPDX-License-Identifier: MIT
 # docker-entrypoint.sh
 # ─────────────────────────────────────────────────────────────────────────────
 # Container entrypoint - runs before the main CMD (node dist/main.js).

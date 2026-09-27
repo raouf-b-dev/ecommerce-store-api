@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/inventory/domain/interfaces/inventory.interface.ts
 export interface IInventory {
   id: number | null;

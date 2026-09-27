@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HttpStatus } from '@nestjs/common';
 import { AssignRoleUseCase } from './assign-role.usecase';
 import { Role } from '../../../domain/entities/role';

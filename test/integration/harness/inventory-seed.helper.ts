@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { DataSource } from 'typeorm';
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
 

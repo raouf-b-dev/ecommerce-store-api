@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ProductDtoTestFactory } from 'src/modules/products/testing';
 import { ProductQueryMapper } from './product-query.mapper';
 

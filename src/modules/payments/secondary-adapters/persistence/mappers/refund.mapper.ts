@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Refund, RefundProps } from '../../../core/domain/entities/refund';
 import { RefundStatusType } from '../../../core/domain/value-objects/refund-status';

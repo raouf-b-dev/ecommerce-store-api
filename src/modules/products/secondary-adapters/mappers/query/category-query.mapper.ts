@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CategoryResult } from '../../../core/application/queries/results/category.result';
 import { RawCategoryQueryRow } from '../../dto/raw-category-query-row.interface';
 

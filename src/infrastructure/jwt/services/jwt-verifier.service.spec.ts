@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtVerifierService } from './jwt-verifier.service';
 import { JwksPort } from '../ports/jwks.port';

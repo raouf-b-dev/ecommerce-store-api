@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // data-source.ts
 import { existsSync } from 'fs';
 import { config as loadEnv } from 'dotenv';

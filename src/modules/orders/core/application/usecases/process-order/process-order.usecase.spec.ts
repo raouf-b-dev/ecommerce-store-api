@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/orders/application/usecases/process-order/process-order.usecase.spec.ts
 
 import { OrderTestFactory } from 'src/modules/orders/testing';

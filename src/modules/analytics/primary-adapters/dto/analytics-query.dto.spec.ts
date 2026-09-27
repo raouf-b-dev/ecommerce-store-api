@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { AnalyticsPeriodQueryDto } from './analytics-period-query.dto';

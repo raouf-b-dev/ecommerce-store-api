@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { FlowJob, Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';

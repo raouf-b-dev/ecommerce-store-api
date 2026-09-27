@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { OrderEntityTestFactory } from 'src/modules/orders/testing';
 import { CachedOrderRepository } from './cached.order-repository';
 import { PostgresOrderRepository } from '../postgres-order-repository/postgres.order-repository';

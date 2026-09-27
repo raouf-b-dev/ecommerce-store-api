@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Shared-kernel interface describing the primitive shape of a resolved
  * role-permissions value. Kept here so global type augmentations (e.g.

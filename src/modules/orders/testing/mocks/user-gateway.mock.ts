@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { Result } from 'src/shared-kernel/domain/result';
 import {

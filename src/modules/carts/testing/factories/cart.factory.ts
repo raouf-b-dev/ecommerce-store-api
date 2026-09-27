@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/carts/testing/factories/cart.factory.ts
 import { Cart, CartProps } from '../../core/domain/entities/cart';
 

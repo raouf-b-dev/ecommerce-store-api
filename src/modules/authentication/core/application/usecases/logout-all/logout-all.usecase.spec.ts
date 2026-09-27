@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockSessionTokenRepository } from 'src/modules/authentication/testing';
 import { LogoutAllUseCase } from './logout-all.usecase';
 import {

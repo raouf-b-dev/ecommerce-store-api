@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Result } from 'src/shared-kernel/domain/result';
 import { UserRoleAssignment } from '../../core/domain/entities/user-role-assignment';
 import { UserRoleAssignmentRepository } from '../../core/domain/repositories/user-role-assignment.repository';

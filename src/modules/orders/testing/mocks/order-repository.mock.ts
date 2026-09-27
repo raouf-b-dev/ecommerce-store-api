@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/orders/testing/mocks/order-repository.mock.ts
 import {
   ListOrdersQuery,

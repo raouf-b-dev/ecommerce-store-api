@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Result } from 'src/shared-kernel/domain/result';
 import { FindRoleByUserIdUseCase } from './find-role-by-user-id.usecase';
 import { UserRoleAssignment } from '../../../domain/entities/user-role-assignment';

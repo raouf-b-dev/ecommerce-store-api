@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { errors, jwtVerify, JWTPayload } from 'jose';
 import { JwksPort } from '../ports/jwks.port';

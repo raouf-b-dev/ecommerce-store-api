@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { UserListItemDTO } from '../../core/application/queries/results/user-list-item.result';
 import { UserDetailDTO } from '../../core/application/queries/results/user-detail.result';
 import { RawUserListQueryRow } from '../../secondary-adapters/dto/raw-user-list-query-row.interface';

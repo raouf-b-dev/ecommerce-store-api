@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { cleanEnv, str, port, num } from 'envalid';
 
 export function validateEnv(env: NodeJS.ProcessEnv) {

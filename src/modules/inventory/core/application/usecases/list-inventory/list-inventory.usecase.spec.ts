@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ListInventoryUseCase } from './list-inventory.usecase';
 import { InventoryDtoTestFactory } from 'src/modules/inventory/testing/factories/inventory-dto.factory';
 import { MockInventoryQueryService } from 'src/modules/inventory/testing/mocks/inventory-query-service.mock';

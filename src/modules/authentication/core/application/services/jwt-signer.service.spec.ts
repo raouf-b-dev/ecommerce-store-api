@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockJwksService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtSignerService } from './jwt-signer.service';

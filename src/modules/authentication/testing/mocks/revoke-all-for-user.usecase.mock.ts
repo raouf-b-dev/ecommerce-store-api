@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { Result } from 'src/shared-kernel/domain/result';
 import { RevokeAllForUserUsecase } from '../../core/application/usecases/revoke-all-for-user/revoke-all-for-user.usecase';

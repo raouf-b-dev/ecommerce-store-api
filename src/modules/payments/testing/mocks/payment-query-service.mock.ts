@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { PaymentQueryService } from '../../core/application/ports/payment-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { PaymentListItemDTO } from '../../core/application/queries/results/payment-list-item.result';

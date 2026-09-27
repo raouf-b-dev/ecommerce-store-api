@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { PaymentListItemDTO } from '../../core/application/queries/results/payment-list-item.result';
 import { PaymentDetailDTO } from '../../core/application/queries/results/payment-detail.result';
 import { RawPaymentListQueryRow } from '../../secondary-adapters/dto/raw-payment-list-query-row.interface';

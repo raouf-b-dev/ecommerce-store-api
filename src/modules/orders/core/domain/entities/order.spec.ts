@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';

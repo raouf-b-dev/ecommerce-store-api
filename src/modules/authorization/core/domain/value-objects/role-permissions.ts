@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IRolePermissions } from '../../../../../shared-kernel/domain/interfaces/role-permissions.interface';
 export type { IRolePermissions };
 

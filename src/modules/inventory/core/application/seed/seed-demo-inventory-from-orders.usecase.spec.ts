@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockInventoryRepository } from 'src/modules/inventory/testing';
 import { SeedDemoInventoryFromOrdersUseCase } from './seed-demo-inventory-from-orders.usecase';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/testing/helpers/result-assertion.helper.ts
 import { AppError } from '../../shared-kernel/domain/exceptions/app.error';
 import { DomainError } from '../../shared-kernel/domain/exceptions/domain.error';

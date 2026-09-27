@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { PermissionRepository } from '../../core/domain/repositories/permission.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { Permission } from '../../core/domain/entities/permission';

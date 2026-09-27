@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/carts/testing/builders/cart.builder.ts
 import { ICart } from '../../core/domain/interfaces/cart.interface';
 import { CartTestFactory } from '../factories/cart.factory';

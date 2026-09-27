@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CartOwnershipValidator } from './cart-ownership.validator';
 import { Cart } from '../../domain/entities/cart';
 import {

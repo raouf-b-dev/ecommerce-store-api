@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
 

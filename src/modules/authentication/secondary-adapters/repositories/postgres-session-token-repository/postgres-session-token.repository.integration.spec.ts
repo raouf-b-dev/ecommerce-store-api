@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { SessionToken } from '../../../core/domain/entities/session-token';
 import { PostgresSessionTokenRepository } from './postgres-session-token.repository';
 import { SessionTokenEntity } from '../../orm/session-token.schema';

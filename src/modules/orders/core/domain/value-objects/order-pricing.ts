@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/orders/domain/value-objects/order-pricing.ts
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { OrderItem } from '../entities/order-items';

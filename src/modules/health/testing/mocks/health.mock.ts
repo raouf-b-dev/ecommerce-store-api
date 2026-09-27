@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 import { RedisHealthIndicator } from '../../indicators/redis.health-indicator';
 import { WebSocketHealthIndicator } from '../../indicators/websocket.health-indicator';

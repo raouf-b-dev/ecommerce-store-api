@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { DeepPartial } from 'typeorm';
 import { OrderEntity } from '../../secondary-adapters/orm/order.schema';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';

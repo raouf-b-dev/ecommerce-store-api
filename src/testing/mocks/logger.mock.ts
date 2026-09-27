@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { LoggerService, Logger } from '@nestjs/common';
 
 export class MockLogger extends Logger implements LoggerService {

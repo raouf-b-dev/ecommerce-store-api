@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** Payment read model for GET /payments/orders/:orderId (and similar detail reads). */

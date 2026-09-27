@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { OrderWorkflow } from '../policies/order-workflow';
 import { OrderStatus } from './order-status.enum';
 

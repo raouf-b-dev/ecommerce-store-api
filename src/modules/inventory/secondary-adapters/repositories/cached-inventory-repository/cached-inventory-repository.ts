@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import { InventoryRepository } from '../../../core/domain/repositories/inventory.repository';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';

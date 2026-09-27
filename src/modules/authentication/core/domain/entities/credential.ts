@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ICredential } from '../interfaces/credential.interface';
 
 export interface CredentialProps {

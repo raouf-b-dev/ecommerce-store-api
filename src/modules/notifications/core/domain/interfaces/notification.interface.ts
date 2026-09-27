@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { NotificationStatus } from '../enums/notification-status.enum';
 import { NotificationPayload } from '../types/notification-payload.type';
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Controller, Get, Patch, Param, Query } from '@nestjs/common';
 import { CurrentUser } from '../identity/primary-adapters/decorators/current-user.decorator';
 import {

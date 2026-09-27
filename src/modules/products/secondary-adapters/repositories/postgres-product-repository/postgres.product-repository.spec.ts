@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/products/infrastructure/repositories/PostgresProductRepository/postgres.product-repository.spec.ts
 import { ProductTestFactory } from 'src/modules/products/testing';
 import { Test, TestingModule } from '@nestjs/testing';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { DeepPartial } from 'typeorm';
 import { PaymentEntity } from '../../secondary-adapters/orm/payment.schema';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';

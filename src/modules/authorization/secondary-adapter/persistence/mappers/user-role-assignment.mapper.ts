@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { UserRoleAssignmentEntity } from '../../orm/user-role-assignment.schema';
 import { UserRoleAssignment } from 'src/modules/authorization/core/domain/entities/user-role-assignment';

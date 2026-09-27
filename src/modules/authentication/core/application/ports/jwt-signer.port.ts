@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Input payload for signing an access token.
  * Contains the domain-level claims before JWT standard fields are added.

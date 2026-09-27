@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HttpStatus } from '@nestjs/common';
 import { DEFAULT_API_PREFIX } from 'src/infrastructure/http/api-version';
 import { E2eHttpClient } from './e2e-test-app.helper';

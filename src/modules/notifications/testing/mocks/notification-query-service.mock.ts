@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { NotificationQueryService } from '../../core/application/ports/notification-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { NotificationListItemDTO } from '../../core/application/queries/results/notification-list-item.result';

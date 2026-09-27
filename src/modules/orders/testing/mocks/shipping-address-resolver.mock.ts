@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ShippingAddressProps } from '../../core/domain/value-objects/shipping-address';
 import { CheckoutUserInfoResult } from '../../core/application/ports/user.gateway';
 import {

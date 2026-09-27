@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/inventory/testing/mocks/inventory-repository.mock.ts
 import {
   InventoryRepository,

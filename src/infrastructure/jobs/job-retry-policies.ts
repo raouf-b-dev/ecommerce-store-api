@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { BackoffStrategy, RetryConfig } from './retry-config';
 import { JobName, JobNames } from './job-names';
 

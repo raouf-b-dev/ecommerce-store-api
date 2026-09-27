@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import { EnvConfigService } from '../../../../../config/env-config.service';
 import { JwksPort } from '../../../../../infrastructure/jwt/ports/jwks.port';

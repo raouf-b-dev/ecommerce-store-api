@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Module, Global } from '@nestjs/common';
 import { WebsocketConnectionGateway } from './websocket.connection.gateway';
 import { AuthenticationModule } from 'src/modules/authentication/authentication.module';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HttpStatus } from '@nestjs/common';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {

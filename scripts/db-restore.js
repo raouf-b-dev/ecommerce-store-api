@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 'use strict';
 
 // PostgreSQL restore automation for E-Commerce Store API.

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Reservation } from './reservation';
 import { ReservationStatus } from '../value-objects/reservation-status';
 import { ReservationTestFactory } from 'src/modules/inventory/testing';

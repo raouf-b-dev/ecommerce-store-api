@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export const JobNames = {
   PROCESS_CHECKOUT: 'process-checkout', // Orchestrator
   VALIDATE_CART: 'validate-cart',

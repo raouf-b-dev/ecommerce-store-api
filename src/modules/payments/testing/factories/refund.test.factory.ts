@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Refund, RefundProps } from '../../core/domain/entities/refund';
 import { IRefund } from '../../core/domain/interfaces/refund.interface';
 import { RefundStatusType } from '../../core/domain/value-objects/refund-status';

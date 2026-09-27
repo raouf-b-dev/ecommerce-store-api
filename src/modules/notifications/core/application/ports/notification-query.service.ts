@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ListNotificationsQuery } from '../queries/list-notifications.query';
 import { NotificationListItemDTO } from '../queries/results/notification-list-item.result';
 import { PaginatedQueryResult } from '../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';

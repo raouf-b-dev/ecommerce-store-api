@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Permission } from '../../../../authorization/core/domain/entities/permission';
 import { PermissionEntity } from '../../../../authorization/secondary-adapter/orm/permission.schema';
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';

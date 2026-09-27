@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Represents the raw query result row returned by the TypeORM query builder
  * when selecting flat order list projections across cross-context JOINs.

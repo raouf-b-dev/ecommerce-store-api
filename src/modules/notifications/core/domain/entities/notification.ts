@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { INotification } from '../interfaces/notification.interface';
 import { NotificationStatus } from '../enums/notification-status.enum';
 import { randomUUID } from 'crypto';

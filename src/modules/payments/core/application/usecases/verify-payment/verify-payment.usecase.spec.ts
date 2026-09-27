@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { VerifyPaymentUseCase } from './verify-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';

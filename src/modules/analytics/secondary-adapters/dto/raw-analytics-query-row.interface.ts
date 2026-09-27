@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /**
  * Raw SQL row shapes returned by analytics query adapter (node-pg / TypeORM).
  * Coercion to application result DTOs lives in AnalyticsQueryMapper.

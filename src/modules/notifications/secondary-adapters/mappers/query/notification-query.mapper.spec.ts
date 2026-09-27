@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { NotificationDtoTestFactory } from 'src/modules/notifications/testing';
 import { NotificationQueryMapper } from './notification-query.mapper';
 

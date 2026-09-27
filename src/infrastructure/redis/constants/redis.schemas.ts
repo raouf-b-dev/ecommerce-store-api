@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export const OrderIndexSchema = {
   '$.id': { type: 'TEXT', AS: 'id' },
   '$.userId': { type: 'TEXT', AS: 'userId' },

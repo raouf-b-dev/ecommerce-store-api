@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CreateFromEntity } from 'src/infrastructure/mappers/utils/create-from-entity.type';
 import { Notification } from '../../../core/domain/entities/notification';
 import { NotificationEntity } from '../../orm/notification.schema';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ShippingAddressResolver } from './shipping-address-resolver';
 import { CheckoutUserInfoResult } from '../ports/user.gateway';
 import { OrderDtoTestFactory } from 'src/modules/orders/testing';

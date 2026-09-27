@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/users/application/usecases/set-default-address/set-default-address.usecase.ts
 
 import { Injectable } from '@nestjs/common';

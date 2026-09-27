@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import { SYSTEM_PERMISSIONS } from '../../domain/reference-data/permission-definitions';

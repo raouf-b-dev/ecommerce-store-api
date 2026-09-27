@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AnalyticsPeriodQueryDto } from './analytics-period-query.dto';

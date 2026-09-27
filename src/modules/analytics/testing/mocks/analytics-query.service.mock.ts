@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { AnalyticsQueryService } from '../../core/application/ports/analytics-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../shared-kernel/domain/exceptions/query.error';

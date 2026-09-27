@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { InventoryListItemDTO } from '../../core/application/queries/results/inventory-list-item.result';
 import { RawInventoryListQueryRow } from '../../secondary-adapters/dto/raw-inventory-list-query-row.interface';
 

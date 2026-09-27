@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockOrderRepository } from 'src/modules/orders/testing';
 import { LinkDemoOrderPaymentsUseCase } from './link-demo-order-payments.usecase';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';

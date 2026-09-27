@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CurrentUser } from './current-user.decorator';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import {

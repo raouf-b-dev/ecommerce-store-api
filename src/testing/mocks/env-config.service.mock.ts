@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { EnvConfigService } from '../../config/env-config.service';
 import { IAppConfig, AppConfigKey } from '../../config/configuration';
 import { Injectable } from '@nestjs/common';

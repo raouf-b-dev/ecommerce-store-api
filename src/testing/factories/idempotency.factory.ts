@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import {
   IDEMPOTENCY_KEY_HEADER,
   X_IDEMPOTENCY_KEY_HEADER,

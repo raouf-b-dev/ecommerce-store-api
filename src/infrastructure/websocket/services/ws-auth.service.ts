@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';

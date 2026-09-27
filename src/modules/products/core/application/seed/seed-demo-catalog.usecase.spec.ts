@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeedDemoCatalogUseCase } from './seed-demo-catalog.usecase';
 import { CreateProductUseCase } from '../usecases/create-product/create-product.usecase';

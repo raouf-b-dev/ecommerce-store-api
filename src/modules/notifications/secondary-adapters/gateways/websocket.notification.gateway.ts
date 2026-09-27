@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationGateway } from '../../core/domain/gateways/notification.gateway.interface';
 import { NotificationPayload } from '../../core/domain/types/notification-payload.type';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { CachedProductRepository } from './cached.product-repository';
 import { PostgresProductRepository } from '../postgres-product-repository/postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';

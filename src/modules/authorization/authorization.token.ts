@@ -1,5 +1,2 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 export const POSTGRES_ROLE_REPOSITORY = Symbol('POSTGRES_ROLE_REPOSITORY');
 export const CACHED_ROLE_REPOSITORY = Symbol('CACHED_ROLE_REPOSITORY');

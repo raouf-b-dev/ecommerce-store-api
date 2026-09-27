@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 /** Omit PK on insert when domain id is unset or legacy `0`. */
 export function persistedChildId(
   id: number | null | undefined,

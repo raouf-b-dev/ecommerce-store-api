@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ListUsersQuery } from '../queries/list-users.query';
 import { UserListItemDTO } from '../queries/results/user-list-item.result';
 import { UserDetailDTO } from '../queries/results/user-detail.result';

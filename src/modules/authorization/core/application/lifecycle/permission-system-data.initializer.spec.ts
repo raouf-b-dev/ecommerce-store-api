@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockPermissionRepository } from 'src/modules/authorization/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionSystemDataInitializer } from './permission-system-data.initializer';

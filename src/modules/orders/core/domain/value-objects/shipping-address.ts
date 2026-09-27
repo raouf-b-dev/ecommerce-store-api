@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IShippingAddress } from '../interfaces/shipping-address.interface';
 
 // src/modules/orders/domain/value-objects/shipping-address.ts

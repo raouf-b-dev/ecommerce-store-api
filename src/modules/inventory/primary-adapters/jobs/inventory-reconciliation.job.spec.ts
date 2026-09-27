@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { InventoryReconciliationJob } from './inventory-reconciliation.job';
 import { ReconcileInventoryUseCase } from '../../core/application/usecases/reconcile-inventory/reconcile-inventory.usecase';
 import { MetricsService } from '../../../../infrastructure/metrics/metrics.service';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { SeedSuperAdminUseCase } from '../src/modules/authentication/core/application/seed/seed-super-admin.usecase';

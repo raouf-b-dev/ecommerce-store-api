@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { HttpStatus } from '@nestjs/common';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';

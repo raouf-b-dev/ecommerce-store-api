@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PasswordHasher } from '../../../../shared-kernel/domain/interfaces/password-hasher.interface';

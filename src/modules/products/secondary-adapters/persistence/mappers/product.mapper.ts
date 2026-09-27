@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { Product, ProductProps } from '../../../core/domain/entities/product';
 import { IProduct } from '../../../core/domain/interfaces/product.interface';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { RefundStatusType } from '../value-objects/refund-status';
 
 //src\modules\payments\domain\interfaces\refund.interface.ts

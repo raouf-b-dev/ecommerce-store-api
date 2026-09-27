@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { InventoryBuilder } from 'src/modules/inventory/testing';
 import { Inventory } from '../../../core/domain/entities/inventory';
 import { CachedInventoryRepository } from './cached-inventory-repository';

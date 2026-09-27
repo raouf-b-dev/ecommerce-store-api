@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { PostgresCategoryQueryAdapter } from './postgres-category-query.adapter';
 import { CategoryEntity } from '../orm/category.schema';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ProductTestFactory } from '../../../testing';
 import { ProductCacheMapper } from './product.mapper';
 import { Product } from '../../../core/domain/entities/product';

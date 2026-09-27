@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/order/infrastructure/__tests__/redis-order.repository.spec.ts
 import {
   MockOrderRepository,

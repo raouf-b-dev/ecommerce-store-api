@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 // src/modules/inventory/presentation/dto/stock-reservation-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { DataSource } from 'typeorm';
 import { UserEntity } from 'src/modules/identity/secondary-adapters/orm/user.schema';
 import { AddressEntity } from 'src/modules/identity/secondary-adapters/orm/address.schema';

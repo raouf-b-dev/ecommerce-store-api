@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { AddAddressCommand } from '../../core/application/commands/add-address.command';
 import { UpdateAddressCommand } from '../../core/application/commands/update-address.command';
 import { IAddress } from '../../core/domain/interfaces/address.interface';

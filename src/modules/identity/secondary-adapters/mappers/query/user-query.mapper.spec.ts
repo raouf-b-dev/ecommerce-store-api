@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type';
 import { UserDtoTestFactory } from 'src/modules/identity/testing';
 import { AddressEntity } from '../../orm/address.schema';

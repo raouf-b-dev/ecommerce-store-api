@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { User, UserProps } from '../../../core/domain/entities/user';
 import { Address } from '../../../core/domain/entities/address';
 import { UserEntity } from '../../orm/user.schema';

@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { ProductQueryService } from '../../core/application/ports/product-query.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ProductListItemDTO } from '../../core/application/queries/results/product-list-item.result';

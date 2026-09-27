@@ -1,6 +1,3 @@
-// Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: MIT
-
 import { MockUserRepository } from 'src/modules/identity/testing';
 import { DeleteUserUseCase } from './delete-user.usecase';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
