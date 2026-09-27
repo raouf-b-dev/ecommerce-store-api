@@ -17,7 +17,9 @@ import { maskEmail, statusLabel } from './utils/log-helpers';
 
 const authOnly = process.argv.includes('--auth-only');
 
-function inventoryEffectForStatus(status: string): 'hold' | 'consume' | null {
+function inventoryEffectForStatus(
+  status: string,
+): 'hold' | 'consume' | null {
   if (status === 'pending_payment') {
     return 'hold';
   }
