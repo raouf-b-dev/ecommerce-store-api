@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { ProductListItemDTO } from '../../core/application/queries/results/product-list-item.result';
 import { ProductDetailDTO } from '../../core/application/queries/results/product-detail.result';

@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { UpdateFromEntity } from '../../../../../infrastructure/mappers/utils/update-from-entity.type';
 import { Product, ProductProps } from '../../../core/domain/entities/product';

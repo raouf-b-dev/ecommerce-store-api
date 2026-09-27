@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
@@ -20,9 +20,7 @@ import { maskEmail, statusLabel } from './utils/log-helpers';
 
 const authOnly = process.argv.includes('--auth-only');
 
-function inventoryEffectForStatus(
-  status: string,
-): 'hold' | 'consume' | null {
+function inventoryEffectForStatus(status: string): 'hold' | 'consume' | null {
   if (status === 'pending_payment') {
     return 'hold';
   }

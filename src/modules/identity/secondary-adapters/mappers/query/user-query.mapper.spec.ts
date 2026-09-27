@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type';
 import { UserDtoTestFactory } from 'src/modules/identity/testing';

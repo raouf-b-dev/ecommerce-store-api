@@ -4,7 +4,7 @@ type: software
 title: E-commerce Store API
 version: 0.8.0
 date-released: "2026-09-20"
-license: AGPL-3.0-only
+license: MIT
 repository-code: https://github.com/raouf-b-dev/ecommerce-store-api
 authors:
   - given-names: Abderaouf

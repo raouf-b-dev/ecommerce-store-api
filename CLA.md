@@ -24,7 +24,7 @@ You accept and agree to the following terms and conditions for Your present and 
 
 Subject to the terms and conditions of this Agreement, You hereby grant to the Maintainer a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright licence to reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute Your Contributions and such derivative works.
 
-Downstream recipients receive the Work under the outbound licence the Maintainer applies to the distribution they receive (for the public project, AGPL-3.0-only, or a separate commercial licence when one is granted). This section does not grant those recipients a broader licence than that outbound licence.
+The public repository is offered under the MIT License. This section does not grant recipients of that public distribution a broader licence than the MIT License.
 
 ## 3. Grant of Patent License
 
@@ -52,6 +52,6 @@ You agree to notify the Maintainer of any facts or circumstances of which you be
 
 ## 9. Sublicense and relicense
 
-You hereby grant the Maintainer a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable right to sublicense and to relicense Your Contributions, and derivative works of them, under any terms, including proprietary and commercial licences, and to permit others to do so.
+You hereby grant the Maintainer a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable right to sublicense and to relicense Your Contributions, and derivative works of them, under any terms, including other open-source or proprietary licences, and to permit others to do so.
 
-This section is explicit. It covers every Contribution You submit to this project. It is what allows the Maintainer to offer the Work to the public under AGPL-3.0-only and, separately, under a commercial licence to parties who cannot meet the AGPL-3.0-only obligations.
+This section is explicit. It covers every Contribution You submit to this project.

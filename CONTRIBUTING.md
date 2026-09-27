@@ -22,9 +22,9 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ## Contributor License Agreement
 
-The project is dual-licensed. See [LICENSING.md](LICENSING.md) and [CLA.md](CLA.md).
+The project is licensed under the [MIT License](LICENSE). Contributors sign the [Contributor License Agreement](CLA.md).
 
-Before a first contribution can be merged, you sign the Contributor License Agreement. The agreement gives Abderaouf Bouzerara the right to sublicense and relicense your contributions under any terms, including proprietary and commercial licences.
+Before a first contribution can be merged, you sign the Contributor License Agreement. The agreement gives Abderaouf Bouzerara the right to sublicense and relicense your contributions under any terms, including other open-source or proprietary licences.
 
 On your first pull request, the CLA check asks you to comment with this exact sentence:
 

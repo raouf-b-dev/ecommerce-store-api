@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 // src/modules/customers/application/usecases/get-customer/get-customer.usecase.ts
 import { Injectable } from '@nestjs/common';

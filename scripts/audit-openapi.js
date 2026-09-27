@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 'use strict';
 
@@ -126,7 +126,8 @@ for (const [route, methods] of Object.entries(spec.paths || {})) {
         continue;
       }
 
-      const description = `${response.description || ''} ${operation.description || ''}`.toLowerCase();
+      const description =
+        `${response.description || ''} ${operation.description || ''}`.toLowerCase();
       const mentionsNull =
         description.includes('null') ||
         description.includes('`null`') ||

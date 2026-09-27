@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 'use strict';
 
@@ -36,7 +36,9 @@ function runSetup({
   log.log('✓ Docker engine is running');
 
   if (!envDevExists()) {
-    log.log('\n▶ Stage 1/4: Initializing local development environment files...');
+    log.log(
+      '\n▶ Stage 1/4: Initializing local development environment files...',
+    );
     const envResult = generateEnvs();
     if (!envResult || envResult.status !== 0) {
       return failedCommand(
@@ -45,12 +47,16 @@ function runSetup({
       );
     }
   } else {
-    log.log('\n✓ Stage 1/4: Environment files already configured (.env.development)');
+    log.log(
+      '\n✓ Stage 1/4: Environment files already configured (.env.development)',
+    );
   }
 
   loadEnv();
 
-  log.log('\n▶ Stage 2/4: Starting PostgreSQL & Redis Stack with healthcheck wait...');
+  log.log(
+    '\n▶ Stage 2/4: Starting PostgreSQL & Redis Stack with healthcheck wait...',
+  );
   const composeResult = startInfra();
   if (!composeResult || composeResult.status !== 0) {
     return asFailure('composeUp');
@@ -65,7 +71,9 @@ function runSetup({
     );
   }
 
-  log.log('\n▶ Stage 4/4: Seeding demo fixtures (Users, Products, Inventory, Orders)...');
+  log.log(
+    '\n▶ Stage 4/4: Seeding demo fixtures (Users, Products, Inventory, Orders)...',
+  );
   const seedResult = runSeed();
   if (!seedResult || seedResult.status !== 0) {
     return failedCommand(

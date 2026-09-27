@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 'use strict';
 
@@ -142,7 +142,10 @@ describe('runSetup', () => {
     assert.match(result.hints.join('\n'), /5432, 6379, 8001/);
     assert.match(result.hints.join('\n'), /REDIS_INSIGHT_PORT/);
     assert.match(result.hints.join('\n'), /logs postgres redis/);
-    assert.match(result.hints.join('\n'), /setup:reset \(wipes local volumes\)/);
+    assert.match(
+      result.hints.join('\n'),
+      /setup:reset \(wipes local volumes\)/,
+    );
   });
 
   it('does not seed when migrations fail', () => {

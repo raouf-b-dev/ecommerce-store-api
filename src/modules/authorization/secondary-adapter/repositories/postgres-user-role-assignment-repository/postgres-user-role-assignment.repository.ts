@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRoleAssignment } from 'src/modules/authorization/core/domain/entities/user-role-assignment';

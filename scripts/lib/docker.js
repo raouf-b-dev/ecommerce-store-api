@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 'use strict';
 
@@ -49,9 +49,7 @@ const FAILURES = {
   },
   composeTimeout: {
     message: 'Timed out waiting for Docker Compose to respond.',
-    hints: [
-      'Restart Docker Desktop, wait until it is idle, then retry.',
-    ],
+    hints: ['Restart Docker Desktop, wait until it is idle, then retry.'],
   },
   noCompose: {
     message: 'The Docker Compose plugin is not available.',

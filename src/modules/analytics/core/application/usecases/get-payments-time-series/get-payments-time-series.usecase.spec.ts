@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { GetPaymentsTimeSeriesUseCase } from './get-payments-time-series.usecase';
 import { isFailure } from '../../../../../../shared-kernel/domain/result';

@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 // src/modules/order/testing/builders/order.test.builder.ts
 import { IOrder } from '../../core/domain/interfaces/order.interface';

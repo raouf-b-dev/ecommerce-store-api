@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { HttpStatus } from '@nestjs/common';
 import { STRIPE_WEBHOOK_E2E_BYPASS_SIGNATURE } from 'src/modules/payments/secondary-adapters/services/stripe-signature.service';

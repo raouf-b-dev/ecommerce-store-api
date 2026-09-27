@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { CancelOrderUseCase } from './cancel-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';

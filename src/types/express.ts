@@ -1,5 +1,5 @@
 // Copyright (c) 2025-2026 Abderaouf Bouzerara
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: MIT
 
 import { CurrentUserPayload } from '../shared-kernel/domain/interfaces/current-user.interface';
 import { IRolePermissions } from '../shared-kernel/domain/interfaces/role-permissions.interface';
