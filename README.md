@@ -189,4 +189,4 @@ Each repository runs independently. Clone companions from the table when you nee
 
 [MIT](LICENSE)
 
-Built by [Abderaouf .B](https://github.com/raouf-b-dev) · [Issues](https://github.com/raouf-b-dev/ecommerce-store-api/issues)
+Built by [Abderaouf Bouzerara](https://github.com/raouf-b-dev) · [Issues](https://github.com/raouf-b-dev/ecommerce-store-api/issues)

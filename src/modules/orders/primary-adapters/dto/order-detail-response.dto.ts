@@ -22,6 +22,14 @@ export class OrderItemDetailResponseDto {
 
   @ApiProperty({ example: 199.99, description: 'Line subtotal' })
   subtotal!: number;
+
+  @ApiProperty({
+    example: 'https://api.example.com/media/demo/v1/elec-anc-001.webp',
+    description: 'Product image URL captured when the order was placed',
+    type: String,
+    nullable: true,
+  })
+  imageUrl!: string | null;
 }
 
 /** Detail read model for GET /orders/:id. */

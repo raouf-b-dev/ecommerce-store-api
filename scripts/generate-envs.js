@@ -86,6 +86,10 @@ function buildLinesForEnv(lines, envName) {
       return 'TRUST_PROXY=false';
     }
 
+    if (key === 'PUBLIC_BASE_URL' && isProdLike) {
+      return 'PUBLIC_BASE_URL=';
+    }
+
     if (key === 'IS_DB_SYNCHRONIZE') {
       return isProdLike ? 'IS_DB_SYNCHRONIZE=false' : 'IS_DB_SYNCHRONIZE=true';
     }

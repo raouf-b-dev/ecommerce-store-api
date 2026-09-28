@@ -3,14 +3,14 @@
 - **Status**: Accepted
 - **Date**: 2026-08-30
 - **Deciders**: Engineering Core Team
-- **Context**: Admin Control Center Phase 7 operational dashboard
+- **Context**: Admin Control Center operational dashboard
 - **Companion**: [domains/ANALYTICS.md](../domains/ANALYTICS.md), [CQRS.md](../CQRS.md)
 
 ---
 
 ## 1. Context & Problem Statement
 
-The admin SPA needs an operational cockpit (revenue pulse, attention queues, low stock, top products). Prometheus/Grafana answers *system health*; list-endpoint `total` fan-out answers neither money nor period comparisons correctly.
+The admin SPA needs an operational cockpit (revenue pulse, attention queues, low stock, top products). Prometheus/Grafana answers _system health_; list-endpoint `total` fan-out answers neither money nor period comparisons correctly.
 
 We needed a place for **cross-table read aggregates** without:
 
@@ -55,8 +55,8 @@ We needed a place for **cross-table read aggregates** without:
 
 ## 4. Alternatives Rejected
 
-| Alternative | Why rejected |
-| --- | --- |
+| Alternative                                           | Why rejected                                       |
+| ----------------------------------------------------- | -------------------------------------------------- |
 | Endpoints split across Orders/Payments/Inventory only | SPA becomes composer; no shared revenue definition |
-| ACL composition for overview | N+1 / wrong tool for reads |
-| Prometheus as revenue source | Wrong semantics and lifecycle |
+| ACL composition for overview                          | N+1 / wrong tool for reads                         |
+| Prometheus as revenue source                          | Wrong semantics and lifecycle                      |

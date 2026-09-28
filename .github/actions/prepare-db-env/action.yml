@@ -111,6 +111,7 @@ runs:
             const lines = [
             "NODE_ENV=test",
             "PORT=3000",
+            "PUBLIC_BASE_URL=http://localhost:3000",
             `DB_HOST=${JSON.stringify(process.env.CI_DB_HOST || "localhost")}`,
             `DB_PORT=${JSON.stringify(process.env.CI_DB_PORT || "5432")}`,
             `DB_USERNAME=${JSON.stringify(process.env.CI_DB_USERNAME)}`,

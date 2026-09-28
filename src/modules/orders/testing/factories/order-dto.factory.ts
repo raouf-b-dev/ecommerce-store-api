@@ -191,6 +191,7 @@ export class OrderDtoTestFactory {
       unitPrice: 50,
       quantity: 2,
       subtotal: 100,
+      imageUrl: null,
     };
     return { ...baseItem, ...overrides };
   }

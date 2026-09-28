@@ -119,6 +119,16 @@ The seeder then inserts **15 products** across those **5 categories** with speci
 | The Art of Clean Code               | `BOOK-ACC-001` | Books         | $28.50  |      30       |          5          | Medium Stock |
 | Designing Data-Intensive Systems    | `BOOK-DDS-002` | Books         | $42.00  |       4       |          5          | Low Stock    |
 
+#### Demo product photos
+
+Every demo SKU gets a product photo. The files live in `assets/demo-media/v1/<sku-lowercase>.webp` (800x800 WebP, AI-generated; see [`assets/demo-media/LICENSE.md`](../../assets/demo-media/LICENSE.md)) and the API serves them itself at `/media/demo/v1/<file>`:
+
+- **Stored URL**: the seed writes absolute URLs built from `PUBLIC_BASE_URL`, for example `http://localhost:3000/media/demo/v1/elec-anc-001.webp`. `PUBLIC_BASE_URL` is required and must be a bare http(s) origin; the API refuses to start without it. Locally it matches `PORT` (`http://localhost:3000`); on a deployed host it is the public origin browsers use to reach the API, and staging and production reject plain `http` (loopback hosts excepted).
+- **Re-runs**: `db:seed` fills `imageUrl` when it is null and rewrites URLs whose path has the demo shape `/media/demo/v<n>/<sku>.webp` (an older version or an old base URL). Any other URL was set by an operator and is left alone.
+- **Cross-origin loading**: responses carry `Cross-Origin-Resource-Policy: cross-origin` (helmet defaults every other route to `same-origin`) and `Cache-Control: public, max-age=31536000, immutable`. Bump `DEMO_MEDIA_VERSION` in `src/modules/products/core/application/seed/demo-media.ts` and add a new folder when a photo changes.
+- **Clients**: the storefront renders images through `next/image`, so its allowlist (`src/lib/images/allowed-origins.ts`) must include the `PUBLIC_BASE_URL` origin. The admin loads URLs directly with `<img>`.
+- **Docker**: the production image copies `assets/demo-media`; the static handler resolves it from the working directory (`/app`) and fails the boot when the `DEMO_MEDIA_VERSION` folder is missing.
+
 ### 5. Seeded Demo Orders (for `customer@store.local`)
 
 The seeder creates **4 demo orders** for the customer account (idempotent: skips create if that user already has any orders; re-runs still refresh payment/order timestamps and rebuild inventory). Useful for admin order list/detail, dashboard revenue, and status-transition smoke tests.

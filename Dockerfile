@@ -48,6 +48,8 @@ ENV NODE_OPTIONS="--require ./dist/src/infrastructure/tracing/tracing.js"
 COPY --from=build /app/dist ./dist
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
+# Demo product photos served at /media/demo (resolved from the working directory)
+COPY assets/demo-media ./assets/demo-media
 
 # Entrypoint + migration runner (runs pending DB migrations, then starts the app)
 COPY docker-entrypoint.sh ./

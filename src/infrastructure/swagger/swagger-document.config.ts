@@ -1,4 +1,5 @@
 import { DocumentBuilder } from '@nestjs/swagger';
+import { getAppVersion } from '../../shared-kernel/infra/lang/app-version';
 
 export function buildSwaggerDocumentConfig(): ReturnType<
   DocumentBuilder['build']
@@ -6,7 +7,7 @@ export function buildSwaggerDocumentConfig(): ReturnType<
   return new DocumentBuilder()
     .setTitle('E-Commerce API')
     .setDescription('API documentation for E-Commerce API modules')
-    .setVersion('1.0')
+    .setVersion(getAppVersion())
     .addBearerAuth()
     .build();
 }

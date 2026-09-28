@@ -44,6 +44,7 @@ function createDefaultMockConfig(): IAppConfig {
     },
     http: {
       trustProxy: 'false',
+      publicBaseUrl: 'http://localhost:3000',
     },
     metricsApiKey: 'test-key',
     otel: {
