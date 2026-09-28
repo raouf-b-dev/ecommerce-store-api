@@ -1,9 +1,13 @@
 #!/bin/sh
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-
-if [ "$current_branch" = "master" ] || [ "$current_branch" = "develop" ]; then
-  echo "❌ Error: Direct pushes to '$current_branch' are not allowed. Please use a feature branch and create a Pull Request."
-  exit 1
-fi
+# Git passes one "<local ref> <local sha> <remote ref> <remote sha>" line per
+# pushed ref on stdin; block by destination so tag pushes from master still work.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/master | refs/heads/develop)
+      echo "❌ Error: Direct pushes to '${remote_ref#refs/heads/}' are not allowed. Please use a feature branch and create a Pull Request."
+      exit 1
+      ;;
+  esac
+done
 
 exit 0
