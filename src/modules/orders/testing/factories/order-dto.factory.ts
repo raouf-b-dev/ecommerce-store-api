@@ -162,6 +162,7 @@ export class OrderDtoTestFactory {
     const baseUser: CheckoutCartItem = {
       productId: 1,
       productName: 'productName',
+      imageUrl: null,
       price: 10,
       quantity: 1,
       currency: 'USD',

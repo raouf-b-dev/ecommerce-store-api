@@ -6,6 +6,7 @@ import { CallerContext } from '../../../../../shared-kernel/domain/interfaces/ca
 export interface CheckoutCartItem {
   productId: number;
   productName: string;
+  imageUrl: string | null;
   price: number;
   quantity: number;
   currency: string;
