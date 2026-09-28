@@ -8,6 +8,7 @@ import {
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
 import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
+import { getAppVersion } from '../../shared-kernel/infra/lang/app-version';
 
 const isTracingEnabled = process.env.OTEL_TRACING_ENABLED !== 'false';
 
@@ -15,7 +16,7 @@ if (isTracingEnabled) {
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'ecommerce-store-api',
-      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '0.8.0',
+      [ATTR_SERVICE_VERSION]: getAppVersion(),
       ['deployment.environment']: process.env.NODE_ENV || 'development',
     }),
     traceExporter: new OTLPTraceExporter({
