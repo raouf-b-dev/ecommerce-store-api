@@ -15,6 +15,7 @@ export interface SeedDemoOrderProductItem {
   sku: string;
   name: string;
   price: number;
+  imageUrl: string | null;
 }
 
 export interface SeedDemoOrdersInput {
@@ -85,6 +86,7 @@ export class SeedDemoOrdersUseCase extends UseCase<
             productId: product.id,
             productName: product.name,
             sku: product.sku,
+            imageUrl: product.imageUrl,
             unitPrice: product.price,
             quantity: itemDef.quantity,
           });
