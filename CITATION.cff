@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: If you use this software, please cite it using these metadata.
 type: software
 title: E-commerce Store API
-version: 0.9.0
+version: 0.9.1
 date-released: "2026-09-28"
 license: MIT
 repository-code: https://github.com/raouf-b-dev/ecommerce-store-api
