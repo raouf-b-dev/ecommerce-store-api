@@ -687,6 +687,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       [
+        resolve-env,
         lint,
         typecheck,
         unit-tests,
@@ -695,6 +696,7 @@ jobs:
         build,
         openapi-audit,
         integration-tests,
+        redis-chaos-tests,
         e2e-tests,
         smoke-test,
         restore-drill,
@@ -704,49 +706,53 @@ jobs:
     steps:
       - name: Check all jobs status
         run: |
-          lint_status="${{ needs.lint.result }}"
-          typecheck_status="${{ needs.typecheck.result }}"
-          unit_status="${{ needs.unit-tests.result }}"
-          arch_status="${{ needs.arch.result }}"
-          audit_status="${{ needs.audit.result }}"
-          build_status="${{ needs.build.result }}"
-          openapi_audit_status="${{ needs.openapi-audit.result }}"
-          integration_status="${{ needs.integration-tests.result }}"
-          e2e_status="${{ needs.e2e-tests.result }}"
-          smoke_status="${{ needs.smoke-test.result }}"
-          restore_drill_status="${{ needs.restore-drill.result }}"
-          restore_drill_smoke_status="${{ needs.restore-drill-smoke.result }}"
+          # Push runs (master, v* tags) feed docker-publish, so every required job
+          # must have actually run and succeeded. PRs and manual runs only fail on
+          # failure/cancelled, because fork PRs intentionally skip the test jobs.
+          strict=false
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            strict=true
+          fi
 
-          echo "lint: $lint_status"
-          echo "typecheck: $typecheck_status"
-          echo "unit-tests: $unit_status"
-          echo "arch: $arch_status"
-          echo "audit: $audit_status"
-          echo "build: $build_status"
-          echo "openapi-audit: $openapi_audit_status"
-          echo "integration-tests: $integration_status"
-          echo "e2e-tests: $e2e_status"
-          echo "smoke-test: $smoke_status"
-          echo "restore-drill: $restore_drill_status"
-          echo "restore-drill-smoke: $restore_drill_smoke_status"
+          # restore-drill-smoke only runs on pushes to master; skipped on PRs,
+          # tags and manual runs is OK.
+          restore_drill_smoke_required=false
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/master" ]; then
+            restore_drill_smoke_required=true
+          fi
 
-          for status in "$lint_status" "$typecheck_status" "$unit_status" "$arch_status" "$audit_status" "$build_status" "$openapi_audit_status"; do
+          echo "event: $GITHUB_EVENT_NAME ($GITHUB_REF), strict: $strict"
+
+          failed=false
+          check() {
+            local name="$1" status="$2" require_success="$3"
+            echo "$name: $status"
             if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
-              echo "One of the required parallel jobs failed or was cancelled."
-              exit 1
+              echo "::error::$name $status"
+              failed=true
+            elif [ "$require_success" = true ] && [ "$status" != "success" ]; then
+              echo "::error::$name was $status but must succeed on this run"
+              failed=true
             fi
-          done
+          }
 
-          for status in "$integration_status" "$e2e_status" "$smoke_status" "$restore_drill_status"; do
-            if [ "$status" = "failure" ] || [ "$status" = "cancelled" ]; then
-              echo "One of the test jobs failed or was cancelled."
-              exit 1
-            fi
-          done
+          check resolve-env "${{ needs.resolve-env.result }}" "$strict"
+          check lint "${{ needs.lint.result }}" "$strict"
+          check typecheck "${{ needs.typecheck.result }}" "$strict"
+          check unit-tests "${{ needs.unit-tests.result }}" "$strict"
+          check arch "${{ needs.arch.result }}" "$strict"
+          check audit "${{ needs.audit.result }}" "$strict"
+          check build "${{ needs.build.result }}" "$strict"
+          check openapi-audit "${{ needs.openapi-audit.result }}" "$strict"
+          check integration-tests "${{ needs.integration-tests.result }}" "$strict"
+          check redis-chaos-tests "${{ needs.redis-chaos-tests.result }}" "$strict"
+          check e2e-tests "${{ needs.e2e-tests.result }}" "$strict"
+          check smoke-test "${{ needs.smoke-test.result }}" "$strict"
+          check restore-drill "${{ needs.restore-drill.result }}" "$strict"
+          check restore-drill-smoke "${{ needs.restore-drill-smoke.result }}" "$restore_drill_smoke_required"
 
-          # master-only job: skipped on PRs/tags is OK
-          if [ "$restore_drill_smoke_status" = "failure" ] || [ "$restore_drill_smoke_status" = "cancelled" ]; then
-            echo "restore-drill-smoke failed or was cancelled."
+          if [ "$failed" = true ]; then
+            echo "One or more required jobs did not pass."
             exit 1
           fi
 
@@ -808,7 +814,7 @@ jobs:
         with:
           images: ghcr.io/raouf-b-dev/ecommerce-store-api
           tags: |
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=semver,pattern={{version}}
 
       - name: Build and push
