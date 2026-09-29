@@ -3,7 +3,7 @@ message: If you use this software, please cite it using these metadata.
 type: software
 title: E-commerce Store API
 version: 0.9.2
-date-released: "2026-09-28"
+date-released: "2026-09-29"
 license: MIT
 repository-code: https://github.com/raouf-b-dev/ecommerce-store-api
 authors:
