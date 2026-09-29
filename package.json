@@ -214,7 +214,7 @@
     "typescript-eslint": "^8.70.1"
   },
   "overrides": {
-    "multer": "^2.3.0",
+    "multer": "^2.4.0",
     "qs": "^6.16.0",
     "sanitize-html": {
       "htmlparser2": "10.1.0"
