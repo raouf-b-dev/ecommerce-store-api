@@ -170,7 +170,7 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ## Docs
 
-[`docs/README.md`](docs/README.md) · [`FEATURES.md`](docs/FEATURES.md) · [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) · [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) · [ADRs](docs/architecture/adr/README.md)
+[`CHANGELOG.md`](CHANGELOG.md) · [`docs/README.md`](docs/README.md) · [`FEATURES.md`](docs/FEATURES.md) · [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) · [`DDD-HEXAGONAL.md`](docs/architecture/DDD-HEXAGONAL.md) · [ADRs](docs/architecture/adr/README.md)
 
 ## Contributing and security
 
