@@ -92,6 +92,7 @@ export class ModuleCartGateway implements CartGateway {
     items?: Array<{
       productId: number;
       productName: string;
+      imageUrl: string | null;
       price: number;
       quantity: number;
       currency?: string;
@@ -103,6 +104,7 @@ export class ModuleCartGateway implements CartGateway {
       items: (cart.items || []).map((item): CheckoutCartItem => ({
         productId: item.productId,
         productName: item.productName,
+        imageUrl: item.imageUrl,
         price: item.price,
         quantity: item.quantity,
         currency: (item.currency || 'USD').trim().toUpperCase(),

@@ -18,7 +18,10 @@ describe('SeedDemoOrdersUseCase', () => {
     { id: 6, name: 'Book', sku: 'BOOK-ACC-001', price: 28.5 },
     { id: 7, name: 'Yoga Mat', sku: 'SPOR-EYM-001', price: 29.99 },
     { id: 8, name: 'Keyboard', sku: 'ELEC-MBK-004', price: 79.99 },
-  ];
+  ].map((p) => ({
+    ...p,
+    imageUrl: `http://localhost:3000/media/demo/v1/${p.sku.toLowerCase()}.webp`,
+  }));
 
   beforeEach(() => {
     mockOrderRepository = new MockOrderRepository();
@@ -83,5 +86,23 @@ describe('SeedDemoOrdersUseCase', () => {
     expect(mockOrderRepository.save).toHaveBeenCalledTimes(
       DEMO_SEED_ORDERS.length,
     );
+  });
+
+  it('should snapshot each product image on seeded order lines', async () => {
+    mockOrderRepository.mockSuccessfulList([]);
+    mockOrderRepository.mockSuccessfulSave(100);
+    const imageByProductId = new Map(
+      dummyProducts.map((p) => [p.id, p.imageUrl]),
+    );
+
+    await useCase.execute({ userId: 1, products: dummyProducts });
+
+    const savedItems = mockOrderRepository.save.mock.calls.flatMap(
+      ([order]) => order.items,
+    );
+    expect(savedItems.length).toBeGreaterThan(0);
+    for (const item of savedItems) {
+      expect(item.imageUrl).toBe(imageByProductId.get(item.productId));
+    }
   });
 });

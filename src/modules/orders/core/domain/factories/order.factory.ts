@@ -5,6 +5,7 @@ import { OrderItemProps } from '../entities/order-items';
 export interface OrderCartItemInput {
   productId: number;
   productName: string;
+  imageUrl: string | null;
   price: number;
   quantity: number;
   currency: string;
@@ -28,6 +29,7 @@ export class OrderFactory {
         id: 0,
         productId: item.productId,
         productName: item.productName,
+        imageUrl: item.imageUrl,
         unitPrice: item.price,
         quantity: item.quantity,
         currency: item.currency,
