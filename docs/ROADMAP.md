@@ -123,10 +123,11 @@ Phases **15-17**, **16b**, and **20** are done.
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                      | Phase  | Critical Purpose           |
-| ---------------------------------------------------------------- | ------ | -------------------------- |
-| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies | **13** | Pre-deploy HTTP confidence |
-| [x] Repository integration + concurrent checkout lock proof      | **13** | Real DB + stock race       |
+| Task / Item                                                       | Phase   | Critical Purpose                          |
+| ----------------------------------------------------------------- | ------- | ----------------------------------------- |
+| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies  | **13**  | Pre-deploy HTTP confidence                |
+| [ ] E2E: customer A reads customer B's real order and its payment | **16e** | Current order/payment cases use id 999999 |
+| [x] Repository integration + concurrent checkout lock proof       | **13**  | Real DB + stock race                      |
 
 ### Step 3: Multi-Instance (Before 2+ pods)
 
@@ -346,6 +347,20 @@ Moved to Phase **16c**.
 **Done when**: `audit:openapi` covers the error schema and e2e specs assert the shape and code for 400/401/403/404/409/429.
 
 **Location**: `src/filters/global-exception.filter.ts`, `src/infrastructure/swagger/`, `docs/architecture/adr/`, `test/e2e/`
+
+### [ ] Cross-user order and payment reads
+
+**What**: Cart IDOR e2e already uses another customer's real cart. The order case calls `GET /v1/orders/999999`, and the payment case calls `GET /v1/payments/orders/999999` and accepts an empty 200. Neither proves that a real other customer's order or payment stays hidden. The use case already scopes payment reads and returns not-found when the caller is not allowed; the HTTP suite does not exercise that with two real users.
+
+**Scope**:
+
+- Customer A requests customer B's real order id. The response is the same not-found result as a missing id, not the order body.
+- Customer A requests the payment for that order. The response is the not-found failure, not customer B's payment.
+- Keep the missing-id cases. Do not change status codes here. The error envelope above owns that.
+
+**Done when**: both cases are in `test/e2e/security/security-idor.e2e-spec.ts` and pass in CI.
+
+**Location**: `test/e2e/security/security-idor.e2e-spec.ts`
 
 ---
 

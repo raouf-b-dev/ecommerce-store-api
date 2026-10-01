@@ -219,12 +219,8 @@
     "sanitize-html": {
       "htmlparser2": "10.1.0"
     },
-    "js-yaml": "5.2.3",
-    "@eslint/eslintrc": {
-      "minimatch": {
-        "brace-expansion": "1.1.18"
-      }
-    },
+    "js-yaml": "5.4.2",
+    "brace-expansion@1": "1.1.21",
     "typeorm": {
       "redis": "npm:redis@5.8.0"
     }
