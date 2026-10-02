@@ -39,6 +39,7 @@ import {
   AUTH_REFRESH_THROTTLE,
   AUTH_STRICT_THROTTLE,
 } from '../../infrastructure/throttler/throttle.constants';
+import { SkipSanitization } from '../../interceptors/sanitize.interceptor';
 
 @ApiTags('Authentication')
 @Controller('authentication')
@@ -66,6 +67,7 @@ export class AuthenticationController {
 
   @Post('login')
   @Public()
+  @SkipSanitization()
   @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Login user' })
   @ApiOkResponse({
@@ -87,6 +89,7 @@ export class AuthenticationController {
 
   @Post('refresh')
   @Public()
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.OK)
   @Throttle(AUTH_REFRESH_THROTTLE)
@@ -121,6 +124,7 @@ export class AuthenticationController {
   }
 
   @Post('logout')
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -147,6 +151,7 @@ export class AuthenticationController {
   }
 
   @Post('logout-all')
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -174,6 +179,7 @@ export class AuthenticationController {
 
   @Post('change-password')
   @AllowDuringPasswordChange()
+  @SkipSanitization()
   @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Change password for the authenticated user' })
   @ApiOkResponse({

@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
@@ -46,7 +46,11 @@ async function bootstrap() {
     version: DEMO_MEDIA_VERSION,
   });
 
-  app.useGlobalInterceptors(new SanitizeInterceptor(), new ResultInterceptor());
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(
+    new SanitizeInterceptor(reflector),
+    new ResultInterceptor(),
+  );
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useGlobalPipes(
