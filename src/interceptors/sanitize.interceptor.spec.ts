@@ -76,11 +76,12 @@ describe('SanitizeInterceptor', () => {
       expect(request.body.email).toBe('user@example.com');
     });
 
-    it('sanitizes registration input since register has no skip decorator', () => {
+    it('sanitizes registration profile input while keeping raw password intact', () => {
       const body = {
         firstName: '<script>alert("xss")</script>Jane',
         lastName: '<b>Doe</b>',
         email: 'jane@example.com',
+        password: 'P@ss<word>&123!',
       };
       const context = createMockExecutionContext({ body });
       context.getHandler.mockReturnValue(
@@ -94,6 +95,7 @@ describe('SanitizeInterceptor', () => {
       expect(request.body.firstName).toBe('Jane');
       expect(request.body.lastName).toBe('Doe');
       expect(request.body.email).toBe('jane@example.com');
+      expect(request.body.password).toBe('P@ss<word>&123!');
     });
 
     it('skips sanitization on stripe webhook handler leaving the body untouched', () => {
@@ -284,6 +286,24 @@ describe('SanitizeInterceptor', () => {
       expect(result.tags).toEqual(['tag1', 'tag2']);
       expect(result.details.note).toBe('Important');
       expect(result.details.count).toBe(10);
+    });
+
+    it('preserves exact password keys intact while sanitizing other fields including passwordHint', () => {
+      const payload = {
+        username: '<script>evil()</script>Alice',
+        password: 'Pass<word>&123!',
+        currentPassword: 'Old<Pass>&456!',
+        newPassword: 'New<Pass>&789!',
+        confirmPassword: 'New<Pass>&789!',
+        passwordHint: '<script>alert(1)</script>mother maiden name',
+      };
+      const result = sanitizeDeep(payload);
+      expect(result.username).toBe('Alice');
+      expect(result.password).toBe('Pass<word>&123!');
+      expect(result.currentPassword).toBe('Old<Pass>&456!');
+      expect(result.newPassword).toBe('New<Pass>&789!');
+      expect(result.confirmPassword).toBe('New<Pass>&789!');
+      expect(result.passwordHint).toBe('mother maiden name');
     });
   });
 });

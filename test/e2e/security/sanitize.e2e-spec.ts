@@ -2,9 +2,9 @@
  * Input sanitization regression suite (e2e).
  *
  * Verifies that:
- * 1. User registration inputs are sanitized against XSS.
- * 2. Login preserves raw credential characters (<, >, &) without mutation.
- * 3. Stripe webhook payloads remain untouched for signature and data fidelity.
+ * 1. User registration inputs are sanitized against XSS while raw passwords with < > & are preserved.
+ * 2. Login over HTTP succeeds using the exact same < > & password registered over HTTP.
+ * 3. Stripe webhook payloads remain untouched and are passed unmutated to the webhook handler.
  * 4. Authorization routes (/v1/authorization/... and /v1/roles) are properly sanitized.
  *
  * Prerequisites: PostgreSQL + Redis running (`npm run d:up:dev`) and migrations applied.
@@ -20,7 +20,7 @@ import {
 import { TestingModule } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
 import { Public } from 'src/guards/decorators/public.decorator';
-import { RegisterUserUseCase } from 'src/modules/authentication/core/application/usecases/register-user/register-user.usecase';
+import { HandleStripeWebhookUseCase } from 'src/modules/payments/core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import {
   AuthSession,
   AuthTestHelper,
@@ -64,35 +64,23 @@ describe('Input sanitization (e2e)', () => {
     await E2eTestAppHelper.closeApp(app);
   });
 
-  it('sanitizes user profile fields on registration', async () => {
-    const email = `sanitize-reg-${Date.now()}@example.com`;
-    const response = await http
+  it('registers over HTTP with a <>& password and logs in with the exact same password', async () => {
+    const email = `sanitize-http-flow-${Date.now()}@example.com`;
+    const passwordWithSpecialChars = 'P@ss<word>&123!';
+
+    const registerResponse = await http
       .post(`${E2E_API_PREFIX}/authentication/register`)
       .send({
         email,
-        password: AuthTestHelper.password,
+        password: passwordWithSpecialChars,
         firstName: '<script>alert("xss")</script>Jane',
         lastName: '<b>Doe</b>',
       });
 
-    expect(response.status).toBe(HttpStatus.CREATED);
-    expect(response.body.firstName).toBe('Jane');
-    expect(response.body.lastName).toBe('Doe');
-    expect(response.body.email).toBe(email);
-  });
-
-  it('keeps passwords containing < > & intact on login', async () => {
-    const email = `sanitize-login-${Date.now()}@example.com`;
-    const passwordWithSpecialChars = 'P@ss<word>&123!';
-
-    const registerUseCase = moduleRef.get(RegisterUserUseCase);
-    const createResult = await registerUseCase.execute({
-      email,
-      password: passwordWithSpecialChars,
-      firstName: 'Special',
-      lastName: 'Chars',
-    });
-    expect(createResult.isSuccess).toBe(true);
+    expect(registerResponse.status).toBe(HttpStatus.CREATED);
+    expect(registerResponse.body.firstName).toBe('Jane');
+    expect(registerResponse.body.lastName).toBe('Doe');
+    expect(registerResponse.body.email).toBe(email);
 
     const loginResponse = await http
       .post(`${E2E_API_PREFIX}/authentication/login`)
@@ -105,14 +93,18 @@ describe('Input sanitization (e2e)', () => {
     expect(loginResponse.body.accessToken).toBeDefined();
   });
 
-  it('leaves the webhook body untouched when receiving Stripe webhooks', async () => {
+  it('leaves the webhook body untouched and asserts what the webhook handler actually receives', async () => {
+    const webhookUseCase = moduleRef.get(HandleStripeWebhookUseCase);
+    const executeSpy = jest.spyOn(webhookUseCase, 'execute');
+
     const rawPayload = {
-      id: `evt_test_${Date.now()}`,
       type: 'payment_intent.created',
       data: {
         object: {
           id: 'pi_test_sanitize',
-          description: '<script>alert("xss")</script> Raw & Untouched Payload',
+          metadata: {
+            note: '<script>alert("xss")</script> Raw & Untouched Payload',
+          },
         },
       },
     };
@@ -123,6 +115,16 @@ describe('Input sanitization (e2e)', () => {
       .send(rawPayload);
 
     expect(response.status).toBe(HttpStatus.OK);
+    expect(executeSpy).toHaveBeenCalledTimes(1);
+
+    const receivedCommand = executeSpy.mock.calls[0][0];
+    expect(receivedCommand.signature).toBe('e2e-test');
+    expect(receivedCommand.payload).toEqual(rawPayload);
+    expect(receivedCommand.payload.data.object.metadata.note).toBe(
+      '<script>alert("xss")</script> Raw & Untouched Payload',
+    );
+
+    executeSpy.mockRestore();
   });
 
   it('sanitizes payloads sent to /v1/authorization/... routes', async () => {
