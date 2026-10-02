@@ -43,8 +43,10 @@ export function createMockExecutionContext(
 
   const context = {
     ...host,
-    getClass: jest.fn(),
-    getHandler: jest.fn(),
+    getClass: jest.fn().mockReturnValue(class MockController {}),
+    getHandler: jest.fn().mockReturnValue(function mockHandler() {
+      return undefined;
+    }),
   } as unknown as jest.Mocked<ExecutionContext>;
   return context;
 }

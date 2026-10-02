@@ -152,7 +152,7 @@ export class OwnedResourceAccessPolicy {
 
 1. **Parameterized Query Layer:** Database persistence is managed by TypeORM repositories using parameterized `QueryBuilder` instances. User input is supplied strictly via bound parameters (`:userId`, `:status`), preventing SQL control structure injection.
 2. **Dynamic Sort Field Filtering:** Where dynamic column sorting is supported (e.g. `/orders?sortBy=createdAt`), the sort key is validated against an explicit DTO allowlist (`@IsIn(['createdAt', 'updatedAt', 'totalPrice'])`). Arbitrary string input cannot reach SQL `ORDER BY` clauses.
-3. **XSS Input Sanitization:** Global interceptor `SanitizeInterceptor` recurses through all incoming HTTP request bodies, query strings, and parameters, stripping hazardous HTML elements and unescaped script tags prior to domain processing.
+3. **XSS Input Sanitization:** Global interceptor `SanitizeInterceptor` recurses through all incoming HTTP request bodies, stripping hazardous HTML elements and unescaped script tags prior to domain processing. Individual handlers handling credentials or cryptographic payloads opt out via `@SkipSanitization()` to preserve raw input fidelity.
 4. **Static AST Analysis:** Static analysis tool `eslint-plugin-security` is embedded in the project ESLint flat configuration (`eslint.config.mjs`), scanning the AST for unsafe patterns (`eval()`, non-literal regular expressions, unsafe child process invocations).
 
 ---
@@ -303,4 +303,3 @@ The security controls detailed in this specification are subject to continuous a
 2. **Domain & Unit Testing:** `npm run test` (validates domain logic, security filter masking, and exception handling).
 3. **Architecture Boundary Tests:** `npm run test:arch` (enforces module encapsulation and hexagonal boundary rules).
 4. **Integration & E2E Security Tests:** `npm run test:e2e` (runs `test/e2e/security/security-idor.e2e-spec.ts` for RBAC/ownership isolation, plus `test/e2e/auth/authentication-lifecycle.e2e-spec.ts` and `test/e2e/checkout/checkout-saga.e2e-spec.ts`, against real PostgreSQL and Redis).
-

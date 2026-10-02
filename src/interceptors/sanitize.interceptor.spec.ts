@@ -1,275 +1,289 @@
-import {
-  SanitizeInterceptor,
-  SkipSanitization,
-  sanitizeDeep,
-} from './sanitize.interceptor';
 import { CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { of } from 'rxjs';
+import {
+  SanitizeInterceptor,
+  SKIP_SANITIZATION_KEY,
+  sanitizeDeep,
+} from './sanitize.interceptor';
+import { AuthenticationController } from '../modules/authentication/authentication.controller';
+import { PaymentsController } from '../modules/payments/payments.controller';
+import { RolesController } from '../modules/authorization/roles.controller';
 import { createMockExecutionContext } from '../testing';
 
 describe('SanitizeInterceptor', () => {
+  const reflector = new Reflector();
   let interceptor: SanitizeInterceptor;
-  let mockReflector: Reflector;
 
   beforeEach(() => {
-    mockReflector = {
-      getAllAndOverride: jest.fn().mockReturnValue(false),
-    } as unknown as Reflector;
-    interceptor = new SanitizeInterceptor(mockReflector);
+    interceptor = new SanitizeInterceptor(reflector);
   });
 
   const createMockCallHandler = (): CallHandler => ({
     handle: () => of(undefined),
   });
 
-  it('should be defined', () => {
-    expect(interceptor).toBeDefined();
+  describe('handler metadata reflection', () => {
+    it('sets SkipSanitization on AuthenticationController.prototype.login', () => {
+      const isSkipped = reflector.get<boolean>(
+        SKIP_SANITIZATION_KEY,
+        AuthenticationController.prototype.login,
+      );
+      expect(isSkipped).toBe(true);
+    });
+
+    it('does not set SkipSanitization on AuthenticationController.prototype.register', () => {
+      const isSkipped = reflector.get<boolean>(
+        SKIP_SANITIZATION_KEY,
+        AuthenticationController.prototype.register,
+      );
+      expect(isSkipped).toBeUndefined();
+    });
+
+    it('sets SkipSanitization on PaymentsController.prototype.handleStripeWebhook', () => {
+      const isSkipped = reflector.get<boolean>(
+        SKIP_SANITIZATION_KEY,
+        PaymentsController.prototype.handleStripeWebhook,
+      );
+      expect(isSkipped).toBe(true);
+    });
+
+    it('does not set SkipSanitization on RolesController.prototype.create', () => {
+      const isSkipped = reflector.get<boolean>(
+        SKIP_SANITIZATION_KEY,
+        RolesController.prototype.create,
+      );
+      expect(isSkipped).toBeUndefined();
+    });
   });
 
-  it('should strip HTML from simple string fields', () => {
-    const body = {
-      name: '<script>alert("xss")</script>John',
-      email: 'john@example.com',
-    };
-    const context = createMockExecutionContext({ body });
+  describe('interception with real controller contexts and Reflector', () => {
+    it('skips sanitization on login so credentials with < > & are preserved intact', () => {
+      const body = {
+        email: 'user@example.com',
+        password: 'P@ss<word>&123',
+      };
+      const context = createMockExecutionContext({ body });
+      context.getHandler.mockReturnValue(
+        AuthenticationController.prototype.login,
+      );
+      context.getClass.mockReturnValue(AuthenticationController);
 
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.name).toBe('John');
-    expect(request.body.email).toBe('john@example.com');
-  });
-
-  it('should strip HTML from nested object fields', () => {
-    const body = {
-      user: {
-        name: '<b>Bold Name</b>',
-        address: {
-          street: '<img src=x onerror=alert(1)>123 Main St',
-        },
-      },
-    };
-    const context = createMockExecutionContext({ body });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.user.name).toBe('Bold Name');
-    expect(request.body.user.address.street).toBe('123 Main St');
-  });
-
-  it('should strip HTML from array elements', () => {
-    const body = {
-      items: [
-        '<script>alert(1)</script>Item 1',
-        'Item 2',
-        '<a href="evil">Item 3</a>',
-      ],
-    };
-    const context = createMockExecutionContext({ body });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.items).toEqual(['Item 1', 'Item 2', 'Item 3']);
-  });
-
-  it('should preserve non-string values unchanged', () => {
-    const body = {
-      price: 29.99,
-      quantity: 5,
-      active: true,
-      metadata: null,
-    };
-    const context = createMockExecutionContext({ body });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.price).toBe(29.99);
-    expect(request.body.quantity).toBe(5);
-    expect(request.body.active).toBe(true);
-    expect(request.body.metadata).toBeNull();
-  });
-
-  it('should not modify already-clean input', () => {
-    const body = {
-      name: 'John Doe',
-      email: 'john@example.com',
-      description: 'A normal product description.',
-    };
-    const originalBody = { ...body };
-    const context = createMockExecutionContext({ body });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body).toEqual(originalBody);
-  });
-
-  it('should handle empty body gracefully', () => {
-    const context = createMockExecutionContext({});
-
-    expect(() => {
       interceptor.intercept(context, createMockCallHandler());
-    }).not.toThrow();
-  });
 
-  it('should handle arrays of objects', () => {
-    const body = {
-      items: [
-        { name: '<b>Item 1</b>', qty: 2 },
-        { name: 'Item 2', qty: 3 },
-      ],
-    };
-    const context = createMockExecutionContext({ body });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.items[0].name).toBe('Item 1');
-    expect(request.body.items[0].qty).toBe(2);
-    expect(request.body.items[1].name).toBe('Item 2');
-  });
-
-  it('should not bypass sanitization on arbitrary routes when ?x=/auth/ is passed (negative case)', () => {
-    const body = {
-      title: '<script>alert("xss")</script>Shoes',
-      description: '<b>Nice shoes</b>',
-    };
-    const context = createMockExecutionContext({
-      body,
-      url: '/v1/products?x=/auth/',
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.password).toBe('P@ss<word>&123');
+      expect(request.body.email).toBe('user@example.com');
     });
 
-    interceptor.intercept(context, createMockCallHandler());
+    it('sanitizes registration input since register has no skip decorator', () => {
+      const body = {
+        firstName: '<script>alert("xss")</script>Jane',
+        lastName: '<b>Doe</b>',
+        email: 'jane@example.com',
+      };
+      const context = createMockExecutionContext({ body });
+      context.getHandler.mockReturnValue(
+        AuthenticationController.prototype.register,
+      );
+      context.getClass.mockReturnValue(AuthenticationController);
 
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.title).toBe('Shoes');
-    expect(request.body.description).toBe('Nice shoes');
-  });
+      interceptor.intercept(context, createMockCallHandler());
 
-  it('should sanitize registration fields (firstName, lastName, phone) while preserving password characters', () => {
-    const body = {
-      firstName: '<script>alert("xss")</script>Jane',
-      lastName: '<b>Doe</b>',
-      phone: '<script>evil()</script>+15551234567',
-      password: 'My<Complex>&SecurePassword!',
-    };
-    const context = createMockExecutionContext({
-      body,
-      url: '/v1/authentication/register',
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.firstName).toBe('Jane');
+      expect(request.body.lastName).toBe('Doe');
+      expect(request.body.email).toBe('jane@example.com');
     });
 
-    interceptor.intercept(context, createMockCallHandler());
+    it('skips sanitization on stripe webhook handler leaving the body untouched', () => {
+      const body = {
+        id: 'evt_test_123',
+        type: 'payment_intent.created',
+        data: {
+          object: {
+            id: 'pi_test',
+            description:
+              '<script>alert("xss")</script> Raw & Untouched Payload',
+          },
+        },
+      };
+      const context = createMockExecutionContext({ body });
+      context.getHandler.mockReturnValue(
+        PaymentsController.prototype.handleStripeWebhook,
+      );
+      context.getClass.mockReturnValue(PaymentsController);
 
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.firstName).toBe('Jane');
-    expect(request.body.lastName).toBe('Doe');
-    expect(request.body.phone).toBe('+15551234567');
-    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
-  });
+      interceptor.intercept(context, createMockCallHandler());
 
-  it('should allow passwords containing < > & to survive unaltered on login with @SkipSanitization()', () => {
-    (mockReflector.getAllAndOverride as jest.Mock).mockReturnValue(true);
-
-    const body = {
-      email: 'user@example.com',
-      password: 'P@ss<word>&123',
-    };
-    const context = createMockExecutionContext({
-      body,
-      url: '/v1/authentication/login',
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.data.object.description).toBe(
+        '<script>alert("xss")</script> Raw & Untouched Payload',
+      );
     });
 
-    interceptor.intercept(context, createMockCallHandler());
+    it('sanitizes authorization role management endpoints', () => {
+      const body = {
+        code: 'CUSTOM_ROLE',
+        name: '<script>alert(1)</script>Role Manager',
+        description: '<b>Custom permissions</b>',
+      };
+      const context = createMockExecutionContext({ body });
+      context.getHandler.mockReturnValue(RolesController.prototype.create);
+      context.getClass.mockReturnValue(RolesController);
 
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.password).toBe('P@ss<word>&123');
-    expect(request.body.email).toBe('user@example.com');
+      interceptor.intercept(context, createMockCallHandler());
+
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.code).toBe('CUSTOM_ROLE');
+      expect(request.body.name).toBe('Role Manager');
+      expect(request.body.description).toBe('Custom permissions');
+    });
   });
 
-  it('should recognize @SkipSanitization() decorator on a real controller handler using real Reflector', () => {
-    class TestController {
-      @SkipSanitization()
-      loginHandler() {
-        return 'ok';
-      }
+  describe('data sanitization functionality', () => {
+    it('strips HTML from simple string fields', () => {
+      const body = {
+        name: '<script>alert("xss")</script>John',
+        email: 'john@example.com',
+      };
+      const context = createMockExecutionContext({ body });
 
-      standardHandler() {
-        return 'ok';
-      }
-    }
+      interceptor.intercept(context, createMockCallHandler());
 
-    const realReflector = new Reflector();
-    const realInterceptor = new SanitizeInterceptor(realReflector);
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.name).toBe('John');
+      expect(request.body.email).toBe('john@example.com');
+    });
 
-    const instance = new TestController();
-    const loginReq = { body: { password: 'P@ss<word>&123' } };
-    const loginContext = {
-      getType: () => 'http',
-      getHandler: () => instance.loginHandler,
-      getClass: () => TestController,
-      switchToHttp: () => ({
-        getRequest: () => loginReq,
-      }),
-    } as any;
+    it('strips HTML from nested object fields', () => {
+      const body = {
+        user: {
+          name: '<b>Bold Name</b>',
+          address: {
+            street: '<img src=x onerror=alert(1)>123 Main St',
+          },
+        },
+      };
+      const context = createMockExecutionContext({ body });
 
-    realInterceptor.intercept(loginContext, createMockCallHandler());
-    expect(loginReq.body.password).toBe('P@ss<word>&123');
+      interceptor.intercept(context, createMockCallHandler());
 
-    const standardReq = { body: { name: '<b>Alice</b>' } };
-    const standardContext = {
-      getType: () => 'http',
-      getHandler: () => instance.standardHandler,
-      getClass: () => TestController,
-      switchToHttp: () => ({
-        getRequest: () => standardReq,
-      }),
-    } as any;
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.user.name).toBe('Bold Name');
+      expect(request.body.user.address.street).toBe('123 Main St');
+    });
 
-    realInterceptor.intercept(standardContext, createMockCallHandler());
-    expect(standardReq.body.name).toBe('Alice');
+    it('strips HTML from array elements', () => {
+      const body = {
+        items: [
+          '<script>alert(1)</script>Item 1',
+          'Item 2',
+          '<a href="evil">Item 3</a>',
+        ],
+      };
+      const context = createMockExecutionContext({ body });
+
+      interceptor.intercept(context, createMockCallHandler());
+
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.items).toEqual(['Item 1', 'Item 2', 'Item 3']);
+    });
+
+    it('preserves non-string values unchanged', () => {
+      const body = {
+        price: 29.99,
+        quantity: 5,
+        active: true,
+        metadata: null,
+      };
+      const context = createMockExecutionContext({ body });
+
+      interceptor.intercept(context, createMockCallHandler());
+
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.price).toBe(29.99);
+      expect(request.body.quantity).toBe(5);
+      expect(request.body.active).toBe(true);
+      expect(request.body.metadata).toBeNull();
+    });
+
+    it('does not modify already-clean input', () => {
+      const body = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        description: 'A normal product description.',
+      };
+      const originalBody = { ...body };
+      const context = createMockExecutionContext({ body });
+
+      interceptor.intercept(context, createMockCallHandler());
+
+      const request = context.switchToHttp().getRequest();
+      expect(request.body).toEqual(originalBody);
+    });
+
+    it('handles empty body gracefully', () => {
+      const context = createMockExecutionContext({});
+
+      expect(() => {
+        interceptor.intercept(context, createMockCallHandler());
+      }).not.toThrow();
+    });
+
+    it('handles arrays of objects', () => {
+      const body = {
+        items: [
+          { name: '<b>Item 1</b>', qty: 2 },
+          { name: 'Item 2', qty: 3 },
+        ],
+      };
+      const context = createMockExecutionContext({ body });
+
+      interceptor.intercept(context, createMockCallHandler());
+
+      const request = context.switchToHttp().getRequest();
+      expect(request.body.items[0].name).toBe('Item 1');
+      expect(request.body.items[0].qty).toBe(2);
+      expect(request.body.items[1].name).toBe('Item 2');
+    });
   });
-});
 
-describe('sanitizeDeep', () => {
-  it('should sanitize a plain string', () => {
-    expect(sanitizeDeep('<script>alert(1)</script>hello')).toBe('hello');
-  });
+  describe('sanitizeDeep', () => {
+    it('sanitizes a plain string', () => {
+      expect(sanitizeDeep('<script>alert(1)</script>hello')).toBe('hello');
+    });
 
-  it('should return numbers unchanged', () => {
-    expect(sanitizeDeep(42)).toBe(42);
-  });
+    it('returns numbers unchanged', () => {
+      expect(sanitizeDeep(42)).toBe(42);
+    });
 
-  it('should return booleans unchanged', () => {
-    expect(sanitizeDeep(true)).toBe(true);
-  });
+    it('returns booleans unchanged', () => {
+      expect(sanitizeDeep(true)).toBe(true);
+    });
 
-  it('should return null unchanged', () => {
-    expect(sanitizeDeep(null)).toBeNull();
-  });
+    it('returns null unchanged', () => {
+      expect(sanitizeDeep(null)).toBeNull();
+    });
 
-  it('should return undefined unchanged', () => {
-    expect(sanitizeDeep(undefined)).toBeUndefined();
-  });
+    it('returns undefined unchanged', () => {
+      expect(sanitizeDeep(undefined)).toBeUndefined();
+    });
 
-  it('should preserve password fields while sanitizing other object keys', () => {
-    const payload = {
-      name: '<script>evil()</script>Alice',
-      password: 'Pass<word>&123',
-      nested: {
-        currentPassword: 'Old<Pass>&456',
-        newPassword: 'New<Pass>&789',
-        bio: '<b>Developer</b>',
-      },
-    };
-    const result = sanitizeDeep(payload);
-    expect(result.name).toBe('Alice');
-    expect(result.password).toBe('Pass<word>&123');
-    expect(result.nested.currentPassword).toBe('Old<Pass>&456');
-    expect(result.nested.newPassword).toBe('New<Pass>&789');
-    expect(result.nested.bio).toBe('Developer');
+    it('recursively strips HTML in nested objects and arrays', () => {
+      const payload = {
+        title: '<script>evil()</script>Item',
+        tags: ['<b>tag1</b>', 'tag2'],
+        details: {
+          note: '<img src=x onerror=alert(1)>Important',
+          count: 10,
+        },
+      };
+      const result = sanitizeDeep(payload);
+      expect(result.title).toBe('Item');
+      expect(result.tags).toEqual(['tag1', 'tag2']);
+      expect(result.details.note).toBe('Important');
+      expect(result.details.count).toBe(10);
+    });
   });
 });

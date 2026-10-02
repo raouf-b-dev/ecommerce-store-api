@@ -2,16 +2,13 @@ version: 2
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
-    target-branch: 'master'
+    target-branch: 'develop'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
     labels:
       - 'dependencies'
     groups:
-      nestjs-deps:
-        patterns:
-          - '@nestjs/*'
       production-deps:
         dependency-type: 'production'
         update-types:
@@ -24,7 +21,7 @@ updates:
           - 'patch'
   - package-ecosystem: 'github-actions'
     directory: '/'
-    target-branch: 'master'
+    target-branch: 'develop'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5
