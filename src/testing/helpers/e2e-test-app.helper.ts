@@ -5,6 +5,7 @@ import {
   Type,
   VersioningType,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Test, TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import cookieParser from 'cookie-parser';
@@ -54,7 +55,7 @@ export class E2eTestAppHelper {
 
     if (applyGlobals) {
       app.useGlobalInterceptors(
-        new SanitizeInterceptor(),
+        new SanitizeInterceptor(app.get(Reflector)),
         new ResultInterceptor(),
       );
       app.useGlobalFilters(new GlobalExceptionFilter());
