@@ -89,6 +89,7 @@ export class AuthenticationController {
 
   @Post('refresh')
   @Public()
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.OK)
   @Throttle(AUTH_REFRESH_THROTTLE)
@@ -123,6 +124,7 @@ export class AuthenticationController {
   }
 
   @Post('logout')
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -149,6 +151,7 @@ export class AuthenticationController {
   }
 
   @Post('logout-all')
+  @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({

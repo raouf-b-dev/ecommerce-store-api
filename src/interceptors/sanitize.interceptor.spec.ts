@@ -1,13 +1,22 @@
-import { SanitizeInterceptor, sanitizeDeep } from './sanitize.interceptor';
+import {
+  SanitizeInterceptor,
+  SkipSanitization,
+  sanitizeDeep,
+} from './sanitize.interceptor';
 import { CallHandler } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { of } from 'rxjs';
 import { createMockExecutionContext } from '../testing';
 
 describe('SanitizeInterceptor', () => {
   let interceptor: SanitizeInterceptor;
+  let mockReflector: Reflector;
 
   beforeEach(() => {
-    interceptor = new SanitizeInterceptor();
+    mockReflector = {
+      getAllAndOverride: jest.fn().mockReturnValue(false),
+    } as unknown as Reflector;
+    interceptor = new SanitizeInterceptor(mockReflector);
   });
 
   const createMockCallHandler = (): CallHandler => ({
@@ -124,14 +133,14 @@ describe('SanitizeInterceptor', () => {
     expect(request.body.items[1].name).toBe('Item 2');
   });
 
-  it('should not skip sanitization when URL query parameters contain /auth/ or /authentication/', () => {
+  it('should not bypass sanitization on arbitrary routes when ?x=/auth/ is passed (negative case)', () => {
     const body = {
       title: '<script>alert("xss")</script>Shoes',
       description: '<b>Nice shoes</b>',
     };
     const context = createMockExecutionContext({
       body,
-      url: '/v1/products?search=/auth/&category=/authentication/',
+      url: '/v1/products?x=/auth/',
     });
 
     interceptor.intercept(context, createMockCallHandler());
@@ -141,11 +150,11 @@ describe('SanitizeInterceptor', () => {
     expect(request.body.description).toBe('Nice shoes');
   });
 
-  it('should sanitize profile fields during registration while preserving password characters', () => {
+  it('should sanitize registration fields (firstName, lastName, phone) while preserving password characters', () => {
     const body = {
-      firstName: '<script>alert(1)</script>John',
+      firstName: '<script>alert("xss")</script>Jane',
       lastName: '<b>Doe</b>',
-      email: 'john.doe@example.com',
+      phone: '<script>evil()</script>+15551234567',
       password: 'My<Complex>&SecurePassword!',
     };
     const context = createMockExecutionContext({
@@ -156,34 +165,72 @@ describe('SanitizeInterceptor', () => {
     interceptor.intercept(context, createMockCallHandler());
 
     const request = context.switchToHttp().getRequest();
-    expect(request.body.firstName).toBe('John');
+    expect(request.body.firstName).toBe('Jane');
     expect(request.body.lastName).toBe('Doe');
-    expect(request.body.email).toBe('john.doe@example.com');
+    expect(request.body.phone).toBe('+15551234567');
     expect(request.body.password).toBe('My<Complex>&SecurePassword!');
   });
 
-  it('should skip sanitization completely when Reflector detects SkipSanitization metadata', () => {
-    const reflector = {
-      getAllAndOverride: jest.fn().mockReturnValue(true),
-    } as any;
-    const customInterceptor = new SanitizeInterceptor(reflector);
+  it('should allow passwords containing < > & to survive unaltered on login with @SkipSanitization()', () => {
+    (mockReflector.getAllAndOverride as jest.Mock).mockReturnValue(true);
 
     const body = {
       email: 'user@example.com',
-      password: 'My<Complex>&SecurePassword!',
-      rawWebhookPayload: '{"data":"<unaltered>"}',
+      password: 'P@ss<word>&123',
     };
     const context = createMockExecutionContext({
       body,
       url: '/v1/authentication/login',
     });
 
-    customInterceptor.intercept(context, createMockCallHandler());
+    interceptor.intercept(context, createMockCallHandler());
 
     const request = context.switchToHttp().getRequest();
-    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
-    expect(request.body.rawWebhookPayload).toBe('{"data":"<unaltered>"}');
-    expect(reflector.getAllAndOverride).toHaveBeenCalled();
+    expect(request.body.password).toBe('P@ss<word>&123');
+    expect(request.body.email).toBe('user@example.com');
+  });
+
+  it('should recognize @SkipSanitization() decorator on a real controller handler using real Reflector', () => {
+    class TestController {
+      @SkipSanitization()
+      loginHandler() {
+        return 'ok';
+      }
+
+      standardHandler() {
+        return 'ok';
+      }
+    }
+
+    const realReflector = new Reflector();
+    const realInterceptor = new SanitizeInterceptor(realReflector);
+
+    const instance = new TestController();
+    const loginReq = { body: { password: 'P@ss<word>&123' } };
+    const loginContext = {
+      getType: () => 'http',
+      getHandler: () => instance.loginHandler,
+      getClass: () => TestController,
+      switchToHttp: () => ({
+        getRequest: () => loginReq,
+      }),
+    } as any;
+
+    realInterceptor.intercept(loginContext, createMockCallHandler());
+    expect(loginReq.body.password).toBe('P@ss<word>&123');
+
+    const standardReq = { body: { name: '<b>Alice</b>' } };
+    const standardContext = {
+      getType: () => 'http',
+      getHandler: () => instance.standardHandler,
+      getClass: () => TestController,
+      switchToHttp: () => ({
+        getRequest: () => standardReq,
+      }),
+    } as any;
+
+    realInterceptor.intercept(standardContext, createMockCallHandler());
+    expect(standardReq.body.name).toBe('Alice');
   });
 });
 

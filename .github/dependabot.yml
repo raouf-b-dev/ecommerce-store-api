@@ -2,7 +2,7 @@ version: 2
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
-    target-branch: 'develop'
+    target-branch: 'master'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
@@ -24,7 +24,7 @@ updates:
           - 'patch'
   - package-ecosystem: 'github-actions'
     directory: '/'
-    target-branch: 'develop'
+    target-branch: 'master'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5

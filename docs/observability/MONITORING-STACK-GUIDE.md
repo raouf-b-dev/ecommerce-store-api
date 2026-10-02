@@ -39,7 +39,7 @@ npm run d:stop:obs:dev
 | Service         | Container port | Default host port | Env override           |
 | :-------------- | :------------- | :---------------- | :--------------------- |
 | Prometheus      | `9090`         | `9090`            | `PROMETHEUS_HOST_PORT` |
-| Loki            | `3100`         | `3110`            | `LOKI_HOST_PORT`       |
+| Loki            | `3100`         | `3100`            | `LOKI_HOST_PORT`       |
 | Tempo HTTP      | `3200`         | `3200`            | `TEMPO_HOST_PORT`      |
 | Tempo OTLP gRPC | `4317`         | `4317`            | `OTLP_GRPC_HOST_PORT`  |
 | Tempo OTLP HTTP | `4318`         | `4318`            | `OTLP_HTTP_HOST_PORT`  |
@@ -75,7 +75,7 @@ The stack provisions dashboards for:
 | `TEMPO_HOST_PORT`             | `3200`                  | Host port published for Tempo UI / API |
 | `PROMETHEUS_HOST_PORT`        | `9090`                  | Host port published for Prometheus     |
 | `GRAFANA_HOST_PORT`           | `3001`                  | Host port published for Grafana        |
-| `LOKI_HOST_PORT`              | `3110`                  | Host port published for Loki           |
+| `LOKI_HOST_PORT`              | `3100`                  | Host port published for Loki           |
 
 ### Coupling to remember
 

@@ -53,7 +53,7 @@ function sanitizeDeep<T>(value: T, key?: string): T {
 
 @Injectable()
 export class SanitizeInterceptor implements NestInterceptor {
-  constructor(private readonly reflector?: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     if (context.getType && typeof context.getType === 'function') {
@@ -63,14 +63,12 @@ export class SanitizeInterceptor implements NestInterceptor {
       }
     }
 
-    if (this.reflector) {
-      const isSkipped = this.reflector.getAllAndOverride<boolean>(
-        SKIP_SANITIZATION_KEY,
-        [context.getHandler(), context.getClass()],
-      );
-      if (isSkipped) {
-        return next.handle();
-      }
+    const isSkipped = this.reflector.getAllAndOverride<boolean>(
+      SKIP_SANITIZATION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (isSkipped) {
+      return next.handle();
     }
 
     const request = context.switchToHttp().getRequest();
