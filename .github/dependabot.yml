@@ -2,7 +2,7 @@ version: 2
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
-    target-branch: 'develop'
+    target-branch: 'master'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 10
@@ -12,16 +12,18 @@ updates:
       production-deps:
         dependency-type: 'production'
         update-types:
+          - 'major'
           - 'minor'
           - 'patch'
       dev-deps:
         dependency-type: 'development'
         update-types:
+          - 'major'
           - 'minor'
           - 'patch'
   - package-ecosystem: 'github-actions'
     directory: '/'
-    target-branch: 'develop'
+    target-branch: 'master'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 5

@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [master, main, develop]
   push:
-    branches: [master]
+    branches: [master, develop]
     tags: ['v*.*.*']
   workflow_dispatch:
 
