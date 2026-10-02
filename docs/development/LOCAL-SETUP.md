@@ -16,6 +16,7 @@ npm run setup
 ```
 
 This single command orchestrates:
+
 1. Auto-generates local development environment files (`.env.development`) with fresh 4096-bit RSA keys if missing.
 2. Starts **PostgreSQL** (`DB_PORT`, default `:5432`) and **Redis Stack** (`REDIS_PORT` / `REDIS_INSIGHT_PORT`, defaults `:6379` and `:8001`) in Docker with native healthcheck waiting (`--wait`).
 3. Automatically applies all pending TypeORM database migrations (`migration:run:dev`).
@@ -77,28 +78,28 @@ Implementation: [`scripts/generate-envs.js`](../../scripts/generate-envs.js).
 
 ### Auto-generated (no manual paste for local dev)
 
-| Variable                 | Notes                                                                                                                                                                                                                                                                                                    |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `JWT_PRIVATE_KEY`        | RSA-4096 PEM, escaped for dotenv                                                                                                                                                                                                                                                                         |
-| `METRICS_API_KEY`        | Random hex for `/metrics` auth                                                                                                                                                                                                                                                                           |
-| `GRAFANA_ADMIN_PASSWORD` | Random hex when present in template                                                                                                                                                                                                                                                                      |
-| `NODE_ENV`               | Set per file (`development`, `production`, etc.)                                                                                                                                                                                                                                                         |
-| `APP_VERSION`            | From `package.json`                                                                                                                                                                                                                                                                                      |
-| `REDIS_KEYPREFIX`        | `ecom:<env>:`                                                                                                                                                                                                                                                                                            |
-| `LOG_LEVEL`              | `debug` in development                                                                                                                                                                                                                                                                                   |
-| Host ports, CORS, OTEL   | Copied from [`.env.example`](../../.env.example). If Windows cannot bind `3000-3199`, edit the generated file (see [`TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md)).                                                                                                                        |
+| Variable                 | Notes                                                                                                                                                                             |
+| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_PRIVATE_KEY`        | RSA-4096 PEM, escaped for dotenv                                                                                                                                                  |
+| `METRICS_API_KEY`        | Random hex for `/metrics` auth                                                                                                                                                    |
+| `GRAFANA_ADMIN_PASSWORD` | Random hex when present in template                                                                                                                                               |
+| `NODE_ENV`               | Set per file (`development`, `production`, etc.)                                                                                                                                  |
+| `APP_VERSION`            | From `package.json`                                                                                                                                                               |
+| `REDIS_KEYPREFIX`        | `ecom:<env>:`                                                                                                                                                                     |
+| `LOG_LEVEL`              | `debug` in development                                                                                                                                                            |
+| Host ports, CORS, OTEL   | Copied from [`.env.example`](../../.env.example). If Windows cannot bind `3000-3199`, edit the generated file (see [`TROUBLESHOOTING.md`](../infrastructure/TROUBLESHOOTING.md)). |
 
 ### Verify against Compose defaults
 
 For local development, confirm **`.env.development`** matches what Compose expects.
 
-| Variable         | Typical local value |
-| :--------------- | :------------------ |
-| `DB_HOST`        | `localhost`         |
-| `DB_PORT`        | `5432`              |
-| `DB_USERNAME`    | `postgres`          |
-| `DB_PASSWORD`    | `your_password`     |
-| `DB_DATABASE`    | `my_database`       |
+| Variable             | Typical local value |
+| :------------------- | :------------------ |
+| `DB_HOST`            | `localhost`         |
+| `DB_PORT`            | `5432`              |
+| `DB_USERNAME`        | `postgres`          |
+| `DB_PASSWORD`        | `your_password`     |
+| `DB_DATABASE`        | `my_database`       |
 | `REDIS_HOST`         | `localhost`         |
 | `REDIS_PORT`         | `6379`              |
 | `REDIS_INSIGHT_PORT` | `8001`              |
@@ -171,7 +172,7 @@ Use the configured values from `.env.development` when you remap locally.
 | Loki                 | `http://localhost:<LOKI_HOST_PORT>/ready`  |
 | Tempo                | `http://localhost:<TEMPO_HOST_PORT>/ready` |
 
-Canonical defaults are API `3000`, Prometheus `9090`, Grafana `3001`, Loki `3100`, and Tempo `3200`.
+Canonical defaults are API `3000`, Prometheus `9090`, Grafana `3001`, Loki `13100`, and Tempo `3200`.
 
 ---
 

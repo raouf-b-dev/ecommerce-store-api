@@ -79,7 +79,7 @@ services:
       - loki_data:/loki
     ports:
       # Host port is configurable. On some Windows hosts, 3000-3199 are reserved by Hyper-V/WSL.
-      - '${LOKI_HOST_PORT:-3110}:3100'
+      - '${LOKI_HOST_PORT:-13100}:3100'
     command: -config.file=/etc/loki/config.yml
     healthcheck:
       test:
