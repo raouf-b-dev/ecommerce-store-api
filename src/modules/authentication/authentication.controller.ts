@@ -44,7 +44,6 @@ import { SkipSanitization } from '../../interceptors/sanitize.interceptor';
 @ApiTags('Authentication')
 @Controller('authentication')
 @UseInterceptors(RefreshTokenCookieInterceptor)
-@SkipSanitization()
 export class AuthenticationController {
   constructor(
     private readonly registerUseCase: RegisterUserUseCase,
@@ -68,6 +67,7 @@ export class AuthenticationController {
 
   @Post('login')
   @Public()
+  @SkipSanitization()
   @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Login user' })
   @ApiOkResponse({
@@ -176,6 +176,7 @@ export class AuthenticationController {
 
   @Post('change-password')
   @AllowDuringPasswordChange()
+  @SkipSanitization()
   @Throttle(AUTH_STRICT_THROTTLE)
   @ApiOperation({ summary: 'Change password for the authenticated user' })
   @ApiOkResponse({

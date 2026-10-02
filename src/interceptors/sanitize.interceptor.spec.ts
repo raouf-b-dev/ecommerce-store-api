@@ -124,61 +124,66 @@ describe('SanitizeInterceptor', () => {
     expect(request.body.items[1].name).toBe('Item 2');
   });
 
-  it('should skip sanitization on authentication routes to preserve password characters', () => {
+  it('should not skip sanitization when URL query parameters contain /auth/ or /authentication/', () => {
+    const body = {
+      title: '<script>alert("xss")</script>Shoes',
+      description: '<b>Nice shoes</b>',
+    };
+    const context = createMockExecutionContext({
+      body,
+      url: '/v1/products?search=/auth/&category=/authentication/',
+    });
+
+    interceptor.intercept(context, createMockCallHandler());
+
+    const request = context.switchToHttp().getRequest();
+    expect(request.body.title).toBe('Shoes');
+    expect(request.body.description).toBe('Nice shoes');
+  });
+
+  it('should sanitize profile fields during registration while preserving password characters', () => {
+    const body = {
+      firstName: '<script>alert(1)</script>John',
+      lastName: '<b>Doe</b>',
+      email: 'john.doe@example.com',
+      password: 'My<Complex>&SecurePassword!',
+    };
+    const context = createMockExecutionContext({
+      body,
+      url: '/v1/authentication/register',
+    });
+
+    interceptor.intercept(context, createMockCallHandler());
+
+    const request = context.switchToHttp().getRequest();
+    expect(request.body.firstName).toBe('John');
+    expect(request.body.lastName).toBe('Doe');
+    expect(request.body.email).toBe('john.doe@example.com');
+    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
+  });
+
+  it('should skip sanitization completely when Reflector detects SkipSanitization metadata', () => {
+    const reflector = {
+      getAllAndOverride: jest.fn().mockReturnValue(true),
+    } as any;
+    const customInterceptor = new SanitizeInterceptor(reflector);
+
     const body = {
       email: 'user@example.com',
       password: 'My<Complex>&SecurePassword!',
+      rawWebhookPayload: '{"data":"<unaltered>"}',
     };
     const context = createMockExecutionContext({
       body,
       url: '/v1/authentication/login',
     });
 
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
-  });
-
-  it('should skip sanitization on webhook routes to preserve raw signature payloads', () => {
-    const body = {
-      id: 'evt_123',
-      type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          description: 'Payment for <b>Item</b>',
-        },
-      },
-    };
-    const context = createMockExecutionContext({
-      body,
-      url: '/v1/payments/webhooks/stripe',
-    });
-
-    interceptor.intercept(context, createMockCallHandler());
-
-    const request = context.switchToHttp().getRequest();
-    expect(request.body.data.object.description).toBe(
-      'Payment for <b>Item</b>',
-    );
-  });
-
-  it('should skip sanitization when Reflector detects SkipSanitization metadata', () => {
-    const reflector = {
-      getAllAndOverride: jest.fn().mockReturnValue(true),
-    } as any;
-    const customInterceptor = new SanitizeInterceptor(reflector);
-
-    const body = { content: '<script>doNotSanitize()</script>' };
-    const context = createMockExecutionContext({
-      body,
-      url: '/v1/custom-endpoint',
-    });
-
     customInterceptor.intercept(context, createMockCallHandler());
 
     const request = context.switchToHttp().getRequest();
-    expect(request.body.content).toBe('<script>doNotSanitize()</script>');
+    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
+    expect(request.body.rawWebhookPayload).toBe('{"data":"<unaltered>"}');
+    expect(reflector.getAllAndOverride).toHaveBeenCalled();
   });
 });
 
@@ -201,5 +206,23 @@ describe('sanitizeDeep', () => {
 
   it('should return undefined unchanged', () => {
     expect(sanitizeDeep(undefined)).toBeUndefined();
+  });
+
+  it('should preserve password fields while sanitizing other object keys', () => {
+    const payload = {
+      name: '<script>evil()</script>Alice',
+      password: 'Pass<word>&123',
+      nested: {
+        currentPassword: 'Old<Pass>&456',
+        newPassword: 'New<Pass>&789',
+        bio: '<b>Developer</b>',
+      },
+    };
+    const result = sanitizeDeep(payload);
+    expect(result.name).toBe('Alice');
+    expect(result.password).toBe('Pass<word>&123');
+    expect(result.nested.currentPassword).toBe('Old<Pass>&456');
+    expect(result.nested.newPassword).toBe('New<Pass>&789');
+    expect(result.nested.bio).toBe('Developer');
   });
 });

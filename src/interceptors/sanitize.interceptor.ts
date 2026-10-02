@@ -24,22 +24,26 @@ const SANITIZE_OPTIONS: IOptions = {
 };
 
 /**
- * Recursively strips HTML/JS from all string values in the target.
- * Handles nested objects and arrays; skips non-string primitives.
+ * Recursively strips HTML/JS from string values in the target.
+ * Preserves password-related fields intact so credential characters (<, >, &, etc.)
+ * are never corrupted, while preventing stored XSS in user profile fields.
  */
-function sanitizeDeep<T>(value: T): T {
+function sanitizeDeep<T>(value: T, key?: string): T {
   if (typeof value === 'string') {
+    if (key && /password/i.test(key)) {
+      return value;
+    }
     return sanitizeHtml(value, SANITIZE_OPTIONS) as unknown as T;
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitizeDeep(item)) as unknown as T;
+    return value.map((item) => sanitizeDeep(item, key)) as unknown as T;
   }
 
   if (value !== null && typeof value === 'object') {
     const sanitized: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value)) {
-      sanitized[key] = sanitizeDeep(val);
+    for (const [k, val] of Object.entries(value)) {
+      sanitized[k] = sanitizeDeep(val, k);
     }
     return sanitized as T;
   }
@@ -71,22 +75,6 @@ export class SanitizeInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest();
     if (!request || !request.body || typeof request.body !== 'object') {
-      return next.handle();
-    }
-
-    const rawUrl: unknown = request.originalUrl ?? request.url ?? '';
-    const rawPath: unknown =
-      request.path ??
-      (typeof request.route === 'object' && request.route !== null
-        ? (request.route as { path?: unknown }).path
-        : '');
-    const url = typeof rawUrl === 'string' ? rawUrl : '';
-    const path = typeof rawPath === 'string' ? rawPath : '';
-    const isExcludedRoute =
-      /\/(authentication|auth|webhooks)(\/|$|\?)/i.test(url) ||
-      /\/(authentication|auth|webhooks)(\/|$|\?)/i.test(path);
-
-    if (isExcludedRoute) {
       return next.handle();
     }
 
