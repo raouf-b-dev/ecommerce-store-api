@@ -171,7 +171,7 @@ Use the configured values from `.env.development` when you remap locally.
 | Loki                 | `http://localhost:<LOKI_HOST_PORT>/ready`  |
 | Tempo                | `http://localhost:<TEMPO_HOST_PORT>/ready` |
 
-Canonical defaults are API `3000`, Prometheus `9090`, Grafana `3001`, Loki `3100`, and Tempo `3200`.
+Canonical defaults are API `3000`, Prometheus `9090`, Grafana `3001`, Loki `13100`, and Tempo `3200`.
 
 ---
 
