@@ -39,10 +39,12 @@ import {
   AUTH_REFRESH_THROTTLE,
   AUTH_STRICT_THROTTLE,
 } from '../../infrastructure/throttler/throttle.constants';
+import { SkipSanitization } from '../../interceptors/sanitize.interceptor';
 
 @ApiTags('Authentication')
 @Controller('authentication')
 @UseInterceptors(RefreshTokenCookieInterceptor)
+@SkipSanitization()
 export class AuthenticationController {
   constructor(
     private readonly registerUseCase: RegisterUserUseCase,

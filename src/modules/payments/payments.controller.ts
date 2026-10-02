@@ -23,6 +23,7 @@ import { RequirePermissions } from '../authorization/primary-adapter/decorators/
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Public } from '../../guards/decorators/public.decorator';
+import { SkipSanitization } from '../../interceptors/sanitize.interceptor';
 import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
@@ -57,6 +58,7 @@ export class PaymentsController {
 
   @Post('webhooks/stripe')
   @Public()
+  @SkipSanitization()
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handleStripeWebhook(

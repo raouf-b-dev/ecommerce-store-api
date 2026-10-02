@@ -123,6 +123,63 @@ describe('SanitizeInterceptor', () => {
     expect(request.body.items[0].qty).toBe(2);
     expect(request.body.items[1].name).toBe('Item 2');
   });
+
+  it('should skip sanitization on authentication routes to preserve password characters', () => {
+    const body = {
+      email: 'user@example.com',
+      password: 'My<Complex>&SecurePassword!',
+    };
+    const context = createMockExecutionContext({
+      body,
+      url: '/v1/authentication/login',
+    });
+
+    interceptor.intercept(context, createMockCallHandler());
+
+    const request = context.switchToHttp().getRequest();
+    expect(request.body.password).toBe('My<Complex>&SecurePassword!');
+  });
+
+  it('should skip sanitization on webhook routes to preserve raw signature payloads', () => {
+    const body = {
+      id: 'evt_123',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          description: 'Payment for <b>Item</b>',
+        },
+      },
+    };
+    const context = createMockExecutionContext({
+      body,
+      url: '/v1/payments/webhooks/stripe',
+    });
+
+    interceptor.intercept(context, createMockCallHandler());
+
+    const request = context.switchToHttp().getRequest();
+    expect(request.body.data.object.description).toBe(
+      'Payment for <b>Item</b>',
+    );
+  });
+
+  it('should skip sanitization when Reflector detects SkipSanitization metadata', () => {
+    const reflector = {
+      getAllAndOverride: jest.fn().mockReturnValue(true),
+    } as any;
+    const customInterceptor = new SanitizeInterceptor(reflector);
+
+    const body = { content: '<script>doNotSanitize()</script>' };
+    const context = createMockExecutionContext({
+      body,
+      url: '/v1/custom-endpoint',
+    });
+
+    customInterceptor.intercept(context, createMockCallHandler());
+
+    const request = context.switchToHttp().getRequest();
+    expect(request.body.content).toBe('<script>doNotSanitize()</script>');
+  });
 });
 
 describe('sanitizeDeep', () => {
