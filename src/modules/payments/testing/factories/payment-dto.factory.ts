@@ -5,6 +5,15 @@ import { CreatePaymentDto } from '../../primary-adapters/dto/create-payment.dto'
 import { ProcessRefundDto } from '../../primary-adapters/dto/process-refund.dto';
 import { ListPaymentsQueryDto } from '../../primary-adapters/dto/list-payments-query.dto';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
+import {
+  PaymentCompletedProps,
+  PaymentFailedProps,
+} from '../../core/domain/schedulers/payment-events.scheduler';
+import { PaymentWebhookDto } from '../../core/application/services/handle-payment-webhook/handle-payment-webhook.service';
+import { PaymentEventType } from '../../core/domain/value-objects/payment-event-type';
+import { StripeWebhookPayload } from '../../core/application/ports/stripe-signature-verifier';
+import { StripeWebhookCommand } from '../../core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { TEST_IDS } from '../../../../testing/helpers/test-data.helper';
 
 export class PaymentDtoTestFactory {
   static createCreatePaymentDto(
@@ -93,6 +102,70 @@ export class PaymentDtoTestFactory {
       failureReason: null,
       metadata: { provider: 'stripe' },
       updatedAt: base.createdAt,
+      ...overrides,
+    };
+  }
+
+  static createPaymentCompletedProps(
+    overrides?: Partial<PaymentCompletedProps>,
+  ): PaymentCompletedProps {
+    return {
+      orderId: TEST_IDS.order,
+      paymentId: TEST_IDS.payment,
+      transactionId: 'txn_test123',
+      reservationId: 303,
+      cartId: TEST_IDS.cart,
+      ...overrides,
+    };
+  }
+
+  static createPaymentFailedProps(
+    overrides?: Partial<PaymentFailedProps>,
+  ): PaymentFailedProps {
+    return {
+      orderId: TEST_IDS.order,
+      paymentId: TEST_IDS.payment,
+      reason: 'Insufficient funds',
+      reservationId: 303,
+      ...overrides,
+    };
+  }
+
+  static createPaymentWebhookDto(
+    overrides?: Partial<PaymentWebhookDto>,
+  ): PaymentWebhookDto {
+    return {
+      paymentIntentId: 'pi_test123',
+      eventType: PaymentEventType.SUCCEEDED,
+      transactionId: 'txn_test123',
+      ...overrides,
+    };
+  }
+
+  static createStripeWebhookPayload(
+    overrides?: Partial<StripeWebhookPayload>,
+  ): StripeWebhookPayload {
+    return {
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_test123',
+          amount: 5000,
+          amount_received: 5000,
+          currency: 'usd',
+          metadata: { orderId: String(TEST_IDS.order) },
+        },
+      },
+      ...overrides,
+    };
+  }
+
+  static createStripeWebhookCommand(
+    overrides?: Partial<StripeWebhookCommand>,
+  ): StripeWebhookCommand {
+    return {
+      signature: 'valid_stripe_signature',
+      payload: this.createStripeWebhookPayload(),
       ...overrides,
     };
   }

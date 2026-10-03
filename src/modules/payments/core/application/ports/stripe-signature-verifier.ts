@@ -4,6 +4,9 @@ export interface StripeWebhookPayload {
     object: {
       id: string;
       metadata: Record<string, string>;
+      amount?: number;
+      amount_received?: number;
+      currency?: string;
       last_payment_error?: {
         message: string;
       };
