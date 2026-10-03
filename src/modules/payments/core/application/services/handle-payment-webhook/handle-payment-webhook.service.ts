@@ -45,7 +45,6 @@ export class HandlePaymentWebhookService {
       `Processing webhook: ${dto.eventType} for intent ${dto.paymentIntentId}`,
     );
 
-    // 1. Find payment by gateway payment intent ID
     const paymentResult =
       await this.paymentRepository.findByGatewayPaymentIntentId(
         dto.paymentIntentId,
@@ -59,15 +58,19 @@ export class HandlePaymentWebhookService {
     }
 
     const payment = paymentResult.value;
+    const reservationId = dto.metadata?.reservationId
+      ? Number(dto.metadata.reservationId)
+      : undefined;
+    const cartId = dto.metadata?.cartId
+      ? Number(dto.metadata.cartId)
+      : undefined;
 
-    // 2. Handle based on event type
     switch (dto.eventType) {
       case PaymentEventType.SUCCEEDED:
-        return this.handlePaymentSuccess(payment, dto);
+        return this.handlePaymentSuccess(payment, dto, reservationId, cartId);
       case PaymentEventType.FAILED:
-        return this.handlePaymentFailure(payment, dto);
+        return this.handlePaymentFailure(payment, dto, reservationId);
       default: {
-        // Exhaustive check to ensure all event types are handled
         const _exhaustiveCheck: never = dto.eventType;
         return ErrorFactory.ServiceError(
           `Unhandled event type: ${_exhaustiveCheck as string}`,
@@ -79,15 +82,9 @@ export class HandlePaymentWebhookService {
   private async handlePaymentSuccess(
     payment: Payment,
     dto: PaymentWebhookDto,
+    reservationId?: number,
+    cartId?: number,
   ): Promise<Result<PaymentWebhookResult, AppError>> {
-    const reservationId = dto.metadata?.reservationId
-      ? Number(dto.metadata.reservationId)
-      : undefined;
-    const cartId = dto.metadata?.cartId
-      ? Number(dto.metadata.cartId)
-      : undefined;
-
-    // 1. Redelivery check: if already COMPLETED, re-emit completed event and return success
     if (payment.status === PaymentStatusType.COMPLETED) {
       this.logger.log(
         `Payment ${payment.id} already COMPLETED, re-emitting completed event for order ${payment.orderId}`,
@@ -100,7 +97,6 @@ export class HandlePaymentWebhookService {
       );
     }
 
-    // 2. Succeeded event on FAILED or CANCELLED payment: log error and return ServiceError
     if (
       payment.status === PaymentStatusType.FAILED ||
       payment.status === PaymentStatusType.CANCELLED
@@ -113,7 +109,6 @@ export class HandlePaymentWebhookService {
       );
     }
 
-    // 3. Amount and currency validation before payment.complete()
     if (dto.amountMinor !== undefined) {
       const expectedAmountMinor = Math.round(payment.amount * 100);
       if (dto.amountMinor !== expectedAmountMinor) {
@@ -123,15 +118,15 @@ export class HandlePaymentWebhookService {
       }
     }
 
-    if (dto.currency !== undefined) {
-      if (dto.currency.toLowerCase() !== payment.currency.toLowerCase()) {
-        return ErrorFactory.ServiceError(
-          `Payment currency mismatch: expected ${payment.currency}, received ${dto.currency}`,
-        );
-      }
+    if (
+      dto.currency !== undefined &&
+      dto.currency.toLowerCase() !== payment.currency.toLowerCase()
+    ) {
+      return ErrorFactory.ServiceError(
+        `Payment currency mismatch: expected ${payment.currency}, received ${dto.currency}`,
+      );
     }
 
-    // 4. Complete payment
     const completeResult = payment.complete(dto.transactionId);
     if (isFailure(completeResult)) {
       return ErrorFactory.ServiceError(
@@ -140,13 +135,11 @@ export class HandlePaymentWebhookService {
       );
     }
 
-    // 5. Save payment
     const savePaymentResult = await this.paymentRepository.update(payment);
     if (isFailure(savePaymentResult)) {
       return savePaymentResult;
     }
 
-    // 6. Emit completed event and return result
     return this.emitCompleted(
       payment,
       dto.transactionId,
@@ -158,12 +151,8 @@ export class HandlePaymentWebhookService {
   private async handlePaymentFailure(
     payment: Payment,
     dto: PaymentWebhookDto,
+    reservationId?: number,
   ): Promise<Result<PaymentWebhookResult, AppError>> {
-    const reservationId = dto.metadata?.reservationId
-      ? Number(dto.metadata.reservationId)
-      : undefined;
-
-    // 1. Redelivery check: if already FAILED, re-emit failed event and return success
     if (payment.status === PaymentStatusType.FAILED) {
       this.logger.log(
         `Payment ${payment.id} already FAILED, re-emitting failed event for order ${payment.orderId}`,
@@ -171,19 +160,20 @@ export class HandlePaymentWebhookService {
       return this.emitFailed(payment, dto.failureReason, reservationId);
     }
 
-    // 2. Late or out of order failure on already COMPLETED payment: log warning and ignore
-    if (payment.status === PaymentStatusType.COMPLETED) {
+    if (
+      payment.status !== PaymentStatusType.PENDING &&
+      payment.status !== PaymentStatusType.AUTHORIZED
+    ) {
       this.logger.warn(
-        `Payment ${payment.id} received failed event but is already COMPLETED. Ignoring.`,
+        `Payment ${payment.id} received failed event but is in ${payment.status} status. Ignoring.`,
       );
       return Result.success({
         orderId: payment.orderId,
         paymentId: payment.id!,
-        status: PaymentStatusType.COMPLETED,
+        status: payment.status,
       });
     }
 
-    // 3. Fail payment
     const failResult = payment.fail(dto.failureReason || 'Payment failed');
     if (isFailure(failResult)) {
       return ErrorFactory.ServiceError(
@@ -192,13 +182,11 @@ export class HandlePaymentWebhookService {
       );
     }
 
-    // 4. Save payment
     const savePaymentResult = await this.paymentRepository.update(payment);
     if (isFailure(savePaymentResult)) {
       return savePaymentResult;
     }
 
-    // 5. Emit failed event and return result
     return this.emitFailed(payment, dto.failureReason, reservationId);
   }
 
@@ -211,7 +199,7 @@ export class HandlePaymentWebhookService {
     const emitResult = await this.paymentEventsScheduler.emitPaymentCompleted({
       orderId: payment.orderId,
       paymentId: payment.id!,
-      transactionId: transactionId || payment.transactionId || undefined,
+      transactionId,
       reservationId,
       cartId,
     });
@@ -239,7 +227,7 @@ export class HandlePaymentWebhookService {
     const emitResult = await this.paymentEventsScheduler.emitPaymentFailed({
       orderId: payment.orderId,
       paymentId: payment.id!,
-      reason: failureReason || payment.failureReason || undefined,
+      reason: failureReason,
       reservationId,
     });
 

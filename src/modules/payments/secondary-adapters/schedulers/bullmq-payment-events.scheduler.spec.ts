@@ -65,9 +65,11 @@ describe('BullMqPaymentEventsScheduler', () => {
         'Failed to emit payment completed event',
         InfrastructureError,
       );
-      if (isFailure(result)) {
-        expect(result.error.retryable).toBe(true);
+      expect(result.isFailure).toBe(true);
+      if (!isFailure(result)) {
+        throw new Error('Expected failure');
       }
+      expect(result.error.retryable).toBe(true);
     });
   });
 
@@ -104,9 +106,11 @@ describe('BullMqPaymentEventsScheduler', () => {
         'Failed to emit payment failed event',
         InfrastructureError,
       );
-      if (isFailure(result)) {
-        expect(result.error.retryable).toBe(true);
+      expect(result.isFailure).toBe(true);
+      if (!isFailure(result)) {
+        throw new Error('Expected failure');
       }
+      expect(result.error.retryable).toBe(true);
     });
   });
 });

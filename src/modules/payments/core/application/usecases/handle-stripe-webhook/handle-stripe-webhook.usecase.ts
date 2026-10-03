@@ -31,7 +31,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
 
   constructor(
     private readonly stripeSignatureVerifier: StripeSignatureVerifier,
-    private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookService,
+    private readonly handlePaymentWebhookService: HandlePaymentWebhookService,
   ) {
     super();
   }
@@ -72,8 +72,8 @@ export class HandleStripeWebhookUseCase extends UseCase<
     const amountMinor = paymentIntent.amount_received ?? paymentIntent.amount;
     const currency = paymentIntent.currency;
 
-    // 4. Delegate to HandlePaymentWebhookUseCase
-    const result = await this.handlePaymentWebhookUseCase.execute({
+    // 4. Delegate to HandlePaymentWebhookService
+    const result = await this.handlePaymentWebhookService.execute({
       paymentIntentId: paymentIntent.id,
       eventType: internalEventType,
       transactionId: paymentIntent.id,

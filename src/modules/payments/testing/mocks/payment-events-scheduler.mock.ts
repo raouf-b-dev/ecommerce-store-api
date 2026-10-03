@@ -16,20 +16,12 @@ export class MockPaymentEventsScheduler implements PaymentEventsScheduler {
     .fn<Promise<Result<void, InfrastructureError>>, [PaymentFailedProps]>()
     .mockResolvedValue(Result.success(undefined));
 
-  mockSuccessfulEmitPaymentCompleted(): void {
-    this.emitPaymentCompleted.mockResolvedValue(Result.success(undefined));
-  }
-
   mockFailedEmitPaymentCompleted(
     message = 'Failed to emit payment completed event',
   ): void {
     this.emitPaymentCompleted.mockResolvedValue(
       ErrorFactory.InfrastructureError(message),
     );
-  }
-
-  mockSuccessfulEmitPaymentFailed(): void {
-    this.emitPaymentFailed.mockResolvedValue(Result.success(undefined));
   }
 
   mockFailedEmitPaymentFailed(
@@ -42,7 +34,7 @@ export class MockPaymentEventsScheduler implements PaymentEventsScheduler {
 
   reset(): void {
     jest.clearAllMocks();
-    this.mockSuccessfulEmitPaymentCompleted();
-    this.mockSuccessfulEmitPaymentFailed();
+    this.emitPaymentCompleted.mockResolvedValue(Result.success(undefined));
+    this.emitPaymentFailed.mockResolvedValue(Result.success(undefined));
   }
 }

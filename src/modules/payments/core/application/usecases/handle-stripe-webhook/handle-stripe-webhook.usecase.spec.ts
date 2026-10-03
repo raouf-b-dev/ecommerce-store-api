@@ -1,48 +1,68 @@
 import { HandleStripeWebhookUseCase } from './handle-stripe-webhook.usecase';
 import {
   MockStripeSignatureVerifier,
-  MockHandlePaymentWebhookService,
+  MockPaymentRepository,
+  MockPaymentEventsScheduler,
+  PaymentTestFactory,
   PaymentDtoTestFactory,
 } from '../../../../testing';
 import { PaymentEventType } from '../../../domain/value-objects/payment-event-type';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper, TEST_IDS } from '../../../../../../testing';
+import { HandlePaymentWebhookService } from '../../services/handle-payment-webhook/handle-payment-webhook.service';
 
 describe('HandleStripeWebhookUseCase', () => {
   let useCase: HandleStripeWebhookUseCase;
   let mockSignatureVerifier: MockStripeSignatureVerifier;
-  let mockWebhookService: MockHandlePaymentWebhookService;
+  let webhookService: HandlePaymentWebhookService;
+  let paymentRepository: MockPaymentRepository;
+  let paymentEventsScheduler: MockPaymentEventsScheduler;
+
+  const paymentIntentId = 'pi_test123';
 
   beforeEach(() => {
     mockSignatureVerifier = new MockStripeSignatureVerifier();
-    mockWebhookService = new MockHandlePaymentWebhookService();
-
-    mockWebhookService.execute.mockResolvedValue(
-      Result.success({
-        orderId: TEST_IDS.order,
-        paymentId: TEST_IDS.payment,
-        status: PaymentStatusType.COMPLETED,
-      }),
+    paymentRepository = new MockPaymentRepository();
+    paymentEventsScheduler = new MockPaymentEventsScheduler();
+    webhookService = new HandlePaymentWebhookService(
+      paymentRepository,
+      paymentEventsScheduler,
     );
+
+    const payment = PaymentTestFactory.createDomainPayment({
+      id: TEST_IDS.payment,
+      orderId: TEST_IDS.order,
+      amount: 50,
+      currency: 'USD',
+      status: PaymentStatusType.PENDING,
+      gatewayPaymentIntentId: paymentIntentId,
+    });
+
+    paymentRepository.findByGatewayPaymentIntentId.mockResolvedValue(
+      Result.success(payment),
+    );
+    paymentRepository.update.mockResolvedValue(Result.success(payment));
 
     useCase = new HandleStripeWebhookUseCase(
       mockSignatureVerifier,
-      mockWebhookService,
+      webhookService,
     );
   });
 
   afterEach(() => {
     mockSignatureVerifier.reset();
-    mockWebhookService.reset();
+    paymentRepository.reset();
+    paymentEventsScheduler.reset();
   });
 
   it('maps paymentIntent.amount_received and paymentIntent.currency into amountMinor and currency', async () => {
+    const executeSpy = jest.spyOn(webhookService, 'execute');
     const payload = PaymentDtoTestFactory.createStripeWebhookPayload({
       type: 'payment_intent.succeeded',
       data: {
         object: {
-          id: 'pi_test123',
+          id: paymentIntentId,
           amount_received: 5000,
           amount: 5000,
           currency: 'usd',
@@ -59,10 +79,10 @@ describe('HandleStripeWebhookUseCase', () => {
     const result = await useCase.execute(command);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(mockWebhookService.execute).toHaveBeenCalledWith({
-      paymentIntentId: 'pi_test123',
+    expect(executeSpy).toHaveBeenCalledWith({
+      paymentIntentId,
       eventType: PaymentEventType.SUCCEEDED,
-      transactionId: 'pi_test123',
+      transactionId: paymentIntentId,
       metadata: { orderId: String(TEST_IDS.order) },
       failureReason: undefined,
       amountMinor: 5000,
@@ -71,13 +91,14 @@ describe('HandleStripeWebhookUseCase', () => {
   });
 
   it('falls back to paymentIntent.amount when amount_received is undefined', async () => {
+    const executeSpy = jest.spyOn(webhookService, 'execute');
     const payload = PaymentDtoTestFactory.createStripeWebhookPayload({
       type: 'payment_intent.succeeded',
       data: {
         object: {
-          id: 'pi_test123',
-          amount: 7500,
-          currency: 'eur',
+          id: paymentIntentId,
+          amount: 5000,
+          currency: 'usd',
           metadata: {},
         },
       },
@@ -91,23 +112,24 @@ describe('HandleStripeWebhookUseCase', () => {
     const result = await useCase.execute(command);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(mockWebhookService.execute).toHaveBeenCalledWith({
-      paymentIntentId: 'pi_test123',
+    expect(executeSpy).toHaveBeenCalledWith({
+      paymentIntentId,
       eventType: PaymentEventType.SUCCEEDED,
-      transactionId: 'pi_test123',
+      transactionId: paymentIntentId,
       metadata: {},
       failureReason: undefined,
-      amountMinor: 7500,
-      currency: 'eur',
+      amountMinor: 5000,
+      currency: 'usd',
     });
   });
 
   it('omits amountMinor and currency keys from dto when undefined in payload', async () => {
+    const executeSpy = jest.spyOn(webhookService, 'execute');
     const payload = PaymentDtoTestFactory.createStripeWebhookPayload({
       type: 'payment_intent.succeeded',
       data: {
         object: {
-          id: 'pi_test123',
+          id: paymentIntentId,
           metadata: { orderId: String(TEST_IDS.order) },
         },
       },
@@ -121,13 +143,13 @@ describe('HandleStripeWebhookUseCase', () => {
     const result = await useCase.execute(command);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    const calledDto = mockWebhookService.execute.mock.calls[0][0];
+    const calledDto = executeSpy.mock.calls[0][0];
     expect(calledDto).not.toHaveProperty('amountMinor');
     expect(calledDto).not.toHaveProperty('currency');
     expect(calledDto).toEqual({
-      paymentIntentId: 'pi_test123',
+      paymentIntentId,
       eventType: PaymentEventType.SUCCEEDED,
-      transactionId: 'pi_test123',
+      transactionId: paymentIntentId,
       metadata: { orderId: String(TEST_IDS.order) },
       failureReason: undefined,
     });
