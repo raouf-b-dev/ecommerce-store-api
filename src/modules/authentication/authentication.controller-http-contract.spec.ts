@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthenticationController } from 'src/modules/authentication/authentication.controller';
@@ -98,7 +99,7 @@ describe('Authentication controller HTTP contract', () => {
 
     app = moduleRef.createNestApplication();
     app.useGlobalInterceptors(
-      new SanitizeInterceptor(),
+      new SanitizeInterceptor(new Reflector()),
       new ResultInterceptor(),
     );
     app.useGlobalFilters(new GlobalExceptionFilter());

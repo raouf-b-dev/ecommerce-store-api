@@ -27,7 +27,7 @@ Work top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - 
 
 **Next**
 
-2. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki off `3100`, PR template).
+2. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki to `13100`, PR template).
 3. **Phase 16e** - Stable error codes (one documented error envelope).
 4. **Phase 18** - Real Stripe SDK and webhook idempotency.
 
@@ -89,7 +89,7 @@ Phases **15-17**, **16b**, and **20** are done.
 | **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman                                       |
 | **16b** | Demo Catalog Media                                | `[x]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
 | **16c** | Hosted Staging & Public Demo                      | `[ ]`  |  `[P1]`  | Single-instance deploy; sibling-subdomain cookies; public Swagger flag; RBAC demo role; seed reset  |
-| **16d** | Full-Stack Local DX                               | `[ ]`  |  `[P1]`  | Run-the-stack guide + port table; Loki off `3100`; PR template                                      |
+| **16d** | Full-Stack Local DX                               | `[ ]`  |  `[P1]`  | Run-the-stack guide + port table; Loki to `13100`; PR template                                      |
 | **16e** | Stable Error Codes                                | `[ ]`  |  `[P1]`  | Framework errors mapped to stable machine codes; one error schema in OpenAPI; ADR; e2e assertions   |
 | **17**  | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | Pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)                        |
 | **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | HMAC + event.id dedupe (mock fail-closed already in 15)                                             |
@@ -313,9 +313,9 @@ Moved to Phase **16c**.
 
 ---
 
-### [ ] Move Loki Off Port 3100
+### [x] Move Loki to Port 13100
 
-**What**: `3100` is a common dev-server port for HTTP clients. Change the `LOKI_HOST_PORT` default (for example `3110`) in `.env.example`, the `docker-compose.yaml` port mapping and healthcheck URL, and the port tables in `docs/observability/MONITORING-STACK-GUIDE.md`, so the monitoring stack and a client on `3100` run together.
+**What**: 3100 is a common dev-server port for HTTP clients and within Windows reserved port ranges (3000-3199). Set the LOKI_HOST_PORT default to 13100 in .env.example and the docker-compose.yaml host-port mapping. Keep the container healthcheck on localhost:3100, and update the port tables in docs/observability/MONITORING-STACK-GUIDE.md, so the monitoring stack and a client on 3100 run together.
 
 **Location**: `.env.example`, `docker-compose.yaml`, `docs/observability/`
 
