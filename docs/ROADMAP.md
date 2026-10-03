@@ -315,7 +315,7 @@ Moved to Phase **16c**.
 
 ### [x] Move Loki to Port 13100
 
-**What**: `3100` is a common dev-server port for HTTP clients and within Windows reserved port ranges (3000-3199). Change the `LOKI_HOST_PORT` default (to `13100`) in `.env.example`, the `docker-compose.yaml` port mapping and healthcheck URL, and the port tables in `docs/observability/MONITORING-STACK-GUIDE.md`, so the monitoring stack and a client on `3100` run together.
+**What**: 3100 is a common dev-server port for HTTP clients and within Windows reserved port ranges (3000-3199). Set the LOKI_HOST_PORT default to 13100 in .env.example and the docker-compose.yaml host-port mapping. Keep the container healthcheck on localhost:3100, and update the port tables in docs/observability/MONITORING-STACK-GUIDE.md, so the monitoring stack and a client on 3100 run together.
 
 **Location**: `.env.example`, `docker-compose.yaml`, `docs/observability/`
 
