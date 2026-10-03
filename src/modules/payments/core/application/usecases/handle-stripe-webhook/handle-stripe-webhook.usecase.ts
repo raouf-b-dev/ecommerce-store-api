@@ -4,7 +4,7 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import {
   StripeSignatureVerifier,
@@ -25,20 +25,20 @@ export interface StripeWebhookCommand {
 export class HandleStripeWebhookUseCase extends UseCase<
   StripeWebhookCommand,
   PaymentWebhookResult | null,
-  UseCaseError
+  AppError
 > {
   private readonly logger = new Logger(HandleStripeWebhookUseCase.name);
 
   constructor(
     private readonly stripeSignatureVerifier: StripeSignatureVerifier,
-    private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookService,
+    private readonly handlePaymentWebhookService: HandlePaymentWebhookService,
   ) {
     super();
   }
 
   async execute(
     dto: StripeWebhookCommand,
-  ): Promise<Result<PaymentWebhookResult | null, UseCaseError>> {
+  ): Promise<Result<PaymentWebhookResult | null, AppError>> {
     // 1. Validate signature
     if (!dto.signature) {
       return ErrorFactory.UseCaseError('Missing stripe-signature header');
@@ -69,13 +69,18 @@ export class HandleStripeWebhookUseCase extends UseCase<
       );
     }
 
-    // 4. Delegate to HandlePaymentWebhookUseCase
-    const result = await this.handlePaymentWebhookUseCase.execute({
+    const amountMinor = paymentIntent.amount_received ?? paymentIntent.amount;
+    const currency = paymentIntent.currency;
+
+    // 4. Delegate to HandlePaymentWebhookService
+    const result = await this.handlePaymentWebhookService.execute({
       paymentIntentId: paymentIntent.id,
       eventType: internalEventType,
       transactionId: paymentIntent.id,
       metadata: paymentIntent.metadata,
       failureReason: paymentIntent.last_payment_error?.message,
+      ...(amountMinor !== undefined ? { amountMinor } : {}),
+      ...(currency !== undefined ? { currency } : {}),
     });
 
     if (isFailure(result)) {

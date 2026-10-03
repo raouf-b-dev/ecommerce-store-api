@@ -11,6 +11,7 @@ import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 
 @Injectable()
 export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
@@ -19,6 +20,7 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
   constructor(
     @InjectQueue('payment-events') private readonly paymentEventsQueue: Queue,
     private readonly correlation: CorrelationService,
+    private readonly jobConfig: JobConfigService,
   ) {}
 
   async emitPaymentCompleted(
@@ -26,10 +28,14 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
   ): Promise<Result<void, InfrastructureError>> {
     try {
       const correlationId = this.correlation.getId();
-      await this.paymentEventsQueue.add(JobNames.PAYMENT_COMPLETED, {
-        ...props,
-        ...(correlationId ? { correlationId } : {}),
-      });
+      await this.paymentEventsQueue.add(
+        JobNames.PAYMENT_COMPLETED,
+        {
+          ...props,
+          ...(correlationId ? { correlationId } : {}),
+        },
+        this.jobConfig.getJobOptions(JobNames.PAYMENT_COMPLETED),
+      );
       this.logger.log(
         `Emitted payment completed event for order ${props.orderId}`,
       );
@@ -51,10 +57,14 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
   ): Promise<Result<void, InfrastructureError>> {
     try {
       const correlationId = this.correlation.getId();
-      await this.paymentEventsQueue.add(JobNames.PAYMENT_FAILED, {
-        ...props,
-        ...(correlationId ? { correlationId } : {}),
-      });
+      await this.paymentEventsQueue.add(
+        JobNames.PAYMENT_FAILED,
+        {
+          ...props,
+          ...(correlationId ? { correlationId } : {}),
+        },
+        this.jobConfig.getJobOptions(JobNames.PAYMENT_FAILED),
+      );
       this.logger.log(
         `Emitted payment failed event for order ${props.orderId}`,
       );
