@@ -89,10 +89,10 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 ### Payment Gateway (Mock Adapter)
 
-Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook HMAC verification are Phase 18. In the mock era, `POST /v1/payments/webhooks/stripe` is fail-closed: signatures must verify, except a documented `NODE_ENV=test` bypass used by e2e helpers.
+Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
 
 - **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
-- **Webhooks**: Handler and job path exist; signature verification is stubbed for testing
+- **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
 - **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`

@@ -175,16 +175,16 @@ Phases **15-17**, **16b**, and **20** are done.
 
 ---
 
-### [x] Track 15-C: Fail-Closed Stripe Webhook Signature (Mock Era)
+### [x] Track 15-C: Fail-Closed Stripe Webhook Signature (Raw Body Verification)
 
-**What**: `POST /v1/payments/webhooks/stripe` is `@Public()` and `StripeSignatureService.verify()` currently returns `true` always - forgeable in any environment that exposes the route.
+**What**: `POST /v1/payments/webhooks/stripe` verifies webhook signatures over raw request bytes via the official stripe SDK using `STRIPE_WEBHOOK_SECRET`.
 
 **Scope**:
 
-- In production (and staging): reject unless a real secret verifies the signature (or disable the route until Phase 18).
-- Keep local/test paths explicit (documented bypass only when `NODE_ENV=test` or equivalent).
-- Do **not** treat full Stripe SDK / PaymentIntent adapter as P0 - that is Phase 18.
-- Optionally rename/clarify mock `StripeGateway` vs real adapter to reduce confusion.
+- Enable rawBody on Nest application instances and extract raw bytes in the controller.
+- Verify signatures with `Stripe.webhooks.constructEvent` with 300s tolerance (forward and backward).
+- Enforce `STRIPE_WEBHOOK_SECRET` presence at boot in production and staging environments.
+- Eliminate signature bypasses across all environments, including test.
 
 **Location**: `src/modules/payments/secondary-adapters/services/stripe-signature.service.ts`, `payments.controller.ts`, env docs
 
