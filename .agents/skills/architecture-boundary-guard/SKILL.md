@@ -1,39 +1,25 @@
 ---
 name: architecture-boundary-guard
-description: Enforce DDD, Hexagonal architecture, and security/IDOR boundaries for code changes. Use when implementing or reviewing any change touching module boundaries, ports/adapters, controllers, or resource authorization policies.
+description: Review a diff or plan for layer, ACL, and authorization drift. Use when reviewing a PR, or after a change that touches ports, adapters, controllers, gateways, caller context, or resource access policies, before reporting it done.
 ---
 
-# Purpose
+# Architecture and authorization review
 
-Prevent architecture drift, preserve bounded-context integrity, and ensure IDOR protection invariants remain intact.
+Rules: [ARCHITECTURE-INVARIANTS.md](../../../docs/ai/ARCHITECTURE-INVARIANTS.md), [ANTI-PATTERNS.md](../../../docs/ai/ANTI-PATTERNS.md), [CONVENTIONS.md](../../../docs/ai/CONVENTIONS.md) sections 1 to 4 and 8.
 
-# Workflow & Checklist
+## Check
 
-1. **Load Rules**: Load and apply [docs/ai/CONVENTIONS.md](../../../docs/ai/CONVENTIONS.md), especially sections 1 through 4, section 8, and security policies.
-2. **Boundary Checks**:
-   - Validate dependency direction (adapters depend on ports, domain has zero infrastructure imports).
-   - Flag forbidden direct cross-context repository/entity imports (must use ACL gateways).
-   - Confirm controller/use-case separation (thin controllers, zero business logic or inline authorization checks in controllers).
-3. **IDOR & Security Context Guard**:
-   - Verify that use cases operating on owned resources explicitly take `CallerContext` and delegate authorization decisions to `OwnedResourceAccessPolicy` or `CartOwnershipValidator`.
-   - Ensure primary HTTP controllers extract caller context via `@CallerCtx()` rather than manually parsing HTTP headers or tokens.
-   - Confirm that background jobs, schedulers, and ACL gateways explicitly pass `SYSTEM_CALLER_CONTEXT`.
-   - Flag any forged `CallerContext` instances or hardcoded `userId` overrides in production code.
-4. **Adapter & Mapper Compliance**: Validate mapper (`CreateFromEntity<T>`, OCC `UpdateFromEntity` / `toUpdatePayload()`), job handler (`BaseJobHandler`), and Redis usage when touched.
-5. **Boundary Verification**: Run `npm run typecheck`, then `npm run test:arch` when boundaries change, to verify hexagonal and cross-module boundary compliance.
-6. **Findings Summary**: Produce structured findings with exact file paths and line numbers.
+1. **Direction**: `core/domain` imports no NestJS, TypeORM, or infrastructure. `core/application` imports no adapter. Adapters depend on ports.
+2. **Cross-context**: no other module's repository or entity imported. Gateways pass `SYSTEM_CALLER_CONTEXT` for internal calls. Analytics reads through SQL projections only.
+3. **Primary adapters**: no business logic, no inline authorization, no `DomainEventPublisher`. Caller identity comes from `@CallerCtx()`, never from hand-parsed headers or tokens.
+4. **Authorization**: use cases on owned resources take `CallerContext` and call `OwnedResourceAccessPolicy` (or `CartOwnershipValidator`). Flag forged `CallerContext` values and hardcoded user ids in production code.
+5. **Persistence**: repositories return domain entities; mapper, OCC, and Redis rules from the conventions hold; `version` is absent from the domain.
+6. **Types and tests**: AGENTS.md rule 1 holds; tests include the authorization denial.
 
-# Inputs
+## Run
 
-- Target files and diff context.
-- [docs/ai/CONVENTIONS.md](../../../docs/ai/CONVENTIONS.md)
-- [`.agents/PROJECT-CONTEXT.md`](../../../.agents/PROJECT-CONTEXT.md)
+`npm run test:arch`, then `npm run verify`.
 
-# Outputs
+## Report
 
-- Boundary & Security compliance report.
-- List of architectural or authorization violations with corrective guidance.
-
-# Failure and Escalation
-
-Escalate when business intent conflicts with architecture invariants or IDOR protection rules.
+Findings as `path:line - problem - fix`, ordered by severity. Escalate when business intent conflicts with an invariant or when an authorization path is unverified.

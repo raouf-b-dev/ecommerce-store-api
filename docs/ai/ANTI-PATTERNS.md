@@ -1,23 +1,10 @@
-# Codebase Anti-Patterns & Review Checklist
+# Anti-Patterns and Review Checklist
 
----
+Applied guide. Bad and good examples for the rules agents break most.
 
-Document Type: Applied Guide & Review Checklist
-Audience: Backend Engineers & AI Code Reviewers
-Status: Active
-Owner: Architecture & Quality Team
+## 1. Fat controller
 
----
-
-This document provides concrete **Good ✅ vs. Bad ❌ code examples** and a review checklist to enforce architectural rules during code generation and peer reviews.
-
----
-
-## 1. Controller Layer Anti-Patterns
-
-### Rule: Controllers must be thin and delegate directly to use cases.
-
-#### ❌ BAD (Business logic and ORM in Controller):
+Bad: business logic and ORM in the controller.
 
 ```typescript
 @Post('reserve')
@@ -27,31 +14,23 @@ async reserveStock(@Body() dto: ReserveStockDto) {
     throw new BadRequestException('Insufficient stock');
   }
   inv.availableQuantity -= dto.quantity;
-  await this.inventoryOrmRepo.save(inv);
-  return inv;
+  return this.inventoryOrmRepo.save(inv);
 }
 ```
 
-#### ✅ GOOD (Thin Controller delegating to Use Case):
+Good: permission metadata, then delegate. `ResultInterceptor` maps the `Result` to HTTP.
 
 ```typescript
 @Post('reserve')
-async reserveStock(@Body() dto: ReserveStockDto): Promise<ReservationResponseDto> {
-  const result = await this.reserveStockUseCase.execute(dto.toCommand());
-  if (result.isFailure) {
-    throw result.error.toHttpException();
-  }
-  return ReservationMapper.toResponseDto(result.value);
+@RequirePermissions('manage_inventory')
+async reserveStock(@Body() dto: ReserveStockDto) {
+  return await this.reserveStockUseCase.execute(dto);
 }
 ```
 
----
+## 2. Repository leaks the ORM entity
 
-## 2. Repository Layer Anti-Patterns
-
-### Rule: Repositories accept and return pure domain aggregates, never ORM entities.
-
-#### ❌ BAD (Leaking ORM Entity to Use Case):
+Bad:
 
 ```typescript
 async findById(id: number): Promise<InventoryEntity | null> {
@@ -59,7 +38,7 @@ async findById(id: number): Promise<InventoryEntity | null> {
 }
 ```
 
-#### ✅ GOOD (Mapping to Pure Domain Aggregate):
+Good: map to the aggregate and return a `Result`.
 
 ```typescript
 async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
@@ -71,63 +50,47 @@ async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
 }
 ```
 
----
+## 3. Optimistic locking through `save()`
 
-## 3. Concurrency Anti-Patterns
-
-### Rule: Optimistic locking must use atomic SQL conditional updates.
-
-#### ❌ BAD (Swallowing version mismatch with standard ORM save):
+Bad: TypeORM `save()` on a detached entity can overwrite without a version check.
 
 ```typescript
-async save(inventory: Inventory, expectedVersion?: number): Promise<Result<Inventory, RepositoryError>> {
-  const entity = InventoryMapper.toEntity(inventory);
-  if (expectedVersion !== undefined) {
-    entity.version = expectedVersion; // TypeORM save may overwrite without 409 error
-  }
-  await this.ormRepo.save(entity);
-  return Result.success(inventory);
-}
+entity.version = expectedVersion;
+await this.ormRepo.save(entity);
 ```
 
-#### ✅ GOOD (Explicit atomic SQL conditional update):
+Good: one atomic conditional `UPDATE ... WHERE version = :expectedVersion` that returns 409 on zero rows. Rule: [ARCHITECTURE-INVARIANTS.md](ARCHITECTURE-INVARIANTS.md) invariant 10; code: `write-repository` skill.
+
+## 4. Casts to silence the compiler
+
+Bad: the cast hides that the stub does not match the class (AGENTS.md rule 1).
 
 ```typescript
-async save(inventory: Inventory, expectedVersion?: number): Promise<Result<Inventory, RepositoryError>> {
-  if (expectedVersion === undefined) {
-    const saved = await this.ormRepo.save(InventoryMapper.toEntity(inventory));
-    return Result.success(InventoryMapper.toDomain(saved));
-  }
-  const entity = InventoryMapper.toEntity(inventory);
-  const res = await this.ormRepo.createQueryBuilder()
-    .update(InventoryEntity)
-    .set({
-      availableQuantity: entity.availableQuantity,
-      reservedQuantity: entity.reservedQuantity,
-      lowStockThreshold: entity.lowStockThreshold,
-      lastRestockDate: entity.lastRestockDate,
-      version: () => 'version + 1',
-      updatedAt: () => 'CURRENT_TIMESTAMP',
-    })
-    .where('id = :id AND version = :expectedVersion', { id: inventory.id, expectedVersion })
-    .execute();
-
-  if (res.affected === 0) {
-    return ErrorFactory.RepositoryError('Optimistic lock failure', undefined, HttpStatus.CONFLICT);
-  }
-  const updated = await this.ormRepo.findOneByOrFail({ id: inventory.id! });
-  return Result.success(InventoryMapper.toDomain(updated));
-}
+const queries = {
+  getById: jest.fn(),
+} as unknown as jest.Mocked<OrderQueryService>;
 ```
 
-For Product / Order / User / Cart, spread `Mapper.toUpdatePayload(entity)` into `.set()` instead of listing application-owned columns by hand. See [CONVENTIONS.md](CONVENTIONS.md) §4 and §13.
+Good: type the function from the real method, keep the reference, and pass it to `useValue`. `mockResolvedValue` is then checked. More in the `write-tests` skill.
 
----
+```typescript
+const getById: jest.MockedFunction<OrderQueryService['getById']> = jest.fn();
+const module = await Test.createTestingModule({
+  providers: [
+    GetOrderUseCase,
+    { provide: OrderQueryService, useValue: { getById } },
+  ],
+}).compile();
+```
 
-## 4. Anti-Patterns Review Checklist
+## 5. Review checklist
 
-- [ ] Does any domain entity import NestJS `@Injectable()`, TypeORM `@Entity()`, or external libraries?
-- [ ] Is a controller publishing domain events directly using `DomainEventPublisher` instead of letting the use case handle it?
-- [ ] Is a repository injecting another repository from a different bounded context instead of using an ACL gateway?
-- [ ] Is a derived field (e.g. `totalQuantity`) being stored in a database column instead of evaluated via an aggregate getter?
-- [ ] Is a background maintenance job executing `OFFSET` pagination instead of ID keyset cursor pagination (`findBatch`)?
+- [ ] Domain imports no NestJS, TypeORM, or external library.
+- [ ] Controllers and job handlers hold no logic and do not publish events.
+- [ ] No repository or entity imported from another context; gateways used instead.
+- [ ] Repositories return domain entities; optimistic locking follows invariant 10.
+- [ ] Owned resources check `CallerContext` through `OwnedResourceAccessPolicy`; jobs pass `SYSTEM_CALLER_CONTEXT`.
+- [ ] No stored derived field (use an aggregate getter); batch jobs use keyset pagination (`findBatch`), not `OFFSET`.
+- [ ] Type rules in AGENTS.md rule 1 hold (no `as`, `any`, `@ts-ignore`, new baseline entries).
+- [ ] Tests cover success, failure, and authorization; `npm run verify` is green.
+- [ ] Docs updated when a feature ships (`write-docs` skill); an ADR written when a trigger applies.

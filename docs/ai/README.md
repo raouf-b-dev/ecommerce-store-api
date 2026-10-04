@@ -1,42 +1,23 @@
-# AI / Agentic Engineering
+# AI Guidance
 
-This folder is the canonical reference for building a multi-agent engineering workflow in this repository.
+Agent instructions are deliberately small. [AGENTS.md](../../AGENTS.md) at the repository root is the single entry point (Claude Code reaches it through `CLAUDE.md`, Gemini CLI through `.gemini/settings.json`). It tells agents which file to load for which task.
 
-It complements [AGENT.md](../../AGENT.md) and the architecture docs in [docs/architecture](../architecture).
+| File                                                     | Purpose                                               |
+| -------------------------------------------------------- | ----------------------------------------------------- |
+| [CONVENTIONS.md](CONVENTIONS.md)                         | Layer, ACL, mapper, job, Redis, type, and error rules |
+| [ARCHITECTURE-INVARIANTS.md](ARCHITECTURE-INVARIANTS.md) | Ten non-negotiable architecture rules                 |
+| [ANTI-PATTERNS.md](ANTI-PATTERNS.md)                     | Bad and good examples, review checklist               |
+| [CODE-MAP.md](CODE-MAP.md)                               | Where modules and shared code live                    |
 
-## Reading Order
+Task procedures are skills in `.agents/skills/<name>/SKILL.md`: `write-tests`, `add-module`, `add-job`, `write-repository`, `write-docs`, `architecture-boundary-guard`. Skills follow the open [Agent Skills](https://agentskills.io) layout: a folder with a `SKILL.md` whose frontmatter has `name` and a "use when" `description`; extra files under `references/` load on demand.
 
-1. [FOUNDATIONS.md](FOUNDATIONS.md)
-2. [ARCHITECTURE-INVARIANTS.md](ARCHITECTURE-INVARIANTS.md)
-3. [CONVENTIONS.md](CONVENTIONS.md)
-4. [ANTI-PATTERNS.md](ANTI-PATTERNS.md)
-5. [GOVERNANCE-AND-QUALITY-GATES.md](GOVERNANCE-AND-QUALITY-GATES.md)
-6. [WORKFLOW-PLAYBOOK.md](WORKFLOW-PLAYBOOK.md)
-7. [SKILLS-SYSTEM.md](SKILLS-SYSTEM.md)
-8. [ECOSYSTEM-PROFILES/README.md](ECOSYSTEM-PROFILES/README.md)
-9. [TEMPLATES/README.md](TEMPLATES/README.md)
+Human reference docs (data, security, infrastructure, observability, architecture) are indexed in [docs/README.md](../README.md) and are not loaded by agents unless the task is in that area.
 
-## Core Specifications
+Security gate: a change that touches secrets, env configuration, or authentication must follow [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md). Architecture changes follow [DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md) and [INTEGRATION-PATTERNS.md](../integration/INTEGRATION-PATTERNS.md).
 
-1. `CAC v1` (Canonical Agent Contract): shared policy contract that every ecosystem profile must map to.
-2. `SPS v1` (Skill Pack Spec): standard for writing reusable skills and skill resources.
-3. `EWC v1` (Execution Workflow Contract): standard task lifecycle, required evidence, and handoff format.
+## Maintaining this folder
 
-## Scope
-
-This documentation targets major globally used ecosystems:
-
-- OpenAI Codex/GPT
-- Anthropic Claude
-- Google Gemini
-- GitHub Copilot
-- Cursor and Windsurf
-- Generic OSS/CLI agents
-
-The goal is broad interoperability and consistent engineering quality, not exhaustive support for every niche tool.
-
-## Source of Truth Policy
-
-- Project architecture rules remain canonical in [DDD-HEXAGONAL.md](../architecture/DDD-HEXAGONAL.md) and [INTEGRATION-PATTERNS.md](../integration/INTEGRATION-PATTERNS.md).
-- Security controls remain canonical in [SECRETS-MANAGEMENT.md](../security/SECRETS-MANAGEMENT.md) and [JWT-RSA-JWKS.md](../security/JWT-RSA-JWKS.md).
-- Agent docs must link to canonical docs instead of duplicating them.
+- Keep `AGENTS.md` under about 60 lines. Move detail into a skill or a doc linked from its table.
+- One rule lives in one place. Link instead of copying.
+- Rules that a tool can enforce belong in ESLint or `test/architecture`, not in prose.
+- Do not add per-tool adapter files (Cursor rules, Copilot instructions, `.windsurfrules`, `GEMINI.md`). Tools read `AGENTS.md`.
