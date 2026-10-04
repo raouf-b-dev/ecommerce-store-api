@@ -78,11 +78,16 @@ describe('RefundCheckoutPaymentUseCase', () => {
     expect(paymentGateway.processRefund).not.toHaveBeenCalled();
   });
 
-  it('returns failure when gateway fails', async () => {
+  it('returns failure keeping retryable === true when gateway fails with retryable error', async () => {
     jest
       .spyOn(paymentGateway, 'processRefund')
       .mockResolvedValueOnce(
-        ErrorFactory.InfrastructureError('Payment provider rejected refund'),
+        ErrorFactory.InfrastructureError(
+          'Payment provider timeout',
+          undefined,
+          undefined,
+          true,
+        ),
       );
 
     const input: ProcessRefundInput = {
@@ -97,6 +102,39 @@ describe('RefundCheckoutPaymentUseCase', () => {
       result,
       'Failed to refund checkout payment',
     );
+    if (result.isFailure) {
+      expect(result.error.retryable).toBe(true);
+    }
+    expect(domainEventPublisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('returns failure keeping retryable === false when gateway fails with non-retryable error', async () => {
+    jest
+      .spyOn(paymentGateway, 'processRefund')
+      .mockResolvedValueOnce(
+        ErrorFactory.InfrastructureError(
+          'Payment provider rejected refund',
+          undefined,
+          undefined,
+          false,
+        ),
+      );
+
+    const input: ProcessRefundInput = {
+      paymentId: 10,
+      amount: 50,
+      reason: 'Compensation',
+    };
+
+    const result = await useCase.execute(input);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Failed to refund checkout payment',
+    );
+    if (result.isFailure) {
+      expect(result.error.retryable).toBe(false);
+    }
     expect(domainEventPublisher.publish).not.toHaveBeenCalled();
   });
 });

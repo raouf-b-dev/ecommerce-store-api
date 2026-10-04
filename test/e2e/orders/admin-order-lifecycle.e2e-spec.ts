@@ -26,6 +26,7 @@ import {
 import { DataSource } from 'typeorm';
 import { PaymentEntity } from 'src/modules/payments/secondary-adapters/orm/payment.schema';
 import { E2eInventoryHelper } from 'src/testing/helpers/e2e-inventory.helper';
+import { assertDefined } from 'src/testing';
 
 describe('Admin order lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -193,10 +194,10 @@ describe('Admin order lifecycle (e2e)', () => {
         where: { orderId },
         relations: ['refunds'],
       });
-    expect(paymentRecord).toBeDefined();
-    expect(paymentRecord?.refunds).toHaveLength(1);
-    expect(Number(paymentRecord?.refundedAmount)).toBe(
-      Number(paymentRecord?.amount),
+    assertDefined(paymentRecord);
+    expect(paymentRecord.refunds).toHaveLength(1);
+    expect(Number(paymentRecord.refundedAmount)).toBe(
+      Number(paymentRecord.amount),
     );
   }, 180_000);
 

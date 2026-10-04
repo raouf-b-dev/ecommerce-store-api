@@ -2,10 +2,7 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import {
-  Result,
-  isFailure,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { Order } from '../../../domain/entities/order';
@@ -48,9 +45,7 @@ export class CancelOrderUseCase implements UseCase<
         orderId,
         reason,
       );
-      if (isFailure(refundResult)) {
-        return refundResult;
-      }
+      if (refundResult.isFailure) return refundResult;
       return Result.success(order.toPrimitives());
     }
 
@@ -58,9 +53,7 @@ export class CancelOrderUseCase implements UseCase<
     if (cancelResult.isFailure) return cancelResult;
 
     if (order.paymentId !== null && order.totalPrice <= 0) {
-      return ErrorFactory.UseCaseError(
-        'Refund amount must be greater than zero',
-      );
+      return this.invalidRefundAmount();
     }
 
     const updateResult = await this.orderRepository.save(
@@ -74,14 +67,12 @@ export class CancelOrderUseCase implements UseCase<
       orderId,
       reason,
     );
-    if (isFailure(refundResult)) {
-      return refundResult;
-    }
+    if (refundResult.isFailure) return refundResult;
 
     const scheduleResult =
       await this.orderScheduler.scheduleOrderStockRelease(orderId);
 
-    if (isFailure(scheduleResult)) {
+    if (scheduleResult.isFailure) {
       this.logger.error(
         `Failed to schedule stock release for order ${orderId}: ${scheduleResult.error.message}`,
       );
@@ -100,6 +91,10 @@ export class CancelOrderUseCase implements UseCase<
     return Result.success(order.toPrimitives());
   }
 
+  private invalidRefundAmount(): Result<never, UseCaseError> {
+    return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
+  }
+
   private async scheduleRefundIfPaid(
     order: Order,
     orderId: number,
@@ -110,9 +105,7 @@ export class CancelOrderUseCase implements UseCase<
     }
 
     if (order.totalPrice <= 0) {
-      return ErrorFactory.UseCaseError(
-        'Refund amount must be greater than zero',
-      );
+      return this.invalidRefundAmount();
     }
 
     const refundResult = await this.orderScheduler.scheduleRefundPayment({
@@ -122,7 +115,7 @@ export class CancelOrderUseCase implements UseCase<
       reason,
     });
 
-    if (isFailure(refundResult)) {
+    if (refundResult.isFailure) {
       this.logger.error(
         `Failed to schedule refund for order ${orderId}: ${refundResult.error.message}`,
       );

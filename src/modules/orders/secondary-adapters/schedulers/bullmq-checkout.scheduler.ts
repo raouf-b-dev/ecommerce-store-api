@@ -214,9 +214,10 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     props: ScheduleRefundPaymentProps,
   ): Promise<Result<string, InfrastructureError>> {
     try {
+      const identifier = `order-${props.orderId}`;
       const jobId = this.jobConfig.getJobId(
         JobNames.REFUND_PAYMENT,
-        `order-${props.orderId}`,
+        identifier,
       );
       const correlationId = this.correlation.getId();
 
@@ -230,10 +231,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
           reason: props.reason,
           ...(correlationId ? { correlationId } : {}),
         },
-        opts: this.jobConfig.getJobOptions(
-          JobNames.REFUND_PAYMENT,
-          `order-${props.orderId}`,
-        ),
+        opts: this.jobConfig.getJobOptions(JobNames.REFUND_PAYMENT, identifier),
       });
 
       return Result.success(jobId);
