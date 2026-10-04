@@ -28,6 +28,7 @@ export abstract class ReservationRepository {
   abstract findPendingExpired(
     date: Date,
     limit?: number,
+    excludeIds?: number[],
   ): Promise<Result<Reservation[], RepositoryError>>;
   abstract release(
     reservation: Reservation,

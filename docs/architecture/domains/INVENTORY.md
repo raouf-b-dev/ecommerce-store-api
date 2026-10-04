@@ -114,16 +114,17 @@ Customer                Checkout / Order          Reservation System           I
 - **Execution Mode**: Strictly **read-only**. Does NOT perform automated database repairs to avoid masking underlying software defects or overwriting concurrent write operations.
 - **Batch Scanning**: Uses ID-based keyset cursor pagination (`findBatch({ afterId, limit })`) executing `SELECT * FROM inventory WHERE id > :afterId ORDER BY id ASC LIMIT :limit` for $O(1)$ index cursor seeks.
 - **Reference Timestamp**: Captures `reconciliationAsOfDate = new Date()` at batch start to evaluate `expires_at > :reconciliationAsOfDate`, eliminating false drift reports from un-swept expired reservations.
+- **Expired Reservation Sweeper**: The `SWEEP_EXPIRED_RESERVATIONS` job (`sweep-expired-reservations`) executes on a 5-minute cadence with a bounded batch size of 100, expiring stale `PENDING` reservations and returning reserved stock to `availableQuantity`. It aligns with shared TTL constants (`ORDER_PAYMENT_EXPIRATION_MINUTES = 30`, `ORDER_EXPIRY_SWEEP_MINUTES = 5`, `RESERVATION_GRACE_MINUTES = 5`, `RESERVATION_TTL_MINUTES = 40`) so stock is never released while an order payment window remains open.
 
 ---
 
 ## 8. Failure Scenarios & Recovery Procedures
 
-| Scenario                             | Symptom                                              | Diagnostic Procedure                                                         | Recovery Action                                                                              |
-| :----------------------------------- | :--------------------------------------------------- | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| **Concurrent Version Mismatch**      | `HttpStatus.CONFLICT` (409)                          | Check concurrent stock update operations for the target product ID.          | Client retries stock update with latest `version`.                                           |
-| **Reservation Drift Detected**       | `inventory_drift_count` Prometheus metric increments | Inspect `InventoryReconciliationJob` logger output for affected `productId`. | Operationally audit reservation log and issue inventory adjustment via `AdjustStockUseCase`. |
-| **Expired Reservation Accumulation** | High pending reservation count                       | Inspect `ReservationCleanupJob` queue status in BullMQ dashboard.            | Trigger manual execution of reservation cleanup job.                                         |
+| Scenario                             | Symptom                                              | Diagnostic Procedure                                                                                                                                                                        | Recovery Action                                                                              |
+| :----------------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------- |
+| **Concurrent Version Mismatch**      | `HttpStatus.CONFLICT` (409)                          | Check concurrent stock update operations for the target product ID.                                                                                                                         | Client retries stock update with latest `version`.                                           |
+| **Reservation Drift Detected**       | `inventory_drift_count` Prometheus metric increments | Inspect `InventoryReconciliationJob` logger output for affected `productId`.                                                                                                                | Operationally audit reservation log and issue inventory adjustment via `AdjustStockUseCase`. |
+| **Expired Reservation Accumulation** | High pending reservation count                       | Inspect `SWEEP_EXPIRED_RESERVATIONS` (`sweep-expired-reservations`) job queue status in BullMQ dashboard. Runs on a 5-minute cadence with batch size 100, governed by shared TTL constants. | Trigger manual execution of `SWEEP_EXPIRED_RESERVATIONS` job.                                |
 
 ---
 

@@ -8,23 +8,25 @@ import { createMockQueue } from '../../testing';
 
 describe('InventoryProcessor', () => {
   let processor: InventoryProcessor;
-  let reconciliationJob: { handle: jest.Mock };
-  let sweeperJob: { handle: jest.Mock };
+  let reconciliationHandle: jest.MockedFunction<
+    InventoryReconciliationJob['handle']
+  >;
+  let sweeperHandle: jest.MockedFunction<SweepExpiredReservationsJob['handle']>;
 
   beforeEach(async () => {
-    reconciliationJob = { handle: jest.fn() };
-    sweeperJob = { handle: jest.fn() };
+    reconciliationHandle = jest.fn();
+    sweeperHandle = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InventoryProcessor,
         {
           provide: InventoryReconciliationJob,
-          useValue: reconciliationJob,
+          useValue: { handle: reconciliationHandle },
         },
         {
           provide: SweepExpiredReservationsJob,
-          useValue: sweeperJob,
+          useValue: { handle: sweeperHandle },
         },
       ],
     }).compile();
@@ -42,12 +44,12 @@ describe('InventoryProcessor', () => {
       JobNames.INVENTORY_RECONCILIATION,
       undefined,
     );
-    reconciliationJob.handle.mockResolvedValue(undefined);
+    reconciliationHandle.mockResolvedValue(undefined);
 
     await processor.process(job);
 
-    expect(reconciliationJob.handle).toHaveBeenCalledWith(job);
-    expect(sweeperJob.handle).not.toHaveBeenCalled();
+    expect(reconciliationHandle).toHaveBeenCalledWith(job);
+    expect(sweeperHandle).not.toHaveBeenCalled();
   });
 
   it('delegates SWEEP_EXPIRED_RESERVATIONS job to sweeper handler', async () => {
@@ -60,12 +62,12 @@ describe('InventoryProcessor', () => {
       JobNames.SWEEP_EXPIRED_RESERVATIONS,
       undefined,
     );
-    sweeperJob.handle.mockResolvedValue({ sweptCount: 2 });
+    sweeperHandle.mockResolvedValue({ sweptCount: 2, failedCount: 0 });
 
     await processor.process(job);
 
-    expect(sweeperJob.handle).toHaveBeenCalledWith(job);
-    expect(reconciliationJob.handle).not.toHaveBeenCalled();
+    expect(sweeperHandle).toHaveBeenCalledWith(job);
+    expect(reconciliationHandle).not.toHaveBeenCalled();
   });
 
   it('throws an error for unknown job names', async () => {

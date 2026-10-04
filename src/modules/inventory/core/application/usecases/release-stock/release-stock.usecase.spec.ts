@@ -8,6 +8,8 @@ import { ReleaseStockUseCase } from './release-stock.usecase';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
 
+import { ResultAssertionHelper } from 'src/testing';
+
 describe('ReleaseStockUseCase', () => {
   let useCase: ReleaseStockUseCase;
   let reservationRepository: MockReservationRepository;
@@ -36,16 +38,33 @@ describe('ReleaseStockUseCase', () => {
   });
 
   describe('execute', () => {
-    it('should release stock successfully', async () => {
+    it('should release stock successfully for pending reservation', async () => {
       const reservation = ReservationTestFactory.createPendingReservation();
+      const reservationId = reservation.id ?? 1;
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulRelease(reservation);
 
-      const result = await useCase.execute(reservation.id!);
+      const result = await useCase.execute(reservationId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(reservationRepository.findById).toHaveBeenCalledWith(
-        reservation.id,
+        reservationId,
+      );
+      expect(reservation.status).toBe(ReservationStatus.RELEASED);
+      expect(reservationRepository.release).toHaveBeenCalledWith(reservation);
+    });
+
+    it('should return confirmed reservation to stock successfully', async () => {
+      const reservation = ReservationTestFactory.createConfirmedReservation();
+      const reservationId = reservation.id ?? 1;
+      reservationRepository.mockSuccessfulFindById(reservation);
+      reservationRepository.mockSuccessfulRelease(reservation);
+
+      const result = await useCase.execute(reservationId);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(reservationRepository.findById).toHaveBeenCalledWith(
+        reservationId,
       );
       expect(reservation.status).toBe(ReservationStatus.RELEASED);
       expect(reservationRepository.release).toHaveBeenCalledWith(reservation);
@@ -57,10 +76,7 @@ describe('ReleaseStockUseCase', () => {
 
       const result = await useCase.execute(reservationId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('not found');
-      }
+      ResultAssertionHelper.assertResultFailure(result, 'not found');
       expect(reservationRepository.findById).toHaveBeenCalledWith(
         reservationId,
       );
@@ -69,30 +85,29 @@ describe('ReleaseStockUseCase', () => {
 
     it('should return failure if repository release fails', async () => {
       const reservation = ReservationTestFactory.createPendingReservation();
+      const reservationId = reservation.id ?? 1;
       const errorMessage = 'Database error';
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockReleaseFailure(errorMessage);
 
-      const result = await useCase.execute(reservation.id!);
+      const result = await useCase.execute(reservationId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe(errorMessage);
-      }
+      ResultAssertionHelper.assertResultFailure(result, errorMessage);
       expect(reservationRepository.findById).toHaveBeenCalledWith(
-        reservation.id,
+        reservationId,
       );
       expect(reservationRepository.release).toHaveBeenCalledWith(reservation);
     });
 
     it('should succeed even if reservation is already released', async () => {
       const reservation = ReservationTestFactory.createReleasedReservation();
+      const reservationId = reservation.id ?? 1;
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulRelease(reservation);
 
-      const result = await useCase.execute(reservation.id!);
+      const result = await useCase.execute(reservationId);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(reservation.status).toBe(ReservationStatus.RELEASED);
       expect(reservationRepository.release).toHaveBeenCalledWith(reservation);
     });

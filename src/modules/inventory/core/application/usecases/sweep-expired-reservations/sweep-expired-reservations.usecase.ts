@@ -9,6 +9,7 @@ import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 export interface SweepExpiredReservationsCommand {
   asOfDate?: Date;
   batchSize?: number;
+  maxBatches?: number;
 }
 
 export interface SweepExpiredReservationsResult {
@@ -36,45 +37,64 @@ export class SweepExpiredReservationsUseCase implements UseCase<
     const asOfDate = command?.asOfDate ?? new Date();
     const batchSize =
       command?.batchSize ?? SweepExpiredReservationsUseCase.DEFAULT_BATCH_SIZE;
+    const maxBatches = command?.maxBatches;
 
-    const expiredResult = await this.reservationRepository.findPendingExpired(
-      asOfDate,
-      batchSize,
-    );
-
-    if (expiredResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to fetch expired reservations',
-        expiredResult.error,
-      );
-    }
-
-    const reservations = expiredResult.value;
     let sweptCount = 0;
-    let failedCount = 0;
+    const failedIds: number[] = [];
+    let batchesProcessed = 0;
 
-    for (const reservation of reservations) {
-      const expireDomainResult = reservation.expire();
-      if (expireDomainResult.isFailure) {
-        this.logger.error(
-          `Failed to transition reservation ${reservation.id} to expired: ${expireDomainResult.error.message}`,
-        );
-        failedCount++;
-        continue;
+    while (true) {
+      if (maxBatches !== undefined && batchesProcessed >= maxBatches) {
+        break;
       }
 
-      const saveResult = await this.reservationRepository.expire(reservation);
-      if (saveResult.isFailure) {
-        this.logger.error(
-          `Failed to persist expired reservation ${reservation.id}: ${saveResult.error.message}`,
+      const expiredResult = await this.reservationRepository.findPendingExpired(
+        asOfDate,
+        batchSize,
+        failedIds.length > 0 ? failedIds : undefined,
+      );
+
+      if (expiredResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'Failed to fetch expired reservations',
+          expiredResult.error,
         );
-        failedCount++;
-        continue;
       }
 
-      sweptCount++;
+      const reservations = expiredResult.value;
+      if (reservations.length === 0) {
+        break;
+      }
+
+      batchesProcessed++;
+
+      for (const reservation of reservations) {
+        const expireDomainResult = reservation.expire();
+        if (expireDomainResult.isFailure) {
+          this.logger.error(
+            `Failed to transition reservation ${reservation.id} to expired: ${expireDomainResult.error.message}`,
+          );
+          if (reservation.id !== null) {
+            failedIds.push(reservation.id);
+          }
+          continue;
+        }
+
+        const saveResult = await this.reservationRepository.expire(reservation);
+        if (saveResult.isFailure) {
+          this.logger.error(
+            `Failed to persist expired reservation ${reservation.id}: ${saveResult.error.message}`,
+          );
+          if (reservation.id !== null) {
+            failedIds.push(reservation.id);
+          }
+          continue;
+        }
+
+        sweptCount++;
+      }
     }
 
-    return Result.success({ sweptCount, failedCount });
+    return Result.success({ sweptCount, failedCount: failedIds.length });
   }
 }

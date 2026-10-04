@@ -26,7 +26,7 @@ export class MockReservationRepository implements ReservationRepository {
   >();
   findPendingExpired = jest.fn<
     Promise<Result<Reservation[], RepositoryError>>,
-    [Date, number?]
+    [Date, number?, number[]?]
   >();
   confirm = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,

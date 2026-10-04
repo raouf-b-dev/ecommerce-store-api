@@ -5,6 +5,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 
+import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
+
 @Injectable()
 export class ReleaseStockUseCase implements UseCase<
   number,
@@ -22,7 +24,10 @@ export class ReleaseStockUseCase implements UseCase<
     if (reservationResult.isFailure) return reservationResult;
 
     const reservation = reservationResult.value;
-    const releaseResult = reservation.release();
+    const releaseResult =
+      reservation.status === ReservationStatus.CONFIRMED
+        ? reservation.returnConfirmedToStock()
+        : reservation.release();
 
     if (releaseResult.isFailure) return releaseResult;
 

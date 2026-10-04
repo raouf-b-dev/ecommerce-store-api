@@ -236,7 +236,7 @@
   },
   "src/modules/inventory/secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 1
     }
   },
   "src/modules/inventory/testing/factories/inventory-dto.test.factory.ts": {
@@ -307,11 +307,6 @@
   "src/modules/orders/primary-adapters/jobs/create-order.job.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "src/modules/orders/primary-adapters/jobs/expire-pending-orders.job.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
     }
   },
   "src/modules/orders/primary-adapters/jobs/process-payment.job.ts": {

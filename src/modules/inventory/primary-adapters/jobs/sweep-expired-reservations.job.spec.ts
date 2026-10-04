@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { SweepExpiredReservationsJob } from './sweep-expired-reservations.job';
 import { SweepExpiredReservationsUseCase } from '../../core/application/usecases/sweep-expired-reservations/sweep-expired-reservations.usecase';
@@ -27,7 +28,7 @@ describe('SweepExpiredReservationsJob', () => {
     handler = module.get(SweepExpiredReservationsJob);
   });
 
-  it('delegates to the use case and returns swept count on success', async () => {
+  it('delegates to the use case and returns swept and failed counts on success', async () => {
     execute.mockResolvedValue(
       Result.success({ sweptCount: 5, failedCount: 0 }),
     );
@@ -39,8 +40,28 @@ describe('SweepExpiredReservationsJob', () => {
 
     const result = await handler.handle(job);
 
-    expect(result).toEqual({ sweptCount: 5 });
+    expect(result).toEqual({ sweptCount: 5, failedCount: 0 });
     expect(execute).toHaveBeenCalled();
+  });
+
+  it('logs an error when failedCount is greater than 0', async () => {
+    const errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    execute.mockResolvedValue(
+      Result.success({ sweptCount: 4, failedCount: 2 }),
+    );
+    const queue = Object.assign(createMockQueue(), {
+      toKey: jest.fn(),
+      keys: {},
+    });
+    const job = new Job<void>(queue, 'sweep-expired-reservations', undefined);
+
+    const result = await handler.handle(job);
+
+    expect(result).toEqual({ sweptCount: 4, failedCount: 2 });
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('encountered 2 failures'),
+    );
+    errorSpy.mockRestore();
   });
 
   it('throws when the use case fails', async () => {

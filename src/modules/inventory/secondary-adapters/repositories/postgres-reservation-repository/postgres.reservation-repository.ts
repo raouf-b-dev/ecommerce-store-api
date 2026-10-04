@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, DataSource, In } from 'typeorm';
+import {
+  Repository,
+  LessThan,
+  DataSource,
+  In,
+  Not,
+  FindOptionsWhere,
+} from 'typeorm';
 import { ReservationRepository } from '../../../core/domain/repositories/reservation.repository';
 import { Reservation } from '../../../core/domain/entities/reservation';
 import { ReservationEntity } from '../../orm/reservation.schema';
@@ -154,13 +161,18 @@ export class PostgresReservationRepository implements ReservationRepository {
   async findPendingExpired(
     date: Date,
     limit?: number,
+    excludeIds?: number[],
   ): Promise<Result<Reservation[], RepositoryError>> {
     try {
+      const where: FindOptionsWhere<ReservationEntity> = {
+        status: ReservationStatus.PENDING,
+        expiresAt: LessThan(date),
+      };
+      if (excludeIds && excludeIds.length > 0) {
+        where.id = Not(In(excludeIds));
+      }
       const entities = await this.repository.find({
-        where: {
-          status: ReservationStatus.PENDING,
-          expiresAt: LessThan(date),
-        },
+        where,
         take: limit,
         order: { expiresAt: 'ASC' },
       });

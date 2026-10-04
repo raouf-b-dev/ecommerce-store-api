@@ -9,7 +9,7 @@ import { SweepExpiredReservationsUseCase } from '../../core/application/usecases
 @Injectable()
 export class SweepExpiredReservationsJob extends BaseJobHandler<
   void,
-  { sweptCount: number }
+  { sweptCount: number; failedCount: number }
 > {
   protected readonly logger = new Logger(SweepExpiredReservationsJob.name);
 
@@ -26,7 +26,7 @@ export class SweepExpiredReservationsJob extends BaseJobHandler<
 
   protected async onExecute(
     job: Job<void>,
-  ): Promise<Result<{ sweptCount: number }, AppError>> {
+  ): Promise<Result<{ sweptCount: number; failedCount: number }, AppError>> {
     this.logger.log(
       `Executing expired reservations sweeper for job ${job.id ?? 'unknown'}...`,
     );
@@ -37,10 +37,19 @@ export class SweepExpiredReservationsJob extends BaseJobHandler<
       return Result.failure(result.error);
     }
 
+    if (result.value.failedCount > 0) {
+      this.logger.error(
+        `Expired reservations sweeper encountered ${result.value.failedCount} failures during run.`,
+      );
+    }
+
     this.logger.log(
       `Expired reservations sweeper completed. Swept ${result.value.sweptCount} reservations, failed ${result.value.failedCount}.`,
     );
 
-    return Result.success({ sweptCount: result.value.sweptCount });
+    return Result.success({
+      sweptCount: result.value.sweptCount,
+      failedCount: result.value.failedCount,
+    });
   }
 }

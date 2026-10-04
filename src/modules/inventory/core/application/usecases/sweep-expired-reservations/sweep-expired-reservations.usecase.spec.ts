@@ -37,7 +37,9 @@ describe('SweepExpiredReservationsUseCase', () => {
   it('sweeps expired reservations and returns swept count on success', async () => {
     const expired1 = ReservationTestFactory.createPendingReservation({ id: 1 });
     const expired2 = ReservationTestFactory.createPendingReservation({ id: 2 });
-    reservations.mockSuccessfulFindPendingExpired([expired1, expired2]);
+    reservations.findPendingExpired
+      .mockResolvedValueOnce(Result.success([expired1, expired2]))
+      .mockResolvedValueOnce(Result.success([]));
     reservations.mockSuccessfulExpire(expired1);
     reservations.mockSuccessfulExpire(expired2);
 
@@ -73,6 +75,7 @@ describe('SweepExpiredReservationsUseCase', () => {
     expect(reservations.findPendingExpired).toHaveBeenCalledWith(
       asOfDate,
       batchSize,
+      undefined,
     );
   });
 
@@ -93,7 +96,9 @@ describe('SweepExpiredReservationsUseCase', () => {
   it('increments failedCount when expiring an individual reservation fails to persist', async () => {
     const expired1 = ReservationTestFactory.createPendingReservation({ id: 1 });
     const expired2 = ReservationTestFactory.createPendingReservation({ id: 2 });
-    reservations.mockSuccessfulFindPendingExpired([expired1, expired2]);
+    reservations.findPendingExpired
+      .mockResolvedValueOnce(Result.success([expired1, expired2]))
+      .mockResolvedValueOnce(Result.success([]));
     reservations.mockExpireFailure('Deadlock detected');
 
     const result = await useCase.execute();
@@ -108,7 +113,9 @@ describe('SweepExpiredReservationsUseCase', () => {
     const released = ReservationTestFactory.createReleasedReservation({
       id: 3,
     });
-    reservations.mockSuccessfulFindPendingExpired([released]);
+    reservations.findPendingExpired
+      .mockResolvedValueOnce(Result.success([released]))
+      .mockResolvedValueOnce(Result.success([]));
 
     const result = await useCase.execute();
 
@@ -116,5 +123,63 @@ describe('SweepExpiredReservationsUseCase', () => {
     expect(result.value.sweptCount).toBe(0);
     expect(result.value.failedCount).toBe(1);
     expect(reservations.expire).not.toHaveBeenCalled();
+  });
+
+  it('processes batches in a loop and excludes failed ids from subsequent queries', async () => {
+    const failingRes = ReservationTestFactory.createPendingReservation({
+      id: 101,
+    });
+    const succeedingRes1 = ReservationTestFactory.createPendingReservation({
+      id: 102,
+    });
+    const succeedingRes2 = ReservationTestFactory.createPendingReservation({
+      id: 103,
+    });
+
+    // Batch 1 returns [failingRes, succeedingRes1]
+    // Batch 2 returns [succeedingRes2]
+    // Batch 3 returns []
+    reservations.findPendingExpired
+      .mockResolvedValueOnce(Result.success([failingRes, succeedingRes1]))
+      .mockResolvedValueOnce(Result.success([succeedingRes2]))
+      .mockResolvedValueOnce(Result.success([]));
+
+    reservations.expire.mockImplementation((res) => {
+      if (res.id === 101) {
+        return Promise.resolve(
+          Result.failure(new RepositoryError('Persistent failure')),
+        );
+      }
+      return Promise.resolve(Result.success(res));
+    });
+
+    const result = await useCase.execute({ batchSize: 2 });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.sweptCount).toBe(2);
+    expect(result.value.failedCount).toBe(1);
+
+    expect(reservations.findPendingExpired).toHaveBeenCalledTimes(3);
+    // Batch 1 has no exclusions
+    expect(reservations.findPendingExpired).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Date),
+      2,
+      undefined,
+    );
+    // Batch 2 excludes failed id 101
+    expect(reservations.findPendingExpired).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Date),
+      2,
+      [101],
+    );
+    // Batch 3 excludes failed id 101
+    expect(reservations.findPendingExpired).toHaveBeenNthCalledWith(
+      3,
+      expect.any(Date),
+      2,
+      [101],
+    );
   });
 });

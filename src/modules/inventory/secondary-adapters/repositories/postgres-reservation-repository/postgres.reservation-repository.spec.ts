@@ -10,6 +10,8 @@ import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
 import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
+import { ResultAssertionHelper } from 'src/testing';
+import { RepositoryError } from 'src/shared-kernel/domain/exceptions/repository.error';
 
 describe('PostgresReservationRepository', () => {
   let repository: PostgresReservationRepository;
@@ -53,14 +55,16 @@ describe('PostgresReservationRepository', () => {
     dataSource = module.get(DataSource);
     entityManager = module.get(EntityManager);
 
-    dataSource.transaction.mockImplementation(
-      (isolationOrCb: unknown, cb?: unknown) => {
-        const callback = (
-          typeof isolationOrCb === 'function' ? isolationOrCb : cb
-        ) as (mgr: unknown) => Promise<unknown>;
+    dataSource.transaction.mockImplementation((...args: unknown[]) => {
+      const callback = args.find(
+        (arg): arg is (mgr: EntityManager) => Promise<unknown> =>
+          typeof arg === 'function',
+      );
+      if (callback) {
         return callback(entityManager);
-      },
-    );
+      }
+      return Promise.resolve();
+    });
   });
 
   afterEach(() => {
@@ -88,10 +92,8 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.save(dto);
 
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) {
-        expect(result.value.id).toBe(reservationId);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(reservationId);
       expect(entityManager.find).toHaveBeenCalledWith(
         InventoryEntity,
         expect.anything(),
@@ -142,12 +144,11 @@ describe('PostgresReservationRepository', () => {
       const entity = ReservationMapper.toEntity(reservation);
       typeOrmRepository.findOne.mockResolvedValue(entity);
 
-      const result = await repository.findById(reservation.id!);
+      const reservationId = reservation.id ?? 1;
+      const result = await repository.findById(reservationId);
 
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) {
-        expect(result.value.id).toBe(reservation.id);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.id).toBe(reservationId);
     });
 
     it('should return failure if not found', async () => {
@@ -155,10 +156,11 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.findById(404);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Reservation not found');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Reservation not found',
+        RepositoryError,
+      );
     });
   });
 
@@ -167,11 +169,11 @@ describe('PostgresReservationRepository', () => {
       const reservation = ReservationTestFactory.createPendingReservation();
       const reservationEntity = ReservationMapper.toEntity(reservation);
 
-      const inventoryEntity = {
+      const inventoryEntity = Object.assign(new InventoryEntity(), {
         productId: reservation.items[0].productId,
         availableQuantity: 8,
         reservedQuantity: 2,
-      } as InventoryEntity;
+      });
 
       entityManager.findOne.mockResolvedValue(reservationEntity);
       entityManager.find.mockResolvedValue([inventoryEntity]);
@@ -181,7 +183,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.release(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(entityManager.findOne).toHaveBeenCalledWith(
         ReservationEntity,
         expect.anything(),
@@ -216,7 +218,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.release(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(inventoryEntity.availableQuantity).toBe(
         8 + reservation.items[0].quantity,
       );
@@ -231,7 +233,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.release(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(entityManager.save).not.toHaveBeenCalled();
     });
   });
@@ -243,11 +245,11 @@ describe('PostgresReservationRepository', () => {
 
       entityManager.findOne.mockResolvedValue(reservationEntity);
 
-      const inventoryEntity = {
+      const inventoryEntity = Object.assign(new InventoryEntity(), {
         productId: reservation.items[0].productId,
         availableQuantity: 10,
         reservedQuantity: 5,
-      } as InventoryEntity;
+      });
       entityManager.find.mockResolvedValue([inventoryEntity]);
 
       entityManager.save.mockImplementation((entity) =>
@@ -256,7 +258,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.confirm(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(entityManager.save).toHaveBeenCalled();
     });
 
@@ -268,7 +270,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.confirm(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(entityManager.save).not.toHaveBeenCalled();
     });
 
@@ -283,12 +285,11 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.confirm(reservation);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain(
-          'Cannot confirm reservation in RELEASED status',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot confirm reservation in RELEASED status',
+        RepositoryError,
+      );
     });
 
     it('should fail if reservation in DB is expired', async () => {
@@ -302,12 +303,11 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.confirm(reservation);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain(
-          'Cannot confirm expired reservation',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot confirm expired reservation',
+        RepositoryError,
+      );
     });
   });
 
@@ -330,7 +330,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.expire(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(inventoryEntity.availableQuantity).toBe(
         10 + reservation.items[0].quantity,
       );
@@ -347,7 +347,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.expire(reservation);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(entityManager.save).not.toHaveBeenCalled();
     });
 
@@ -362,29 +362,29 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.expire(reservation);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain(
-          'Cannot expire reservation in CONFIRMED status',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot expire reservation in CONFIRMED status',
+        RepositoryError,
+      );
     });
   });
 
   describe('findPendingExpired', () => {
-    it('should query with status PENDING, LessThan date, and optional limit', async () => {
+    it('should query with status PENDING, LessThan date, optional limit, and optional excludeIds', async () => {
       const reservation = ReservationTestFactory.createPendingReservation();
       const entity = ReservationMapper.toEntity(reservation);
       typeOrmRepository.find.mockResolvedValue([entity]);
 
       const testDate = new Date();
-      const result = await repository.findPendingExpired(testDate, 50);
+      const result = await repository.findPendingExpired(testDate, 50, [1, 2]);
 
-      expect(result.isSuccess).toBe(true);
+      ResultAssertionHelper.assertResultSuccess(result);
       expect(typeOrmRepository.find).toHaveBeenCalledWith({
         where: {
           status: ReservationStatus.PENDING,
           expiresAt: expect.anything(),
+          id: expect.anything(),
         },
         take: 50,
         order: { expiresAt: 'ASC' },
