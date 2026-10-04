@@ -2,6 +2,7 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger, OnApplicationShutdown } from '@nestjs/common';
 import { InventoryReconciliationJob } from './primary-adapters/jobs/inventory-reconciliation.job';
+import { SweepExpiredReservationsJob } from './primary-adapters/jobs/sweep-expired-reservations.job';
 import { JobNames } from '../../infrastructure/jobs/job-names';
 
 @Processor('inventory', { concurrency: 1 })
@@ -13,6 +14,7 @@ export class InventoryProcessor
 
   constructor(
     private readonly inventoryReconciliationJob: InventoryReconciliationJob,
+    private readonly sweepExpiredReservationsJob: SweepExpiredReservationsJob,
   ) {
     super();
   }
@@ -26,6 +28,8 @@ export class InventoryProcessor
     switch (job.name) {
       case JobNames.INVENTORY_RECONCILIATION:
         return this.inventoryReconciliationJob.handle(job);
+      case JobNames.SWEEP_EXPIRED_RESERVATIONS:
+        return this.sweepExpiredReservationsJob.handle(job);
       default:
         throw new Error(`Unknown job name: ${job.name}`);
     }

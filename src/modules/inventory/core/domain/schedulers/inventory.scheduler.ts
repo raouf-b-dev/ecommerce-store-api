@@ -5,4 +5,7 @@ export abstract class InventoryScheduler {
   abstract scheduleReconciliationJob(): Promise<
     Result<{ jobId: string }, InfrastructureError>
   >;
+  abstract scheduleSweeperJob(): Promise<
+    Result<{ jobId: string }, InfrastructureError>
+  >;
 }

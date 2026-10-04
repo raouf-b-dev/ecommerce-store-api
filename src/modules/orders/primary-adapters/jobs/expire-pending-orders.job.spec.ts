@@ -36,7 +36,7 @@ describe('ExpirePendingOrdersJob', () => {
 
     expect(result).toEqual({ cancelledCount: 3 });
     expect(mockUseCase.execute).toHaveBeenCalledWith({
-      expirationMinutes: 30,
+      expirationMinutes: 15,
     });
   });
 

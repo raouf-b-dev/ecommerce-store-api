@@ -11,6 +11,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import { ReservationInput } from '../../../core/domain/repositories/reservation.repository';
+import { RESERVATION_TTL_MINUTES } from '../../../../../shared-kernel/domain/constants/reservation.constants';
 
 @Injectable()
 export class PostgresReservationRepository implements ReservationRepository {
@@ -30,7 +31,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           ...item,
           id: null,
         })),
-        ttlMinutes: 15, // Default TTL
+        ttlMinutes: RESERVATION_TTL_MINUTES, // Shared constant: 15 minutes
       });
 
       if (reservationResult.isFailure) {
@@ -152,6 +153,7 @@ export class PostgresReservationRepository implements ReservationRepository {
 
   async findPendingExpired(
     date: Date,
+    limit?: number,
   ): Promise<Result<Reservation[], RepositoryError>> {
     try {
       const entities = await this.repository.find({
@@ -159,6 +161,8 @@ export class PostgresReservationRepository implements ReservationRepository {
           status: ReservationStatus.PENDING,
           expiresAt: LessThan(date),
         },
+        take: limit,
+        order: { expiresAt: 'ASC' },
       });
       return Result.success(entities.map(ReservationMapper.toDomain));
     } catch (error) {
@@ -213,11 +217,19 @@ export class PostgresReservationRepository implements ReservationRepository {
 
           for (const item of items) {
             const inventory = inventoryMap.get(item.productId);
-            if (inventory) {
+            if (!inventory) {
+              throw new RepositoryError(
+                `Inventory not found for product ${item.productId}`,
+              );
+            }
+            if (currentEntity.status === ReservationStatus.PENDING) {
               inventory.availableQuantity += item.quantity;
               inventory.reservedQuantity -= item.quantity;
-              await manager.save(inventory);
+            } else if (currentEntity.status === ReservationStatus.CONFIRMED) {
+              // Confirm already deducted reservedQuantity; only return physical stock to available
+              inventory.availableQuantity += item.quantity;
             }
+            await manager.save(inventory);
           }
 
           // Update Reservation Status
@@ -263,6 +275,16 @@ export class PostgresReservationRepository implements ReservationRepository {
             return currentEntity;
           }
 
+          if (currentEntity.status !== ReservationStatus.PENDING) {
+            throw new RepositoryError(
+              `Cannot confirm reservation in ${currentEntity.status} status`,
+            );
+          }
+
+          if (new Date() > currentEntity.expiresAt) {
+            throw new RepositoryError('Cannot confirm expired reservation');
+          }
+
           const items = reservation.items;
           // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
           const productIds = [...new Set(items.map((i) => i.productId))].sort(
@@ -278,10 +300,13 @@ export class PostgresReservationRepository implements ReservationRepository {
 
           for (const item of items) {
             const inventory = inventoryMap.get(item.productId);
-            if (inventory) {
-              inventory.reservedQuantity -= item.quantity;
-              await manager.save(inventory);
+            if (!inventory) {
+              throw new RepositoryError(
+                `Inventory not found for product ${item.productId}`,
+              );
             }
+            inventory.reservedQuantity -= item.quantity;
+            await manager.save(inventory);
           }
 
           const entity = ReservationMapper.toEntity(reservation);
@@ -295,6 +320,77 @@ export class PostgresReservationRepository implements ReservationRepository {
       }
       return ErrorFactory.RepositoryError(
         'Failed to confirm reservation',
+        error,
+      );
+    }
+  }
+
+  async expire(
+    reservation: Reservation,
+  ): Promise<Result<Reservation, RepositoryError>> {
+    try {
+      const savedReservation = await this.dataSource.transaction(
+        'REPEATABLE READ',
+        async (manager) => {
+          if (!reservation.id) {
+            throw new RepositoryError('Reservation ID is required');
+          }
+          const currentEntity = await manager.findOne(ReservationEntity, {
+            where: { id: reservation.id },
+            lock: { mode: 'pessimistic_write' },
+            loadEagerRelations: false,
+          });
+
+          if (!currentEntity) {
+            throw new RepositoryError('Reservation not found');
+          }
+
+          if (currentEntity.status === ReservationStatus.EXPIRED) {
+            return currentEntity;
+          }
+
+          if (currentEntity.status !== ReservationStatus.PENDING) {
+            throw new RepositoryError(
+              `Cannot expire reservation in ${currentEntity.status} status`,
+            );
+          }
+
+          const items = reservation.items;
+          // Sort product IDs deterministically to prevent PostgreSQL row lock deadlocks
+          const productIds = [...new Set(items.map((i) => i.productId))].sort(
+            (a, b) => a - b,
+          );
+          const inventoryItems = await manager.find(InventoryEntity, {
+            where: { productId: In(productIds) },
+            lock: { mode: 'pessimistic_write' },
+          });
+          const inventoryMap = new Map(
+            inventoryItems.map((i) => [i.productId, i]),
+          );
+
+          for (const item of items) {
+            const inventory = inventoryMap.get(item.productId);
+            if (!inventory) {
+              throw new RepositoryError(
+                `Inventory not found for product ${item.productId}`,
+              );
+            }
+            inventory.availableQuantity += item.quantity;
+            inventory.reservedQuantity -= item.quantity;
+            await manager.save(inventory);
+          }
+
+          const entity = ReservationMapper.toEntity(reservation);
+          return await manager.save(entity);
+        },
+      );
+      return Result.success(ReservationMapper.toDomain(savedReservation));
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        return Result.failure(error);
+      }
+      return ErrorFactory.RepositoryError(
+        'Failed to expire reservation',
         error,
       );
     }

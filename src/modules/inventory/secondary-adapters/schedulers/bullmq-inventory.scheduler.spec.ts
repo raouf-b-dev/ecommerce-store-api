@@ -33,7 +33,7 @@ describe('BullMqInventoryScheduler', () => {
   });
 
   describe('onModuleInit', () => {
-    it('should schedule inventory reconciliation audit job on module init', async () => {
+    it('should schedule inventory reconciliation and sweeper jobs on module init', async () => {
       await scheduler.onModuleInit();
 
       expect(mockQueue.add).toHaveBeenCalledWith(
@@ -42,6 +42,14 @@ describe('BullMqInventoryScheduler', () => {
         {
           repeat: { pattern: '0 4 * * *' },
           jobId: 'inventory-reconciliation-job',
+        },
+      );
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        JobNames.SWEEP_EXPIRED_RESERVATIONS,
+        {},
+        {
+          repeat: { pattern: '*/5 * * * *' },
+          jobId: 'sweep-expired-reservations-job',
         },
       );
     });
@@ -76,6 +84,41 @@ describe('BullMqInventoryScheduler', () => {
           'Failed to schedule inventory reconciliation audit job',
         );
       }
+    });
+  });
+
+  describe('scheduleSweeperJob', () => {
+    it('should return success result when sweeper job is added to queue', async () => {
+      const result = await scheduler.scheduleSweeperJob();
+
+      expect(result.isSuccess).toBe(true);
+      if (result.isSuccess) {
+        expect(result.value).toEqual({
+          jobId: 'sweep-expired-reservations-job',
+        });
+      }
+    });
+
+    it('should return infrastructure error when queue fails', async () => {
+      mockQueue.add.mockRejectedValueOnce(new Error('Redis connection failed'));
+
+      const result = await scheduler.scheduleSweeperJob();
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error.message).toContain(
+          'Failed to schedule expired reservations sweeper job',
+        );
+      }
+    });
+
+    it('should return infrastructure error and skip when shutting down', async () => {
+      lifecycle.isShuttingDown = true;
+
+      const result = await scheduler.scheduleSweeperJob();
+
+      expect(result.isFailure).toBe(true);
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
   });
 });

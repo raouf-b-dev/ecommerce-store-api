@@ -9,6 +9,7 @@ import { PostgresReservationRepository } from './postgres.reservation-repository
 import { ReservationEntity } from '../../orm/reservation.schema';
 import { InventoryEntity } from '../../orm/inventory.schema';
 import { ReservationMapper } from '../../persistence/mappers/reservation.mapper';
+import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
 
 describe('PostgresReservationRepository', () => {
   let repository: PostgresReservationRepository;
@@ -197,6 +198,31 @@ describe('PostgresReservationRepository', () => {
       );
     });
 
+    it('should release CONFIRMED reservation without decrementing reservedQuantity', async () => {
+      const reservation = ReservationTestFactory.createConfirmedReservation();
+      const reservationEntity = ReservationMapper.toEntity(reservation);
+
+      const inventoryEntity = Object.assign(new InventoryEntity(), {
+        productId: reservation.items[0].productId,
+        availableQuantity: 8,
+        reservedQuantity: 2,
+      });
+
+      entityManager.findOne.mockResolvedValue(reservationEntity);
+      entityManager.find.mockResolvedValue([inventoryEntity]);
+      entityManager.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await repository.release(reservation);
+
+      expect(result.isSuccess).toBe(true);
+      expect(inventoryEntity.availableQuantity).toBe(
+        8 + reservation.items[0].quantity,
+      );
+      expect(inventoryEntity.reservedQuantity).toBe(2);
+    });
+
     it('should return success if already released', async () => {
       const reservation = ReservationTestFactory.createReleasedReservation();
       const reservationEntity = ReservationMapper.toEntity(reservation);
@@ -244,6 +270,125 @@ describe('PostgresReservationRepository', () => {
 
       expect(result.isSuccess).toBe(true);
       expect(entityManager.save).not.toHaveBeenCalled();
+    });
+
+    it('should fail if reservation status in DB is not PENDING', async () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+      const releasedEntity = Object.assign(
+        ReservationMapper.toEntity(reservation),
+        { status: ReservationStatus.RELEASED },
+      );
+
+      entityManager.findOne.mockResolvedValue(releasedEntity);
+
+      const result = await repository.confirm(reservation);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error.message).toContain(
+          'Cannot confirm reservation in RELEASED status',
+        );
+      }
+    });
+
+    it('should fail if reservation in DB is expired', async () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+      const expiredEntity = Object.assign(
+        ReservationMapper.toEntity(reservation),
+        { expiresAt: new Date(Date.now() - 60000) },
+      );
+
+      entityManager.findOne.mockResolvedValue(expiredEntity);
+
+      const result = await repository.confirm(reservation);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error.message).toContain(
+          'Cannot confirm expired reservation',
+        );
+      }
+    });
+  });
+
+  describe('expire', () => {
+    it('should expire PENDING reservation and return stock to available', async () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+      const reservationEntity = ReservationMapper.toEntity(reservation);
+
+      const inventoryEntity = Object.assign(new InventoryEntity(), {
+        productId: reservation.items[0].productId,
+        availableQuantity: 10,
+        reservedQuantity: 5,
+      });
+
+      entityManager.findOne.mockResolvedValue(reservationEntity);
+      entityManager.find.mockResolvedValue([inventoryEntity]);
+      entityManager.save.mockImplementation((entity) =>
+        Promise.resolve(entity),
+      );
+
+      const result = await repository.expire(reservation);
+
+      expect(result.isSuccess).toBe(true);
+      expect(inventoryEntity.availableQuantity).toBe(
+        10 + reservation.items[0].quantity,
+      );
+      expect(inventoryEntity.reservedQuantity).toBe(
+        5 - reservation.items[0].quantity,
+      );
+    });
+
+    it('should return success if already expired', async () => {
+      const reservation = ReservationTestFactory.createExpiredReservation();
+      const reservationEntity = ReservationMapper.toEntity(reservation);
+
+      entityManager.findOne.mockResolvedValue(reservationEntity);
+
+      const result = await repository.expire(reservation);
+
+      expect(result.isSuccess).toBe(true);
+      expect(entityManager.save).not.toHaveBeenCalled();
+    });
+
+    it('should fail if reservation status in DB is not PENDING', async () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+      const confirmedEntity = Object.assign(
+        ReservationMapper.toEntity(reservation),
+        { status: ReservationStatus.CONFIRMED },
+      );
+
+      entityManager.findOne.mockResolvedValue(confirmedEntity);
+
+      const result = await repository.expire(reservation);
+
+      expect(result.isFailure).toBe(true);
+      if (result.isFailure) {
+        expect(result.error.message).toContain(
+          'Cannot expire reservation in CONFIRMED status',
+        );
+      }
+    });
+  });
+
+  describe('findPendingExpired', () => {
+    it('should query with status PENDING, LessThan date, and optional limit', async () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+      const entity = ReservationMapper.toEntity(reservation);
+      typeOrmRepository.find.mockResolvedValue([entity]);
+
+      const testDate = new Date();
+      const result = await repository.findPendingExpired(testDate, 50);
+
+      expect(result.isSuccess).toBe(true);
+      expect(typeOrmRepository.find).toHaveBeenCalledWith({
+        where: {
+          status: ReservationStatus.PENDING,
+          expiresAt: expect.anything(),
+        },
+        take: 50,
+        order: { expiresAt: 'ASC' },
+      });
     });
   });
 });
