@@ -27,11 +27,16 @@ export abstract class ReservationRepository {
   ): Promise<Result<Reservation, RepositoryError>>;
   abstract findPendingExpired(
     date: Date,
+    limit?: number,
+    excludeIds?: number[],
   ): Promise<Result<Reservation[], RepositoryError>>;
   abstract release(
     reservation: Reservation,
   ): Promise<Result<Reservation, RepositoryError>>;
   abstract confirm(
+    reservation: Reservation,
+  ): Promise<Result<Reservation, RepositoryError>>;
+  abstract expire(
     reservation: Reservation,
   ): Promise<Result<Reservation, RepositoryError>>;
   abstract sumPendingReservedByProductIds(

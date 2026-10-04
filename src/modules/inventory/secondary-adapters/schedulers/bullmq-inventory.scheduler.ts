@@ -22,6 +22,7 @@ export class BullMqInventoryScheduler
 
   async onModuleInit() {
     await this.scheduleReconciliationJob();
+    await this.scheduleSweeperJob();
   }
 
   async scheduleReconciliationJob(): Promise<
@@ -66,6 +67,53 @@ export class BullMqInventoryScheduler
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule inventory reconciliation audit job',
+        error,
+      );
+    }
+  }
+
+  async scheduleSweeperJob(): Promise<
+    Result<{ jobId: string }, InfrastructureError>
+  > {
+    if (this.lifecycle.isShuttingDown) {
+      this.logger.debug(
+        'Skipping expired reservations sweeper schedule during shutdown',
+      );
+      return ErrorFactory.InfrastructureError(
+        'Skipped expired reservations sweeper schedule during shutdown',
+      );
+    }
+
+    const jobName = JobNames.SWEEP_EXPIRED_RESERVATIONS;
+    const cron = '*/5 * * * *'; // Every 5 minutes
+    const jobId = 'sweep-expired-reservations-job';
+
+    try {
+      await this.inventoryQueue.add(
+        jobName,
+        {},
+        {
+          repeat: { pattern: cron },
+          jobId,
+        },
+      );
+      this.logger.log(
+        'Expired reservations sweeper job scheduled successfully (cron: */5 * * * *)',
+      );
+      return Result.success({ jobId });
+    } catch (error) {
+      if (this.lifecycle.isShuttingDown) {
+        this.logger.debug(
+          'Failed to schedule expired reservations sweeper job (ignored during shutdown)',
+        );
+      } else {
+        this.logger.error(
+          'Failed to schedule expired reservations sweeper job',
+          error,
+        );
+      }
+      return ErrorFactory.InfrastructureError(
+        'Failed to schedule expired reservations sweeper job',
         error,
       );
     }

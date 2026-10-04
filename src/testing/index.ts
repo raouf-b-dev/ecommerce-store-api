@@ -9,6 +9,7 @@ export * from './helpers/poll.helper';
 export * from './helpers/http-error-assertion.helper';
 export * from './helpers/http-status.helper';
 export * from './helpers/result-assertion.helper';
+export * from './helpers/defined-assertion.helper';
 export * from './helpers/test-data.helper';
 export * from './helpers/logger-test.helper';
 export {
@@ -36,4 +37,5 @@ export * from './mocks/application-lifecycle.mock';
 export * from './mocks/flow-producer.service.mock';
 export * from './mocks/job-config.service.mock';
 export * from './mocks/queue.mock';
+export * from './mocks/job.mock';
 export * from '../infrastructure/redis/testing';

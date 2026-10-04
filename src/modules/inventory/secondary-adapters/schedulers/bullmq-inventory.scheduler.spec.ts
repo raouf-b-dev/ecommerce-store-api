@@ -4,7 +4,11 @@ import { Queue } from 'bullmq';
 import { BullMqInventoryScheduler } from './bullmq-inventory.scheduler';
 import { JobNames } from 'src/infrastructure/jobs/job-names';
 import { ApplicationLifecyclePort } from 'src/shared-kernel/domain/interfaces/application-lifecycle.port';
-import { MockApplicationLifecycle, createMockQueue } from 'src/testing';
+import {
+  MockApplicationLifecycle,
+  createMockQueue,
+  ResultAssertionHelper,
+} from 'src/testing';
 
 describe('BullMqInventoryScheduler', () => {
   let scheduler: BullMqInventoryScheduler;
@@ -33,7 +37,7 @@ describe('BullMqInventoryScheduler', () => {
   });
 
   describe('onModuleInit', () => {
-    it('should schedule inventory reconciliation audit job on module init', async () => {
+    it('should schedule inventory reconciliation and sweeper jobs on module init', async () => {
       await scheduler.onModuleInit();
 
       expect(mockQueue.add).toHaveBeenCalledWith(
@@ -42,6 +46,14 @@ describe('BullMqInventoryScheduler', () => {
         {
           repeat: { pattern: '0 4 * * *' },
           jobId: 'inventory-reconciliation-job',
+        },
+      );
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        JobNames.SWEEP_EXPIRED_RESERVATIONS,
+        {},
+        {
+          repeat: { pattern: '*/5 * * * *' },
+          jobId: 'sweep-expired-reservations-job',
         },
       );
     });
@@ -76,6 +88,40 @@ describe('BullMqInventoryScheduler', () => {
           'Failed to schedule inventory reconciliation audit job',
         );
       }
+    });
+  });
+
+  describe('scheduleSweeperJob', () => {
+    it('should return success result when sweeper job is added to queue', async () => {
+      const result = await scheduler.scheduleSweeperJob();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({
+        jobId: 'sweep-expired-reservations-job',
+      });
+    });
+
+    it('should return infrastructure error when queue fails', async () => {
+      mockQueue.add.mockRejectedValueOnce(new Error('Redis connection failed'));
+
+      const result = await scheduler.scheduleSweeperJob();
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule expired reservations sweeper job',
+      );
+    });
+
+    it('should return infrastructure error and skip when shutting down', async () => {
+      lifecycle.isShuttingDown = true;
+
+      const result = await scheduler.scheduleSweeperJob();
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Skipped expired reservations sweeper schedule during shutdown',
+      );
+      expect(mockQueue.add).not.toHaveBeenCalled();
     });
   });
 });

@@ -149,6 +149,11 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     backoffStrategy: BackoffStrategy.FIXED,
     initialDelay: 0,
   },
+  [JobNames.SWEEP_EXPIRED_RESERVATIONS]: {
+    maxAttempts: 1,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 0,
+  },
   [JobNames.EXPIRE_PENDING_ORDERS]: {
     maxAttempts: 1,
     backoffStrategy: BackoffStrategy.FIXED,

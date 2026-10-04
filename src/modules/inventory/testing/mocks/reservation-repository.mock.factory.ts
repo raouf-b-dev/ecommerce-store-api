@@ -26,13 +26,17 @@ export class MockReservationRepository implements ReservationRepository {
   >();
   findPendingExpired = jest.fn<
     Promise<Result<Reservation[], RepositoryError>>,
-    [Date]
+    [Date, number?, number[]?]
   >();
   confirm = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
     [Reservation]
   >();
   release = jest.fn<
+    Promise<Result<Reservation, RepositoryError>>,
+    [Reservation]
+  >();
+  expire = jest.fn<
     Promise<Result<Reservation, RepositoryError>>,
     [Reservation]
   >();
@@ -115,6 +119,16 @@ export class MockReservationRepository implements ReservationRepository {
 
   mockReleaseFailure(errorMessage: string): void {
     this.release.mockResolvedValue(
+      Result.failure(new RepositoryError(errorMessage)),
+    );
+  }
+
+  mockSuccessfulExpire(reservation: Reservation): void {
+    this.expire.mockResolvedValue(Result.success(reservation));
+  }
+
+  mockExpireFailure(errorMessage: string): void {
+    this.expire.mockResolvedValue(
       Result.failure(new RepositoryError(errorMessage)),
     );
   }

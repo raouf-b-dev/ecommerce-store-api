@@ -5,7 +5,8 @@ import { InventoryEntity } from '../../orm/inventory.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { seedSingleUnitInventory } from 'test/integration/harness/inventory-seed.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
-import { ResultAssertionHelper } from 'src/testing';
+import { ResultAssertionHelper, assertDefined } from 'src/testing';
+import { ReservationStatus } from '../../../core/domain/value-objects/reservation-status';
 
 /**
  * Pre-flight (concurrency proof):
@@ -46,9 +47,10 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const inventory = await IntegrationTestHelper.getRepository(
         InventoryEntity,
       ).findOneBy({ productId: seededData.product.id });
+      assertDefined(inventory);
 
-      expect(inventory!.availableQuantity).toBe(48);
-      expect(inventory!.reservedQuantity).toBe(7);
+      expect(inventory.availableQuantity).toBe(48);
+      expect(inventory.reservedQuantity).toBe(7);
 
       const reservationCount =
         await IntegrationTestHelper.getRepository(ReservationEntity).count();
@@ -76,8 +78,9 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const inventory = await inventoryRepo.findOneBy({
         productId: seededData.product.id,
       });
-      expect(inventory!.availableQuantity).toBe(0);
-      expect(inventory!.reservedQuantity).toBe(5);
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(0);
+      expect(inventory.reservedQuantity).toBe(5);
     });
 
     it('returns failure when inventory row does not exist', async () => {
@@ -103,13 +106,16 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const saveResult = await repository.save(dto);
       ResultAssertionHelper.assertResultSuccess(saveResult);
 
-      const byId = await repository.findById(saveResult.value.id!);
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      const byId = await repository.findById(reservationId);
       ResultAssertionHelper.assertResultSuccess(byId);
       expect(byId.value.orderId).toBe(10);
 
       const byOrderId = await repository.findByOrderId(10);
       ResultAssertionHelper.assertResultSuccess(byOrderId);
-      expect(byOrderId.value.id).toBe(saveResult.value.id);
+      expect(byOrderId.value.id).toBe(reservationId);
     });
   });
 
@@ -123,9 +129,12 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const saveResult = await repository.save(dto);
       ResultAssertionHelper.assertResultSuccess(saveResult);
 
-      const loaded = await repository.findById(saveResult.value.id!);
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      const loaded = await repository.findById(reservationId);
       ResultAssertionHelper.assertResultSuccess(loaded);
-      loaded.value.release();
+      ResultAssertionHelper.assertResultSuccess(loaded.value.release());
 
       const releaseResult = await repository.release(loaded.value);
       ResultAssertionHelper.assertResultSuccess(releaseResult);
@@ -133,8 +142,58 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const inventory = await IntegrationTestHelper.getRepository(
         InventoryEntity,
       ).findOneBy({ productId: seededData.product.id });
-      expect(inventory!.availableQuantity).toBe(50);
-      expect(inventory!.reservedQuantity).toBe(5);
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(50);
+      expect(inventory.reservedQuantity).toBe(5);
+    });
+
+    it('releasing a CONFIRMED reservation restocks available quantity without double-decrementing reserved quantity', async () => {
+      // Seeded: available 50, reserved 5.
+      // 1. Reserve 3 -> available 47, reserved 8.
+      const dto = InventoryCommandTestFactory.createReservationForOrder(
+        21,
+        seededData.product.id,
+        3,
+      );
+      const saveResult = await repository.save(dto);
+      ResultAssertionHelper.assertResultSuccess(saveResult);
+
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      const loadedForConfirm = await repository.findById(reservationId);
+      ResultAssertionHelper.assertResultSuccess(loadedForConfirm);
+      ResultAssertionHelper.assertResultSuccess(
+        loadedForConfirm.value.confirm(),
+      );
+
+      // 2. Confirm 3 -> available 47, reserved 5.
+      const confirmResult = await repository.confirm(loadedForConfirm.value);
+      ResultAssertionHelper.assertResultSuccess(confirmResult);
+
+      let inventory = await IntegrationTestHelper.getRepository(
+        InventoryEntity,
+      ).findOneBy({ productId: seededData.product.id });
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(47);
+      expect(inventory.reservedQuantity).toBe(5);
+
+      // 3. Release CONFIRMED reservation (e.g. order cancel) -> should end at available 50, reserved 5
+      const loadedForRelease = await repository.findById(reservationId);
+      ResultAssertionHelper.assertResultSuccess(loadedForRelease);
+      ResultAssertionHelper.assertResultSuccess(
+        loadedForRelease.value.returnConfirmedToStock(),
+      );
+
+      const releaseResult = await repository.release(loadedForRelease.value);
+      ResultAssertionHelper.assertResultSuccess(releaseResult);
+
+      inventory = await IntegrationTestHelper.getRepository(
+        InventoryEntity,
+      ).findOneBy({ productId: seededData.product.id });
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(50);
+      expect(inventory.reservedQuantity).toBe(5);
     });
   });
 
@@ -148,7 +207,10 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const saveResult = await repository.save(dto);
       ResultAssertionHelper.assertResultSuccess(saveResult);
 
-      const loaded = await repository.findById(saveResult.value.id!);
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      const loaded = await repository.findById(reservationId);
       ResultAssertionHelper.assertResultSuccess(loaded);
       ResultAssertionHelper.assertResultSuccess(loaded.value.confirm());
 
@@ -158,13 +220,144 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const inventory = await IntegrationTestHelper.getRepository(
         InventoryEntity,
       ).findOneBy({ productId: seededData.product.id });
-      expect(inventory!.availableQuantity).toBe(47);
-      expect(inventory!.reservedQuantity).toBe(5);
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(47);
+      expect(inventory.reservedQuantity).toBe(5);
+    });
+
+    it('fails when confirming a RELEASED reservation and does not mutate inventory', async () => {
+      const dto = InventoryCommandTestFactory.createReservationForOrder(
+        31,
+        seededData.product.id,
+        3,
+      );
+      const saveResult = await repository.save(dto);
+      ResultAssertionHelper.assertResultSuccess(saveResult);
+
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      const loaded = await repository.findById(reservationId);
+      ResultAssertionHelper.assertResultSuccess(loaded);
+      ResultAssertionHelper.assertResultSuccess(loaded.value.release());
+
+      const releaseResult = await repository.release(loaded.value);
+      ResultAssertionHelper.assertResultSuccess(releaseResult);
+
+      // Stale attempt to confirm released reservation
+      const confirmResult = await repository.confirm(loaded.value);
+      ResultAssertionHelper.assertResultFailure(
+        confirmResult,
+        'Cannot confirm reservation in RELEASED status',
+      );
+
+      const inventory = await IntegrationTestHelper.getRepository(
+        InventoryEntity,
+      ).findOneBy({ productId: seededData.product.id });
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(50);
+      expect(inventory.reservedQuantity).toBe(5);
+    });
+  });
+
+  describe('check constraints', () => {
+    it('rejects negative availableQuantity at the database level', async () => {
+      const inventoryRepo =
+        IntegrationTestHelper.getRepository(InventoryEntity);
+      await expect(
+        inventoryRepo.update(
+          { productId: seededData.product.id },
+          { availableQuantity: -1 },
+        ),
+      ).rejects.toThrow(/chk_inventory_available_quantity/);
+    });
+
+    it('rejects negative reservedQuantity at the database level', async () => {
+      const inventoryRepo =
+        IntegrationTestHelper.getRepository(InventoryEntity);
+      await expect(
+        inventoryRepo.update(
+          { productId: seededData.product.id },
+          { reservedQuantity: -1 },
+        ),
+      ).rejects.toThrow(/chk_inventory_reserved_quantity/);
+    });
+  });
+
+  describe('expire and findPendingExpired', () => {
+    it('expires a stale PENDING reservation and returns its stock to available', async () => {
+      // 1. Reserve 3 -> available 47, reserved 8
+      const dto = InventoryCommandTestFactory.createReservationForOrder(
+        40,
+        seededData.product.id,
+        3,
+      );
+      const saveResult = await repository.save(dto);
+      ResultAssertionHelper.assertResultSuccess(saveResult);
+
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      // Backdate expiresAt to simulate abandoned checkout
+      const reservationRepo =
+        IntegrationTestHelper.getRepository(ReservationEntity);
+      await reservationRepo.update(
+        { id: reservationId },
+        { expiresAt: new Date(Date.now() - 60000) },
+      );
+
+      // 2. Query expired reservations with bounded batch
+      const now = new Date();
+      const expiredResult = await repository.findPendingExpired(now, 10);
+      ResultAssertionHelper.assertResultSuccess(expiredResult);
+      expect(expiredResult.value.length).toBeGreaterThanOrEqual(1);
+
+      const toExpire = expiredResult.value.find((r) => r.id === reservationId);
+      assertDefined(toExpire);
+
+      // 3. Expire the reservation
+      ResultAssertionHelper.assertResultSuccess(toExpire.expire());
+      const expireResult = await repository.expire(toExpire);
+      ResultAssertionHelper.assertResultSuccess(expireResult);
+
+      // 4. Verify inventory is returned: available 50, reserved 5
+      const inventory = await IntegrationTestHelper.getRepository(
+        InventoryEntity,
+      ).findOneBy({ productId: seededData.product.id });
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(50);
+      expect(inventory.reservedQuantity).toBe(5);
+
+      // 5. Verify DB row is EXPIRED
+      const updatedEntity = await reservationRepo.findOneBy({
+        id: reservationId,
+      });
+      assertDefined(updatedEntity);
+      expect(updatedEntity.status).toBe(ReservationStatus.EXPIRED);
+    });
+
+    it('does not return active (non-expired) reservations in findPendingExpired', async () => {
+      const dto = InventoryCommandTestFactory.createReservationForOrder(
+        41,
+        seededData.product.id,
+        2,
+      );
+      const saveResult = await repository.save(dto);
+      ResultAssertionHelper.assertResultSuccess(saveResult);
+
+      const reservationId = saveResult.value.id;
+      assertDefined(reservationId);
+
+      // expiresAt is 40 minutes in the future; querying with now should not find it
+      const expiredResult = await repository.findPendingExpired(new Date(), 10);
+      ResultAssertionHelper.assertResultSuccess(expiredResult);
+      const found = expiredResult.value.find((r) => r.id === reservationId);
+      expect(found).toBeUndefined();
     });
   });
 
   describe('concurrent checkout inventory invariant - repository-level reservation proof', () => {
-    it('serializes parallel saves: 1 available unit → exactly 1 reservation succeeds', async () => {
+    it('serializes parallel saves: 1 available unit -> exactly 1 reservation succeeds', async () => {
       const dataSource = IntegrationTestHelper.getDataSource();
       await seedSingleUnitInventory(dataSource, seededData.product.id);
 
@@ -195,8 +388,9 @@ describe('PostgresReservationRepository (Integration - Real DB)', () => {
       const inventory = await IntegrationTestHelper.getRepository(
         InventoryEntity,
       ).findOneBy({ productId: seededData.product.id });
-      expect(inventory!.availableQuantity).toBe(0);
-      expect(inventory!.reservedQuantity).toBe(1);
+      assertDefined(inventory);
+      expect(inventory.availableQuantity).toBe(0);
+      expect(inventory.reservedQuantity).toBe(1);
 
       const reservationCount =
         await IntegrationTestHelper.getRepository(ReservationEntity).count();
