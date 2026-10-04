@@ -23,6 +23,7 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { E2eInventoryHelper } from 'src/testing/helpers/e2e-inventory.helper';
 
 describe('Admin order lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -159,11 +160,29 @@ describe('Admin order lifecycle (e2e)', () => {
       PaymentStatusType.REFUNDED,
     );
 
+    await E2eInventoryHelper.waitForProductStock(
+      http,
+      admin.accessToken,
+      cancelProduct.id,
+      { availableQuantity: 1, reservedQuantity: 0 },
+      'restock after cancel',
+    );
+
     const secondCancelResponse = await http
       .patch(`${E2E_API_PREFIX}/orders/${orderId}/cancel`)
       .set(AuthTestHelper.bearer(admin.accessToken));
     expect(secondCancelResponse.status).toBe(HttpStatus.OK);
     expect(secondCancelResponse.body.status).toBe(OrderStatus.CANCELLED);
+
+    const stockAfterSecondCancel = await E2eInventoryHelper.getProductStock(
+      http,
+      admin.accessToken,
+      cancelProduct.id,
+    );
+    expect(stockAfterSecondCancel).toEqual({
+      availableQuantity: 1,
+      reservedQuantity: 0,
+    });
   }, 180_000);
 
   it('rejects admin cancel of a shipped order with 409 Conflict', async () => {

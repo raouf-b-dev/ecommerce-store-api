@@ -13,6 +13,7 @@ import { PaymentMapper } from '../../../../secondary-adapters/persistence/mapper
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
@@ -138,6 +139,60 @@ describe('ProcessRefundUseCase', () => {
 
     const result = await useCase.execute(command);
 
-    ResultAssertionHelper.assertResultFailure(result);
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Refund amount exceeds remaining payment amount',
+    );
+    expect(defaultGateway.refund).not.toHaveBeenCalled();
+  });
+
+  it('returns success idempotently without calling gateway if payment is already REFUNDED', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 100,
+      refundedAmount: 100,
+      status: PaymentStatusType.REFUNDED,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 100,
+    };
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(defaultGateway.refund).not.toHaveBeenCalled();
+    expect(paymentRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('fails without calling gateway if payment cannot be refunded in current status', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 100,
+      refundedAmount: 0,
+      status: PaymentStatusType.PENDING,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 50,
+    };
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Payment cannot be refunded in current status',
+    );
+    expect(defaultGateway.refund).not.toHaveBeenCalled();
   });
 });

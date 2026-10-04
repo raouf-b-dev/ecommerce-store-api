@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { UnrecoverableError } from 'bullmq';
 import { RefundPaymentStep, RefundPaymentJobData } from './refund-payment.job';
 import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
@@ -29,9 +30,10 @@ describe('RefundPaymentStep', () => {
 
   it('refunds payment successfully when valid amount is provided', async () => {
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       paymentId: 10,
       amount: 49.99,
-      orderId: 1,
+      reason: 'Order cancelled',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
@@ -40,14 +42,16 @@ describe('RefundPaymentStep', () => {
     expect(execute).toHaveBeenCalledWith({
       paymentId: 10,
       amount: 49.99,
-      reason: 'Order cancellation refund',
+      reason: 'Order cancelled',
     });
   });
 
-  it('refunds payment using orderTotal fallback when amount is not provided', async () => {
+  it('passes checkout compensation reason to use case', async () => {
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       paymentId: 10,
-      orderTotal: 35.5,
+      amount: 35.5,
+      reason: 'Checkout compensation',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
@@ -56,24 +60,30 @@ describe('RefundPaymentStep', () => {
     expect(execute).toHaveBeenCalledWith({
       paymentId: 10,
       amount: 35.5,
-      reason: 'Order cancellation refund',
+      reason: 'Checkout compensation',
     });
   });
 
-  it('rejects refund when paymentId is missing', async () => {
+  it('rejects refund as non-retryable UnrecoverableError when paymentId is missing', async () => {
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       amount: 50,
+      reason: 'Order cancelled',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
-    await expect(jobHandler.handle(mockJob)).rejects.toThrow();
+    await expect(jobHandler.handle(mockJob)).rejects.toThrow(
+      UnrecoverableError,
+    );
     expect(execute).not.toHaveBeenCalled();
   });
 
   it('rejects refund when amount is zero', async () => {
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       paymentId: 10,
       amount: 0,
+      reason: 'Order cancelled',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
@@ -83,8 +93,10 @@ describe('RefundPaymentStep', () => {
 
   it('rejects refund when amount is negative', async () => {
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       paymentId: 10,
       amount: -10,
+      reason: 'Order cancelled',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
@@ -98,8 +110,10 @@ describe('RefundPaymentStep', () => {
     );
 
     const jobData: RefundPaymentJobData = {
+      orderId: 1,
       paymentId: 10,
       amount: 25,
+      reason: 'Order cancelled',
     };
     const mockJob = createMockJob('refund-payment', jobData);
 

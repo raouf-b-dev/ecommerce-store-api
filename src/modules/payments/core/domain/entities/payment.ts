@@ -334,6 +334,10 @@ export class Payment implements IPayment {
     return this._status.isRefunded();
   }
 
+  canBeRefunded(): boolean {
+    return this._status.canBeRefunded();
+  }
+
   isFullyRefunded(): boolean {
     return this._refundedAmount.equals(this._amount);
   }

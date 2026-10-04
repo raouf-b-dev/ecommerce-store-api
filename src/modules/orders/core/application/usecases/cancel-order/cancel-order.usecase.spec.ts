@@ -189,11 +189,12 @@ describe('CancelOrderUseCase', () => {
       const result = await useCase.execute({ orderId });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith(
-        42,
-        paidOrder.totalPrice,
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
-      );
+        paymentId: 42,
+        amount: paidOrder.totalPrice,
+        reason: 'Order cancelled',
+      });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
@@ -212,12 +213,100 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     });
 
-    it('succeeds idempotently without second refund or restock when order is already cancelled', async () => {
+    it('fails when paid order has totalPrice 0 without refund or save', async () => {
+      const orderId = 1;
+      const zeroPaidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+        items: [
+          {
+            id: 1,
+            productId: 1,
+            productName: 'Free item',
+            quantity: 1,
+            unitPrice: 0,
+          },
+        ],
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(zeroPaidOrder);
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Refund amount must be greater than zero',
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
+
+    it('re-queues refund when cancelling an already CANCELLED order with paymentId', async () => {
       const orderId = 1;
       const cancelledOrder = OrderTestFactory.createDomainOrder({
         id: orderId,
         status: OrderStatus.CANCELLED,
         paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
+      expect(domainEventPublisher.publish).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId,
+        paymentId: 42,
+        amount: cancelledOrder.totalPrice,
+        reason: 'Order cancelled',
+      });
+    });
+
+    it('returns 500 when re-queuing refund fails on already CANCELLED order with paymentId', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        ErrorFactory.InfrastructureError('Queue connection refused'),
+      );
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order cancelled but the refund could not be scheduled',
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 500 },
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
+      expect(domainEventPublisher.publish).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when order is already CANCELLED without paymentId', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
       });
 
       mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
@@ -229,6 +318,7 @@ describe('CancelOrderUseCase', () => {
       expect(
         mockOrderScheduler.scheduleOrderStockRelease,
       ).not.toHaveBeenCalled();
+      expect(domainEventPublisher.publish).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     });
 
@@ -252,7 +342,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     });
 
-    it('fails cancel without saving when refund cannot be enqueued', async () => {
+    it('returns 500 with order saved when refund cannot be enqueued', async () => {
       const orderId = 1;
       const paidOrder = OrderTestFactory.createDomainOrder({
         id: orderId,
@@ -261,6 +351,7 @@ describe('CancelOrderUseCase', () => {
       });
 
       mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockRepository.mockSuccessfulSave();
       mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
         ErrorFactory.InfrastructureError('Queue down'),
       );
@@ -269,9 +360,13 @@ describe('CancelOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Failed to schedule refund for order',
+        'Order cancelled but the refund could not be scheduled',
       );
-      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 500 },
+      });
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
   });
 });

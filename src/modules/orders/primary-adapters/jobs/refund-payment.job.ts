@@ -8,11 +8,10 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface RefundPaymentJobData {
+  orderId: number;
   paymentId?: number;
-  amount?: number;
-  orderTotal?: number;
-  orderId?: number;
-  reason?: string;
+  amount: number;
+  reason: string;
   correlationId?: string;
 }
 
@@ -37,8 +36,7 @@ export class RefundPaymentStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<RefundPaymentJobData>,
   ): Promise<Result<void, AppError>> {
-    const { paymentId } = job.data;
-    const amount = job.data.amount ?? job.data.orderTotal;
+    const { paymentId, amount, reason } = job.data;
 
     if (!paymentId) {
       this.logger.warn('No payment ID found to refund.');
@@ -59,7 +57,7 @@ export class RefundPaymentStep extends BaseJobHandler<
     const result = await this.refundPaymentUseCase.execute({
       paymentId,
       amount,
-      reason: job.data.reason || 'Order cancellation refund',
+      reason,
     });
 
     if (isFailure(result)) {

@@ -10,6 +10,7 @@ import { PaymentRepository } from '../../../domain/repositories/payment.reposito
 import { Refund } from '../../../domain/entities/refund';
 import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ProcessRefundCommand } from '../../commands/process-refund.command';
 
@@ -42,6 +43,22 @@ export class ProcessRefundUseCase extends UseCase<
     if (isFailure(paymentResult)) return paymentResult;
 
     const payment = paymentResult.value;
+
+    if (payment.status === PaymentStatusType.REFUNDED) {
+      return Result.success(payment.toPrimitives());
+    }
+
+    if (!payment.canBeRefunded()) {
+      return ErrorFactory.UseCaseError(
+        'Payment cannot be refunded in current status',
+      );
+    }
+
+    if (amount > payment.remainingAmount) {
+      return ErrorFactory.UseCaseError(
+        'Refund amount exceeds remaining payment amount',
+      );
+    }
 
     // 1. Get Gateway
     const gateway = this.paymentGatewayResolver.getGateway(

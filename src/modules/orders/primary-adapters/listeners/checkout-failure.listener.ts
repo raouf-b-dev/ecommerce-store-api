@@ -6,6 +6,7 @@ import { InventoryReservationGateway } from '../../core/application/ports/invent
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
 import { parseCheckoutCompensationJobData } from './checkout-compensation-job-data';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -31,6 +32,13 @@ export class CheckoutFailureListener implements OnModuleInit {
           const job = await this.checkoutQueue.getJob(jobId);
           if (!job) {
             this.logger.error(`Could not find job ${jobId} for compensation`);
+            return;
+          }
+
+          if (job.name === JobNames.REFUND_PAYMENT) {
+            this.logger.debug(
+              `Job ${jobId} is a refund payment job. Skipping checkout compensation.`,
+            );
             return;
           }
 

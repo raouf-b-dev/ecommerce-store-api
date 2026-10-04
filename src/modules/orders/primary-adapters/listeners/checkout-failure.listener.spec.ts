@@ -10,6 +10,7 @@ import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/rel
 import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
 import { MockInventoryReservationGateway } from 'src/modules/orders/testing';
 import { Result } from '../../../../shared-kernel/domain/result';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
 
 describe('CheckoutFailureListener', () => {
   let listener: CheckoutFailureListener;
@@ -118,5 +119,32 @@ describe('CheckoutFailureListener', () => {
       isSagaCompensation: true,
     });
     expect(releaseExecute).toHaveBeenCalledWith(99);
+  });
+
+  it('skips compensation for failed REFUND_PAYMENT jobs', async () => {
+    listener.onModuleInit();
+
+    expect(onFailedHandler).toBeDefined();
+
+    getJob.mockResolvedValueOnce({
+      id: 'job-refund-1',
+      name: JobNames.REFUND_PAYMENT,
+      data: {
+        orderId: 10,
+        paymentId: 5,
+        amount: 100,
+        reason: 'Order cancelled',
+      },
+    });
+
+    if (onFailedHandler) {
+      await onFailedHandler({
+        jobId: 'job-refund-1',
+        failedReason: 'Gateway timeout',
+      });
+    }
+
+    expect(cancelExecute).not.toHaveBeenCalled();
+    expect(releaseExecute).not.toHaveBeenCalled();
   });
 });
