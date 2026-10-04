@@ -93,7 +93,6 @@ describe('Order', () => {
       OrderStatus.PAYMENT_FAILED,
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.SHIPPED,
     ])('allows cancellation when status is %s', (status) => {
       const order = OrderTestFactory.createDomainOrder({
         status,
@@ -107,6 +106,7 @@ describe('Order', () => {
     });
 
     it.each([
+      OrderStatus.SHIPPED,
       OrderStatus.DELIVERED,
       OrderStatus.REFUNDED,
       OrderStatus.CANCELLED,
@@ -123,6 +123,10 @@ describe('Order', () => {
         'Order cannot be cancelled in current state',
         DomainError,
       );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 409 },
+      });
     });
   });
 

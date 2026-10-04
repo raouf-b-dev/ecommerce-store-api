@@ -40,13 +40,22 @@ export class MockPaymentGateway implements IPaymentGateway {
   }
 
   mockSuccessfulRefund(transactionId: string = 'txn_refund_123'): void {
-    this.refund.mockResolvedValue(
-      Result.success({
-        success: true,
-        transactionId,
-        status: PaymentStatusType.REFUNDED,
-      }),
-    );
+    this.refund.mockImplementation((_txnId: string, amount: number) => {
+      if (amount <= 0) {
+        return Promise.resolve(
+          ErrorFactory.InfrastructureError(
+            'Refund amount must be greater than zero',
+          ),
+        );
+      }
+      return Promise.resolve(
+        Result.success({
+          success: true,
+          transactionId,
+          status: PaymentStatusType.REFUNDED,
+        }),
+      );
+    });
   }
 
   mockFailedRefund(message: string): void {

@@ -5,6 +5,7 @@ import {
   OrderScheduler,
   ScheduleCheckoutProps,
   SchedulePostPaymentProps,
+  ScheduleRefundPaymentProps,
 } from '../../core/domain/schedulers/order.scheduler';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -204,6 +205,39 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule order stock release',
+        error,
+      );
+    }
+  }
+
+  async scheduleRefundPayment(
+    props: ScheduleRefundPaymentProps,
+  ): Promise<Result<string, InfrastructureError>> {
+    try {
+      const identifier = `order-${props.orderId}`;
+      const jobId = this.jobConfig.getJobId(
+        JobNames.REFUND_PAYMENT,
+        identifier,
+      );
+      const correlationId = this.correlation.getId();
+
+      await this.flowProducerService.add({
+        name: JobNames.REFUND_PAYMENT,
+        queueName: 'checkout',
+        data: {
+          orderId: props.orderId,
+          paymentId: props.paymentId,
+          amount: props.amount,
+          reason: props.reason,
+          ...(correlationId ? { correlationId } : {}),
+        },
+        opts: this.jobConfig.getJobOptions(JobNames.REFUND_PAYMENT, identifier),
+      });
+
+      return Result.success(jobId);
+    } catch (error) {
+      return ErrorFactory.InfrastructureError(
+        'Failed to schedule payment refund',
         error,
       );
     }

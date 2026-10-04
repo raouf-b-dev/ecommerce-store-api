@@ -6,6 +6,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { OrderStatus } from 'src/modules/orders/core/domain/value-objects/order-status.enum';
+import { PaymentStatusType } from 'src/modules/payments/core/domain/value-objects/payment-status';
 import {
   AuthSession,
   AuthTestHelper,
@@ -22,6 +23,10 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { DataSource } from 'typeorm';
+import { PaymentEntity } from 'src/modules/payments/secondary-adapters/orm/payment.schema';
+import { E2eInventoryHelper } from 'src/testing/helpers/e2e-inventory.helper';
+import { assertDefined } from 'src/testing';
 
 describe('Admin order lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -31,6 +36,7 @@ describe('Admin order lifecycle (e2e)', () => {
   let customer: AuthSession;
   let shipProduct: E2eCatalogProduct;
   let cancelProduct: E2eCatalogProduct;
+  let shippedProduct: E2eCatalogProduct;
 
   beforeAll(async () => {
     const context = await E2eTestAppHelper.createApp();
@@ -52,6 +58,13 @@ describe('Admin order lifecycle (e2e)', () => {
       admin,
       1,
       'cancel',
+    );
+    shippedProduct = await E2eCatalogHelper.createProductWithStock(
+      moduleRef,
+      http,
+      admin,
+      1,
+      'cancel-shipped',
     );
     customer = await AuthTestHelper.registerAndLogin(http, {
       firstName: 'AdminFlow',
@@ -125,7 +138,7 @@ describe('Admin order lifecycle (e2e)', () => {
     expect(customerView.body.status).toBe(OrderStatus.SHIPPED);
   }, 180_000);
 
-  it('lets admin cancel a confirmed order', async () => {
+  it('lets admin cancel a confirmed order and triggers a refund', async () => {
     const orderId = await checkoutAndConfirm(cancelProduct);
 
     const cancelResponse = await http
@@ -139,5 +152,77 @@ describe('Admin order lifecycle (e2e)', () => {
       .set(AuthTestHelper.bearer(customer.accessToken));
     expect(customerView.status).toBe(HttpStatus.OK);
     expect(customerView.body.status).toBe(OrderStatus.CANCELLED);
+
+    const payment = await E2eOrderHelper.waitForPaymentStatus(
+      http,
+      customer,
+      orderId,
+      PaymentStatusType.REFUNDED,
+    );
+    expect(String(payment.status).toUpperCase()).toBe(
+      PaymentStatusType.REFUNDED,
+    );
+
+    await E2eInventoryHelper.waitForProductStock(
+      http,
+      admin.accessToken,
+      cancelProduct.id,
+      { availableQuantity: 1, reservedQuantity: 0 },
+      'restock after cancel',
+    );
+
+    const secondCancelResponse = await http
+      .patch(`${E2E_API_PREFIX}/orders/${orderId}/cancel`)
+      .set(AuthTestHelper.bearer(admin.accessToken));
+    expect(secondCancelResponse.status).toBe(HttpStatus.OK);
+    expect(secondCancelResponse.body.status).toBe(OrderStatus.CANCELLED);
+
+    const stockAfterSecondCancel = await E2eInventoryHelper.getProductStock(
+      http,
+      admin.accessToken,
+      cancelProduct.id,
+    );
+    expect(stockAfterSecondCancel).toEqual({
+      availableQuantity: 1,
+      reservedQuantity: 0,
+    });
+
+    const dataSource = moduleRef.get(DataSource);
+    const paymentRecord = await dataSource
+      .getRepository(PaymentEntity)
+      .findOne({
+        where: { orderId },
+        relations: ['refunds'],
+      });
+    assertDefined(paymentRecord);
+    expect(paymentRecord.refunds).toHaveLength(1);
+    expect(Number(paymentRecord.refundedAmount)).toBe(
+      Number(paymentRecord.amount),
+    );
+  }, 180_000);
+
+  it('rejects admin cancel of a shipped order with 409 Conflict', async () => {
+    const orderId = await checkoutAndConfirm(shippedProduct);
+
+    const processResponse = await http
+      .patch(`${E2E_API_PREFIX}/orders/${orderId}/process`)
+      .set(AuthTestHelper.bearer(admin.accessToken));
+    expect(processResponse.status).toBe(HttpStatus.OK);
+
+    const shipResponse = await http
+      .patch(`${E2E_API_PREFIX}/orders/${orderId}/ship`)
+      .set(AuthTestHelper.bearer(admin.accessToken));
+    expect(shipResponse.status).toBe(HttpStatus.OK);
+
+    const cancelResponse = await http
+      .patch(`${E2E_API_PREFIX}/orders/${orderId}/cancel`)
+      .set(AuthTestHelper.bearer(admin.accessToken));
+    expect(cancelResponse.status).toBe(HttpStatus.CONFLICT);
+
+    const customerView = await http
+      .get(`${E2E_API_PREFIX}/orders/${orderId}`)
+      .set(AuthTestHelper.bearer(customer.accessToken));
+    expect(customerView.status).toBe(HttpStatus.OK);
+    expect(customerView.body.status).toBe(OrderStatus.SHIPPED);
   }, 180_000);
 });

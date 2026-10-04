@@ -127,7 +127,7 @@ describe('OrdersController', () => {
       ],
     }).compile();
 
-    controller = module.get<OrdersController>(OrdersController);
+    controller = module.get(OrdersController);
     checkoutUseCase = module.get(CheckoutUseCase);
     getOrderUseCase = module.get(GetOrderUseCase);
     listOrdersUseCase = module.get(ListOrdersUsecase);

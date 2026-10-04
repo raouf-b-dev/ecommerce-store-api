@@ -19,6 +19,13 @@ export interface SchedulePostPaymentProps {
   cartId: number;
 }
 
+export interface ScheduleRefundPaymentProps {
+  orderId: number;
+  paymentId: number;
+  amount: number;
+  reason: string;
+}
+
 export abstract class OrderScheduler {
   abstract scheduleCheckout(
     props: ScheduleCheckoutProps,
@@ -36,6 +43,10 @@ export abstract class OrderScheduler {
 
   abstract scheduleOrderStockRelease(
     orderId: number,
+  ): Promise<Result<string, InfrastructureError>>;
+
+  abstract scheduleRefundPayment(
+    props: ScheduleRefundPaymentProps,
   ): Promise<Result<string, InfrastructureError>>;
 
   abstract schedulePendingOrdersExpiration(): Promise<

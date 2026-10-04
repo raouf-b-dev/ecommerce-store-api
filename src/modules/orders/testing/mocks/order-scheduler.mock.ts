@@ -1,6 +1,7 @@
 import {
   OrderScheduler,
   ScheduleCheckoutProps,
+  ScheduleRefundPaymentProps,
 } from '../../core/domain/schedulers/order.scheduler';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
@@ -29,6 +30,11 @@ export class MockOrderScheduler implements OrderScheduler {
   scheduleOrderStockRelease = jest.fn<
     Promise<Result<string, InfrastructureError>>,
     [number]
+  >();
+
+  scheduleRefundPayment = jest.fn<
+    Promise<Result<string, InfrastructureError>>,
+    [ScheduleRefundPaymentProps]
   >();
 
   schedulePendingOrdersExpiration = jest.fn<
