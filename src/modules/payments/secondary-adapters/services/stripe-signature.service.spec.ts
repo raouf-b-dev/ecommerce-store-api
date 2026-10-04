@@ -57,6 +57,20 @@ describe('StripeSignatureService', () => {
     expect(result?.data.object.metadata).toEqual({ orderId: '100' });
   });
 
+  it('rejects re-serialized compact JSON of the same event when signed as pretty JSON', () => {
+    const service = createService(secret);
+    const signature = Stripe.webhooks.generateTestHeaderString({
+      payload: prettyJson,
+      secret,
+    });
+    const compactJson = JSON.stringify(JSON.parse(prettyJson));
+    const compactBody = Buffer.from(compactJson, 'utf8');
+
+    const result = service.verify(compactBody, signature);
+
+    expect(result).toBeNull();
+  });
+
   it('rejects a tampered body where one byte changed', () => {
     const service = createService(secret);
     const signature = Stripe.webhooks.generateTestHeaderString({
@@ -129,6 +143,36 @@ describe('StripeSignatureService', () => {
       const result = service.verify(rawBody, futureSignature);
 
       expect(result).toBeNull();
+    } finally {
+      ClockTestHelper.restore();
+    }
+  });
+
+  it('accepts signatures at the exact 300 second tolerance boundary (past and future)', () => {
+    const baseTime = new Date('2026-10-04T12:00:00Z');
+    ClockTestHelper.useFixedDate(baseTime);
+
+    try {
+      const service = createService(secret);
+      const nowSeconds = Math.floor(baseTime.getTime() / 1000);
+
+      const pastBoundarySignature = Stripe.webhooks.generateTestHeaderString({
+        payload: prettyJson,
+        secret,
+        timestamp: nowSeconds - 300,
+      });
+      const pastResult = service.verify(rawBody, pastBoundarySignature);
+      expect(pastResult).not.toBeNull();
+      expect(pastResult?.type).toBe('payment_intent.succeeded');
+
+      const futureBoundarySignature = Stripe.webhooks.generateTestHeaderString({
+        payload: prettyJson,
+        secret,
+        timestamp: nowSeconds + 300,
+      });
+      const futureResult = service.verify(rawBody, futureBoundarySignature);
+      expect(futureResult).not.toBeNull();
+      expect(futureResult?.type).toBe('payment_intent.succeeded');
     } finally {
       ClockTestHelper.restore();
     }

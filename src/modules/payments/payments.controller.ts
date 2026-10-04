@@ -65,8 +65,8 @@ export class PaymentsController {
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handleStripeWebhook(
-    @Headers('stripe-signature') signature: string,
-    @Req() req: RawBodyRequest<Request>,
+    @Headers('stripe-signature') signature: string | undefined,
+    @Req() req: Pick<RawBodyRequest<Request>, 'rawBody'>,
   ) {
     return await this.handleStripeWebhookUseCase.execute({
       signature,

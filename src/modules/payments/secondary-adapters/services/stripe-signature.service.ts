@@ -8,32 +8,6 @@ import { EnvConfigService } from '../../../../config/env-config.service';
 
 export const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function extractMetadata(value: unknown): Record<string, string> {
-  if (!isRecord(value)) {
-    return {};
-  }
-  const result: Record<string, string> = {};
-  for (const [k, v] of Object.entries(value)) {
-    if (typeof v === 'string') {
-      result[k] = v;
-    }
-  }
-  return result;
-}
-
-function extractLastPaymentError(
-  value: unknown,
-): { message: string } | undefined {
-  if (isRecord(value) && typeof value['message'] === 'string') {
-    return { message: value['message'] };
-  }
-  return undefined;
-}
-
 @Injectable()
 export class StripeSignatureService implements StripeSignatureVerifier {
   constructor(private readonly envConfigService: EnvConfigService) {}
@@ -53,6 +27,7 @@ export class StripeSignatureService implements StripeSignatureVerifier {
       return null;
     }
 
+    // stripe-node only rejects stale timestamps; also reject far-future ones
     const nowSeconds = Math.floor(Date.now() / 1000);
     if (timestamp - nowSeconds > STRIPE_SIGNATURE_TOLERANCE_SECONDS) {
       return null;
@@ -70,35 +45,38 @@ export class StripeSignatureService implements StripeSignatureVerifier {
       return null;
     }
 
-    const obj = event.data?.object;
-    if (!isRecord(obj)) {
-      return null;
+    if (
+      event.type === 'payment_intent.succeeded' ||
+      event.type === 'payment_intent.payment_failed'
+    ) {
+      const paymentIntent = event.data.object;
+      return {
+        type: event.type,
+        data: {
+          object: {
+            id: paymentIntent.id,
+            metadata: paymentIntent.metadata,
+            amount: paymentIntent.amount,
+            amount_received: paymentIntent.amount_received,
+            currency: paymentIntent.currency,
+            ...(paymentIntent.last_payment_error?.message
+              ? {
+                  last_payment_error: {
+                    message: paymentIntent.last_payment_error.message,
+                  },
+                }
+              : {}),
+          },
+        },
+      };
     }
-
-    const id = typeof obj['id'] === 'string' ? obj['id'] : '';
-    const metadata = extractMetadata(obj['metadata']);
-    const amount =
-      typeof obj['amount'] === 'number' ? obj['amount'] : undefined;
-    const amountReceived =
-      typeof obj['amount_received'] === 'number'
-        ? obj['amount_received']
-        : undefined;
-    const currency =
-      typeof obj['currency'] === 'string' ? obj['currency'] : undefined;
-    const lastPaymentError = extractLastPaymentError(obj['last_payment_error']);
 
     return {
       type: event.type,
       data: {
         object: {
-          id,
-          metadata,
-          ...(amount !== undefined ? { amount } : {}),
-          ...(amountReceived !== undefined
-            ? { amount_received: amountReceived }
-            : {}),
-          ...(currency !== undefined ? { currency } : {}),
-          ...(lastPaymentError ? { last_payment_error: lastPaymentError } : {}),
+          id: '',
+          metadata: {},
         },
       },
     };
@@ -109,9 +87,9 @@ export class StripeSignatureService implements StripeSignatureVerifier {
     for (const part of parts) {
       const trimmed = part.trim();
       if (trimmed.startsWith('t=')) {
-        const rawTs = trimmed.slice(2);
-        const parsed = parseInt(rawTs, 10);
-        if (!Number.isNaN(parsed)) {
+        const rawTs = trimmed.slice(2).trim();
+        const parsed = Number(rawTs);
+        if (Number.isInteger(parsed)) {
           return parsed;
         }
       }

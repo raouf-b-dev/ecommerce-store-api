@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { PaymentsController } from './payments.controller';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
@@ -96,9 +98,9 @@ describe('PaymentsController', () => {
   it('should delegate handleStripeWebhook to HandleStripeWebhookUseCase with signature and rawBody', async () => {
     const signature = 'stripe-signature';
     const rawBody = Buffer.from('{"id":"evt_123"}');
+    const req: Pick<RawBodyRequest<Request>, 'rawBody'> = { rawBody };
 
-    // @ts-expect-error Mock express RawBodyRequest with only rawBody property needed by controller
-    await controller.handleStripeWebhook(signature, { rawBody });
+    await controller.handleStripeWebhook(signature, req);
 
     expect(handleStripeWebhookUseCase.execute).toHaveBeenCalledWith({
       signature,

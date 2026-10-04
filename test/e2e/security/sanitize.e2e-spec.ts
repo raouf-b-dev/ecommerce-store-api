@@ -65,6 +65,10 @@ describe('Input sanitization (e2e)', () => {
     await E2eTestAppHelper.closeApp(app);
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('registers over HTTP with a <>& password and logs in with the exact same password', async () => {
     const email = `sanitize-http-flow-${Date.now()}@example.com`;
     const passwordWithSpecialChars = 'P@ss<word>&123!';
@@ -127,13 +131,7 @@ describe('Input sanitization (e2e)', () => {
     }
 
     const rawBodyString = receivedCommand.rawBody.toString('utf8');
-    const parsed = JSON.parse(rawBodyString);
-    expect(parsed).toEqual(rawPayload);
-    expect(parsed.data.object.metadata.note).toBe(
-      '<script>alert("xss")</script> Raw & Untouched Payload',
-    );
-
-    executeSpy.mockRestore();
+    expect(JSON.parse(rawBodyString)).toEqual(rawPayload);
   });
 
   it('sanitizes payloads sent to /v1/authorization/... routes', async () => {

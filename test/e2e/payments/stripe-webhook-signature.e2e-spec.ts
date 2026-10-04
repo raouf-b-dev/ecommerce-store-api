@@ -51,6 +51,10 @@ describe('Stripe webhook signature gate (e2e)', () => {
     await E2eTestAppHelper.closeApp(app);
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('accepts a valid signature over a pretty-printed body and returns 200', async () => {
     const response = await E2eStripeWebhookHelper.postSignedWebhook(
       http,
@@ -158,16 +162,8 @@ describe('Stripe webhook signature gate (e2e)', () => {
 
     expect(response.status).toBe(HttpStatus.OK);
     expect(executeSpy).toHaveBeenCalledTimes(1);
-
-    const firstCall = executeSpy.mock.calls[0];
-    expect(firstCall).toBeDefined();
-    if (firstCall !== undefined) {
-      const [callArg] = firstCall;
-      expect(callArg.metadata).toEqual(specialMetadata);
-      expect(callArg.metadata?.xss).toBe('<script>alert("safe")</script>');
-      expect(callArg.metadata?.symbols).toBe('Tom & Jerry && "quotes" <tag>');
-    }
-
-    executeSpy.mockRestore();
+    expect(executeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: specialMetadata }),
+    );
   });
 });
