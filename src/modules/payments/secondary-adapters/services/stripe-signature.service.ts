@@ -1,68 +1,99 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHmac, timingSafeEqual } from 'crypto';
+import Stripe from 'stripe';
+import {
+  StripeSignatureVerifier,
+  StripeWebhookPayload,
+} from '../../core/application/ports/stripe-signature-verifier';
+import { EnvConfigService } from '../../../../config/env-config.service';
 
-/** Documented test-only bypass for e2e when NODE_ENV=test. Not valid in production. */
-export const STRIPE_WEBHOOK_E2E_BYPASS_SIGNATURE = 'e2e-test';
+export const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
 
 @Injectable()
-export class StripeSignatureService {
-  constructor(private readonly configService: ConfigService) {}
+export class StripeSignatureService implements StripeSignatureVerifier {
+  constructor(private readonly envConfigService: EnvConfigService) {}
 
-  verify(payload: Record<string, unknown>, signature: string): boolean {
-    if (!signature?.trim()) {
-      return false;
+  verify(rawBody: Buffer, signature: string): StripeWebhookPayload | null {
+    if (!signature?.trim() || !rawBody || rawBody.length === 0) {
+      return null;
     }
 
-    const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'development';
-
-    if (
-      nodeEnv === 'test' &&
-      signature === STRIPE_WEBHOOK_E2E_BYPASS_SIGNATURE
-    ) {
-      return true;
-    }
-
-    const secret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    const secret = this.envConfigService.payments.stripeWebhookSecret;
     if (!secret?.trim()) {
-      return false;
+      return null;
     }
 
-    const rawPayload = JSON.stringify(payload);
-    return this.verifyStripeSignature(rawPayload, signature, secret);
-  }
-
-  private verifyStripeSignature(
-    rawPayload: string,
-    signatureHeader: string,
-    secret: string,
-  ): boolean {
-    const parts = signatureHeader.split(',').map((part) => part.trim());
-    const timestampPart = parts.find((part) => part.startsWith('t='));
-    const signaturePart = parts.find((part) => part.startsWith('v1='));
-
-    if (!timestampPart || !signaturePart) {
-      return false;
+    const timestamp = this.parseTimestampFromHeader(signature);
+    if (timestamp === null) {
+      return null;
     }
 
-    const timestamp = timestampPart.slice(2);
-    const expectedSignature = signaturePart.slice(3);
-    if (!timestamp || !expectedSignature) {
-      return false;
+    // stripe-node only rejects stale timestamps; also reject far-future ones
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (timestamp - nowSeconds > STRIPE_SIGNATURE_TOLERANCE_SECONDS) {
+      return null;
     }
 
-    const signedPayload = `${timestamp}.${rawPayload}`;
-    const computed = createHmac('sha256', secret)
-      .update(signedPayload, 'utf8')
-      .digest('hex');
-
+    let event: Stripe.Event;
     try {
-      return timingSafeEqual(
-        Buffer.from(computed, 'utf8'),
-        Buffer.from(expectedSignature, 'utf8'),
+      event = Stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        secret,
+        STRIPE_SIGNATURE_TOLERANCE_SECONDS,
       );
     } catch {
-      return false;
+      return null;
     }
+
+    if (
+      event.type === 'payment_intent.succeeded' ||
+      event.type === 'payment_intent.payment_failed'
+    ) {
+      const paymentIntent = event.data.object;
+      return {
+        type: event.type,
+        data: {
+          object: {
+            id: paymentIntent.id,
+            metadata: paymentIntent.metadata,
+            amount: paymentIntent.amount,
+            amount_received: paymentIntent.amount_received,
+            currency: paymentIntent.currency,
+            ...(paymentIntent.last_payment_error?.message
+              ? {
+                  last_payment_error: {
+                    message: paymentIntent.last_payment_error.message,
+                  },
+                }
+              : {}),
+          },
+        },
+      };
+    }
+
+    return {
+      type: event.type,
+      data: {
+        object: {
+          id: '',
+          metadata: {},
+        },
+      },
+    };
+  }
+
+  private parseTimestampFromHeader(header: string): number | null {
+    const parts = header.split(',');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith('t=')) {
+        const rawTs = trimmed.slice(2).trim();
+        const parsed = Number(rawTs);
+        if (Number.isInteger(parsed)) {
+          return parsed;
+        }
+      }
+    }
+    return null;
   }
 }

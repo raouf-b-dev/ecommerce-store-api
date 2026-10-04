@@ -74,11 +74,11 @@ Missing or malformed configuration should crash the application **immediately at
 
 Not all environment variables carry equal risk. This project classifies every variable into one of three tiers, and each tier determines how the value is stored, transmitted, and rotated.
 
-| Tier   | Classification                                                                       | Examples                                                              | Storage                               | Rotation Frequency     | Leak Impact                                                          |
-| :----- | :----------------------------------------------------------------------------------- | :-------------------------------------------------------------------- | :------------------------------------ | :--------------------- | :------------------------------------------------------------------- |
-| **T1** | **Secrets**: Credentials that grant access to systems or can impersonate identities | `JWT_PRIVATE_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `METRICS_API_KEY` | Secrets manager, injected at runtime | 90 days or on incident | **Critical**: full system compromise, data breach, identity forgery |
-| **T2** | **Sensitive Config**: Infrastructure details that reveal attack surface | `DB_HOST`, `DB_PORT`, `REDIS_HOST` | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium**: aids reconnaissance, enables targeted attacks |
-| **T3** | **Non-Sensitive Config**: Behavioural settings with no security impact | `NODE_ENV`, `PORT`, `JWT_ACCESS_TOKEN_TTL`, `REDIS_KEYPREFIX` | `.env.<environment>`, can be in code | Per environment | **Low**: no direct security impact |
+| Tier   | Classification                                                                      | Examples                                                                                       | Storage                               | Rotation Frequency     | Leak Impact                                                         |
+| :----- | :---------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------ | :--------------------- | :------------------------------------------------------------------ |
+| **T1** | **Secrets**: Credentials that grant access to systems or can impersonate identities | `JWT_PRIVATE_KEY`, `DB_PASSWORD`, `REDIS_PASSWORD`, `METRICS_API_KEY`, `STRIPE_WEBHOOK_SECRET` | Secrets manager, injected at runtime  | 90 days or on incident | **Critical**: full system compromise, data breach, identity forgery |
+| **T2** | **Sensitive Config**: Infrastructure details that reveal attack surface             | `DB_HOST`, `DB_PORT`, `REDIS_HOST`                                                             | `.env.<environment>`, CI/CD variables | Rarely (infra changes) | **Medium**: aids reconnaissance, enables targeted attacks           |
+| **T3** | **Non-Sensitive Config**: Behavioural settings with no security impact              | `NODE_ENV`, `PORT`, `JWT_ACCESS_TOKEN_TTL`, `REDIS_KEYPREFIX`                                  | `.env.<environment>`, can be in code  | Per environment        | **Low**: no direct security impact                                  |
 
 > [!IMPORTANT]
 > The tier determines the **minimum acceptable storage mechanism**. A T1 secret must never be stored in a lower-security tier's mechanism (e.g., hardcoded in code, committed to git).
@@ -207,19 +207,19 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 | Variable                  | Type     | Required | Default | Tier      | Description                                        |
 | :------------------------ | :------- | :------- | :------ | :-------- | :------------------------------------------------- |
-| `DB_HOST` | `string` | ✅ |: | T2 | Database server hostname |
+| `DB_HOST`                 | `string` | ✅       | :       | T2        | Database server hostname                           |
 | `DB_PORT`                 | `number` | ✅       | `5432`  | T2        | Database port                                      |
-| `DB_USERNAME` | `string` | ✅ |: | T2 | Database role name |
-| `DB_PASSWORD` | `string` | ✅ |: | **T1** 🔑 | Database role password |
-| `DB_DATABASE` | `string` | ✅ |: | T3 | Database name |
-| `POSTGRES_CONTAINER_NAME` | `string` | ✅ |: | T3 | Compose / `docker exec` container name |
-| `POSTGRES_IMAGE` | `string` | ✅ |: | T3 | Postgres image tag (Compose + dump/restore client) |
+| `DB_USERNAME`             | `string` | ✅       | :       | T2        | Database role name                                 |
+| `DB_PASSWORD`             | `string` | ✅       | :       | **T1** 🔑 | Database role password                             |
+| `DB_DATABASE`             | `string` | ✅       | :       | T3        | Database name                                      |
+| `POSTGRES_CONTAINER_NAME` | `string` | ✅       | :       | T3        | Compose / `docker exec` container name             |
+| `POSTGRES_IMAGE`          | `string` | ✅       | :       | T3        | Postgres image tag (Compose + dump/restore client) |
 
 ### Redis
 
 | Variable          | Type     | Required | Default | Tier      | Description           |
 | :---------------- | :------- | :------- | :------ | :-------- | :-------------------- |
-| `REDIS_HOST` | `string` | ✅ |: | T2 | Redis server hostname |
+| `REDIS_HOST`      | `string` | ✅       | :       | T2        | Redis server hostname |
 | `REDIS_PORT`      | `number` | ❌       | `6379`  | T2        | Redis server port     |
 | `REDIS_PASSWORD`  | `string` | ❌       | `""`    | **T1** 🔑 | Redis AUTH password   |
 | `REDIS_KEYPREFIX` | `string` | ❌       | `""`    | T3        | Key namespace prefix  |
@@ -229,10 +229,16 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 | Variable                | Type     | Required | Default | Tier      | Description                                |
 | :---------------------- | :------- | :------- | :------ | :-------- | :----------------------------------------- |
-| `JWT_PRIVATE_KEY` | `string` | ✅ |: | **T1** 🔑 | RSA PKCS#8 PEM private key (RS256 signing) |
+| `JWT_PRIVATE_KEY`       | `string` | ✅       | :       | **T1** 🔑 | RSA PKCS#8 PEM private key (RS256 signing) |
 | `JWT_ACCESS_TOKEN_TTL`  | `string` | ❌       | `15m`   | T3        | Access token lifetime (e.g. `15m`, `1h`)   |
 | `JWT_REFRESH_TOKEN_TTL` | `string` | ❌       | `7d`    | T3        | Refresh token lifetime                     |
 | `JWT_CART_SESSION_TTL`  | `string` | ❌       | `7d`    | T3        | Guest cart session token lifetime          |
+
+### Payments (Stripe)
+
+| Variable                | Type     | Required     | Default | Tier   | Description                                                                     |
+| :---------------------- | :------- | :----------- | :------ | :----- | :------------------------------------------------------------------------------ |
+| `STRIPE_WEBHOOK_SECRET` | `string` | Prod/Staging | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production and staging |
 
 ---
 
@@ -302,9 +308,9 @@ ConfigModule.forRoot({
 // src/config/validate-env.ts
 export function validateEnv(env: NodeJS.ProcessEnv) {
   return cleanEnv(env, {
- DB_HOST: str(), // required: crashes if absent
+    DB_HOST: str(), // required: crashes if absent
     REDIS_HOST: str(), // required
- PORT: port({ default: 3000 }), // optional: falls back to default
+    PORT: port({ default: 3000 }), // optional: falls back to default
     NODE_ENV: str({
       choices: ['development', 'production', 'test', 'staging'],
     }),
@@ -358,8 +364,8 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 | :------------ | :----------------------------------------------- |
 | `development` | Copied from `.env.example` (safe local defaults) |
 | `test`        | Copied from `.env.example` (safe local defaults) |
-| `production` | **Emptied**: must be explicitly set |
-| `staging` | **Emptied**: must be explicitly set |
+| `production`  | **Emptied**: must be explicitly set              |
+| `staging`     | **Emptied**: must be explicitly set              |
 
 ---
 
@@ -621,7 +627,7 @@ services:
     env_file:
       - .env.production # T2/T3 config
     environment:
- # T1 secrets override: can come from CI/CD or host env
+      # T1 secrets override: can come from CI/CD or host env
       - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
@@ -701,13 +707,13 @@ Canonical production runbooks live in **[SECRET-ROTATION.md](SECRET-ROTATION.md)
 
 Summary:
 
-| Secret            | Frequency                             | Notes                                                          |
-| :---------------- | :------------------------------------ | :------------------------------------------------------------- |
+| Secret            | Frequency                             | Notes                                                         |
+| :---------------- | :------------------------------------ | :------------------------------------------------------------ |
 | `JWT_PRIVATE_KEY` | 90 days, or immediately on compromise | Single RS256 key today: restart + force re-login; see runbook |
-| `DB_PASSWORD`     | 90 days                               | Alter role → update env → restart API                          |
-| `REDIS_PASSWORD`  | 90 days                               | `CONFIG SET requirepass` → update env → restart API            |
-| `METRICS_API_KEY` | 90 days                               | Update env → restart → refresh scrapers                        |
-| **All secrets**   | **Immediately**                       | Staff departure, suspected breach, secret in logs/git          |
+| `DB_PASSWORD`     | 90 days                               | Alter role → update env → restart API                         |
+| `REDIS_PASSWORD`  | 90 days                               | `CONFIG SET requirepass` → update env → restart API           |
+| `METRICS_API_KEY` | 90 days                               | Update env → restart → refresh scrapers                       |
+| **All secrets**   | **Immediately**                       | Staff departure, suspected breach, secret in logs/git         |
 
 Do not use the outdated HS256 / `JWT_SECRET` procedure: this project signs with `JWT_PRIVATE_KEY` (RS256).
 
@@ -870,4 +876,3 @@ The variable was added to `.env.example` but not to `validate-env.ts`. Without v
 ---
 
 _Last updated: April 2026_
-

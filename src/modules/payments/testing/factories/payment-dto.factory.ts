@@ -165,7 +165,7 @@ export class PaymentDtoTestFactory {
   ): StripeWebhookCommand {
     return {
       signature: 'valid_stripe_signature',
-      payload: this.createStripeWebhookPayload(),
+      rawBody: Buffer.from(JSON.stringify(this.createStripeWebhookPayload())),
       ...overrides,
     };
   }

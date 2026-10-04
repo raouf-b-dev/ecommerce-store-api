@@ -22,7 +22,7 @@ describe('StripeGateway', () => {
 
   it('creates payment intent and enqueues delayed webhook when mockAutoComplete is enabled', async () => {
     mockConfigService.setMockConfig({
-      payments: { mockAutoComplete: true },
+      payments: { mockAutoComplete: true, stripeWebhookSecret: '' },
     });
 
     const result = await gateway.createPaymentIntent(100, 'USD', {
@@ -51,7 +51,7 @@ describe('StripeGateway', () => {
 
   it('does not enqueue webhook when mockAutoComplete is disabled', async () => {
     mockConfigService.setMockConfig({
-      payments: { mockAutoComplete: false },
+      payments: { mockAutoComplete: false, stripeWebhookSecret: '' },
     });
 
     const result = await gateway.createPaymentIntent(100, 'USD');
@@ -62,7 +62,7 @@ describe('StripeGateway', () => {
 
   it('returns failure when mock webhook enqueueing fails', async () => {
     mockConfigService.setMockConfig({
-      payments: { mockAutoComplete: true },
+      payments: { mockAutoComplete: true, stripeWebhookSecret: '' },
     });
 
     mockQueue.add.mockRejectedValueOnce(new Error('Redis connection lost'));

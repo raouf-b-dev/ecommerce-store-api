@@ -5,11 +5,19 @@ import {
 
 export class MockStripeSignatureVerifier implements StripeSignatureVerifier {
   verify = jest
-    .fn<boolean, [StripeWebhookPayload, string]>()
-    .mockReturnValue(true);
+    .fn<StripeWebhookPayload | null, [Buffer, string]>()
+    .mockReturnValue(null);
+
+  mockSuccessfulVerification(payload: StripeWebhookPayload): void {
+    this.verify.mockReturnValue(payload);
+  }
+
+  mockFailedVerification(): void {
+    this.verify.mockReturnValue(null);
+  }
 
   reset(): void {
     jest.clearAllMocks();
-    this.verify.mockReturnValue(true);
+    this.verify.mockReturnValue(null);
   }
 }
