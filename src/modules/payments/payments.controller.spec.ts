@@ -11,6 +11,8 @@ import { ProcessRefundUseCase } from './core/application/usecases/process-refund
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
+import { IS_PUBLIC_KEY } from '../../guards/decorators/public.decorator';
+import { SKIP_SANITIZATION_KEY } from '../../interceptors/sanitize.interceptor';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
@@ -80,7 +82,7 @@ describe('PaymentsController', () => {
       ],
     }).compile();
 
-    controller = module.get<PaymentsController>(PaymentsController);
+    controller = module.get(PaymentsController);
     createPaymentUseCase = module.get(CreatePaymentUseCase);
     getPaymentUseCase = module.get(GetPaymentUseCase);
     listPaymentsUseCase = module.get(ListPaymentsUseCase);
@@ -91,16 +93,29 @@ describe('PaymentsController', () => {
     getPaymentByOrderIdUseCase = module.get(GetPaymentByOrderIdUseCase);
   });
 
-  it('should delegate handleStripeWebhook to HandleStripeWebhookUseCase', async () => {
+  it('should delegate handleStripeWebhook to HandleStripeWebhookUseCase with signature and rawBody', async () => {
     const signature = 'stripe-signature';
-    const body = { id: 'evt_123' };
+    const rawBody = Buffer.from('{"id":"evt_123"}');
 
-    await controller.handleStripeWebhook(signature, body);
+    // @ts-expect-error Mock express RawBodyRequest with only rawBody property needed by controller
+    await controller.handleStripeWebhook(signature, { rawBody });
 
     expect(handleStripeWebhookUseCase.execute).toHaveBeenCalledWith({
       signature,
-      payload: body,
+      rawBody,
     });
+  });
+
+  it('declares public and skip-sanitization metadata on handleStripeWebhook', () => {
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.handleStripeWebhook),
+    ).toBe(true);
+    expect(
+      Reflect.getMetadata(
+        SKIP_SANITIZATION_KEY,
+        controller.handleStripeWebhook,
+      ),
+    ).toBe(true);
   });
 
   it('should delegate createPayment to CreatePaymentUseCase', async () => {

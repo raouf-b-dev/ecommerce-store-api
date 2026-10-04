@@ -399,11 +399,6 @@
       "count": 1
     }
   },
-  "src/modules/payments/payments.controller.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/modules/payments/primary-adapters/jobs/simulate-mock-payment-webhook.job.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -435,11 +430,6 @@
   "src/modules/payments/secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    }
-  },
-  "src/modules/payments/secondary-adapters/services/stripe-signature.service.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
     }
   },
   "src/modules/payments/testing/factories/refund-entity.test.factory.ts": {

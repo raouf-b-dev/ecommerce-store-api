@@ -8,7 +8,10 @@ import {
   Headers,
   HttpCode,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiTags,
   ApiResponse,
@@ -63,11 +66,11 @@ export class PaymentsController {
   @ApiExcludeEndpoint()
   async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
-    @Body() body: any,
+    @Req() req: RawBodyRequest<Request>,
   ) {
     return await this.handleStripeWebhookUseCase.execute({
       signature,
-      payload: body,
+      rawBody: req.rawBody,
     });
   }
 

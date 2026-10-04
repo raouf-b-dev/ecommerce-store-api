@@ -48,6 +48,22 @@ export function assertSecurePublicOrigin(
   );
 }
 
+/**
+ * Deployed environments must configure STRIPE_WEBHOOK_SECRET to receive
+ * verified Stripe webhooks. Fails fast at startup if missing.
+ */
+export function assertStripeWebhookSecret(
+  nodeEnv: string,
+  secret?: string,
+): void {
+  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+    return;
+  }
+  if (!secret?.trim()) {
+    throw new EnvError(`STRIPE_WEBHOOK_SECRET is required in ${nodeEnv}`);
+  }
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv) {
   const validated = cleanEnv(env, {
     NODE_ENV: str({
@@ -101,7 +117,12 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
       choices: ['true', 'false'],
       default: 'false',
     }),
+    STRIPE_WEBHOOK_SECRET: str({ default: '' }),
   });
   assertSecurePublicOrigin(validated.NODE_ENV, validated.PUBLIC_BASE_URL);
+  assertStripeWebhookSecret(
+    validated.NODE_ENV,
+    validated.STRIPE_WEBHOOK_SECRET,
+  );
   return validated;
 }

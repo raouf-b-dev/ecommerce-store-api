@@ -53,6 +53,7 @@ function createDefaultMockConfig(): IAppConfig {
     },
     payments: {
       mockAutoComplete: false,
+      stripeWebhookSecret: '',
     },
   };
 }

@@ -1,5 +1,9 @@
 import { EnvError } from 'envalid';
-import { assertSecurePublicOrigin, parseHttpOrigin } from './validate-env';
+import {
+  assertSecurePublicOrigin,
+  assertStripeWebhookSecret,
+  parseHttpOrigin,
+} from './validate-env';
 
 describe('assertSecurePublicOrigin', () => {
   it('allows http outside deployed environments', () => {
@@ -44,5 +48,24 @@ describe('parseHttpOrigin', () => {
     'https://user:pass@api.example.com',
   ])('rejects %p', (value) => {
     expect(() => parseHttpOrigin(value)).toThrow(EnvError);
+  });
+});
+
+describe('assertStripeWebhookSecret', () => {
+  it.each(['development', 'test'])('allows empty secret in %s', (nodeEnv) => {
+    expect(() => assertStripeWebhookSecret(nodeEnv, '')).not.toThrow();
+    expect(() => assertStripeWebhookSecret(nodeEnv)).not.toThrow();
+    expect(() =>
+      assertStripeWebhookSecret(nodeEnv, 'whsec_test'),
+    ).not.toThrow();
+  });
+
+  it.each(['production', 'staging'])('requires secret in %s', (nodeEnv) => {
+    expect(() =>
+      assertStripeWebhookSecret(nodeEnv, 'whsec_test'),
+    ).not.toThrow();
+    expect(() => assertStripeWebhookSecret(nodeEnv, '')).toThrow(EnvError);
+    expect(() => assertStripeWebhookSecret(nodeEnv, '   ')).toThrow(EnvError);
+    expect(() => assertStripeWebhookSecret(nodeEnv)).toThrow(EnvError);
   });
 });

@@ -52,6 +52,7 @@ export interface IAppConfig {
   };
   payments: {
     mockAutoComplete: boolean;
+    stripeWebhookSecret: string;
   };
 }
 
@@ -111,6 +112,7 @@ export default (): IAppConfig => {
     },
     payments: {
       mockAutoComplete: env.PAYMENT_MOCK_AUTO_COMPLETE === 'true',
+      stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
     },
   };
 };

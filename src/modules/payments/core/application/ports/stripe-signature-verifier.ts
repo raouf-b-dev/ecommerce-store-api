@@ -15,5 +15,8 @@ export interface StripeWebhookPayload {
 }
 
 export abstract class StripeSignatureVerifier {
-  abstract verify(payload: StripeWebhookPayload, signature: string): boolean;
+  abstract verify(
+    rawBody: Buffer,
+    signature: string,
+  ): StripeWebhookPayload | null;
 }
