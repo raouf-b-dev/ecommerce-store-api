@@ -31,10 +31,15 @@ export interface E2eAppContext {
   moduleRef: TestingModule;
 }
 
+export const E2E_STRIPE_WEBHOOK_SECRET = 'whsec_e2e_test_secret';
+
 export class E2eTestAppHelper {
   static async createApp(
     options: CreateE2eAppOptions = {},
   ): Promise<E2eAppContext> {
+    process.env.STRIPE_WEBHOOK_SECRET =
+      process.env.STRIPE_WEBHOOK_SECRET || E2E_STRIPE_WEBHOOK_SECRET;
+
     const imports = options.imports ?? [AppModule];
     const applyGlobals = options.applyGlobalPipesAndInterceptors !== false;
 
@@ -45,7 +50,7 @@ export class E2eTestAppHelper {
     }
 
     const moduleRef = await builder.compile();
-    const app = moduleRef.createNestApplication();
+    const app = moduleRef.createNestApplication({ rawBody: true });
 
     app.enableVersioning({
       type: VersioningType.URI,
