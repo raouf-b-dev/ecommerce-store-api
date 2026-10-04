@@ -38,6 +38,12 @@ export abstract class OrderScheduler {
     orderId: number,
   ): Promise<Result<string, InfrastructureError>>;
 
+  abstract scheduleRefundPayment(
+    paymentId: number,
+    amount: number,
+    orderId?: number,
+  ): Promise<Result<string, InfrastructureError>>;
+
   abstract schedulePendingOrdersExpiration(): Promise<
     Result<string, InfrastructureError>
   >;

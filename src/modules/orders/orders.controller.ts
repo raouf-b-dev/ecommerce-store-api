@@ -244,7 +244,10 @@ export class OrdersController {
     type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
-  @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Order cannot be cancelled in current state.',
+  })
   async cancelOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.cancelOrderUseCase.execute({ orderId: id });
   }

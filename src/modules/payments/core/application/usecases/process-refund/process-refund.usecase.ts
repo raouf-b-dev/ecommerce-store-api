@@ -32,6 +32,12 @@ export class ProcessRefundUseCase extends UseCase<
   ): Promise<Result<IPayment, UseCaseError>> {
     const { paymentId, amount, reason } = command;
 
+    if (amount <= 0) {
+      return ErrorFactory.UseCaseError(
+        'Refund amount must be greater than zero',
+      );
+    }
+
     const paymentResult = await this.paymentRepository.findById(paymentId);
     if (isFailure(paymentResult)) return paymentResult;
 

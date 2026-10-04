@@ -13,7 +13,7 @@ export class OrderWorkflow {
     ],
     [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
     [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-    [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+    [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
     [OrderStatus.DELIVERED]: [OrderStatus.REFUNDED],
     [OrderStatus.CANCELLED]: [],
     [OrderStatus.REFUNDED]: [],

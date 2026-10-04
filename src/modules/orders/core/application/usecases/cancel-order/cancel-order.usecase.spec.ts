@@ -5,6 +5,7 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import {
   MockOrderRepository,
   MockOrderScheduler,
@@ -168,6 +169,108 @@ describe('CancelOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(result);
 
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('triggers a refund for a paid order', async () => {
+      const orderId = 1;
+      const paidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockRepository.mockSuccessfulSave();
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith(
+        42,
+        paidOrder.totalPrice,
+        orderId,
+      );
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not trigger a refund for an unpaid order', async () => {
+      const orderId = 1;
+      const unpaidOrder = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(unpaidOrder);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
+
+    it('succeeds idempotently without second refund or restock when order is already cancelled', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
+
+    it('rejects cancellation of a shipped order with 409 Conflict', async () => {
+      const orderId = 1;
+      const shippedOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.SHIPPED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(shippedOrder);
+
+      const result = await useCase.execute({ orderId });
+
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 409 },
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
+
+    it('fails cancel without saving when refund cannot be enqueued', async () => {
+      const orderId = 1;
+      const paidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        ErrorFactory.InfrastructureError('Queue down'),
+      );
+
+      const result = await useCase.execute({ orderId });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule refund for order',
+      );
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });

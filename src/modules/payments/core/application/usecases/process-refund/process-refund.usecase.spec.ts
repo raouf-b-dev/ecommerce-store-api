@@ -44,14 +44,35 @@ describe('ProcessRefundUseCase', () => {
     }).compile();
 
     useCase = module.get<ProcessRefundUseCase>(ProcessRefundUseCase);
-    paymentRepository = module.get<PaymentRepository>(
-      PaymentRepository,
-    ) as MockPaymentRepository;
+    paymentRepository = module.get<MockPaymentRepository>(PaymentRepository);
   });
 
   afterEach(() => {
     paymentRepository.reset();
     gatewayResolver.reset();
+  });
+
+  it('should fail if refund amount is zero or negative', async () => {
+    const zeroResult = await useCase.execute({
+      paymentId: 123,
+      amount: 0,
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      zeroResult,
+      'Refund amount must be greater than zero',
+    );
+
+    const negativeResult = await useCase.execute({
+      paymentId: 123,
+      amount: -10,
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      negativeResult,
+      'Refund amount must be greater than zero',
+    );
+    expect(paymentRepository.findById).not.toHaveBeenCalled();
   });
 
   it('should process a refund successfully', async () => {

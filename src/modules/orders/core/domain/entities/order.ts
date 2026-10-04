@@ -257,8 +257,7 @@ export class Order implements IOrder {
       this._status.isPendingPayment() ||
       this._status.isPaymentFailed() ||
       this._status.isConfirmed() ||
-      this._status.isProcessing() ||
-      this._status.isShipped()
+      this._status.isProcessing()
     );
   }
 
@@ -266,6 +265,8 @@ export class Order implements IOrder {
     if (!this.isCancellable()) {
       return ErrorFactory.DomainError(
         'Order cannot be cancelled in current state',
+        undefined,
+        409,
       );
     }
 

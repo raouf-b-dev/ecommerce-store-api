@@ -17,7 +17,6 @@ const allowedOrderWorkflowTransitions: [OrderStatus, OrderStatus][] = [
   [OrderStatus.PROCESSING, OrderStatus.SHIPPED],
   [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
   [OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-  [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
   [OrderStatus.DELIVERED, OrderStatus.REFUNDED],
 ];
 

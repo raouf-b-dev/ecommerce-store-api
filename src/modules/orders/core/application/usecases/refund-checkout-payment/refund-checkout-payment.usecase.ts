@@ -26,6 +26,12 @@ export class RefundCheckoutPaymentUseCase implements UseCase<
   async execute(
     input: ProcessRefundInput,
   ): Promise<Result<void, UseCaseError>> {
+    if (input.amount <= 0) {
+      return ErrorFactory.UseCaseError(
+        'Refund amount must be greater than zero',
+      );
+    }
+
     const result = await this.paymentGateway.processRefund(input);
 
     if (isFailure(result)) {

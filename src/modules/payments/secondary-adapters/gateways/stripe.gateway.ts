@@ -113,6 +113,13 @@ export class StripeGateway implements IPaymentGateway {
     transactionId: string,
     amount: number,
   ): Promise<Result<PaymentResult, InfrastructureError>> {
+    if (amount <= 0) {
+      return Promise.resolve(
+        ErrorFactory.InfrastructureError(
+          'Refund amount must be greater than zero',
+        ),
+      );
+    }
     // STUB: Simulate Stripe refund
     return Promise.resolve(
       Result.success({

@@ -31,6 +31,11 @@ export class MockOrderScheduler implements OrderScheduler {
     [number]
   >();
 
+  scheduleRefundPayment = jest.fn<
+    Promise<Result<string, InfrastructureError>>,
+    [number, number, number?]
+  >();
+
   schedulePendingOrdersExpiration = jest.fn<
     Promise<Result<string, InfrastructureError>>,
     []

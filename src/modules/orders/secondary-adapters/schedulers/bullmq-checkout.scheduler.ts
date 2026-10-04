@@ -209,6 +209,39 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     }
   }
 
+  async scheduleRefundPayment(
+    paymentId: number,
+    amount: number,
+    orderId?: number,
+  ): Promise<Result<string, InfrastructureError>> {
+    try {
+      const jobId = this.jobConfig.generateJobId(JobNames.REFUND_PAYMENT);
+      const correlationId = this.correlation.getId();
+
+      await this.flowProducerService.add({
+        name: JobNames.REFUND_PAYMENT,
+        queueName: 'checkout',
+        data: {
+          paymentId,
+          amount,
+          ...(orderId !== undefined ? { orderId } : {}),
+          ...(correlationId ? { correlationId } : {}),
+        },
+        opts: {
+          jobId,
+          ...this.jobConfig.getJobOptions(JobNames.REFUND_PAYMENT),
+        },
+      });
+
+      return Result.success(jobId);
+    } catch (error) {
+      return ErrorFactory.InfrastructureError(
+        'Failed to schedule payment refund',
+        error,
+      );
+    }
+  }
+
   async schedulePendingOrdersExpiration(): Promise<
     Result<string, InfrastructureError>
   > {

@@ -46,8 +46,10 @@ export class Refund implements IRefund {
     if (!props.paymentId) {
       return ErrorFactory.DomainError('Payment ID is required');
     }
-    if (props.amount < 0) {
-      return ErrorFactory.DomainError('Refund amount cannot be negative');
+    if (props.amount <= 0) {
+      return ErrorFactory.DomainError(
+        'Refund amount must be greater than zero',
+      );
     }
     if (!props.currency?.trim()) {
       return ErrorFactory.DomainError('Currency is required');
