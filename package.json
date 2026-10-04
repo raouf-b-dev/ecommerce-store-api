@@ -42,6 +42,7 @@
     "build:clean": "npm run clean && nest build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix && node scripts/lint-ascii-prose.cjs --fix",
     "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\" --max-warnings 0 && node scripts/lint-ascii-prose.cjs",
+    "lint:prune": "eslint \"{src,apps,libs,test}/**/*.ts\" --prune-suppressions",
     "test:arch": "cross-env NODE_ENV=test jest --config ./test/architecture/jest-arch.json",
     "lint:arch": "npm run test:arch",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\" \"test/**/*.{ts,js,json,md}\"",
@@ -128,9 +129,8 @@
     "smoke-test": "node scripts/smoke-test.js",
     "audit:check": "npm audit --omit=dev --audit-level=high",
     "prepare": "husky",
-    "skills:sync": "node scripts/sync-agent-skills.js",
-    "skills:check": "node scripts/sync-agent-skills.js --check",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run lint:check && npm run format:check && npm run test:arch && npm test"
   },
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.2.0",
@@ -254,7 +254,7 @@
   },
   "lint-staged": {
     "*.{ts,js}": [
-      "eslint --fix",
+      "eslint --fix --pass-on-unpruned-suppressions",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [

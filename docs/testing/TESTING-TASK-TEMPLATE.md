@@ -4,9 +4,8 @@ Use this template for every testing task.
 
 This template aligns with:
 
-- [AGENT.md](../../AGENT.md)
+- [AGENTS.md](../../AGENTS.md)
 - [docs/ai/CONVENTIONS.md](../ai/CONVENTIONS.md)
-- [docs/ai/GOVERNANCE-AND-QUALITY-GATES.md](../ai/GOVERNANCE-AND-QUALITY-GATES.md)
 
 ---
 

@@ -1,0 +1,569 @@
+{
+  "src/filters/global-exception.filter.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "src/filters/global-exception.filter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/guards/auth.guard.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "src/infrastructure/idempotency/idempotency.service.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/jobs/base-job.handler.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/jwt/services/jwks.service.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/metrics/collectors/infra-metrics.collector.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/infrastructure/redis/cache/cache.service.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "src/infrastructure/redis/redis-cache-recovery.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/infrastructure/redis/redis.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    }
+  },
+  "src/infrastructure/redis/redis.service.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "src/infrastructure/shutdown/shutdown.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/throttler/resilient-throttler.storage.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 6
+    }
+  },
+  "src/infrastructure/websocket/adapters/redis-io.adapter.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/websocket/services/ws-auth.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/websocket/services/ws-auth.service.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/interceptors/result.interceptor.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "src/interceptors/sanitize.interceptor.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/main.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/analytics/primary-adapters/dto/analytics-period-range.validator.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/analytics/secondary-adapters/query/postgres-analytics-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 7
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 7
+    }
+  },
+  "src/modules/authentication/core/application/usecases/change-password/change-password.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/authentication/primary-adapters/interceptors/refresh-token-cookie.interceptor.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/authorization/core/application/lifecycle/permission-system-data.initializer.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/authorization/core/application/lifecycle/role-system-data.initializer.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/authorization/core/application/services/resolve-role-permissions.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/authorization/primary-adapter/guards/permissions.guard.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/authorization/testing/mocks/role-repository.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/carts/core/application/usecases/get-cart/get-cart.usecase.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/carts/secondary-adapters/query/postgres-cart-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/carts/testing/factories/cart-entity.factory.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/health/indicators/websocket.health-indicator.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/health/testing/mocks/health.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 10
+    }
+  },
+  "src/modules/identity/primary-adapters/decorators/current-user.decorator.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "src/modules/identity/primary-adapters/decorators/current-user.decorator.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/identity/secondary-adapters/mappers/query/user-query.mapper.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/identity/secondary-adapters/query/postgres-user-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/identity/secondary-adapters/repositories/postgres-user-repository/postgres-user.repository.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/inventory/core/application/seed/seed-demo-inventory.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 8
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 5
+    }
+  },
+  "src/modules/inventory/core/application/usecases/reconcile-inventory/reconcile-inventory.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/modules/inventory/primary-adapters/jobs/inventory-reconciliation.job.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 8
+    }
+  },
+  "src/modules/inventory/secondary-adapters/query/postgres-inventory-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/inventory/secondary-adapters/repositories/postgres-inventory-repository/postgres-inventory-repository.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/inventory/secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/modules/inventory/testing/factories/inventory-dto.test.factory.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/notifications/core/application/queries/results/notification-list-item.result.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/notifications/secondary-adapters/dto/raw-notification-list-query-row.interface.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/notifications/secondary-adapters/mappers/query/notification-query.mapper.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/notifications/secondary-adapters/orm/notification.schema.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/notifications/secondary-adapters/persistence/mappers/notification.mapper.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/notifications/secondary-adapters/query/postgres-notification-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/notifications/secondary-adapters/repositories/postgres.notification.repository.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/core/application/ports/payment.gateway.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/core/application/usecases/checkout/checkout.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/core/domain/entities/order-items.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 8
+    }
+  },
+  "src/modules/orders/core/domain/policies/order-workflow.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/core/domain/value-objects/order-status.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/orders/primary-adapters/jobs/create-order.job.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/primary-adapters/jobs/expire-pending-orders.job.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 8
+    }
+  },
+  "src/modules/orders/primary-adapters/jobs/process-payment.job.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/primary-adapters/jobs/reserve-stock-job/reserve-stock.job.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/orders/primary-adapters/jobs/reserve-stock-job/reserve-stock.job.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/testing/factories/order-entity.factory.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/modules/payments/core/application/commands/create-payment-intent.command.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/queries/results/payment-detail.result.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/services/handle-payment-webhook/handle-payment-webhook.service.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/usecases/capture-payment/capture-payment.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/usecases/create-payment/create-payment.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/usecases/process-refund/process-refund.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/application/usecases/verify-payment/verify-payment.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/domain/gateways/payment-result.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/domain/value-objects/payment-status.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/payments/core/domain/value-objects/payment-status.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/core/domain/value-objects/refund-status.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/payments.controller.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/primary-adapters/jobs/simulate-mock-payment-webhook.job.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/modules/payments/primary-adapters/processors/payments.processor.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/secondary-adapters/dto/raw-payment-list-query-row.interface.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/secondary-adapters/mappers/query/payment-query.mapper.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/secondary-adapters/persistence/mappers/refund.mapper.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/modules/payments/secondary-adapters/services/stripe-signature.service.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/modules/payments/testing/factories/refund-entity.test.factory.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/modules/products/core/application/seed/seed-demo-catalog.usecase.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/modules/products/secondary-adapters/query/postgres-product-query.adapter.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 3
+    }
+  },
+  "src/shared-kernel/domain/interfaces/caller-context.interface.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/shared-kernel/domain/policies/owned-resource-access.policy.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "src/shared-kernel/domain/value-objects/payment-method.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/shared-kernel/infra/http/request.helpers.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/shared-kernel/infra/lang/app-version.spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/testing/fixtures/nestjs-context.fixture.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 8
+    }
+  },
+  "src/testing/helpers/e2e-catalog.helper.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/testing/helpers/e2e-test-app.helper.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "src/testing/helpers/result-assertion.helper.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "src/testing/mocks/bullmq-job.mock.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/testing/mocks/cache.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    }
+  },
+  "src/testing/mocks/idempotency-store.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/testing/mocks/logger.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 7
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 7
+    }
+  },
+  "src/testing/mocks/queue.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "src/testing/mocks/typeorm.mocks.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 4
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 5
+    }
+  },
+  "test/e2e/auth/must-change-password.e2e-spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 6
+    }
+  },
+  "test/e2e/checkout/checkout-idempotency.e2e-spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 2
+    }
+  },
+  "test/e2e/checkout/checkout-saga.e2e-spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "test/e2e/checkout/checkout-validation.e2e-spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "test/e2e/products/catalog-read-path.e2e-spec.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
+    }
+  }
+}

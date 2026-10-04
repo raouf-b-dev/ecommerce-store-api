@@ -40,7 +40,12 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/require-await': 'error',
-      '@typescript-eslint/no-explicit-any': 'off',
+      // No type assertions (`as const` stays allowed). The preset bans `any`.
+      // Older violations are baselined in eslint-suppressions.json.
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'never' },
+      ],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-argument': 'error',
 
@@ -114,7 +119,6 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/prefer-readonly': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
       'security/detect-non-literal-fs-filename': 'off',
     },

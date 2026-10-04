@@ -1,6 +1,6 @@
 # Repository & Query Adapter Integration Testing Guide (Real DB)
 
-> **Companion docs**: [`AGENT.md`](../../AGENT.md) (testing standards §9), [`TESTING-TASK-TEMPLATE.md`](TESTING-TASK-TEMPLATE.md) (task checklist), [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (architecture constraints).
+> **Companion docs**: [`AGENTS.md`](../../AGENTS.md) (agent rules), [`TESTING-TASK-TEMPLATE.md`](TESTING-TASK-TEMPLATE.md) (task checklist), [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (architecture constraints).
 
 This guide details best practices and conventions for writing repository and CQRS query adapter integration tests using a real PostgreSQL instance via **Testcontainers** in the `ecommerce-store-api` codebase.
 
@@ -244,4 +244,3 @@ AFTER:  exactly 1 success, availableQuantity = 0, reservedQuantity = 1, 1 reserv
 Use `seedSingleUnitInventory()` from `test/integration/harness/inventory-seed.helper.ts` for explicit absolute initial state: do not assert relative to default seed quantities.
 
 **Contention design:** Launch N concurrent `save()` calls via `Promise.all`. If overlap is uncertain, escalate to a barrier/hold or `pg_locks` inspection: do not weaken assertions to pass.
-
