@@ -12,6 +12,7 @@ export class SweepExpiredReservationsJob extends BaseJobHandler<
   { sweptCount: number; failedCount: number }
 > {
   protected readonly logger = new Logger(SweepExpiredReservationsJob.name);
+  private static readonly MAX_BATCHES = 50;
 
   constructor(
     private readonly sweepExpiredReservationsUseCase: SweepExpiredReservationsUseCase,
@@ -31,10 +32,18 @@ export class SweepExpiredReservationsJob extends BaseJobHandler<
       `Executing expired reservations sweeper for job ${job.id ?? 'unknown'}...`,
     );
 
-    const result = await this.sweepExpiredReservationsUseCase.execute();
+    const result = await this.sweepExpiredReservationsUseCase.execute({
+      maxBatches: SweepExpiredReservationsJob.MAX_BATCHES,
+    });
 
     if (result.isFailure) {
       return Result.failure(result.error);
+    }
+
+    if (result.value.batchCapHit) {
+      this.logger.warn(
+        `Expired reservations sweeper reached the batch cap of ${SweepExpiredReservationsJob.MAX_BATCHES}. Remaining expired reservations will be processed in the next run.`,
+      );
     }
 
     if (result.value.failedCount > 0) {

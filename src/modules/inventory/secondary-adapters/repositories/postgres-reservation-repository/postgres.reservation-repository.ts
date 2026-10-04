@@ -38,7 +38,7 @@ export class PostgresReservationRepository implements ReservationRepository {
           ...item,
           id: null,
         })),
-        ttlMinutes: RESERVATION_TTL_MINUTES, // Shared constant: 15 minutes
+        ttlMinutes: RESERVATION_TTL_MINUTES,
       });
 
       if (reservationResult.isFailure) {
@@ -174,7 +174,7 @@ export class PostgresReservationRepository implements ReservationRepository {
       const entities = await this.repository.find({
         where,
         take: limit,
-        order: { expiresAt: 'ASC' },
+        order: { expiresAt: 'ASC', id: 'ASC' },
       });
       return Result.success(entities.map(ReservationMapper.toDomain));
     } catch (error) {

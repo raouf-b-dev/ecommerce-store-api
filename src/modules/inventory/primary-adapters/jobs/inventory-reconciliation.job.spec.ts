@@ -3,7 +3,7 @@ import { ReconcileInventoryUseCase } from '../../core/application/usecases/recon
 import { MetricsService } from '../../../../infrastructure/metrics/metrics.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
-import { Job } from 'bullmq';
+import { createMockJob } from '../../../../testing';
 
 describe('InventoryReconciliationJob', () => {
   let jobHandler: InventoryReconciliationJob;
@@ -58,11 +58,9 @@ describe('InventoryReconciliationJob', () => {
       }),
     );
 
-    const mockJob = {
+    const mockJob = createMockJob('inventory-reconciliation', undefined, {
       id: 'job-1',
-      name: 'inventory-reconciliation',
-      data: {},
-    } as unknown as Job<void>;
+    });
 
     await jobHandler.handle(mockJob);
 

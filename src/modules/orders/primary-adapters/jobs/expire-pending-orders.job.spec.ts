@@ -1,11 +1,10 @@
 import { Test } from '@nestjs/testing';
-import { Job } from 'bullmq';
 import { ExpirePendingOrdersJob } from './expire-pending-orders.job';
 import { ExpirePendingOrdersUseCase } from '../../core/application/usecases/expire-pending-orders/expire-pending-orders.usecase';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { MockCorrelationService, createMockQueue } from '../../../../testing';
+import { MockCorrelationService, createMockJob } from '../../../../testing';
 
 describe('ExpirePendingOrdersJob', () => {
   let jobHandler: ExpirePendingOrdersJob;
@@ -31,11 +30,7 @@ describe('ExpirePendingOrdersJob', () => {
   });
 
   it('should execute pending orders expiration use case successfully', async () => {
-    const queue = Object.assign(createMockQueue(), {
-      toKey: jest.fn(),
-      keys: {},
-    });
-    const mockJob = new Job<void>(queue, 'expire-pending-orders', undefined);
+    const mockJob = createMockJob('expire-pending-orders', undefined);
 
     const result = await jobHandler.handle(mockJob);
 
@@ -50,11 +45,7 @@ describe('ExpirePendingOrdersJob', () => {
       ErrorFactory.DomainError('Expiration failed'),
     );
 
-    const queue = Object.assign(createMockQueue(), {
-      toKey: jest.fn(),
-      keys: {},
-    });
-    const mockJob = new Job<void>(queue, 'expire-pending-orders', undefined);
+    const mockJob = createMockJob('expire-pending-orders', undefined);
 
     await expect(jobHandler.handle(mockJob)).rejects.toThrow();
   });

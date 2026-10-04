@@ -182,4 +182,38 @@ describe('SweepExpiredReservationsUseCase', () => {
       [101],
     );
   });
+
+  it('throws an error if a reservation returned from repository has null id', async () => {
+    const invalidReservation = ReservationTestFactory.createPendingReservation({
+      id: null,
+    });
+    reservations.findPendingExpired.mockResolvedValueOnce(
+      Result.success([invalidReservation]),
+    );
+
+    await expect(useCase.execute()).rejects.toThrow(
+      'Expired reservation fetched from repository has no id',
+    );
+  });
+
+  it('stops processing and sets batchCapHit when maxBatches limit is reached', async () => {
+    const res1 = ReservationTestFactory.createPendingReservation({ id: 1 });
+    const res2 = ReservationTestFactory.createPendingReservation({ id: 2 });
+    const res3 = ReservationTestFactory.createPendingReservation({ id: 3 });
+
+    reservations.findPendingExpired
+      .mockResolvedValueOnce(Result.success([res1]))
+      .mockResolvedValueOnce(Result.success([res2]))
+      .mockResolvedValueOnce(Result.success([res3]));
+    reservations.mockSuccessfulExpire(res1);
+    reservations.mockSuccessfulExpire(res2);
+    reservations.mockSuccessfulExpire(res3);
+
+    const result = await useCase.execute({ batchSize: 1, maxBatches: 2 });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.sweptCount).toBe(2);
+    expect(result.value.batchCapHit).toBe(true);
+    expect(reservations.findPendingExpired).toHaveBeenCalledTimes(2);
+  });
 });

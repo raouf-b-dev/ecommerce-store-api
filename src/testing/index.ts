@@ -37,4 +37,5 @@ export * from './mocks/application-lifecycle.mock';
 export * from './mocks/flow-producer.service.mock';
 export * from './mocks/job-config.service.mock';
 export * from './mocks/queue.mock';
+export * from './mocks/job.mock';
 export * from '../infrastructure/redis/testing';

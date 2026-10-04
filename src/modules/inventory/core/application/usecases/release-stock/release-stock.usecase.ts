@@ -3,9 +3,8 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
-
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
+import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 
 @Injectable()
 export class ReleaseStockUseCase implements UseCase<

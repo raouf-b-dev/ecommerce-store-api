@@ -15,6 +15,7 @@ export interface SweepExpiredReservationsCommand {
 export interface SweepExpiredReservationsResult {
   sweptCount: number;
   failedCount: number;
+  batchCapHit?: boolean;
 }
 
 @Injectable()
@@ -42,16 +43,21 @@ export class SweepExpiredReservationsUseCase implements UseCase<
     let sweptCount = 0;
     const failedIds: number[] = [];
     let batchesProcessed = 0;
+    let batchCapHit = false;
 
     while (true) {
       if (maxBatches !== undefined && batchesProcessed >= maxBatches) {
+        batchCapHit = true;
+        this.logger.warn(
+          `Reached maximum batch limit of ${maxBatches} batches; stopping sweep run.`,
+        );
         break;
       }
 
       const expiredResult = await this.reservationRepository.findPendingExpired(
         asOfDate,
         batchSize,
-        failedIds.length > 0 ? failedIds : undefined,
+        failedIds.length > 0 ? [...failedIds] : undefined,
       );
 
       if (expiredResult.isFailure) {
@@ -69,25 +75,28 @@ export class SweepExpiredReservationsUseCase implements UseCase<
       batchesProcessed++;
 
       for (const reservation of reservations) {
+        const reservationId = reservation.id;
+        if (reservationId === null) {
+          throw new Error(
+            'Expired reservation fetched from repository has no id',
+          );
+        }
+
         const expireDomainResult = reservation.expire();
         if (expireDomainResult.isFailure) {
           this.logger.error(
-            `Failed to transition reservation ${reservation.id} to expired: ${expireDomainResult.error.message}`,
+            `Failed to transition reservation ${reservationId} to expired: ${expireDomainResult.error.message}`,
           );
-          if (reservation.id !== null) {
-            failedIds.push(reservation.id);
-          }
+          failedIds.push(reservationId);
           continue;
         }
 
         const saveResult = await this.reservationRepository.expire(reservation);
         if (saveResult.isFailure) {
           this.logger.error(
-            `Failed to persist expired reservation ${reservation.id}: ${saveResult.error.message}`,
+            `Failed to persist expired reservation ${reservationId}: ${saveResult.error.message}`,
           );
-          if (reservation.id !== null) {
-            failedIds.push(reservation.id);
-          }
+          failedIds.push(reservationId);
           continue;
         }
 
@@ -95,6 +104,10 @@ export class SweepExpiredReservationsUseCase implements UseCase<
       }
     }
 
-    return Result.success({ sweptCount, failedCount: failedIds.length });
+    return Result.success({
+      sweptCount,
+      failedCount: failedIds.length,
+      batchCapHit,
+    });
   }
 }

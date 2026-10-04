@@ -3,8 +3,7 @@ import { InventoryProcessor } from './inventory.processor';
 import { InventoryReconciliationJob } from './primary-adapters/jobs/inventory-reconciliation.job';
 import { SweepExpiredReservationsJob } from './primary-adapters/jobs/sweep-expired-reservations.job';
 import { JobNames } from '../../infrastructure/jobs/job-names';
-import { Job } from 'bullmq';
-import { createMockQueue } from '../../testing';
+import { createMockJob } from '../../testing';
 
 describe('InventoryProcessor', () => {
   let processor: InventoryProcessor;
@@ -35,15 +34,7 @@ describe('InventoryProcessor', () => {
   });
 
   it('delegates INVENTORY_RECONCILIATION job to reconciliation handler', async () => {
-    const queue = Object.assign(createMockQueue(), {
-      toKey: jest.fn(),
-      keys: {},
-    });
-    const job = new Job<void>(
-      queue,
-      JobNames.INVENTORY_RECONCILIATION,
-      undefined,
-    );
+    const job = createMockJob(JobNames.INVENTORY_RECONCILIATION, undefined);
     reconciliationHandle.mockResolvedValue(undefined);
 
     await processor.process(job);
@@ -53,15 +44,7 @@ describe('InventoryProcessor', () => {
   });
 
   it('delegates SWEEP_EXPIRED_RESERVATIONS job to sweeper handler', async () => {
-    const queue = Object.assign(createMockQueue(), {
-      toKey: jest.fn(),
-      keys: {},
-    });
-    const job = new Job<void>(
-      queue,
-      JobNames.SWEEP_EXPIRED_RESERVATIONS,
-      undefined,
-    );
+    const job = createMockJob(JobNames.SWEEP_EXPIRED_RESERVATIONS, undefined);
     sweeperHandle.mockResolvedValue({ sweptCount: 2, failedCount: 0 });
 
     await processor.process(job);
@@ -71,11 +54,7 @@ describe('InventoryProcessor', () => {
   });
 
   it('throws an error for unknown job names', async () => {
-    const queue = Object.assign(createMockQueue(), {
-      toKey: jest.fn(),
-      keys: {},
-    });
-    const job = new Job<void>(queue, 'unknown-job', undefined);
+    const job = createMockJob('unknown-job', undefined);
 
     await expect(processor.process(job)).rejects.toThrow(
       'Unknown job name: unknown-job',

@@ -39,8 +39,10 @@ describe('ReleaseStockUseCase', () => {
 
   describe('execute', () => {
     it('should release stock successfully for pending reservation', async () => {
-      const reservation = ReservationTestFactory.createPendingReservation();
-      const reservationId = reservation.id ?? 1;
+      const reservationId = 1;
+      const reservation = ReservationTestFactory.createPendingReservation({
+        id: reservationId,
+      });
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulRelease(reservation);
 
@@ -55,8 +57,10 @@ describe('ReleaseStockUseCase', () => {
     });
 
     it('should return confirmed reservation to stock successfully', async () => {
-      const reservation = ReservationTestFactory.createConfirmedReservation();
-      const reservationId = reservation.id ?? 1;
+      const reservationId = 1;
+      const reservation = ReservationTestFactory.createConfirmedReservation({
+        id: reservationId,
+      });
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulRelease(reservation);
 
@@ -84,8 +88,10 @@ describe('ReleaseStockUseCase', () => {
     });
 
     it('should return failure if repository release fails', async () => {
-      const reservation = ReservationTestFactory.createPendingReservation();
-      const reservationId = reservation.id ?? 1;
+      const reservationId = 1;
+      const reservation = ReservationTestFactory.createPendingReservation({
+        id: reservationId,
+      });
       const errorMessage = 'Database error';
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockReleaseFailure(errorMessage);
@@ -100,8 +106,10 @@ describe('ReleaseStockUseCase', () => {
     });
 
     it('should succeed even if reservation is already released', async () => {
-      const reservation = ReservationTestFactory.createReleasedReservation();
-      const reservationId = reservation.id ?? 1;
+      const reservationId = 1;
+      const reservation = ReservationTestFactory.createReleasedReservation({
+        id: reservationId,
+      });
       reservationRepository.mockSuccessfulFindById(reservation);
       reservationRepository.mockSuccessfulRelease(reservation);
 

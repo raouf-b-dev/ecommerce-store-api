@@ -140,11 +140,13 @@ describe('PostgresReservationRepository', () => {
 
   describe('findById', () => {
     it('should return reservation if found', async () => {
-      const reservation = ReservationTestFactory.createPendingReservation();
+      const reservationId = 1;
+      const reservation = ReservationTestFactory.createPendingReservation({
+        id: reservationId,
+      });
       const entity = ReservationMapper.toEntity(reservation);
       typeOrmRepository.findOne.mockResolvedValue(entity);
 
-      const reservationId = reservation.id ?? 1;
       const result = await repository.findById(reservationId);
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -387,7 +389,7 @@ describe('PostgresReservationRepository', () => {
           id: expect.anything(),
         },
         take: 50,
-        order: { expiresAt: 'ASC' },
+        order: { expiresAt: 'ASC', id: 'ASC' },
       });
     });
   });
