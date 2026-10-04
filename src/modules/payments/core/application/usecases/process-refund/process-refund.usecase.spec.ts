@@ -228,9 +228,10 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Gateway refund failed: Gateway network timeout',
     );
-    if (result.isFailure) {
-      expect(result.error.retryable).toBe(true);
-    }
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: true },
+    });
   });
 
   it('yields retryable === false when gateway returns a success: false result', async () => {
@@ -263,8 +264,9 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Gateway refund failed: Card issuer declined refund',
     );
-    if (result.isFailure) {
-      expect(result.error.retryable).toBe(false);
-    }
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: false },
+    });
   });
 });

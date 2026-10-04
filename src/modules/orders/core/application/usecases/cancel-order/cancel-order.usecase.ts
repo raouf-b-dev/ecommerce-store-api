@@ -11,6 +11,10 @@ import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { CancelOrderCommand } from '../../commands/cancel-order.command';
 
+function invalidRefundAmount(): Result<never, UseCaseError> {
+  return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
+}
+
 @Injectable()
 export class CancelOrderUseCase implements UseCase<
   CancelOrderCommand,
@@ -53,7 +57,7 @@ export class CancelOrderUseCase implements UseCase<
     if (cancelResult.isFailure) return cancelResult;
 
     if (order.paymentId !== null && order.totalPrice <= 0) {
-      return this.invalidRefundAmount();
+      return invalidRefundAmount();
     }
 
     const updateResult = await this.orderRepository.save(
@@ -91,10 +95,6 @@ export class CancelOrderUseCase implements UseCase<
     return Result.success(order.toPrimitives());
   }
 
-  private invalidRefundAmount(): Result<never, UseCaseError> {
-    return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
-  }
-
   private async scheduleRefundIfPaid(
     order: Order,
     orderId: number,
@@ -105,7 +105,7 @@ export class CancelOrderUseCase implements UseCase<
     }
 
     if (order.totalPrice <= 0) {
-      return this.invalidRefundAmount();
+      return invalidRefundAmount();
     }
 
     const refundResult = await this.orderScheduler.scheduleRefundPayment({

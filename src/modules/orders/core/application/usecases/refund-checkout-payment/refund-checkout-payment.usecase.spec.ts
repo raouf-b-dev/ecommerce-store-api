@@ -102,9 +102,10 @@ describe('RefundCheckoutPaymentUseCase', () => {
       result,
       'Failed to refund checkout payment',
     );
-    if (result.isFailure) {
-      expect(result.error.retryable).toBe(true);
-    }
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: true },
+    });
     expect(domainEventPublisher.publish).not.toHaveBeenCalled();
   });
 
@@ -132,9 +133,10 @@ describe('RefundCheckoutPaymentUseCase', () => {
       result,
       'Failed to refund checkout payment',
     );
-    if (result.isFailure) {
-      expect(result.error.retryable).toBe(false);
-    }
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: false },
+    });
     expect(domainEventPublisher.publish).not.toHaveBeenCalled();
   });
 });
