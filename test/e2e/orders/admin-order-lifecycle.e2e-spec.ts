@@ -23,6 +23,8 @@ import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
+import { DataSource } from 'typeorm';
+import { PaymentEntity } from 'src/modules/payments/secondary-adapters/orm/payment.schema';
 import { E2eInventoryHelper } from 'src/testing/helpers/e2e-inventory.helper';
 
 describe('Admin order lifecycle (e2e)', () => {
@@ -183,6 +185,19 @@ describe('Admin order lifecycle (e2e)', () => {
       availableQuantity: 1,
       reservedQuantity: 0,
     });
+
+    const dataSource = moduleRef.get(DataSource);
+    const paymentRecord = await dataSource
+      .getRepository(PaymentEntity)
+      .findOne({
+        where: { orderId },
+        relations: ['refunds'],
+      });
+    expect(paymentRecord).toBeDefined();
+    expect(paymentRecord?.refunds).toHaveLength(1);
+    expect(Number(paymentRecord?.refundedAmount)).toBe(
+      Number(paymentRecord?.amount),
+    );
   }, 180_000);
 
   it('rejects admin cancel of a shipped order with 409 Conflict', async () => {

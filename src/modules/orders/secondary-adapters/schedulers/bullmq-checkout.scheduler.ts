@@ -230,13 +230,10 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
           reason: props.reason,
           ...(correlationId ? { correlationId } : {}),
         },
-        opts: {
-          jobId,
-          ...this.jobConfig.getJobOptions(
-            JobNames.REFUND_PAYMENT,
-            `order-${props.orderId}`,
-          ),
-        },
+        opts: this.jobConfig.getJobOptions(
+          JobNames.REFUND_PAYMENT,
+          `order-${props.orderId}`,
+        ),
       });
 
       return Result.success(jobId);

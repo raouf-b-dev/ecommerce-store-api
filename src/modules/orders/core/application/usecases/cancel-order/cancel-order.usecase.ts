@@ -8,6 +8,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
+import { Order } from '../../../domain/entities/order';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
@@ -42,30 +43,13 @@ export class CancelOrderUseCase implements UseCase<
       : 'Order cancelled';
 
     if (order.status === OrderStatus.CANCELLED) {
-      if (order.paymentId !== null) {
-        if (order.totalPrice <= 0) {
-          return ErrorFactory.UseCaseError(
-            'Refund amount must be greater than zero',
-          );
-        }
-
-        const refundResult = await this.orderScheduler.scheduleRefundPayment({
-          orderId,
-          paymentId: order.paymentId,
-          amount: order.totalPrice,
-          reason,
-        });
-
-        if (isFailure(refundResult)) {
-          this.logger.error(
-            `Failed to schedule refund for cancelled order ${orderId}: ${refundResult.error.message}`,
-          );
-          return ErrorFactory.UseCaseError(
-            'Order cancelled but the refund could not be scheduled',
-            refundResult.error,
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        }
+      const refundResult = await this.scheduleRefundIfPaid(
+        order,
+        orderId,
+        reason,
+      );
+      if (isFailure(refundResult)) {
+        return refundResult;
       }
       return Result.success(order.toPrimitives());
     }
@@ -85,24 +69,13 @@ export class CancelOrderUseCase implements UseCase<
     );
     if (updateResult.isFailure) return updateResult;
 
-    if (order.paymentId !== null) {
-      const refundResult = await this.orderScheduler.scheduleRefundPayment({
-        orderId,
-        paymentId: order.paymentId,
-        amount: order.totalPrice,
-        reason,
-      });
-
-      if (isFailure(refundResult)) {
-        this.logger.error(
-          `Failed to schedule refund for order ${orderId}: ${refundResult.error.message}`,
-        );
-        return ErrorFactory.UseCaseError(
-          'Order cancelled but the refund could not be scheduled',
-          refundResult.error,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+    const refundResult = await this.scheduleRefundIfPaid(
+      order,
+      orderId,
+      reason,
+    );
+    if (isFailure(refundResult)) {
+      return refundResult;
     }
 
     const scheduleResult =
@@ -125,5 +98,41 @@ export class CancelOrderUseCase implements UseCase<
     }
 
     return Result.success(order.toPrimitives());
+  }
+
+  private async scheduleRefundIfPaid(
+    order: Order,
+    orderId: number,
+    reason: string,
+  ): Promise<Result<void, UseCaseError>> {
+    if (order.paymentId === null) {
+      return Result.success(undefined);
+    }
+
+    if (order.totalPrice <= 0) {
+      return ErrorFactory.UseCaseError(
+        'Refund amount must be greater than zero',
+      );
+    }
+
+    const refundResult = await this.orderScheduler.scheduleRefundPayment({
+      orderId,
+      paymentId: order.paymentId,
+      amount: order.totalPrice,
+      reason,
+    });
+
+    if (isFailure(refundResult)) {
+      this.logger.error(
+        `Failed to schedule refund for order ${orderId}: ${refundResult.error.message}`,
+      );
+      return ErrorFactory.UseCaseError(
+        'Order cancelled but the refund could not be scheduled',
+        refundResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return Result.success(undefined);
   }
 }

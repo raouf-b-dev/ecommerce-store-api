@@ -64,11 +64,18 @@ describe('CheckoutFailureListener', () => {
     listener = module.get(CheckoutFailureListener);
   });
 
+  function getRequiredOnFailedHandler(): QueueEventHandler {
+    if (!onFailedHandler) {
+      throw new Error('onFailedHandler was not registered on checkout queue');
+    }
+    return onFailedHandler;
+  }
+
   it('registers onFailed listener and executes compensation on failure', async () => {
     listener.onModuleInit();
 
     expect(onFailed).toHaveBeenCalledWith('checkout', expect.any(Function));
-    expect(onFailedHandler).toBeDefined();
+    const handler = getRequiredOnFailedHandler();
 
     getJob.mockResolvedValueOnce({
       id: 'job-1',
@@ -78,12 +85,10 @@ describe('CheckoutFailureListener', () => {
       },
     });
 
-    if (onFailedHandler) {
-      await onFailedHandler({
-        jobId: 'job-1',
-        failedReason: 'Payment declined',
-      });
-    }
+    await handler({
+      jobId: 'job-1',
+      failedReason: 'Payment declined',
+    });
 
     expect(cancelExecute).toHaveBeenCalledWith({
       orderId: 10,
@@ -95,7 +100,7 @@ describe('CheckoutFailureListener', () => {
   it('looks up reservationId from inventoryGateway when missing in job data', async () => {
     listener.onModuleInit();
 
-    expect(onFailedHandler).toBeDefined();
+    const handler = getRequiredOnFailedHandler();
 
     getJob.mockResolvedValueOnce({
       id: 'job-2',
@@ -106,12 +111,10 @@ describe('CheckoutFailureListener', () => {
 
     inventoryGateway.mockSuccessfulGetOrderReservations([{ id: 99 }]);
 
-    if (onFailedHandler) {
-      await onFailedHandler({
-        jobId: 'job-2',
-        failedReason: 'Stock expired',
-      });
-    }
+    await handler({
+      jobId: 'job-2',
+      failedReason: 'Stock expired',
+    });
 
     expect(inventoryGateway.getOrderReservations).toHaveBeenCalledWith(15);
     expect(cancelExecute).toHaveBeenCalledWith({
@@ -124,7 +127,7 @@ describe('CheckoutFailureListener', () => {
   it('skips compensation for failed REFUND_PAYMENT jobs', async () => {
     listener.onModuleInit();
 
-    expect(onFailedHandler).toBeDefined();
+    const handler = getRequiredOnFailedHandler();
 
     getJob.mockResolvedValueOnce({
       id: 'job-refund-1',
@@ -137,12 +140,10 @@ describe('CheckoutFailureListener', () => {
       },
     });
 
-    if (onFailedHandler) {
-      await onFailedHandler({
-        jobId: 'job-refund-1',
-        failedReason: 'Gateway timeout',
-      });
-    }
+    await handler({
+      jobId: 'job-refund-1',
+      failedReason: 'Gateway timeout',
+    });
 
     expect(cancelExecute).not.toHaveBeenCalled();
     expect(releaseExecute).not.toHaveBeenCalled();

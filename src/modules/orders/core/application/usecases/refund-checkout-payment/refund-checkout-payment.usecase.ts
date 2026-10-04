@@ -38,6 +38,8 @@ export class RefundCheckoutPaymentUseCase implements UseCase<
       return ErrorFactory.UseCaseError(
         'Failed to refund checkout payment',
         result.error,
+        undefined,
+        result.error.retryable,
       );
     }
 

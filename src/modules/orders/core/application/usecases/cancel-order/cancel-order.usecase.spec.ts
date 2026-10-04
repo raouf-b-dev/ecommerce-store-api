@@ -137,6 +137,28 @@ describe('CancelOrderUseCase', () => {
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
   });
 
+  it('does not schedule refund or stock release if save fails on paid CONFIRMED order', async () => {
+    const orderId = 1;
+    const paidOrder = OrderTestFactory.createDomainOrder({
+      id: orderId,
+      status: OrderStatus.CONFIRMED,
+      paymentId: 42,
+    });
+
+    mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+    mockRepository.mockSaveFailure('Version conflict');
+
+    const result = await useCase.execute({ orderId });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Version conflict',
+      RepositoryError,
+    );
+    expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
+  });
+
   describe('complex scenarios', () => {
     it('should cancel multi-item order successfully', async () => {
       const orderPrimitives = new OrderBuilder()

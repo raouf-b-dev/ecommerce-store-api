@@ -17,8 +17,15 @@ function isRetryableHttpStatus(status?: number): boolean {
 export const ErrorFactory = {
   DomainError: (message: string, cause?: unknown, status?: HttpStatus) =>
     Result.failure(new DomainError(message, toOptionalError(cause), status)),
-  UseCaseError: (message: string, cause?: unknown, status?: HttpStatus) =>
-    Result.failure(new UseCaseError(message, toOptionalError(cause), status)),
+  UseCaseError: (
+    message: string,
+    cause?: unknown,
+    status?: HttpStatus,
+    retryable?: boolean,
+  ) =>
+    Result.failure(
+      new UseCaseError(message, toOptionalError(cause), status, retryable),
+    ),
   ServiceError: (message: string, cause?: unknown, status?: HttpStatus) =>
     Result.failure(new ServiceError(message, toOptionalError(cause), status)),
   RepositoryError: (

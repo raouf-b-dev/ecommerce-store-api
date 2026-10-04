@@ -91,8 +91,6 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     maxAttempts: 8,
     backoffStrategy: BackoffStrategy.EXPONENTIAL,
     initialDelay: 5000,
-    maxDelay: 60000,
-    multiplier: 2,
   },
   [JobNames.FINALIZE_CHECKOUT]: {
     maxAttempts: 1,

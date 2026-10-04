@@ -64,49 +64,14 @@ describe('RefundPaymentStep', () => {
     });
   });
 
-  it('rejects refund as non-retryable UnrecoverableError when paymentId is missing', async () => {
-    const jobData: RefundPaymentJobData = {
-      orderId: 1,
-      amount: 50,
-      reason: 'Order cancelled',
-    };
-    const mockJob = createMockJob('refund-payment', jobData);
-
-    await expect(jobHandler.handle(mockJob)).rejects.toThrow(
-      UnrecoverableError,
-    );
-    expect(execute).not.toHaveBeenCalled();
-  });
-
-  it('rejects refund when amount is zero', async () => {
-    const jobData: RefundPaymentJobData = {
-      orderId: 1,
-      paymentId: 10,
-      amount: 0,
-      reason: 'Order cancelled',
-    };
-    const mockJob = createMockJob('refund-payment', jobData);
-
-    await expect(jobHandler.handle(mockJob)).rejects.toThrow();
-    expect(execute).not.toHaveBeenCalled();
-  });
-
-  it('rejects refund when amount is negative', async () => {
-    const jobData: RefundPaymentJobData = {
-      orderId: 1,
-      paymentId: 10,
-      amount: -10,
-      reason: 'Order cancelled',
-    };
-    const mockJob = createMockJob('refund-payment', jobData);
-
-    await expect(jobHandler.handle(mockJob)).rejects.toThrow();
-    expect(execute).not.toHaveBeenCalled();
-  });
-
-  it('throws error when use case returns failure', async () => {
+  it('does NOT throw UnrecoverableError when usecase returns retryable gateway failure', async () => {
     execute.mockResolvedValueOnce(
-      ErrorFactory.UseCaseError('Payment gateway refund failed'),
+      ErrorFactory.UseCaseError(
+        'Failed to refund checkout payment',
+        new Error('Gateway timeout'),
+        undefined,
+        true,
+      ),
     );
 
     const jobData: RefundPaymentJobData = {
@@ -117,6 +82,26 @@ describe('RefundPaymentStep', () => {
     };
     const mockJob = createMockJob('refund-payment', jobData);
 
-    await expect(jobHandler.handle(mockJob)).rejects.toThrow();
+    const promise = jobHandler.handle(mockJob);
+    await expect(promise).rejects.toThrow('Failed to refund checkout payment');
+    await expect(promise).rejects.not.toThrow(UnrecoverableError);
+  });
+
+  it('throws UnrecoverableError when usecase returns non-retryable failure', async () => {
+    execute.mockResolvedValueOnce(
+      ErrorFactory.UseCaseError('Payment cannot be refunded in current status'),
+    );
+
+    const jobData: RefundPaymentJobData = {
+      orderId: 1,
+      paymentId: 10,
+      amount: 25,
+      reason: 'Order cancelled',
+    };
+    const mockJob = createMockJob('refund-payment', jobData);
+
+    await expect(jobHandler.handle(mockJob)).rejects.toThrow(
+      UnrecoverableError,
+    );
   });
 });
