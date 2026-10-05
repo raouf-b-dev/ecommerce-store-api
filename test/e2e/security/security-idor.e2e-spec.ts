@@ -106,9 +106,9 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/carts/${cartId}`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(crossRead.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(crossRead.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(crossRead, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
         messageContains: 'not found',
       });
     });
@@ -126,9 +126,9 @@ describe('Security IDOR (e2e)', () => {
           paymentMethod: 'STRIPE',
         });
 
-      expect(checkoutResponse.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(checkoutResponse.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(checkoutResponse, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
         messageContains: 'not found',
       });
     });
