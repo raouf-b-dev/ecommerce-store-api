@@ -325,3 +325,74 @@ const error = jest.spyOn(logger, 'error').mockImplementation();
 ## Domain entity
 
 No mocks. Follow `src/modules/inventory/core/domain/entities/inventory.spec.ts` and [DOMAIN-ENTITY-TESTING.md](../../../../docs/testing/DOMAIN-ENTITY-TESTING.md).
+
+## Failure injection
+
+For side effects that leave the database (enqueue a job, call a gateway, emit an event). Test that:
+
+1. When the effect fails, earlier state is saved and the error is retryable.
+2. When the call is retried, the effect happens exactly once.
+
+```typescript
+describe('CancelOrderUseCase when the refund cannot be queued', () => {
+  let useCase: CancelOrderUseCase;
+  let orders: MockOrderRepository;
+  let refunds: FakeRefundScheduler;
+
+  beforeEach(() => {
+    orders = new MockOrderRepository();
+    refunds = new FakeRefundScheduler();
+    useCase = new CancelOrderUseCase(orders, refunds, { publish: jest.fn() });
+  });
+
+  it('saves the cancelled order and returns a retryable failure', async () => {
+    const paidOrder = OrderTestFactory.createDomainOrder({
+      id: 1,
+      status: OrderStatus.CONFIRMED,
+      paymentId: 42,
+    });
+    orders.mockSuccessfulFindByIdForUpdate(paidOrder);
+    orders.mockSuccessfulSave();
+    refunds.failNext(
+      new InfrastructureError('queue down', undefined, undefined, true),
+    );
+
+    const result = await useCase.execute({ orderId: 1 });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: true },
+    });
+    expect(orders.save).toHaveBeenCalledTimes(1);
+    expect(refunds.jobs.size).toBe(0);
+  });
+
+  it('creates exactly one refund job when the cancel is retried', async () => {
+    const paidOrder = OrderTestFactory.createDomainOrder({
+      id: 1,
+      status: OrderStatus.CONFIRMED,
+      paymentId: 42,
+    });
+    orders.mockSuccessfulFindByIdForUpdate(paidOrder);
+    orders.mockSuccessfulSave();
+    refunds.failNext(
+      new InfrastructureError('queue down', undefined, undefined, true),
+    );
+
+    await useCase.execute({ orderId: 1 });
+
+    const cancelledOrder = OrderTestFactory.createDomainOrder({
+      id: 1,
+      status: OrderStatus.CANCELLED,
+      paymentId: 42,
+    });
+    orders.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+
+    const retry = await useCase.execute({ orderId: 1 });
+    await useCase.execute({ orderId: 1 });
+
+    ResultAssertionHelper.assertResultSuccess(retry);
+    expect([...refunds.jobs.keys()]).toEqual(['refund-payment-order-1']);
+  });
+});
+```

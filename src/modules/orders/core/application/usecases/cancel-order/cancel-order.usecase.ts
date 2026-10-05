@@ -123,6 +123,7 @@ export class CancelOrderUseCase implements UseCase<
         'Order cancelled but the refund could not be scheduled',
         refundResult.error,
         HttpStatus.INTERNAL_SERVER_ERROR,
+        refundResult.error.retryable,
       );
     }
 

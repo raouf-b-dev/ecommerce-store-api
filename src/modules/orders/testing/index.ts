@@ -8,6 +8,7 @@ export * from './mocks/inventory-reservation-gateway.mock';
 export * from './mocks/order-query-service.mock';
 export * from './mocks/order-repository.mock';
 export * from './mocks/order-scheduler.mock';
+export * from './mocks/fake-refund-scheduler.mock';
 export * from './mocks/orders-payment-gateway.mock';
 export * from './mocks/shipping-address-resolver.mock';
 export * from './mocks/user-gateway.mock';

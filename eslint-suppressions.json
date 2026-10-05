@@ -110,12 +110,22 @@
       "count": 1
     }
   },
+  "src/modules/authentication/authentication.controller.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
+    }
+  },
   "src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7
     },
     "@typescript-eslint/no-explicit-any": {
       "count": 7
+    }
+  },
+  "src/modules/authentication/core/application/seed/seed-super-admin.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
     }
   },
   "src/modules/authentication/core/application/usecases/change-password/change-password.usecase.spec.ts": {
@@ -141,6 +151,19 @@
   "src/modules/authorization/core/application/services/resolve-role-permissions.service.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
+    },
+    "jest/no-conditional-expect": {
+      "count": 3
+    }
+  },
+  "src/modules/authorization/core/application/usecases/user-role/assign-role.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
+    }
+  },
+  "src/modules/authorization/core/application/usecases/user-role/find-role-by-user-id.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 2
     }
   },
   "src/modules/authorization/primary-adapter/guards/permissions.guard.spec.ts": {
@@ -163,6 +186,11 @@
       "count": 2
     }
   },
+  "src/modules/carts/secondary-adapters/repositories/postgres-cart-repository/postgres.cart-repository.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 4
+    }
+  },
   "src/modules/carts/testing/factories/cart-entity.factory.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -176,6 +204,16 @@
   "src/modules/health/testing/mocks/health.mock.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
+    }
+  },
+  "src/modules/identity/core/application/usecases/user/assign-user-role/assign-user-role.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 2
+    }
+  },
+  "src/modules/identity/core/application/usecases/user/get-user-by-email/get-user-by-email.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 2
     }
   },
   "src/modules/identity/primary-adapters/decorators/current-user.decorator.spec.ts": {
@@ -198,6 +236,11 @@
       "count": 2
     }
   },
+  "src/modules/identity/secondary-adapters/repositories/postgres-user-repository/postgres-user.repository.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
+    }
+  },
   "src/modules/identity/secondary-adapters/repositories/postgres-user-repository/postgres-user.repository.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -211,9 +254,19 @@
       "count": 5
     }
   },
+  "src/modules/inventory/core/application/usecases/confirm-reservation/confirm-reservation.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 4
+    }
+  },
   "src/modules/inventory/core/application/usecases/reconcile-inventory/reconcile-inventory.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
+    }
+  },
+  "src/modules/inventory/core/application/usecases/reserve-stock/reserve-stock.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 2
     }
   },
   "src/modules/inventory/primary-adapters/jobs/inventory-reconciliation.job.spec.ts": {
@@ -232,11 +285,22 @@
     },
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "jest/no-conditional-expect": {
+      "count": 2
     }
   },
   "src/modules/inventory/secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
+    },
+    "jest/no-conditional-expect": {
+      "count": 2
+    }
+  },
+  "src/modules/inventory/secondary-adapters/schedulers/bullmq-inventory.scheduler.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 2
     }
   },
   "src/modules/inventory/testing/factories/inventory-dto.test.factory.ts": {
@@ -284,6 +348,11 @@
       "count": 1
     }
   },
+  "src/modules/orders/core/application/usecases/cancel-order/cancel-order.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 3
+    }
+  },
   "src/modules/orders/core/application/usecases/checkout/checkout.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -324,9 +393,22 @@
       "count": 1
     }
   },
+  "src/modules/orders/secondary-adapters/query/postgres-order-query.adapter.integration.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
+    }
+  },
+  "src/modules/orders/secondary-adapters/repositories/cached-order-repository/cached.order-repository.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 13
+    }
+  },
   "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
+    },
+    "jest/no-conditional-expect": {
+      "count": 4
     }
   },
   "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.ts": {
@@ -407,6 +489,11 @@
       "count": 1
     }
   },
+  "src/modules/payments/secondary-adapters/gateways/stripe.gateway.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 4
+    }
+  },
   "src/modules/payments/secondary-adapters/mappers/query/payment-query.mapper.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -430,11 +517,34 @@
   "src/modules/products/core/application/seed/seed-demo-catalog.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
+    },
+    "jest/no-conditional-expect": {
+      "count": 14
+    }
+  },
+  "src/modules/products/core/application/seed/seed-demo-categories.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 8
+    }
+  },
+  "src/modules/products/core/application/usecases/activate-product/activate-product.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
+    }
+  },
+  "src/modules/products/core/application/usecases/deactivate-product/deactivate-product.usecase.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
     }
   },
   "src/modules/products/secondary-adapters/query/postgres-product-query.adapter.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
+    }
+  },
+  "src/modules/products/secondary-adapters/repositories/postgres-product-repository/postgres.product-repository.spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
     }
   },
   "src/shared-kernel/domain/interfaces/caller-context.interface.ts": {
@@ -529,6 +639,9 @@
   "test/e2e/checkout/checkout-idempotency.e2e-spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
+    },
+    "jest/no-conditional-expect": {
+      "count": 1
     }
   },
   "test/e2e/checkout/checkout-saga.e2e-spec.ts": {
@@ -544,6 +657,11 @@
   "test/e2e/products/catalog-read-path.e2e-spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
+    }
+  },
+  "test/e2e/security/security-idor.e2e-spec.ts": {
+    "jest/no-conditional-expect": {
+      "count": 1
     }
   }
 }
