@@ -55,9 +55,7 @@ describe('CancelOrderUseCase', () => {
       orderId,
     );
     ResultAssertionHelper.assertResultSuccess(result);
-    if (result.isSuccess) {
-      expect(result.value.status).toBe(OrderStatus.CANCELLED);
-    }
+    expect(result.value.status).toBe(OrderStatus.CANCELLED);
     expect(domainEventPublisher.publish).not.toHaveBeenCalled();
   });
 
@@ -175,10 +173,8 @@ describe('CancelOrderUseCase', () => {
 
       // Test the outcome
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.status).toBe(OrderStatus.CANCELLED);
-        expect(result.value.id).toBe(1);
-      }
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      expect(result.value.id).toBe(1);
       expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(1);
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
@@ -443,8 +439,14 @@ describe('CancelOrderUseCase', () => {
         expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(
           3,
         );
-        expect([...mockOrderScheduler.jobs.keys()]).toEqual([
-          `refund-payment-order-${orderId}`,
+        expect(mockOrderScheduler.jobs.size).toBe(1);
+        expect([...mockOrderScheduler.jobs.values()]).toEqual([
+          {
+            orderId,
+            paymentId: 42,
+            amount: cancelledOrder.totalPrice,
+            reason: 'Order cancelled',
+          },
         ]);
       });
     });

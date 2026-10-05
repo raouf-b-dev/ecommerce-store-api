@@ -7,6 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfirmReservationUseCase } from './confirm-reservation.usecase';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
+import { ResultAssertionHelper } from 'src/testing';
 
 describe('ConfirmReservationUseCase', () => {
   let useCase: ConfirmReservationUseCase;
@@ -57,10 +58,7 @@ describe('ConfirmReservationUseCase', () => {
 
       const result = await useCase.execute(reservationId);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('not found');
-      }
+      ResultAssertionHelper.assertResultFailure(result, 'not found');
       expect(reservationRepository.findById).toHaveBeenCalledWith(
         reservationId,
       );
@@ -75,10 +73,10 @@ describe('ConfirmReservationUseCase', () => {
 
       const result = await useCase.execute(reservation.id!);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe('Cannot confirm expired reservation');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot confirm expired reservation',
+      );
       expect(reservationRepository.findById).toHaveBeenCalledWith(
         reservation.id,
       );
@@ -91,10 +89,10 @@ describe('ConfirmReservationUseCase', () => {
 
       const result = await useCase.execute(reservation.id!);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('Cannot confirm reservation in');
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot confirm reservation in',
+      );
       expect(reservationRepository.findById).toHaveBeenCalledWith(
         reservation.id,
       );
@@ -109,10 +107,7 @@ describe('ConfirmReservationUseCase', () => {
 
       const result = await useCase.execute(reservation.id!);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe(errorMessage);
-      }
+      ResultAssertionHelper.assertResultFailure(result, errorMessage);
       expect(reservationRepository.findById).toHaveBeenCalledWith(
         reservation.id,
       );

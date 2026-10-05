@@ -114,10 +114,8 @@ describe('CachedOrderRepository', () => {
       const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        const expectedEntity = OrderCacheMapper.fromCache(mockCachedOrder);
-        expect(result.value).toEqual(expectedEntity);
-      }
+      const expectedEntity = OrderCacheMapper.fromCache(mockCachedOrder);
+      expect(result.value).toEqual(expectedEntity);
       expect(postgresRepo.findById).not.toHaveBeenCalled();
     });
 
@@ -130,7 +128,7 @@ describe('CachedOrderRepository', () => {
       const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) expect(result.value).toEqual(order);
+      expect(result.value).toEqual(order);
       const expectedCached = OrderCacheMapper.toCache(order);
       expect(cacheService.set).toHaveBeenCalledWith(
         `${ORDER_REDIS.CACHE_KEY}:${orderId}`,
@@ -150,9 +148,7 @@ describe('CachedOrderRepository', () => {
       const result = await repository.findById(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
-      }
+      expect(result.value.status).toBe(OrderStatus.PENDING_PAYMENT);
     });
   });
 
@@ -192,10 +188,8 @@ describe('CachedOrderRepository', () => {
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        const expected = [OrderCacheMapper.fromCache(mockCachedOrder)];
-        expect(result.value).toEqual(expected);
-      }
+      const expected = [OrderCacheMapper.fromCache(mockCachedOrder)];
+      expect(result.value).toEqual(expected);
     });
 
     it('should fall back to postgres when cached list has an invalid entry', async () => {
@@ -213,7 +207,7 @@ describe('CachedOrderRepository', () => {
       const result = await repository.listOrders({});
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
+      expect(result.value).toEqual([mockOrder]);
       expect(postgresRepo.listOrders).toHaveBeenCalled();
       expect(logger.warn).toHaveBeenCalledWith(
         'Order list cache payload had unreadable entries - falling back to Postgres',
@@ -230,7 +224,7 @@ describe('CachedOrderRepository', () => {
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) expect(result.value).toEqual([mockOrder]);
+      expect(result.value).toEqual([mockOrder]);
       expect(cacheService.setAll).toHaveBeenCalled();
       expect(cacheService.set).toHaveBeenCalledWith(
         ORDER_REDIS.IS_CACHED_FLAG,
@@ -256,12 +250,10 @@ describe('CachedOrderRepository', () => {
       const result = await repository.listOrders({});
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value).toHaveLength(3);
-        expect(result.value[0].status).toBe(OrderStatus.PENDING_PAYMENT);
-        expect(result.value[1].status).toBe(OrderStatus.SHIPPED);
-        expect(result.value[2].status).toBe(OrderStatus.CANCELLED);
-      }
+      expect(result.value).toHaveLength(3);
+      expect(result.value[0].status).toBe(OrderStatus.PENDING_PAYMENT);
+      expect(result.value[1].status).toBe(OrderStatus.SHIPPED);
+      expect(result.value[2].status).toBe(OrderStatus.CANCELLED);
     });
 
     it('should log a warning if cache lookup fails', async () => {
@@ -323,9 +315,7 @@ describe('CachedOrderRepository', () => {
       const result = await repository.listOrders(dto);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value).toHaveLength(10);
-      }
+      expect(result.value).toHaveLength(10);
     });
   });
 
@@ -338,10 +328,8 @@ describe('CachedOrderRepository', () => {
       const result = await repository.findByIdForUpdate(orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.entity).toEqual(mockOrder);
-        expect(result.value.expectedVersion).toBe(1);
-      }
+      expect(result.value.entity).toEqual(mockOrder);
+      expect(result.value.expectedVersion).toBe(1);
       expect(postgresRepo.findByIdForUpdate).toHaveBeenCalledWith(orderId);
     });
   });

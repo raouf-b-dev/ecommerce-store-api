@@ -58,10 +58,8 @@ describe('PostgresCartRepository', () => {
       const result = await repository.findById(mockCartEntity.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value).toBeInstanceOf(Cart);
-        expect(result.value.id).toBe(mockCartEntity.id);
-      }
+      expect(result.value).toBeInstanceOf(Cart);
+      expect(result.value.id).toBe(mockCartEntity.id);
     });
 
     it('should return error if cart not found', async () => {
@@ -88,9 +86,7 @@ describe('PostgresCartRepository', () => {
       const result = await repository.findByuserId(mockCartEntity.userId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.userId).toBe(mockCartEntity.userId);
-      }
+      expect(result.value.userId).toBe(mockCartEntity.userId);
     });
 
     it('should return error if cart not found', async () => {
@@ -142,9 +138,7 @@ describe('PostgresCartRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      if (result.isFailure) {
-        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
-      }
+      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     });
 
     it('should return not-found when OCC update affects 0 rows and the cart is missing', async () => {

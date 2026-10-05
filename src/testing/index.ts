@@ -28,7 +28,6 @@ export * from './mocks/idempotency-store.mock';
 export * from './factories/idempotency.factory';
 export * from './mocks/correlation-service.mock';
 export * from './mocks/reflector.mock';
-export * from './mocks/order-scheduler.mock';
 export * from './mocks/env-config.service.mock';
 export * from './mocks/redis-pipeline.mock';
 export * from './mocks/logger.mock';

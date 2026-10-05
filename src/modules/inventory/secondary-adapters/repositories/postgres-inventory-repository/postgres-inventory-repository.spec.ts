@@ -398,10 +398,8 @@ describe('PostgresInventoryRepository', () => {
       const result = await repository.findByIdForUpdate(entity.id);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.entity.id).toBe(entity.id);
-        expect(result.value.expectedVersion).toBe(entity.version);
-      }
+      expect(result.value.entity.id).toBe(entity.id);
+      expect(result.value.expectedVersion).toBe(entity.version);
     });
 
     it('should return error when inventory not found', async () => {

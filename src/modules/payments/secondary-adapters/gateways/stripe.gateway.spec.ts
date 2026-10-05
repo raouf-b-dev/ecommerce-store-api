@@ -1,9 +1,12 @@
 import { Queue } from 'bullmq';
 import { StripeGateway } from './stripe.gateway';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
-import { MockEnvConfigService, createMockQueue } from '../../../../testing';
+import {
+  MockEnvConfigService,
+  createMockQueue,
+  ResultAssertionHelper,
+} from '../../../../testing';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
-import { isSuccess } from '../../../../shared-kernel/domain/result';
 
 describe('StripeGateway', () => {
   let gateway: StripeGateway;
@@ -30,23 +33,21 @@ describe('StripeGateway', () => {
       cartId: '2',
     });
 
-    expect(isSuccess(result)).toBe(true);
-    if (isSuccess(result)) {
-      expect(result.value.paymentIntentId).toMatch(/^pi_[a-f0-9]+$/);
-      expect(result.value.clientSecret).toContain(result.value.paymentIntentId);
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.paymentIntentId).toMatch(/^pi_[a-f0-9]+$/);
+    expect(result.value.clientSecret).toContain(result.value.paymentIntentId);
 
-      expect(mockQueue.add).toHaveBeenCalledWith(
-        JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
-        {
-          paymentIntentId: result.value.paymentIntentId,
-          transactionId: result.value.paymentIntentId,
-          metadata: { orderId: '1', cartId: '2' },
-          amount: 100,
-          currency: 'USD',
-        },
-        { delay: 1000 },
-      );
-    }
+    expect(mockQueue.add).toHaveBeenCalledWith(
+      JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+      {
+        paymentIntentId: result.value.paymentIntentId,
+        transactionId: result.value.paymentIntentId,
+        metadata: { orderId: '1', cartId: '2' },
+        amount: 100,
+        currency: 'USD',
+      },
+      { delay: 1000 },
+    );
   });
 
   it('does not enqueue webhook when mockAutoComplete is disabled', async () => {
@@ -56,7 +57,7 @@ describe('StripeGateway', () => {
 
     const result = await gateway.createPaymentIntent(100, 'USD');
 
-    expect(isSuccess(result)).toBe(true);
+    ResultAssertionHelper.assertResultSuccess(result);
     expect(mockQueue.add).not.toHaveBeenCalled();
   });
 
@@ -69,9 +70,7 @@ describe('StripeGateway', () => {
 
     const result = await gateway.createPaymentIntent(100, 'USD');
 
-    expect(isSuccess(result)).toBe(false);
-    if (!isSuccess(result)) {
-      expect(result.error.message).toContain('Redis connection lost');
-    }
+    ResultAssertionHelper.assertResultFailure(result);
+    expect(result.error.message).toContain('Redis connection lost');
   });
 });

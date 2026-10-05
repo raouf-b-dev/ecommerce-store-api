@@ -1,4 +1,5 @@
 import { Result } from 'src/shared-kernel/domain/result';
+import { ResultAssertionHelper } from 'src/testing';
 import { FindRoleByUserIdUseCase } from './find-role-by-user-id.usecase';
 import { UserRoleAssignment } from '../../../domain/entities/user-role-assignment';
 import { Role } from '../../../domain/entities/role';
@@ -52,14 +53,12 @@ describe('FindRoleByUserIdUseCase', () => {
 
     const result = await usecase.execute(123);
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value).toEqual({
-        id: 456,
-        code: 'CUSTOMER',
-        permissions: ['view_own_profile', 'view_own_orders'],
-      });
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual({
+      id: 456,
+      code: 'CUSTOMER',
+      permissions: ['view_own_profile', 'view_own_orders'],
+    });
   });
 
   it('should return failure if user role assignment not found', async () => {
@@ -69,9 +68,9 @@ describe('FindRoleByUserIdUseCase', () => {
 
     const result = await usecase.execute(123);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toBe('User role assignment not found');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'User role assignment not found',
+    );
   });
 });

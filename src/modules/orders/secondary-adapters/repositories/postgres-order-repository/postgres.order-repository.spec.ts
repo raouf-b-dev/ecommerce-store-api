@@ -83,9 +83,7 @@ describe('PostgresOrderRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      if (result.isFailure) {
-        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
-      }
+      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     });
 
     it('should return error on DB failure', async () => {
@@ -105,10 +103,8 @@ describe('PostgresOrderRepository', () => {
       const result = await repository.findByIdForUpdate(testData.orderId);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.entity.id).toBe(testData.orderId);
-        expect(result.value.expectedVersion).toBe(testData.orderEntity.version);
-      }
+      expect(result.value.entity.id).toBe(testData.orderId);
+      expect(result.value.expectedVersion).toBe(testData.orderEntity.version);
     });
   });
 
@@ -121,9 +117,7 @@ describe('PostgresOrderRepository', () => {
       const result = await repository.listOrders({});
 
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.length).toBe(1);
-      }
+      expect(result.value.length).toBe(1);
     });
   });
 });

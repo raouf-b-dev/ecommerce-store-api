@@ -24,7 +24,6 @@ import {
 } from 'src/testing/helpers/e2e-test-app.helper';
 import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 import { IdempotencyTestFactory } from 'src/testing/factories/idempotency.factory';
-import { Response } from 'supertest';
 
 describe('Checkout idempotency (e2e)', () => {
   let app: INestApplication;
@@ -186,21 +185,19 @@ describe('Checkout idempotency (e2e)', () => {
       isHttpStatus(response.status, HttpStatus.CONFLICT),
     );
 
+    expect(conflicts.length + successes.length).toBe(responses.length);
     expect(successes.length).toBeGreaterThanOrEqual(1);
     const orderIds = new Set(
       successes.map((response) => Number(response.body.orderId)),
     );
     expect(orderIds.size).toBe(1);
 
-    if (conflicts.length > 0) {
-      HttpErrorAssertionHelper.assertErrorContract(
-        { body: conflicts[0].body } as Response,
-        {
-          statusCode: HttpStatus.CONFLICT,
-          messageContains: 'already in progress',
-        },
-      );
-      expect(conflicts[0].getHeader('Retry-After')).toBe(
+    for (const conflict of conflicts) {
+      HttpErrorAssertionHelper.assertErrorContract(conflict, {
+        statusCode: HttpStatus.CONFLICT,
+        messageContains: 'already in progress',
+      });
+      expect(conflict.getHeader('Retry-After')).toBe(
         String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
       );
     }
@@ -225,14 +222,11 @@ describe('Checkout idempotency (e2e)', () => {
       body: { cartId: 'not-a-number' },
     });
     expect(failed.status).toBe(HttpStatus.BAD_REQUEST);
-    HttpErrorAssertionHelper.assertErrorContract(
-      { body: failed.body } as Response,
-      {
-        statusCode: HttpStatus.BAD_REQUEST,
-        messageContains: 'Validation failed',
-        hasValidationErrors: true,
-      },
-    );
+    HttpErrorAssertionHelper.assertErrorContract(failed, {
+      statusCode: HttpStatus.BAD_REQUEST,
+      messageContains: 'Validation failed',
+      hasValidationErrors: true,
+    });
 
     const cartId = await E2eCheckoutHelper.createCartWithItem(
       http,

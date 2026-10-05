@@ -112,10 +112,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.save(dto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('Inventory not found');
-      }
+      ResultAssertionHelper.assertResultFailure(result, 'Inventory not found');
     });
 
     it('should fail if insufficient stock', async () => {
@@ -131,10 +128,7 @@ describe('PostgresReservationRepository', () => {
 
       const result = await repository.save(dto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain('Insufficient stock');
-      }
+      ResultAssertionHelper.assertResultFailure(result, 'Insufficient stock');
     });
   });
 

@@ -73,7 +73,10 @@ describe('BullMqOrderScheduler', () => {
       const result = await scheduler.scheduleRefundPayment(props);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const expectedJobId = 'refund-payment-order-42';
+      const expectedJobId = jobConfigService.getJobId(
+        JobNames.REFUND_PAYMENT,
+        'order-42',
+      );
       expect(result.value).toBe(expectedJobId);
 
       expect(mockFlowProducer.add).toHaveBeenCalledWith({
