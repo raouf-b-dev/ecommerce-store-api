@@ -4,13 +4,14 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
-import { SessionToken } from '../../../domain/entities/session-token';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
 import { JwtVerifierPort } from '../../../../../../shared-kernel/domain/interfaces/jwt-verifier.port';
 import { IdentityGateway } from '../../ports/identity.gateway';
 import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
 import { CredentialRepository } from '../../../domain/repositories/credential.repository';
+
+const REUSE_MESSAGE = 'Refresh token reuse detected. All sessions revoked.';
 
 @Injectable()
 export class RefreshTokenUseCase extends UseCase<
@@ -35,16 +36,21 @@ export class RefreshTokenUseCase extends UseCase<
     refreshToken: string,
   ): Promise<Result<AuthTokensResult, UseCaseError>> {
     try {
-      // 1. Verify token signature and expiration
       const payload =
         await this.jwtVerifierService.verifyRefreshToken(refreshToken);
       const sessionId = payload.sid;
-      const userId = Number(payload.sub);
 
-      // 2. Find session in DB
       const sessionResult =
         await this.sessionTokenRepository.findById(sessionId);
-      if (sessionResult.isFailure || !sessionResult.value) {
+      if (sessionResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'Failed to load session',
+          sessionResult.error,
+          sessionResult.error.statusCode,
+          sessionResult.error.retryable,
+        );
+      }
+      if (!sessionResult.value) {
         return ErrorFactory.UseCaseError(
           'Session not found',
           null,
@@ -53,7 +59,6 @@ export class RefreshTokenUseCase extends UseCase<
       }
       const session = sessionResult.value;
 
-      // 3. Check if session is valid (not revoked / not expired)
       if (!session.isValid) {
         return ErrorFactory.UseCaseError(
           'Invalid or expired session',
@@ -62,28 +67,22 @@ export class RefreshTokenUseCase extends UseCase<
         );
       }
 
-      // 3b. Reuse detection - token hash mismatch on a valid session means
-      //     a previously rotated token is being replayed (stolen token attack)
       if (!session.isTokenMatch(refreshToken)) {
-        this.logger.warn(
-          `Refresh token reuse detected for user ${userId}. Revoking all sessions.`,
-        );
-        await this.sessionTokenRepository.revokeAllForUser(userId);
-
-        return ErrorFactory.UseCaseError(
-          'Refresh token reuse detected. All sessions revoked.',
-          null,
-          HttpStatus.UNAUTHORIZED,
-        );
+        return this.revokeForReuse(session.userId);
       }
 
-      // 4. Revoke old session
-      session.revoke();
-      await this.sessionTokenRepository.save(session);
-
-      // 5. Load user to get updated access token payload
-      const userResult = await this.identityGateway.findUserById(userId);
-      if (userResult.isFailure || !userResult.value) {
+      const userResult = await this.identityGateway.findUserById(
+        session.userId,
+      );
+      if (userResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'User not found',
+          userResult.error,
+          HttpStatus.UNAUTHORIZED,
+          userResult.error.retryable,
+        );
+      }
+      if (!userResult.value) {
         return ErrorFactory.UseCaseError(
           'User not found',
           null,
@@ -92,11 +91,18 @@ export class RefreshTokenUseCase extends UseCase<
       }
       const user = userResult.value;
 
-      // 6. Resolve role code for JWT payload (PermissionsGuard requires the string code)
       const roleResult = await this.authorizationGateway.findRoleByUserId(
         user.id,
       );
-      if (roleResult.isFailure || !roleResult.value) {
+      if (roleResult.isFailure) {
+        return ErrorFactory.UseCaseError(
+          'Failed to resolve user role',
+          roleResult.error,
+          HttpStatus.UNAUTHORIZED,
+          roleResult.error.retryable,
+        );
+      }
+      if (!roleResult.value) {
         return ErrorFactory.UseCaseError(
           'Failed to resolve user role',
           null,
@@ -104,7 +110,6 @@ export class RefreshTokenUseCase extends UseCase<
         );
       }
 
-      // 7. Load the credential flag so it can ride along in the access token
       const credentialResult = await this.credentialRepository.findByUserId(
         user.id,
       );
@@ -113,13 +118,13 @@ export class RefreshTokenUseCase extends UseCase<
           'Failed to retrieve credential information',
           credentialResult.error,
           HttpStatus.INTERNAL_SERVER_ERROR,
+          credentialResult.error.retryable,
         );
       }
 
       const mustChangePassword =
         credentialResult.value?.mustChangePassword ?? false;
 
-      // 8. Generate new tokens
       const newAccessToken = await this.jwtSignerService.signAccessToken({
         sub: user.id.toString(),
         email: user.email,
@@ -127,23 +132,34 @@ export class RefreshTokenUseCase extends UseCase<
         mustChangePassword,
       });
 
-      const {
-        token: newRefreshToken,
-        sessionId: newSessionId,
-        expiresAt,
-      } = await this.jwtSignerService.signRefreshTokenWithSession({
-        sub: user.id,
-      });
+      const { token: newRefreshToken, expiresAt } =
+        await this.jwtSignerService.signRefreshTokenWithSession({
+          sub: user.id,
+          sid: session.id,
+        });
 
-      // 9. Save new session
-      const newSession = SessionToken.create(
-        user.id,
-        newRefreshToken,
-        expiresAt,
-        newSessionId,
+      const expectedTokenHash = session.tokenHash;
+      session.rotate(newRefreshToken, expiresAt);
+      const replaced = await this.sessionTokenRepository.replaceTokenIfCurrent(
+        session,
+        expectedTokenHash,
       );
+      if (replaced.isFailure) {
+        if (replaced.error.statusCode === HttpStatus.CONFLICT) {
+          return this.rejectStaleRotation(
+            sessionId,
+            refreshToken,
+            session.userId,
+          );
+        }
 
-      await this.sessionTokenRepository.save(newSession);
+        return ErrorFactory.UseCaseError(
+          'Failed to rotate refresh token',
+          replaced.error,
+          replaced.error.statusCode,
+          replaced.error.retryable,
+        );
+      }
 
       return Result.success<AuthTokensResult>({
         accessToken: newAccessToken,
@@ -158,5 +174,59 @@ export class RefreshTokenUseCase extends UseCase<
         HttpStatus.UNAUTHORIZED,
       );
     }
+  }
+
+  private async revokeForReuse(
+    userId: number,
+  ): Promise<Result<AuthTokensResult, UseCaseError>> {
+    this.logger.warn(
+      `Refresh token reuse detected for user ${userId}. Revoking all sessions.`,
+    );
+    const revokeResult =
+      await this.sessionTokenRepository.revokeAllForUser(userId);
+    if (revokeResult.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to revoke sessions after refresh token reuse',
+        revokeResult.error,
+        revokeResult.error.statusCode,
+        revokeResult.error.retryable,
+      );
+    }
+
+    return ErrorFactory.UseCaseError(
+      REUSE_MESSAGE,
+      null,
+      HttpStatus.UNAUTHORIZED,
+    );
+  }
+
+  private async rejectStaleRotation(
+    sessionId: string,
+    refreshToken: string,
+    userId: number,
+  ): Promise<Result<AuthTokensResult, UseCaseError>> {
+    const current = await this.sessionTokenRepository.findById(sessionId);
+    if (current.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Failed to load session',
+        current.error,
+        current.error.statusCode,
+        current.error.retryable,
+      );
+    }
+
+    if (
+      current.value &&
+      current.value.isValid &&
+      !current.value.isTokenMatch(refreshToken)
+    ) {
+      return this.revokeForReuse(userId);
+    }
+
+    return ErrorFactory.UseCaseError(
+      'Invalid or expired session',
+      null,
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 }

@@ -70,17 +70,20 @@ export class JwtSignerService implements JwtSignerPort {
    * Returns the signed JWT, a unique sessionId, and the token's expiration Date.
    */
   async signRefreshTokenWithSession(
-    payload: Pick<SignRefreshTokenPayload, 'sub'>,
+    payload: Pick<SignRefreshTokenPayload, 'sub' | 'sid'>,
   ): Promise<RefreshTokenResult> {
-    const sessionId = crypto.randomUUID();
+    const sessionId = payload.sid ?? crypto.randomUUID();
 
     const token = await this.signRefreshToken({
-      ...payload,
+      sub: payload.sub,
       sid: sessionId,
     });
 
     const decoded = decodeJwt(token);
-    const expiresAt = new Date(decoded.exp! * 1000);
+    if (typeof decoded.exp !== 'number') {
+      throw new Error('Refresh token is missing exp');
+    }
+    const expiresAt = new Date(decoded.exp * 1000);
 
     return { token, sessionId, expiresAt };
   }

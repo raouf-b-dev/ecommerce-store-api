@@ -29,6 +29,23 @@ describe('SessionToken', () => {
     expect(session.isValid).toBe(false);
   });
 
+  it('replaces the secret and keeps the same session id', () => {
+    const expiresAt = new Date('2099-01-01T00:00:00.000Z');
+    const rotatedExpiry = new Date('2099-06-01T00:00:00.000Z');
+    const session = SessionToken.create(1, 'raw-token', expiresAt, 'mock-id');
+    const previousHash = session.tokenHash;
+
+    session.rotate('next-token', rotatedExpiry);
+
+    expect(session.id).toBe('mock-id');
+    expect(session.isRevoked).toBe(false);
+    expect(session.isValid).toBe(true);
+    expect(session.tokenHash).not.toBe(previousHash);
+    expect(session.isTokenMatch('raw-token')).toBe(false);
+    expect(session.isTokenMatch('next-token')).toBe(true);
+    expect(session.expiresAt.getTime()).toBe(rotatedExpiry.getTime());
+  });
+
   it('should be invalid if expired', () => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() - 1); // 1 hour ago

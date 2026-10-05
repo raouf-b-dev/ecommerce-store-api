@@ -36,7 +36,7 @@ export abstract class JwtSignerPort {
   abstract signAccessToken(payload: SignAccessTokenPayload): Promise<string>;
   abstract signRefreshToken(payload: SignRefreshTokenPayload): Promise<string>;
   abstract signRefreshTokenWithSession(
-    payload: Pick<SignRefreshTokenPayload, 'sub'>,
+    payload: Pick<SignRefreshTokenPayload, 'sub' | 'sid'>,
   ): Promise<RefreshTokenResult>;
   abstract signCartSessionToken(cartId: number): Promise<string>;
 }

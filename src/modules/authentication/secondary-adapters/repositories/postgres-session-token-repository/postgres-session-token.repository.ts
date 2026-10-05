@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -41,6 +41,54 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find session token by id',
+        error,
+      );
+    }
+  }
+
+  async replaceTokenIfCurrent(
+    session: SessionToken,
+    expectedTokenHash: string,
+  ): Promise<Result<SessionToken, RepositoryError>> {
+    try {
+      const primitives = session.toPrimitives();
+      const result = await this.repository
+        .createQueryBuilder()
+        .update(SessionTokenEntity)
+        .set({
+          tokenHash: primitives.tokenHash,
+          expiresAt: primitives.expiresAt,
+        })
+        .where(
+          'id = :id AND "tokenHash" = :expectedTokenHash AND "isRevoked" = false',
+          {
+            id: primitives.id,
+            expectedTokenHash,
+          },
+        )
+        .execute();
+
+      if ((result.affected ?? 0) === 0) {
+        return ErrorFactory.RepositoryError(
+          'Refresh token was already rotated',
+          undefined,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      const updated = await this.repository.findOneBy({ id: primitives.id });
+      if (!updated) {
+        return ErrorFactory.RepositoryError(
+          'Session not found after rotation',
+          undefined,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return Result.success(SessionTokenMapper.toDomain(updated));
+    } catch (error) {
+      return ErrorFactory.RepositoryError(
+        'Failed to rotate session token',
         error,
       );
     }
