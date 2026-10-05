@@ -333,62 +333,10 @@ For side effects that leave the database (enqueue a job, call a gateway, emit an
 1. When the effect fails, earlier state is saved and the error is retryable.
 2. When the call is retried, the effect happens exactly once.
 
+Worked example: the `failure injection` describe in src/modules/orders/core/application/usecases/cancel-order/cancel-order.usecase.spec.ts. Use MockOrderScheduler.failNext(error) to make the next refund enqueue fail, and MockOrderScheduler.jobs (keyed by the production job id) to assert exactly one job exists after retries.
+
 ```typescript
-describe('CancelOrderUseCase when the refund cannot be queued', () => {
-  let useCase: CancelOrderUseCase;
-  let orders: MockOrderRepository;
-  let scheduler: MockOrderScheduler;
-
-  beforeEach(() => {
-    orders = new MockOrderRepository();
-    scheduler = new MockOrderScheduler();
-    scheduler.scheduleOrderStockRelease.mockResolvedValue(
-      Result.success('stock-release-job'),
-    );
-    useCase = new CancelOrderUseCase(orders, scheduler, { publish: jest.fn() });
-
-    const order = OrderTestFactory.createDomainOrder({
-      id: 1,
-      status: OrderStatus.CONFIRMED,
-      paymentId: 42,
-    });
-    orders.mockSuccessfulFindByIdForUpdate(order);
-    orders.mockSuccessfulSave();
-    scheduler.failNext(
-      new InfrastructureError('queue down', undefined, undefined, true),
-    );
-  });
-
-  it('saves the cancelled order and returns a retryable failure', async () => {
-    const result = await useCase.execute({ orderId: 1 });
-
-    expect(result).toMatchObject({
-      isFailure: true,
-      error: { retryable: true },
-    });
-    expect(orders.save).toHaveBeenCalledWith(
-      expect.objectContaining({ status: OrderStatus.CANCELLED }),
-      expect.any(Number),
-    );
-    expect(scheduler.jobs.size).toBe(0);
-  });
-
-  it('creates exactly one refund job when the cancel is retried', async () => {
-    await useCase.execute({ orderId: 1 });
-
-    const cancelledOrder = OrderTestFactory.createDomainOrder({
-      id: 1,
-      status: OrderStatus.CANCELLED,
-      paymentId: 42,
-    });
-    orders.mockSuccessfulFindByIdForUpdate(cancelledOrder);
-
-    const retry = await useCase.execute({ orderId: 1 });
-    await useCase.execute({ orderId: 1 });
-
-    ResultAssertionHelper.assertResultSuccess(retry);
-    expect(scheduler.scheduleRefundPayment).toHaveBeenCalledTimes(3);
-    expect([...scheduler.jobs.keys()]).toEqual(['refund-payment-order-1']);
-  });
-});
+scheduler.failNext(new InfrastructureError('queue down'));
+const result = await useCase.execute({ orderId: 1 });
+expect(result).toMatchObject({ isFailure: true, error: { retryable: true } });
 ```
