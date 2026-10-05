@@ -90,6 +90,8 @@ export class JwtSignerService implements JwtSignerPort {
     const jwtPayload = {
       sub: String(payload.sub),
       ...(payload.sid ? { sid: payload.sid } : {}),
+      // Same sid, iat, and exp in one second would otherwise sign an identical token.
+      jti: crypto.randomUUID(),
       typ: 'refresh',
     };
 

@@ -107,6 +107,30 @@ describe('JwtSignerService', () => {
       expect(decoded.exp).toBe(Math.floor(result.expiresAt.getTime() / 1000));
     });
 
+    it('issues a distinct refresh token when the same session is signed twice in one second', async () => {
+      const fixed = new Date('2026-06-01T00:00:00.000Z');
+      const signed = await ClockTestHelper.runWithFixedDate(fixed, async () => {
+        const first = await signingService.signRefreshTokenWithSession({
+          sub: 1,
+          sid: 'session-kept',
+        });
+        const second = await signingService.signRefreshTokenWithSession({
+          sub: 1,
+          sid: 'session-kept',
+        });
+        return { first, second };
+      });
+
+      expect(signed.first.token).not.toBe(signed.second.token);
+      expect(signed.first.sessionId).toBe(signed.second.sessionId);
+      expect(signed.first.expiresAt.getTime()).toBe(
+        signed.second.expiresAt.getTime(),
+      );
+      expect(jose.decodeJwt(signed.first.token).jti).not.toBe(
+        jose.decodeJwt(signed.second.token).jti,
+      );
+    });
+
     it('mints a session id when none is provided', async () => {
       const first = await signingService.signRefreshTokenWithSession({
         sub: '1',
