@@ -11,6 +11,7 @@ import {
   MockOrderScheduler,
   OrderBuilder,
   OrderTestFactory,
+  getRefundJobId,
 } from 'src/modules/orders/testing';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
@@ -55,9 +56,7 @@ describe('CancelOrderUseCase', () => {
       orderId,
     );
     ResultAssertionHelper.assertResultSuccess(result);
-    if (result.isSuccess) {
-      expect(result.value.status).toBe(OrderStatus.CANCELLED);
-    }
+    expect(result.value.status).toBe(OrderStatus.CANCELLED);
     expect(domainEventPublisher.publish).not.toHaveBeenCalled();
   });
 
@@ -175,10 +174,8 @@ describe('CancelOrderUseCase', () => {
 
       // Test the outcome
       ResultAssertionHelper.assertResultSuccess(result);
-      if (result.isSuccess) {
-        expect(result.value.status).toBe(OrderStatus.CANCELLED);
-        expect(result.value.id).toBe(1);
-      }
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      expect(result.value.id).toBe(1);
       expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(1);
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
@@ -444,7 +441,7 @@ describe('CancelOrderUseCase', () => {
           3,
         );
         expect([...mockOrderScheduler.jobs.keys()]).toEqual([
-          `refund-payment-order-${orderId}`,
+          getRefundJobId(orderId),
         ]);
       });
     });

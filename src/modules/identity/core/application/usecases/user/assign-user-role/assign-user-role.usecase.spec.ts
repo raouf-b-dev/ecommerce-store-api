@@ -56,8 +56,7 @@ describe('AssignUserRoleUseCase', () => {
       'User not found',
       UseCaseError,
     );
-    if (result.isFailure)
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
     authorizationGateway.verifyNoUnexpectedCalls();
   });
 
@@ -80,7 +79,6 @@ describe('AssignUserRoleUseCase', () => {
       'Role INVALID not found',
       UseCaseError,
     );
-    if (result.isFailure)
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
   });
 });

@@ -71,10 +71,8 @@ describe('BullMqInventoryScheduler', () => {
     it('should return success result when job is added to queue', async () => {
       const result = await scheduler.scheduleReconciliationJob();
 
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) {
-        expect(result.value).toEqual({ jobId: 'inventory-reconciliation-job' });
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({ jobId: 'inventory-reconciliation-job' });
     });
 
     it('should return infrastructure error when queue fails', async () => {
@@ -82,12 +80,10 @@ describe('BullMqInventoryScheduler', () => {
 
       const result = await scheduler.scheduleReconciliationJob();
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toContain(
-          'Failed to schedule inventory reconciliation audit job',
-        );
-      }
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule inventory reconciliation audit job',
+      );
     });
   });
 

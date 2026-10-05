@@ -2,16 +2,16 @@ import {
   OrderScheduler,
   ScheduleCheckoutProps,
   ScheduleRefundPaymentProps,
+  getRefundJobId,
 } from '../../core/domain/schedulers/order.scheduler';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { JobNames } from '../../../../infrastructure/jobs/job-names';
-import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
+
+export { getRefundJobId };
 
 export class MockOrderScheduler implements OrderScheduler {
   readonly jobs = new Map<string, ScheduleRefundPaymentProps>();
   private readonly refundFailures: InfrastructureError[] = [];
-  private readonly jobConfig = new JobConfigService();
 
   failNext(error: InfrastructureError): void {
     this.refundFailures.push(error);
@@ -32,10 +32,9 @@ export class MockOrderScheduler implements OrderScheduler {
     [number]
   >();
 
-  schedulePostConfirmation = jest.fn<
-    Promise<Result<string, InfrastructureError>>,
-    [number]
-  >();
+  schedulePostConfirmation = jest
+    .fn<Promise<Result<string, InfrastructureError>>, [number]>()
+    .mockResolvedValue(Result.success('flow-id'));
 
   scheduleOrderStockRelease = jest.fn<
     Promise<Result<string, InfrastructureError>>,
@@ -50,8 +49,7 @@ export class MockOrderScheduler implements OrderScheduler {
     if (failure) {
       return Promise.resolve(Result.failure(failure));
     }
-    const identifier = `order-${props.orderId}`;
-    const jobId = this.jobConfig.getJobId(JobNames.REFUND_PAYMENT, identifier);
+    const jobId = getRefundJobId(props.orderId);
     if (!this.jobs.has(jobId)) {
       this.jobs.set(jobId, props);
     }

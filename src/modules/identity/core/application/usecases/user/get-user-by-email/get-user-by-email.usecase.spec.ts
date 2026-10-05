@@ -116,8 +116,7 @@ describe('GetUserByEmailUseCase', () => {
         'Access denied: You do not have permission to view this profile',
         UseCaseError,
       );
-      if (result.isFailure)
-        expect(result.error.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(result.error.statusCode).toBe(HttpStatus.FORBIDDEN);
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
 
@@ -134,8 +133,7 @@ describe('GetUserByEmailUseCase', () => {
         `User with email ${validEmail} not found`,
         UseCaseError,
       );
-      if (result.isFailure)
-        expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
 

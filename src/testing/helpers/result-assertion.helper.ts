@@ -19,7 +19,7 @@ export class ResultAssertionHelper {
     expectedMessage?: string,
     expectedErrorType?: ErrorConstructor,
     cause?: Error,
-  ): void {
+  ): asserts result is { isFailure: true; error: AppError } {
     expect(result.isFailure).toBe(true);
     expect(result.error).toBeDefined();
 
@@ -38,7 +38,7 @@ export class ResultAssertionHelper {
   static assertResultFailureWithError(
     result: any,
     expectedError: AppError,
-  ): void {
+  ): asserts result is { isFailure: true; error: AppError } {
     expect(result.isFailure).toBe(true);
     expect(result.error).toBeDefined();
     expect(result.error).toEqual(expectedError);

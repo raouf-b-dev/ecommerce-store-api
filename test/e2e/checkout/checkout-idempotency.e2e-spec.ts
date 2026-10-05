@@ -186,24 +186,28 @@ describe('Checkout idempotency (e2e)', () => {
       isHttpStatus(response.status, HttpStatus.CONFLICT),
     );
 
+    expect(conflicts.length + successes.length).toBe(responses.length);
     expect(successes.length).toBeGreaterThanOrEqual(1);
     const orderIds = new Set(
       successes.map((response) => Number(response.body.orderId)),
     );
     expect(orderIds.size).toBe(1);
 
-    if (conflicts.length > 0) {
-      HttpErrorAssertionHelper.assertErrorContract(
-        { body: conflicts[0].body } as Response,
-        {
+    expect(
+      conflicts.map((conflict) => ({
+        body: conflict.body,
+        retryAfter: conflict.getHeader('Retry-After'),
+      })),
+    ).toEqual(
+      conflicts.map(() => ({
+        body: expect.objectContaining({
+          success: false,
           statusCode: HttpStatus.CONFLICT,
-          messageContains: 'already in progress',
-        },
-      );
-      expect(conflicts[0].getHeader('Retry-After')).toBe(
-        String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
-      );
-    }
+          message: expect.stringContaining('already in progress'),
+        }),
+        retryAfter: String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
+      })),
+    );
 
     const afterCount = await E2eCheckoutHelper.listOrderCount(
       http,

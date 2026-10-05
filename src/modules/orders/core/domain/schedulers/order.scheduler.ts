@@ -26,7 +26,15 @@ export interface ScheduleRefundPaymentProps {
   reason: string;
 }
 
+export function getRefundJobId(orderId: number): string {
+  return `refund-payment-order-${orderId}`;
+}
+
 export abstract class OrderScheduler {
+  static getRefundJobId(orderId: number): string {
+    return getRefundJobId(orderId);
+  }
+
   abstract scheduleCheckout(
     props: ScheduleCheckoutProps,
   ): Promise<Result<string, InfrastructureError>>;

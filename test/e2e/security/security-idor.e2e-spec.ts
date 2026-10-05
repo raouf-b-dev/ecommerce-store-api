@@ -170,11 +170,10 @@ describe('Security IDOR (e2e)', () => {
         : response.body.items;
       expect(Array.isArray(orders)).toBe(true);
 
-      for (const order of orders) {
-        if (order.userId != null) {
-          expect(order.userId).toBe(userA.userId);
-        }
-      }
+      const userIds: unknown[] = orders
+        .map((order: { userId?: unknown }) => order.userId)
+        .filter((userId: unknown) => userId != null);
+      expect(userIds).toEqual(userIds.map(() => userA.userId));
     });
   });
 });

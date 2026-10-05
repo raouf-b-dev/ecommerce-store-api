@@ -115,11 +115,9 @@ describe('SeedSuperAdminUseCase', () => {
     });
 
     ResultAssertionHelper.assertResultFailure(result);
-    if (result.isFailure) {
-      expect(result.error.message).toBe(
-        'Password must be at least 6 characters long.',
-      );
-    }
+    expect(result.error.message).toBe(
+      'Password must be at least 6 characters long.',
+    );
   });
 
   it('should compensate if credential creation fails', async () => {

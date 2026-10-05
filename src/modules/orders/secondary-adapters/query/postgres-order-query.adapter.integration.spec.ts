@@ -1,4 +1,5 @@
 import { OrderEntityTestFactory } from 'src/modules/orders/testing';
+import { ResultAssertionHelper } from 'src/testing';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { PostgresOrderQueryAdapter } from './postgres-order-query.adapter';
@@ -173,10 +174,8 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
   it('returns QueryNotFoundError when querying non-existent order ID', async () => {
     const result = await queryAdapter.getById(99999);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain('not found');
-    }
+    ResultAssertionHelper.assertResultFailure(result);
+    expect(result.error.message).toContain('not found');
   });
 
   it('returns error when user ID ownership does not match order ID', async () => {

@@ -104,9 +104,7 @@ describe('PostgresUserRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      if (result.isFailure) {
-        expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
-      }
+      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     });
 
     it('should return not-found when OCC update affects 0 rows and the user is missing', async () => {
