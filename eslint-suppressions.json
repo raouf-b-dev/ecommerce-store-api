@@ -480,11 +480,6 @@
       "count": 1
     }
   },
-  "src/testing/helpers/result-assertion.helper.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    }
-  },
   "src/testing/mocks/bullmq-job.mock.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -524,11 +519,6 @@
   "test/e2e/auth/must-change-password.e2e-spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "test/e2e/checkout/checkout-idempotency.e2e-spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "test/e2e/checkout/checkout-saga.e2e-spec.ts": {

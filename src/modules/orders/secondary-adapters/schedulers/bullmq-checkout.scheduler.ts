@@ -6,7 +6,6 @@ import {
   ScheduleCheckoutProps,
   SchedulePostPaymentProps,
   ScheduleRefundPaymentProps,
-  getRefundJobId,
 } from '../../core/domain/schedulers/order.scheduler';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -215,7 +214,10 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     props: ScheduleRefundPaymentProps,
   ): Promise<Result<string, InfrastructureError>> {
     try {
-      const jobId = getRefundJobId(props.orderId);
+      const jobId = this.jobConfig.getJobId(
+        JobNames.REFUND_PAYMENT,
+        `order-${props.orderId}`,
+      );
       const correlationId = this.correlation.getId();
 
       await this.flowProducerService.add({

@@ -11,7 +11,6 @@ import {
   MockOrderScheduler,
   OrderBuilder,
   OrderTestFactory,
-  getRefundJobId,
 } from 'src/modules/orders/testing';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
@@ -440,8 +439,14 @@ describe('CancelOrderUseCase', () => {
         expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(
           3,
         );
-        expect([...mockOrderScheduler.jobs.keys()]).toEqual([
-          getRefundJobId(orderId),
+        expect(mockOrderScheduler.jobs.size).toBe(1);
+        expect([...mockOrderScheduler.jobs.values()]).toEqual([
+          {
+            orderId,
+            paymentId: 42,
+            amount: cancelledOrder.totalPrice,
+            reason: 'Order cancelled',
+          },
         ]);
       });
     });

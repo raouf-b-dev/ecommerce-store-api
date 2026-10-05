@@ -14,10 +14,7 @@ import {
   createMockQueue,
   ResultAssertionHelper,
 } from '../../../../testing';
-import {
-  ScheduleRefundPaymentProps,
-  getRefundJobId,
-} from '../../core/domain/schedulers/order.scheduler';
+import { ScheduleRefundPaymentProps } from '../../core/domain/schedulers/order.scheduler';
 
 describe('BullMqOrderScheduler', () => {
   let scheduler: BullMqOrderScheduler;
@@ -76,7 +73,10 @@ describe('BullMqOrderScheduler', () => {
       const result = await scheduler.scheduleRefundPayment(props);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      const expectedJobId = getRefundJobId(42);
+      const expectedJobId = jobConfigService.getJobId(
+        JobNames.REFUND_PAYMENT,
+        'order-42',
+      );
       expect(result.value).toBe(expectedJobId);
 
       expect(mockFlowProducer.add).toHaveBeenCalledWith({

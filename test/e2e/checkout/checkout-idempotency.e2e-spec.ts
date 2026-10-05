@@ -24,7 +24,6 @@ import {
 } from 'src/testing/helpers/e2e-test-app.helper';
 import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 import { IdempotencyTestFactory } from 'src/testing/factories/idempotency.factory';
-import { Response } from 'supertest';
 
 describe('Checkout idempotency (e2e)', () => {
   let app: INestApplication;
@@ -193,21 +192,15 @@ describe('Checkout idempotency (e2e)', () => {
     );
     expect(orderIds.size).toBe(1);
 
-    expect(
-      conflicts.map((conflict) => ({
-        body: conflict.body,
-        retryAfter: conflict.getHeader('Retry-After'),
-      })),
-    ).toEqual(
-      conflicts.map(() => ({
-        body: expect.objectContaining({
-          success: false,
-          statusCode: HttpStatus.CONFLICT,
-          message: expect.stringContaining('already in progress'),
-        }),
-        retryAfter: String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
-      })),
-    );
+    for (const conflict of conflicts) {
+      HttpErrorAssertionHelper.assertErrorContract(conflict, {
+        statusCode: HttpStatus.CONFLICT,
+        messageContains: 'already in progress',
+      });
+      expect(conflict.getHeader('Retry-After')).toBe(
+        String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
+      );
+    }
 
     const afterCount = await E2eCheckoutHelper.listOrderCount(
       http,
@@ -229,14 +222,11 @@ describe('Checkout idempotency (e2e)', () => {
       body: { cartId: 'not-a-number' },
     });
     expect(failed.status).toBe(HttpStatus.BAD_REQUEST);
-    HttpErrorAssertionHelper.assertErrorContract(
-      { body: failed.body } as Response,
-      {
-        statusCode: HttpStatus.BAD_REQUEST,
-        messageContains: 'Validation failed',
-        hasValidationErrors: true,
-      },
-    );
+    HttpErrorAssertionHelper.assertErrorContract(failed, {
+      statusCode: HttpStatus.BAD_REQUEST,
+      messageContains: 'Validation failed',
+      hasValidationErrors: true,
+    });
 
     const cartId = await E2eCheckoutHelper.createCartWithItem(
       http,
