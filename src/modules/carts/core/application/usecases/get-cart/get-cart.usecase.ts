@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
@@ -38,6 +39,8 @@ export class GetCartUseCase extends UseCase<
     if (!callerContext) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
@@ -49,10 +52,12 @@ export class GetCartUseCase extends UseCase<
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
-    let result: Result<CartPresentationDTO | null, any>;
+    let result: Result<CartPresentationDTO | null, QueryError>;
 
     if (cartId) {
       result = await this.cartQueryService.getById(
@@ -73,9 +78,20 @@ export class GetCartUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Cart ID or User ID is required');
     }
 
-    if (isFailure(result) || !result.value) {
+    if (isFailure(result)) {
+      return ErrorFactory.UseCaseError(
+        result.error.message,
+        result.error,
+        result.error.statusCode,
+        result.error.retryable,
+      );
+    }
+
+    if (!result.value) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
