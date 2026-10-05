@@ -337,48 +337,43 @@ For side effects that leave the database (enqueue a job, call a gateway, emit an
 describe('CancelOrderUseCase when the refund cannot be queued', () => {
   let useCase: CancelOrderUseCase;
   let orders: MockOrderRepository;
-  let refunds: FakeRefundScheduler;
+  let scheduler: MockOrderScheduler;
 
   beforeEach(() => {
     orders = new MockOrderRepository();
-    refunds = new FakeRefundScheduler();
-    useCase = new CancelOrderUseCase(orders, refunds, { publish: jest.fn() });
-  });
+    scheduler = new MockOrderScheduler();
+    scheduler.scheduleOrderStockRelease.mockResolvedValue(
+      Result.success('stock-release-job'),
+    );
+    useCase = new CancelOrderUseCase(orders, scheduler, { publish: jest.fn() });
 
-  it('saves the cancelled order and returns a retryable failure', async () => {
-    const paidOrder = OrderTestFactory.createDomainOrder({
+    const order = OrderTestFactory.createDomainOrder({
       id: 1,
       status: OrderStatus.CONFIRMED,
       paymentId: 42,
     });
-    orders.mockSuccessfulFindByIdForUpdate(paidOrder);
+    orders.mockSuccessfulFindByIdForUpdate(order);
     orders.mockSuccessfulSave();
-    refunds.failNext(
+    scheduler.failNext(
       new InfrastructureError('queue down', undefined, undefined, true),
     );
+  });
 
+  it('saves the cancelled order and returns a retryable failure', async () => {
     const result = await useCase.execute({ orderId: 1 });
 
     expect(result).toMatchObject({
       isFailure: true,
       error: { retryable: true },
     });
-    expect(orders.save).toHaveBeenCalledTimes(1);
-    expect(refunds.jobs.size).toBe(0);
+    expect(orders.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: OrderStatus.CANCELLED }),
+      expect.any(Number),
+    );
+    expect(scheduler.jobs.size).toBe(0);
   });
 
   it('creates exactly one refund job when the cancel is retried', async () => {
-    const paidOrder = OrderTestFactory.createDomainOrder({
-      id: 1,
-      status: OrderStatus.CONFIRMED,
-      paymentId: 42,
-    });
-    orders.mockSuccessfulFindByIdForUpdate(paidOrder);
-    orders.mockSuccessfulSave();
-    refunds.failNext(
-      new InfrastructureError('queue down', undefined, undefined, true),
-    );
-
     await useCase.execute({ orderId: 1 });
 
     const cancelledOrder = OrderTestFactory.createDomainOrder({
@@ -392,7 +387,8 @@ describe('CancelOrderUseCase when the refund cannot be queued', () => {
     await useCase.execute({ orderId: 1 });
 
     ResultAssertionHelper.assertResultSuccess(retry);
-    expect([...refunds.jobs.keys()]).toEqual(['refund-payment-order-1']);
+    expect(scheduler.scheduleRefundPayment).toHaveBeenCalledTimes(3);
+    expect([...scheduler.jobs.keys()]).toEqual(['refund-payment-order-1']);
   });
 });
 ```

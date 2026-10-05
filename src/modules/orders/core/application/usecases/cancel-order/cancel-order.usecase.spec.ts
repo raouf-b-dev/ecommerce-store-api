@@ -7,7 +7,6 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import {
-  FakeRefundScheduler,
   MockOrderRepository,
   MockOrderScheduler,
   OrderBuilder,
@@ -394,20 +393,9 @@ describe('CancelOrderUseCase', () => {
     });
 
     describe('when the refund cannot be queued (failure injection)', () => {
-      let fakeRefundScheduler: FakeRefundScheduler;
-      let failureInjectionUseCase: CancelOrderUseCase;
+      const orderId = 1;
 
       beforeEach(() => {
-        fakeRefundScheduler = new FakeRefundScheduler();
-        failureInjectionUseCase = new CancelOrderUseCase(
-          mockRepository,
-          fakeRefundScheduler,
-          domainEventPublisher,
-        );
-      });
-
-      it('saves the cancelled order and returns a retryable failure when enqueue fails', async () => {
-        const orderId = 1;
         const paidOrder = OrderTestFactory.createDomainOrder({
           id: orderId,
           status: OrderStatus.CONFIRMED,
@@ -416,39 +404,29 @@ describe('CancelOrderUseCase', () => {
 
         mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
         mockRepository.mockSuccessfulSave();
-        fakeRefundScheduler.failNext(
+        mockOrderScheduler.failNext(
           new InfrastructureError('queue down', undefined, undefined, true),
         );
+      });
 
-        const result = await failureInjectionUseCase.execute({ orderId });
+      it('saves the cancelled order and returns a retryable failure when enqueue fails', async () => {
+        const result = await useCase.execute({ orderId });
 
         expect(result).toMatchObject({
           isFailure: true,
           error: { retryable: true },
         });
         expect(mockRepository.save).toHaveBeenCalledTimes(1);
-        expect(mockRepository.save.mock.calls[0]?.[0]?.status).toBe(
-          OrderStatus.CANCELLED,
+        expect(mockRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({ status: OrderStatus.CANCELLED }),
+          expect.any(Number),
         );
-        expect(fakeRefundScheduler.jobs.size).toBe(0);
+        expect(mockOrderScheduler.jobs.size).toBe(0);
       });
 
       it('creates exactly one refund job when the cancel is retried', async () => {
-        const orderId = 1;
-        const paidOrder = OrderTestFactory.createDomainOrder({
-          id: orderId,
-          status: OrderStatus.CONFIRMED,
-          paymentId: 42,
-        });
-
-        mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
-        mockRepository.mockSuccessfulSave();
-        fakeRefundScheduler.failNext(
-          new InfrastructureError('queue down', undefined, undefined, true),
-        );
-
         // Run 1: enqueue fails after order is saved
-        await failureInjectionUseCase.execute({ orderId });
+        await useCase.execute({ orderId });
 
         // On retry, the order in DB is now CANCELLED with paymentId 42
         const cancelledOrder = OrderTestFactory.createDomainOrder({
@@ -458,11 +436,14 @@ describe('CancelOrderUseCase', () => {
         });
         mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
 
-        const retryResult = await failureInjectionUseCase.execute({ orderId });
-        await failureInjectionUseCase.execute({ orderId });
+        const retryResult = await useCase.execute({ orderId });
+        await useCase.execute({ orderId });
 
         ResultAssertionHelper.assertResultSuccess(retryResult);
-        expect([...fakeRefundScheduler.jobs.keys()]).toEqual([
+        expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(
+          3,
+        );
+        expect([...mockOrderScheduler.jobs.keys()]).toEqual([
           `refund-payment-order-${orderId}`,
         ]);
       });
