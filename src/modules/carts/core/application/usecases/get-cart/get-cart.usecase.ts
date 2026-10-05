@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -38,6 +38,8 @@ export class GetCartUseCase extends UseCase<
     if (!callerContext) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
@@ -49,6 +51,8 @@ export class GetCartUseCase extends UseCase<
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
@@ -76,6 +80,8 @@ export class GetCartUseCase extends UseCase<
     if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
+        undefined,
+        HttpStatus.NOT_FOUND,
       );
     }
 
