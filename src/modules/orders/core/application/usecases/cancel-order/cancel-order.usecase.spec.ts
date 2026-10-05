@@ -12,6 +12,7 @@ import {
   OrderBuilder,
   OrderTestFactory,
 } from 'src/modules/orders/testing';
+import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
@@ -389,6 +390,63 @@ describe('CancelOrderUseCase', () => {
         error: { statusCode: 500 },
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when the refund cannot be queued (failure injection)', () => {
+      const orderId = 1;
+
+      beforeEach(() => {
+        const paidOrder = OrderTestFactory.createDomainOrder({
+          id: orderId,
+          status: OrderStatus.CONFIRMED,
+          paymentId: 42,
+        });
+
+        mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+        mockRepository.mockSuccessfulSave();
+        mockOrderScheduler.failNext(
+          new InfrastructureError('queue down', undefined, undefined, true),
+        );
+      });
+
+      it('saves the cancelled order and returns a retryable failure when enqueue fails', async () => {
+        const result = await useCase.execute({ orderId });
+
+        expect(result).toMatchObject({
+          isFailure: true,
+          error: { retryable: true },
+        });
+        expect(mockRepository.save).toHaveBeenCalledTimes(1);
+        expect(mockRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({ status: OrderStatus.CANCELLED }),
+          expect.any(Number),
+        );
+        expect(mockOrderScheduler.jobs.size).toBe(0);
+      });
+
+      it('creates exactly one refund job when the cancel is retried', async () => {
+        // Run 1: enqueue fails after order is saved
+        await useCase.execute({ orderId });
+
+        // On retry, the order in DB is now CANCELLED with paymentId 42
+        const cancelledOrder = OrderTestFactory.createDomainOrder({
+          id: orderId,
+          status: OrderStatus.CANCELLED,
+          paymentId: 42,
+        });
+        mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+
+        const retryResult = await useCase.execute({ orderId });
+        await useCase.execute({ orderId });
+
+        ResultAssertionHelper.assertResultSuccess(retryResult);
+        expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(
+          3,
+        );
+        expect([...mockOrderScheduler.jobs.keys()]).toEqual([
+          `refund-payment-order-${orderId}`,
+        ]);
+      });
     });
   });
 });

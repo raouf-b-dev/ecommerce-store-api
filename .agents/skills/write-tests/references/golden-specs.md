@@ -325,3 +325,18 @@ const error = jest.spyOn(logger, 'error').mockImplementation();
 ## Domain entity
 
 No mocks. Follow `src/modules/inventory/core/domain/entities/inventory.spec.ts` and [DOMAIN-ENTITY-TESTING.md](../../../../docs/testing/DOMAIN-ENTITY-TESTING.md).
+
+## Failure injection
+
+For side effects that leave the database (enqueue a job, call a gateway, emit an event). Test that:
+
+1. When the effect fails, earlier state is saved and the error is retryable.
+2. When the call is retried, the effect happens exactly once.
+
+Worked example: the `failure injection` describe in src/modules/orders/core/application/usecases/cancel-order/cancel-order.usecase.spec.ts. Use MockOrderScheduler.failNext(error) to make the next refund enqueue fail, and MockOrderScheduler.jobs (keyed by the production job id) to assert exactly one job exists after retries.
+
+```typescript
+scheduler.failNext(new InfrastructureError('queue down'));
+const result = await useCase.execute({ orderId: 1 });
+expect(result).toMatchObject({ isFailure: true, error: { retryable: true } });
+```

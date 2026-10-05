@@ -6,7 +6,7 @@ NestJS 11 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), 
 
 `npm run verify` runs typecheck, lint (ESLint + ASCII prose), format check, architecture tests, and unit tests. Run it before reporting a task done. One spec: `npx jest <path>`.
 
-In your final message give: what changed, the commands you ran with results, and open risks or assumptions.
+In your final message give: what changed, the commands you ran with results, open risks or assumptions, and for each side effect in the diff (queue add, gateway call, notification, event) what happens if the process dies right after it.
 
 ## Never
 
@@ -28,6 +28,15 @@ Stop and ask when a security or data-integrity decision is ambiguous.
 
 Pure domain; persistence-ignorant aggregates; repositories return domain entities only; thin primary adapters; ACL gateways or domain events between contexts; one aggregate per transaction; normalized schemas by default; reconciliation jobs are read-only; explicit optimistic concurrency. Details: `docs/ai/ARCHITECTURE-INVARIANTS.md`.
 
+## PR review findings
+
+Mistakes that cost QA rounds. Check your diff for each before you report done.
+
+- A side effect fires before the state it depends on is saved, or its key is random or time-based: `check-side-effects` skill.
+- The retryable flag is dropped when an error is wrapped (`ErrorFactory`, `UseCaseError`, gateways, use cases), or no test covers it.
+- `expect` sits inside `if`, `try`, `catch`, or a ternary: the test passes when the branch is skipped. ESLint rejects it.
+- The same block is pasted twice: extract it before the PR.
+
 ## Load only when
 
 Skills are folders `.agents/skills/<name>/SKILL.md`. Open the file when its row applies, even if your tool does not discover skills itself.
@@ -37,6 +46,7 @@ Skills are folders `.agents/skills/<name>/SKILL.md`. Open the file when its row 
 | Writing or fixing tests                                       | `.agents/skills/write-tests/SKILL.md`                                  |
 | Adding a module, use case, endpoint, gateway, or permission   | `.agents/skills/add-module/SKILL.md`                                   |
 | Adding a scheduled or background job                          | `.agents/skills/add-job/SKILL.md`                                      |
+| Adding or changing a queue add, gateway call, or domain event | `.agents/skills/check-side-effects/SKILL.md`                           |
 | Changing a repository, mapper, ORM entity, or versioned write | `.agents/skills/write-repository/SKILL.md`                             |
 | Writing or moving docs, ADRs, FEATURES or ROADMAP entries     | `.agents/skills/write-docs/SKILL.md`                                   |
 | Reviewing a change for layer, ACL, or authorization drift     | `.agents/skills/architecture-boundary-guard/SKILL.md`                  |
