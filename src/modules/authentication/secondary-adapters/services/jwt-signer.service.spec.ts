@@ -1,10 +1,10 @@
 import { generateKeyPairSync } from 'crypto';
-import { decodeJwt } from 'jose';
-import { MockJwksService } from 'src/testing';
+import * as jose from 'jose';
+import { ClockTestHelper, MockJwksService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtSignerService } from './jwt-signer.service';
-import { JwksPort } from '../../../../../infrastructure/jwt/ports/jwks.port';
-import { EnvConfigService } from '../../../../../config/env-config.service';
+import { JwksPort } from '../../../../infrastructure/jwt/ports/jwks.port';
+import { EnvConfigService } from '../../../../config/env-config.service';
 
 function createPrivateKeyPem(): string {
   const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
@@ -39,7 +39,7 @@ describe('JwtSignerService', () => {
       ],
     }).compile();
 
-    service = module.get<JwtSignerService>(JwtSignerService);
+    service = module.get(JwtSignerService);
   });
 
   it('should be defined', () => {
@@ -80,12 +80,31 @@ describe('JwtSignerService', () => {
       });
 
       expect(result.sessionId).toBe('session-kept');
-      const decoded = decodeJwt(result.token);
+      const decoded = jose.decodeJwt(result.token);
       expect(decoded.sid).toBe('session-kept');
       if (typeof decoded.exp !== 'number') {
         throw new Error('Expected refresh token exp');
       }
       expect(result.expiresAt.getTime()).toBe(decoded.exp * 1000);
+    });
+
+    it('sets expiresAt from the configured refresh TTL when the payload has no exp', async () => {
+      const fixed = new Date('2026-06-01T00:00:00.000Z');
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const decodeJwt = jest.spyOn(jose, 'decodeJwt');
+
+      const result = await ClockTestHelper.runWithFixedDate(fixed, () =>
+        signingService.signRefreshTokenWithSession({
+          sub: 1,
+          sid: 'session-kept',
+        }),
+      );
+
+      expect(decodeJwt).not.toHaveBeenCalled();
+      decodeJwt.mockRestore();
+      expect(result.expiresAt.getTime()).toBe(fixed.getTime() + sevenDaysMs);
+      const decoded = jose.decodeJwt(result.token);
+      expect(decoded.exp).toBe(Math.floor(result.expiresAt.getTime() / 1000));
     });
 
     it('mints a session id when none is provided', async () => {
@@ -97,8 +116,8 @@ describe('JwtSignerService', () => {
       });
 
       expect(first.sessionId).not.toBe(second.sessionId);
-      expect(decodeJwt(first.token).sid).toBe(first.sessionId);
-      expect(decodeJwt(second.token).sid).toBe(second.sessionId);
+      expect(jose.decodeJwt(first.token).sid).toBe(first.sessionId);
+      expect(jose.decodeJwt(second.token).sid).toBe(second.sessionId);
     });
   });
 });

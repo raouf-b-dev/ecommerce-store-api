@@ -2,6 +2,7 @@ import { EnvError } from 'envalid';
 import {
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
+  parseDuration,
   parseHttpOrigin,
 } from './validate-env';
 
@@ -48,6 +49,18 @@ describe('parseHttpOrigin', () => {
     'https://user:pass@api.example.com',
   ])('rejects %p', (value) => {
     expect(() => parseHttpOrigin(value)).toThrow(EnvError);
+  });
+});
+
+describe('parseDuration', () => {
+  it('accepts a unit duration', () => {
+    expect(parseDuration('7d')).toBe('7d');
+    expect(parseDuration(' 15m ')).toBe('15m');
+  });
+
+  it('rejects a value that is not a duration', () => {
+    expect(() => parseDuration('banana')).toThrow(EnvError);
+    expect(() => parseDuration('')).toThrow(EnvError);
   });
 });
 

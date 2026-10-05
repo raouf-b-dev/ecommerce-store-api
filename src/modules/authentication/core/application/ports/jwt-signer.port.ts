@@ -30,7 +30,7 @@ export interface RefreshTokenResult {
 
 /**
  * Port for signing JWT tokens.
- * Implemented by JwtSignerService in the infrastructure layer.
+ * Implemented by JwtSignerService in the authentication secondary adapter.
  */
 export abstract class JwtSignerPort {
   abstract signAccessToken(payload: SignAccessTokenPayload): Promise<string>;
