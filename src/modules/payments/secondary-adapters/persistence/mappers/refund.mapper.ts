@@ -2,10 +2,8 @@ import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/cr
 import { Refund, RefundProps } from '../../../core/domain/entities/refund';
 import { RefundStatusType } from '../../../core/domain/value-objects/refund-status';
 import { RefundEntity } from '../../orm/refund.schema';
-import {
-  decimalFromMinorUnits,
-  requireMinorUnits,
-} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
 
 type RefundCreate = CreateFromEntity<RefundEntity, 'payment'>;
 

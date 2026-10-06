@@ -33,5 +33,8 @@
   },
   "files": ["src/types/express.ts"],
   "include": ["src/**/*", "test/**/*", "scripts/**/*", "data-source.ts"],
-  "exclude": ["node_modules", "dist", "coverage", ".gemini"]
+  "exclude": ["node_modules", "dist", "coverage", ".gemini"],
+  "ts-node": {
+    "transpileOnly": true
+  }
 }

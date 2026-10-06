@@ -87,4 +87,12 @@ describe('Money', () => {
     ResultAssertionHelper.assertResultSuccess(line);
     expect(line.value.amount).toBe(3998);
   });
+
+  it('formats minor units to decimal string and major units number', () => {
+    const moneyResult = Money.create(1999, 'USD');
+    ResultAssertionHelper.assertResultSuccess(moneyResult);
+
+    expect(moneyResult.value.toDecimalString()).toBe('19.99');
+    expect(moneyResult.value.toMajorUnits()).toBe(19.99);
+  });
 });

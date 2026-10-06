@@ -10,6 +10,7 @@ import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.schedu
 import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 export interface ProcessPaymentResult extends ReserveStockResult {
   paymentId: number;
@@ -17,6 +18,19 @@ export interface ProcessPaymentResult extends ReserveStockResult {
   orderId: number;
   orderTotal: number;
   orderCurrency: string;
+}
+
+function isReserveStockResult(value: unknown): value is ReserveStockResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'reservationId' in value &&
+    typeof value.reservationId === 'number' &&
+    'cartId' in value &&
+    typeof value.cartId === 'number' &&
+    'cartItems' in value &&
+    Array.isArray(value.cartItems)
+  );
 }
 
 @Injectable()
@@ -44,9 +58,9 @@ export class ProcessPaymentStep extends BaseJobHandler<
     const { paymentMethod, userId, orderId } = job.data;
 
     const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(childrenValues)[0] as ReserveStockResult;
+    const childData = Object.values(childrenValues)[0];
 
-    if (!childData || !childData.reservationId) {
+    if (!isReserveStockResult(childData)) {
       return ErrorFactory.ServiceError(
         'Missing reservation data from ReserveStockStep',
       );
@@ -64,8 +78,14 @@ export class ProcessPaymentStep extends BaseJobHandler<
       );
     }
     const order = orderResult.value;
-    const orderTotal = order.totalPrice;
     const orderCurrency = order.currency;
+    const moneyResult = Money.fromMajorUnits(order.totalPrice, orderCurrency);
+    if (isFailure(moneyResult)) {
+      return ErrorFactory.ServiceError(
+        `Failed to compute payment amount for order ${orderId}: ${moneyResult.error.message}`,
+      );
+    }
+    const orderTotal = moneyResult.value.amount;
 
     this.logger.log(`Creating payment intent for order ${orderId}...`);
 

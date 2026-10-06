@@ -4,26 +4,26 @@
  */
 
 export interface RawAnalyticsRevenueAggRow {
-  gross: string | number | null;
-  refunded: string | number | null;
-  paid_count: string | number | null;
+  gross: number | null;
+  refunded: number | null;
+  paid_count: number | null;
   currency: string | null;
 }
 
 export interface RawAnalyticsCountRow {
-  count: string | number;
+  count: number;
 }
 
 export interface RawAnalyticsAttentionRow {
   status: string;
-  count: string | number;
+  count: number;
 }
 
 export interface RawAnalyticsSeriesRow {
   bucket_start: Date | string;
-  gross: string | number | null;
-  refunded: string | number | null;
-  captured_count: string | number | null;
+  gross: number | null;
+  refunded: number | null;
+  captured_count: number | null;
   currency: string | null;
 }
 
@@ -31,8 +31,8 @@ export interface RawAnalyticsTopProductRow {
   product_id: number;
   name: string;
   sku: string | null;
-  units_sold: string | number;
-  line_revenue: string | number;
+  units_sold: number;
+  line_revenue: number;
 }
 
 export interface RawAnalyticsAlertRow {

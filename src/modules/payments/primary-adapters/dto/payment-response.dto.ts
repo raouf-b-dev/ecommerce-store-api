@@ -17,9 +17,9 @@ export class PaymentResponseDto {
   orderId!: number;
 
   @ApiProperty({
-    example: 29999,
-    description: 'Payment amount in minor currency units',
-    type: 'integer',
+    example: 299.99,
+    description: 'Payment amount',
+    type: Number,
   })
   amount!: number;
 
@@ -70,9 +70,9 @@ export class PaymentResponseDto {
   paymentMethodInfo?: string;
 
   @ApiPropertyOptional({
-    example: 5000,
-    description: 'Refunded amount in minor currency units',
-    type: 'integer',
+    example: 50,
+    description: 'Refunded amount',
+    type: Number,
   })
   refundedAmount?: number;
 

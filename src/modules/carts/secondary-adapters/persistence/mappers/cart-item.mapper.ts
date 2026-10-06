@@ -6,10 +6,8 @@ import {
 } from '../../../core/domain/entities/cart-item';
 import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { CartItemEntity } from '../../orm/cart-item.schema';
-import {
-  decimalFromMinorUnits,
-  requireMinorUnits,
-} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
 
 export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
 

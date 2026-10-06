@@ -21,13 +21,13 @@ describe('InventoryQueryMapper', () => {
 
   it('should supply default fallback values when nullable fields are missing', () => {
     const rawRow = InventoryDtoTestFactory.createRawInventoryListQueryRow({
-      id: '12',
-      productId: '8',
+      id: 12,
+      productId: 8,
       sku: null,
       productTitle: null,
-      availableQuantity: '10',
-      reservedQuantity: '0',
-      totalQuantity: '10',
+      availableQuantity: 10,
+      reservedQuantity: 0,
+      totalQuantity: 10,
       updatedAt: '2024-02-01T12:00:00.000Z',
     });
 

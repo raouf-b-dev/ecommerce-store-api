@@ -1,7 +1,6 @@
 import { PaymentListItemDTO } from '../../../core/application/queries/results/payment-list-item.result';
 import { PaymentDetailDTO } from '../../../core/application/queries/results/payment-detail.result';
 import { RawPaymentListQueryRow } from '../../dto/raw-payment-list-query-row.interface';
-import { requireMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class PaymentQueryMapper {
   static toListItemDto(row: RawPaymentListQueryRow): PaymentListItemDTO {
@@ -11,8 +10,8 @@ export class PaymentQueryMapper {
       userId: Number(row.userId || 0),
       userName: row.userName || 'Unknown User',
       userEmail: row.userEmail || '',
-      amount: requireMinorUnits(row.amount || 0),
-      currency: row.currency || 'USD',
+      amount: Number(row.amount || 0),
+      currency: row.currency,
       status: String(row.status),
       paymentMethod: row.paymentMethod || 'CREDIT_CARD',
       transactionId: row.transactionId || '',
@@ -25,7 +24,7 @@ export class PaymentQueryMapper {
 
   static toDetailDto(row: RawPaymentListQueryRow): PaymentDetailDTO {
     const base = this.toListItemDto(row);
-    let parsedMetadata: Record<string, any> | null = null;
+    let parsedMetadata: Record<string, unknown> | null = null;
 
     if (row.metadata) {
       if (typeof row.metadata === 'string') {

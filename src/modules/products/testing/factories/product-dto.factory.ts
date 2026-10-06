@@ -12,7 +12,7 @@ export class ProductDtoTestFactory {
       slug: 'wireless-gaming-mouse',
       description: 'High precision optical sensor mouse.',
       sku: 'MOUSE-W-001',
-      price: '49.99',
+      price: 49.99,
       currency: 'USD',
       imageUrl: 'https://example.com/mouse.jpg',
       categoryId: 2,

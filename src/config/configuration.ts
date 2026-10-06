@@ -21,6 +21,7 @@ export interface IAppConfig {
     database?: string;
     containerName: string;
     image: string;
+    synchronize: boolean;
   };
   jwt: {
     privateKey: string;
@@ -82,6 +83,7 @@ export default (): IAppConfig => {
       database: env.DB_DATABASE,
       containerName: env.POSTGRES_CONTAINER_NAME,
       image: env.POSTGRES_IMAGE,
+      synchronize: env.IS_DB_SYNCHRONIZE,
     },
     jwt: {
       privateKey: env.JWT_PRIVATE_KEY,

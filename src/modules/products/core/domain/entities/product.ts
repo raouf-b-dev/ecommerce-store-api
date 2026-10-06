@@ -10,7 +10,7 @@ export interface ProductProps {
   slug?: string;
   description?: string;
   price: number;
-  currency?: string;
+  currency: string;
   sku?: string;
   imageUrl?: string | null;
   categoryId?: number | null;
@@ -54,7 +54,7 @@ export class Product implements IProduct {
       : this.generateSlug(props.name);
     this._description = props.description?.trim();
     this._price = this.roundPrice(props.price);
-    this._currency = props.currency?.trim().toUpperCase() || 'USD';
+    this._currency = props.currency.trim().toUpperCase();
     this._sku = props.sku?.trim().toUpperCase();
     this._imageUrl = props.imageUrl?.trim() || null;
     this._categoryId = props.categoryId ?? null;
@@ -69,6 +69,11 @@ export class Product implements IProduct {
     }
     if (props.price < 0) {
       return ErrorFactory.DomainError('Product price cannot be negative');
+    }
+    if (!props.currency?.trim() || props.currency.trim().length !== 3) {
+      return ErrorFactory.DomainError(
+        'Product currency must be a valid 3-letter ISO 4217 code',
+      );
     }
     const slug = props.slug?.trim()
       ? this.generateSlug(props.slug)

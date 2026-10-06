@@ -234,16 +234,6 @@
       "count": 2
     }
   },
-  "src/modules/notifications/core/application/queries/results/notification-list-item.result.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/notifications/secondary-adapters/dto/raw-notification-list-query-row.interface.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/modules/notifications/secondary-adapters/mappers/query/notification-query.mapper.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -295,11 +285,6 @@
     }
   },
   "src/modules/orders/primary-adapters/jobs/create-order.job.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/primary-adapters/jobs/process-payment.job.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
@@ -388,16 +373,6 @@
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/secondary-adapters/dto/raw-payment-list-query-row.interface.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/secondary-adapters/mappers/query/payment-query.mapper.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }

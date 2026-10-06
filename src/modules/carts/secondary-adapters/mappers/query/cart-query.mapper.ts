@@ -3,7 +3,6 @@ import {
   CartPresentationDTO,
 } from '../../../core/application/queries/results/cart-presentation.result';
 import { RawCartQueryRow } from '../../dto/raw-cart-query-row.interface';
-import { requireMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class CartQueryMapper {
   static toPresentationDto(
@@ -22,13 +21,13 @@ export class CartQueryMapper {
     for (const row of rows) {
       if (row.itemId != null) {
         const qty = Number(row.quantity || 0);
-        const unitPrice = requireMinorUnits(row.price || 0);
-        const itemTotal = qty * unitPrice;
-        const itemCurrency = (row.currency || 'USD').trim().toUpperCase();
+        const unitPrice = Number(row.price || 0);
+        const itemTotal = Number((qty * unitPrice).toFixed(2));
+        const itemCurrency = (row.currency ?? '').trim().toUpperCase();
 
         totalQuantity += qty;
         grandTotal += itemTotal;
-        if (!currency) {
+        if (!currency && itemCurrency) {
           currency = itemCurrency;
         }
 
@@ -57,15 +56,17 @@ export class CartQueryMapper {
         : String(firstRow.cartUpdatedAt);
 
     const shippingCost = 0;
+    const subtotal = Number(grandTotal.toFixed(2));
+    const totalAmount = Number((subtotal + shippingCost).toFixed(2));
 
     return {
       id: Number(firstRow.cartId),
       userId: Number(firstRow.userId),
       items,
       itemCount: totalQuantity,
-      subtotal: grandTotal,
+      subtotal,
       shippingCost,
-      totalAmount: grandTotal + shippingCost,
+      totalAmount,
       currency,
       createdAt,
       updatedAt:

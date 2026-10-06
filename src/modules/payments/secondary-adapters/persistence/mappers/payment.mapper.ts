@@ -3,10 +3,8 @@ import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
-import {
-  decimalFromMinorUnits,
-  requireMinorUnits,
-} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 

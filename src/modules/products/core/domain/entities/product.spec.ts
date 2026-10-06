@@ -16,6 +16,21 @@ describe('Product', () => {
       ).toThrow(DomainError);
     });
 
+    it('rejects missing or empty currency', () => {
+      expect(() =>
+        ProductTestFactory.createDomainProduct({ currency: '   ' }),
+      ).toThrow(DomainError);
+    });
+
+    it('rejects currency that is not a 3-letter code', () => {
+      expect(() =>
+        ProductTestFactory.createDomainProduct({ currency: 'US' }),
+      ).toThrow(DomainError);
+      expect(() =>
+        ProductTestFactory.createDomainProduct({ currency: 'USDT' }),
+      ).toThrow(DomainError);
+    });
+
     it('generates slug from name and uppercases sku', () => {
       const product = ProductTestFactory.createDomainProduct({
         name: 'Cool Gadget',
