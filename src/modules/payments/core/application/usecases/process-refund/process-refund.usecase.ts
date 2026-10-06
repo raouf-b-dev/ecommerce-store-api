@@ -77,9 +77,10 @@ export class ProcessRefundUseCase extends UseCase<
     if (isFailure(gatewayResult)) {
       return ErrorFactory.UseCaseError(
         `Gateway refund failed: ${gatewayResult.error.message}`,
-        gatewayResult.error,
-        undefined,
-        gatewayResult.error.retryable,
+        {
+          cause: gatewayResult.error,
+          retryable: gatewayResult.error.retryable,
+        },
       );
     }
 

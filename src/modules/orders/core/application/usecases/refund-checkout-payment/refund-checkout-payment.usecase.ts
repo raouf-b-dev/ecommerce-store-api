@@ -11,6 +11,7 @@ import {
   ProcessRefundInput,
 } from '../../ports/payment.gateway';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
 @Injectable()
 export class RefundCheckoutPaymentUseCase implements UseCase<
@@ -29,18 +30,19 @@ export class RefundCheckoutPaymentUseCase implements UseCase<
     if (input.amount <= 0) {
       return ErrorFactory.UseCaseError(
         'Refund amount must be greater than zero',
+        {
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
+        },
       );
     }
 
     const result = await this.paymentGateway.processRefund(input);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to refund checkout payment',
-        result.error,
-        undefined,
-        result.error.retryable,
-      );
+      return ErrorFactory.UseCaseError('Failed to refund checkout payment', {
+        cause: result.error,
+        retryable: result.error.retryable,
+      });
     }
 
     this.domainEventPublisher.publish('checkout.saga.compensation', {

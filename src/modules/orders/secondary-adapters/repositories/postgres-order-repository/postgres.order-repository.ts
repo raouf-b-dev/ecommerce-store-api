@@ -146,8 +146,7 @@ export class PostgresOrderRepository implements OrderRepository {
         }
         throw new RepositoryError(
           `Optimistic lock failure for Order ${order.id}. Expected version ${expectedVersion}.`,
-          undefined,
-          HttpStatus.CONFLICT,
+          { status: HttpStatus.CONFLICT },
         );
       }
 

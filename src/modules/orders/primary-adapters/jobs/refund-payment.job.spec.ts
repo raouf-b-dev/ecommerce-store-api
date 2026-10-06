@@ -66,12 +66,10 @@ describe('RefundPaymentStep', () => {
 
   it('does NOT throw UnrecoverableError when usecase returns retryable gateway failure', async () => {
     execute.mockResolvedValueOnce(
-      ErrorFactory.UseCaseError(
-        'Failed to refund checkout payment',
-        new Error('Gateway timeout'),
-        undefined,
-        true,
-      ),
+      ErrorFactory.UseCaseError('Failed to refund checkout payment', {
+        cause: new Error('Gateway timeout'),
+        retryable: true,
+      }),
     );
 
     const jobData: RefundPaymentJobData = {

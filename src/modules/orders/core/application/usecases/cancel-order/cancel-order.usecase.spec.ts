@@ -245,6 +245,7 @@ describe('CancelOrderUseCase', () => {
             productName: 'Free item',
             quantity: 1,
             unitPrice: 0,
+            currency: 'USD',
           },
         ],
       });
@@ -401,7 +402,7 @@ describe('CancelOrderUseCase', () => {
         mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
         mockRepository.mockSuccessfulSave();
         mockOrderScheduler.failNext(
-          new InfrastructureError('queue down', undefined, undefined, true),
+          new InfrastructureError('queue down', { retryable: true }),
         );
       });
 

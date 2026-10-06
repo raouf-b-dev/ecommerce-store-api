@@ -79,16 +79,11 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('returns failure keeping retryable === true when gateway fails with retryable error', async () => {
-    jest
-      .spyOn(paymentGateway, 'processRefund')
-      .mockResolvedValueOnce(
-        ErrorFactory.InfrastructureError(
-          'Payment provider timeout',
-          undefined,
-          undefined,
-          true,
-        ),
-      );
+    jest.spyOn(paymentGateway, 'processRefund').mockResolvedValueOnce(
+      ErrorFactory.InfrastructureError('Payment provider timeout', {
+        retryable: true,
+      }),
+    );
 
     const input: ProcessRefundInput = {
       paymentId: 10,
@@ -110,16 +105,11 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('returns failure keeping retryable === false when gateway fails with non-retryable error', async () => {
-    jest
-      .spyOn(paymentGateway, 'processRefund')
-      .mockResolvedValueOnce(
-        ErrorFactory.InfrastructureError(
-          'Payment provider rejected refund',
-          undefined,
-          undefined,
-          false,
-        ),
-      );
+    jest.spyOn(paymentGateway, 'processRefund').mockResolvedValueOnce(
+      ErrorFactory.InfrastructureError('Payment provider rejected refund', {
+        retryable: false,
+      }),
+    );
 
     const input: ProcessRefundInput = {
       paymentId: 10,

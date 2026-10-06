@@ -53,12 +53,10 @@ export class ModulePaymentGateway implements PaymentGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to process refund',
-        result.error,
-        undefined,
-        result.error.retryable,
-      );
+      return ErrorFactory.InfrastructureError('Failed to process refund', {
+        cause: result.error,
+        retryable: result.error.retryable,
+      });
     }
 
     return Result.success(undefined);
