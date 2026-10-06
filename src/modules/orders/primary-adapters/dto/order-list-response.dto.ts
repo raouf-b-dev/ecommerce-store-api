@@ -34,7 +34,11 @@ export class OrderListItemResponseDto {
   @ApiProperty({ example: 2, description: 'Number of line items' })
   itemCount!: number;
 
-  @ApiProperty({ example: 224.94, description: 'Order total amount' })
+  @ApiProperty({
+    example: 22494,
+    description: 'Order total amount in minor currency units',
+    type: 'integer',
+  })
   totalAmount!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })

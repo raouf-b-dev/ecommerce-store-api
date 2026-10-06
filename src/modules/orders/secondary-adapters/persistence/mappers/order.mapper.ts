@@ -8,6 +8,7 @@ import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 type OrderCreate = CreateFromEntity<OrderEntity, 'items' | 'version'>;
 
@@ -60,9 +61,9 @@ export class OrderMapper {
       status: primitives.status,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
-      subtotal: primitives.subtotal,
-      shippingCost: primitives.shippingCost,
-      totalPrice: primitives.totalPrice,
+      subtotal: Number(decimalFromMinorUnits(primitives.subtotal)),
+      shippingCost: Number(decimalFromMinorUnits(primitives.shippingCost)),
+      totalPrice: Number(decimalFromMinorUnits(primitives.totalPrice)),
     };
 
     const orderEntity: OrderEntity = Object.assign(

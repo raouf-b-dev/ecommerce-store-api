@@ -24,6 +24,7 @@ export class OrderTestFactory {
           quantity: 1,
           unitPrice: 10,
           lineTotal: 10,
+          currency: 'USD',
         },
       ],
 
@@ -120,6 +121,7 @@ export class OrderTestFactory {
       quantity: i + 1,
       unitPrice: 10 * (i + 1),
       lineTotal: 10 * (i + 1) * (i + 1),
+      currency: 'USD',
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -187,6 +189,7 @@ export class OrderTestFactory {
           productName: 'Product 1',
           quantity: 1,
           unitPrice: 10,
+          currency: 'USD',
         },
       ],
       shippingAddress: this.createShippingAddressProps(),

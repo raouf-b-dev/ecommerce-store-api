@@ -51,7 +51,11 @@ export class OrderPricing {
     }
 
     const subtotal = subtotalResult.value;
-    const shippingCost = Money.zero(subtotal.currency);
+    const shippingCostResult = Money.zero(subtotal.currency);
+    if (shippingCostResult.isFailure) {
+      throw shippingCostResult.error;
+    }
+    const shippingCost = shippingCostResult.value;
     const totalPriceResult = subtotal.add(shippingCost);
     if (totalPriceResult.isFailure) {
       throw totalPriceResult.error;

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { Result } from '../../../../../shared-kernel/domain/result';
+import { isFailure, Result } from '../../../../../shared-kernel/domain/result';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { OrderRepository } from '../../domain/repositories/order-repository';
 import { Order } from '../../domain/entities/order';
 import { OrderItemProps } from '../../domain/entities/order-items';
@@ -15,6 +15,7 @@ export interface SeedDemoOrderProductItem {
   sku: string;
   name: string;
   price: number;
+  currency: string;
   imageUrl: string | null;
 }
 
@@ -81,14 +82,22 @@ export class SeedDemoOrdersUseCase extends UseCase<
       for (const itemDef of seedDef.items) {
         const product = productMapBySku.get(itemDef.sku);
         if (product && product.id) {
+          const unitPrice = Money.fromMajorUnits(
+            product.price,
+            product.currency,
+          );
+          if (isFailure(unitPrice)) {
+            return unitPrice;
+          }
           orderItems.push({
             id: null,
             productId: product.id,
             productName: product.name,
             sku: product.sku,
             imageUrl: product.imageUrl,
-            unitPrice: product.price,
+            unitPrice: unitPrice.value.amount,
             quantity: itemDef.quantity,
+            currency: unitPrice.value.currency,
           });
         }
       }
@@ -112,11 +121,8 @@ export class SeedDemoOrdersUseCase extends UseCase<
       this.applyStatusTransition(order, seedDef.targetStatus);
 
       const saveResult = await this.orderRepository.save(order);
-      if (saveResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          `Failed to seed order '${seedDef.referenceName}'`,
-          saveResult.error,
-        );
+      if (isFailure(saveResult)) {
+        return saveResult;
       }
 
       seededOrders.push(

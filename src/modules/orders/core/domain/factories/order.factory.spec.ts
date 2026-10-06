@@ -9,7 +9,7 @@ describe('OrderFactory', () => {
     productId: 7,
     productName: 'Headphones',
     imageUrl,
-    price: 199.99,
+    price: 19999,
     quantity: 1,
     currency: 'USD',
   });

@@ -96,8 +96,8 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
     const result = await queryAdapter.list({
       page: 1,
       limit: 10,
-      minAmount: 100,
-      maxAmount: 200,
+      minAmount: 10000,
+      maxAmount: 20000,
     });
 
     expect(result.isSuccess).toBe(true);
@@ -105,7 +105,7 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
 
     expect(result.value.total).toBe(1);
     expect(result.value.items[0].id).toBe(inRange.id);
-    expect(result.value.items[0].totalAmount).toBe(150);
+    expect(result.value.items[0].totalAmount).toBe(15000);
   });
 
   it('filters orders by createdAfter and createdBefore with inclusive end-of-day for date-only values', async () => {

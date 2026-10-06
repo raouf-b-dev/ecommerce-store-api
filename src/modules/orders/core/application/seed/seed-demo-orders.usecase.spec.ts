@@ -20,6 +20,7 @@ describe('SeedDemoOrdersUseCase', () => {
     { id: 8, name: 'Keyboard', sku: 'ELEC-MBK-004', price: 79.99 },
   ].map((p) => ({
     ...p,
+    currency: 'USD',
     imageUrl: `http://localhost:3000/media/demo/v1/${p.sku.toLowerCase()}.webp`,
   }));
 
@@ -45,6 +46,7 @@ describe('SeedDemoOrdersUseCase', () => {
           sku: 'ELEC-ANC-001',
           unitPrice: 100,
           quantity: 1,
+          currency: 'USD',
         },
       ],
       shippingAddress: {

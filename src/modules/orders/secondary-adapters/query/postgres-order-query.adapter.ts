@@ -15,6 +15,7 @@ import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interface
 import { UserEntity } from '../../../identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
 import type { SelectQueryBuilder } from 'typeorm';
+import { decimalFromMinorUnits } from '../../../../shared-kernel/domain/value-objects/money-decimal';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -113,11 +114,15 @@ function applyOrderListFilters(
   }
 
   if (minAmount !== undefined) {
-    qb.andWhere('order.totalPrice >= :minAmount', { minAmount });
+    qb.andWhere('order.totalPrice >= :minAmount', {
+      minAmount: decimalFromMinorUnits(minAmount),
+    });
   }
 
   if (maxAmount !== undefined) {
-    qb.andWhere('order.totalPrice <= :maxAmount', { maxAmount });
+    qb.andWhere('order.totalPrice <= :maxAmount', {
+      maxAmount: decimalFromMinorUnits(maxAmount),
+    });
   }
 }
 

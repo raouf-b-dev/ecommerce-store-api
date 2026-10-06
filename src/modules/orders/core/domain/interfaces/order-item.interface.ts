@@ -7,4 +7,5 @@ export interface IOrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  currency: string;
 }

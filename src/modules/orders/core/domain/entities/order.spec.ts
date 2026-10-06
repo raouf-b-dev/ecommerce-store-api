@@ -138,6 +138,7 @@ describe('Order', () => {
         productName: 'Updated',
         quantity: 2,
         unitPrice: 15,
+        currency: 'USD',
       },
     ];
 
