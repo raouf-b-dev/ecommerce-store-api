@@ -6,6 +6,7 @@ import {
   UpdateProductInputFactory,
 } from 'src/modules/products/testing';
 import { UpdateProductUseCase } from './update-product.usecase';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Product } from '../../../domain/entities/product';
@@ -54,7 +55,7 @@ describe('UpdateProductUseCase', () => {
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
     });
 
-    it('should return Failure(UseCaseError) if product is not found', async () => {
+    it('returns the repository failure when the product is not found', async () => {
       const productId = 999;
       const command = UpdateProductInputFactory.createMockDto({
         id: productId,
@@ -67,7 +68,7 @@ describe('UpdateProductUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         `Product with id ${productId} not found`,
-        UseCaseError,
+        RepositoryError,
       );
     });
 

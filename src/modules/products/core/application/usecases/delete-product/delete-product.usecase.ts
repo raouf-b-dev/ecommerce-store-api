@@ -6,8 +6,6 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-
 @Injectable()
 export class DeleteProductUseCase extends UseCase<number, void, UseCaseError> {
   constructor(private readonly productRepository: ProductRepository) {
@@ -18,7 +16,7 @@ export class DeleteProductUseCase extends UseCase<number, void, UseCaseError> {
     const productResult = await this.productRepository.deleteById(id);
 
     if (isFailure(productResult)) {
-      return ErrorFactory.UseCaseError(productResult.error.message);
+      return productResult;
     }
 
     return Result.success(productResult.value);

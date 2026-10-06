@@ -33,7 +33,7 @@ export class AssignUserRoleUseCase extends UseCase<
     const userResult = await this.userRepository.findById(command.userId);
 
     if (isFailure(userResult)) {
-      return ErrorFactory.UseCaseError(userResult.error.message);
+      return userResult;
     }
 
     if (!userResult.value) {

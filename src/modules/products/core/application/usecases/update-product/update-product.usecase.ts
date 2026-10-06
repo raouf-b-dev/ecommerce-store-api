@@ -29,11 +29,9 @@ export class UpdateProductUseCase extends UseCase<
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
       if (command.categoryId === null) {
-        return ErrorFactory.UseCaseError(
-          'categoryId cannot be null',
-          undefined,
-          HttpStatus.BAD_REQUEST,
-        );
+        return ErrorFactory.UseCaseError('categoryId cannot be null', {
+          status: HttpStatus.BAD_REQUEST,
+        });
       }
 
       if (command.categoryId != null) {
@@ -41,13 +39,12 @@ export class UpdateProductUseCase extends UseCase<
           command.categoryId,
         );
         if (isFailure(categoryResult)) {
-          return ErrorFactory.UseCaseError(categoryResult.error.message);
+          return categoryResult;
         }
         if (!categoryResult.value || !categoryResult.value.isActive) {
           return ErrorFactory.UseCaseError(
             `Category with id ${command.categoryId} not found`,
-            undefined,
-            HttpStatus.BAD_REQUEST,
+            { status: HttpStatus.BAD_REQUEST },
           );
         }
       }
@@ -57,7 +54,7 @@ export class UpdateProductUseCase extends UseCase<
       );
 
       if (isFailure(findResult)) {
-        return ErrorFactory.UseCaseError(findResult.error.message);
+        return findResult;
       }
 
       const { entity, expectedVersion } = findResult.value;
@@ -78,7 +75,7 @@ export class UpdateProductUseCase extends UseCase<
       );
 
       if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(saveResult.error.message);
+        return saveResult;
       }
 
       return Result.success<IProduct>(entity.toPrimitives());

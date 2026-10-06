@@ -5,6 +5,7 @@ import {
   MockProductRepository,
 } from 'src/modules/products/testing';
 import { CreateProductUseCase } from './create-product.usecase';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
@@ -60,7 +61,7 @@ describe('CreateProductUseCase', () => {
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should return Failure(UseCaseError) if product is not created', async () => {
+    it('returns the repository failure when the product is not saved', async () => {
       const command = CreateProductInputFactory.createMockDto();
 
       mockRepository.mockSaveFailure('Failed to save product');
@@ -70,7 +71,7 @@ describe('CreateProductUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         'Failed to save product',
-        UseCaseError,
+        RepositoryError,
       );
     });
 
