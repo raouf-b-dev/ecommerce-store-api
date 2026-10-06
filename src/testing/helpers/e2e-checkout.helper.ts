@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { HttpStatus } from '@nestjs/common';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {
@@ -78,12 +79,16 @@ export class E2eCheckoutHelper {
     cartId: number,
     options: {
       idempotencyKey?: string;
+      omitIdempotencyKey?: boolean;
       includeShipping?: boolean;
       headers?: Record<string, string>;
       body?: Record<string, unknown>;
     } = {},
   ): Promise<CheckoutHttpResult> {
     const includeShipping = options.includeShipping !== false;
+    const idempotencyKey = options.omitIdempotencyKey
+      ? undefined
+      : (options.idempotencyKey ?? randomUUID());
     const request = http
       .post(`${E2E_API_PREFIX}/orders/checkout`)
       .set(AuthTestHelper.bearer(customer.accessToken));
@@ -98,9 +103,7 @@ export class E2eCheckoutHelper {
       ...(includeShipping
         ? { shippingAddress: this.shippingAddress(customer) }
         : {}),
-      ...(options.idempotencyKey
-        ? { idempotencyKey: options.idempotencyKey }
-        : {}),
+      ...(idempotencyKey ? { idempotencyKey } : {}),
     };
 
     const response = await request.send(payload);

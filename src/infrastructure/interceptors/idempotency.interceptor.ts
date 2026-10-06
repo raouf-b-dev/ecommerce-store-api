@@ -3,6 +3,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  BadRequestException,
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import {
   extractIdempotencyKey,
 } from '../../shared-kernel/infra/http/request.helpers';
 import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
+import { ErrorCode } from '../../shared-kernel/domain/exceptions/error-code';
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
@@ -27,7 +29,15 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const clientKey = extractIdempotencyKey(request);
 
     if (!clientKey) {
-      return next.handle();
+      return throwError(
+        () =>
+          new BadRequestException({
+            statusCode: 400,
+            message: 'Idempotency-Key is required',
+            error: ErrorCode.IDEMPOTENCY_KEY_REQUIRED,
+            code: ErrorCode.IDEMPOTENCY_KEY_REQUIRED,
+          }),
+      );
     }
 
     const scopedKey = buildScopedIdempotencyKey(request, clientKey);

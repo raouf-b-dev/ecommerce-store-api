@@ -72,7 +72,7 @@ export class OrdersController {
   @ApiResponse({
     status: 400,
     description:
-      'Invalid checkout data, empty cart, or omitted shippingAddress with no default address on the user profile.',
+      'Invalid checkout data, missing Idempotency-Key, empty cart, or omitted shippingAddress with no default address on the user profile.',
   })
   @ApiResponse({
     status: 401,
@@ -100,8 +100,8 @@ export class OrdersController {
   @ApiHeader({
     name: 'Idempotency-Key',
     description:
-      'Preferred client idempotency key (also accepted as x-idempotency-key or body idempotencyKey).',
-    required: false,
+      'Client idempotency key (also accepted as x-idempotency-key or body idempotencyKey). Required.',
+    required: true,
   })
   @ApiHeader({
     name: 'x-idempotency-key',
