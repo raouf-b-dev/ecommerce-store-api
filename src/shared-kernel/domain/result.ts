@@ -9,7 +9,7 @@ class Success<T> {
   constructor(public readonly value: T) {}
 }
 
-class Failure<E extends AppError = AppError> {
+export class Failure<E extends AppError = AppError> {
   public readonly isSuccess = false;
   public readonly isFailure = true;
   constructor(public readonly error: E) {}

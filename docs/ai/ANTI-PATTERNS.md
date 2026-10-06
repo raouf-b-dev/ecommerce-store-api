@@ -44,7 +44,9 @@ Good: map to the aggregate and return a `Result`.
 async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
   const entity = await this.ormRepo.findOne({ where: { id } });
   if (!entity) {
-    return ErrorFactory.RepositoryError('Inventory not found', undefined, HttpStatus.NOT_FOUND);
+    return ErrorFactory.RepositoryError('Inventory not found', {
+      status: HttpStatus.NOT_FOUND,
+    });
   }
   return Result.success(InventoryMapper.toDomain(entity));
 }
@@ -83,7 +85,25 @@ const module = await Test.createTestingModule({
 }).compile();
 ```
 
-## 5. Review checklist
+## 5. Rewrapping a Result failure
+
+Bad: a new error that copies the message and drops `code`, `statusCode`, and `retryable`.
+
+```typescript
+if (isFailure(result)) {
+  return ErrorFactory.UseCaseError(result.error.message, result.error);
+}
+```
+
+Good: return the failure the collaborator already built. Rule: [CONVENTIONS.md](CONVENTIONS.md) section 14.
+
+```typescript
+if (isFailure(result)) {
+  return result;
+}
+```
+
+## 6. Review checklist
 
 - [ ] Domain imports no NestJS, TypeORM, or external library.
 - [ ] Controllers and job handlers hold no logic and do not publish events.
@@ -92,5 +112,7 @@ const module = await Test.createTestingModule({
 - [ ] Owned resources check `CallerContext` through `OwnedResourceAccessPolicy`; jobs pass `SYSTEM_CALLER_CONTEXT`.
 - [ ] No stored derived field (use an aggregate getter); batch jobs use keyset pagination (`findBatch`), not `OFFSET`.
 - [ ] Type rules in AGENTS.md rule 1 hold (no `as`, `any`, `@ts-ignore`, new baseline entries).
+- [ ] A `Result` failure is returned as-is. A new error is only for a decision this function makes (CONVENTIONS.md section 14).
+- [ ] `ErrorFactory` status, retryable, and code are passed as an options object. No `undefined` placeholders.
 - [ ] Tests cover success, failure, and authorization; `npm run verify` is green.
 - [ ] Docs updated when a feature ships (`write-docs` skill); an ADR written when a trigger applies.

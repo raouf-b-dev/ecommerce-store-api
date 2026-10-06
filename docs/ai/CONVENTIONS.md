@@ -35,10 +35,7 @@ export class ModuleUserGateway implements UserGateway {
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to validate user',
-        result.error,
-      );
+      return result;
     }
     return Result.success(toUserInfo(result.value)); // maps to the orders-owned CheckoutUserInfoResult
   }
@@ -108,7 +105,23 @@ Wrap every bidirectional relation property in TypeORM `Relation<T>` (avoids TDZ 
 
 Canonical rule: [ARCHITECTURE-INVARIANTS.md](ARCHITECTURE-INVARIANTS.md) invariant 10. Port, mapper, and adapter code: `write-repository` skill. Rationale: [ADR-0005](../architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md).
 
-## 14. Unknown errors
+## 14. Errors
+
+When a call already returned a `Result` failure, return that failure. Do not build a new `ErrorFactory` error around it.
+
+A new error is only for a decision this function makes itself: a missing input, a business rule, an empty cart. Copying `message` into `UseCaseError`, `InfrastructureError`, `RepositoryError`, `QueryError`, or `DomainError` drops `code`, `statusCode`, and `retryable` unless every field is copied, and it hides the layer that failed. The HTTP filter already reads those fields off `AppError`, so the original error is the response.
+
+This applies inside a use case, a domain method, a repository, a query adapter, and an ACL gateway.
+
+Pass only the fields you are setting. The second argument of `ErrorFactory` and of `new DomainError`, `UseCaseError`, `ServiceError`, `RepositoryError`, `InfrastructureError`, and `QueryError` may be an options object (`cause`, `status`, `retryable`, `code`). `(message)` and `(message, cause)` stay valid. Do not pass `undefined` to reach a later argument.
+
+```typescript
+return ErrorFactory.UseCaseError('Cart is empty', {
+  code: ErrorCode.CART_EMPTY,
+});
+```
+
+Unknown thrown values still go through the helpers below. Do not stringify them by hand.
 
 - `toErrorMessage(err)`: a log or response string.
 - `toError(err)`: an `Error` to log, rethrow, or pass on; keeps `cause`.

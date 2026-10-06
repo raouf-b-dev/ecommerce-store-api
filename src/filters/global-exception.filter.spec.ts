@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
+import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
 import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { createMockArgumentsHost } from '../testing';
 
@@ -16,7 +17,7 @@ class TestAppError extends AppError {
     super(
       message,
       HttpStatus.UNPROCESSABLE_ENTITY,
-      'TEST_ERROR',
+      ErrorCode.DOMAIN_ERROR,
       undefined,
       false,
     );
@@ -81,6 +82,7 @@ describe('GlobalExceptionFilter', () => {
         statusCode: 400,
         message: 'Validation failed',
         errors: ['name should not be empty', 'email must be an email'],
+        code: ErrorCode.VALIDATION_FAILED,
       }),
     );
     expect(mockResponse.json.mock.calls[0][0]).toHaveProperty('timestamp');
@@ -171,7 +173,7 @@ describe('GlobalExceptionFilter', () => {
         success: false,
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
         message: 'A domain error occurred',
-        code: 'TEST_ERROR',
+        code: ErrorCode.DOMAIN_ERROR,
       }),
     );
   });
@@ -231,11 +233,11 @@ describe('GlobalExceptionFilter', () => {
         success: false,
         statusCode: 500,
         message: 'An unexpected server error occurred.',
+        code: ErrorCode.INTERNAL_ERROR,
         timestamp: expect.any(String),
       });
       expect(jsonResponse).not.toHaveProperty('stack');
       expect(jsonResponse).not.toHaveProperty('error');
-      expect(jsonResponse).not.toHaveProperty('code');
       expect(Logger.prototype.error).toHaveBeenCalled();
     });
 
