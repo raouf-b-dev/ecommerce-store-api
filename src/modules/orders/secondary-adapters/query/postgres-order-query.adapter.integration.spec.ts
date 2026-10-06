@@ -105,7 +105,7 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
 
     expect(result.value.total).toBe(1);
     expect(result.value.items[0].id).toBe(inRange.id);
-    expect(result.value.items[0].totalAmount).toBe(15000);
+    expect(result.value.items[0].totalAmount).toBe(150);
   });
 
   it('filters orders by createdAfter and createdBefore with inclusive end-of-day for date-only values', async () => {

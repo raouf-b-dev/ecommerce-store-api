@@ -289,11 +289,6 @@
       "count": 1
     }
   },
-  "src/modules/orders/primary-adapters/jobs/process-payment.job.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "src/modules/orders/primary-adapters/jobs/reserve-stock-job/reserve-stock.job.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
