@@ -3,6 +3,7 @@ import {
   CartPresentationDTO,
 } from '../../../core/application/queries/results/cart-presentation.result';
 import { RawCartQueryRow } from '../../dto/raw-cart-query-row.interface';
+import { requireMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class CartQueryMapper {
   static toPresentationDto(
@@ -21,8 +22,8 @@ export class CartQueryMapper {
     for (const row of rows) {
       if (row.itemId != null) {
         const qty = Number(row.quantity || 0);
-        const unitPrice = Number(row.price || 0);
-        const itemTotal = Number((qty * unitPrice).toFixed(2));
+        const unitPrice = requireMinorUnits(row.price || 0);
+        const itemTotal = qty * unitPrice;
         const itemCurrency = (row.currency || 'USD').trim().toUpperCase();
 
         totalQuantity += qty;
@@ -55,7 +56,6 @@ export class CartQueryMapper {
         ? firstRow.cartUpdatedAt.toISOString()
         : String(firstRow.cartUpdatedAt);
 
-    const subtotal = Number(grandTotal.toFixed(2));
     const shippingCost = 0;
 
     return {
@@ -63,9 +63,9 @@ export class CartQueryMapper {
       userId: Number(firstRow.userId),
       items,
       itemCount: totalQuantity,
-      subtotal,
+      subtotal: grandTotal,
       shippingCost,
-      totalAmount: Number((subtotal + shippingCost).toFixed(2)),
+      totalAmount: grandTotal + shippingCost,
       currency,
       createdAt,
       updatedAt:

@@ -26,27 +26,27 @@ describe('CartQueryMapper', () => {
           id: 100,
           productId: 5,
           productName: 'Mechanical Keyboard',
-          price: 50,
+          price: 5000,
           currency: 'USD',
           quantity: 2,
-          subtotal: 100,
+          subtotal: 10000,
           imageUrl: 'https://example.com/keyboard.jpg',
         },
         {
           id: 101,
           productId: 6,
           productName: 'Gaming Mouse',
-          price: 30,
+          price: 3000,
           currency: 'USD',
           quantity: 1,
-          subtotal: 30,
+          subtotal: 3000,
           imageUrl: 'https://example.com/keyboard.jpg',
         },
       ],
       itemCount: 3,
-      subtotal: 130,
+      subtotal: 13000,
       shippingCost: 0,
-      totalAmount: 130,
+      totalAmount: 13000,
       currency: 'USD',
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
@@ -89,6 +89,6 @@ describe('CartQueryMapper', () => {
 
     expect(result?.items).toHaveLength(1);
     expect(result?.items[0].id).toBe(0);
-    expect(result?.subtotal).toBe(12.5);
+    expect(result?.subtotal).toBe(1250);
   });
 });

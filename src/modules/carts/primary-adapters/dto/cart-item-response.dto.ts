@@ -22,9 +22,9 @@ export class CartItemResponseDto {
   productName!: string;
 
   @ApiProperty({
-    example: 99.99,
-    description: 'Unit price snapshotted at add time',
-    type: Number,
+    example: 9999,
+    description: 'Unit price in minor currency units, snapshotted at add time',
+    type: 'integer',
   })
   price!: number;
 
@@ -42,9 +42,9 @@ export class CartItemResponseDto {
   quantity!: number;
 
   @ApiProperty({
-    example: 199.98,
-    description: 'Subtotal (price * quantity)',
-    type: Number,
+    example: 19998,
+    description: 'Line subtotal in minor currency units',
+    type: 'integer',
   })
   subtotal!: number;
 

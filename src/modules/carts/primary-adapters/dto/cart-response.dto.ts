@@ -32,24 +32,24 @@ export class CartResponseDto {
   itemCount!: number;
 
   @ApiProperty({
-    example: 299.97,
-    description: 'Cart subtotal (sum of line items)',
-    type: Number,
+    example: 29997,
+    description: 'Cart subtotal in minor currency units (sum of line items)',
+    type: 'integer',
   })
   subtotal!: number;
 
   @ApiProperty({
     example: 0,
     description:
-      'Shipping cost for the cart. MVP policy: always 0 until a shipping engine ships.',
-    type: Number,
+      'Shipping cost in minor currency units. MVP policy: always 0 until a shipping engine ships.',
+    type: 'integer',
   })
   shippingCost!: number;
 
   @ApiProperty({
-    example: 299.97,
-    description: 'Cart total amount (subtotal + shippingCost)',
-    type: Number,
+    example: 29997,
+    description: 'Cart total in minor currency units (subtotal + shippingCost)',
+    type: 'integer',
   })
   totalAmount!: number;
 
