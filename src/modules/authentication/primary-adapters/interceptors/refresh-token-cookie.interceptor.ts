@@ -7,7 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Request, Response } from 'express';
-import ms, { StringValue } from 'ms';
+import ms from 'ms';
 import { EnvConfigService } from '../../../../config/env-config.service';
 import { DEFAULT_API_PREFIX } from '../../../../infrastructure/http/api-version';
 import { getUnversionedRoutePath } from '../../../../shared-kernel/infra/http/request.helpers';
@@ -40,9 +40,7 @@ export class RefreshTokenCookieInterceptor implements NestInterceptor {
   private readonly cookieMaxAge: number;
 
   constructor(private readonly configService: EnvConfigService) {
-    this.cookieMaxAge = ms(
-      this.configService.jwt.refreshTokenTtl as StringValue,
-    );
+    this.cookieMaxAge = ms(this.configService.jwt.refreshTokenTtl);
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {

@@ -1,9 +1,11 @@
+import { HttpStatus } from '@nestjs/common';
 import { SessionToken } from '../../../core/domain/entities/session-token';
 import { PostgresSessionTokenRepository } from './postgres-session-token.repository';
 import { SessionTokenEntity } from '../../orm/session-token.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
+import { RepositoryError } from 'src/shared-kernel/domain/exceptions/repository.error';
 
 describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
   let repository: PostgresSessionTokenRepository;
@@ -71,5 +73,53 @@ describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
     expect(firstLoaded.value?.isRevoked).toBe(true);
     expect(secondLoaded.value?.isRevoked).toBe(true);
     expect(adminLoaded.value?.isRevoked).toBe(false);
+  });
+
+  it('replaceTokenIfCurrent keeps the first hash when a second writer presents the stale hash', async () => {
+    const original = SessionToken.create(
+      seededData.customerUser.id,
+      'raw-session-token',
+      new Date(Date.now() + 60_000),
+    );
+    const saveResult = await repository.save(original);
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const rotatedExpiry = new Date(Date.now() + 120_000);
+    const rotated = SessionToken.create(
+      seededData.customerUser.id,
+      'rotated-session-token',
+      rotatedExpiry,
+      original.id,
+    );
+    const replaced = await repository.replaceTokenIfCurrent(
+      rotated,
+      original.tokenHash,
+    );
+    ResultAssertionHelper.assertResultSuccess(replaced);
+    expect(replaced.value.tokenHash).toBe(rotated.tokenHash);
+    expect(replaced.value.isRevoked).toBe(false);
+
+    const stale = SessionToken.create(
+      seededData.customerUser.id,
+      'second-rotation',
+      rotatedExpiry,
+      original.id,
+    );
+    const conflict = await repository.replaceTokenIfCurrent(
+      stale,
+      original.tokenHash,
+    );
+    ResultAssertionHelper.assertResultFailure(
+      conflict,
+      'Refresh token was already rotated',
+      RepositoryError,
+    );
+    expect(conflict.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(conflict.error.retryable).toBe(false);
+
+    const loaded = await repository.findById(original.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value?.tokenHash).toBe(rotated.tokenHash);
+    expect(loaded.value?.isRevoked).toBe(false);
   });
 });

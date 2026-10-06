@@ -1,4 +1,5 @@
 import { cleanEnv, str, port, num, makeValidator, EnvError } from 'envalid';
+import { duration } from './validators/duration';
 
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
@@ -87,7 +88,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
-    JWT_REFRESH_TOKEN_TTL: str({ default: '7d' }),
+    JWT_REFRESH_TOKEN_TTL: duration({ default: '7d' }),
 
     JWT_CART_SESSION_TTL: str({ default: '7d' }),
 

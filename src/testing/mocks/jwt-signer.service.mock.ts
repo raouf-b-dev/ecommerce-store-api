@@ -18,7 +18,10 @@ export class MockJwtSignerService implements JwtSignerPort {
     .fn<Promise<string>, [SignRefreshTokenPayload]>()
     .mockResolvedValue(dummyToken);
   signRefreshTokenWithSession = jest
-    .fn<Promise<RefreshTokenResult>, [Pick<SignRefreshTokenPayload, 'sub'>]>()
+    .fn<
+      Promise<RefreshTokenResult>,
+      [Pick<SignRefreshTokenPayload, 'sub' | 'sid'>]
+    >()
     .mockResolvedValue({
       token: dummyToken,
       sessionId: 'mock-session-id',

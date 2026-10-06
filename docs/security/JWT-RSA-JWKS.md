@@ -16,23 +16,23 @@ A signed JWT (JWS Compact Serialization) consists of three Base64url-encoded seg
 <Header>.<Payload>.<Signature>
 ```
 
-| Segment       | Contains                                                                                            |
-| :------------ | :-------------------------------------------------------------------------------------------------- |
-| **Header**    | `alg` (signing algorithm, e.g. `RS256`), `typ` (`JWT`), optionally `kid` (key identifier)           |
-| **Payload** | Claims: both registered (e.g. `iss`, `sub`, `exp`, `iat`) and custom (e.g. `role`, `email`) |
+| Segment       | Contains                                                                                           |
+| :------------ | :------------------------------------------------------------------------------------------------- |
+| **Header**    | `alg` (signing algorithm, e.g. `RS256`), `typ` (`JWT`), optionally `kid` (key identifier)          |
+| **Payload**   | Claims: both registered (e.g. `iss`, `sub`, `exp`, `iat`) and custom (e.g. `role`, `email`)        |
 | **Signature** | `SIGN(base64url(header) + "." + base64url(payload), key)`: the cryptographic proof of authenticity |
 
 ### 1.2 Registered Claims (RFC 7519 §4.1)
 
-| Claim | Name       | Description                                                                            |
-| :---- | :--------- | :------------------------------------------------------------------------------------- |
-| `iss` | Issuer     | Identifies the principal that issued the JWT                                           |
-| `sub` | Subject    | Identifies the principal that is the subject (typically a user ID)                     |
-| `aud` | Audience   | Identifies the intended recipient(s) of the JWT                                        |
+| Claim | Name       | Description                                                                           |
+| :---- | :--------- | :------------------------------------------------------------------------------------ |
+| `iss` | Issuer     | Identifies the principal that issued the JWT                                          |
+| `sub` | Subject    | Identifies the principal that is the subject (typically a user ID)                    |
+| `aud` | Audience   | Identifies the intended recipient(s) of the JWT                                       |
 | `exp` | Expiration | The time after which the JWT must be rejected (NumericDate: seconds since Unix epoch) |
-| `nbf` | Not Before | The time before which the JWT must not be accepted                                     |
-| `iat` | Issued At  | The time at which the JWT was issued                                                   |
-| `jti` | JWT ID | A unique identifier for the JWT: can prevent replay attacks |
+| `nbf` | Not Before | The time before which the JWT must not be accepted                                    |
+| `iat` | Issued At  | The time at which the JWT was issued                                                  |
+| `jti` | JWT ID     | A unique identifier for the JWT: can prevent replay attacks                           |
 
 ### 1.3 Signing Algorithms
 
@@ -121,14 +121,14 @@ A **JSON Web Key (JWK)** is a JSON object that represents a cryptographic key. F
 }
 ```
 
-| Field | Description                                       | Required     |
-| :---- | :------------------------------------------------ | :----------- |
-| `kty` | Key Type: `RSA`, `EC`, `OKP`, `oct` | ✅ Yes |
-| `use` | Key Usage: `sig` (signing) or `enc` (encryption) | Optional |
-| `alg` | Algorithm intended for use with this key          | Optional     |
-| `kid` | Key ID: a unique identifier for key selection | Optional |
-| `n`   | RSA modulus (Base64url-encoded)                   | ✅ Yes (RSA) |
-| `e`   | RSA public exponent (Base64url-encoded)           | ✅ Yes (RSA) |
+| Field | Description                                      | Required     |
+| :---- | :----------------------------------------------- | :----------- |
+| `kty` | Key Type: `RSA`, `EC`, `OKP`, `oct`              | ✅ Yes       |
+| `use` | Key Usage: `sig` (signing) or `enc` (encryption) | Optional     |
+| `alg` | Algorithm intended for use with this key         | Optional     |
+| `kid` | Key ID: a unique identifier for key selection    | Optional     |
+| `n`   | RSA modulus (Base64url-encoded)                  | ✅ Yes (RSA) |
+| `e`   | RSA public exponent (Base64url-encoded)          | ✅ Yes (RSA) |
 
 > **Important**: A public JWK must never contain private parameters (`d`, `p`, `q`, `dp`, `dq`, `qi`). If these are present, you have leaked your private key.
 
@@ -165,7 +165,7 @@ The `kid` parameter is an **opaque, case-sensitive string** used to select the c
 | **RFC 7638 Thumbprint** | SHA-256 hash of the canonicalized JWK members (`e`, `kty`, `n` for RSA) | Deterministic, collision-resistant, industry standard. Slightly complex. |
 | **Date-based**          | e.g. `2024-04-21-primary`                                               | Human-readable, easy to manage. Risk of collision on fast rotation.      |
 | **Incremental**         | e.g. `1`, `2`, `3`                                                      | Simple. Not portable across systems. Not recommended for production.     |
-| **UUID** | e.g. `550e8400-e29b-41d4-a716-446655440000` | Unique. Non-deterministic: harder to correlate across services. |
+| **UUID**                | e.g. `550e8400-e29b-41d4-a716-446655440000`                             | Unique. Non-deterministic: harder to correlate across services.          |
 
 > **Recommendation**: Use **RFC 7638 thumbprints** for production systems. The thumbprint is derived directly from the key material, making it deterministic and globally unique without coordination.
 
@@ -192,12 +192,12 @@ Modern authentication systems use two distinct tokens:
 | Property       | Access Token                             | Refresh Token                                                     |
 | :------------- | :--------------------------------------- | :---------------------------------------------------------------- |
 | **Purpose**    | Authorize API requests                   | Obtain new access tokens without re-authentication                |
-| **Lifetime** | Short (5-15 minutes) | Long (hours to days) |
+| **Lifetime**   | Short (5-15 minutes)                     | Long (hours to days)                                              |
 | **Storage**    | Application memory (JavaScript variable) | HttpOnly + Secure + SameSite cookie                               |
 | **Sent via**   | `Authorization: Bearer <token>` header   | Automatically via cookie on `/v1/authentication/refresh` requests |
-| **Payload** | User identity, role, permissions | Minimal: user ID + session ID |
-| **Stateless?** | Yes: verified via signature only | No: validated against server-side session store |
-| **Revocable?** | Not immediately (expires naturally) | Yes: server revokes the session record |
+| **Payload**    | User identity, role, permissions         | Minimal: user ID + session ID                                     |
+| **Stateless?** | Yes: verified via signature only         | No: validated against server-side session store                   |
+| **Revocable?** | Not immediately (expires naturally)      | Yes: server revokes the session record                            |
 
 ### 4.2 Why Two Tokens?
 
@@ -210,13 +210,13 @@ The refresh token bridges this gap. It is **stateful**: the server checks a sess
 **Rotation** means that every time a client uses a refresh token, the server:
 
 1. **Validates** the refresh token (signature + session record)
-2. **Revokes** the used refresh token
-3. **Issues** a brand-new refresh token (and a new access token)
+2. **Replaces** the stored hash on that same session, which invalidates the presented token
+3. **Issues** a brand-new refresh token (and a new access token) for that session
 4. **Returns** the new pair
 
 This limits the window of opportunity for a stolen refresh token. If an attacker uses a stolen token, the legitimate user's next refresh attempt will fail (because the token was already consumed), alerting the system to potential compromise.
 
-**Reuse detection**: If a revoked refresh token is presented again, this is a strong signal of token theft. Best practice is to revoke **all sessions** for that user (a "forced logout everywhere").
+**Reuse detection**: If a refresh token that was already rotated is presented again, this is a strong signal of token theft. Best practice is to revoke **all sessions** for that user (a "forced logout everywhere").
 
 ### 4.4 Refresh Token Transport: OWASP Best Practice
 
@@ -224,10 +224,10 @@ This limits the window of opportunity for a stolen refresh token. If an attacker
 
 | Cookie Attribute | Value             | Purpose                                                    |
 | :--------------- | :---------------- | :--------------------------------------------------------- |
-| `HttpOnly` | `true` | Prevents JavaScript access: mitigates XSS token theft |
+| `HttpOnly`       | `true`            | Prevents JavaScript access: mitigates XSS token theft      |
 | `Secure`         | `true`            | Cookie only sent over HTTPS                                |
 | `SameSite`       | `Strict`          | Prevents CSRF by blocking cross-origin cookie transmission |
-| `Path` | `/authentication` | Cookie only sent to auth endpoints: minimizes exposure |
+| `Path`           | `/authentication` | Cookie only sent to auth endpoints: minimizes exposure     |
 | `Max-Age`        | TTL in sec        | Matches the refresh token's server-side expiration         |
 
 **Why not the response body?**
@@ -264,14 +264,14 @@ sequenceDiagram
     Note over Authentication: 8. Verify signature (public key)<br/>(No DB lookup needed!)
     Authentication-->>Client: 9. 200 OK { data }
 
- Note over Client, Authentication:: access token expires - 
+    Note over Client, Authentication: Access token expires.
 
     Client->>Authentication: 10. POST /v1/authentication/refresh<br/>Cookie: refresh_token (auto)
     Note over Authentication: 11. Verify refresh JWT
     Authentication->>DB: 12. Check session in DB
     DB-->>Authentication: Session valid
-    Authentication->>DB: 13. Revoke old session,<br/>create new session
-    DB-->>Authentication: Sessions updated
+    Authentication->>DB: 13. Replace the stored hash<br/>on the same session
+    DB-->>Authentication: Session hash replaced
     Authentication-->>Client: 14. New access + refresh tokens
 ```
 
@@ -308,22 +308,21 @@ For multi-tenant or multi-service deployments, always set and verify the `aud` c
 | **Using `alg: none`**                                | The `none` algorithm disables signature verification entirely. Attackers forge arbitrary claims.        | Always validate the `alg` header against an allowlist; reject unsigned tokens.                                               |
 | **Symmetric secrets in multi-service architectures** | Every service that verifies tokens also possesses the signing secret and can forge tokens for any user. | Use asymmetric keys (RS256/ES256). Only the auth service holds the private key; others verify with the public key via JWKS.  |
 | **Never rotating keys**                              | A single compromised key remains valid forever, enabling persistent impersonation.                      | Implement JWKS key rotation with a `kid` transition period. Old key verifies existing tokens; new key signs new ones.        |
-| **Ignoring `exp` validation** | Tokens remain valid indefinitely after issuance. A leaked token grants permanent access. | Always set and enforce `exp`. Use short-lived access tokens (5-15 min) and refresh token rotation. |
+| **Ignoring `exp` validation**                        | Tokens remain valid indefinitely after issuance. A leaked token grants permanent access.                | Always set and enforce `exp`. Use short-lived access tokens (5-15 min) and refresh token rotation.                           |
 | **Embedding sensitive data in claims**               | JWT payloads are Base64url-encoded, not encrypted. Anyone with the token can read all claims.           | Store only identifiers and roles in claims. Keep sensitive data server-side. Use JWE if payload confidentiality is required. |
 
 ---
 
 ## References
 
-| RFC / Standard     | Title                                                 |
-| :----------------- | :---------------------------------------------------- |
-| **RFC 7519**       | JSON Web Token (JWT)                                  |
-| **RFC 7515**       | JSON Web Signature (JWS)                              |
-| **RFC 7516**       | JSON Web Encryption (JWE)                             |
-| **RFC 7517**       | JSON Web Key (JWK)                                    |
-| **RFC 7518**       | JSON Web Algorithms (JWA)                             |
-| **RFC 7638**       | JSON Web Key (JWK) Thumbprint                         |
-| **RFC 6749**       | The OAuth 2.0 Authorization Framework                 |
-| **NIST SP 800-57** | Recommendation for Key Management                     |
-| **OWASP** | Cheat Sheet Series: Session Management, JWT Security |
-
+| RFC / Standard     | Title                                                |
+| :----------------- | :--------------------------------------------------- |
+| **RFC 7519**       | JSON Web Token (JWT)                                 |
+| **RFC 7515**       | JSON Web Signature (JWS)                             |
+| **RFC 7516**       | JSON Web Encryption (JWE)                            |
+| **RFC 7517**       | JSON Web Key (JWK)                                   |
+| **RFC 7518**       | JSON Web Algorithms (JWA)                            |
+| **RFC 7638**       | JSON Web Key (JWK) Thumbprint                        |
+| **RFC 6749**       | The OAuth 2.0 Authorization Framework                |
+| **NIST SP 800-57** | Recommendation for Key Management                    |
+| **OWASP**          | Cheat Sheet Series: Session Management, JWT Security |

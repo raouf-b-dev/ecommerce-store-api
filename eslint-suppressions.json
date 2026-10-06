@@ -123,11 +123,6 @@
       "count": 1
     }
   },
-  "src/modules/authentication/primary-adapters/interceptors/refresh-token-cookie.interceptor.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "src/modules/authorization/core/application/lifecycle/permission-system-data.initializer.spec.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1

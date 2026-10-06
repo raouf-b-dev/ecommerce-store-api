@@ -1,3 +1,4 @@
+import { type StringValue } from 'ms';
 import { validateEnv } from './validate-env';
 
 export interface IAppConfig {
@@ -24,7 +25,7 @@ export interface IAppConfig {
   jwt: {
     privateKey: string;
     accessTokenTtl: string;
-    refreshTokenTtl: string;
+    refreshTokenTtl: StringValue;
     cartSessionTtl: string;
   };
   logging: { level: string; dir: string; transport: string };
