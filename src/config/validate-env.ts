@@ -1,4 +1,12 @@
-import { cleanEnv, str, port, num, makeValidator, EnvError } from 'envalid';
+import {
+  cleanEnv,
+  str,
+  port,
+  num,
+  makeValidator,
+  EnvError,
+  bool,
+} from 'envalid';
 import { duration } from './validators/duration';
 
 const HTTP_ORIGIN_ERROR =
@@ -85,6 +93,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DB_DATABASE: str(),
     POSTGRES_CONTAINER_NAME: str(),
     POSTGRES_IMAGE: str(),
+    IS_DB_SYNCHRONIZE: bool({ default: false }),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),

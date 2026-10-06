@@ -20,7 +20,7 @@ import { EnvConfigModule } from 'src/config/config.module';
           password: dbConfig.password,
           database: dbConfig.database,
           autoLoadEntities: true,
-          synchronize: nodeConfig.env !== 'production',
+          synchronize: dbConfig.synchronize && nodeConfig.env !== 'production',
           logging:
             nodeConfig.env !== 'production' ? ['error', 'warn'] : ['error'],
         };

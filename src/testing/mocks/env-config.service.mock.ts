@@ -29,6 +29,7 @@ function createDefaultMockConfig(): IAppConfig {
       database: 'test-db',
       containerName: 'postgres-db',
       image: 'postgres:18.4',
+      synchronize: false,
     },
     logging: {
       level: 'info',
