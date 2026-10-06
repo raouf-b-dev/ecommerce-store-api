@@ -26,7 +26,7 @@ import type {
 } from '../../dto/raw-analytics-query-row.interface';
 
 export class AnalyticsQueryMapper {
-  static toNumber(value: string | number | null | undefined): number {
+  static toNumber(value: number | string | null | undefined): number {
     if (value === null || value === undefined) {
       return 0;
     }

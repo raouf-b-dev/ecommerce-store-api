@@ -1,8 +1,8 @@
 export interface RawCategoryQueryRow {
-  id: number | string;
+  id: number;
   name: string;
   slug: string;
   description: string | null;
-  isActive: boolean | number | string;
-  productCount: number | string | null;
+  isActive: boolean;
+  productCount: number | null;
 }

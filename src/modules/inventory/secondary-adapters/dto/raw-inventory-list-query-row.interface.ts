@@ -1,10 +1,10 @@
 export interface RawInventoryListQueryRow {
-  id: number | string;
-  productId: number | string;
+  id: number;
+  productId: number;
   sku: string | null;
   productTitle: string | null;
-  availableQuantity: number | string;
-  reservedQuantity: number | string;
-  totalQuantity: number | string;
+  availableQuantity: number;
+  reservedQuantity: number;
+  totalQuantity: number;
   updatedAt: Date | string;
 }

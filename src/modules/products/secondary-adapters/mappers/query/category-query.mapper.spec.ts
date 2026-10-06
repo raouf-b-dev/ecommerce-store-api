@@ -1,14 +1,14 @@
 import { CategoryQueryMapper } from './category-query.mapper';
 
 describe('CategoryQueryMapper', () => {
-  it('maps raw rows and coerces string COUNT to number', () => {
+  it('maps raw rows to category result', () => {
     const result = CategoryQueryMapper.toResult({
-      id: '1',
+      id: 1,
       name: 'Electronics',
       slug: 'electronics',
       description: null,
       isActive: true,
-      productCount: '12',
+      productCount: 12,
     });
 
     expect(result).toEqual({
@@ -40,7 +40,7 @@ describe('CategoryQueryMapper', () => {
         slug: 'bad',
         description: null,
         isActive: true,
-        productCount: 'not-a-number',
+        productCount: -5,
       }).productCount,
     ).toBe(0);
   });

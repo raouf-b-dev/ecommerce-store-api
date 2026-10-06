@@ -20,13 +20,13 @@ describe('AnalyticsQueryMapper', () => {
   describe('toKpiSnapshot', () => {
     it('maps revenue and order count rows', () => {
       const revenue: RawAnalyticsRevenueAggRow = {
-        gross: '150.5',
-        refunded: '20',
-        paid_count: '2',
+        gross: 150.5,
+        refunded: 20,
+        paid_count: 2,
         currency: 'USD',
       };
       const snapshot = AnalyticsQueryMapper.toKpiSnapshot(revenue, {
-        count: '5',
+        count: 5,
       });
       expect(snapshot).toEqual({
         netRevenue: 130.5,
@@ -87,8 +87,8 @@ describe('AnalyticsQueryMapper', () => {
           product_id: 9,
           name: 'Mat',
           sku: 'SPOR-1',
-          units_sold: '3',
-          line_revenue: '89.97',
+          units_sold: 3,
+          line_revenue: 89.97,
         },
       ];
       const result = AnalyticsQueryMapper.toTopProductsResult({

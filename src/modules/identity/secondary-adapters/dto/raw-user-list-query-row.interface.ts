@@ -1,12 +1,12 @@
 export interface RawUserListQueryRow {
-  id: number | string;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string | null;
-  isActive: boolean | number | string;
+  isActive: boolean;
   roleCode?: string | null;
   createdAt: Date | string;
   updatedAt?: Date | string;
-  addressCount?: number | string;
+  addressCount?: number;
 }
