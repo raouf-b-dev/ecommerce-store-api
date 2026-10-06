@@ -32,7 +32,11 @@ export class Refund implements IRefund {
 
     this._id = props.id || null;
     this._paymentId = props.paymentId;
-    this._amount = Money.from(props.amount, props.currency);
+    const amount = Money.create(props.amount, props.currency);
+    if (amount.isFailure) {
+      throw amount.error;
+    }
+    this._amount = amount.value;
     this._reason = props.reason.trim();
     this._status = new RefundStatus(props.status);
     this._createdAt = props.createdAt || new Date();

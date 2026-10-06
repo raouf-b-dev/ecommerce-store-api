@@ -21,8 +21,9 @@ export class CreatePaymentDto {
   orderId!: number;
 
   @ApiProperty({
-    example: 299.99,
-    description: 'Payment amount',
+    example: 29999,
+    description: 'Payment amount in minor currency units',
+    type: 'integer',
   })
   @IsNumber()
   @Min(0)

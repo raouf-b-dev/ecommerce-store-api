@@ -3,6 +3,10 @@ import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
+import {
+  decimalFromMinorUnits,
+  requireMinorUnits,
+} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 
@@ -27,7 +31,7 @@ export class PaymentMapper {
       id: entity.id,
       orderId: entity.orderId,
       userId: entity.userId,
-      amount: Number(entity.amount),
+      amount: requireMinorUnits(entity.amount),
       currency: entity.currency,
       paymentMethod: entity.paymentMethod,
       status: entity.status,
@@ -35,7 +39,7 @@ export class PaymentMapper {
       gatewayPaymentIntentId: entity.gatewayPaymentIntentId || null,
       gatewayClientSecret: entity.gatewayClientSecret || null,
       paymentMethodInfo: entity.paymentMethodInfo,
-      refundedAmount: Number(entity.refundedAmount),
+      refundedAmount: requireMinorUnits(entity.refundedAmount),
       refunds: entity.refunds
         ? entity.refunds.map((r) => RefundMapper.toDomain(r).props)
         : [],
@@ -55,7 +59,7 @@ export class PaymentMapper {
       id: primitives.id || 0,
       orderId: primitives.orderId,
       userId: primitives.userId,
-      amount: primitives.amount,
+      amount: Number(decimalFromMinorUnits(primitives.amount)),
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,
       status: primitives.status,
@@ -63,7 +67,7 @@ export class PaymentMapper {
       gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,
       gatewayClientSecret: primitives.gatewayClientSecret,
       paymentMethodInfo: primitives.paymentMethodInfo,
-      refundedAmount: primitives.refundedAmount,
+      refundedAmount: Number(decimalFromMinorUnits(primitives.refundedAmount)),
       failureReason: primitives.failureReason,
       createdAt: primitives.createdAt,
       completedAt: primitives.completedAt,
