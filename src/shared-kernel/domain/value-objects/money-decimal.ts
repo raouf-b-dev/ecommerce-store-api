@@ -1,68 +1,47 @@
 const SCALE = 2;
 const FACTOR = 100;
+const INTEGER_PATTERN = /^\d+$/;
+const DECIMAL_PATTERN = /^\d+\.\d{1,2}$/;
 
-function isAllDigits(value: string): boolean {
-  if (value.length === 0) {
-    return false;
-  }
-  for (let index = 0; index < value.length; index += 1) {
-    const code = value.charCodeAt(index);
-    if (code < 48 || code > 57) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function decimalText(value: string | number): string | undefined {
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      return undefined;
-    }
-    return value.toFixed(SCALE);
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
+function isValidDecimalText(text: string): boolean {
+  return text.includes('.')
+    ? DECIMAL_PATTERN.test(text)
+    : INTEGER_PATTERN.test(text);
 }
 
 /**
- * Parses a scale-2 decimal string into integer minor units.
+ * Parses a scale-2 decimal string or finite number into integer minor units.
  * "19.99" and "19.9" become 1999 and 1990. More than two fraction digits is rejected.
  */
 export function minorUnitsFromDecimal(
   value: string | number,
 ): number | undefined {
-  const text = decimalText(value);
-  if (text === undefined) {
+  let text: string;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value < 0) {
+      return undefined;
+    }
+    text = value.toFixed(SCALE);
+  } else if (typeof value === 'string') {
+    text = value.trim();
+  } else {
     return undefined;
   }
+
+  if (!isValidDecimalText(text)) {
+    return undefined;
+  }
+
   const dot = text.indexOf('.');
   const whole = dot === -1 ? text : text.slice(0, dot);
   const fractionRaw = dot === -1 ? '' : text.slice(dot + 1);
-  if (!isAllDigits(whole)) {
-    return undefined;
-  }
-  if (dot !== -1 && !isAllDigits(fractionRaw)) {
-    return undefined;
-  }
-  if (fractionRaw.length > SCALE) {
-    return undefined;
-  }
   const fraction = fractionRaw.padEnd(SCALE, '0');
   const minor = Number(whole) * FACTOR + Number(fraction);
-  if (!Number.isSafeInteger(minor)) {
+
+  if (!Number.isSafeInteger(minor) || minor < 0) {
     return undefined;
   }
   return minor;
-}
-
-/** Minor units, or throws when the decimal cannot be represented. Adapters only. */
-export function requireMinorUnits(value: string | number): number {
-  const minorUnits = minorUnitsFromDecimal(value);
-  if (minorUnits === undefined) {
-    throw new Error(`Invalid money amount "${String(value)}"`);
-  }
-  return minorUnits;
 }
 
 /** Formats integer minor units as a scale-2 decimal string for numeric columns. */

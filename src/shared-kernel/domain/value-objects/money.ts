@@ -2,7 +2,7 @@ import { Result } from '../result';
 import { DomainError } from '../exceptions/domain.error';
 import { ErrorCode } from '../exceptions/error-code';
 import { ErrorFactory } from '../exceptions/error.factory';
-import { minorUnitsFromDecimal } from './money-decimal';
+import { decimalFromMinorUnits, minorUnitsFromDecimal } from './money-decimal';
 
 /**
  * Amount in integer minor units (cents for USD) plus an ISO 4217 currency code.
@@ -80,6 +80,16 @@ export class Money {
 
   get currency(): string {
     return this.currencyCode;
+  }
+
+  /** Formats the minor units as a scale-2 decimal string, e.g. "19.99". */
+  toDecimalString(): string {
+    return decimalFromMinorUnits(this.minorUnits);
+  }
+
+  /** Converts the minor units to a major-unit number, e.g. 19.99. */
+  toMajorUnits(): number {
+    return Number(decimalFromMinorUnits(this.minorUnits));
   }
 
   add(other: Money): Result<Money, DomainError> {
