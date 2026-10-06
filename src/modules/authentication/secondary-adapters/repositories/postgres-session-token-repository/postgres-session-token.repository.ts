@@ -71,8 +71,7 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
       if ((result.affected ?? 0) === 0) {
         return ErrorFactory.RepositoryError(
           'Refresh token was already rotated',
-          undefined,
-          HttpStatus.CONFLICT,
+          { status: HttpStatus.CONFLICT },
         );
       }
 
@@ -80,8 +79,9 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
       if (!updated) {
         return ErrorFactory.RepositoryError(
           'Session not found after rotation',
-          undefined,
-          HttpStatus.NOT_FOUND,
+          {
+            status: HttpStatus.NOT_FOUND,
+          },
         );
       }
 

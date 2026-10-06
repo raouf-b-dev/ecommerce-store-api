@@ -36,11 +36,9 @@ describe('SeedDemoInventoryUseCase', () => {
   it('should seed inventory when it does not exist', async () => {
     inventoryRepository.findByProductId.mockResolvedValue(
       Result.failure(
-        new RepositoryError(
-          'Inventory not found',
-          undefined,
-          HttpStatus.NOT_FOUND,
-        ),
+        new RepositoryError('Inventory not found', {
+          status: HttpStatus.NOT_FOUND,
+        }),
       ),
     );
     inventoryRepository.save.mockResolvedValue(Result.success({} as any));
@@ -90,11 +88,9 @@ describe('SeedDemoInventoryUseCase', () => {
   it('should propagate failure if inventory saving fails', async () => {
     inventoryRepository.findByProductId.mockResolvedValue(
       Result.failure(
-        new RepositoryError(
-          'Inventory not found',
-          undefined,
-          HttpStatus.NOT_FOUND,
-        ),
+        new RepositoryError('Inventory not found', {
+          status: HttpStatus.NOT_FOUND,
+        }),
       ),
     );
     inventoryRepository.save.mockResolvedValue(

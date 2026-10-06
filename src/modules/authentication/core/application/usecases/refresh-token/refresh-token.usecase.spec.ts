@@ -74,11 +74,9 @@ class RecordingSessionTokenRepository implements SessionTokenRepository {
     const stored = this.rows.get(session.id);
     if (!stored || stored.isRevoked || stored.tokenHash !== expectedTokenHash) {
       return Promise.resolve(
-        ErrorFactory.RepositoryError(
-          'Refresh token was already rotated',
-          undefined,
-          HttpStatus.CONFLICT,
-        ),
+        ErrorFactory.RepositoryError('Refresh token was already rotated', {
+          status: HttpStatus.CONFLICT,
+        }),
       );
     }
 
@@ -539,15 +537,11 @@ describe('RefreshTokenUseCase', () => {
         Result.success(SessionToken.fromPrimitives(session.toPrimitives())),
       );
     });
-    jest
-      .spyOn(repository, 'replaceTokenIfCurrent')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'Refresh token was already rotated',
-          undefined,
-          HttpStatus.CONFLICT,
-        ),
-      );
+    jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
+      ErrorFactory.RepositoryError('Refresh token was already rotated', {
+        status: HttpStatus.CONFLICT,
+      }),
+    );
     const revokeAllForUser = jest.spyOn(repository, 'revokeAllForUser');
 
     const result = await useCase.execute(RAW_TOKEN);
@@ -578,15 +572,11 @@ describe('RefreshTokenUseCase', () => {
         ),
       );
     });
-    jest
-      .spyOn(repository, 'replaceTokenIfCurrent')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'Refresh token was already rotated',
-          undefined,
-          HttpStatus.CONFLICT,
-        ),
-      );
+    jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
+      ErrorFactory.RepositoryError('Refresh token was already rotated', {
+        status: HttpStatus.CONFLICT,
+      }),
+    );
 
     const result = await useCase.execute(RAW_TOKEN);
 

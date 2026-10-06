@@ -2,6 +2,7 @@ import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
@@ -145,7 +146,7 @@ export class RefreshTokenUseCase extends UseCase<
         expectedTokenHash,
       );
       if (replaced.isFailure) {
-        if (replaced.error.statusCode === HttpStatus.CONFLICT) {
+        if (replaced.error.statusCode === StatusCode.CONFLICT) {
           return this.rejectStaleRotation(
             sessionId,
             refreshToken,
