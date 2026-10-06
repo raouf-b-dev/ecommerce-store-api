@@ -116,16 +116,18 @@ export class ListOrdersQueryDto {
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Filter orders with total price greater than',
-    example: 50.0,
+    description: 'Minimum order total in minor currency units',
+    example: 5000,
+    type: 'integer',
   })
   minAmount?: number;
 
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Filter orders with total price less than',
-    example: 1000.0,
+    description: 'Maximum order total in minor currency units',
+    example: 100000,
+    type: 'integer',
   })
   maxAmount?: number;
 }

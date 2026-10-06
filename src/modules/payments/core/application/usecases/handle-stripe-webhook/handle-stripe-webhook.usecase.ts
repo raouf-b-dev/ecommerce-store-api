@@ -38,20 +38,16 @@ export class HandleStripeWebhookUseCase extends UseCase<
   ): Promise<Result<PaymentWebhookResult | null, AppError>> {
     // 1. Validate signature presence
     if (!dto.signature?.trim()) {
-      return ErrorFactory.UseCaseError(
-        'Missing stripe-signature header',
-        undefined,
-        HttpStatus.BAD_REQUEST,
-      );
+      return ErrorFactory.UseCaseError('Missing stripe-signature header', {
+        status: HttpStatus.BAD_REQUEST,
+      });
     }
 
     // 2. Validate raw body presence
     if (!dto.rawBody || dto.rawBody.length === 0) {
-      return ErrorFactory.UseCaseError(
-        'Missing raw request body',
-        undefined,
-        HttpStatus.BAD_REQUEST,
-      );
+      return ErrorFactory.UseCaseError('Missing raw request body', {
+        status: HttpStatus.BAD_REQUEST,
+      });
     }
 
     // 3. Verify signature over raw bytes and extract payload
@@ -60,11 +56,9 @@ export class HandleStripeWebhookUseCase extends UseCase<
       dto.signature,
     );
     if (!payload) {
-      return ErrorFactory.UseCaseError(
-        'Invalid Stripe webhook signature',
-        undefined,
-        HttpStatus.BAD_REQUEST,
-      );
+      return ErrorFactory.UseCaseError('Invalid Stripe webhook signature', {
+        status: HttpStatus.BAD_REQUEST,
+      });
     }
 
     // 4. Extract and map event type
@@ -81,8 +75,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
     if (!paymentIntent?.id) {
       return ErrorFactory.UseCaseError(
         'Invalid Stripe webhook payload: missing payment intent',
-        undefined,
-        HttpStatus.BAD_REQUEST,
+        { status: HttpStatus.BAD_REQUEST },
       );
     }
 

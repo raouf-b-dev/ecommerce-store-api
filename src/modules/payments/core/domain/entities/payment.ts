@@ -60,14 +60,22 @@ export class Payment implements IPayment {
     this._id = props.id || null;
     this._orderId = props.orderId;
     this._userId = props.userId || null;
-    this._amount = Money.from(props.amount, props.currency);
+    const amount = Money.create(props.amount, props.currency);
+    if (amount.isFailure) {
+      throw amount.error;
+    }
+    this._amount = amount.value;
     this._paymentMethod = new PaymentMethod(props.paymentMethod);
     this._status = new PaymentStatus(props.status);
     this._transactionId = props.transactionId?.trim() || null;
     this._gatewayPaymentIntentId = props.gatewayPaymentIntentId?.trim() || null;
     this._gatewayClientSecret = props.gatewayClientSecret?.trim() || null;
     this._paymentMethodInfo = props.paymentMethodInfo?.trim() || null;
-    this._refundedAmount = Money.from(props.refundedAmount, props.currency);
+    const refundedAmount = Money.create(props.refundedAmount, props.currency);
+    if (refundedAmount.isFailure) {
+      throw refundedAmount.error;
+    }
+    this._refundedAmount = refundedAmount.value;
     this._refunds = props.refunds
       ? props.refunds.map((r) => new Refund(r))
       : [];
@@ -290,7 +298,11 @@ export class Payment implements IPayment {
       );
     }
 
-    this._refundedAmount = Money.from(totalRefunded, this._amount.currency);
+    const refunded = Money.create(totalRefunded, this._amount.currency);
+    if (refunded.isFailure) {
+      return refunded;
+    }
+    this._refundedAmount = refunded.value;
     this._refunds.push(refund);
 
     // Update status based on refund amount

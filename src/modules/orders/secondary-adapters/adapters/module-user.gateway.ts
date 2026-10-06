@@ -6,7 +6,6 @@ import {
 } from '../../core/application/ports/user.gateway';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { GetUserUseCase } from 'src/modules/identity/core/application/usecases/user/get-user/get-user.usecase';
 
@@ -23,10 +22,7 @@ export class ModuleUserGateway implements UserGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to validate user',
-        result.error,
-      );
+      return result;
     }
 
     const user = result.value;

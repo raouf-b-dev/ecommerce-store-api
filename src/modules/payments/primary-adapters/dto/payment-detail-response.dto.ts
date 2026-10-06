@@ -20,7 +20,11 @@ export class PaymentDetailResponseDto {
   })
   userEmail!: string;
 
-  @ApiProperty({ example: 224.94, description: 'Payment amount' })
+  @ApiProperty({
+    example: 22494,
+    description: 'Payment amount in minor currency units',
+    type: 'integer',
+  })
   amount!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })

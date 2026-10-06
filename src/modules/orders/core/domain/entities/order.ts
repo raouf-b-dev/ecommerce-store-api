@@ -265,8 +265,7 @@ export class Order implements IOrder {
     if (!this.isCancellable()) {
       return ErrorFactory.DomainError(
         'Order cannot be cancelled in current state',
-        undefined,
-        409,
+        { status: 409 },
       );
     }
 

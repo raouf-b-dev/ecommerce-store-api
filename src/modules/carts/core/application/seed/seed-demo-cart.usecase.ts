@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { Result } from '../../../../../shared-kernel/domain/result';
+import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { CartRepository } from '../../domain/repositories/cart.repository';
 import { Cart } from '../../domain/entities/cart';
 import { DEMO_SEED_CART_ITEMS } from './demo-cart-items';
@@ -65,24 +65,29 @@ export class SeedDemoCartUseCase extends UseCase<
 
     for (const seedItem of DEMO_SEED_CART_ITEMS) {
       const product = productMapBySku.get(seedItem.sku);
-      if (product && product.id) {
-        cart.addItem(
-          product.id,
-          product.name,
-          product.price,
-          seedItem.quantity,
-          product.currency,
-          product.imageUrl ?? undefined,
-        );
+      if (!product?.id) {
+        continue;
+      }
+      const price = Money.fromMajorUnits(product.price, product.currency);
+      if (isFailure(price)) {
+        return price;
+      }
+      const addResult = cart.addItem(
+        product.id,
+        product.name,
+        price.value.amount,
+        seedItem.quantity,
+        price.value.currency,
+        product.imageUrl ?? undefined,
+      );
+      if (isFailure(addResult)) {
+        return addResult;
       }
     }
 
     const saveResult = await this.cartRepository.save(cart);
-    if (saveResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to save seeded cart',
-        saveResult.error,
-      );
+    if (isFailure(saveResult)) {
+      return saveResult;
     }
 
     return Result.success({

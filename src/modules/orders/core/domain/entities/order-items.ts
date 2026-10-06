@@ -11,7 +11,7 @@ export interface OrderItemProps {
   imageUrl?: string | null;
   unitPrice: number;
   quantity: number;
-  currency?: string;
+  currency: string;
 }
 
 export class OrderItem implements IOrderItem {
@@ -37,7 +37,11 @@ export class OrderItem implements IOrderItem {
     this._productName = props.productName.trim();
     this._sku = props.sku?.trim() || null;
     this._imageUrl = props.imageUrl?.trim() || null;
-    this._unitPrice = Money.from(props.unitPrice, props.currency ?? 'USD');
+    const unitPrice = Money.create(props.unitPrice, props.currency);
+    if (unitPrice.isFailure) {
+      throw unitPrice.error;
+    }
+    this._unitPrice = unitPrice.value;
     this._quantity = Quantity.from(props.quantity);
     const lineTotalResult = this._unitPrice.multiply(this._quantity.value);
     if (lineTotalResult.isFailure) {
@@ -97,6 +101,7 @@ export class OrderItem implements IOrderItem {
       unitPrice: this._unitPrice.value,
       quantity: this._quantity.value,
       lineTotal: this._lineTotal.value,
+      currency: this._unitPrice.currency,
     };
   }
 

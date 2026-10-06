@@ -1,6 +1,7 @@
 import { PaymentListItemDTO } from '../../../core/application/queries/results/payment-list-item.result';
 import { PaymentDetailDTO } from '../../../core/application/queries/results/payment-detail.result';
 import { RawPaymentListQueryRow } from '../../dto/raw-payment-list-query-row.interface';
+import { requireMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class PaymentQueryMapper {
   static toListItemDto(row: RawPaymentListQueryRow): PaymentListItemDTO {
@@ -10,7 +11,7 @@ export class PaymentQueryMapper {
       userId: Number(row.userId || 0),
       userName: row.userName || 'Unknown User',
       userEmail: row.userEmail || '',
-      amount: Number(row.amount || 0),
+      amount: requireMinorUnits(row.amount || 0),
       currency: row.currency || 'USD',
       status: String(row.status),
       paymentMethod: row.paymentMethod || 'CREDIT_CARD',

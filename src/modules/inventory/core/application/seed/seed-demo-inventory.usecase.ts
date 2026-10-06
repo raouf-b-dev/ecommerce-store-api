@@ -1,4 +1,5 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -41,7 +42,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
     for (let i = 0; i < existenceChecks.length; i++) {
       const check = existenceChecks[i];
       const item = items[i];
-      if (check.isFailure && check.error.statusCode !== HttpStatus.NOT_FOUND) {
+      if (check.isFailure && check.error.statusCode !== StatusCode.NOT_FOUND) {
         return ErrorFactory.UseCaseError(
           `Failed to check existing inventory for ${item.sku}`,
           check.error,
@@ -52,7 +53,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
     const missingItems = items.filter(
       (_, i) =>
         existenceChecks[i].isFailure &&
-        existenceChecks[i].error.statusCode === HttpStatus.NOT_FOUND,
+        existenceChecks[i].error.statusCode === StatusCode.NOT_FOUND,
     );
 
     const saveResults = await Promise.all(

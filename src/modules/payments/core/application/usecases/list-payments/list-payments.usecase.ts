@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaginatedQueryResult } from '../../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
@@ -55,7 +54,7 @@ export class ListPaymentsUseCase implements UseCase<
 
     const result = await this.paymentQueryService.list(filteredQuery);
     if (result.isFailure) {
-      return ErrorFactory.UseCaseError(result.error.message, result.error);
+      return result;
     }
 
     return Result.success(result.value);

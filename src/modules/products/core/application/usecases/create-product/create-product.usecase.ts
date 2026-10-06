@@ -30,24 +30,21 @@ export class CreateProductUseCase extends UseCase<
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
       if (command.categoryId == null) {
-        return ErrorFactory.UseCaseError(
-          'categoryId is required',
-          undefined,
-          HttpStatus.BAD_REQUEST,
-        );
+        return ErrorFactory.UseCaseError('categoryId is required', {
+          status: HttpStatus.BAD_REQUEST,
+        });
       }
 
       const categoryResult = await this.categoryRepository.findById(
         command.categoryId,
       );
       if (isFailure(categoryResult)) {
-        return ErrorFactory.UseCaseError(categoryResult.error.message);
+        return categoryResult;
       }
       if (!categoryResult.value || !categoryResult.value.isActive) {
         return ErrorFactory.UseCaseError(
           `Category with id ${command.categoryId} not found`,
-          undefined,
-          HttpStatus.BAD_REQUEST,
+          { status: HttpStatus.BAD_REQUEST },
         );
       }
 
@@ -65,7 +62,7 @@ export class CreateProductUseCase extends UseCase<
       const saveResult = await this.productRepository.save(product);
 
       if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(saveResult.error.message);
+        return saveResult;
       }
 
       return Result.success<IProduct>(product.toPrimitives());

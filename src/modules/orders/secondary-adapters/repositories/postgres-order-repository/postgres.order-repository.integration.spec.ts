@@ -14,6 +14,7 @@ import { Order } from '../../../core/domain/entities/order';
 import { OrderStatus } from '../../../core/domain/value-objects/order-status';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from 'src/testing';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 
 describe('PostgresOrderRepository (Integration - Real DB)', () => {
   let repository: PostgresOrderRepository;
@@ -89,6 +90,17 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
       }),
     );
 
+    const firstPrice = Money.fromMajorUnits(
+      seededData.product.price,
+      seededData.product.currency,
+    );
+    const secondPrice = Money.fromMajorUnits(
+      secondProduct.price,
+      secondProduct.currency,
+    );
+    ResultAssertionHelper.assertResultSuccess(firstPrice);
+    ResultAssertionHelper.assertResultSuccess(secondPrice);
+
     const order = Order.create({
       id: null,
       userId: seededData.customerUser.id,
@@ -103,16 +115,18 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
           productId: seededData.product.id,
           productName: seededData.product.name,
           sku: seededData.product.sku,
-          unitPrice: seededData.product.price,
+          unitPrice: firstPrice.value.amount,
           quantity: 1,
+          currency: firstPrice.value.currency,
         },
         {
           id: null,
           productId: secondProduct.id,
           productName: secondProduct.name,
           sku: secondProduct.sku,
-          unitPrice: secondProduct.price,
+          unitPrice: secondPrice.value.amount,
           quantity: 1,
+          currency: secondPrice.value.currency,
         },
       ],
     });
@@ -123,9 +137,8 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
     const loaded = await repository.findById(saveResult.value.id!);
     ResultAssertionHelper.assertResultSuccess(loaded);
     expect(loaded.value.getItems()).toHaveLength(2);
-    expect(loaded.value.totalPrice).toBeCloseTo(
-      seededData.product.price + secondProduct.price,
-      2,
+    expect(loaded.value.totalPrice).toBe(
+      firstPrice.value.amount + secondPrice.value.amount,
     );
     expect(
       loaded.value.getItems().every((item) => item.id != null && item.id > 0),

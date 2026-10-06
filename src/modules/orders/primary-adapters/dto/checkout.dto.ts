@@ -1,6 +1,7 @@
 // src/modules/orders/presentation/dto/checkout.dto.ts
 import {
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
@@ -34,11 +35,12 @@ export class CheckoutDto {
   @IsString()
   customerNotes?: string;
 
-  @ApiPropertyOptional({
-    description: 'Idempotency key for preventing duplicate checkouts',
+  @ApiProperty({
+    description:
+      'Idempotency key for preventing duplicate checkouts. Also accepted as the Idempotency-Key header.',
     example: 'checkout-abc123-xyz789',
   })
-  @IsOptional()
   @IsString()
-  idempotencyKey?: string;
+  @IsNotEmpty()
+  idempotencyKey!: string;
 }

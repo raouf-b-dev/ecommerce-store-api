@@ -1,7 +1,7 @@
 // src/modules/Products/application/usecases/delete-product/delete-product.usecase.spec.ts
 import { MockProductRepository } from 'src/modules/products/testing';
 import { DeleteProductUseCase } from './delete-product.usecase';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('DeleteProductUseCase', () => {
@@ -31,7 +31,7 @@ describe('DeleteProductUseCase', () => {
       expect(mockRepository.deleteById).toHaveBeenCalledTimes(1);
     });
 
-    it('should return Failure(UseCaseError) if product is not deleted', async () => {
+    it('returns the repository failure when the product is not deleted', async () => {
       const productId = 1;
 
       mockRepository.mockDeleteFailure(
@@ -43,7 +43,7 @@ describe('DeleteProductUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         'Product with id 1 not deleted',
-        UseCaseError,
+        RepositoryError,
       );
     });
   });

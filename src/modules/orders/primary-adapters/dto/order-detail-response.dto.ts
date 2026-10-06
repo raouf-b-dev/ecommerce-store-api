@@ -14,13 +14,21 @@ export class OrderItemDetailResponseDto {
   })
   title!: string;
 
-  @ApiProperty({ example: 199.99, description: 'Unit price' })
+  @ApiProperty({
+    example: 19999,
+    description: 'Unit price in minor currency units',
+    type: 'integer',
+  })
   unitPrice!: number;
 
   @ApiProperty({ example: 1, description: 'Quantity ordered' })
   quantity!: number;
 
-  @ApiProperty({ example: 199.99, description: 'Line subtotal' })
+  @ApiProperty({
+    example: 19999,
+    description: 'Line subtotal in minor currency units',
+    type: 'integer',
+  })
   subtotal!: number;
 
   @ApiProperty({
@@ -72,8 +80,9 @@ export class OrderDetailResponseDto {
   items!: OrderItemDetailResponseDto[];
 
   @ApiProperty({
-    example: 199.99,
-    description: 'Order subtotal (sum of line items)',
+    example: 19999,
+    description: 'Order subtotal in minor currency units',
+    type: 'integer',
   })
   subtotal!: number;
 
@@ -84,10 +93,18 @@ export class OrderDetailResponseDto {
   })
   shippingCost!: number;
 
-  @ApiProperty({ example: 224.94, description: 'Order total amount' })
+  @ApiProperty({
+    example: 22494,
+    description: 'Order total amount in minor currency units',
+    type: 'integer',
+  })
   totalAmount!: number;
 
-  @ApiProperty({ example: 224.94, description: 'Order total price' })
+  @ApiProperty({
+    example: 22494,
+    description: 'Order total price in minor currency units',
+    type: 'integer',
+  })
   totalPrice!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })
@@ -121,7 +138,11 @@ export class OrderMutationResponseDto {
   })
   status!: OrderStatus;
 
-  @ApiProperty({ example: 224.94, description: 'Order total price' })
+  @ApiProperty({
+    example: 22494,
+    description: 'Order total price in minor currency units',
+    type: 'integer',
+  })
   totalPrice!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })

@@ -149,8 +149,7 @@ export class PostgresCartRepository implements CartRepository {
         }
         throw new RepositoryError(
           `Optimistic lock failure for Cart ${cart.id}. Expected version ${expectedVersion}.`,
-          undefined,
-          HttpStatus.CONFLICT,
+          { status: HttpStatus.CONFLICT },
         );
       }
 

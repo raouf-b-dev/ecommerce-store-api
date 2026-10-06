@@ -118,13 +118,12 @@ describe('Security IDOR (e2e)', () => {
     it('denies checkout with another users cart', async () => {
       const cartId = await cartIdFor(userB);
 
-      const checkoutResponse = await http
-        .post(`${E2E_API_PREFIX}/orders/checkout`)
-        .set(AuthTestHelper.bearer(userA.accessToken))
-        .send({
-          cartId,
-          paymentMethod: 'STRIPE',
-        });
+      const checkoutResponse = await E2eCheckoutHelper.checkout(
+        http,
+        userA,
+        cartId,
+        { includeShipping: false },
+      );
 
       expect(checkoutResponse.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(checkoutResponse, {

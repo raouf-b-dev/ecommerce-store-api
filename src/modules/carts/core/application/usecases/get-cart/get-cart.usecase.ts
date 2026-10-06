@@ -39,8 +39,7 @@ export class GetCartUseCase extends UseCase<
     if (!callerContext) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        undefined,
-        HttpStatus.NOT_FOUND,
+        { status: HttpStatus.NOT_FOUND },
       );
     }
 
@@ -52,8 +51,7 @@ export class GetCartUseCase extends UseCase<
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        undefined,
-        HttpStatus.NOT_FOUND,
+        { status: HttpStatus.NOT_FOUND },
       );
     }
 
@@ -90,8 +88,7 @@ export class GetCartUseCase extends UseCase<
     if (!result.value) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        undefined,
-        HttpStatus.NOT_FOUND,
+        { status: HttpStatus.NOT_FOUND },
       );
     }
 

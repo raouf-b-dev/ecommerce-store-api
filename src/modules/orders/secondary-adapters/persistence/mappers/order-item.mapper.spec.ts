@@ -9,11 +9,13 @@ describe('OrderItemMapper', () => {
       productName: 'Widget',
       unitPrice: 10,
       quantity: 2,
+      currency: 'USD',
     });
     const entity = OrderItemMapper.toEntity(item);
 
     expect(entity.id).toBeUndefined();
-    expect(entity.lineTotal).toBe(item.lineTotal);
+    expect(entity.unitPrice).toBe(0.1);
+    expect(entity.lineTotal).toBe(0.2);
   });
 
   it('toEntity omits id when domain id is 0', () => {
@@ -23,6 +25,7 @@ describe('OrderItemMapper', () => {
       productName: 'Widget',
       unitPrice: 10,
       quantity: 1,
+      currency: 'USD',
     });
     const entity = OrderItemMapper.toEntity(item);
 

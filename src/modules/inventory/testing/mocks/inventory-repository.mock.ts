@@ -88,11 +88,9 @@ export class MockInventoryRepository implements InventoryRepository {
 
   mockInventoryNotFoundForProduct(productId: number): void {
     const err = Result.failure<RepositoryError>(
-      new RepositoryError(
-        `Inventory not found for product ${productId}`,
-        undefined,
-        HttpStatus.NOT_FOUND,
-      ),
+      new RepositoryError(`Inventory not found for product ${productId}`, {
+        status: HttpStatus.NOT_FOUND,
+      }),
     );
     this.findByProductId.mockResolvedValue(err);
     this.findByProductIdForUpdate.mockResolvedValue(err);

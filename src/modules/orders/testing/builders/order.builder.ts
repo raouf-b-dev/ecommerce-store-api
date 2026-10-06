@@ -44,6 +44,7 @@ export class OrderBuilder {
       quantity: 1,
       unitPrice: 10,
       lineTotal: 10,
+      currency: 'USD',
     }));
 
     this.order.items = items;

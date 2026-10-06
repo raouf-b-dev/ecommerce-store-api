@@ -16,7 +16,11 @@ export class PaymentListItemResponseDto {
   @ApiProperty({ type: String, example: 'customer@store.local' })
   userEmail!: string;
 
-  @ApiProperty({ type: Number, example: 224.94 })
+  @ApiProperty({
+    type: 'integer',
+    example: 22494,
+    description: 'Payment amount in minor currency units',
+  })
   amount!: number;
 
   @ApiProperty({ type: String, example: 'USD' })

@@ -4,6 +4,7 @@ import { OrderListItemDTO } from '../../../core/application/queries/results/orde
 import { OrderDetailDTO } from '../../../core/application/queries/results/order-detail.result';
 import { OrderItemDetailDTO } from '../../../core/application/queries/results/order-item-detail.result';
 import { RawOrderListQueryRow } from '../../dto/raw-order-list-query-row.interface';
+import { requireMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class OrderQueryMapper {
   /**
@@ -18,7 +19,7 @@ export class OrderQueryMapper {
       userEmail: row.userEmail || '',
       status: String(row.status || ''),
       itemCount: Number(row.itemCount || 0),
-      totalAmount: Number(row.totalAmount || 0),
+      totalAmount: requireMinorUnits(row.totalAmount || 0),
       currency: 'USD',
       createdAt: new Date(row.createdAt),
     };
@@ -36,9 +37,9 @@ export class OrderQueryMapper {
       sku: item.sku || productInfo?.sku || `SKU-${item.productId}`,
       title:
         item.productName || productInfo?.title || `Product #${item.productId}`,
-      unitPrice: item.unitPrice,
+      unitPrice: requireMinorUnits(item.unitPrice),
       quantity: item.quantity,
-      subtotal: item.lineTotal,
+      subtotal: requireMinorUnits(item.lineTotal),
       imageUrl: item.imageUrl ?? null,
     };
   }
@@ -71,10 +72,10 @@ export class OrderQueryMapper {
       status: orderEntity.status,
       shippingAddress: shippingAddrStr,
       items,
-      subtotal: orderEntity.subtotal,
-      shippingCost: orderEntity.shippingCost,
-      totalAmount: orderEntity.totalPrice,
-      totalPrice: orderEntity.totalPrice,
+      subtotal: requireMinorUnits(orderEntity.subtotal),
+      shippingCost: requireMinorUnits(orderEntity.shippingCost),
+      totalAmount: requireMinorUnits(orderEntity.totalPrice),
+      totalPrice: requireMinorUnits(orderEntity.totalPrice),
       currency: 'USD',
       createdAt: orderEntity.createdAt,
       updatedAt: orderEntity.updatedAt,

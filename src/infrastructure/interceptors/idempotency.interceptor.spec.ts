@@ -3,6 +3,7 @@ import { IdempotencyInterceptor } from './idempotency.interceptor';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import {
   CallHandler,
+  BadRequestException,
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -68,14 +69,16 @@ describe('IdempotencyInterceptor', () => {
     expect(interceptor).toBeDefined();
   });
 
-  it('should proceed if no idempotency key provided', (done) => {
+  it('rejects the request when no idempotency key is provided', (done) => {
     const { context } = createContext(undefined);
     const next = createMockCallHandler(of('response'));
 
     interceptor.intercept(context, next).subscribe({
-      next: (result) => {
-        expect(result).toBe('response');
+      next: () => done(new Error('expected the request to be rejected')),
+      error: (error: unknown) => {
+        expect(error).toBeInstanceOf(BadRequestException);
         expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
+        expect(next.handle).not.toHaveBeenCalled();
         done();
       },
     });

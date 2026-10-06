@@ -5,13 +5,13 @@ import {
   ExecutionContext,
   CallHandler,
   HttpException,
-  HttpStatus,
   Logger, // Import the Logger
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Result, isFailure } from 'src/shared-kernel/domain/result';
 import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
+import { StatusCode } from 'src/shared-kernel/domain/exceptions/status-code';
 
 @Injectable()
 export class ResultInterceptor implements NestInterceptor {
@@ -41,16 +41,17 @@ export class ResultInterceptor implements NestInterceptor {
   }
 
   private mapErrorToHttpException(error: AppError): HttpException {
-    const statusCode = error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
+    const statusCode = error.statusCode || StatusCode.INTERNAL_SERVER_ERROR;
 
-    if (statusCode === HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (statusCode === StatusCode.INTERNAL_SERVER_ERROR) {
       this.logger.error('An unhandled internal error occurred:', error.stack);
     }
 
     const responseBody = {
       statusCode,
       message: error.message,
-      error: error.code || 'InternalError',
+      code: error.code,
+      error: error.code,
     };
 
     return new HttpException(responseBody, statusCode);

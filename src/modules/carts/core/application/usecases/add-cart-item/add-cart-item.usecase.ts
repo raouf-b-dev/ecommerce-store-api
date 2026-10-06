@@ -7,6 +7,7 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartProductGateway } from '../../ports/product.gateway';
 import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
@@ -70,7 +71,7 @@ export class AddCartItemUseCase extends UseCase<
     );
 
     if (isFailure(stockResult)) {
-      return ErrorFactory.UseCaseError(stockResult.error.message);
+      return stockResult;
     }
 
     if (!stockResult.value.isAvailable) {
@@ -79,12 +80,17 @@ export class AddCartItemUseCase extends UseCase<
       );
     }
 
+    const price = Money.fromMajorUnits(product.price, product.currency);
+    if (isFailure(price)) {
+      return price;
+    }
+
     const addResult = cart.addItem(
       product.id!,
       product.name,
-      product.price,
+      price.value.amount,
       quantity,
-      product.currency,
+      price.value.currency,
       product.imageUrl ?? undefined,
     );
     if (isFailure(addResult)) return addResult;

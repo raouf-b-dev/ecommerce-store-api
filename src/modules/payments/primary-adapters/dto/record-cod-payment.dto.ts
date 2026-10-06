@@ -11,11 +11,12 @@ export class RecordCodPaymentDto {
   orderId!: number;
 
   @ApiProperty({
-    example: 299.99,
-    description: 'Amount collected',
+    example: 29999,
+    description: 'Amount collected in minor currency units',
+    type: 'integer',
   })
   @IsNumber()
-  @Min(0.01)
+  @Min(1)
   amountCollected!: number;
 
   @ApiProperty({

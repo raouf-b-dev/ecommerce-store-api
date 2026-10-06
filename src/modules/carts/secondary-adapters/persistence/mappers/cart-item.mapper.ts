@@ -6,6 +6,10 @@ import {
 } from '../../../core/domain/entities/cart-item';
 import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { CartItemEntity } from '../../orm/cart-item.schema';
+import {
+  decimalFromMinorUnits,
+  requireMinorUnits,
+} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
 
@@ -15,7 +19,7 @@ export class CartItemMapper {
       id: entity.id ?? null,
       productId: entity.productId,
       productName: entity.productName,
-      price: entity.price,
+      price: requireMinorUnits(entity.price),
       currency: entity.currency,
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
@@ -29,7 +33,7 @@ export class CartItemMapper {
     const itemPayload: Omit<CartItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,
-      price: primitives.price,
+      price: Number(decimalFromMinorUnits(primitives.price)),
       currency: primitives.currency,
       quantity: primitives.quantity,
       imageUrl: primitives.imageUrl,

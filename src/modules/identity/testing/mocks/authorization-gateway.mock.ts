@@ -16,7 +16,7 @@ export class AuthorizationGatewayMock implements AuthorizationGateway {
 
   mockFailedAssignRole(message: string, status?: HttpStatus): void {
     this.assignRole.mockResolvedValue(
-      ErrorFactory.InfrastructureError(message, undefined, status),
+      ErrorFactory.InfrastructureError(message, { status }),
     );
   }
 

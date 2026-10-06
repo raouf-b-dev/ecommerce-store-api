@@ -29,11 +29,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError(
-          'Inventory not found',
-          undefined,
-          HttpStatus.NOT_FOUND,
-        );
+        return ErrorFactory.RepositoryError('Inventory not found', {
+          status: HttpStatus.NOT_FOUND,
+        });
       }
 
       const inventory = InventoryMapper.toDomain(entity);
@@ -54,8 +52,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
       if (!entity) {
         return ErrorFactory.RepositoryError(
           `Inventory not found for product ${productId}`,
-          undefined,
-          HttpStatus.NOT_FOUND,
+          { status: HttpStatus.NOT_FOUND },
         );
       }
 
@@ -179,11 +176,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
     try {
       const entity = await this.ormRepo.findOne({ where: { id } });
       if (!entity) {
-        return ErrorFactory.RepositoryError(
-          'Inventory not found',
-          undefined,
-          HttpStatus.NOT_FOUND,
-        );
+        return ErrorFactory.RepositoryError('Inventory not found', {
+          status: HttpStatus.NOT_FOUND,
+        });
       }
       return Result.success({
         entity: InventoryMapper.toDomain(entity),
@@ -207,8 +202,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
       if (!entity) {
         return ErrorFactory.RepositoryError(
           `Inventory not found for product ${productId}`,
-          undefined,
-          HttpStatus.NOT_FOUND,
+          { status: HttpStatus.NOT_FOUND },
         );
       }
       return Result.success({
@@ -263,8 +257,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     if (updateResult.affected === 0) {
       return ErrorFactory.RepositoryError(
         `Optimistic lock failure for Inventory ${inventory.id}. Expected version ${expectedVersion}.`,
-        undefined,
-        HttpStatus.CONFLICT,
+        { status: HttpStatus.CONFLICT },
       );
     }
 
@@ -287,11 +280,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
       const deleteResult = await this.ormRepo.delete({ id });
 
       if (deleteResult.affected === 0) {
-        return ErrorFactory.RepositoryError(
-          'Inventory not found',
-          undefined,
-          HttpStatus.NOT_FOUND,
-        );
+        return ErrorFactory.RepositoryError('Inventory not found', {
+          status: HttpStatus.NOT_FOUND,
+        });
       }
 
       return Result.success<void>(undefined);

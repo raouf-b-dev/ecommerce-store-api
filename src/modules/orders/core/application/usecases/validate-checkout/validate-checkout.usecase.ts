@@ -16,6 +16,7 @@ import { UserGateway } from '../../ports/user.gateway';
 import { CartGateway, CheckoutCartInfo } from '../../ports/cart.gateway';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
 export interface ValidateCheckoutInput {
   cartId: number;
@@ -57,6 +58,9 @@ export class ValidateCheckoutUseCase extends UseCase<
       ) {
         return ErrorFactory.UseCaseError(
           'Checkout requires a customer account',
+          {
+            code: ErrorCode.CHECKOUT_ACCOUNT_REQUIRED,
+          },
         );
       }
     }
@@ -71,7 +75,9 @@ export class ValidateCheckoutUseCase extends UseCase<
     const cart = cartResult.value;
 
     if (cart.items.length === 0) {
-      return ErrorFactory.UseCaseError('Cart is empty');
+      return ErrorFactory.UseCaseError('Cart is empty', {
+        code: ErrorCode.CART_EMPTY,
+      });
     }
 
     const userId = isSystemCaller(callerContext)
@@ -89,6 +95,7 @@ export class ValidateCheckoutUseCase extends UseCase<
     if (!resolvedAddress) {
       return ErrorFactory.UseCaseError(
         'No default address found. Please provide a shipping address.',
+        { code: ErrorCode.SHIPPING_ADDRESS_REQUIRED },
       );
     }
 

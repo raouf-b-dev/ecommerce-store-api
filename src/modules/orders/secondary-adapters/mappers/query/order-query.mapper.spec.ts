@@ -21,7 +21,7 @@ describe('OrderQueryMapper', () => {
           userEmail: 'alice@example.com',
           status: 'PENDING_PAYMENT',
           itemCount: 3,
-          totalAmount: 199.99,
+          totalAmount: 19999,
         }),
       );
     });
@@ -80,9 +80,9 @@ describe('OrderQueryMapper', () => {
         productId: 5,
         sku: 'KEY-001',
         title: 'Mechanical Keyboard',
-        unitPrice: 120,
+        unitPrice: 12000,
         quantity: 1,
-        subtotal: 120,
+        subtotal: 12000,
         imageUrl: 'https://cdn.example.com/keyboard.webp',
       });
     });

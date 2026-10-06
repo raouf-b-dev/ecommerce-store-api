@@ -107,7 +107,7 @@ describe('Cart', () => {
             id: 1,
             productId: 1,
             productName: 'A',
-            price: 10,
+            price: 1000,
             currency: 'USD',
             quantity: 2,
             imageUrl: null,
@@ -116,7 +116,7 @@ describe('Cart', () => {
             id: 2,
             productId: 2,
             productName: 'B',
-            price: 5.5,
+            price: 550,
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
@@ -125,7 +125,7 @@ describe('Cart', () => {
       });
 
       expect(cart.itemCount).toBe(3);
-      expect(cart.totalAmount).toBe(25.5);
+      expect(cart.totalAmount).toBe(2550);
       expect(cart.currency).toBe('USD');
     });
 

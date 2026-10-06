@@ -93,7 +93,7 @@ describe('ProcessRefundUseCase', () => {
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
-      amount: 50,
+      amount: 5000,
       reason: 'Defective product',
     };
 
@@ -102,7 +102,7 @@ describe('ProcessRefundUseCase', () => {
     ResultAssertionHelper.assertResultSuccess(result);
     expect(paymentRepository.findById).toHaveBeenCalledWith(123);
     const updatedPayment = result.value;
-    expect(updatedPayment.refundedAmount).toBe(50);
+    expect(updatedPayment.refundedAmount).toBe(5000);
   });
 
   it('should fail if payment is not found', async () => {
@@ -135,7 +135,7 @@ describe('ProcessRefundUseCase', () => {
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
-      amount: 150,
+      amount: 15000,
     };
 
     const result = await useCase.execute(command);
@@ -209,12 +209,9 @@ describe('ProcessRefundUseCase', () => {
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
     defaultGateway.refund.mockResolvedValueOnce(
-      ErrorFactory.InfrastructureError(
-        'Gateway network timeout',
-        undefined,
-        undefined,
-        true,
-      ),
+      ErrorFactory.InfrastructureError('Gateway network timeout', {
+        retryable: true,
+      }),
     );
 
     const command: ProcessRefundCommand = {

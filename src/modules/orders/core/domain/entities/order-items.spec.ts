@@ -7,8 +7,9 @@ describe('OrderItem', () => {
     productName: 'Wireless Mouse',
     sku: 'SKU-MOUSE',
     imageUrl: 'https://cdn.example.com/mouse.png',
-    unitPrice: 25.5,
+    unitPrice: 2550,
     quantity: 2,
+    currency: 'USD',
   };
 
   describe('construction', () => {
@@ -26,9 +27,9 @@ describe('OrderItem', () => {
         expect(item.productName).toBe('Wireless Mouse');
         expect(item.sku).toBe('SKU-MOUSE');
         expect(item.imageUrl).toBe('https://cdn.example.com/mouse.png');
-        expect(item.unitPrice).toBe(25.5);
+        expect(item.unitPrice).toBe(2550);
         expect(item.quantity).toBe(2);
-        expect(item.lineTotal).toBe(51);
+        expect(item.lineTotal).toBe(5100);
       });
 
       it('defaults optional fields when omitted', () => {
@@ -38,6 +39,7 @@ describe('OrderItem', () => {
           productName: 'Wireless Mouse',
           unitPrice: 10,
           quantity: 1,
+          currency: 'USD',
         });
 
         expect(item.id).toBeNull();
@@ -83,7 +85,7 @@ describe('OrderItem', () => {
   describe('lineTotal', () => {
     it.each([
       { unitPrice: 10, quantity: 1, expected: 10 },
-      { unitPrice: 12.5, quantity: 4, expected: 50 },
+      { unitPrice: 1250, quantity: 4, expected: 5000 },
       { unitPrice: 0, quantity: 3, expected: 0 },
     ])(
       'computes unitPrice %s × quantity %s as %s',
@@ -109,9 +111,10 @@ describe('OrderItem', () => {
         productName: 'Wireless Mouse',
         sku: 'SKU-MOUSE',
         imageUrl: 'https://cdn.example.com/mouse.png',
-        unitPrice: 25.5,
+        unitPrice: 2550,
         quantity: 2,
-        lineTotal: 51,
+        lineTotal: 5100,
+        currency: 'USD',
       });
     });
   });

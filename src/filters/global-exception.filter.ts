@@ -10,6 +10,7 @@ import {
 import { Response } from 'express';
 import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
+import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
 
 interface ValidationErrorResponse {
   message: string | string[];
@@ -44,6 +45,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       errors = Array.isArray(validationResponse.message)
         ? validationResponse.message
         : [validationResponse.message || 'Invalid input provided.'];
+      code =
+        typeof validationResponse.code === 'string' &&
+        validationResponse.code.length > 0
+          ? validationResponse.code
+          : ErrorCode.VALIDATION_FAILED;
 
       this.logger.warn(
         `Validation failed for ${request.method} ${request.url}: ${errors?.join(', ')}`,
@@ -87,7 +93,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode = HttpStatus.CONFLICT;
       message =
         'Resource was modified by another request. Please reload and retry.';
-      code = 'OPTIMISTIC_LOCK_CONFLICT';
+      code = ErrorCode.OPTIMISTIC_LOCK_CONFLICT;
       errorDetail = exception.message;
 
       this.logger.warn(
@@ -116,7 +122,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       success: false,
       statusCode,
       message,
-      ...(code && { code }),
+      code: code ?? ErrorCode.INTERNAL_ERROR,
       ...(errors && { errors }),
       ...(!isProduction && errorDetail && { error: errorDetail }),
       ...(!isProduction && stack && { stack }),
