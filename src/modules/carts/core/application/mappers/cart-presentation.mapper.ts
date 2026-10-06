@@ -3,19 +3,20 @@ import {
   CartItemPresentationDTO,
   CartPresentationDTO,
 } from '../queries/results/cart-presentation.result';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class CartPresentationMapper {
   static fromDomain(cart: Cart): CartPresentationDTO {
-    const subtotal = cart.totalAmount;
+    const subtotal = Number(decimalFromMinorUnits(cart.totalAmount));
     const shippingCost = 0;
     const items: CartItemPresentationDTO[] = cart.items.map((item) => ({
       id: item.id!,
       productId: item.productId,
       productName: item.productName,
-      price: item.price,
+      price: Number(decimalFromMinorUnits(item.price)),
       currency: item.currency,
       quantity: item.quantity,
-      subtotal: item.subtotal,
+      subtotal: Number(decimalFromMinorUnits(item.subtotal)),
       imageUrl: item.imageUrl,
     }));
 

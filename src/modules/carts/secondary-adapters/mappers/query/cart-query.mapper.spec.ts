@@ -5,14 +5,14 @@ describe('CartQueryMapper', () => {
   it('should map raw query rows into a CartPresentationDTO', () => {
     const row1 = CartDtoTestFactory.createRawCartQueryRow({
       itemId: 100,
-      price: '50.00',
+      price: 50,
       quantity: 2,
     });
     const row2 = CartDtoTestFactory.createRawCartQueryRow({
       itemId: 101,
       productId: 6,
       productName: 'Gaming Mouse',
-      price: '30.00',
+      price: 30,
       quantity: 1,
     });
 
@@ -26,27 +26,27 @@ describe('CartQueryMapper', () => {
           id: 100,
           productId: 5,
           productName: 'Mechanical Keyboard',
-          price: 5000,
+          price: 50,
           currency: 'USD',
           quantity: 2,
-          subtotal: 10000,
+          subtotal: 100,
           imageUrl: 'https://example.com/keyboard.jpg',
         },
         {
           id: 101,
           productId: 6,
           productName: 'Gaming Mouse',
-          price: 3000,
+          price: 30,
           currency: 'USD',
           quantity: 1,
-          subtotal: 3000,
+          subtotal: 30,
           imageUrl: 'https://example.com/keyboard.jpg',
         },
       ],
       itemCount: 3,
-      subtotal: 13000,
+      subtotal: 130,
       shippingCost: 0,
-      totalAmount: 13000,
+      totalAmount: 130,
       currency: 'USD',
       createdAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
@@ -62,14 +62,14 @@ describe('CartQueryMapper', () => {
       itemId: 102,
       productId: 7,
       productName: 'Planter',
-      price: '32.50',
+      price: 32.5,
       quantity: 1,
     });
     const earlier = CartDtoTestFactory.createRawCartQueryRow({
       itemId: 100,
       productId: 5,
       productName: 'French Press',
-      price: '39.99',
+      price: 39.99,
       quantity: 2,
     });
 
@@ -81,7 +81,7 @@ describe('CartQueryMapper', () => {
   it('includes cart lines when itemId is 0 (legacy persisted rows)', () => {
     const row = CartDtoTestFactory.createRawCartQueryRow({
       itemId: 0,
-      price: '12.50',
+      price: 12.5,
       quantity: 1,
     });
 
@@ -89,6 +89,6 @@ describe('CartQueryMapper', () => {
 
     expect(result?.items).toHaveLength(1);
     expect(result?.items[0].id).toBe(0);
-    expect(result?.subtotal).toBe(1250);
+    expect(result?.subtotal).toBe(12.5);
   });
 });

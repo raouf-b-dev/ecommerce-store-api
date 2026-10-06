@@ -5,10 +5,8 @@ import {
 } from '../../../core/domain/entities/order-items';
 import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { OrderItemEntity } from '../../orm/order-item.schema';
-import {
-  decimalFromMinorUnits,
-  requireMinorUnits,
-} from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
 
 export type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order'>;
 

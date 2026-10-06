@@ -1,13 +1,13 @@
 export interface RawCartQueryRow {
-  cartId: number | string;
-  userId: number | string;
+  cartId: number;
+  userId: number;
   cartCreatedAt?: Date | string;
   cartUpdatedAt: Date | string;
-  itemId?: number | string | null;
-  productId?: number | string | null;
+  itemId?: number | null;
+  productId?: number | null;
   productName?: string | null;
-  price?: number | string | null;
+  price?: number | null;
   currency?: string | null;
-  quantity?: number | string | null;
+  quantity?: number | null;
   imageUrl?: string | null;
 }

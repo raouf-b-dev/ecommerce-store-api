@@ -14,7 +14,7 @@ describe('PaymentQueryMapper', () => {
       userId: 2,
       userName: 'John Doe',
       userEmail: 'john@example.com',
-      amount: 9999,
+      amount: 99.99,
       currency: 'USD',
       status: 'COMPLETED',
       paymentMethod: 'CREDIT_CARD',

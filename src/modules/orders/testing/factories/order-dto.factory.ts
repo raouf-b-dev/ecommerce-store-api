@@ -225,13 +225,13 @@ export class OrderDtoTestFactory {
     overrides?: Partial<RawOrderListQueryRow>,
   ): RawOrderListQueryRow {
     return {
-      id: '42',
-      userId: '10',
+      id: 42,
+      userId: 10,
       userName: 'Alice Smith',
       userEmail: 'alice@example.com',
       status: 'PENDING_PAYMENT',
-      itemCount: '3',
-      totalAmount: '199.99',
+      itemCount: 3,
+      totalAmount: 199.99,
       createdAt: '2026-08-09T20:00:00.000Z',
       ...overrides,
     };
