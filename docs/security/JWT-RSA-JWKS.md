@@ -264,7 +264,7 @@ sequenceDiagram
     Note over Authentication: 8. Verify signature (public key)<br/>(No DB lookup needed!)
     Authentication-->>Client: 9. 200 OK { data }
 
- Note over Client, Authentication:: access token expires -
+    Note over Client, Authentication: Access token expires.
 
     Client->>Authentication: 10. POST /v1/authentication/refresh<br/>Cookie: refresh_token (auto)
     Note over Authentication: 11. Verify refresh JWT

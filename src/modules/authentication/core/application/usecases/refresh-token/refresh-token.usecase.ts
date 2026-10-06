@@ -78,7 +78,7 @@ export class RefreshTokenUseCase extends UseCase<
         return ErrorFactory.UseCaseError(
           'User not found',
           userResult.error,
-          HttpStatus.UNAUTHORIZED,
+          userResult.error.statusCode,
           userResult.error.retryable,
         );
       }
@@ -98,7 +98,7 @@ export class RefreshTokenUseCase extends UseCase<
         return ErrorFactory.UseCaseError(
           'Failed to resolve user role',
           roleResult.error,
-          HttpStatus.UNAUTHORIZED,
+          roleResult.error.statusCode,
           roleResult.error.retryable,
         );
       }

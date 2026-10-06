@@ -415,6 +415,7 @@ describe('RefreshTokenUseCase', () => {
       'User not found',
       UseCaseError,
     );
+    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
     expect(result.error.retryable).toBe(true);
   });
 
@@ -446,6 +447,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to resolve user role',
       UseCaseError,
     );
+    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
     expect(result.error.retryable).toBe(true);
   });
 
