@@ -116,18 +116,18 @@ export class ListOrdersQueryDto {
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Minimum order total in minor currency units',
-    example: 5000,
-    type: 'integer',
+    description: 'Minimum order total as a major-unit decimal',
+    example: 50,
+    type: Number,
   })
   minAmount?: number;
 
   @IsOptional()
   @Type(() => Number)
   @ApiPropertyOptional({
-    description: 'Maximum order total in minor currency units',
-    example: 100000,
-    type: 'integer',
+    description: 'Maximum order total as a major-unit decimal',
+    example: 1000,
+    type: Number,
   })
   maxAmount?: number;
 }

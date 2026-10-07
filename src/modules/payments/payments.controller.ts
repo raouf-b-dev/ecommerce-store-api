@@ -166,11 +166,10 @@ export class PaymentsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ProcessRefundDto,
   ) {
-    const result = await this.processRefundUseCase.execute({
-      paymentId: id,
-      amount: dto.amount,
-      reason: dto.reason,
-    });
+    const command = PaymentDtoMapper.toRefundCommand(id, dto);
+    if (isFailure(command)) return command;
+
+    const result = await this.processRefundUseCase.execute(command.value);
     if (isFailure(result)) return result;
     return Result.success(PaymentDtoMapper.toResponse(result.value));
   }

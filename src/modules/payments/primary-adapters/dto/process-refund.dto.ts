@@ -4,12 +4,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ProcessRefundDto {
   @ApiProperty({
-    example: 9999,
-    description: 'Refund amount in minor currency units',
-    type: 'integer',
+    example: 99.99,
+    description: 'Refund amount as a major-unit decimal',
+    type: Number,
   })
-  @IsNumber()
-  @Min(1)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
   amount!: number;
 
   @ApiPropertyOptional({

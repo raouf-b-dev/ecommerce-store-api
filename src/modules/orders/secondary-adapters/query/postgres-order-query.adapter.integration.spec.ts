@@ -96,8 +96,8 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
     const result = await queryAdapter.list({
       page: 1,
       limit: 10,
-      minAmount: 10000,
-      maxAmount: 20000,
+      minAmount: 100,
+      maxAmount: 200,
     });
 
     expect(result.isSuccess).toBe(true);
