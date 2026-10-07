@@ -60,10 +60,11 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
           expiresAt: primitives.expiresAt,
         })
         .where(
-          'id = :id AND "tokenHash" = :expectedTokenHash AND "isRevoked" = false',
+          'id = :id AND "tokenHash" = :expectedTokenHash AND "isRevoked" = false AND "expiresAt" > :now',
           {
             id: primitives.id,
             expectedTokenHash,
+            now: new Date(),
           },
         )
         .execute();
