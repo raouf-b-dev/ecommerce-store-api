@@ -1,23 +1,18 @@
 import { RefundCheckoutPaymentUseCase } from './refund-checkout-payment.usecase';
-import {
-  PaymentGateway,
-  ProcessRefundInput,
-} from '../../ports/payment.gateway';
+import { ProcessRefundInput } from '../../ports/payment.gateway';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ResultAssertionHelper } from '../../../../../../testing';
+import { MockOrdersPaymentGateway } from '../../../../testing';
 
 describe('RefundCheckoutPaymentUseCase', () => {
   let useCase: RefundCheckoutPaymentUseCase;
-  let paymentGateway: PaymentGateway;
+  let paymentGateway: MockOrdersPaymentGateway;
   let domainEventPublisher: DomainEventPublisher;
 
   beforeEach(() => {
-    paymentGateway = {
-      createPaymentIntent: jest.fn(),
-      processRefund: jest.fn().mockResolvedValue(Result.success(undefined)),
-    };
+    paymentGateway = new MockOrdersPaymentGateway();
+    paymentGateway.mockSuccessfulProcessRefund();
     domainEventPublisher = { publish: jest.fn() };
     useCase = new RefundCheckoutPaymentUseCase(
       paymentGateway,
@@ -79,7 +74,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('returns failure keeping retryable === true when gateway fails with retryable error', async () => {
-    jest.spyOn(paymentGateway, 'processRefund').mockResolvedValueOnce(
+    paymentGateway.processRefund.mockResolvedValueOnce(
       ErrorFactory.InfrastructureError('Payment provider timeout', {
         retryable: true,
       }),
@@ -105,7 +100,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('returns failure keeping retryable === false when gateway fails with non-retryable error', async () => {
-    jest.spyOn(paymentGateway, 'processRefund').mockResolvedValueOnce(
+    paymentGateway.processRefund.mockResolvedValueOnce(
       ErrorFactory.InfrastructureError('Payment provider rejected refund', {
         retryable: false,
       }),

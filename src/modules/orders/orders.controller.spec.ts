@@ -17,12 +17,17 @@ import { CancelOrderUseCase } from './core/application/usecases/cancel-order/can
 import { ConfirmOrderUseCase } from './core/application/usecases/confirm-order/confirm-order.usecase';
 import { DeliverOrderUseCase } from './core/application/usecases/deliver-order/deliver-order.usecase';
 import { ProcessOrderUseCase } from './core/application/usecases/process-order/process-order.usecase';
+import { CreateOrderPaymentUseCase } from './core/application/usecases/create-order-payment/create-order-payment.usecase';
 import { DeliverOrderCommand } from './core/application/usecases/deliver-order/deliver-order.usecase';
 import { Order } from './core/domain/entities/order';
 import { OrderStatus } from './core/domain/value-objects/order-status';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
+import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/payment-method';
+import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
+import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
+import { ResultAssertionHelper } from '../../testing';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -34,6 +39,7 @@ describe('OrdersController', () => {
   let processOrderUseCase: jest.Mocked<ProcessOrderUseCase>;
   let deliverOrderUseCase: jest.Mocked<DeliverOrderUseCase>;
   let shipOrderUseCase: jest.Mocked<ShipOrderUseCase>;
+  let createOrderPaymentUseCase: jest.Mocked<CreateOrderPaymentUseCase>;
   let mockOrder: Order;
   let cancelledOrder: Order;
   let confirmedOrder: Order;
@@ -124,6 +130,12 @@ describe('OrdersController', () => {
             execute: jest.fn().mockResolvedValue(Result.success(undefined)),
           },
         },
+        {
+          provide: CreateOrderPaymentUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+          },
+        },
       ],
     }).compile();
 
@@ -136,6 +148,7 @@ describe('OrdersController', () => {
     processOrderUseCase = module.get(ProcessOrderUseCase);
     deliverOrderUseCase = module.get(DeliverOrderUseCase);
     shipOrderUseCase = module.get(ShipOrderUseCase);
+    createOrderPaymentUseCase = module.get(CreateOrderPaymentUseCase);
   });
 
   afterEach(() => {
@@ -212,5 +225,45 @@ describe('OrdersController', () => {
   it('should call ShipOrderUseCase.execute when shipOrder is called', async () => {
     await controller.shipOrder(processingOrder.id!);
     expect(shipOrderUseCase.execute).toHaveBeenCalledWith(processingOrder.id!);
+  });
+
+  it('should call CreateOrderPaymentUseCase.execute when createPayment is called', async () => {
+    const dto = {
+      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethodDetails: { cardLast4: '4242' },
+    };
+    createOrderPaymentUseCase.execute.mockResolvedValue(
+      Result.success(OrderDtoTestFactory.createCreatedPayment()),
+    );
+
+    const res = await controller.createPayment(123, dto, callerContext);
+
+    expect(createOrderPaymentUseCase.execute).toHaveBeenCalledWith({
+      orderId: 123,
+      paymentMethod: dto.paymentMethod,
+      paymentMethodDetails: dto.paymentMethodDetails,
+      callerContext,
+    });
+    ResultAssertionHelper.assertResultSuccess(res);
+    expect(res.value.amount).toBe(25.5);
+    expect(res.value.refundedAmount).toBe(0);
+  });
+
+  it('returns the use case failure when createPayment fails', async () => {
+    const failure = ErrorFactory.UseCaseError('Order with id 123 not found');
+    createOrderPaymentUseCase.execute.mockResolvedValue(failure);
+
+    const res = await controller.createPayment(
+      123,
+      { paymentMethod: PaymentMethodType.STRIPE },
+      callerContext,
+    );
+
+    expect(res).toBe(failure);
+    ResultAssertionHelper.assertResultFailure(
+      res,
+      'Order with id 123 not found',
+      UseCaseError,
+    );
   });
 });

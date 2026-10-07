@@ -91,7 +91,7 @@ describe('ProcessPaymentStep', () => {
     jobHandler = module.get(ProcessPaymentStep);
   });
 
-  it('converts major units to minor units and creates payment intent', async () => {
+  it('creates the payment intent from the loaded order total', async () => {
     const mockJob = createMockJob('process-payment', jobData);
     jest.spyOn(mockJob, 'getChildrenValues').mockResolvedValue({
       'reserve-stock': validChildResult,

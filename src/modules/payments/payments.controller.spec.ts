@@ -6,7 +6,6 @@ import { Result } from '../../shared-kernel/domain/result';
 import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
 import { PaymentDtoTestFactory, PaymentTestFactory } from './testing';
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
-import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
@@ -18,7 +17,6 @@ import { SKIP_SANITIZATION_KEY } from '../../interceptors/sanitize.interceptor';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
-  let createPaymentUseCase: jest.Mocked<CreatePaymentUseCase>;
   let getPaymentUseCase: jest.Mocked<GetPaymentUseCase>;
   let listPaymentsUseCase: jest.Mocked<ListPaymentsUseCase>;
   let capturePaymentUseCase: jest.Mocked<CapturePaymentUseCase>;
@@ -33,12 +31,6 @@ describe('PaymentsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PaymentsController],
       providers: [
-        {
-          provide: CreatePaymentUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(mockPayment)),
-          },
-        },
         {
           provide: GetPaymentUseCase,
           useValue: {
@@ -85,7 +77,6 @@ describe('PaymentsController', () => {
     }).compile();
 
     controller = module.get(PaymentsController);
-    createPaymentUseCase = module.get(CreatePaymentUseCase);
     getPaymentUseCase = module.get(GetPaymentUseCase);
     listPaymentsUseCase = module.get(ListPaymentsUseCase);
     capturePaymentUseCase = module.get(CapturePaymentUseCase);
@@ -118,17 +109,6 @@ describe('PaymentsController', () => {
         controller.handleStripeWebhook,
       ),
     ).toBe(true);
-  });
-
-  it('should delegate createPayment to CreatePaymentUseCase', async () => {
-    const dto = PaymentDtoTestFactory.createCreatePaymentDto();
-
-    await controller.createPayment(dto, callerContext);
-
-    expect(createPaymentUseCase.execute).toHaveBeenCalledWith({
-      ...dto,
-      callerContext,
-    });
   });
 
   it('should delegate getPayment to GetPaymentUseCase', async () => {
