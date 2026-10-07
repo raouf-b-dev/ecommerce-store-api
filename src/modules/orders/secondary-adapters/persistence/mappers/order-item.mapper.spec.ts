@@ -16,6 +16,22 @@ describe('OrderItemMapper', () => {
     expect(entity.id).toBeUndefined();
     expect(entity.unitPrice).toBe(0.1);
     expect(entity.lineTotal).toBe(0.2);
+    expect(entity.currency).toBe('USD');
+  });
+
+  it('reloads the currency stored on the line', () => {
+    const item = new OrderItem({
+      id: 4,
+      productId: 1,
+      productName: 'Widget',
+      unitPrice: 1999,
+      quantity: 1,
+      currency: 'EUR',
+    });
+    const entity = OrderItemMapper.toEntity(item);
+    const reloaded = OrderItemMapper.toDomain(entity);
+
+    expect(reloaded.toPrimitives().currency).toBe('EUR');
   });
 
   it('toEntity omits id when domain id is 0', () => {

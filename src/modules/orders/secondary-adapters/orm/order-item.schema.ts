@@ -48,6 +48,9 @@ export class OrderItemEntity {
   })
   lineTotal!: number;
 
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  currency!: string;
+
   @ManyToOne(() => OrderEntity, (order: OrderEntity) => order.items, {
     onDelete: 'CASCADE',
   })

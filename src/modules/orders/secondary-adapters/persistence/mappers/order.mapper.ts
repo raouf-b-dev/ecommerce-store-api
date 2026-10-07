@@ -64,6 +64,7 @@ export class OrderMapper {
       subtotal: Number(decimalFromMinorUnits(primitives.subtotal)),
       shippingCost: Number(decimalFromMinorUnits(primitives.shippingCost)),
       totalPrice: Number(decimalFromMinorUnits(primitives.totalPrice)),
+      currency: primitives.currency,
     };
 
     const orderEntity: OrderEntity = Object.assign(
@@ -95,6 +96,7 @@ export class OrderMapper {
       subtotal: entity.subtotal,
       shippingCost: entity.shippingCost,
       totalPrice: entity.totalPrice,
+      currency: entity.currency,
       status: entity.status,
     };
   }

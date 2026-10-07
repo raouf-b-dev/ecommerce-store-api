@@ -232,6 +232,7 @@ export class OrderDtoTestFactory {
       status: 'PENDING_PAYMENT',
       itemCount: 3,
       totalAmount: 199.99,
+      currency: 'USD',
       createdAt: '2026-08-09T20:00:00.000Z',
       ...overrides,
     };
