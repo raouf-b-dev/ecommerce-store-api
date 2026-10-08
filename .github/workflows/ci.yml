@@ -102,7 +102,15 @@ jobs:
         run: npm ci
 
       - name: Run Unit Tests (${{ matrix.shard }})
-        run: npx cross-env NODE_ENV=test vitest run --shard=${{ matrix.shard }}
+        run: npx cross-env NODE_ENV=test vitest run --shard=${{ matrix.shard }} --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ./coverage/lcov.info
+          flags: unit-tests-${{ matrix.shard }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
       - name: Run Script Specs
         if: matrix.shard == '1/2'

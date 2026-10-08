@@ -16,5 +16,18 @@ export default defineConfig({
     setupFiles: ['./test/vitest.setup.ts'],
     include: ['src/**/*.spec.ts'],
     exclude: ['**/*.integration.spec.ts', 'node_modules', 'dist'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/**/*.integration.spec.ts',
+        'src/**/*.d.ts',
+        'src/main.ts',
+        'src/migrations/**',
+        'src/testing/**',
+      ],
+    },
   },
 });
