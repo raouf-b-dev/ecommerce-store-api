@@ -247,8 +247,8 @@ jobs:
 
       - name: Verify build output
         run: |
-          test -f dist/src/main.js
-          echo "dist/src/main.js exists"
+          test -f dist/main.js
+          echo "dist/main.js exists"
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -443,8 +443,8 @@ jobs:
 
       - name: Verify downloaded artifact
         run: |
-          test -f dist/src/main.js
-          echo "dist/src/main.js exists"
+          test -f dist/main.js
+          echo "dist/main.js exists"
 
       - name: Prepare test environment
         uses: ./.github/actions/prepare-test-env
@@ -617,8 +617,8 @@ jobs:
 
       - name: Verify downloaded artifact
         run: |
-          test -f dist/src/main.js
-          echo "dist/src/main.js exists"
+          test -f dist/main.js
+          echo "dist/main.js exists"
 
       - name: Prepare test environment
         uses: ./.github/actions/prepare-test-env
