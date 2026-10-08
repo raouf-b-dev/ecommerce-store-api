@@ -75,6 +75,7 @@ import { ReserveStockForCheckoutUseCase } from './core/application/usecases/rese
 import { ReleaseCheckoutStockUseCase } from './core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
 import { ConfirmCheckoutReservationUseCase } from './core/application/usecases/confirm-checkout-reservation/confirm-checkout-reservation.usecase';
 import { CreateCheckoutPaymentUseCase } from './core/application/usecases/create-checkout-payment/create-checkout-payment.usecase';
+import { CreateOrderPaymentUseCase } from './core/application/usecases/create-order-payment/create-order-payment.usecase';
 import { RefundCheckoutPaymentUseCase } from './core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { ClearCheckoutCartUseCase } from './core/application/usecases/clear-checkout-cart/clear-checkout-cart.usecase';
 import { FinalizeCheckoutUseCase } from './core/application/usecases/finalize-checkout/finalize-checkout.usecase';
@@ -192,6 +193,7 @@ import { LinkDemoOrderPaymentsUseCase } from './core/application/seed/link-demo-
     ReleaseCheckoutStockUseCase,
     ConfirmCheckoutReservationUseCase,
     CreateCheckoutPaymentUseCase,
+    CreateOrderPaymentUseCase,
     RefundCheckoutPaymentUseCase,
     ClearCheckoutCartUseCase,
     FinalizeCheckoutUseCase,

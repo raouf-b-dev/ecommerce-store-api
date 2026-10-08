@@ -27,7 +27,6 @@ import { CallerCtx } from '../identity/primary-adapters/decorators/caller-contex
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Public } from '../../guards/decorators/public.decorator';
 import { SkipSanitization } from '../../interceptors/sanitize.interceptor';
-import { CreatePaymentDto } from './primary-adapters/dto/create-payment.dto';
 import { ProcessRefundDto } from './primary-adapters/dto/process-refund.dto';
 import { PaymentResponseDto } from './primary-adapters/dto/payment-response.dto';
 import { PaymentDetailResponseDto } from './primary-adapters/dto/payment-detail-response.dto';
@@ -35,7 +34,6 @@ import { PaginatedPaymentListResponseDto } from './primary-adapters/dto/payment-
 import { PaymentDtoMapper } from './primary-adapters/mappers/payment-dto.mapper';
 import { Result } from '../../shared-kernel/domain/result';
 import { ListPaymentsQueryDto } from './primary-adapters/dto/list-payments-query.dto';
-import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
@@ -49,7 +47,6 @@ import { isFailure } from '../../shared-kernel/domain/result';
 @Controller('payments')
 export class PaymentsController {
   constructor(
-    private readonly createPaymentUseCase: CreatePaymentUseCase,
     private readonly getPaymentUseCase: GetPaymentUseCase,
     private readonly listPaymentsUseCase: ListPaymentsUseCase,
     private readonly capturePaymentUseCase: CapturePaymentUseCase,
@@ -72,24 +69,6 @@ export class PaymentsController {
       signature,
       rawBody: req.rawBody,
     });
-  }
-
-  @Post()
-  @RequirePermissions('view_all_orders', 'view_own_orders')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a payment intent/transaction' })
-  @ApiResponse({ status: 201, type: PaymentResponseDto })
-  async createPayment(
-    @Body() dto: CreatePaymentDto,
-    @CallerCtx() callerContext: CallerContext,
-  ) {
-    const result = await this.createPaymentUseCase.execute({
-      ...dto,
-      callerContext,
-    });
-
-    if (isFailure(result)) return result;
-    return Result.success(PaymentDtoMapper.toResponse(result.value));
   }
 
   @Get()

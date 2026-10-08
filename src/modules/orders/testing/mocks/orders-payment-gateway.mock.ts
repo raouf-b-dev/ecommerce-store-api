@@ -1,6 +1,9 @@
 import { Result } from '../../../../shared-kernel/domain/result';
+import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import {
+  CreatedPayment,
+  CreatePaymentInput,
   CreatePaymentIntentInput,
   PaymentGateway,
   PaymentIntentResult,
@@ -8,6 +11,11 @@ import {
 } from '../../core/application/ports/payment.gateway';
 
 export class MockOrdersPaymentGateway implements PaymentGateway {
+  createPayment = jest.fn<
+    Promise<Result<CreatedPayment, AppError>>,
+    [CreatePaymentInput]
+  >();
+
   createPaymentIntent = jest.fn<
     Promise<Result<PaymentIntentResult, InfrastructureError>>,
     [CreatePaymentIntentInput]
@@ -39,6 +47,7 @@ export class MockOrdersPaymentGateway implements PaymentGateway {
   }
 
   verifyNoUnexpectedCalls(): void {
+    expect(this.createPayment).not.toHaveBeenCalled();
     expect(this.createPaymentIntent).not.toHaveBeenCalled();
     expect(this.processRefund).not.toHaveBeenCalled();
   }

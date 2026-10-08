@@ -18,6 +18,7 @@ import { OrderDetailDTO } from '../../core/application/queries/results/order-det
 import { OrderItemDetailDTO } from '../../core/application/queries/results/order-item-detail.result';
 import { RawOrderListQueryRow } from '../../secondary-adapters/dto/raw-order-list-query-row.interface';
 import { CheckoutDto } from '../../primary-adapters/dto/checkout.dto';
+import { CreatedPayment } from '../../core/application/ports/payment.gateway';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 export class OrderDtoTestFactory {
@@ -247,6 +248,30 @@ export class OrderDtoTestFactory {
       email: 'alice@example.com',
       ...overrides,
     };
+  }
+
+  static createCreatedPayment(
+    overrides?: Partial<CreatedPayment>,
+  ): CreatedPayment {
+    const createdAt = new Date('2026-01-01T00:00:00.000Z');
+    const basePayment: CreatedPayment = {
+      id: 5,
+      orderId: 123,
+      userId: 2,
+      amount: 2550,
+      currency: 'EUR',
+      paymentMethod: PaymentMethodType.STRIPE,
+      status: 'AUTHORIZED',
+      transactionId: 'txn_123',
+      gatewayPaymentIntentId: null,
+      paymentMethodInfo: null,
+      refundedAmount: 0,
+      failureReason: null,
+      createdAt,
+      completedAt: null,
+      updatedAt: createdAt,
+    };
+    return { ...basePayment, ...overrides };
   }
 
   static createOrderListItemDTO(
