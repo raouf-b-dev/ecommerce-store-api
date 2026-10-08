@@ -7,7 +7,7 @@ import {
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
 import {
   createMockExecutionContext,
@@ -69,22 +69,19 @@ describe('IdempotencyInterceptor', () => {
     expect(interceptor).toBeDefined();
   });
 
-  it('rejects the request when no idempotency key is provided', (done) => {
+  it('rejects the request when no idempotency key is provided', async () => {
     const { context } = createContext(undefined);
     const next = createMockCallHandler(of('response'));
 
-    interceptor.intercept(context, next).subscribe({
-      next: () => done(new Error('expected the request to be rejected')),
-      error: (error: unknown) => {
-        expect(error).toBeInstanceOf(BadRequestException);
-        expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
-        expect(next.handle).not.toHaveBeenCalled();
-        done();
-      },
-    });
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
+    expect(next.handle).not.toHaveBeenCalled();
   });
 
-  it('should return cached response if key exists', (done) => {
+  it('should return cached response if key exists', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('cached');
     const cachedResponse = { status: 'ok' };
     const { context } = createContext(clientKey);
@@ -92,72 +89,61 @@ describe('IdempotencyInterceptor', () => {
 
     idempotencyStore.mockCompleted(cachedResponse);
 
-    interceptor.intercept(context, next).subscribe({
-      next: (result) => {
-        expect(result).toBe(cachedResponse);
-        expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
-          expectedScopedKey(clientKey),
-        );
-        expect(next.handle).not.toHaveBeenCalled();
-        done();
-      },
-    });
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+
+    expect(result).toBe(cachedResponse);
+    expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
+      expectedScopedKey(clientKey),
+    );
+    expect(next.handle).not.toHaveBeenCalled();
   });
 
-  it('should accept the legacy x-idempotency-key header', (done) => {
+  it('should accept the legacy x-idempotency-key header', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('legacy');
     const { context } = createContext(clientKey, 'legacy');
     const next = createMockCallHandler(of({ ok: true }));
 
     idempotencyStore.mockNewLock();
 
-    interceptor.intercept(context, next).subscribe({
-      next: () => {
-        expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
-          expectedScopedKey(clientKey),
-        );
-        done();
-      },
-    });
+    await firstValueFrom(interceptor.intercept(context, next));
+
+    expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
+      expectedScopedKey(clientKey),
+    );
   });
 
-  it('should throw ConflictException with Retry-After when in progress', (done) => {
+  it('should throw ConflictException with Retry-After when in progress', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('inflight');
     const { context, response } = createContext(clientKey);
     const next = createMockCallHandler(of('response'));
 
     idempotencyStore.mockInProgress();
 
-    interceptor.intercept(context, next).subscribe({
-      error: (err) => {
-        expect(err).toBeInstanceOf(ConflictException);
-        expect(response.setHeader).toHaveBeenCalledWith(
-          'Retry-After',
-          String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
-        );
-        expect(next.handle).not.toHaveBeenCalled();
-        done();
-      },
-    });
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(ConflictException);
+
+    expect(response.setHeader).toHaveBeenCalledWith(
+      'Retry-After',
+      String(IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS),
+    );
+    expect(next.handle).not.toHaveBeenCalled();
   });
 
-  it('should throw ServiceUnavailableException when store is unavailable', (done) => {
+  it('should throw ServiceUnavailableException when store is unavailable', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('unavailable');
     const { context } = createContext(clientKey);
     const next = createMockCallHandler(of('response'));
 
     idempotencyStore.mockUnavailable();
 
-    interceptor.intercept(context, next).subscribe({
-      error: (err) => {
-        expect(err).toBeInstanceOf(ServiceUnavailableException);
-        expect(next.handle).not.toHaveBeenCalled();
-        done();
-      },
-    });
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(next.handle).not.toHaveBeenCalled();
   });
 
-  it('should proceed and complete if key is new', (done) => {
+  it('should proceed and complete if key is new', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('new');
     const responseBody = { status: 'created' };
     const { context } = createContext(clientKey);
@@ -166,19 +152,16 @@ describe('IdempotencyInterceptor', () => {
 
     idempotencyStore.mockNewLock();
 
-    interceptor.intercept(context, next).subscribe({
-      next: (result) => {
-        expect(result).toBe(responseBody);
-        expect(idempotencyStore.complete).toHaveBeenCalledWith(
-          scopedKey,
-          responseBody,
-        );
-        done();
-      },
-    });
+    const result = await firstValueFrom(interceptor.intercept(context, next));
+
+    expect(result).toBe(responseBody);
+    expect(idempotencyStore.complete).toHaveBeenCalledWith(
+      scopedKey,
+      responseBody,
+    );
   });
 
-  it('should fail closed with 503 when complete cannot persist', (done) => {
+  it('should fail closed with 503 when complete cannot persist', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('persist-fail');
     const responseBody = { status: 'created' };
     const { context } = createContext(clientKey);
@@ -189,16 +172,13 @@ describe('IdempotencyInterceptor', () => {
     idempotencyStore.mockCompleteFailure(new Error('Redis down'));
     idempotencyStore.mockReleaseSuccess();
 
-    interceptor.intercept(context, next).subscribe({
-      error: (err) => {
-        expect(err).toBeInstanceOf(ServiceUnavailableException);
-        expect(idempotencyStore.release).toHaveBeenCalledWith(scopedKey);
-        done();
-      },
-    });
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(idempotencyStore.release).toHaveBeenCalledWith(scopedKey);
   });
 
-  it('should release lock if handler fails', (done) => {
+  it('should release lock if handler fails', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('handler-fail');
     const error = new Error('Handler failed');
     const { context } = createContext(clientKey);
@@ -208,13 +188,10 @@ describe('IdempotencyInterceptor', () => {
     idempotencyStore.mockNewLock();
     idempotencyStore.mockReleaseSuccess();
 
-    interceptor.intercept(context, next).subscribe({
-      error: (err) => {
-        expect(err).toBe(error);
-        expect(idempotencyStore.release).toHaveBeenCalledWith(scopedKey);
-        done();
-      },
-    });
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(error);
+    expect(idempotencyStore.release).toHaveBeenCalledWith(scopedKey);
   });
 });
 
