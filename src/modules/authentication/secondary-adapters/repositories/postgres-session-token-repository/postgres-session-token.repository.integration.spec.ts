@@ -122,4 +122,36 @@ describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
     expect(loaded.value?.tokenHash).toBe(rotated.tokenHash);
     expect(loaded.value?.isRevoked).toBe(false);
   });
+
+  it('replaceTokenIfCurrent returns conflict when the session is already expired', async () => {
+    const expired = SessionToken.create(
+      seededData.customerUser.id,
+      'expired-session-token',
+      new Date(Date.now() - 60_000),
+    );
+    const saveResult = await repository.save(expired);
+    ResultAssertionHelper.assertResultSuccess(saveResult);
+
+    const rotated = SessionToken.create(
+      seededData.customerUser.id,
+      'should-not-rotate',
+      new Date(Date.now() + 60_000),
+      expired.id,
+    );
+    const result = await repository.replaceTokenIfCurrent(
+      rotated,
+      expired.tokenHash,
+    );
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Refresh token was already rotated',
+      RepositoryError,
+    );
+    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+
+    const loaded = await repository.findById(expired.id);
+    ResultAssertionHelper.assertResultSuccess(loaded);
+    expect(loaded.value?.tokenHash).toBe(expired.tokenHash);
+  });
 });

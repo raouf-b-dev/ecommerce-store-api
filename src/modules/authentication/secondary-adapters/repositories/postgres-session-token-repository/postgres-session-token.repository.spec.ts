@@ -93,11 +93,12 @@ describe('PostgresSessionTokenRepository', () => {
       expiresAt: nextExpiry,
     });
     expect(queryBuilder.where).toHaveBeenCalledWith(
-      'id = :id AND "tokenHash" = :expectedTokenHash AND "isRevoked" = false',
-      {
+      'id = :id AND "tokenHash" = :expectedTokenHash AND "isRevoked" = false AND "expiresAt" > :now',
+      expect.objectContaining({
         id: rotated.id,
         expectedTokenHash: current.tokenHash,
-      },
+        now: expect.any(Date),
+      }),
     );
   });
 
