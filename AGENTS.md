@@ -1,10 +1,10 @@
 # ecommerce-store-api
 
-NestJS 11 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node 24+.
+NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node 24+.
 
 ## Verify
 
-`npm run verify` runs typecheck, lint (ESLint + ASCII prose), format check, architecture tests, and unit tests. Run it before reporting a task done. One spec: `npx jest <path>`.
+`npm run verify` runs typecheck, lint (ESLint + ASCII prose), format check, architecture tests, and unit tests. Run it before reporting a task done. One spec: `npx vitest <path>`.
 
 In your final message give: what changed, the commands you ran with results, open risks or assumptions, and for each side effect in the diff (queue add, gateway call, notification, event) what happens if the process dies right after it.
 
