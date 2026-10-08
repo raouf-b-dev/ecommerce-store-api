@@ -13,7 +13,7 @@ Repository and Query Adapter integration tests validate transactional persistenc
 ### Key Principles
 
 - **Real Database Container**: Tests run against an isolated containerized PostgreSQL instance managed via `@testcontainers/postgresql`.
-- **Isolated Suite**: Integration tests use the file pattern `*.integration.spec.ts` and are executed via a dedicated Jest project (`test/integration/jest-integration.json`). Adapter/repository specs stay co-located under `src/modules/**/secondary-adapters/`; suite-level DB checks live under `test/integration/database/`. Default unit test runs (`npm run test`) explicitly ignore them via `testPathIgnorePatterns: [".*\\.integration\\.spec\\.ts$"]`.
+- **Isolated Suite**: Integration tests use the file pattern `*.integration.spec.ts` and are executed via a dedicated Vitest configuration (`vitest.integration.config.mts`). Adapter/repository specs stay co-located under `src/modules/**/secondary-adapters/`; suite-level DB checks live under `test/integration/database/`. Default unit test runs (`npm run test`) explicitly ignore them via `exclude: ['**/*.integration.spec.ts']`.
 - **Serial Execution**: Standard unit tests remain fast and lightweight without Docker dependencies (`npm run test`). Integration tests run in serial mode (`npm run test:integration`) to ensure total database isolation without connection conflicts.
 
 ### Command Execution
@@ -37,10 +37,8 @@ Integration testing infrastructure is located under `test/integration/`:
 
 ```
 test/integration/
-├── jest-integration.json                    # Dedicated Jest configuration
 ├── harness/
-│ ├── testcontainers.global-setup.ts # Jest globalSetup: starts Postgres container
-│ ├── testcontainers.global-teardown.ts # Jest globalTeardown: stops Postgres container
+│ ├── vitest-integration.global-setup.ts # Vitest globalSetup: starts and stops Postgres container
 │ ├── testcontainers.setup.ts # Per-file hook: shared DataSource singleton
 │   ├── integration-test.constants.ts        # Postgres image version and DB credentials
 │   ├── seed-reference-data.ts               # Minimal deterministic FK reference data seeder
