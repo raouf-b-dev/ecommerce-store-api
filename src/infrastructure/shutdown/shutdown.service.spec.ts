@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShutdownService } from './shutdown.service';
 import { Logger } from '@nestjs/common';
+import { vi } from 'vitest';
 
 describe('ShutdownService', () => {
   let service: ShutdownService;
+  let exitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     // Mock process.exit to prevent the test suite from exiting
-    jest
+    exitSpy = vi
       .spyOn(process, 'exit')
       .mockImplementation((_code?: string | number | null) => {
         return undefined as never;
@@ -21,8 +23,8 @@ describe('ShutdownService', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
-    jest.useRealTimers();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('should be defined', () => {
@@ -31,10 +33,10 @@ describe('ShutdownService', () => {
 
   describe('beforeApplicationShutdown', () => {
     it('should start the safety timeout on the first call', () => {
-      jest.useFakeTimers();
-      const loggerSpy = jest
+      vi.useFakeTimers();
+      const loggerSpy = vi
         .spyOn(Logger.prototype, 'log')
-        .mockImplementation();
+        .mockImplementation(() => undefined);
 
       service.beforeApplicationShutdown('SIGTERM');
 
@@ -46,12 +48,11 @@ describe('ShutdownService', () => {
       expect(service['shutdownTimeout']).not.toBeNull();
 
       // Fast forward to trigger the timeout
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation();
-      const errorSpy = jest
+      const errorSpy = vi
         .spyOn(Logger.prototype, 'error')
-        .mockImplementation();
+        .mockImplementation(() => undefined);
 
-      jest.advanceTimersByTime(15000);
+      vi.advanceTimersByTime(15000);
 
       expect(errorSpy).toHaveBeenCalled();
       expect(exitSpy).toHaveBeenCalledWith(1);

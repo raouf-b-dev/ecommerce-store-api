@@ -1,10 +1,18 @@
 import { generateKeyPairSync } from 'crypto';
 import * as jose from 'jose';
+import { vi } from 'vitest';
 import { ClockTestHelper, MockJwksService } from 'src/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtSignerService } from './jwt-signer.service';
 import { JwksPort } from '../../../../infrastructure/jwt/ports/jwks.port';
 import { EnvConfigService } from '../../../../config/env-config.service';
+
+vi.mock('jose', async (importOriginal) => {
+  const actual = await importOriginal<typeof jose>();
+  return {
+    ...actual,
+  };
+});
 
 function createPrivateKeyPem(): string {
   const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });

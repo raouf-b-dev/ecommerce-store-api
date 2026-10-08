@@ -1,5 +1,5 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { ServerOptions } from 'socket.io';
+import { Server, ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { INestApplicationContext, Logger } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { buildNodeRedisClientOptions } from '../../redis/redis-connection.option
 
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor?: ReturnType<typeof createAdapter>;
-  private readonly logger = new Logger(RedisIoAdapter.name);
+  protected override readonly logger = new Logger(RedisIoAdapter.name);
   private pubClient?: ReturnType<typeof createClient>;
   private subClient?: ReturnType<typeof createClient>;
   private useRedis = false;
@@ -41,7 +41,7 @@ export class RedisIoAdapter extends IoAdapter {
     }
   }
 
-  createIOServer(port: number, options?: ServerOptions): any {
+  override createIOServer(port: number, options?: ServerOptions): Server {
     const server = super.createIOServer(port, options);
     if (this.useRedis && this.adapterConstructor) {
       server.adapter(this.adapterConstructor);
@@ -53,7 +53,10 @@ export class RedisIoAdapter extends IoAdapter {
    * Called by NestJS SocketModule during application shutdown.
    * Idempotent - safe to call multiple times (quit on a closed client is caught).
    */
-  async close(): Promise<void> {
+  override async close(server?: Server): Promise<void> {
+    if (server) {
+      await super.close(server);
+    }
     await Promise.all([
       this.pubClient?.quit().catch((err: unknown) => {
         this.logger.debug(`pubClient already closed: ${toErrorMessage(err)}`);
