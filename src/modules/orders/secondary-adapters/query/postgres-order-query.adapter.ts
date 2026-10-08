@@ -188,6 +188,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
           'order.userId AS "userId"',
           'order.status AS "status"',
           'order.totalPrice AS "totalAmount"',
+          'order.currency AS "currency"',
           'order.createdAt AS "createdAt"',
           "COALESCE(user.firstName || ' ' || user.lastName, 'Unknown User') AS \"userName\"",
           'COALESCE(user.email, \'\') AS "userEmail"',

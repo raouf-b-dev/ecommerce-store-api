@@ -76,7 +76,7 @@ export class CreateOrderStep extends BaseJobHandler<
       ...childData,
       orderId: order.id,
       orderTotal: order.totalPrice,
-      orderCurrency: 'USD',
+      orderCurrency: order.currency,
     });
   }
 }

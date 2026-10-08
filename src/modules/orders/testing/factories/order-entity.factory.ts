@@ -28,6 +28,7 @@ export class OrderEntityTestFactory {
       subtotal: 100,
       shippingCost: 0,
       totalPrice: 100,
+      currency: 'USD',
       status: OrderStatus.PENDING_PAYMENT,
       version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -50,6 +51,7 @@ export class OrderEntityTestFactory {
         subtotal: 100,
         shippingCost: 0,
         totalPrice: 100,
+        currency: 'USD',
         status: OrderStatus.PENDING_PAYMENT,
         version: 1,
         createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -97,6 +99,7 @@ export class OrderEntityTestFactory {
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
+      currency: 'USD',
       order: null as unknown as OrderEntity,
     };
 
@@ -114,6 +117,7 @@ export class OrderEntityTestFactory {
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
+      currency: 'USD',
       order: null as unknown as OrderEntity,
     };
 

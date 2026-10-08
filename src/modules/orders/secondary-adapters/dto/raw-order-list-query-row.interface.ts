@@ -10,5 +10,6 @@ export interface RawOrderListQueryRow {
   status: string;
   itemCount: number;
   totalAmount: number;
+  currency: string;
   createdAt: Date | string;
 }

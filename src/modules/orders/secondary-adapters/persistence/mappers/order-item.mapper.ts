@@ -10,10 +10,6 @@ import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/d
 
 export type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order'>;
 
-// order_items has no currency column. Reload uses the single store currency
-// until the FX phase adds the column and a store-currency port.
-const ORDER_LINE_CURRENCY = 'USD';
-
 export class OrderItemMapper {
   static toDomain(entity: OrderItemEntity): OrderItem {
     const orderItemProps: OrderItemProps = {
@@ -24,7 +20,7 @@ export class OrderItemMapper {
       imageUrl: entity.imageUrl || null,
       unitPrice: requireMinorUnits(entity.unitPrice),
       quantity: entity.quantity,
-      currency: ORDER_LINE_CURRENCY,
+      currency: entity.currency,
     };
     return new OrderItem(orderItemProps);
   }
@@ -39,6 +35,7 @@ export class OrderItemMapper {
       unitPrice: Number(decimalFromMinorUnits(primitives.unitPrice)),
       quantity: primitives.quantity,
       lineTotal: Number(decimalFromMinorUnits(primitives.lineTotal)),
+      currency: primitives.currency,
     };
     const entity = Object.assign(new OrderItemEntity(), itemPayload);
     const persistedId = persistedChildId(primitives.id);

@@ -19,7 +19,7 @@ export class OrderQueryMapper {
       status: String(row.status || ''),
       itemCount: Number(row.itemCount || 0),
       totalAmount: Number(row.totalAmount || 0),
-      currency: 'USD',
+      currency: row.currency,
       createdAt: new Date(row.createdAt),
     };
   }
@@ -75,7 +75,7 @@ export class OrderQueryMapper {
       shippingCost: Number(orderEntity.shippingCost),
       totalAmount: Number(orderEntity.totalPrice),
       totalPrice: Number(orderEntity.totalPrice),
-      currency: 'USD',
+      currency: orderEntity.currency,
       createdAt: orderEntity.createdAt,
       updatedAt: orderEntity.updatedAt,
     };

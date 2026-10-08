@@ -89,6 +89,9 @@ export class OrderEntity {
   })
   totalPrice!: number;
 
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  currency!: string;
+
   @Column({
     type: 'varchar',
     enum: OrderStatus,
