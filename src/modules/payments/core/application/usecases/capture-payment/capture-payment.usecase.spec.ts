@@ -11,6 +11,7 @@ import { PaymentMapper } from '../../../../secondary-adapters/persistence/mapper
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 
 describe('CapturePaymentUseCase', () => {
   let useCase: CapturePaymentUseCase;
@@ -89,9 +90,31 @@ describe('CapturePaymentUseCase', () => {
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
-  it('should fail if update fails', async () => {
+  it('returns the domain failure when the payment is not authorized', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPendingEntity({
       id: 123,
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const result = await useCase.execute(123);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Can only capture authorized payments',
+      DomainError,
+    );
+    expect(paymentRepository.update).not.toHaveBeenCalled();
+    expect(domainEventPublisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('should fail if update fails', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 100,
+      status: PaymentStatusType.AUTHORIZED,
+      completedAt: null,
     });
     const payment = PaymentMapper.toDomain(paymentEntity);
 
