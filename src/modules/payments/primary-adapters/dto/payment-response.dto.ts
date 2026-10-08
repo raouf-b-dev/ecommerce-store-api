@@ -18,7 +18,7 @@ export class PaymentResponseDto {
 
   @ApiProperty({
     example: 299.99,
-    description: 'Payment amount',
+    description: 'Payment amount as a major-unit decimal',
     type: Number,
   })
   amount!: number;
@@ -71,7 +71,7 @@ export class PaymentResponseDto {
 
   @ApiPropertyOptional({
     example: 50,
-    description: 'Refunded amount',
+    description: 'Refunded amount as a major-unit decimal',
     type: Number,
   })
   refundedAmount?: number;

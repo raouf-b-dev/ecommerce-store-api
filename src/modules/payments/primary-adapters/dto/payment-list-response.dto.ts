@@ -17,9 +17,9 @@ export class PaymentListItemResponseDto {
   userEmail!: string;
 
   @ApiProperty({
-    type: 'integer',
-    example: 22494,
-    description: 'Payment amount in minor currency units',
+    type: Number,
+    example: 224.94,
+    description: 'Payment amount as a major-unit decimal',
   })
   amount!: number;
 
