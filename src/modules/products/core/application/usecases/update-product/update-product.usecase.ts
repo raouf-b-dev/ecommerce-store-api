@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { CurrencyConfigPort } from '../../ports/currency-config.port';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -20,6 +21,7 @@ export class UpdateProductUseCase extends UseCase<
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly currencyConfig: CurrencyConfigPort,
   ) {
     super();
   }
@@ -59,11 +61,29 @@ export class UpdateProductUseCase extends UseCase<
 
       const { entity, expectedVersion } = findResult.value;
 
+      const effectiveCurrency = (command.currency ?? entity.currency)
+        ?.trim()
+        .toUpperCase();
+
+      const supportedCurrencies = this.currencyConfig.getSupportedCurrencies();
+      if (
+        !effectiveCurrency ||
+        !supportedCurrencies.includes(effectiveCurrency)
+      ) {
+        return ErrorFactory.UseCaseError(
+          `Effective product currency "${effectiveCurrency}" is not supported by this store`,
+          { status: HttpStatus.BAD_REQUEST },
+        );
+      }
+
+      const updatedCurrency =
+        command.currency !== undefined ? effectiveCurrency : undefined;
+
       entity.updateProduct({
         name: command.name,
         description: command.description,
         price: command.price,
-        currency: command.currency,
+        currency: updatedCurrency,
         sku: command.sku,
         imageUrl: command.imageUrl,
         categoryId: command.categoryId,

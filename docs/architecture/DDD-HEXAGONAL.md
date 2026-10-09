@@ -43,22 +43,22 @@ The Hexagonal Architecture organizes software as a **core application** surround
 
 > **Dependencies ALWAYS point inwards.**
 
-| Layer | May depend on | Must NOT depend on |
+| Layer                  | May depend on                        | Must NOT depend on                  |
 | ---------------------- | ------------------------------------ | ----------------------------------- |
-| **Domain** | Nothing | Application, Adapters, Frameworks |
-| **Application** | Domain only | Adapters, Frameworks |
-| **Primary Adapters** | Application | Domain directly, Secondary Adapters |
-| **Secondary Adapters** | Domain interfaces, Application ports | Primary Adapters |
+| **Domain**             | Nothing                              | Application, Adapters, Frameworks   |
+| **Application**        | Domain only                          | Adapters, Frameworks                |
+| **Primary Adapters**   | Application                          | Domain directly, Secondary Adapters |
+| **Secondary Adapters** | Domain interfaces, Application ports | Primary Adapters                    |
 
 ### 1.3 Ports & Adapters Definitions
 
-| Concept | Academic Definition | Typical Convention |
-| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **Port** | An interface defined by the application core that the outside world must conform to | Abstract classes in `domain/repositories/` and `application/ports/` |
-| **Primary Adapter** | Code that **drives** the application (sends input) | `primary-adapters/` folder: Controllers, DTOs, Job handlers, Guards |
-| **Secondary Adapter** | Code that the application **drives** (sends output) | `secondary-adapters/` folder: Repository impls, API clients, Cache impls |
-| **Driving Actor** | External entity that triggers the application | HTTP client, Cron scheduler, WebSocket client |
-| **Driven Actor** | External dependency the application uses | PostgreSQL, Redis, Stripe/PayPal Gateway |
+| Concept               | Academic Definition                                                                 | Typical Convention                                                       |
+| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Port**              | An interface defined by the application core that the outside world must conform to | Abstract classes in `domain/repositories/` and `application/ports/`      |
+| **Primary Adapter**   | Code that **drives** the application (sends input)                                  | `primary-adapters/` folder: Controllers, DTOs, Job handlers, Guards      |
+| **Secondary Adapter** | Code that the application **drives** (sends output)                                 | `secondary-adapters/` folder: Repository impls, API clients, Cache impls |
+| **Driving Actor**     | External entity that triggers the application                                       | HTTP client, Cron scheduler, WebSocket client                            |
+| **Driven Actor**      | External dependency the application uses                                            | PostgreSQL, Redis, Stripe/PayPal Gateway                                 |
 
 ### 1.4 How This Maps to Our Directory Structure
 
@@ -96,27 +96,27 @@ src/modules/[module]/
 
 ### 2.1 Strategic Design Patterns
 
-| Pattern | Definition | Example Application |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context** | A boundary within which a domain model is defined and applicable | Each folder in `src/modules/` is treated as a context. Health is probes only. Analytics is query-only composition, not a write aggregate. |
-| **Shared Kernel** | A subset of the domain model shared between multiple contexts. Must be pure domain: no infrastructure | `src/shared-kernel/domain/`: contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore` |
-| **Context Map** | Documents the relationships between Bounded Contexts | Orders imports from Identity (ACL via UserGateway), Carts (ACL via CartGateway) |
-| **Upstream/Downstream** | One context provides, another consumes | Orders (downstream) consumes Identity, Carts, Inventory, Payments (upstream) |
-| **Anti-Corruption Layer** | Translates between two contexts' models | Gateway adapters in `secondary-adapters/adapters/` (e.g., `UserGatewayAdapter`, `CartGatewayAdapter`) |
+| Pattern                   | Definition                                                                                            | Example Application                                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**       | A boundary within which a domain model is defined and applicable                                      | Each folder in `src/modules/` represents a domain context (Analytics is query-only composition, not a write aggregate; health probes live in `src/infrastructure/health/`). |
+| **Shared Kernel**         | A subset of the domain model shared between multiple contexts. Must be pure domain: no infrastructure | `src/shared-kernel/domain/`: contains only `Result`, `AppError`, `UseCase`, `Money`, `Quantity`, `IdempotencyStore`                                                         |
+| **Context Map**           | Documents the relationships between Bounded Contexts                                                  | Orders imports from Identity (ACL via UserGateway), Carts (ACL via CartGateway)                                                                                             |
+| **Upstream/Downstream**   | One context provides, another consumes                                                                | Orders (downstream) consumes Identity, Carts, Inventory, Payments (upstream)                                                                                                |
+| **Anti-Corruption Layer** | Translates between two contexts' models                                                               | Gateway adapters in `secondary-adapters/adapters/` (e.g., `UserGatewayAdapter`, `CartGatewayAdapter`)                                                                       |
 
 ### 2.2 Tactical Design Patterns
 
-| Pattern | Definition | Typical Location |
+| Pattern                            | Definition                                          | Typical Location                                                                    |
 | ---------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Entity** | Has identity, mutable state, lifecycle | `core/domain/models/` |
-| **Value Object** | Defined by attributes, immutable, no identity | `core/domain/value-objects/` |
-| **Aggregate** | Cluster of entities with a single root entity | Domain models that encapsulate child entities |
-| **Repository** | Abstracts storage operations for aggregates | `core/domain/repositories/` (interface) → `secondary-adapters/repositories/` (impl) |
-| **Domain Service** | Business logic that doesn't belong to one entity | `core/domain/services/` |
-| **Domain Event** | Records something significant that happened | `core/domain/events/` |
-| **Application Service / Use Case** | Orchestrates domain objects for a specific task | `core/application/usecases/` |
-| **Port** | Interface the core defines for external interaction | `core/application/ports/` |
-| **Factory** | Encapsulates complex creation logic | `ErrorFactory` in shared-kernel |
+| **Entity**                         | Has identity, mutable state, lifecycle              | `core/domain/models/`                                                               |
+| **Value Object**                   | Defined by attributes, immutable, no identity       | `core/domain/value-objects/`                                                        |
+| **Aggregate**                      | Cluster of entities with a single root entity       | Domain models that encapsulate child entities                                       |
+| **Repository**                     | Abstracts storage operations for aggregates         | `core/domain/repositories/` (interface) → `secondary-adapters/repositories/` (impl) |
+| **Domain Service**                 | Business logic that doesn't belong to one entity    | `core/domain/services/`                                                             |
+| **Domain Event**                   | Records something significant that happened         | `core/domain/events/`                                                               |
+| **Application Service / Use Case** | Orchestrates domain objects for a specific task     | `core/application/usecases/`                                                        |
+| **Port**                           | Interface the core defines for external interaction | `core/application/ports/`                                                           |
+| **Factory**                        | Encapsulates complex creation logic                 | `ErrorFactory` in shared-kernel                                                     |
 
 ### 2.3 Shared Kernel: Strict Rules
 
@@ -147,7 +147,7 @@ src/modules/[module]/
 
 When a module needs **cross-context operations** from another module, it must go through an **ACL Gateway**. The adapter injects upstream **application-layer exports** (Use Cases), not Repositories. This preserves upstream domain invariants and enables microservice migration.
 
-Canonical context map (Shared Kernel, Orders/Carts/Auth ACL gateways, Health): see [Bounded Contexts and Context Mapping](ARCHITECTURE.md#bounded-contexts-and-context-mapping) in `ARCHITECTURE.md`. Do not duplicate that diagram here.
+Canonical context map (Shared Kernel, Orders/Carts/Auth ACL gateways): see [Bounded Contexts and Context Mapping](ARCHITECTURE.md#bounded-contexts-and-context-mapping) in `ARCHITECTURE.md`. Do not duplicate that diagram here.
 
 **Live example: Orders → Identity**
 
@@ -207,11 +207,11 @@ The `CheckoutUseCase` touches Orders, Carts, Inventory, Payments, and Identity. 
 
 This is a common source of confusion. Here is the precise distinction:
 
-| Term | Scope | What It Contains | Typical Implementation |
+| Term                      | Scope              | What It Contains                                                 | Typical Implementation                               |
 | ------------------------- | ------------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| **Primary Adapters** | Driving side | Controllers, Guards, Interceptors, Filters, CLI, Cron triggers | `modules/[x]/primary-adapters/`, `src/interceptors/` |
-| **Secondary Adapters** | Driven side | Repository impls, API clients, Cache impls, Queue producers | `modules/[x]/secondary-adapters/` |
-| **Global Infrastructure** | Shared driven-side | DB connections, Cache config, Redis setup, Logger, External APIs | `src/infrastructure/` |
+| **Primary Adapters**      | Driving side       | Controllers, Guards, Interceptors, Filters, CLI, Cron triggers   | `modules/[x]/primary-adapters/`, `src/interceptors/` |
+| **Secondary Adapters**    | Driven side        | Repository impls, API clients, Cache impls, Queue producers      | `modules/[x]/secondary-adapters/`                    |
+| **Global Infrastructure** | Shared driven-side | DB connections, Cache config, Redis setup, Logger, External APIs | `src/infrastructure/`                                |
 
 **Key insight**: `src/infrastructure/` is the **global secondary adapter layer**. It is NOT a catch-all for everything. Primary adapters (filters, interceptors) live at the app level (`src/filters/`, `src/interceptors/`) because they are **presentation concerns**, not infrastructure.
 
@@ -249,26 +249,26 @@ Does it have its own controller + use case?
 
 ## 5. Naming Conventions Summary
 
-| Concept | Module-Level Name | Global-Level Name |
+| Concept          | Module-Level Name                    | Global-Level Name                   |
 | ---------------- | ------------------------------------ | ----------------------------------- |
-| Driving adapters | `primary-adapters/` | `src/filters/`, `src/interceptors/` |
-| Driven adapters | `secondary-adapters/` | `src/infrastructure/` |
-| Business core | `core/domain/` + `core/application/` | `shared-kernel/domain/` |
-| NestJS module | `[module].module.ts` | `infrastructure.module.ts` |
+| Driving adapters | `primary-adapters/`                  | `src/filters/`, `src/interceptors/` |
+| Driven adapters  | `secondary-adapters/`                | `src/infrastructure/`               |
+| Business core    | `core/domain/` + `core/application/` | `shared-kernel/domain/`             |
+| NestJS module    | `[module].module.ts`                 | `infrastructure.module.ts`          |
 
 ---
 
 ## 6. Anti-Patterns
 
-| Anti-Pattern | Problem | Correct Approach |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| **Fat controller** | Business logic in controllers (validation, conditionals, entity creation). The controller becomes an untestable monolith. | Controllers are thin adapters: parse input, call use case, map response. Zero domain logic. |
-| **Use case imports infrastructure** | A use case directly imports a TypeORM repository, Redis client, or HTTP client. Couples the core to frameworks. | Use cases depend on **ports** (abstract interfaces). Adapters implement the ports. |
-| **Domain entity depends on ORM** | Entity class extends `TypeORM.BaseEntity` or uses ORM decorators. The domain is permanently coupled to the persistence framework. | Domain entities are plain classes. ORM schemas are separate mapper/schema classes in the adapter layer. |
-| **Bidirectional module dependency** | Module A calls Module B, and Module B calls back to Module A. Creates circular dependencies and violates the direction of the context map. | Use domain events for the reverse direction. The Core Domain orchestrates; supporting contexts never call back. |
-| **Shared database tables across contexts** | Two write-side contexts query each other's tables as if they owned them. Hidden coupling when either schema evolves. | Each write context owns its tables. Commands flow through ACL gateways or domain events. CQRS query adapters and Analytics may JOIN for reads in this monolith. |
-| **Anemic domain model** | Entities are data bags with only getters/setters. All logic lives in services. | Entities encapsulate behaviour (Evans, 2003). Services orchestrate entities, not replace them. |
-| **Leaking domain types to the API** | Returning domain entities directly from controllers. Couples the public API contract to internal domain structure. | Map domain entities to presentation DTOs at the controller/adapter boundary. |
+| Anti-Pattern                               | Problem                                                                                                                                    | Correct Approach                                                                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fat controller**                         | Business logic in controllers (validation, conditionals, entity creation). The controller becomes an untestable monolith.                  | Controllers are thin adapters: parse input, call use case, map response. Zero domain logic.                                                                     |
+| **Use case imports infrastructure**        | A use case directly imports a TypeORM repository, Redis client, or HTTP client. Couples the core to frameworks.                            | Use cases depend on **ports** (abstract interfaces). Adapters implement the ports.                                                                              |
+| **Domain entity depends on ORM**           | Entity class extends `TypeORM.BaseEntity` or uses ORM decorators. The domain is permanently coupled to the persistence framework.          | Domain entities are plain classes. ORM schemas are separate mapper/schema classes in the adapter layer.                                                         |
+| **Bidirectional module dependency**        | Module A calls Module B, and Module B calls back to Module A. Creates circular dependencies and violates the direction of the context map. | Use domain events for the reverse direction. The Core Domain orchestrates; supporting contexts never call back.                                                 |
+| **Shared database tables across contexts** | Two write-side contexts query each other's tables as if they owned them. Hidden coupling when either schema evolves.                       | Each write context owns its tables. Commands flow through ACL gateways or domain events. CQRS query adapters and Analytics may JOIN for reads in this monolith. |
+| **Anemic domain model**                    | Entities are data bags with only getters/setters. All logic lives in services.                                                             | Entities encapsulate behaviour (Evans, 2003). Services orchestrate entities, not replace them.                                                                  |
+| **Leaking domain types to the API**        | Returning domain entities directly from controllers. Couples the public API contract to internal domain structure.                         | Map domain entities to presentation DTOs at the controller/adapter boundary.                                                                                    |
 
 ---
 

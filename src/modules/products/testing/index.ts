@@ -9,4 +9,5 @@ export * from './mocks/category-repository.mock';
 export * from './mocks/category-query-service.mock';
 export * from './mocks/product-query-service.mock';
 export * from './mocks/product-repository.mock';
+export * from './mocks/currency-config-port.mock';
 export type { CategoryResult } from '../core/application/queries/results/category.result';

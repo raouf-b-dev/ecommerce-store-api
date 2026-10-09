@@ -2,6 +2,7 @@ import { EnvError } from 'envalid';
 import {
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
+  assertValidIso4217Currency,
   parseHttpOrigin,
   validateEnv,
 } from './validate-env';
@@ -71,6 +72,22 @@ describe('assertStripeWebhookSecret', () => {
   });
 });
 
+describe('assertValidIso4217Currency', () => {
+  it.each(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'aud'])(
+    'accepts valid ISO currency %s',
+    (curr) => {
+      expect(() => assertValidIso4217Currency(curr)).not.toThrow();
+    },
+  );
+
+  it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$'])(
+    'rejects invalid currency %s',
+    (curr) => {
+      expect(() => assertValidIso4217Currency(curr)).toThrow(EnvError);
+    },
+  );
+});
+
 describe('validateEnv', () => {
   const baseEnv: NodeJS.ProcessEnv = {
     NODE_ENV: 'development',
@@ -99,5 +116,16 @@ describe('validateEnv', () => {
   it('parses IS_DB_SYNCHRONIZE=false', () => {
     const validated = validateEnv({ ...baseEnv, IS_DB_SYNCHRONIZE: 'false' });
     expect(validated.IS_DB_SYNCHRONIZE).toBe(false);
+  });
+
+  it('defaults STORE_DEFAULT_CURRENCY to USD when omitted', () => {
+    const validated = validateEnv(baseEnv);
+    expect(validated.STORE_DEFAULT_CURRENCY).toBe('USD');
+  });
+
+  it('rejects invalid STORE_DEFAULT_CURRENCY', () => {
+    expect(() =>
+      validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'INVALID' }),
+    ).toThrow(EnvError);
   });
 });

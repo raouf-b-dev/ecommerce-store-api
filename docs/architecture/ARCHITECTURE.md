@@ -22,23 +22,24 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 
 ### Subdomains
 
-| Subdomain | Type | Description |
-| :-------- | :--- | :---------- |
-| **Orders** | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows. |
-| **Identity** | Supporting | User accounts, profiles, contact info, and shipping addresses. |
-| **Authorization** | Supporting | RBAC, permission resolution, and user role assignments. |
-| **Carts** | Supporting | Shopping sessions, item selection, and cart persistence (RedisJSON). |
-| **Inventory** | Supporting | Stock levels and reservations. |
-| **Products** | Supporting | Catalog, categories, and search indexing. |
-| **Payments** | Generic | Payment intents and gateway abstraction. Provider adapter is a mock today. |
-| **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
-| **Notifications** | Generic | Real-time and background alerts. |
-| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
-| **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
+| Subdomain          | Type            | Description                                                                                                                                                   |
+| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Orders**         | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows.                                                                                              |
+| **Identity**       | Supporting      | User accounts, profiles, contact info, and shipping addresses.                                                                                                |
+| **Authorization**  | Supporting      | RBAC, permission resolution, and user role assignments.                                                                                                       |
+| **Carts**          | Supporting      | Shopping sessions, item selection, and cart persistence (RedisJSON).                                                                                          |
+| **Inventory**      | Supporting      | Stock levels and reservations.                                                                                                                                |
+| **Products**       | Supporting      | Catalog, categories, and search indexing.                                                                                                                     |
+| **Payments**       | Generic         | Payment intents and gateway abstraction. Provider adapter is a mock today.                                                                                    |
+| **Authentication** | Generic         | Credentials, password hashing, sessions, and JWT management.                                                                                                  |
+| **Notifications**  | Generic         | Real-time and background alerts.                                                                                                                              |
+| **Analytics**      | Supporting      | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
+
+> Note: Health probes (`/health`, `/health/liveness`, `/health/readiness`) and runtime platform configuration (`/v1/platform/config`) are operational infrastructure capabilities under `src/infrastructure/`, not business subdomains.
 
 ### Bounded Contexts and Context Mapping
 
-Each NestJS module under `src/modules/` is treated as a context. Health is an ops module (probes). Analytics is a query-only composition module, not a write aggregate. Context mapping keeps write-side boundaries explicit and avoids a tangled dependency graph.
+Each folder under `src/modules/` represents a domain Bounded Context (Analytics is a query-only composition context, not a write aggregate). Operational health probes and runtime platform configuration live under `src/infrastructure/`. Context mapping keeps write-side boundaries explicit and avoids a tangled dependency graph.
 
 ```mermaid
 graph TD
@@ -52,7 +53,6 @@ graph TD
  SK --> Authentication[Authentication]
  SK --> Notifications[Notifications]
  SK --> Analytics[Analytics]
- SK --> Health[Health]
 
  subgraph ACL_Orders["ACL Gateways in Orders"]
  CustGW["UserGateway"]
@@ -96,7 +96,7 @@ graph TD
 
 > **Anti-Corruption Layer (ACL):** Downstream contexts define their own ports (gateway interfaces) with only the data they need. Adapters in the secondary layer translate upstream models into the downstream domain language. If Identity changes its user entity, only the Orders `ModuleUserGateway` adapter needs updating, not Orders use cases.
 
-Health has no ACL consumers. It exposes HTTP probes only.
+Operational probes (health, metrics) and runtime platform configuration live in `src/infrastructure/` and have no ACL consumers.
 
 ## System Context (C4 Level 1)
 
@@ -130,7 +130,7 @@ graph TD
  API --> Payments["Payments"]
  API --> Inventory["Inventory"]
  API --> Identity["Identity"]
- API --> Health["Health"]
+ API --> Analytics["Analytics"]
  WS --> Notifications["Notifications"]
 
  Authentication -->|ACL| Identity
@@ -185,7 +185,7 @@ graph TD
  subgraph Support["Support"]
  Authentication["Authentication"]
  Notifications["Notifications"]
- Health["Health"]
+ Analytics["Analytics"]
  end
 
  Orders -->|ACL| Inventory

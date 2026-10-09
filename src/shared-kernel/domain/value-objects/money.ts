@@ -3,6 +3,7 @@ import { DomainError } from '../exceptions/domain.error';
 import { ErrorCode } from '../exceptions/error-code';
 import { ErrorFactory } from '../exceptions/error.factory';
 import { decimalFromMinorUnits, minorUnitsFromDecimal } from './money-decimal';
+import { Currency } from './currency';
 
 /**
  * Amount in integer minor units (cents for USD) plus an ISO 4217 currency code.
@@ -34,23 +35,31 @@ export class Money {
     return Result.success(new Money(minorUnits, normalized));
   }
 
-  /** Persistence boundary: a scale-2 decimal such as "19.99". */
+  /** Persistence boundary: a decimal string or number parsed according to currency exponent. */
   static fromDecimal(
     amount: string | number,
     currency: string,
   ): Result<Money, DomainError> {
-    const minorUnits = minorUnitsFromDecimal(amount);
+    const normalized = normalizeCurrency(currency);
+    if (normalized === undefined) {
+      return ErrorFactory.DomainError(
+        'Currency must be a 3-letter code (ISO 4217)',
+        { code: ErrorCode.CURRENCY_INVALID },
+      );
+    }
+    const exponent = Currency.getExponent(normalized);
+    const minorUnits = minorUnitsFromDecimal(amount, exponent);
     if (minorUnits === undefined) {
       return ErrorFactory.DomainError(
         'Amount must be a non-negative scale-2 decimal',
         { code: ErrorCode.AMOUNT_INVALID },
       );
     }
-    return Money.create(minorUnits, currency);
+    return Result.success(new Money(minorUnits, normalized));
   }
 
   /**
-   * Catalog boundary. Snaps a major-unit number to scale 2, then stores minor units.
+   * Catalog boundary. Snaps a major-unit number according to currency exponent, then stores minor units.
    */
   static fromMajorUnits(
     amount: number,
@@ -61,7 +70,15 @@ export class Money {
         code: ErrorCode.AMOUNT_INVALID,
       });
     }
-    return Money.fromDecimal(amount.toFixed(2), currency);
+    const normalized = normalizeCurrency(currency);
+    if (normalized === undefined) {
+      return ErrorFactory.DomainError(
+        'Currency must be a 3-letter code (ISO 4217)',
+        { code: ErrorCode.CURRENCY_INVALID },
+      );
+    }
+    const exponent = Currency.getExponent(normalized);
+    return Money.fromDecimal(amount.toFixed(exponent), normalized);
   }
 
   static zero(currency: string): Result<Money, DomainError> {
@@ -82,14 +99,15 @@ export class Money {
     return this.currencyCode;
   }
 
-  /** Formats the minor units as a scale-2 decimal string, e.g. "19.99". */
+  /** Formats the minor units as a decimal string according to currency exponent. */
   toDecimalString(): string {
-    return decimalFromMinorUnits(this.minorUnits);
+    const exponent = Currency.getExponent(this.currencyCode);
+    return decimalFromMinorUnits(this.minorUnits, exponent);
   }
 
-  /** Converts the minor units to a major-unit number, e.g. 19.99. */
+  /** Converts the minor units to a major-unit number, e.g. 19.99 for USD or 1000 for JPY. */
   toMajorUnits(): number {
-    return Number(decimalFromMinorUnits(this.minorUnits));
+    return this.minorUnits / Currency.getFactor(this.currencyCode);
   }
 
   add(other: Money): Result<Money, DomainError> {
@@ -179,9 +197,5 @@ export class Money {
 }
 
 function normalizeCurrency(currency: string): string | undefined {
-  const normalized = currency?.trim().toUpperCase();
-  if (!normalized || normalized.length !== 3) {
-    return undefined;
-  }
-  return normalized;
+  return Currency.normalize(currency);
 }

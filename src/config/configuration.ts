@@ -56,6 +56,10 @@ export interface IAppConfig {
     mockAutoComplete: boolean;
     stripeWebhookSecret: string;
   };
+  store: {
+    defaultCurrency: string;
+    supportedCurrencies: string[];
+  };
 }
 
 export type AppConfigKey = keyof IAppConfig;
@@ -116,6 +120,10 @@ export default (): IAppConfig => {
     payments: {
       mockAutoComplete: env.PAYMENT_MOCK_AUTO_COMPLETE === 'true',
       stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
+    },
+    store: {
+      defaultCurrency: env.STORE_DEFAULT_CURRENCY.toUpperCase(),
+      supportedCurrencies: [env.STORE_DEFAULT_CURRENCY.toUpperCase()],
     },
   };
 };

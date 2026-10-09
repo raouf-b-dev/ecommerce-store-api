@@ -74,4 +74,8 @@ export class EnvConfigService {
   get payments() {
     return this.get('payments');
   }
+
+  get store() {
+    return this.get('store');
+  }
 }

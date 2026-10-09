@@ -56,6 +56,10 @@ function createDefaultMockConfig(): IAppConfig {
       mockAutoComplete: false,
       stripeWebhookSecret: '',
     },
+    store: {
+      defaultCurrency: 'USD',
+      supportedCurrencies: ['USD'],
+    },
   };
 }
 

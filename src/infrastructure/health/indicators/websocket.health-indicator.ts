@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { WebsocketConnectionGateway } from '../../../infrastructure/websocket/websocket.connection.gateway';
+import { WebsocketConnectionGateway } from '../../websocket/websocket.connection.gateway';
 import { toErrorMessage } from '../../../shared-kernel/infra/lang/error.utils';
 
 @Injectable()
