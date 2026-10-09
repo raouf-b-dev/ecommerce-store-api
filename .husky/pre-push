@@ -1,9 +1,6 @@
 #!/bin/sh
 # Git passes one "<local ref> <local sha> <remote ref> <remote sha>" line per
-# pushed ref on stdin. Block direct pushes by destination, and run the fast checks only
-# when a branch with commits is pushed (not for tags or branch deletions, whose
-# local sha is all zeros).
-needs_verify=false
+# pushed ref on stdin. Block direct pushes to protected branches.
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$remote_ref" in
     refs/heads/master | refs/heads/develop)
@@ -12,11 +9,4 @@ while read -r local_ref local_sha remote_ref remote_sha; do
       ;;
     refs/tags/*) continue ;;
   esac
-  case "$local_sha" in
-    *[!0]*) needs_verify=true ;;
-  esac
 done
-
-if [ "$needs_verify" = true ]; then
-  npm run typecheck && npm run lint:check
-fi

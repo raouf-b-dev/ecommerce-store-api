@@ -95,4 +95,26 @@ describe('Money', () => {
     expect(moneyResult.value.toDecimalString()).toBe('19.99');
     expect(moneyResult.value.toMajorUnits()).toBe(19.99);
   });
+
+  it('supports zero-decimal currencies like JPY', () => {
+    const jpyResult = Money.fromDecimal('1000', 'JPY');
+    ResultAssertionHelper.assertResultSuccess(jpyResult);
+    expect(jpyResult.value.amount).toBe(1000);
+    expect(jpyResult.value.currency).toBe('JPY');
+    expect(jpyResult.value.toDecimalString()).toBe('1000');
+    expect(jpyResult.value.toMajorUnits()).toBe(1000);
+
+    const fromMajor = Money.fromMajorUnits(1000, 'JPY');
+    ResultAssertionHelper.assertResultSuccess(fromMajor);
+    expect(fromMajor.value.amount).toBe(1000);
+  });
+
+  it('supports three-decimal currencies like KWD', () => {
+    const kwdResult = Money.fromDecimal('5.125', 'KWD');
+    ResultAssertionHelper.assertResultSuccess(kwdResult);
+    expect(kwdResult.value.amount).toBe(5125);
+    expect(kwdResult.value.currency).toBe('KWD');
+    expect(kwdResult.value.toDecimalString()).toBe('5.125');
+    expect(kwdResult.value.toMajorUnits()).toBe(5.125);
+  });
 });

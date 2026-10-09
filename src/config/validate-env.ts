@@ -73,6 +73,27 @@ export function assertStripeWebhookSecret(
   }
 }
 
+/**
+ * Validates that a string is an authoritative ISO 4217 3-letter currency code
+ * supported by the runtime's Intl data. Fails fast at startup if invalid.
+ */
+export function assertValidIso4217Currency(currency: string): void {
+  const normalized = currency?.trim().toUpperCase();
+  const validCurrencies =
+    typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function'
+      ? Intl.supportedValuesOf('currency')
+      : [];
+  if (
+    !normalized ||
+    normalized.length !== 3 ||
+    !validCurrencies.includes(normalized)
+  ) {
+    throw new EnvError(
+      `STORE_DEFAULT_CURRENCY must be a valid ISO 4217 currency code (got "${currency}")`,
+    );
+  }
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv) {
   const validated = cleanEnv(env, {
     NODE_ENV: str({
@@ -94,6 +115,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     POSTGRES_CONTAINER_NAME: str(),
     POSTGRES_IMAGE: str(),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
+
+    STORE_DEFAULT_CURRENCY: str({ default: 'USD' }),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
@@ -134,5 +157,6 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
   );
+  assertValidIso4217Currency(validated.STORE_DEFAULT_CURRENCY);
   return validated;
 }

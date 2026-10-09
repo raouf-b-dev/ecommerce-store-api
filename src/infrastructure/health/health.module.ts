@@ -5,7 +5,7 @@ import { HealthController } from './health.controller';
 import { RedisHealthIndicator } from './indicators/redis.health-indicator';
 import { WebSocketHealthIndicator } from './indicators/websocket.health-indicator';
 import { ProcessHealthIndicator } from './indicators/process.health-indicator';
-import { WebsocketModule } from '../../infrastructure/websocket/websocket.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [TerminusModule, WebsocketModule],

@@ -14,6 +14,17 @@ describe('minorUnitsFromDecimal', () => {
     expect(minorUnitsFromDecimal('')).toBeUndefined();
     expect(minorUnitsFromDecimal(Number.NaN)).toBeUndefined();
   });
+  it('supports zero-decimal currencies (scale 0)', () => {
+    expect(minorUnitsFromDecimal('1000', 0)).toBe(1000);
+    expect(minorUnitsFromDecimal(1000, 0)).toBe(1000);
+    expect(minorUnitsFromDecimal('1000.50', 0)).toBeUndefined();
+  });
+
+  it('supports three-decimal currencies (scale 3)', () => {
+    expect(minorUnitsFromDecimal('5.125', 3)).toBe(5125);
+    expect(minorUnitsFromDecimal('5.12', 3)).toBe(5120);
+    expect(minorUnitsFromDecimal('5.1234', 3)).toBeUndefined();
+  });
 });
 
 describe('decimalFromMinorUnits', () => {
@@ -21,5 +32,14 @@ describe('decimalFromMinorUnits', () => {
     expect(decimalFromMinorUnits(1999)).toBe('19.99');
     expect(decimalFromMinorUnits(2000)).toBe('20.00');
     expect(decimalFromMinorUnits(5)).toBe('0.05');
+  });
+
+  it('formats zero-decimal minor units without decimal point', () => {
+    expect(decimalFromMinorUnits(1000, 0)).toBe('1000');
+  });
+
+  it('formats three-decimal minor units', () => {
+    expect(decimalFromMinorUnits(5125, 3)).toBe('5.125');
+    expect(decimalFromMinorUnits(5120, 3)).toBe('5.120');
   });
 });

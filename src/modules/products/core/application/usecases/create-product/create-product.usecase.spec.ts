@@ -3,6 +3,7 @@ import {
   CreateProductInputFactory,
   MockCategoryRepository,
   MockProductRepository,
+  MockCurrencyConfigAdapter,
 } from 'src/modules/products/testing';
 import { CreateProductUseCase } from './create-product.usecase';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -13,12 +14,18 @@ describe('CreateProductUseCase', () => {
   let useCase: CreateProductUseCase;
   let mockRepository: MockProductRepository;
   let mockCategoryRepository: MockCategoryRepository;
+  let mockCurrencyConfig: MockCurrencyConfigAdapter;
 
   beforeEach(() => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    useCase = new CreateProductUseCase(mockRepository, mockCategoryRepository);
+    mockCurrencyConfig = new MockCurrencyConfigAdapter('USD', ['USD']);
+    useCase = new CreateProductUseCase(
+      mockRepository,
+      mockCategoryRepository,
+      mockCurrencyConfig,
+    );
   });
 
   afterEach(() => {
@@ -98,6 +105,24 @@ describe('CreateProductUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         'Category with id 99 not found',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when currency is not supported by the store', async () => {
+      const command = CreateProductInputFactory.createMockDto({
+        currency: 'EUR',
+      });
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency "EUR" is not supported by this store',
         UseCaseError,
       );
       expect(result.isFailure && result.error.statusCode).toBe(

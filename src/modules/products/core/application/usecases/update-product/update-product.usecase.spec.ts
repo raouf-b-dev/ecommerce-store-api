@@ -2,6 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import {
   MockCategoryRepository,
   MockProductRepository,
+  MockCurrencyConfigAdapter,
   ProductTestFactory,
   UpdateProductInputFactory,
 } from 'src/modules/products/testing';
@@ -15,12 +16,18 @@ describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let mockRepository: MockProductRepository;
   let mockCategoryRepository: MockCategoryRepository;
+  let mockCurrencyConfig: MockCurrencyConfigAdapter;
 
   beforeEach(() => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    useCase = new UpdateProductUseCase(mockRepository, mockCategoryRepository);
+    mockCurrencyConfig = new MockCurrencyConfigAdapter('USD', ['USD']);
+    useCase = new UpdateProductUseCase(
+      mockRepository,
+      mockCategoryRepository,
+      mockCurrencyConfig,
+    );
   });
 
   afterEach(() => {
@@ -125,6 +132,65 @@ describe('UpdateProductUseCase', () => {
         HttpStatus.BAD_REQUEST,
       );
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when updating with an unsupported currency', async () => {
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        currency: 'EUR',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Effective product currency "EUR" is not supported by this store',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when partial update leaves legacy unsupported currency in place', async () => {
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        name: 'New Name Only',
+      });
+      const legacyProductWithUnsupportedCurrency = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          currency: 'GBP',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(
+        legacyProductWithUnsupportedCurrency,
+        1,
+      );
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Effective product currency "GBP" is not supported by this store',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
     });
   });
 });
