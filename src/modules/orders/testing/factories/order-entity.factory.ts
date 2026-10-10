@@ -18,7 +18,7 @@ export class OrderEntityTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
 
       shippingAddress: this.createShippingAddressEntity(),
@@ -45,7 +45,7 @@ export class OrderEntityTestFactory {
       {
         userId: 1,
         paymentId: null,
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         shippingAddressId: 1,
         userNotes: 'Test order notes',
         subtotal: 100,
@@ -192,7 +192,7 @@ export class OrderEntityTestFactory {
    */
   static createOrderEntityWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType = PaymentMethodType.CARD,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
     return this.createOrderEntity({
@@ -205,11 +205,9 @@ export class OrderEntityTestFactory {
   /**
    * Creates Stripe OrderEntity
    */
-  static createStripeOrderEntity(
-    overrides?: Partial<OrderEntity>,
-  ): OrderEntity {
+  static createCardOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
     return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
       ...overrides,
     });

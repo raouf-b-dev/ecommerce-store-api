@@ -1,7 +1,7 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
-import { PaymentStatusType } from '../../domain/value-objects/payment-status';
+import { PaymentProviderId } from '../../domain/value-objects/payment-provider-id';
 
 export type PaymentNextAction = {
   type: 'confirm_on_client';
@@ -16,13 +16,15 @@ export interface InitiatePaymentParams {
 
 export interface InitiatePaymentResult {
   providerReference: string;
-  status: PaymentStatusType;
   nextAction: PaymentNextAction;
 }
 
+export type AuthorizeResult =
+  | { outcome: 'authorized' | 'captured'; providerReference: string }
+  | { outcome: 'failed'; failureReason: string };
+
 export interface ProviderOperationResult {
   providerReference: string;
-  status: PaymentStatusType;
 }
 
 export interface RefundParams {
@@ -32,6 +34,8 @@ export interface RefundParams {
 }
 
 export abstract class PaymentProvider {
+  abstract readonly id: PaymentProviderId;
+
   abstract initiatePayment(
     params: InitiatePaymentParams,
   ): Promise<Result<InitiatePaymentResult, InfrastructureError>>;
@@ -39,7 +43,7 @@ export abstract class PaymentProvider {
   abstract authorize(
     amount: Money,
     paymentMethodDetails?: string,
-  ): Promise<Result<ProviderOperationResult, InfrastructureError>>;
+  ): Promise<Result<AuthorizeResult, InfrastructureError>>;
 
   abstract capture(
     providerReference: string,

@@ -21,7 +21,7 @@ describe('ModulePaymentGateway createPayment', () => {
     orderId: 123,
     amount: 2550,
     currency: 'EUR',
-    paymentMethod: PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType.CARD,
     userId: 2,
   };
 
@@ -31,7 +31,8 @@ describe('ModulePaymentGateway createPayment', () => {
     userId: 2,
     amount: 2550,
     currency: 'EUR',
-    paymentMethod: PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType.CARD,
+    provider: 'stripe',
     status: PaymentStatusType.AUTHORIZED,
     transactionId: 'txn_123',
     gatewayPaymentIntentId: null,
@@ -82,7 +83,7 @@ describe('ModulePaymentGateway createPayment', () => {
       userId: 2,
       amount: 2550,
       currency: 'EUR',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       status: 'AUTHORIZED',
       transactionId: 'txn_123',
       gatewayPaymentIntentId: null,

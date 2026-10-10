@@ -5,7 +5,7 @@
 import { DomainError } from '../exceptions/domain.error';
 
 export enum PaymentMethodType {
-  STRIPE = 'STRIPE',
+  CARD = 'CARD',
 }
 
 export class PaymentMethod {
@@ -22,19 +22,11 @@ export class PaymentMethod {
     return this._type;
   }
 
-  requiresGateway(): boolean {
-    return true;
-  }
-
   equals(other: PaymentMethod): boolean {
     return this._type === other._type;
   }
 
   toString(): string {
     return this._type;
-  }
-
-  static from(value: string): PaymentMethod {
-    return new PaymentMethod(value as PaymentMethodType);
   }
 }

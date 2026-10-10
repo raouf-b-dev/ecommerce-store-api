@@ -201,6 +201,7 @@ async function bootstrap() {
           amount,
           currency,
           paymentMethod,
+          provider: 'stripe',
           createdAt,
           withPartialRefundAmount,
         }),

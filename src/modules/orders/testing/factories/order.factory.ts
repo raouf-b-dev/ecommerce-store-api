@@ -12,7 +12,7 @@ export class OrderTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
       currency: 'USD',
       // Order items
@@ -48,9 +48,17 @@ export class OrderTestFactory {
     return { ...baseOrder, ...overrides };
   }
 
-  static createPendingPaymentOrder(overrides?: Partial<IOrder>): IOrder {
+  static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      status: OrderStatus.PENDING_PAYMENT,
+      status: OrderStatus.CONFIRMED,
+      paymentId: 1,
+      ...overrides,
+    });
+  }
+
+  static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.CANCELLED,
       ...overrides,
     });
   }
@@ -58,14 +66,7 @@ export class OrderTestFactory {
   static createPaymentFailedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PAYMENT_FAILED,
-      ...overrides,
-    });
-  }
-
-  static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      status: OrderStatus.CONFIRMED,
-      paymentId: 1,
+      paymentId: null,
       ...overrides,
     });
   }
@@ -94,9 +95,10 @@ export class OrderTestFactory {
     });
   }
 
-  static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
+  static createRefundedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      status: OrderStatus.CANCELLED,
+      status: OrderStatus.REFUNDED,
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -105,10 +107,52 @@ export class OrderTestFactory {
     return this.createDeliveredOrder(overrides);
   }
 
-  static createStripeOrder(overrides?: Partial<IOrder>): IOrder {
+  static createCardOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
+      ...overrides,
+    });
+  }
+
+  static createPendingPaymentOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.PENDING_PAYMENT,
+      paymentId: null,
+      ...overrides,
+    });
+  }
+
+  static createPendingOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createPendingPaymentOrder(overrides);
+  }
+
+  static createOrderWithItems(
+    items: Array<{
+      productId: number;
+      productName: string;
+      quantity: number;
+      unitPrice: number;
+      currency?: string;
+    }>,
+    overrides?: Partial<IOrder>,
+  ): IOrder {
+    const orderItems = items.map((item, index) => ({
+      id: index + 1,
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.quantity * item.unitPrice,
+      currency: item.currency || 'USD',
+    }));
+
+    const subtotal = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
+
+    return this.createMockOrder({
+      items: orderItems,
+      subtotal,
+      totalPrice: subtotal,
       ...overrides,
     });
   }
@@ -125,27 +169,26 @@ export class OrderTestFactory {
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-    const totalPrice = subtotal + 5; // + shipping
 
     return this.createMockOrder({
       items,
       subtotal,
-      shippingCost: 5,
-      totalPrice,
+      shippingCost: 0,
+      totalPrice: subtotal,
     });
   }
 
   static createOnlineOrderReadyForConfirmation(): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PENDING_PAYMENT,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
     });
   }
 
   static createOrderWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType = PaymentMethodType.CARD,
     overrides?: Partial<IOrder>,
   ): IOrder {
     return this.createMockOrder({
@@ -180,7 +223,7 @@ export class OrderTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
       items: [
         {

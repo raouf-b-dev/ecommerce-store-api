@@ -15,11 +15,16 @@ import { DomainError } from '../../../../../shared-kernel/domain/exceptions/doma
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
+function parsePaymentMethodType(value: unknown): PaymentMethodType | null {
+  if (value === PaymentMethodType.CARD) return PaymentMethodType.CARD;
+  return null;
+}
+
 export interface OrderProps {
   id: number | null;
   userId: number;
   paymentId: number | null;
-  paymentMethod: PaymentMethodType;
+  paymentMethod: PaymentMethodType | string;
   shippingAddressId: number | null;
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
@@ -44,12 +49,14 @@ export class Order implements IOrder {
   private _pricing: OrderPricing;
 
   constructor(props: OrderProps) {
-    this.validateProps(props);
+    const validationResult = this.validateProps(props);
+    if (validationResult.isFailure) throw validationResult.error;
 
+    const parsedMethod = parsePaymentMethodType(props.paymentMethod);
     this._id = props.id || null;
     this._userId = props.userId;
     this._paymentId = props.paymentId || null;
-    this._paymentMethod = props.paymentMethod;
+    this._paymentMethod = parsedMethod ?? PaymentMethodType.CARD;
     this._shippingAddressId = props.shippingAddressId || null;
     this._items = props.items.map((item) => new OrderItem(item));
     this._shippingAddress = ShippingAddress.fromPrimitives(
@@ -77,6 +84,11 @@ export class Order implements IOrder {
     }
     if (!props.paymentMethod) {
       return ErrorFactory.DomainError('Payment method is required');
+    }
+    if (parsePaymentMethodType(props.paymentMethod) === null) {
+      return ErrorFactory.DomainError(
+        `Invalid payment method: ${String(props.paymentMethod)}`,
+      );
     }
 
     return Result.success(undefined);

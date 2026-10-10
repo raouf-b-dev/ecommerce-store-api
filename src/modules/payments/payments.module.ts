@@ -22,11 +22,10 @@ import { HandlePaymentWebhookService } from './core/application/services/handle-
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
-
 import { SeedDemoPaymentsUseCase } from './core/application/seed/seed-demo-payments.usecase';
 import { AuthenticationModule } from '../authentication/authentication.module';
 import { PaymentProvider } from './core/application/ports/payment-provider';
-import { FakePaymentProvider } from './secondary-adapters/gateways/fake-payment.provider';
+import { FakeStripePaymentProvider } from './secondary-adapters/gateways/fake-stripe-payment.provider';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
 import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
 import { BullModule } from '@nestjs/bullmq';
@@ -56,7 +55,7 @@ import { PaymentsProcessor } from './primary-adapters/processors/payments.proces
     // Gateways & Providers
     {
       provide: PaymentProvider,
-      useClass: FakePaymentProvider,
+      useClass: FakeStripePaymentProvider,
     },
 
     // Services

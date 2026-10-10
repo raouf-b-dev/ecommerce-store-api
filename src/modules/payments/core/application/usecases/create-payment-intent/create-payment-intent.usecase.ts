@@ -9,6 +9,7 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentProvider } from '../../ports/payment-provider';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
@@ -37,23 +38,53 @@ export class CreatePaymentIntentUseCase extends UseCase<
     const moneyResult = Money.create(dto.amount, dto.currency);
     if (isFailure(moneyResult)) return moneyResult;
 
-    // 2. Persist PENDING Payment first
-    const initialPayment = Payment.create(
-      null,
+    // 2. Look up existing payment by order ID
+    const existingResult = await this.paymentRepository.findByOrderId(
       dto.orderId,
-      dto.amount,
-      dto.currency,
-      dto.paymentMethod,
-      dto.userId,
-      dto.metadata ? JSON.stringify(dto.metadata) : undefined,
+    );
+    if (isFailure(existingResult)) return existingResult;
+
+    const existingPayments = existingResult.value;
+    const pendingPayment = existingPayments.find(
+      (p) => p.status === PaymentStatusType.PENDING,
     );
 
-    const saveResult = await this.paymentRepository.save(initialPayment);
-    if (isFailure(saveResult)) return saveResult;
+    let payment: Payment;
 
-    const payment = saveResult.value;
+    if (pendingPayment) {
+      if (
+        pendingPayment.gatewayPaymentIntentId &&
+        pendingPayment.gatewayClientSecret &&
+        pendingPayment.id !== null
+      ) {
+        return Result.success({
+          paymentId: pendingPayment.id,
+          clientSecret: pendingPayment.gatewayClientSecret,
+        });
+      }
+      payment = pendingPayment;
+    } else if (existingPayments.length === 0) {
+      const initialPayment = Payment.create({
+        orderId: dto.orderId,
+        amount: dto.amount,
+        currency: dto.currency,
+        paymentMethod: dto.paymentMethod,
+        provider: this.paymentProvider.id,
+        userId: dto.userId,
+        paymentMethodInfo: dto.metadata ? JSON.stringify(dto.metadata) : null,
+      });
+
+      const saveResult = await this.paymentRepository.save(initialPayment);
+      if (isFailure(saveResult)) return saveResult;
+      payment = saveResult.value;
+    } else {
+      return ErrorFactory.UseCaseError(
+        `Order ${dto.orderId} does not have a pending payment to initiate intent`,
+      );
+    }
+
     if (payment.id === null) {
-      return ErrorFactory.UseCaseError('Payment was saved without an id');
+      return ErrorFactory.UseCaseError('Payment has no ID');
     }
 
     // 3. Initiate Payment via Provider with idempotency key

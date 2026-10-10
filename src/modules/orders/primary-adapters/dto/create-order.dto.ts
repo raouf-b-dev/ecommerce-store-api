@@ -39,7 +39,7 @@ export class CreateOrderDto {
   shippingAddress!: ShippingAddressDto;
 
   @ApiProperty({
-    example: PaymentMethodType.STRIPE,
+    example: PaymentMethodType.CARD,
     description: 'Payment method for the order',
     enum: PaymentMethodType,
   })

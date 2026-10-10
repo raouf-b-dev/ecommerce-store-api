@@ -49,6 +49,12 @@ export class ProcessRefundUseCase extends UseCase<
       return Result.success(payment.toPrimitives());
     }
 
+    if (!payment.providerId.equals(this.paymentProvider.id)) {
+      return ErrorFactory.UseCaseError(
+        `Payment provider ${payment.provider} does not match active provider ${this.paymentProvider.id.value}`,
+      );
+    }
+
     if (!payment.canBeRefunded()) {
       return ErrorFactory.UseCaseError(
         'Payment cannot be refunded in current status',

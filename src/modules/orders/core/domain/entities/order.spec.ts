@@ -234,4 +234,14 @@ describe('Order', () => {
       expect(restored.totalPrice).toBe(original.totalPrice);
     });
   });
+
+  describe('validation', () => {
+    it('rejects an unknown payment method', () => {
+      expect(() => {
+        OrderTestFactory.createDomainOrder({
+          paymentMethod: 'UNKNOWN_METHOD',
+        });
+      }).toThrow('Invalid payment method: UNKNOWN_METHOD');
+    });
+  });
 });

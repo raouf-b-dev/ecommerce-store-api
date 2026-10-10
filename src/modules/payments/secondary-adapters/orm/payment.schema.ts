@@ -39,6 +39,9 @@ export class PaymentEntity {
   paymentMethod!: PaymentMethodType;
 
   @Column({ type: 'varchar' })
+  provider!: string;
+
+  @Column({ type: 'varchar' })
   status!: PaymentStatusType;
 
   @Column({ name: 'transaction_id', type: 'varchar', nullable: true })

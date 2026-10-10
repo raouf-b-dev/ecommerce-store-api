@@ -2,6 +2,7 @@ import {
   PaymentTestFactory,
   RefundTestFactory,
 } from 'src/modules/payments/testing';
+import { Payment } from './payment';
 import { PaymentStatusType } from '../value-objects/payment-status';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../testing';
@@ -157,6 +158,24 @@ describe('Payment', () => {
         'Total refunded amount cannot exceed payment amount',
         DomainError,
       );
+    });
+  });
+
+  describe('provider', () => {
+    it('stores the provider id', () => {
+      const payment = PaymentTestFactory.createDomainPayment();
+      expect(payment.provider).toBe('stripe');
+      expect(payment.providerId.value).toBe('stripe');
+      expect(payment.toPrimitives().provider).toBe('stripe');
+    });
+
+    it('rejects an invalid provider', () => {
+      expect(() => {
+        const primitives = PaymentTestFactory.createMockPayment({
+          provider: 'invalid provider!',
+        });
+        Payment.fromPrimitives(primitives);
+      }).toThrow();
     });
   });
 });

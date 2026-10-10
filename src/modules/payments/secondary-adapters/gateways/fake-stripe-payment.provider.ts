@@ -6,10 +6,11 @@ import {
   PaymentProvider,
   InitiatePaymentParams,
   InitiatePaymentResult,
+  AuthorizeResult,
   ProviderOperationResult,
   RefundParams,
 } from '../../core/application/ports/payment-provider';
-import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
+import { PaymentProviderId } from '../../core/domain/value-objects/payment-provider-id';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
@@ -17,12 +18,15 @@ import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { EnvConfigService } from '../../../../config/env-config.service';
+import { STRIPE_PAYMENT_PROVIDER_ID } from './stripe-provider-id';
+import { Money } from 'src/shared-kernel/domain/value-objects/money';
 
 export const SIMULATED_WEBHOOK_DELAY_MS = 1000;
 
 @Injectable()
-export class FakePaymentProvider extends PaymentProvider {
-  private readonly logger = new Logger(FakePaymentProvider.name);
+export class FakeStripePaymentProvider extends PaymentProvider {
+  private readonly logger = new Logger(FakeStripePaymentProvider.name);
+  readonly id: PaymentProviderId = STRIPE_PAYMENT_PROVIDER_ID;
 
   constructor(
     @InjectQueue('payments') private readonly paymentsQueue: Queue,
@@ -35,8 +39,9 @@ export class FakePaymentProvider extends PaymentProvider {
   async initiatePayment(
     params: InitiatePaymentParams,
   ): Promise<Result<InitiatePaymentResult, InfrastructureError>> {
-    const paymentIntentId = `pi_${uuidv4().replace(/-/g, '')}`;
-    const clientSecret = `${paymentIntentId}_secret_${uuidv4().substring(0, 24)}`;
+    const sanitizedKey = params.idempotencyKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const paymentIntentId = `pi_${sanitizedKey}`;
+    const clientSecret = `${paymentIntentId}_secret_${sanitizedKey}`;
 
     if (this.envConfigService.payments.mockAutoComplete) {
       try {
@@ -52,8 +57,8 @@ export class FakePaymentProvider extends PaymentProvider {
           {
             ...this.jobConfigService.getJobOptions(
               JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+              params.idempotencyKey,
             ),
-            jobId: params.idempotencyKey,
             delay: SIMULATED_WEBHOOK_DELAY_MS,
           },
         );
@@ -74,7 +79,6 @@ export class FakePaymentProvider extends PaymentProvider {
 
     return Result.success({
       providerReference: paymentIntentId,
-      status: PaymentStatusType.PENDING,
       nextAction: {
         type: 'confirm_on_client',
         clientSecret,
@@ -82,22 +86,23 @@ export class FakePaymentProvider extends PaymentProvider {
     });
   }
 
-  authorize(): Promise<Result<ProviderOperationResult, InfrastructureError>> {
+  authorize(): Promise<Result<AuthorizeResult, InfrastructureError>> {
+    const providerReference = `pi_auth_${uuidv4().replace(/-/g, '')}`;
     return Promise.resolve(
       Result.success({
-        providerReference: `pi_fake_${uuidv4().replace(/-/g, '')}`,
-        status: PaymentStatusType.AUTHORIZED,
+        outcome: 'authorized',
+        providerReference,
       }),
     );
   }
 
   capture(
     providerReference: string,
+    _amount: Money,
   ): Promise<Result<ProviderOperationResult, InfrastructureError>> {
     return Promise.resolve(
       Result.success({
         providerReference,
-        status: PaymentStatusType.CAPTURED,
       }),
     );
   }
@@ -108,7 +113,6 @@ export class FakePaymentProvider extends PaymentProvider {
     return Promise.resolve(
       Result.success({
         providerReference: params.providerReference,
-        status: PaymentStatusType.REFUNDED,
       }),
     );
   }
