@@ -25,11 +25,10 @@ import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-paym
 
 import { SeedDemoPaymentsUseCase } from './core/application/seed/seed-demo-payments.usecase';
 import { AuthenticationModule } from '../authentication/authentication.module';
-import { PaymentProviderRegistry } from './secondary-adapters/gateways/payment-provider.registry';
-import { FakeStripeGateway } from './secondary-adapters/gateways/fake-stripe.gateway';
+import { PaymentProvider } from './core/application/ports/payment-provider';
+import { FakePaymentProvider } from './secondary-adapters/gateways/fake-payment.provider';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
 import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
-import { PaymentProviderResolver } from './core/application/ports/payment-provider-resolver';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
@@ -55,11 +54,9 @@ import { PaymentsProcessor } from './primary-adapters/processors/payments.proces
   controllers: [PaymentsController],
   providers: [
     // Gateways & Providers
-    FakeStripeGateway,
-    PaymentProviderRegistry,
     {
-      provide: PaymentProviderResolver,
-      useExisting: PaymentProviderRegistry,
+      provide: PaymentProvider,
+      useClass: FakePaymentProvider,
     },
 
     // Services
@@ -130,7 +127,6 @@ import { PaymentsProcessor } from './primary-adapters/processors/payments.proces
     PaymentRepository,
     CreatePaymentUseCase,
     GetPaymentByOrderIdUseCase,
-    PaymentProviderResolver,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,
     SeedDemoPaymentsUseCase,

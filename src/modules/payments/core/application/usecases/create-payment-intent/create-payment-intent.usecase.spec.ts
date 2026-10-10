@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentIntentUseCase } from './create-payment-intent.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
+import { PaymentProvider } from '../../ports/payment-provider';
 import {
   MockPaymentProvider,
-  MockPaymentProviderResolver,
   MockPaymentRepository,
   PaymentEntityTestFactory,
 } from 'src/modules/payments/testing';
@@ -12,19 +11,20 @@ import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
 
 describe('CreatePaymentIntentUseCase', () => {
   let useCase: CreatePaymentIntentUseCase;
   let paymentRepository: MockPaymentRepository;
-  let providerResolver: MockPaymentProviderResolver;
-  let defaultProvider: MockPaymentProvider;
+  let paymentProvider: MockPaymentProvider;
 
   beforeEach(async () => {
-    providerResolver = new MockPaymentProviderResolver();
-    defaultProvider = providerResolver.getDefaultProvider();
-    defaultProvider.mockSuccessfulInitiatePayment(
+    paymentProvider = new MockPaymentProvider();
+    paymentProvider.mockSuccessfulInitiatePayment(
       'pi_mock_123',
       'pi_mock_123_secret_xyz',
     );
@@ -37,8 +37,8 @@ describe('CreatePaymentIntentUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentProviderResolver,
-          useValue: providerResolver,
+          provide: PaymentProvider,
+          useValue: paymentProvider,
         },
       ],
     }).compile();
@@ -51,10 +51,10 @@ describe('CreatePaymentIntentUseCase', () => {
 
   afterEach(() => {
     paymentRepository.reset();
-    providerResolver.reset();
+    paymentProvider.reset();
   });
 
-  it('creates payment intent successfully when input is valid', async () => {
+  it('creates payment intent successfully by saving first then initiating with idempotency key', async () => {
     const command: CreatePaymentIntentCommand = {
       orderId: 101,
       amount: 5000,
@@ -62,6 +62,86 @@ describe('CreatePaymentIntentUseCase', () => {
       paymentMethod: PaymentMethodType.STRIPE,
       userId: 5,
       metadata: { orderId: '101' },
+    };
+
+    const paymentEntity = PaymentEntityTestFactory.createPendingEntity({
+      id: 42,
+      orderId: command.orderId,
+      amount: command.amount,
+      currency: command.currency,
+      paymentMethod: command.paymentMethod,
+      userId: command.userId,
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulSave(payment);
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.paymentId).toBe(42);
+    expect(result.value.clientSecret).toBe('pi_mock_123_secret_xyz');
+
+    expect(paymentRepository.save).toHaveBeenCalledTimes(1);
+    expect(paymentProvider.initiatePayment).toHaveBeenCalledWith({
+      amount: expect.objectContaining({ amount: 5000, currency: 'USD' }),
+      metadata: { orderId: '101' },
+      idempotencyKey: 'payment-intent-42',
+    });
+    expect(paymentRepository.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns collaborator failure as-is when amount is invalid', async () => {
+    const command: CreatePaymentIntentCommand = {
+      orderId: 101,
+      amount: -100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.STRIPE,
+      userId: 5,
+    };
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Amount must be a non-negative integer in minor units',
+      DomainError,
+    );
+    expect(paymentRepository.save).not.toHaveBeenCalled();
+    expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('returns collaborator failure as-is when initial save fails', async () => {
+    const command: CreatePaymentIntentCommand = {
+      orderId: 101,
+      amount: 5000,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.STRIPE,
+      userId: 5,
+    };
+
+    paymentRepository.mockSaveFailure('Database connection timeout');
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Database connection timeout',
+      RepositoryError,
+    );
+    expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('returns collaborator failure as-is when provider initiatePayment fails', async () => {
+    const command: CreatePaymentIntentCommand = {
+      orderId: 101,
+      amount: 5000,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.STRIPE,
+      userId: 5,
     };
 
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
@@ -75,73 +155,23 @@ describe('CreatePaymentIntentUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
     paymentRepository.mockSuccessfulSave(payment);
 
-    const result = await useCase.execute(command);
-
-    ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.paymentId).toBe(42);
-    expect(result.value.clientSecret).toBe('pi_mock_123_secret_xyz');
-    expect(defaultProvider.initiatePayment).toHaveBeenCalledTimes(1);
-    expect(paymentRepository.save).toHaveBeenCalledTimes(1);
-  });
-
-  it('fails when amount is invalid', async () => {
-    const command: CreatePaymentIntentCommand = {
-      orderId: 101,
-      amount: -100,
-      currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
-      userId: 5,
-    };
-
-    const result = await useCase.execute(command);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Invalid payment amount: Amount must be a non-negative integer in minor units',
-    );
-    expect(defaultProvider.initiatePayment).not.toHaveBeenCalled();
-    expect(paymentRepository.save).not.toHaveBeenCalled();
-  });
-
-  it('fails when provider returns infrastructure error', async () => {
-    const command: CreatePaymentIntentCommand = {
-      orderId: 101,
-      amount: 5000,
-      currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
-      userId: 5,
-    };
-
-    defaultProvider.initiatePayment.mockResolvedValueOnce(
-      ErrorFactory.InfrastructureError('Stripe rate limit exceeded'),
+    paymentProvider.initiatePayment.mockResolvedValueOnce(
+      ErrorFactory.InfrastructureError('Payment network unavailable', {
+        retryable: true,
+      }),
     );
 
     const result = await useCase.execute(command);
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Failed to create payment intent: Stripe rate limit exceeded',
+      'Payment network unavailable',
+      InfrastructureError,
     );
-    expect(paymentRepository.save).not.toHaveBeenCalled();
-  });
-
-  it('fails when saving payment fails in repository', async () => {
-    const command: CreatePaymentIntentCommand = {
-      orderId: 101,
-      amount: 5000,
-      currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
-      userId: 5,
-    };
-
-    paymentRepository.mockSaveFailure('Database disk full');
-
-    const result = await useCase.execute(command);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Failed to save payment',
-      UseCaseError,
-    );
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: { retryable: true },
+    });
+    expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 });

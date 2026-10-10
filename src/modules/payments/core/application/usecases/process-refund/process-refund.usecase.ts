@@ -4,11 +4,11 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Refund } from '../../../domain/entities/refund';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
+import { PaymentProvider } from '../../ports/payment-provider';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
@@ -19,11 +19,11 @@ import { Money } from '../../../../../../shared-kernel/domain/value-objects/mone
 export class ProcessRefundUseCase extends UseCase<
   ProcessRefundCommand,
   IPayment,
-  UseCaseError
+  AppError
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentProviderResolver: PaymentProviderResolver,
+    private readonly paymentProvider: PaymentProvider,
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
@@ -31,7 +31,7 @@ export class ProcessRefundUseCase extends UseCase<
 
   async execute(
     command: ProcessRefundCommand,
-  ): Promise<Result<IPayment, UseCaseError>> {
+  ): Promise<Result<IPayment, AppError>> {
     const { paymentId, amount, reason } = command;
 
     if (amount <= 0) {
@@ -65,12 +65,7 @@ export class ProcessRefundUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Payment has no ID');
     }
 
-    // 1. Get Provider
-    const provider = this.paymentProviderResolver.getProvider(
-      payment.paymentMethod,
-    );
-
-    // 2. Refund via Provider
+    // 1. Validate transaction ID for provider refund
     if (!payment.transactionId) {
       return ErrorFactory.UseCaseError(
         'Cannot refund payment without transaction ID',
@@ -78,30 +73,16 @@ export class ProcessRefundUseCase extends UseCase<
     }
 
     const moneyResult = Money.create(amount, payment.currency);
-    if (isFailure(moneyResult)) {
-      return ErrorFactory.UseCaseError(
-        `Invalid refund amount: ${moneyResult.error.message}`,
-        moneyResult.error,
-      );
-    }
+    if (isFailure(moneyResult)) return moneyResult;
 
     const idempotencyKey = `refund-${payment.id}-${payment.refunds.length}`;
 
-    const providerResult = await provider.refund({
+    const providerResult = await this.paymentProvider.refund({
       providerReference: payment.transactionId,
       amount: moneyResult.value,
       idempotencyKey,
     });
-
-    if (isFailure(providerResult)) {
-      return ErrorFactory.UseCaseError(
-        `Gateway refund failed: ${providerResult.error.message}`,
-        {
-          cause: providerResult.error,
-          retryable: providerResult.error.retryable,
-        },
-      );
-    }
+    if (isFailure(providerResult)) return providerResult;
 
     const refund = Refund.create(
       null,

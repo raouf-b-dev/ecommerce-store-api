@@ -11,6 +11,7 @@ export type PaymentNextAction = {
 export interface InitiatePaymentParams {
   amount: Money;
   metadata?: Record<string, string>;
+  idempotencyKey: string;
 }
 
 export interface InitiatePaymentResult {

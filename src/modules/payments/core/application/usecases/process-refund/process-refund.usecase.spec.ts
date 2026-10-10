@@ -1,6 +1,5 @@
 import {
   MockPaymentProvider,
-  MockPaymentProviderResolver,
   MockPaymentRepository,
   PaymentEntityTestFactory,
 } from 'src/modules/payments/testing';
@@ -12,19 +11,17 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
+import { PaymentProvider } from '../../ports/payment-provider';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
   let paymentRepository: MockPaymentRepository;
-  let providerResolver: MockPaymentProviderResolver;
   let defaultProvider: MockPaymentProvider;
 
   beforeEach(async () => {
-    providerResolver = new MockPaymentProviderResolver();
-    defaultProvider = providerResolver.getDefaultProvider();
+    defaultProvider = new MockPaymentProvider();
     defaultProvider.mockSuccessfulRefund('txn_refund_123');
 
     const module: TestingModule = await Test.createTestingModule({
@@ -35,8 +32,8 @@ describe('ProcessRefundUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentProviderResolver,
-          useValue: providerResolver,
+          provide: PaymentProvider,
+          useValue: defaultProvider,
         },
         {
           provide: DomainEventPublisher,
@@ -51,7 +48,7 @@ describe('ProcessRefundUseCase', () => {
 
   afterEach(() => {
     paymentRepository.reset();
-    providerResolver.reset();
+    defaultProvider.reset();
   });
 
   it('should fail if refund amount is zero or negative', async () => {
@@ -228,7 +225,7 @@ describe('ProcessRefundUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Gateway refund failed: Gateway network timeout',
+      'Gateway network timeout',
     );
     expect(result).toMatchObject({
       isFailure: true,
@@ -262,7 +259,7 @@ describe('ProcessRefundUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Gateway refund failed: Card issuer declined refund',
+      'Card issuer declined refund',
     );
     expect(result).toMatchObject({
       isFailure: true,

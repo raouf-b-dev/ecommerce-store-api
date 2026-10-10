@@ -13,7 +13,7 @@ Write-side contexts talk through ACL gateways and domain events. Analytics is qu
 - `products`: catalog, categories, RedisSearch queries.
 - `inventory`: stock levels, reservations, pessimistic row locks, reconciliation job.
 - `orders`: core domain. Checkout saga with `CheckoutFailureListener` compensation (stock release, refund, cancel).
-- `payments`: payment intents, transactions, `PaymentProvider` port with `FakeStripeGateway` adapter.
+- `payments`: payment intents, transactions, direct `PaymentProvider` port binding with `FakePaymentProvider` adapter.
 - `notifications`: email and SMS orchestration through BullMQ flows.
 - `analytics`: `/v1/admin/analytics/*` reports. See [ANALYTICS.md](../architecture/domains/ANALYTICS.md).
 - `health`: liveness, readiness, Postgres and Redis checks.
@@ -32,7 +32,7 @@ Each module follows `core/{domain,application}`, `primary-adapters`, `secondary-
 
 ## Cross-context gateways
 
-ACL gateways are `modules/<m>/secondary-adapters/adapters/module-<x>.gateway.ts` (orders: user, cart, payment, inventory-reservation; carts: product, inventory; authentication: identity, authorization; identity: authorization). `secondary-adapters/gateways/` holds external SDK and provider adapters: `notifications` websocket and `payments` `FakeStripeGateway`. Ports are in `core/application/ports` (including `PaymentProvider`).
+ACL gateways are `modules/<m>/secondary-adapters/adapters/module-<x>.gateway.ts` (orders: user, cart, payment, inventory-reservation; carts: product, inventory; authentication: identity, authorization; identity: authorization). `secondary-adapters/gateways/` holds external SDK and provider adapters: `notifications` websocket and `payments` `FakePaymentProvider`. Ports are in `core/application/ports` (including `PaymentProvider`).
 
 ## Tests
 

@@ -5,8 +5,6 @@ import {
   ProviderOperationResult,
   RefundParams,
 } from '../../core/application/ports/payment-provider';
-import { PaymentProviderResolver } from '../../core/application/ports/payment-provider-resolver';
-import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -61,13 +59,6 @@ export class MockPaymentProvider implements PaymentProvider {
 
   mockSuccessfulRefund(providerReference: string = 'txn_refund_123'): void {
     this.refund.mockImplementation((params: RefundParams) => {
-      if (params.amount.amount <= 0) {
-        return Promise.resolve(
-          ErrorFactory.InfrastructureError(
-            'Refund amount must be greater than zero',
-          ),
-        );
-      }
       return Promise.resolve(
         Result.success({
           providerReference: params.providerReference || providerReference,
@@ -86,28 +77,5 @@ export class MockPaymentProvider implements PaymentProvider {
     this.authorize.mockClear();
     this.capture.mockClear();
     this.refund.mockClear();
-  }
-}
-
-export class MockPaymentProviderResolver implements PaymentProviderResolver {
-  getProvider = jest.fn<PaymentProvider, [PaymentMethodType]>();
-  private defaultProvider = new MockPaymentProvider();
-
-  constructor() {
-    this.getProvider.mockReturnValue(this.defaultProvider);
-  }
-
-  mockProvider(provider: PaymentProvider): void {
-    this.getProvider.mockReturnValue(provider);
-  }
-
-  getDefaultProvider(): MockPaymentProvider {
-    return this.defaultProvider;
-  }
-
-  reset(): void {
-    this.getProvider.mockClear();
-    this.defaultProvider.reset();
-    this.getProvider.mockReturnValue(this.defaultProvider);
   }
 }

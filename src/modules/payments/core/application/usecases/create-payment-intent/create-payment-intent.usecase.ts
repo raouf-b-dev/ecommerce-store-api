@@ -4,11 +4,11 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
+import { PaymentProvider } from '../../ports/payment-provider';
 import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
@@ -21,50 +21,24 @@ export interface CreatePaymentIntentResult {
 export class CreatePaymentIntentUseCase extends UseCase<
   CreatePaymentIntentCommand,
   CreatePaymentIntentResult,
-  UseCaseError
+  AppError
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentProviderResolver: PaymentProviderResolver,
+    private readonly paymentProvider: PaymentProvider,
   ) {
     super();
   }
 
   async execute(
     dto: CreatePaymentIntentCommand,
-  ): Promise<Result<CreatePaymentIntentResult, UseCaseError>> {
-    // 1. Get Provider
-    const provider = this.paymentProviderResolver.getProvider(
-      dto.paymentMethod,
-    );
-
-    // 2. Validate amount as Money
+  ): Promise<Result<CreatePaymentIntentResult, AppError>> {
+    // 1. Validate amount as Money
     const moneyResult = Money.create(dto.amount, dto.currency);
-    if (isFailure(moneyResult)) {
-      return ErrorFactory.UseCaseError(
-        `Invalid payment amount: ${moneyResult.error.message}`,
-        moneyResult.error,
-      );
-    }
+    if (isFailure(moneyResult)) return moneyResult;
 
-    // 3. Initiate Payment via Provider
-    const initiateResult = await provider.initiatePayment({
-      amount: moneyResult.value,
-      metadata: dto.metadata,
-    });
-
-    if (isFailure(initiateResult)) {
-      return ErrorFactory.UseCaseError(
-        `Failed to create payment intent: ${initiateResult.error.message}`,
-        initiateResult.error,
-      );
-    }
-
-    const { providerReference, nextAction } = initiateResult.value;
-    const clientSecret = nextAction.clientSecret;
-
-    // 4. Create Payment Entity
-    const payment = Payment.create(
+    // 2. Persist PENDING Payment first
+    const initialPayment = Payment.create(
       null,
       dto.orderId,
       dto.amount,
@@ -74,36 +48,38 @@ export class CreatePaymentIntentUseCase extends UseCase<
       dto.metadata ? JSON.stringify(dto.metadata) : undefined,
     );
 
-    // 5. Set Payment Intent Details
-    const setIntentResult = payment.setPaymentIntent(
-      providerReference,
-      clientSecret,
-    );
+    const saveResult = await this.paymentRepository.save(initialPayment);
+    if (isFailure(saveResult)) return saveResult;
 
-    if (isFailure(setIntentResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to set payment intent details',
-        setIntentResult.error,
-      );
-    }
-
-    // 6. Save Payment
-    const saveResult = await this.paymentRepository.save(payment);
-
-    if (isFailure(saveResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to save payment',
-        saveResult.error,
-      );
-    }
-
-    if (saveResult.value.id === null) {
+    const payment = saveResult.value;
+    if (payment.id === null) {
       return ErrorFactory.UseCaseError('Payment was saved without an id');
     }
 
+    // 3. Initiate Payment via Provider with idempotency key
+    const initiateResult = await this.paymentProvider.initiatePayment({
+      amount: moneyResult.value,
+      metadata: dto.metadata,
+      idempotencyKey: `payment-intent-${payment.id}`,
+    });
+    if (isFailure(initiateResult)) return initiateResult;
+
+    const { providerReference, nextAction } = initiateResult.value;
+
+    // 4. Set Payment Intent Details
+    const setIntentResult = payment.setPaymentIntent(
+      providerReference,
+      nextAction.clientSecret,
+    );
+    if (isFailure(setIntentResult)) return setIntentResult;
+
+    // 5. Update Payment in repository
+    const updateResult = await this.paymentRepository.update(payment);
+    if (isFailure(updateResult)) return updateResult;
+
     return Result.success({
-      paymentId: saveResult.value.id,
-      clientSecret,
+      paymentId: payment.id,
+      clientSecret: nextAction.clientSecret,
     });
   }
 }

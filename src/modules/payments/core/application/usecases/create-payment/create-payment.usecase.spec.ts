@@ -1,26 +1,26 @@
 import {
   MockPaymentProvider,
-  MockPaymentProviderResolver,
   MockPaymentRepository,
   PaymentEntityTestFactory,
 } from 'src/modules/payments/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentUseCase } from './create-payment.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
+import { PaymentProvider } from '../../ports/payment-provider';
 import { CreatePaymentCommand } from '../../commands/create-payment.command';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;
   let paymentRepository: MockPaymentRepository;
-  let providerResolver: MockPaymentProviderResolver;
-  let defaultProvider: MockPaymentProvider;
+  let paymentProvider: MockPaymentProvider;
 
   const customerContext = createUserCallerContext({
     userId: 2,
@@ -35,9 +35,8 @@ describe('CreatePaymentUseCase', () => {
   });
 
   beforeEach(async () => {
-    providerResolver = new MockPaymentProviderResolver();
-    defaultProvider = providerResolver.getDefaultProvider();
-    defaultProvider.mockSuccessfulAuthorize('txn_123');
+    paymentProvider = new MockPaymentProvider();
+    paymentProvider.mockSuccessfulAuthorize('txn_123');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,8 +46,8 @@ describe('CreatePaymentUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentProviderResolver,
-          useValue: providerResolver,
+          provide: PaymentProvider,
+          useValue: paymentProvider,
         },
       ],
     }).compile();
@@ -59,7 +58,7 @@ describe('CreatePaymentUseCase', () => {
 
   afterEach(() => {
     paymentRepository.reset();
-    providerResolver.reset();
+    paymentProvider.reset();
   });
 
   it('should create a payment successfully', async () => {
@@ -107,11 +106,11 @@ describe('CreatePaymentUseCase', () => {
       result,
       'User 2 is not allowed to create a payment for order 123',
     );
-    expect(defaultProvider.authorize).not.toHaveBeenCalled();
+    expect(paymentProvider.authorize).not.toHaveBeenCalled();
     expect(paymentRepository.save).not.toHaveBeenCalled();
   });
 
-  it('fails when payment amount is invalid', async () => {
+  it('returns collaborator failure as-is when payment amount is invalid', async () => {
     const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: -100,
@@ -125,13 +124,14 @@ describe('CreatePaymentUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Invalid payment amount: Amount must be a non-negative integer in minor units',
+      'Amount must be a non-negative integer in minor units',
+      DomainError,
     );
-    expect(defaultProvider.authorize).not.toHaveBeenCalled();
+    expect(paymentProvider.authorize).not.toHaveBeenCalled();
     expect(paymentRepository.save).not.toHaveBeenCalled();
   });
 
-  it('fails when authorization fails at provider', async () => {
+  it('returns collaborator failure as-is when authorization fails at provider', async () => {
     const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: 100,
@@ -141,7 +141,7 @@ describe('CreatePaymentUseCase', () => {
       callerContext: customerContext,
     };
 
-    defaultProvider.authorize.mockResolvedValueOnce(
+    paymentProvider.authorize.mockResolvedValueOnce(
       ErrorFactory.InfrastructureError('Insufficient funds'),
     );
 
@@ -149,12 +149,13 @@ describe('CreatePaymentUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Payment authorization failed: Insufficient funds',
+      'Insufficient funds',
+      InfrastructureError,
     );
     expect(paymentRepository.save).not.toHaveBeenCalled();
   });
 
-  it('should fail if save fails', async () => {
+  it('returns collaborator failure as-is when save fails in repository', async () => {
     const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: 100,

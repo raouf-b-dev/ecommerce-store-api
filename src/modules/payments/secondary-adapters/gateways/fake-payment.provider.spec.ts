@@ -1,8 +1,8 @@
 import { Queue } from 'bullmq';
 import {
   SIMULATED_WEBHOOK_DELAY_MS,
-  FakeStripeGateway,
-} from './fake-stripe.gateway';
+  FakePaymentProvider,
+} from './fake-payment.provider';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import {
@@ -13,8 +13,8 @@ import {
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
-describe('FakeStripeGateway', () => {
-  let gateway: FakeStripeGateway;
+describe('FakePaymentProvider', () => {
+  let provider: FakePaymentProvider;
   let mockQueue: jest.Mocked<Queue>;
   let mockConfigService: MockEnvConfigService;
   let jobConfigService: JobConfigService;
@@ -23,7 +23,7 @@ describe('FakeStripeGateway', () => {
     mockQueue = createMockQueue('payments');
     mockConfigService = new MockEnvConfigService();
     jobConfigService = new JobConfigService();
-    gateway = new FakeStripeGateway(
+    provider = new FakePaymentProvider(
       mockQueue,
       mockConfigService,
       jobConfigService,
@@ -31,7 +31,7 @@ describe('FakeStripeGateway', () => {
   });
 
   describe('initiatePayment', () => {
-    it('initiates payment and enqueues delayed webhook when mockAutoComplete is enabled', async () => {
+    it('initiates payment and enqueues delayed webhook with idempotencyKey as jobId when mockAutoComplete is enabled', async () => {
       mockConfigService.setMockConfig({
         payments: { mockAutoComplete: true, stripeWebhookSecret: '' },
       });
@@ -39,8 +39,9 @@ describe('FakeStripeGateway', () => {
       const money = Money.create(100, 'USD');
       ResultAssertionHelper.assertResultSuccess(money);
 
-      const result = await gateway.initiatePayment({
+      const result = await provider.initiatePayment({
         amount: money.value,
+        idempotencyKey: 'payment-intent-101',
         metadata: {
           orderId: '1',
           cartId: '2',
@@ -67,8 +68,8 @@ describe('FakeStripeGateway', () => {
         {
           ...jobConfigService.getJobOptions(
             JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
-            result.value.providerReference,
           ),
+          jobId: 'payment-intent-101',
           delay: SIMULATED_WEBHOOK_DELAY_MS,
         },
       );
@@ -82,8 +83,9 @@ describe('FakeStripeGateway', () => {
       const money = Money.create(100, 'USD');
       ResultAssertionHelper.assertResultSuccess(money);
 
-      const result = await gateway.initiatePayment({
+      const result = await provider.initiatePayment({
         amount: money.value,
+        idempotencyKey: 'payment-intent-101',
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
@@ -100,8 +102,9 @@ describe('FakeStripeGateway', () => {
       const money = Money.create(100, 'USD');
       ResultAssertionHelper.assertResultSuccess(money);
 
-      const result = await gateway.initiatePayment({
+      const result = await provider.initiatePayment({
         amount: money.value,
+        idempotencyKey: 'payment-intent-101',
       });
 
       ResultAssertionHelper.assertResultFailure(result);
@@ -111,23 +114,17 @@ describe('FakeStripeGateway', () => {
 
   describe('authorize', () => {
     it('returns authorized status with provider reference', async () => {
-      const money = Money.create(100, 'USD');
-      ResultAssertionHelper.assertResultSuccess(money);
-
-      const result = await gateway.authorize(money.value, 'card_details');
+      const result = await provider.authorize();
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(PaymentStatusType.AUTHORIZED);
-      expect(result.value.providerReference).toMatch(/^stripe_pi_/);
+      expect(result.value.providerReference).toMatch(/^pi_fake_/);
     });
   });
 
   describe('capture', () => {
     it('returns captured status with provider reference', async () => {
-      const money = Money.create(100, 'USD');
-      ResultAssertionHelper.assertResultSuccess(money);
-
-      const result = await gateway.capture('pi_123', money.value);
+      const result = await provider.capture('pi_123');
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(PaymentStatusType.CAPTURED);
@@ -140,7 +137,7 @@ describe('FakeStripeGateway', () => {
       const money = Money.create(50, 'USD');
       ResultAssertionHelper.assertResultSuccess(money);
 
-      const result = await gateway.refund({
+      const result = await provider.refund({
         providerReference: 'pi_123',
         amount: money.value,
         idempotencyKey: 'refund-1-0',
@@ -149,22 +146,6 @@ describe('FakeStripeGateway', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(PaymentStatusType.REFUNDED);
       expect(result.value.providerReference).toBe('pi_123');
-    });
-
-    it('returns failure when refund amount is zero or negative', async () => {
-      const money = Money.create(0, 'USD');
-      ResultAssertionHelper.assertResultSuccess(money);
-
-      const result = await gateway.refund({
-        providerReference: 'pi_123',
-        amount: money.value,
-        idempotencyKey: 'refund-1-0',
-      });
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Refund amount must be greater than zero',
-      );
     });
   });
 });

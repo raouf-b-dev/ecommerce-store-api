@@ -4,12 +4,12 @@ import {
   Result,
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
+import { PaymentProvider } from '../../ports/payment-provider';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import {
   ORDER_ACCESS_PERMISSIONS,
@@ -22,18 +22,18 @@ import { Money } from '../../../../../../shared-kernel/domain/value-objects/mone
 export class CreatePaymentUseCase extends UseCase<
   CreatePaymentCommand,
   IPayment,
-  UseCaseError
+  AppError
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentProviderResolver: PaymentProviderResolver,
+    private readonly paymentProvider: PaymentProvider,
   ) {
     super();
   }
 
   async execute(
     command: CreatePaymentCommand,
-  ): Promise<Result<IPayment, UseCaseError>> {
+  ): Promise<Result<IPayment, AppError>> {
     const { callerContext } = command;
 
     if (
@@ -49,31 +49,17 @@ export class CreatePaymentUseCase extends UseCase<
       );
     }
 
-    const provider = this.paymentProviderResolver.getProvider(
-      command.paymentMethod,
-    );
-
     const moneyResult = Money.create(command.amount, command.currency);
-    if (isFailure(moneyResult)) {
-      return ErrorFactory.UseCaseError(
-        `Invalid payment amount: ${moneyResult.error.message}`,
-        moneyResult.error,
-      );
-    }
+    if (isFailure(moneyResult)) return moneyResult;
 
-    const authResult = await provider.authorize(
+    const authResult = await this.paymentProvider.authorize(
       moneyResult.value,
       command.paymentMethodDetails
         ? JSON.stringify(command.paymentMethodDetails)
         : undefined,
     );
 
-    if (isFailure(authResult)) {
-      return ErrorFactory.UseCaseError(
-        `Payment authorization failed: ${authResult.error.message}`,
-        authResult.error,
-      );
-    }
+    if (isFailure(authResult)) return authResult;
 
     const { providerReference, status } = authResult.value;
 
@@ -99,7 +85,6 @@ export class CreatePaymentUseCase extends UseCase<
     }
 
     const saveResult = await this.paymentRepository.save(payment);
-
     if (isFailure(saveResult)) return saveResult;
 
     return Result.success(saveResult.value.toPrimitives());
