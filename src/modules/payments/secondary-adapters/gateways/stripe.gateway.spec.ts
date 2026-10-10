@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { StripeGateway } from './stripe.gateway';
+import { MOCK_WEBHOOK_DELAY_MS, StripeGateway } from './stripe.gateway';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import {
@@ -54,7 +54,7 @@ describe('StripeGateway', () => {
           JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
           result.value.paymentIntentId,
         ),
-        delay: 1000,
+        delay: MOCK_WEBHOOK_DELAY_MS,
       },
     );
   });

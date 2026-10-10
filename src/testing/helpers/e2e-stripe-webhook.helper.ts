@@ -49,6 +49,8 @@ export class E2eStripeWebhookHelper {
       eventType: string;
       metadata?: Record<string, string>;
       failureMessage?: string;
+      amountMinor?: number;
+      currency?: string;
     },
   ): Promise<{ status: number; body: unknown }> {
     const payload = {
@@ -58,6 +60,8 @@ export class E2eStripeWebhookHelper {
       data: {
         object: {
           id: options.paymentIntentId,
+          amount_received: options.amountMinor,
+          currency: options.currency,
           metadata: options.metadata ?? {},
           last_payment_error:
             options.eventType === 'payment_intent.payment_failed'
@@ -80,6 +84,8 @@ export class E2eStripeWebhookHelper {
       eventType: string;
       metadata?: Record<string, string>;
       failureMessage?: string;
+      amountMinor?: number;
+      currency?: string;
     },
   ): Promise<void> {
     const response = await this.postStripeWebhook(http, options);

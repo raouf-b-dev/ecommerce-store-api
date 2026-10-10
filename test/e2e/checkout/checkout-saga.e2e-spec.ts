@@ -6,6 +6,8 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { OrderStatus } from 'src/modules/orders/core/domain/value-objects/order-status.enum';
+import { Money } from 'src/shared-kernel/domain/value-objects/money';
+import { ResultAssertionHelper } from 'src/testing/helpers/result-assertion.helper';
 import {
   AuthSession,
   AuthTestHelper,
@@ -34,6 +36,7 @@ describe('Checkout SAGA (e2e)', () => {
   let customer: AuthSession;
   let happyProduct: E2eCatalogProduct;
   let failProduct: E2eCatalogProduct;
+  let mismatchProduct: E2eCatalogProduct;
 
   beforeAll(async () => {
     const context = await E2eTestAppHelper.createApp();
@@ -55,6 +58,13 @@ describe('Checkout SAGA (e2e)', () => {
       admin,
       STARTING_STOCK,
       'fail',
+    );
+    mismatchProduct = await E2eCatalogHelper.createProductWithStock(
+      moduleRef,
+      http,
+      admin,
+      STARTING_STOCK,
+      'mismatch',
     );
     customer = await AuthTestHelper.registerAndLogin(http, {
       firstName: 'Checkout',
@@ -109,9 +119,14 @@ describe('Checkout SAGA (e2e)', () => {
       reservedQuantity: STARTING_STOCK,
     });
 
+    const moneyResult = Money.fromMajorUnits(payment.amount, payment.currency);
+    ResultAssertionHelper.assertResultSuccess(moneyResult);
+
     await E2eStripeWebhookHelper.postAndExpectOk(http, {
       paymentIntentId: payment.gatewayPaymentIntentId,
       eventType: 'payment_intent.succeeded',
+      amountMinor: moneyResult.value.amount,
+      currency: payment.currency,
       metadata: {
         reservationId: payment.reservationId,
         cartId: String(cartId),
@@ -190,6 +205,7 @@ describe('Checkout SAGA (e2e)', () => {
     await E2eStripeWebhookHelper.postAndExpectOk(http, {
       paymentIntentId: payment.gatewayPaymentIntentId,
       eventType: 'payment_intent.payment_failed',
+      currency: payment.currency,
       metadata: {
         reservationId: payment.reservationId,
         cartId: String(cartId),
@@ -211,5 +227,42 @@ describe('Checkout SAGA (e2e)', () => {
       { availableQuantity: STARTING_STOCK, reservedQuantity: 0 },
       'stock released after payment failure',
     );
+  }, 180_000);
+
+  it('does not reach CONFIRMED when webhook amount mismatches (amount + 1)', async () => {
+    const cartId = await E2eCheckoutHelper.createCartWithItem(
+      http,
+      customer.accessToken,
+      mismatchProduct.id,
+    );
+    const orderId = await checkout(cartId);
+
+    const payment = await E2eOrderHelper.waitForPaymentIntent(
+      http,
+      customer,
+      orderId,
+    );
+
+    const moneyResult = Money.fromMajorUnits(payment.amount, payment.currency);
+    ResultAssertionHelper.assertResultSuccess(moneyResult);
+    const amountMinor = moneyResult.value.amount;
+
+    await E2eStripeWebhookHelper.postStripeWebhook(http, {
+      paymentIntentId: payment.gatewayPaymentIntentId,
+      eventType: 'payment_intent.succeeded',
+      amountMinor: amountMinor + 1,
+      currency: payment.currency,
+      metadata: {
+        reservationId: payment.reservationId,
+        cartId: String(cartId),
+      },
+    });
+
+    const orderResponse = await http
+      .get(`${E2E_API_PREFIX}/orders/${orderId}`)
+      .set(AuthTestHelper.bearer(customer.accessToken));
+    expect(orderResponse.status).toBe(HttpStatus.OK);
+    expect(orderResponse.body.status).not.toBe(OrderStatus.CONFIRMED);
+    expect(orderResponse.body.status).toBe(OrderStatus.PENDING_PAYMENT);
   }, 180_000);
 });

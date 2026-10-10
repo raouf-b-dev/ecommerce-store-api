@@ -79,12 +79,12 @@ export function assertStripeWebhookSecret(
  */
 export function assertNoMockPaymentAutoComplete(
   nodeEnv: string,
-  enabled?: string | boolean,
+  enabled?: string,
 ): void {
   if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
     return;
   }
-  if (enabled === 'true' || enabled === true) {
+  if (enabled === 'true') {
     throw new EnvError(
       `PAYMENT_MOCK_AUTO_COMPLETE must not be true in ${nodeEnv}`,
     );

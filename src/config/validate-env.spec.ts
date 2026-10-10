@@ -80,13 +80,7 @@ describe('assertNoMockPaymentAutoComplete', () => {
         assertNoMockPaymentAutoComplete(nodeEnv, 'true'),
       ).not.toThrow();
       expect(() =>
-        assertNoMockPaymentAutoComplete(nodeEnv, true),
-      ).not.toThrow();
-      expect(() =>
         assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
-      ).not.toThrow();
-      expect(() =>
-        assertNoMockPaymentAutoComplete(nodeEnv, false),
       ).not.toThrow();
       expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
     },
@@ -98,14 +92,8 @@ describe('assertNoMockPaymentAutoComplete', () => {
       expect(() => assertNoMockPaymentAutoComplete(nodeEnv, 'true')).toThrow(
         EnvError,
       );
-      expect(() => assertNoMockPaymentAutoComplete(nodeEnv, true)).toThrow(
-        EnvError,
-      );
       expect(() =>
         assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
-      ).not.toThrow();
-      expect(() =>
-        assertNoMockPaymentAutoComplete(nodeEnv, false),
       ).not.toThrow();
       expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
     },
@@ -142,15 +130,18 @@ describe('validateEnv', () => {
     expect(validated.IS_DB_SYNCHRONIZE).toBe(false);
   });
 
-  it('rejects PAYMENT_MOCK_AUTO_COMPLETE=true in production', () => {
-    expect(() =>
-      validateEnv({
-        ...baseEnv,
-        NODE_ENV: 'production',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test',
-        PUBLIC_BASE_URL: 'https://api.example.com',
-        PAYMENT_MOCK_AUTO_COMPLETE: 'true',
-      }),
-    ).toThrow(EnvError);
-  });
+  it.each(['production', 'staging'])(
+    'rejects PAYMENT_MOCK_AUTO_COMPLETE=true in %s',
+    (nodeEnv) => {
+      expect(() =>
+        validateEnv({
+          ...baseEnv,
+          NODE_ENV: nodeEnv,
+          STRIPE_WEBHOOK_SECRET: 'whsec_test',
+          PUBLIC_BASE_URL: 'https://api.example.com',
+          PAYMENT_MOCK_AUTO_COMPLETE: 'true',
+        }),
+      ).toThrow(EnvError);
+    },
+  );
 });

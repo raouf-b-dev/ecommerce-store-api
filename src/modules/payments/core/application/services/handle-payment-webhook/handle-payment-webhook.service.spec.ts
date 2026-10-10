@@ -14,10 +14,7 @@ import { InfrastructureError } from '../../../../../../shared-kernel/domain/exce
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ServiceError } from '../../../../../../shared-kernel/domain/exceptions/service-error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import {
-  Result,
-  isFailure,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 
 describe('HandlePaymentWebhookService', () => {
   let service: HandlePaymentWebhookService;
@@ -84,10 +81,6 @@ describe('HandlePaymentWebhookService', () => {
         'Payment events queue down',
         InfrastructureError,
       );
-      expect(result.isFailure).toBe(true);
-      if (!isFailure(result)) {
-        throw new Error('Expected failure');
-      }
       expect(result.error.retryable).toBe(true);
       expect(paymentRepository.update).toHaveBeenCalledTimes(1);
       expect(paymentEventsScheduler.emitPaymentCompleted).toHaveBeenCalledTimes(
@@ -113,10 +106,6 @@ describe('HandlePaymentWebhookService', () => {
         'Payment events queue down',
         InfrastructureError,
       );
-      expect(result.isFailure).toBe(true);
-      if (!isFailure(result)) {
-        throw new Error('Expected failure');
-      }
       expect(result.error.retryable).toBe(true);
       expect(paymentRepository.update).toHaveBeenCalledTimes(1);
       expect(paymentEventsScheduler.emitPaymentFailed).toHaveBeenCalledTimes(1);
@@ -158,11 +147,14 @@ describe('HandlePaymentWebhookService', () => {
       expect(paymentEventsScheduler.emitPaymentFailed).not.toHaveBeenCalled();
     });
 
-    it('returns a retryable failure when payment is not found by gateway payment intent id', async () => {
+    it('returns the repository failure unchanged when the lookup fails', async () => {
+      const cause = new Error('Database connection failed');
+      const repositoryFailure = ErrorFactory.RepositoryError(
+        'Failed to find payment by gateway intent ID',
+        cause,
+      );
       paymentRepository.findByGatewayPaymentIntentId.mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          `Payment not found for intent: ${paymentIntentId}`,
-        ),
+        repositoryFailure,
       );
 
       const dto = PaymentDtoTestFactory.createPaymentWebhookDto({
@@ -174,13 +166,11 @@ describe('HandlePaymentWebhookService', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        `Payment not found for intent: ${paymentIntentId}`,
+        'Failed to find payment by gateway intent ID',
         RepositoryError,
+        cause,
       );
-      expect(result.isFailure).toBe(true);
-      if (!isFailure(result)) {
-        throw new Error('Expected failure');
-      }
+      expect(result.error).toBe(repositoryFailure.error);
       expect(result.error.retryable).toBe(true);
       expect(paymentRepository.update).not.toHaveBeenCalled();
       expect(

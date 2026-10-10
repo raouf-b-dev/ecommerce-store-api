@@ -1,12 +1,12 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { HandlePaymentCompletedUseCase } from './handle-payment-completed.usecase';
+import { OrderRepository } from '../../../domain/repositories/order-repository';
+import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import {
-  Result,
-  isFailure,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import {
   MockOrderRepository,
@@ -24,16 +24,22 @@ describe('HandlePaymentCompletedUseCase', () => {
   const reservationId = 200;
   const cartId = 300;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockRepository = new MockOrderRepository();
     mockOrderScheduler = new MockOrderScheduler();
     mockOrderScheduler.schedulePostPayment.mockResolvedValue(
       Result.success('post-payment-job-id'),
     );
-    useCase = new HandlePaymentCompletedUseCase(
-      mockRepository,
-      mockOrderScheduler,
-    );
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        HandlePaymentCompletedUseCase,
+        { provide: OrderRepository, useValue: mockRepository },
+        { provide: OrderScheduler, useValue: mockOrderScheduler },
+      ],
+    }).compile();
+
+    useCase = module.get(HandlePaymentCompletedUseCase);
   });
 
   afterEach(() => {
@@ -87,10 +93,6 @@ describe('HandlePaymentCompletedUseCase', () => {
       'Database save failed',
       RepositoryError,
     );
-    expect(result.isFailure).toBe(true);
-    if (!isFailure(result)) {
-      throw new Error('Expected failure');
-    }
     expect(result.error.retryable).toBe(true);
     expect(mockOrderScheduler.schedulePostPayment).not.toHaveBeenCalled();
   });

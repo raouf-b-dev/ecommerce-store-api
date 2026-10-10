@@ -18,6 +18,8 @@ import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { EnvConfigService } from '../../../../config/env-config.service';
 
+export const MOCK_WEBHOOK_DELAY_MS = 1000;
+
 @Injectable()
 export class StripeGateway implements IPaymentGateway {
   private readonly logger = new Logger(StripeGateway.name);
@@ -58,11 +60,11 @@ export class StripeGateway implements IPaymentGateway {
               JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
               paymentIntentId,
             ),
-            delay: 1000,
+            delay: MOCK_WEBHOOK_DELAY_MS,
           },
         );
         this.logger.log(
-          `Scheduled mock payment webhook auto-completion for intent ${paymentIntentId} (${amount} ${currency}) with 1000ms delay`,
+          `Scheduled mock payment webhook auto-completion for intent ${paymentIntentId} (${amount} ${currency}) with ${MOCK_WEBHOOK_DELAY_MS}ms delay`,
         );
       } catch (error) {
         this.logger.error(
