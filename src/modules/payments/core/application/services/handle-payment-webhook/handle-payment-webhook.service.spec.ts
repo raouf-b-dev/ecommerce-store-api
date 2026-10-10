@@ -11,12 +11,10 @@ import { PaymentStatusType } from '../../../domain/value-objects/payment-status'
 import { Payment } from '../../../domain/entities/payment';
 import { ResultAssertionHelper, TEST_IDS } from '../../../../../../testing';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ServiceError } from '../../../../../../shared-kernel/domain/exceptions/service-error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import {
-  Result,
-  isFailure,
-} from '../../../../../../shared-kernel/domain/result';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 
 describe('HandlePaymentWebhookService', () => {
   let service: HandlePaymentWebhookService;
@@ -32,7 +30,7 @@ describe('HandlePaymentWebhookService', () => {
     const payment = PaymentTestFactory.createDomainPayment({
       id: TEST_IDS.payment,
       orderId: TEST_IDS.order,
-      amount: 50,
+      amount: 5000,
       currency: 'USD',
       status,
       gatewayPaymentIntentId: paymentIntentId,
@@ -83,10 +81,6 @@ describe('HandlePaymentWebhookService', () => {
         'Payment events queue down',
         InfrastructureError,
       );
-      expect(result.isFailure).toBe(true);
-      if (!isFailure(result)) {
-        throw new Error('Expected failure');
-      }
       expect(result.error.retryable).toBe(true);
       expect(paymentRepository.update).toHaveBeenCalledTimes(1);
       expect(paymentEventsScheduler.emitPaymentCompleted).toHaveBeenCalledTimes(
@@ -112,10 +106,6 @@ describe('HandlePaymentWebhookService', () => {
         'Payment events queue down',
         InfrastructureError,
       );
-      expect(result.isFailure).toBe(true);
-      if (!isFailure(result)) {
-        throw new Error('Expected failure');
-      }
       expect(result.error.retryable).toBe(true);
       expect(paymentRepository.update).toHaveBeenCalledTimes(1);
       expect(paymentEventsScheduler.emitPaymentFailed).toHaveBeenCalledTimes(1);
@@ -155,6 +145,37 @@ describe('HandlePaymentWebhookService', () => {
 
       ResultAssertionHelper.assertResultFailure(result, 'Database failure');
       expect(paymentEventsScheduler.emitPaymentFailed).not.toHaveBeenCalled();
+    });
+
+    it('returns the repository failure unchanged when the lookup fails', async () => {
+      const cause = new Error('Database connection failed');
+      const repositoryFailure = ErrorFactory.RepositoryError(
+        'Failed to find payment by gateway intent ID',
+        cause,
+      );
+      paymentRepository.findByGatewayPaymentIntentId.mockResolvedValue(
+        repositoryFailure,
+      );
+
+      const dto = PaymentDtoTestFactory.createPaymentWebhookDto({
+        paymentIntentId,
+        eventType: PaymentEventType.SUCCEEDED,
+        transactionId: 'txn_100',
+      });
+      const result = await service.execute(dto);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to find payment by gateway intent ID',
+        RepositoryError,
+        cause,
+      );
+      expect(result.error).toBe(repositoryFailure.error);
+      expect(result.error.retryable).toBe(true);
+      expect(paymentRepository.update).not.toHaveBeenCalled();
+      expect(
+        paymentEventsScheduler.emitPaymentCompleted,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -392,7 +413,7 @@ describe('HandlePaymentWebhookService', () => {
 
   describe('amount and currency validation', () => {
     it('amount mismatch is rejected with no update and no emit', async () => {
-      givenPayment(PaymentStatusType.PENDING, { amount: 50 });
+      givenPayment(PaymentStatusType.PENDING, { amount: 5000 });
 
       const dto = PaymentDtoTestFactory.createPaymentWebhookDto({
         paymentIntentId,

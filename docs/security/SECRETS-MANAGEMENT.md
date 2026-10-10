@@ -236,9 +236,10 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### Payments (Stripe)
 
-| Variable                | Type     | Required     | Default | Tier   | Description                                                                     |
-| :---------------------- | :------- | :----------- | :------ | :----- | :------------------------------------------------------------------------------ |
-| `STRIPE_WEBHOOK_SECRET` | `string` | Prod/Staging | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production and staging |
+| Variable                     | Type     | Required     | Default | Tier   | Description                                                                                                       |
+| :--------------------------- | :------- | :----------- | :------ | :----- | :---------------------------------------------------------------------------------------------------------------- |
+| `PAYMENT_MOCK_AUTO_COMPLETE` | `string` | ❌           | `false` | T3     | When true (development only), local checkouts auto-schedule a simulated webhook; fails startup in prod or staging |
+| `STRIPE_WEBHOOK_SECRET`      | `string` | Prod/Staging | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production and staging                                   |
 
 ---
 

@@ -36,7 +36,7 @@ describe('HandleStripeWebhookUseCase', () => {
     const payment = PaymentTestFactory.createDomainPayment({
       id: TEST_IDS.payment,
       orderId: TEST_IDS.order,
-      amount: 50,
+      amount: 5000,
       currency: 'USD',
       status: PaymentStatusType.PENDING,
       gatewayPaymentIntentId: paymentIntentId,
