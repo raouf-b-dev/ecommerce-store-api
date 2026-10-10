@@ -63,7 +63,7 @@ describe('CreateOrderPaymentUseCase', () => {
 
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentMethodDetails: { cardLast4: '4242' },
       callerContext: customerContext,
     });
@@ -77,7 +77,7 @@ describe('CreateOrderPaymentUseCase', () => {
       orderId: 123,
       amount: 2550,
       currency: 'EUR',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentMethodDetails: { cardLast4: '4242' },
       userId: 2,
     });
@@ -97,7 +97,7 @@ describe('CreateOrderPaymentUseCase', () => {
 
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       callerContext: adminContext,
     });
 
@@ -125,7 +125,7 @@ describe('CreateOrderPaymentUseCase', () => {
 
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
 
@@ -141,7 +141,7 @@ describe('CreateOrderPaymentUseCase', () => {
 
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       callerContext: customerContext,
     });
 
@@ -163,7 +163,7 @@ describe('CreateOrderPaymentUseCase', () => {
 
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       callerContext: customerContext,
     });
 
@@ -177,7 +177,7 @@ describe('CreateOrderPaymentUseCase', () => {
   it('returns not found when there is no caller', async () => {
     const result = await useCase.execute({
       orderId: 123,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       callerContext: null,
     });
 

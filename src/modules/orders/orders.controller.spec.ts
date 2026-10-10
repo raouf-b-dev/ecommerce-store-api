@@ -275,7 +275,7 @@ describe('OrdersController', () => {
 
   it('should call CreateOrderPaymentUseCase.execute when createPayment is called', async () => {
     const dto = {
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentMethodDetails: { cardLast4: '4242' },
     };
     createOrderPaymentUseCase.execute.mockResolvedValue(
@@ -301,7 +301,7 @@ describe('OrdersController', () => {
 
     const res = await controller.createPayment(
       123,
-      { paymentMethod: PaymentMethodType.STRIPE },
+      { paymentMethod: PaymentMethodType.CARD },
       callerContext,
     );
 

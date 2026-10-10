@@ -10,7 +10,7 @@ import { ProcessRefundCommand } from '../../commands/process-refund.command';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { PaymentProvider } from '../../ports/payment-provider';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
@@ -199,6 +199,34 @@ describe('ProcessRefundUseCase', () => {
     expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
 
+  it('fails with UseCaseError on a provider mismatch and calls nothing on provider', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 100,
+      refundedAmount: 0,
+      status: PaymentStatusType.COMPLETED,
+      transactionId: 'txn_123',
+      provider: 'other-provider',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 50,
+    };
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Payment provider other-provider does not match active provider stripe',
+    );
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
+    expect(paymentRepository.update).not.toHaveBeenCalled();
+  });
+
   it('propagates retryable === true when provider fails with retryable InfrastructureError', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
@@ -210,11 +238,10 @@ describe('ProcessRefundUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
-    defaultProvider.refund.mockResolvedValueOnce(
-      ErrorFactory.InfrastructureError('Gateway network timeout', {
-        retryable: true,
-      }),
-    );
+    const providerError = new InfrastructureError('Gateway network timeout', {
+      retryable: true,
+    });
+    defaultProvider.refund.mockResolvedValueOnce(Result.failure(providerError));
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
@@ -226,11 +253,10 @@ describe('ProcessRefundUseCase', () => {
     ResultAssertionHelper.assertResultFailure(
       result,
       'Gateway network timeout',
+      InfrastructureError,
     );
-    expect(result).toMatchObject({
-      isFailure: true,
-      error: { retryable: true },
-    });
+    expect(result.error).toBe(providerError);
+    expect(result.error?.retryable).toBe(true);
   });
 
   it('yields retryable === false when provider returns a non-retryable error', async () => {
@@ -244,11 +270,11 @@ describe('ProcessRefundUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
-    defaultProvider.refund.mockResolvedValueOnce(
-      ErrorFactory.InfrastructureError('Card issuer declined refund', {
-        retryable: false,
-      }),
+    const providerError = new InfrastructureError(
+      'Card issuer declined refund',
+      { retryable: false },
     );
+    defaultProvider.refund.mockResolvedValueOnce(Result.failure(providerError));
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
@@ -260,10 +286,9 @@ describe('ProcessRefundUseCase', () => {
     ResultAssertionHelper.assertResultFailure(
       result,
       'Card issuer declined refund',
+      InfrastructureError,
     );
-    expect(result).toMatchObject({
-      isFailure: true,
-      error: { retryable: false },
-    });
+    expect(result.error).toBe(providerError);
+    expect(result.error?.retryable).toBe(false);
   });
 });

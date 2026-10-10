@@ -10,7 +10,6 @@ import { PaymentRepository } from '../../../domain/repositories/payment.reposito
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { Payment } from '../../../domain/entities/payment';
 import { PaymentProvider } from '../../ports/payment-provider';
-import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import {
   ORDER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
@@ -61,27 +60,37 @@ export class CreatePaymentUseCase extends UseCase<
 
     if (isFailure(authResult)) return authResult;
 
-    const { providerReference, status } = authResult.value;
+    const outcomeResult = authResult.value;
 
-    const payment = Payment.create(
-      null,
-      command.orderId,
-      command.amount,
-      command.currency,
-      command.paymentMethod,
-      command.userId,
-      command.paymentMethodDetails
+    const payment = Payment.create({
+      orderId: command.orderId,
+      amount: command.amount,
+      currency: command.currency,
+      paymentMethod: command.paymentMethod,
+      provider: this.paymentProvider.id,
+      userId: command.userId ?? null,
+      paymentMethodInfo: command.paymentMethodDetails
         ? JSON.stringify(command.paymentMethodDetails)
-        : undefined,
-    );
+        : null,
+    });
 
-    if (status === PaymentStatusType.AUTHORIZED) {
-      payment.authorize(providerReference);
-    } else if (status === PaymentStatusType.CAPTURED) {
-      payment.authorize(providerReference);
-      payment.capture();
-    } else if (status === PaymentStatusType.COMPLETED) {
-      payment.complete(providerReference);
+    switch (outcomeResult.outcome) {
+      case 'authorized':
+        payment.authorize(outcomeResult.providerReference);
+        break;
+      case 'captured':
+        payment.authorize(outcomeResult.providerReference);
+        payment.capture();
+        break;
+      case 'failed':
+        payment.fail(outcomeResult.failureReason);
+        break;
+      default: {
+        const _exhaustive: never = outcomeResult;
+        return ErrorFactory.UseCaseError(
+          `Unhandled authorization outcome: ${JSON.stringify(_exhaustive)}`,
+        );
+      }
     }
 
     const saveResult = await this.paymentRepository.save(payment);

@@ -2,23 +2,31 @@ import {
   PaymentProvider,
   InitiatePaymentParams,
   InitiatePaymentResult,
+  AuthorizeResult,
   ProviderOperationResult,
   RefundParams,
 } from '../../core/application/ports/payment-provider';
+import { PaymentProviderId } from '../../core/domain/value-objects/payment-provider-id';
+import { STRIPE_PAYMENT_PROVIDER_ID } from '../../secondary-adapters/gateways/stripe-provider-id';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 export class MockPaymentProvider implements PaymentProvider {
+  id: PaymentProviderId;
+
+  constructor(id: PaymentProviderId = STRIPE_PAYMENT_PROVIDER_ID) {
+    this.id = id;
+  }
+
   initiatePayment = jest.fn<
     Promise<Result<InitiatePaymentResult, InfrastructureError>>,
     [InitiatePaymentParams]
   >();
 
   authorize = jest.fn<
-    Promise<Result<ProviderOperationResult, InfrastructureError>>,
+    Promise<Result<AuthorizeResult, InfrastructureError>>,
     [Money, string?]
   >();
 
@@ -39,7 +47,6 @@ export class MockPaymentProvider implements PaymentProvider {
     this.initiatePayment.mockResolvedValue(
       Result.success({
         providerReference,
-        status: PaymentStatusType.PENDING,
         nextAction: {
           type: 'confirm_on_client',
           clientSecret,
@@ -48,21 +55,35 @@ export class MockPaymentProvider implements PaymentProvider {
     );
   }
 
-  mockSuccessfulAuthorize(providerReference: string = 'txn_123'): void {
+  mockSuccessfulAuthorize(
+    providerReference: string = 'txn_123',
+    outcome: 'authorized' | 'captured' = 'authorized',
+  ): void {
     this.authorize.mockResolvedValue(
       Result.success({
+        outcome,
         providerReference,
-        status: PaymentStatusType.AUTHORIZED,
       }),
     );
   }
 
-  mockSuccessfulRefund(providerReference: string = 'txn_refund_123'): void {
+  mockDeclinedAuthorize(failureReason: string = 'Card was declined'): void {
+    this.authorize.mockResolvedValue(
+      Result.success({
+        outcome: 'failed',
+        failureReason,
+      }),
+    );
+  }
+
+  mockSuccessfulRefund(providerReference?: string): void {
     this.refund.mockImplementation((params: RefundParams) => {
       return Promise.resolve(
         Result.success({
-          providerReference: params.providerReference || providerReference,
-          status: PaymentStatusType.REFUNDED,
+          providerReference:
+            providerReference !== undefined
+              ? providerReference
+              : params.providerReference,
         }),
       );
     });
@@ -73,6 +94,7 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   reset(): void {
+    this.id = STRIPE_PAYMENT_PROVIDER_ID;
     this.initiatePayment.mockClear();
     this.authorize.mockClear();
     this.capture.mockClear();

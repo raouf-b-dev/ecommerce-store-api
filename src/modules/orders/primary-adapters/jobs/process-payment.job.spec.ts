@@ -42,7 +42,7 @@ describe('ProcessPaymentStep', () => {
     cartId: 100,
     userId: 10,
     orderId: 1,
-    paymentMethod: PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType.CARD,
     shippingAddress: {
       id: null,
       firstName: 'Test',
@@ -111,7 +111,7 @@ describe('ProcessPaymentStep', () => {
       orderId: 1,
       amount: 2550,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 10,
       metadata: {
         orderId: '1',

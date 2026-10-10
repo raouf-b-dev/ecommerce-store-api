@@ -16,6 +16,7 @@ export interface SeedDemoPaymentItemInput {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
+  provider: string;
   createdAt: Date;
   withPartialRefundAmount?: number;
 }
@@ -90,6 +91,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
       amount: item.amount,
       currency: item.currency,
       paymentMethod: item.paymentMethod,
+      provider: item.provider,
       status: PaymentStatusType.CAPTURED,
       transactionId: `seed_tx_order_${item.orderId}`,
       gatewayPaymentIntentId: `seed_pi_order_${item.orderId}`,

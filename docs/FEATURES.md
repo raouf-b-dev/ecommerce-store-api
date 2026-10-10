@@ -87,13 +87,13 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Payment Provider (Fake Payment Provider)
+### Payment Provider (Fake Stripe Payment Provider)
 
-Payments use the provider-neutral `PaymentProvider` port directly bound to `FakePaymentProvider` (no resolver). The `FakePaymentProvider` adapter is an explicit fake used for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
+Payments use the provider-neutral `PaymentProvider` port directly bound to `FakeStripePaymentProvider` (no resolver). Stored payments record provider `'stripe'` and payment method `'CARD'`. The `FakeStripePaymentProvider` adapter imitates Stripe payment intent flows for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
 
 - **Flow**: SAGA Validate Cart -> Reserve Stock -> Process Payment (gateway) -> (webhook / mock auto-complete) -> Confirm Order -> Clear Cart
 - **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so `FakePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 

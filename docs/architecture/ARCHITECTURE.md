@@ -22,19 +22,19 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 
 ### Subdomains
 
-| Subdomain | Type | Description |
-| :-------- | :--- | :---------- |
-| **Orders** | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows. |
-| **Identity** | Supporting | User accounts, profiles, contact info, and shipping addresses. |
-| **Authorization** | Supporting | RBAC, permission resolution, and user role assignments. |
-| **Carts** | Supporting | Shopping sessions, item selection, and cart persistence (RedisJSON). |
-| **Inventory** | Supporting | Stock levels and reservations. |
-| **Products** | Supporting | Catalog, categories, and search indexing. |
-| **Payments** | Generic | Payment intents and gateway abstraction. Provider adapter is a mock today. |
-| **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
-| **Notifications** | Generic | Real-time and background alerts. |
-| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
-| **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
+| Subdomain          | Type            | Description                                                                                                                                                   |
+| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Orders**         | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows.                                                                                              |
+| **Identity**       | Supporting      | User accounts, profiles, contact info, and shipping addresses.                                                                                                |
+| **Authorization**  | Supporting      | RBAC, permission resolution, and user role assignments.                                                                                                       |
+| **Carts**          | Supporting      | Shopping sessions, item selection, and cart persistence (RedisJSON).                                                                                          |
+| **Inventory**      | Supporting      | Stock levels and reservations.                                                                                                                                |
+| **Products**       | Supporting      | Catalog, categories, and search indexing.                                                                                                                     |
+| **Payments**       | Generic         | Payment intents and gateway abstraction. Provider adapter is a mock today.                                                                                    |
+| **Authentication** | Generic         | Credentials, password hashing, sessions, and JWT management.                                                                                                  |
+| **Notifications**  | Generic         | Real-time and background alerts.                                                                                                                              |
+| **Analytics**      | Supporting      | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
+| **Health**         | Generic         | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`).                                                                             |
 
 ### Bounded Contexts and Context Mapping
 
@@ -319,9 +319,9 @@ flowchart TD
  ReleaseStock --> CancelOrder[Update Status CANCELLED]
 ```
 
-## Payment Methods (Current Scope)
+## Payment Methods and Providers (Current Scope)
 
-`PaymentMethodType` currently includes **Stripe only**. The Stripe gateway adapter is a **mock** suitable for local and CI checkout proofs. A real provider SDK is not wired yet.
+`PaymentMethodType` represents the payment method (`CARD`, `BANK_TRANSFER`, `WALLET`), separated from payment provider identity (`PaymentProviderId`, currently `'stripe'`). The payment provider port `PaymentProvider` is bound to `FakeStripePaymentProvider`, an adapter that imitates Stripe payment intent flows for local and CI checkout proofs. A live provider SDK is deferred to Phase 18.
 
 ## Payment Event Handling (Async)
 

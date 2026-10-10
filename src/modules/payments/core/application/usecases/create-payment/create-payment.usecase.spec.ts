@@ -9,13 +9,14 @@ import { PaymentRepository } from '../../../domain/repositories/payment.reposito
 import { PaymentProvider } from '../../ports/payment-provider';
 import { CreatePaymentCommand } from '../../commands/create-payment.command';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('CreatePaymentUseCase', () => {
   let useCase: CreatePaymentUseCase;
@@ -66,7 +67,7 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 2,
       paymentMethodDetails: { cardLast4: '4242' },
       callerContext: customerContext,
@@ -90,12 +91,45 @@ describe('CreatePaymentUseCase', () => {
     expect(result.value.orderId).toBe(dto.orderId);
   });
 
+  it('saves FAILED payment when authorization outcome is failed (declined)', async () => {
+    const dto: CreatePaymentCommand = {
+      orderId: 123,
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.CARD,
+      userId: 2,
+      paymentMethodDetails: { cardLast4: '4242' },
+      callerContext: customerContext,
+    };
+
+    paymentProvider.mockDeclinedAuthorize('Card was declined');
+
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      orderId: dto.orderId,
+      amount: dto.amount,
+      currency: dto.currency,
+      paymentMethod: dto.paymentMethod,
+      userId: dto.userId,
+      status: PaymentStatusType.FAILED,
+      failureReason: 'Card was declined',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+    paymentRepository.mockSuccessfulSave(payment);
+
+    const result = await useCase.execute(dto);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(paymentRepository.save).toHaveBeenCalled();
+    expect(result.value.status).toBe(PaymentStatusType.FAILED);
+    expect(result.value.failureReason).toBe('Card was declined');
+  });
+
   it('fails when user is not authorized to create payment for order', async () => {
     const dto: CreatePaymentCommand = {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 2,
       callerContext: otherCustomerContext,
     };
@@ -115,7 +149,7 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: -100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 2,
       callerContext: customerContext,
     };
@@ -136,22 +170,25 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 2,
       callerContext: customerContext,
     };
 
-    paymentProvider.authorize.mockResolvedValueOnce(
-      ErrorFactory.InfrastructureError('Insufficient funds'),
-    );
+    const authError = new InfrastructureError('Payment network unavailable', {
+      retryable: true,
+    });
+    paymentProvider.authorize.mockResolvedValueOnce(Result.failure(authError));
 
     const result = await useCase.execute(dto);
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Insufficient funds',
+      'Payment network unavailable',
       InfrastructureError,
     );
+    expect(result.error).toBe(authError);
+    expect(result.error?.retryable).toBe(true);
     expect(paymentRepository.save).not.toHaveBeenCalled();
   });
 
@@ -160,19 +197,24 @@ describe('CreatePaymentUseCase', () => {
       orderId: 123,
       amount: 100,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 2,
       callerContext: customerContext,
     };
 
-    paymentRepository.mockSaveFailure('Save failed');
+    const saveError = new RepositoryError('Database save timeout', {
+      retryable: true,
+    });
+    paymentRepository.save.mockResolvedValueOnce(Result.failure(saveError));
 
     const result = await useCase.execute(dto);
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Save failed',
+      'Database save timeout',
       RepositoryError,
     );
+    expect(result.error).toBe(saveError);
+    expect(result.error?.retryable).toBe(true);
   });
 });

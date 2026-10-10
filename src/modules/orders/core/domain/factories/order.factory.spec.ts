@@ -19,7 +19,7 @@ describe('OrderFactory', () => {
       cart: { items },
       userId: 1,
       shippingAddress: OrderTestFactory.createShippingAddressProps(),
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
     });
 
   it('snapshots the cart line image on the order line', () => {

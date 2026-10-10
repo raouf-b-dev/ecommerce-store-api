@@ -2,7 +2,7 @@ export interface RawPaymentListQueryRow {
   id: number;
   orderId: number;
   userId: number;
-  userName: string | null;
+  userName: string;
   userEmail: string | null;
   amount: number;
   currency: string;

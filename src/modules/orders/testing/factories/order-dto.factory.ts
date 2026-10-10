@@ -56,7 +56,7 @@ export class OrderDtoTestFactory {
   ): CheckoutCommand {
     const baseCommand: CheckoutCommand = {
       cartId: 1,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddress: this.createCheckoutShippingAddressInput(),
       callerContext: AuthPayloadFactory.createCallerContext(),
       customerNotes: 'customerNotes',
@@ -108,7 +108,7 @@ export class OrderDtoTestFactory {
       cartId: 1,
       userId: 1,
       shippingAddress: this.createShippingAddressProps(),
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
     };
 
     return { ...baseInput, ...overrides };
@@ -259,7 +259,7 @@ export class OrderDtoTestFactory {
       userId: 2,
       amount: 2550,
       currency: 'EUR',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       status: 'AUTHORIZED',
       transactionId: 'txn_123',
       gatewayPaymentIntentId: null,
