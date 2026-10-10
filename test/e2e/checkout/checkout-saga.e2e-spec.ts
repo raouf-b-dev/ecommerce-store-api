@@ -6,7 +6,9 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import { OrderStatus } from 'src/modules/orders/core/domain/value-objects/order-status.enum';
+import { PaymentStatusType } from 'src/modules/payments/core/domain/value-objects/payment-status';
 import { Money } from 'src/shared-kernel/domain/value-objects/money';
+import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 import { ResultAssertionHelper } from 'src/testing/helpers/result-assertion.helper';
 import {
   AuthSession,
@@ -205,7 +207,6 @@ describe('Checkout SAGA (e2e)', () => {
     await E2eStripeWebhookHelper.postAndExpectOk(http, {
       paymentIntentId: payment.gatewayPaymentIntentId,
       eventType: 'payment_intent.payment_failed',
-      currency: payment.currency,
       metadata: {
         reservationId: payment.reservationId,
         cartId: String(cartId),
@@ -247,22 +248,35 @@ describe('Checkout SAGA (e2e)', () => {
     ResultAssertionHelper.assertResultSuccess(moneyResult);
     const amountMinor = moneyResult.value.amount;
 
-    await E2eStripeWebhookHelper.postStripeWebhook(http, {
-      paymentIntentId: payment.gatewayPaymentIntentId,
-      eventType: 'payment_intent.succeeded',
-      amountMinor: amountMinor + 1,
-      currency: payment.currency,
-      metadata: {
-        reservationId: payment.reservationId,
-        cartId: String(cartId),
+    const mismatchResponse = await E2eStripeWebhookHelper.postStripeWebhook(
+      http,
+      {
+        paymentIntentId: payment.gatewayPaymentIntentId,
+        eventType: 'payment_intent.succeeded',
+        amountMinor: amountMinor + 1,
+        currency: payment.currency,
+        metadata: {
+          reservationId: payment.reservationId,
+          cartId: String(cartId),
+        },
       },
+    );
+
+    HttpErrorAssertionHelper.assertErrorContract(mismatchResponse, {
+      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      messageContains: 'Payment amount mismatch',
     });
+
+    const paymentResponse = await http
+      .get(`${E2E_API_PREFIX}/payments/orders/${orderId}`)
+      .set(AuthTestHelper.bearer(customer.accessToken));
+    expect(paymentResponse.status).toBe(HttpStatus.OK);
+    expect(paymentResponse.body.status).toBe(PaymentStatusType.PENDING);
 
     const orderResponse = await http
       .get(`${E2E_API_PREFIX}/orders/${orderId}`)
       .set(AuthTestHelper.bearer(customer.accessToken));
     expect(orderResponse.status).toBe(HttpStatus.OK);
-    expect(orderResponse.body.status).not.toBe(OrderStatus.CONFIRMED);
     expect(orderResponse.body.status).toBe(OrderStatus.PENDING_PAYMENT);
   }, 180_000);
 });

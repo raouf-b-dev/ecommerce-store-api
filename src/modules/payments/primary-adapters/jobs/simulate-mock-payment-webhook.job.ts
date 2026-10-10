@@ -13,8 +13,8 @@ export interface SimulateMockPaymentWebhookProps {
   paymentIntentId: string;
   transactionId?: string;
   metadata?: Record<string, string>;
-  amountMinor?: number;
-  currency?: string;
+  amountMinor: number;
+  currency: string;
 }
 
 @Injectable()
@@ -41,7 +41,7 @@ export class SimulateMockPaymentWebhookJob extends BaseJobHandler<
     const { paymentIntentId, transactionId, metadata, amountMinor, currency } =
       job.data;
     this.logger.log(
-      `Processing simulated mock payment webhook for intent ${paymentIntentId}${amountMinor && currency ? ` (${amountMinor} ${currency})` : ''}`,
+      `Processing simulated mock payment webhook for intent ${paymentIntentId} (${amountMinor} ${currency})`,
     );
 
     const result = await this.handlePaymentWebhookService.execute({

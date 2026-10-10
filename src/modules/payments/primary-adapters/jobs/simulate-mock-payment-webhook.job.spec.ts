@@ -10,6 +10,7 @@ import { CorrelationService } from '../../../../infrastructure/logging/correlati
 import { MockCorrelationService, createMockJob } from '../../../../testing';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
 
 describe('SimulateMockPaymentWebhookJob', () => {
   let jobHandler: SimulateMockPaymentWebhookJob;
@@ -46,7 +47,10 @@ describe('SimulateMockPaymentWebhookJob', () => {
       currency: 'USD',
     };
 
-    const mockJob = createMockJob('simulate-mock-payment-webhook', jobData);
+    const mockJob = createMockJob(
+      JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+      jobData,
+    );
 
     executeMock.mockResolvedValue(
       Result.success({
@@ -72,9 +76,14 @@ describe('SimulateMockPaymentWebhookJob', () => {
   it('returns failure when HandlePaymentWebhookService fails', async () => {
     const jobData: SimulateMockPaymentWebhookProps = {
       paymentIntentId: 'pi_nonexistent',
+      amountMinor: 5000,
+      currency: 'USD',
     };
 
-    const mockJob = createMockJob('simulate-mock-payment-webhook', jobData);
+    const mockJob = createMockJob(
+      JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+      jobData,
+    );
 
     executeMock.mockResolvedValue(
       ErrorFactory.ServiceError('Payment not found for intent: pi_nonexistent'),
