@@ -27,7 +27,36 @@ import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-cont
 import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/payment-method';
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
+import { DECORATORS } from '@nestjs/swagger';
 import { ResultAssertionHelper } from '../../testing';
+
+interface HeaderParamMeta {
+  name: string;
+  in: string;
+  required?: boolean;
+}
+
+function findHeaderParam(
+  target: object,
+  paramName: string,
+): HeaderParamMeta | undefined {
+  const rawParams: unknown = Reflect.getMetadata(
+    DECORATORS.API_PARAMETERS,
+    target,
+  );
+  if (!Array.isArray(rawParams)) {
+    return undefined;
+  }
+  return rawParams.find(
+    (param: unknown): param is HeaderParamMeta =>
+      typeof param === 'object' &&
+      param !== null &&
+      'name' in param &&
+      'in' in param &&
+      param.name === paramName &&
+      param.in === 'header',
+  );
+}
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -167,38 +196,29 @@ describe('OrdersController', () => {
     });
   });
 
-  it('documents Idempotency-Key header as required and omits legacy x-idempotency-key header in Swagger', () => {
-    const rawParams: unknown = Reflect.getMetadata(
-      'swagger/apiParameters',
-      OrdersController.prototype.checkout,
-    );
-    expect(Array.isArray(rawParams)).toBe(true);
-    const params = Array.isArray(rawParams) ? rawParams : [];
-    const idempotencyKeyHeader = params.find(
-      (param: unknown) =>
-        typeof param === 'object' &&
-        param !== null &&
-        'name' in param &&
-        param.name === 'Idempotency-Key',
-    );
-    expect(idempotencyKeyHeader).toMatchObject({
-      in: 'header',
-      required: true,
-    });
+  it.each([
+    { endpoint: 'checkout', handler: OrdersController.prototype.checkout },
+    {
+      endpoint: 'createPayment',
+      handler: OrdersController.prototype.createPayment,
+    },
+  ])(
+    'documents Idempotency-Key as required header and omits legacy or response headers for $endpoint',
+    ({ handler }) => {
+      const idempotencyKeyHeader = findHeaderParam(handler, 'Idempotency-Key');
+      expect(idempotencyKeyHeader).toMatchObject({
+        in: 'header',
+        required: true,
+      });
 
-    const legacyHeader = params.find(
-      (param: unknown) =>
-        typeof param === 'object' &&
-        param !== null &&
-        'name' in param &&
-        param.name === 'x-idempotency-key',
-    );
-    expect(legacyHeader).toBeUndefined();
-  });
+      expect(findHeaderParam(handler, 'x-idempotency-key')).toBeUndefined();
+      expect(findHeaderParam(handler, 'Retry-After')).toBeUndefined();
+    },
+  );
 
   it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {
     const rawProps: unknown = Reflect.getMetadata(
-      'swagger/apiModelPropertiesArray',
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
       CheckoutDto.prototype,
     );
     expect(Array.isArray(rawProps)).toBe(true);

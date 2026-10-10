@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { HttpStatus } from '@nestjs/common';
+import { IDEMPOTENCY_KEY_HEADER } from 'src/shared-kernel/infra/http/request.helpers';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {
   AuthSession,
@@ -101,7 +102,7 @@ export class E2eCheckoutHelper {
       const hasIdempotencyHeader =
         options.headers &&
         Object.keys(options.headers).some(
-          (h) => h.toLowerCase() === 'idempotency-key',
+          (h) => h.toLowerCase() === IDEMPOTENCY_KEY_HEADER,
         );
       if (!hasIdempotencyHeader) {
         request.set('Idempotency-Key', idempotencyKey);

@@ -462,7 +462,7 @@ Moved to Phase **16c**.
 >
 > **Hard prerequisite:** Shopper HTTP contract **15b** (done).
 >
-> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens, remove unused body `idempotencyKey` `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
+> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
 
 ### [x] Checkout SAGA & real-time order events
 

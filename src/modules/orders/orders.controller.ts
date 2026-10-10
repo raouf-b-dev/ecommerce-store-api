@@ -108,11 +108,6 @@ export class OrdersController {
     description: 'Client idempotency key. Required.',
     required: true,
   })
-  @ApiHeader({
-    name: 'Retry-After',
-    description: `Present on HTTP 409 when the idempotency key is still in progress. Value is ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds.`,
-    required: false,
-  })
   @Idempotent()
   async checkout(
     @Body() dto: CheckoutDto,
@@ -200,11 +195,6 @@ export class OrdersController {
     name: 'Idempotency-Key',
     description: 'Client idempotency key. Required.',
     required: true,
-  })
-  @ApiHeader({
-    name: 'Retry-After',
-    description: `Present on HTTP 409 when the idempotency key is still in progress. Value is ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds.`,
-    required: false,
   })
   @Idempotent()
   async createPayment(
