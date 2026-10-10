@@ -75,16 +75,23 @@ export class CreatePaymentUseCase extends UseCase<
     });
 
     switch (outcomeResult.outcome) {
-      case 'authorized':
-        payment.authorize(outcomeResult.providerReference);
+      case 'authorized': {
+        const authOp = payment.authorize(outcomeResult.providerReference);
+        if (isFailure(authOp)) return authOp;
         break;
-      case 'captured':
-        payment.authorize(outcomeResult.providerReference);
-        payment.capture();
+      }
+      case 'captured': {
+        const authOp = payment.authorize(outcomeResult.providerReference);
+        if (isFailure(authOp)) return authOp;
+        const captureOp = payment.capture();
+        if (isFailure(captureOp)) return captureOp;
         break;
-      case 'failed':
-        payment.fail(outcomeResult.failureReason);
+      }
+      case 'failed': {
+        const failOp = payment.fail(outcomeResult.failureReason);
+        if (isFailure(failOp)) return failOp;
         break;
+      }
       default: {
         const _exhaustive: never = outcomeResult;
         return ErrorFactory.UseCaseError(

@@ -32,7 +32,7 @@ Each module follows `core/{domain,application}`, `primary-adapters`, `secondary-
 
 ## Cross-context gateways
 
-ACL gateways are `modules/<m>/secondary-adapters/adapters/module-<x>.gateway.ts` (orders: user, cart, payment, inventory-reservation; carts: product, inventory; authentication: identity, authorization; identity: authorization). `secondary-adapters/gateways/` holds external SDK and provider adapters: `notifications` websocket and `payments` `FakeStripePaymentProvider` (`stripe-provider-id.ts`). Ports are in `core/application/ports` (including `PaymentProvider`).
+ACL gateways are `modules/<m>/secondary-adapters/adapters/module-<x>.gateway.ts` (orders: user, cart, payment, inventory-reservation; carts: product, inventory; authentication: identity, authorization; identity: authorization). `secondary-adapters/gateways/` holds external SDK and provider adapters: `notifications` websocket and `payments` `FakeStripePaymentProvider` (`stripe-provider-id.ts`). Ports are in `core/application/ports` (including `PaymentProvider`; notifications keeps a port in `core/domain/gateways`).
 
 ## Tests
 

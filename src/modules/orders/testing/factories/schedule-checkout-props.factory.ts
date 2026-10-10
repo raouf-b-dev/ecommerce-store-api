@@ -1,5 +1,4 @@
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
-import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { ValidateCartResult } from '../../primary-adapters/jobs/validate-cart.job';
 
 export class ScheduleCheckoutPropsFactory {
@@ -23,7 +22,6 @@ export class ScheduleCheckoutPropsFactory {
         phone: '1234567890',
         deliveryInstructions: 'Test Delivery Instructions',
       },
-      paymentMethod: PaymentMethodType.CARD,
       flowId: 'flow-123',
     };
 

@@ -208,6 +208,7 @@ export class OrderDtoTestFactory {
       userName: 'John Customer',
       userEmail: 'john@example.com',
       status: 'pending_payment',
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddress: '123 Main St',
       items: [this.createOrderItemDetailDTO()],
       subtotal: 100,

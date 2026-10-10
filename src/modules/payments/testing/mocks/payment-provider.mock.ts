@@ -14,7 +14,7 @@ import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.
 import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 export class MockPaymentProvider implements PaymentProvider {
-  id: PaymentProviderId;
+  readonly id: PaymentProviderId;
 
   constructor(id: PaymentProviderId = STRIPE_PAYMENT_PROVIDER_ID) {
     this.id = id;
@@ -80,10 +80,7 @@ export class MockPaymentProvider implements PaymentProvider {
     this.refund.mockImplementation((params: RefundParams) => {
       return Promise.resolve(
         Result.success({
-          providerReference:
-            providerReference !== undefined
-              ? providerReference
-              : params.providerReference,
+          providerReference: providerReference ?? params.providerReference,
         }),
       );
     });
@@ -94,7 +91,6 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 
   reset(): void {
-    this.id = STRIPE_PAYMENT_PROVIDER_ID;
     this.initiatePayment.mockClear();
     this.authorize.mockClear();
     this.capture.mockClear();

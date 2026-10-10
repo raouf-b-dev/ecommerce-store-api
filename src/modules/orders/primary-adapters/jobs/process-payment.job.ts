@@ -55,7 +55,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<ScheduleCheckoutProps>,
   ): Promise<Result<ProcessPaymentResult, AppError>> {
-    const { paymentMethod, orderId } = job.data;
+    const { orderId } = job.data;
 
     const childrenValues = await job.getChildrenValues();
     const childData = Object.values(childrenValues)[0];
@@ -93,7 +93,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
       orderId,
       amount: orderTotal,
       currency: orderCurrency,
-      paymentMethod,
+      paymentMethod: order.paymentMethod,
       userId: order.userId,
       metadata: {
         orderId: String(orderId),

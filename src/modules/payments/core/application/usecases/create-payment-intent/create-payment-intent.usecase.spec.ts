@@ -1,18 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentIntentUseCase } from './create-payment-intent.usecase';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
+import { Payment } from '../../../domain/entities/payment';
 import { PaymentProvider } from '../../ports/payment-provider';
 import {
   MockPaymentProvider,
   MockPaymentRepository,
   PaymentDtoTestFactory,
   PaymentEntityTestFactory,
+  PaymentTestFactory,
 } from 'src/modules/payments/testing';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
@@ -79,6 +85,9 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(result.value.clientSecret).toBe('pi_mock_123_secret_xyz');
 
     expect(paymentRepository.save).toHaveBeenCalledTimes(1);
+    const savedPayment = paymentRepository.save.mock.calls[0][0];
+    expect(savedPayment.providerId.equals(paymentProvider.id)).toBe(true);
+    expect(savedPayment.provider).toBe(paymentProvider.id.value);
     const expectedMoney = Money.create(command.amount, command.currency);
     if (expectedMoney.isFailure) throw expectedMoney.error;
     expect(paymentProvider.initiatePayment).toHaveBeenCalledWith({
@@ -92,17 +101,18 @@ describe('CreatePaymentIntentUseCase', () => {
   it('reuses existing pending payment row and its id for idempotency key on retry', async () => {
     const command = PaymentDtoTestFactory.createCreatePaymentIntentCommand();
 
-    const pendingEntity = PaymentEntityTestFactory.createPendingEntity({
-      id: 42,
-      orderId: command.orderId,
-      amount: command.amount,
-      currency: command.currency,
-      paymentMethod: command.paymentMethod,
-      userId: command.userId,
-      gatewayPaymentIntentId: null,
-      gatewayClientSecret: null,
-    });
-    const pendingPayment = PaymentMapper.toDomain(pendingEntity);
+    const pendingPayment = Payment.fromPrimitives(
+      PaymentTestFactory.createPendingPayment({
+        id: 42,
+        orderId: command.orderId,
+        amount: command.amount,
+        currency: command.currency,
+        paymentMethod: command.paymentMethod,
+        userId: command.userId,
+        gatewayPaymentIntentId: null,
+        gatewayClientSecret: null,
+      }),
+    );
 
     paymentRepository.findByOrderId.mockResolvedValue(
       Result.success([pendingPayment]),
@@ -131,17 +141,18 @@ describe('CreatePaymentIntentUseCase', () => {
   it('returns existing pending payment directly when provider reference is already present', async () => {
     const command = PaymentDtoTestFactory.createCreatePaymentIntentCommand();
 
-    const pendingEntity = PaymentEntityTestFactory.createPendingEntity({
-      id: 42,
-      orderId: command.orderId,
-      amount: command.amount,
-      currency: command.currency,
-      paymentMethod: command.paymentMethod,
-      userId: command.userId,
-      gatewayPaymentIntentId: 'pi_mock_existing',
-      gatewayClientSecret: 'pi_mock_existing_secret',
-    });
-    const pendingPayment = PaymentMapper.toDomain(pendingEntity);
+    const pendingPayment = Payment.fromPrimitives(
+      PaymentTestFactory.createPendingPayment({
+        id: 42,
+        orderId: command.orderId,
+        amount: command.amount,
+        currency: command.currency,
+        paymentMethod: command.paymentMethod,
+        userId: command.userId,
+        gatewayPaymentIntentId: 'pi_mock_existing',
+        gatewayClientSecret: 'pi_mock_existing_secret',
+      }),
+    );
 
     paymentRepository.findByOrderId.mockResolvedValue(
       Result.success([pendingPayment]),
@@ -156,6 +167,100 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(paymentRepository.save).not.toHaveBeenCalled();
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
     expect(paymentRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('fails with 409 and PAYMENT_PROVIDER_MISMATCH when pending payment provider differs from bound provider', async () => {
+    const command = PaymentDtoTestFactory.createCreatePaymentIntentCommand();
+
+    const pendingPayment = Payment.fromPrimitives(
+      PaymentTestFactory.createPendingPayment({
+        id: 42,
+        orderId: command.orderId,
+        amount: command.amount,
+        currency: command.currency,
+        paymentMethod: command.paymentMethod,
+        userId: command.userId,
+        provider: 'other-provider',
+      }),
+    );
+
+    paymentRepository.findByOrderId.mockResolvedValue(
+      Result.success([pendingPayment]),
+    );
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      `Payment provider other-provider does not match active provider ${paymentProvider.id.value}`,
+      UseCaseError,
+    );
+    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_PROVIDER_MISMATCH);
+    expect(paymentRepository.save).not.toHaveBeenCalled();
+    expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('fails with status 409 when pending payment money differs from command money', async () => {
+    const command = PaymentDtoTestFactory.createCreatePaymentIntentCommand({
+      amount: 200,
+    });
+
+    const pendingPayment = Payment.fromPrimitives(
+      PaymentTestFactory.createPendingPayment({
+        id: 42,
+        orderId: command.orderId,
+        amount: 100,
+        currency: command.currency,
+        paymentMethod: command.paymentMethod,
+        userId: command.userId,
+      }),
+    );
+
+    paymentRepository.findByOrderId.mockResolvedValue(
+      Result.success([pendingPayment]),
+    );
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      `Payment amount or currency does not match pending payment for order ${command.orderId}`,
+      UseCaseError,
+    );
+    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(paymentRepository.save).not.toHaveBeenCalled();
+    expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('fails when order has only non-pending payments', async () => {
+    const command = PaymentDtoTestFactory.createCreatePaymentIntentCommand();
+
+    const completedPayment = Payment.fromPrimitives(
+      PaymentTestFactory.createMockPayment({
+        id: 42,
+        orderId: command.orderId,
+        amount: command.amount,
+        currency: command.currency,
+        paymentMethod: command.paymentMethod,
+        userId: command.userId,
+        status: PaymentStatusType.COMPLETED,
+      }),
+    );
+
+    paymentRepository.findByOrderId.mockResolvedValue(
+      Result.success([completedPayment]),
+    );
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      `Order ${command.orderId} does not have a pending payment to initiate intent`,
+      UseCaseError,
+    );
+    expect(paymentRepository.save).not.toHaveBeenCalled();
+    expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
   });
 
   it('returns collaborator failure as-is when findByOrderId fails', async () => {
@@ -176,7 +281,7 @@ describe('CreatePaymentIntentUseCase', () => {
       RepositoryError,
     );
     expect(result.error).toBe(repoError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
     expect(paymentRepository.save).not.toHaveBeenCalled();
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
   });
@@ -213,7 +318,7 @@ describe('CreatePaymentIntentUseCase', () => {
       RepositoryError,
     );
     expect(result.error).toBe(saveError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
   });
 
@@ -247,7 +352,7 @@ describe('CreatePaymentIntentUseCase', () => {
       InfrastructureError,
     );
     expect(result.error).toBe(initiateError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
@@ -312,6 +417,6 @@ describe('CreatePaymentIntentUseCase', () => {
       RepositoryError,
     );
     expect(result.error).toBe(updateError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
   });
 });

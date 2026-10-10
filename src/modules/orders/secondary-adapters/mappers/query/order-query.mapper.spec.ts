@@ -74,6 +74,7 @@ describe('OrderQueryMapper', () => {
       expect(result.orderNumber).toBe('ORD-1');
       expect(result.userName).toBe('Alice Smith');
       expect(result.userEmail).toBe('alice@example.com');
+      expect(result.paymentMethod).toBe(orderEntity.paymentMethod);
       expect(result.shippingAddress).toBe('123 Tech Lane, Austin, TX 78701');
       expect(result.items.length).toBe(1);
       expect(result.items[0]).toEqual({

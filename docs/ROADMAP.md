@@ -417,7 +417,7 @@ Moved to Phase **16c**.
 - Persist processed Stripe `event.id` (Redis/DB + TTL) to ignore replays.
 - Checkout SAGA (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
 
-**Location**: `src/modules/payments/secondary-adapters/stripe/`, `src/modules/payments/secondary-adapters/gateways/`
+**Location**: `src/modules/payments/secondary-adapters/gateways/`
 
 ---
 

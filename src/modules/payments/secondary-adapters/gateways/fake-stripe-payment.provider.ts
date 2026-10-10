@@ -19,7 +19,7 @@ import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { EnvConfigService } from '../../../../config/env-config.service';
 import { STRIPE_PAYMENT_PROVIDER_ID } from './stripe-provider-id';
-import { Money } from 'src/shared-kernel/domain/value-objects/money';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 export const SIMULATED_WEBHOOK_DELAY_MS = 1000;
 

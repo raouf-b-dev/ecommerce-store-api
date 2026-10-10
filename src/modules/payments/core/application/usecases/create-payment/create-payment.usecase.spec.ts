@@ -124,6 +124,39 @@ describe('CreatePaymentUseCase', () => {
     expect(result.value.failureReason).toBe('Card was declined');
   });
 
+  it('saves CAPTURED payment when authorization outcome is captured', async () => {
+    const dto: CreatePaymentCommand = {
+      orderId: 123,
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.CARD,
+      userId: 2,
+      paymentMethodDetails: { cardLast4: '4242' },
+      callerContext: customerContext,
+    };
+
+    paymentProvider.mockSuccessfulAuthorize('txn_123', 'captured');
+
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      orderId: dto.orderId,
+      amount: dto.amount,
+      currency: dto.currency,
+      paymentMethod: dto.paymentMethod,
+      userId: dto.userId,
+      status: PaymentStatusType.CAPTURED,
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+    paymentRepository.mockSuccessfulSave(payment);
+
+    const result = await useCase.execute(dto);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(paymentRepository.save).toHaveBeenCalled();
+    const saved = paymentRepository.save.mock.calls[0][0];
+    expect(saved.status).toBe(PaymentStatusType.CAPTURED);
+    expect(result.value.status).toBe(PaymentStatusType.CAPTURED);
+  });
+
   it('fails when user is not authorized to create payment for order', async () => {
     const dto: CreatePaymentCommand = {
       orderId: 123,
@@ -188,7 +221,7 @@ describe('CreatePaymentUseCase', () => {
       InfrastructureError,
     );
     expect(result.error).toBe(authError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
     expect(paymentRepository.save).not.toHaveBeenCalled();
   });
 
@@ -215,6 +248,6 @@ describe('CreatePaymentUseCase', () => {
       RepositoryError,
     );
     expect(result.error).toBe(saveError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
   });
 });

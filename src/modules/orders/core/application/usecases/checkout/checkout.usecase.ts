@@ -74,7 +74,6 @@ export class CheckoutUseCase extends UseCase<
       cartId: command.cartId,
       userId,
       shippingAddress,
-      paymentMethod: command.paymentMethod,
       customerNotes: command.customerNotes,
       orderId: orderId!,
       flowId: `checkout-${orderId}-${Date.now()}`,

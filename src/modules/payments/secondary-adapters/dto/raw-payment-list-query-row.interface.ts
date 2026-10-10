@@ -1,3 +1,5 @@
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
+
 export interface RawPaymentListQueryRow {
   id: number;
   orderId: number;
@@ -7,7 +9,7 @@ export interface RawPaymentListQueryRow {
   amount: number;
   currency: string;
   status: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethodType;
   transactionId: string | null;
   gatewayPaymentIntentId?: string | null;
   failureReason?: string | null;

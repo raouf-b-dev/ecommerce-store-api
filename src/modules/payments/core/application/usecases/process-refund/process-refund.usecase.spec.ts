@@ -14,6 +14,8 @@ import { InfrastructureError } from '../../../../../../shared-kernel/domain/exce
 import { PaymentProvider } from '../../ports/payment-provider';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
@@ -223,6 +225,8 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Payment provider other-provider does not match active provider stripe',
     );
+    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_PROVIDER_MISMATCH);
     expect(defaultProvider.refund).not.toHaveBeenCalled();
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
@@ -256,7 +260,7 @@ describe('ProcessRefundUseCase', () => {
       InfrastructureError,
     );
     expect(result.error).toBe(providerError);
-    expect(result.error?.retryable).toBe(true);
+    expect(result.error.retryable).toBe(true);
   });
 
   it('yields retryable === false when provider returns a non-retryable error', async () => {
@@ -289,6 +293,6 @@ describe('ProcessRefundUseCase', () => {
       InfrastructureError,
     );
     expect(result.error).toBe(providerError);
-    expect(result.error?.retryable).toBe(false);
+    expect(result.error.retryable).toBe(false);
   });
 });

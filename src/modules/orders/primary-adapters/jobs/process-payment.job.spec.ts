@@ -26,6 +26,7 @@ describe('ProcessPaymentStep', () => {
     userName: 'Test User',
     userEmail: 'test@example.com',
     status: 'PENDING_PAYMENT',
+    paymentMethod: PaymentMethodType.CARD,
     shippingAddress: '1 Market St',
     items: [],
     subtotal: 25.5,
@@ -42,7 +43,6 @@ describe('ProcessPaymentStep', () => {
     cartId: 100,
     userId: 10,
     orderId: 1,
-    paymentMethod: PaymentMethodType.CARD,
     shippingAddress: {
       id: null,
       firstName: 'Test',

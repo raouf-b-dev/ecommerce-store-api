@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
 import { PaymentRepository } from '../../../core/domain/repositories/payment.repository';
@@ -11,6 +12,7 @@ import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundEntity } from '../../orm/refund.schema';
 import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
+import { isPostgresErrorCode } from '../../../../../infrastructure/database/postgres-error.utils';
 
 @Injectable()
 export class PostgresPaymentRepository implements PaymentRepository {
@@ -153,6 +155,13 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(PaymentMapper.toDomain(savedPayment));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
+      if (isPostgresErrorCode(error, '23505')) {
+        return ErrorFactory.RepositoryError('Payment conflict', {
+          cause: error,
+          status: StatusCode.CONFLICT,
+          retryable: true,
+        });
+      }
       return ErrorFactory.RepositoryError('Failed to save payment', error);
     }
   }

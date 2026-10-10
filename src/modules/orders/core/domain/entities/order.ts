@@ -13,18 +13,17 @@ import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
-
-function parsePaymentMethodType(value: unknown): PaymentMethodType | null {
-  if (value === PaymentMethodType.CARD) return PaymentMethodType.CARD;
-  return null;
-}
+import {
+  PaymentMethod,
+  PaymentMethodType,
+} from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { toErrorMessage } from '../../../../../shared-kernel/infra/lang/error.utils';
 
 export interface OrderProps {
   id: number | null;
   userId: number;
   paymentId: number | null;
-  paymentMethod: PaymentMethodType | string;
+  paymentMethod: PaymentMethodType;
   shippingAddressId: number | null;
   items: OrderItemProps[];
   shippingAddress: ShippingAddressProps;
@@ -52,17 +51,10 @@ export class Order implements IOrder {
     const validationResult = this.validateProps(props);
     if (validationResult.isFailure) throw validationResult.error;
 
-    const parsedMethod = parsePaymentMethodType(props.paymentMethod);
-    if (parsedMethod === null) {
-      throw new DomainError(
-        `Invalid payment method: ${String(props.paymentMethod)}`,
-      );
-    }
-
     this._id = props.id || null;
     this._userId = props.userId;
     this._paymentId = props.paymentId || null;
-    this._paymentMethod = parsedMethod;
+    this._paymentMethod = props.paymentMethod;
     this._shippingAddressId = props.shippingAddressId || null;
     this._items = props.items.map((item) => new OrderItem(item));
     this._shippingAddress = ShippingAddress.fromPrimitives(
@@ -91,10 +83,10 @@ export class Order implements IOrder {
     if (!props.paymentMethod) {
       return ErrorFactory.DomainError('Payment method is required');
     }
-    if (parsePaymentMethodType(props.paymentMethod) === null) {
-      return ErrorFactory.DomainError(
-        `Invalid payment method: ${String(props.paymentMethod)}`,
-      );
+    try {
+      new PaymentMethod(props.paymentMethod);
+    } catch (error) {
+      return ErrorFactory.DomainError(toErrorMessage(error), error);
     }
 
     return Result.success(undefined);

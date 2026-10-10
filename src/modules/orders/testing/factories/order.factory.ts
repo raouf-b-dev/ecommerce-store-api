@@ -48,17 +48,9 @@ export class OrderTestFactory {
     return { ...baseOrder, ...overrides };
   }
 
-  static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
+  static createPendingPaymentOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      status: OrderStatus.CONFIRMED,
-      paymentId: 1,
-      ...overrides,
-    });
-  }
-
-  static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      status: OrderStatus.CANCELLED,
+      status: OrderStatus.PENDING_PAYMENT,
       ...overrides,
     });
   }
@@ -66,7 +58,14 @@ export class OrderTestFactory {
   static createPaymentFailedOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PAYMENT_FAILED,
-      paymentId: null,
+      ...overrides,
+    });
+  }
+
+  static createConfirmedOrder(overrides?: Partial<IOrder>): IOrder {
+    return this.createMockOrder({
+      status: OrderStatus.CONFIRMED,
+      paymentId: 1,
       ...overrides,
     });
   }
@@ -95,10 +94,9 @@ export class OrderTestFactory {
     });
   }
 
-  static createRefundedOrder(overrides?: Partial<IOrder>): IOrder {
+  static createCancelledOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      status: OrderStatus.REFUNDED,
-      paymentId: 1,
+      status: OrderStatus.CANCELLED,
       ...overrides,
     });
   }
@@ -115,48 +113,6 @@ export class OrderTestFactory {
     });
   }
 
-  static createPendingPaymentOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createMockOrder({
-      status: OrderStatus.PENDING_PAYMENT,
-      paymentId: null,
-      ...overrides,
-    });
-  }
-
-  static createPendingOrder(overrides?: Partial<IOrder>): IOrder {
-    return this.createPendingPaymentOrder(overrides);
-  }
-
-  static createOrderWithItems(
-    items: Array<{
-      productId: number;
-      productName: string;
-      quantity: number;
-      unitPrice: number;
-      currency?: string;
-    }>,
-    overrides?: Partial<IOrder>,
-  ): IOrder {
-    const orderItems = items.map((item, index) => ({
-      id: index + 1,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      lineTotal: item.quantity * item.unitPrice,
-      currency: item.currency || 'USD',
-    }));
-
-    const subtotal = orderItems.reduce((sum, item) => sum + item.lineTotal, 0);
-
-    return this.createMockOrder({
-      items: orderItems,
-      subtotal,
-      totalPrice: subtotal,
-      ...overrides,
-    });
-  }
-
   static createMultiItemOrder(itemCount: number = 3): IOrder {
     const items = Array.from({ length: itemCount }, (_, i) => ({
       id: i + 1,
@@ -169,12 +125,13 @@ export class OrderTestFactory {
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+    const totalPrice = subtotal + 5; // + shipping
 
     return this.createMockOrder({
       items,
       subtotal,
-      shippingCost: 0,
-      totalPrice: subtotal,
+      shippingCost: 5,
+      totalPrice,
     });
   }
 

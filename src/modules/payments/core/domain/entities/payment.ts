@@ -37,8 +37,8 @@ export interface PaymentProps {
   provider: PaymentProviderId;
   status: PaymentStatusType;
   transactionId: string | null;
-  gatewayPaymentIntentId: string | null; // Stripe/PayPal payment intent ID
-  gatewayClientSecret: string | null; // Client secret for frontend confirmation
+  gatewayPaymentIntentId: string | null;
+  gatewayClientSecret: string | null;
   paymentMethodInfo: string | null;
   refundedAmount: number;
   refunds: RefundProps[];
@@ -107,9 +107,6 @@ export class Payment implements IPayment {
     if (!props.orderId) {
       return ErrorFactory.DomainError('Order ID is required');
     }
-    if (!props.provider) {
-      return ErrorFactory.DomainError('Payment provider is required');
-    }
     if (props.amount < 0) {
       return ErrorFactory.DomainError('Payment amount cannot be negative');
     }
@@ -143,6 +140,10 @@ export class Payment implements IPayment {
 
   get amount(): number {
     return this._amount.amount;
+  }
+
+  get money(): Money {
+    return this._amount;
   }
 
   get currency(): string {
@@ -210,7 +211,7 @@ export class Payment implements IPayment {
 
   /**
    * Set the payment intent details from gateway response.
-   * Called after creating a payment intent with Stripe/PayPal.
+   * Called after creating a payment intent.
    */
   setPaymentIntent(
     paymentIntentId: string,

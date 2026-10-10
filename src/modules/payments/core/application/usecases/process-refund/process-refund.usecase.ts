@@ -14,6 +14,8 @@ import { PaymentStatusType } from '../../../domain/value-objects/payment-status'
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ProcessRefundCommand } from '../../commands/process-refund.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
@@ -52,6 +54,10 @@ export class ProcessRefundUseCase extends UseCase<
     if (!payment.providerId.equals(this.paymentProvider.id)) {
       return ErrorFactory.UseCaseError(
         `Payment provider ${payment.provider} does not match active provider ${this.paymentProvider.id.value}`,
+        {
+          status: StatusCode.CONFLICT,
+          code: ErrorCode.PAYMENT_PROVIDER_MISMATCH,
+        },
       );
     }
 

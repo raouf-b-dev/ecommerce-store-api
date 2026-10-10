@@ -237,10 +237,22 @@ describe('Order', () => {
 
   describe('validation', () => {
     it('rejects an unknown payment method', () => {
+      const validProps = OrderTestFactory.createOrderProps();
       expect(() => {
-        OrderTestFactory.createDomainOrder({
-          paymentMethod: 'UNKNOWN_METHOD',
-        });
+        Reflect.construct(Order, [
+          {
+            ...validProps,
+            paymentMethod: 'UNKNOWN_METHOD',
+          },
+        ]);
+      }).toThrow(DomainError);
+      expect(() => {
+        Reflect.construct(Order, [
+          {
+            ...validProps,
+            paymentMethod: 'UNKNOWN_METHOD',
+          },
+        ]);
       }).toThrow('Invalid payment method: UNKNOWN_METHOD');
     });
   });

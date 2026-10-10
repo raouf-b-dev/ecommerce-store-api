@@ -18,6 +18,7 @@ export const ErrorCode = {
   CURRENCY_INVALID: 'CURRENCY_INVALID',
   CURRENCY_MISMATCH: 'CURRENCY_MISMATCH',
   QUANTITY_INVALID: 'QUANTITY_INVALID',
+  PAYMENT_PROVIDER_MISMATCH: 'PAYMENT_PROVIDER_MISMATCH',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

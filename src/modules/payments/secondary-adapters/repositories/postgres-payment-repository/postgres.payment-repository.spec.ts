@@ -18,6 +18,7 @@ import {
 } from '../../../../../testing/mocks/typeorm.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
+import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
 import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
 
@@ -127,6 +128,27 @@ describe('PostgresPaymentRepository', () => {
         RepositoryError,
         dbError,
       );
+    });
+
+    it('should map Postgres 23505 error to a RepositoryError with status CONFLICT and retryable true', async () => {
+      const dbError = Object.assign(
+        new Error('duplicate key value violates unique constraint'),
+        { code: '23505' },
+      );
+      const paymentProps = PaymentTestFactory.createMockPayment();
+      const payment = Payment.fromPrimitives(paymentProps);
+
+      mockDataSource.transaction.mockRejectedValue(dbError);
+
+      const result = await repository.save(payment);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Payment conflict',
+        RepositoryError,
+      );
+      expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+      expect(result.error.retryable).toBe(true);
     });
   });
 

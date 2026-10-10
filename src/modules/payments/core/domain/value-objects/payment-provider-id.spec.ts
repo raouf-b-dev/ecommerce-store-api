@@ -11,11 +11,11 @@ describe('PaymentProviderId', () => {
     expect(result.value.toString()).toBe('stripe');
   });
 
-  it('accepts alphanumeric characters, dashes, and underscores', () => {
-    const result = PaymentProviderId.create('provider_123-abc');
+  it('accepts alphanumeric characters and hyphens', () => {
+    const result = PaymentProviderId.create('provider-123-abc');
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value.value).toBe('provider_123-abc');
+    expect(result.value.value).toBe('provider-123-abc');
   });
 
   it('compares equality based on value', () => {
@@ -41,8 +41,8 @@ describe('PaymentProviderId', () => {
     );
   });
 
-  it('fails when value is empty or whitespace', () => {
-    const result = PaymentProviderId.create('   ');
+  it('fails when value is empty', () => {
+    const result = PaymentProviderId.create('');
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -51,12 +51,28 @@ describe('PaymentProviderId', () => {
     );
   });
 
-  it('fails when value has uppercase or invalid characters', () => {
-    const result = PaymentProviderId.create('Invalid Provider!');
+  it('fails without trimming when value contains whitespace', () => {
+    const result = PaymentProviderId.create(' stripe ');
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      "Invalid payment provider ID format: 'Invalid Provider!'",
+      "Invalid payment provider ID format: ' stripe '",
+      DomainError,
+    );
+  });
+
+  it('fails when value has underscores or uppercase characters', () => {
+    const withUnderscore = PaymentProviderId.create('stripe_eu');
+    ResultAssertionHelper.assertResultFailure(
+      withUnderscore,
+      "Invalid payment provider ID format: 'stripe_eu'",
+      DomainError,
+    );
+
+    const withUppercase = PaymentProviderId.create('STRIPE');
+    ResultAssertionHelper.assertResultFailure(
+      withUppercase,
+      "Invalid payment provider ID format: 'STRIPE'",
       DomainError,
     );
   });

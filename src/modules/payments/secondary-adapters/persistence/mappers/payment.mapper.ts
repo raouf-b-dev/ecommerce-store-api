@@ -90,7 +90,6 @@ export class PaymentCacheMapper {
     const primitives = domain.toPrimitives();
     return {
       ...primitives,
-      provider: primitives.provider,
       createdAt: primitives.createdAt.getTime(),
       updatedAt: primitives.updatedAt.getTime(),
       completedAt: primitives.completedAt
