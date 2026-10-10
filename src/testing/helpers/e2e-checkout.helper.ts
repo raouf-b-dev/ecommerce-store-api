@@ -97,13 +97,23 @@ export class E2eCheckoutHelper {
       request.set(options.headers);
     }
 
+    if (idempotencyKey) {
+      const hasIdempotencyHeader =
+        options.headers &&
+        Object.keys(options.headers).some(
+          (h) => h.toLowerCase() === 'idempotency-key',
+        );
+      if (!hasIdempotencyHeader) {
+        request.set('Idempotency-Key', idempotencyKey);
+      }
+    }
+
     const payload = options.body ?? {
       cartId,
       paymentMethod: PaymentMethodType.STRIPE,
       ...(includeShipping
         ? { shippingAddress: this.shippingAddress(customer) }
         : {}),
-      ...(idempotencyKey ? { idempotencyKey } : {}),
     };
 
     const response = await request.send(payload);

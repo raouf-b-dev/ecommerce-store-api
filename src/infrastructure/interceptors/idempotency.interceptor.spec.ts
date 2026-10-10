@@ -98,18 +98,49 @@ describe('IdempotencyInterceptor', () => {
     expect(next.handle).not.toHaveBeenCalled();
   });
 
-  it('should accept the legacy x-idempotency-key header', async () => {
+  it('rejects the request when only legacy x-idempotency-key header is provided', async () => {
     const clientKey = IdempotencyTestFactory.createClientKey('legacy');
     const { context } = createContext(clientKey, 'legacy');
     const next = createMockCallHandler(of({ ok: true }));
 
-    idempotencyStore.mockNewLock();
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(BadRequestException);
 
-    await firstValueFrom(interceptor.intercept(context, next));
+    expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
+    expect(next.handle).not.toHaveBeenCalled();
+  });
 
-    expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
-      expectedScopedKey(clientKey),
-    );
+  it('rejects the request when Idempotency-Key header is whitespace only', async () => {
+    const { context } = createContext('   ');
+    const next = createMockCallHandler(of({ ok: true }));
+
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
+    expect(next.handle).not.toHaveBeenCalled();
+  });
+
+  it('rejects the request when idempotencyKey is only sent in the body', async () => {
+    const request = createMockRequestWithUser(user, {
+      method: 'POST',
+      headers: {},
+      body: { idempotencyKey: 'body-only-key' },
+      path: `/v1${routePath}`,
+      route: { path: routePath },
+    });
+    const response = createMockResponse();
+    const context = createMockExecutionContext(request, response);
+    const next = createMockCallHandler(of({ ok: true }));
+
+    await expect(
+      firstValueFrom(interceptor.intercept(context, next)),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
+    expect(next.handle).not.toHaveBeenCalled();
   });
 
   it('should throw ConflictException with Retry-After when in progress', async () => {

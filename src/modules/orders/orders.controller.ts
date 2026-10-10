@@ -105,14 +105,8 @@ export class OrdersController {
   })
   @ApiHeader({
     name: 'Idempotency-Key',
-    description:
-      'Client idempotency key (also accepted as x-idempotency-key or body idempotencyKey). Required.',
+    description: 'Client idempotency key. Required.',
     required: true,
-  })
-  @ApiHeader({
-    name: 'x-idempotency-key',
-    description: 'Legacy alias for Idempotency-Key.',
-    required: false,
   })
   @ApiHeader({
     name: 'Retry-After',
@@ -204,14 +198,8 @@ export class OrdersController {
   })
   @ApiHeader({
     name: 'Idempotency-Key',
-    description:
-      'Client idempotency key (also accepted as x-idempotency-key or body idempotencyKey). Required.',
+    description: 'Client idempotency key. Required.',
     required: true,
-  })
-  @ApiHeader({
-    name: 'x-idempotency-key',
-    description: 'Legacy alias for Idempotency-Key.',
-    required: false,
   })
   @ApiHeader({
     name: 'Retry-After',

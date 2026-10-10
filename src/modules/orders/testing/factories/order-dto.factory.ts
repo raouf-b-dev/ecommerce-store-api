@@ -47,7 +47,6 @@ export class OrderDtoTestFactory {
       paymentMethod: commandFields.paymentMethod,
       customerNotes: commandFields.customerNotes,
       shippingAddress,
-      idempotencyKey: 'checkout-test-key',
       ...overrides,
     };
   }

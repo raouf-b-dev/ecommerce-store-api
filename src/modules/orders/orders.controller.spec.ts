@@ -167,6 +167,45 @@ describe('OrdersController', () => {
     });
   });
 
+  it('documents Idempotency-Key header as required and omits legacy x-idempotency-key header in Swagger', () => {
+    const rawParams: unknown = Reflect.getMetadata(
+      'swagger/apiParameters',
+      OrdersController.prototype.checkout,
+    );
+    expect(Array.isArray(rawParams)).toBe(true);
+    const params = Array.isArray(rawParams) ? rawParams : [];
+    const idempotencyKeyHeader = params.find(
+      (param: unknown) =>
+        typeof param === 'object' &&
+        param !== null &&
+        'name' in param &&
+        param.name === 'Idempotency-Key',
+    );
+    expect(idempotencyKeyHeader).toMatchObject({
+      in: 'header',
+      required: true,
+    });
+
+    const legacyHeader = params.find(
+      (param: unknown) =>
+        typeof param === 'object' &&
+        param !== null &&
+        'name' in param &&
+        param.name === 'x-idempotency-key',
+    );
+    expect(legacyHeader).toBeUndefined();
+  });
+
+  it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {
+    const rawProps: unknown = Reflect.getMetadata(
+      'swagger/apiModelPropertiesArray',
+      CheckoutDto.prototype,
+    );
+    expect(Array.isArray(rawProps)).toBe(true);
+    const props = Array.isArray(rawProps) ? rawProps : [];
+    expect(props).not.toContain(':idempotencyKey');
+  });
+
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
     const res = await controller.findOne(mockOrder.id!, callerContext);
     expect(getOrderUseCase.execute).toHaveBeenCalledWith({
