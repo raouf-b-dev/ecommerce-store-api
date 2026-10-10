@@ -21,6 +21,7 @@ In your final message give: what changed, the commands you ran with results, ope
 9. Skip authorization on owned resources. Use cases take `CallerContext` and use `OwnedResourceAccessPolicy`; jobs and gateways pass `SYSTEM_CALLER_CONTEXT`.
 10. Ship a behavior change without co-located `*.spec.ts` covering success, failure, and authorization paths.
 11. Run without explicit user approval: `git push`, `npm publish`, `migration:run` or `migration:revert`, `rm -rf` or bulk deletes, or anything that changes production config. Never edit an applied migration.
+12. Use `X-` prefixed header names or compatibility aliases. Use standard header names without the `X-` prefix and no compatibility aliases.
 
 Stop and ask when a security or data-integrity decision is ambiguous.
 

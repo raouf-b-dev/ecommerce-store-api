@@ -159,7 +159,6 @@ describe('Checkout idempotency (e2e)', () => {
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
       HttpErrorAssertionHelper.assertErrorContract(response, {
         statusCode: HttpStatus.BAD_REQUEST,
-        messageContains: 'Idempotency-Key is required',
         code: ErrorCode.IDEMPOTENCY_KEY_REQUIRED,
       });
       expect(response.body.errors).toEqual(['Idempotency-Key is required']);

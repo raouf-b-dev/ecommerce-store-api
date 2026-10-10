@@ -28,18 +28,10 @@ import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/paym
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
 import { DECORATORS } from '@nestjs/swagger';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
 import { ResultAssertionHelper } from '../../testing';
 
-interface HeaderParamMeta {
-  name: string;
-  in: string;
-  required?: boolean;
-}
-
-function findHeaderParam(
-  target: object,
-  paramName: string,
-): HeaderParamMeta | undefined {
+function findHeaderParam(target: object, paramName: string): unknown {
   const rawParams: unknown = Reflect.getMetadata(
     DECORATORS.API_PARAMETERS,
     target,
@@ -48,13 +40,8 @@ function findHeaderParam(
     return undefined;
   }
   return rawParams.find(
-    (param: unknown): param is HeaderParamMeta =>
-      typeof param === 'object' &&
-      param !== null &&
-      'name' in param &&
-      'in' in param &&
-      param.name === paramName &&
-      param.in === 'header',
+    (param: unknown) =>
+      isRecord(param) && param.name === paramName && param.in === 'header',
   );
 }
 
