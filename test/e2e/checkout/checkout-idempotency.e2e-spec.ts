@@ -24,6 +24,8 @@ import {
 } from 'src/testing/helpers/e2e-test-app.helper';
 import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 import { IdempotencyTestFactory } from 'src/testing/factories/idempotency.factory';
+import { ErrorCode } from 'src/shared-kernel/domain/exceptions/error-code';
+import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 
 describe('Checkout idempotency (e2e)', () => {
   let app: INestApplication;
@@ -103,26 +105,95 @@ describe('Checkout idempotency (e2e)', () => {
     expect(afterCount - beforeCount).toBe(1);
   }, 120_000);
 
-  it('replays with the legacy x-idempotency-key header', async () => {
+  it.each([
+    {
+      scenario: 'Idempotency-Key header is missing',
+      buildOptions: () => ({
+        omitIdempotencyKey: true,
+      }),
+    },
+    {
+      scenario: 'only legacy x-idempotency-key header is sent',
+      buildOptions: () => ({
+        headers: IdempotencyTestFactory.createHeaders(
+          IdempotencyTestFactory.createClientKey('legacy-only'),
+          'legacy',
+        ),
+        omitIdempotencyKey: true,
+      }),
+    },
+    {
+      scenario: 'Idempotency-Key header is empty or whitespace',
+      buildOptions: () => ({
+        headers: { 'Idempotency-Key': '   ' },
+        omitIdempotencyKey: true,
+      }),
+    },
+    {
+      scenario: 'idempotencyKey is sent in body without header',
+      buildOptions: (cartId: number) => ({
+        omitIdempotencyKey: true,
+        body: {
+          cartId,
+          paymentMethod: PaymentMethodType.STRIPE,
+          idempotencyKey: IdempotencyTestFactory.createClientKey('body-only'),
+        },
+      }),
+    },
+  ])(
+    'returns 400 IDEMPOTENCY_KEY_REQUIRED when $scenario',
+    async ({ buildOptions }) => {
+      const cartId = await E2eCheckoutHelper.createCartWithItem(
+        http,
+        customer.accessToken,
+        product.id,
+      );
+
+      const response = await E2eCheckoutHelper.checkout(
+        http,
+        customer,
+        cartId,
+        buildOptions(cartId),
+      );
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.BAD_REQUEST,
+        code: ErrorCode.IDEMPOTENCY_KEY_REQUIRED,
+      });
+      expect(response.body.errors).toEqual(['Idempotency-Key is required']);
+    },
+    120_000,
+  );
+
+  it('returns 400 VALIDATION_FAILED when header is present but body contains stripped idempotencyKey', async () => {
     const cartId = await E2eCheckoutHelper.createCartWithItem(
       http,
       customer.accessToken,
       product.id,
     );
-    const key = IdempotencyTestFactory.createClientKey('replay-legacy');
-    const headers = IdempotencyTestFactory.createHeaders(key, 'legacy');
+    const key = IdempotencyTestFactory.createClientKey('valid-header');
+    const headers = IdempotencyTestFactory.createHeaders(key, 'standard');
 
-    const first = await E2eCheckoutHelper.checkout(http, customer, cartId, {
+    const response = await E2eCheckoutHelper.checkout(http, customer, cartId, {
       headers,
+      body: {
+        cartId,
+        paymentMethod: PaymentMethodType.STRIPE,
+        shippingAddress: E2eCheckoutHelper.shippingAddress(customer),
+        idempotencyKey: 'legacy-body-key',
+      },
     });
-    expect(first.status).toBeLessThan(300);
-    expect(first.body.orderId).toBeGreaterThan(0);
 
-    const replay = await E2eCheckoutHelper.checkout(http, customer, cartId, {
-      headers,
+    expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    HttpErrorAssertionHelper.assertErrorContract(response, {
+      statusCode: HttpStatus.BAD_REQUEST,
+      code: ErrorCode.VALIDATION_FAILED,
+      hasValidationErrors: true,
     });
-    expect(replay.status).toBeLessThan(300);
-    expect(replay.body.orderId).toBe(first.body.orderId);
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining('idempotencyKey')]),
+    );
   }, 120_000);
 
   it('isolates the same client key across different users', async () => {
@@ -215,7 +286,7 @@ describe('Checkout idempotency (e2e)', () => {
       customer.accessToken,
     );
     const key = IdempotencyTestFactory.createClientKey('release');
-    const headers = IdempotencyTestFactory.createHeaders(key, 'legacy');
+    const headers = IdempotencyTestFactory.createHeaders(key, 'standard');
 
     const failed = await E2eCheckoutHelper.checkout(http, customer, 0, {
       headers,

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { HttpStatus } from '@nestjs/common';
+import { IDEMPOTENCY_KEY_HEADER } from 'src/shared-kernel/infra/http/request.helpers';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {
   AuthSession,
@@ -97,13 +98,23 @@ export class E2eCheckoutHelper {
       request.set(options.headers);
     }
 
+    if (idempotencyKey) {
+      const hasIdempotencyHeader =
+        options.headers &&
+        Object.keys(options.headers).some(
+          (h) => h.toLowerCase() === IDEMPOTENCY_KEY_HEADER,
+        );
+      if (!hasIdempotencyHeader) {
+        request.set('Idempotency-Key', idempotencyKey);
+      }
+    }
+
     const payload = options.body ?? {
       cartId,
       paymentMethod: PaymentMethodType.STRIPE,
       ...(includeShipping
         ? { shippingAddress: this.shippingAddress(customer) }
         : {}),
-      ...(idempotencyKey ? { idempotencyKey } : {}),
     };
 
     const response = await request.send(payload);

@@ -77,7 +77,7 @@ Checkout is a multi-step SAGA: **Validate → Reserve Stock → Process Payment 
 
 ### Idempotency (Redis-Backed)
 
-`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
+`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients must send the `Idempotency-Key` header (the header is the only source). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/decorators/`, `src/infrastructure/interceptors/`
 

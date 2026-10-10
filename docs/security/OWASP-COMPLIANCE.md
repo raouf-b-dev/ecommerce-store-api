@@ -202,7 +202,7 @@ High-risk endpoints (`/authentication/login`, `/authentication/register`, `/auth
 
 **Control Implementation:**
 
-1. **Distributed Idempotency Protection:** High-impact mutation routes (such as order checkout) are decorated with `@Idempotent()`. A Redis-backed store uses atomic `SET NX` locks keyed by authenticated `userId` + HTTP method + route + client key (`Idempotency-Key` or legacy `x-idempotency-key`; body `idempotencyKey` remains a fallback). Completed responses are replayed; concurrent in-progress duplicates return HTTP 409 with `Retry-After`. Redis errors fail closed with HTTP 503. This covers the HTTP checkout command only: not the BullMQ worker/SAGA chain.
+1. **Distributed Idempotency Protection:** High-impact mutation routes (such as order checkout) are decorated with `@Idempotent()`. A Redis-backed store uses atomic `SET NX` locks keyed by authenticated `userId` + HTTP method + route + client key (`Idempotency-Key` header only). Completed responses are replayed; concurrent in-progress duplicates return HTTP 409 with `Retry-After`. Redis errors fail closed with HTTP 503. This covers the HTTP checkout command only: not the BullMQ worker/SAGA chain.
 2. **Inventory Lock Conservation:** Inventory decrement operations during checkout utilize PostgreSQL row-level pessimistic write locking (`SELECT ... FOR UPDATE`), ensuring concurrent transactions cannot reduce stock below zero.
 3. **SAGA Compensation Mechanics:** Checkout processes managed via BullMQ feature failure listeners (`CheckoutFailureListener`) that execute compensating transactions (refunding authorizations, releasing stock reservations) if downstream steps fail.
 
