@@ -93,7 +93,7 @@ Payments use a gateway **port** and strategy resolver. The Stripe adapter is a *
 
 - **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
 - **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 

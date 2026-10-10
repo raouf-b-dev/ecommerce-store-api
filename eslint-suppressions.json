@@ -359,11 +359,6 @@
       "count": 1
     }
   },
-  "src/modules/payments/primary-adapters/jobs/simulate-mock-payment-webhook.job.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "src/modules/payments/primary-adapters/processors/payments.processor.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5

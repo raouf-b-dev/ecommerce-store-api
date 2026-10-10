@@ -11,6 +11,7 @@ import { PaymentStatusType } from '../../../domain/value-objects/payment-status'
 import { Payment } from '../../../domain/entities/payment';
 import { ResultAssertionHelper, TEST_IDS } from '../../../../../../testing';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ServiceError } from '../../../../../../shared-kernel/domain/exceptions/service-error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import {
@@ -32,7 +33,7 @@ describe('HandlePaymentWebhookService', () => {
     const payment = PaymentTestFactory.createDomainPayment({
       id: TEST_IDS.payment,
       orderId: TEST_IDS.order,
-      amount: 50,
+      amount: 5000,
       currency: 'USD',
       status,
       gatewayPaymentIntentId: paymentIntentId,
@@ -155,6 +156,36 @@ describe('HandlePaymentWebhookService', () => {
 
       ResultAssertionHelper.assertResultFailure(result, 'Database failure');
       expect(paymentEventsScheduler.emitPaymentFailed).not.toHaveBeenCalled();
+    });
+
+    it('returns a retryable failure when payment is not found by gateway payment intent id', async () => {
+      paymentRepository.findByGatewayPaymentIntentId.mockResolvedValue(
+        ErrorFactory.RepositoryError(
+          `Payment not found for intent: ${paymentIntentId}`,
+        ),
+      );
+
+      const dto = PaymentDtoTestFactory.createPaymentWebhookDto({
+        paymentIntentId,
+        eventType: PaymentEventType.SUCCEEDED,
+        transactionId: 'txn_100',
+      });
+      const result = await service.execute(dto);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Payment not found for intent: ${paymentIntentId}`,
+        RepositoryError,
+      );
+      expect(result.isFailure).toBe(true);
+      if (!isFailure(result)) {
+        throw new Error('Expected failure');
+      }
+      expect(result.error.retryable).toBe(true);
+      expect(paymentRepository.update).not.toHaveBeenCalled();
+      expect(
+        paymentEventsScheduler.emitPaymentCompleted,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -392,7 +423,7 @@ describe('HandlePaymentWebhookService', () => {
 
   describe('amount and currency validation', () => {
     it('amount mismatch is rejected with no update and no emit', async () => {
-      givenPayment(PaymentStatusType.PENDING, { amount: 50 });
+      givenPayment(PaymentStatusType.PENDING, { amount: 5000 });
 
       const dto = PaymentDtoTestFactory.createPaymentWebhookDto({
         paymentIntentId,

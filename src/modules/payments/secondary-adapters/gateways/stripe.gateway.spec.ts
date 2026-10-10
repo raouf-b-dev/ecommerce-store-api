@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq';
 import { StripeGateway } from './stripe.gateway';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
+import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import {
   MockEnvConfigService,
   createMockQueue,
@@ -12,11 +13,13 @@ describe('StripeGateway', () => {
   let gateway: StripeGateway;
   let mockQueue: jest.Mocked<Queue>;
   let mockConfigService: MockEnvConfigService;
+  let jobConfigService: JobConfigService;
 
   beforeEach(() => {
     mockQueue = createMockQueue('payments');
     mockConfigService = new MockEnvConfigService();
-    gateway = new StripeGateway(mockQueue, mockConfigService);
+    jobConfigService = new JobConfigService();
+    gateway = new StripeGateway(mockQueue, mockConfigService, jobConfigService);
   });
 
   it('returns STRIPE payment method type', () => {
@@ -43,10 +46,16 @@ describe('StripeGateway', () => {
         paymentIntentId: result.value.paymentIntentId,
         transactionId: result.value.paymentIntentId,
         metadata: { orderId: '1', cartId: '2' },
-        amount: 100,
+        amountMinor: 100,
         currency: 'USD',
       },
-      { delay: 1000 },
+      {
+        ...jobConfigService.getJobOptions(
+          JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+          result.value.paymentIntentId,
+        ),
+        delay: 1000,
+      },
     );
   });
 

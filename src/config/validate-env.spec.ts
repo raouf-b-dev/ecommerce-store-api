@@ -1,5 +1,6 @@
 import { EnvError } from 'envalid';
 import {
+  assertNoMockPaymentAutoComplete,
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
   parseHttpOrigin,
@@ -71,6 +72,46 @@ describe('assertStripeWebhookSecret', () => {
   });
 });
 
+describe('assertNoMockPaymentAutoComplete', () => {
+  it.each(['development', 'test'])(
+    'allows mock auto-complete in %s',
+    (nodeEnv) => {
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'true'),
+      ).not.toThrow();
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, true),
+      ).not.toThrow();
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
+      ).not.toThrow();
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, false),
+      ).not.toThrow();
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
+    },
+  );
+
+  it.each(['production', 'staging'])(
+    'rejects mock auto-complete in %s',
+    (nodeEnv) => {
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv, 'true')).toThrow(
+        EnvError,
+      );
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv, true)).toThrow(
+        EnvError,
+      );
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
+      ).not.toThrow();
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, false),
+      ).not.toThrow();
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
+    },
+  );
+});
+
 describe('validateEnv', () => {
   const baseEnv: NodeJS.ProcessEnv = {
     NODE_ENV: 'development',
@@ -99,5 +140,17 @@ describe('validateEnv', () => {
   it('parses IS_DB_SYNCHRONIZE=false', () => {
     const validated = validateEnv({ ...baseEnv, IS_DB_SYNCHRONIZE: 'false' });
     expect(validated.IS_DB_SYNCHRONIZE).toBe(false);
+  });
+
+  it('rejects PAYMENT_MOCK_AUTO_COMPLETE=true in production', () => {
+    expect(() =>
+      validateEnv({
+        ...baseEnv,
+        NODE_ENV: 'production',
+        STRIPE_WEBHOOK_SECRET: 'whsec_test',
+        PUBLIC_BASE_URL: 'https://api.example.com',
+        PAYMENT_MOCK_AUTO_COMPLETE: 'true',
+      }),
+    ).toThrow(EnvError);
   });
 });

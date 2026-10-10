@@ -13,7 +13,7 @@ export interface SimulateMockPaymentWebhookProps {
   paymentIntentId: string;
   transactionId?: string;
   metadata?: Record<string, string>;
-  amount?: number;
+  amountMinor?: number;
   currency?: string;
 }
 
@@ -38,10 +38,10 @@ export class SimulateMockPaymentWebhookJob extends BaseJobHandler<
   protected async onExecute(
     job: Job<SimulateMockPaymentWebhookProps>,
   ): Promise<Result<PaymentWebhookResult, AppError>> {
-    const { paymentIntentId, transactionId, metadata, amount, currency } =
+    const { paymentIntentId, transactionId, metadata, amountMinor, currency } =
       job.data;
     this.logger.log(
-      `Processing simulated mock payment webhook for intent ${paymentIntentId}${amount && currency ? ` (${amount} ${currency})` : ''}`,
+      `Processing simulated mock payment webhook for intent ${paymentIntentId}${amountMinor && currency ? ` (${amountMinor} ${currency})` : ''}`,
     );
 
     const result = await this.handlePaymentWebhookService.execute({
@@ -49,6 +49,8 @@ export class SimulateMockPaymentWebhookJob extends BaseJobHandler<
       eventType: PaymentEventType.SUCCEEDED,
       transactionId: transactionId || paymentIntentId,
       metadata,
+      amountMinor,
+      currency,
     });
 
     if (isFailure(result)) {

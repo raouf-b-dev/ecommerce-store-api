@@ -73,7 +73,11 @@ export class HandlePaymentCompletedUseCase extends UseCase<
       );
     }
 
-    await this.orderRepository.save(order, expectedVersion);
+    const saveResult = await this.orderRepository.save(order, expectedVersion);
+    if (isFailure(saveResult)) {
+      return saveResult;
+    }
+
     this.logger.log(`Order ${orderId} confirmed after payment`);
 
     // 4. Schedule post-payment flow as a SEPARATE job (atomic, retriable independently)
