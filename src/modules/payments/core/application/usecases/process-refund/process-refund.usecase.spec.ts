@@ -1,6 +1,6 @@
 import {
-  MockPaymentGateway,
-  MockPaymentGatewayResolver,
+  MockPaymentProvider,
+  MockPaymentProviderResolver,
   MockPaymentRepository,
   PaymentEntityTestFactory,
 } from 'src/modules/payments/testing';
@@ -12,20 +12,20 @@ import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 
 describe('ProcessRefundUseCase', () => {
   let useCase: ProcessRefundUseCase;
   let paymentRepository: MockPaymentRepository;
-  let gatewayResolver: MockPaymentGatewayResolver;
-  let defaultGateway: MockPaymentGateway;
+  let providerResolver: MockPaymentProviderResolver;
+  let defaultProvider: MockPaymentProvider;
 
   beforeEach(async () => {
-    gatewayResolver = new MockPaymentGatewayResolver();
-    defaultGateway = gatewayResolver.getDefaultGateway();
-    defaultGateway.mockSuccessfulRefund('txn_refund_123');
+    providerResolver = new MockPaymentProviderResolver();
+    defaultProvider = providerResolver.getDefaultProvider();
+    defaultProvider.mockSuccessfulRefund('txn_refund_123');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,8 +35,8 @@ describe('ProcessRefundUseCase', () => {
           useClass: MockPaymentRepository,
         },
         {
-          provide: PaymentGatewayResolver,
-          useValue: gatewayResolver,
+          provide: PaymentProviderResolver,
+          useValue: providerResolver,
         },
         {
           provide: DomainEventPublisher,
@@ -51,7 +51,7 @@ describe('ProcessRefundUseCase', () => {
 
   afterEach(() => {
     paymentRepository.reset();
-    gatewayResolver.reset();
+    providerResolver.reset();
   });
 
   it('should fail if refund amount is zero or negative', async () => {
@@ -77,10 +77,10 @@ describe('ProcessRefundUseCase', () => {
     expect(paymentRepository.findById).not.toHaveBeenCalled();
   });
 
-  it('should process a refund successfully', async () => {
+  it('should process a refund successfully and pass idempotency key', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
-      amount: 100,
+      amount: 10000,
       refundedAmount: 0,
       transactionId: 'txn_123',
     });
@@ -103,6 +103,11 @@ describe('ProcessRefundUseCase', () => {
     expect(paymentRepository.findById).toHaveBeenCalledWith(123);
     const updatedPayment = result.value;
     expect(updatedPayment.refundedAmount).toBe(5000);
+    expect(defaultProvider.refund).toHaveBeenCalledWith({
+      providerReference: 'txn_123',
+      amount: expect.objectContaining({ amount: 5000, currency: 'USD' }),
+      idempotencyKey: 'refund-123-0',
+    });
   });
 
   it('should fail if payment is not found', async () => {
@@ -144,10 +149,10 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Refund amount exceeds remaining payment amount',
     );
-    expect(defaultGateway.refund).not.toHaveBeenCalled();
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
 
-  it('returns success idempotently without calling gateway if payment is already REFUNDED', async () => {
+  it('returns success idempotently without calling provider if payment is already REFUNDED', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
       amount: 100,
@@ -167,11 +172,11 @@ describe('ProcessRefundUseCase', () => {
     const result = await useCase.execute(command);
 
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(defaultGateway.refund).not.toHaveBeenCalled();
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
-  it('fails without calling gateway if payment cannot be refunded in current status', async () => {
+  it('fails without calling provider if payment cannot be refunded in current status', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
       amount: 100,
@@ -194,10 +199,10 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Payment cannot be refunded in current status',
     );
-    expect(defaultGateway.refund).not.toHaveBeenCalled();
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
 
-  it('propagates retryable === true when gateway fails with retryable InfrastructureError', async () => {
+  it('propagates retryable === true when provider fails with retryable InfrastructureError', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
       amount: 100,
@@ -208,7 +213,7 @@ describe('ProcessRefundUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
-    defaultGateway.refund.mockResolvedValueOnce(
+    defaultProvider.refund.mockResolvedValueOnce(
       ErrorFactory.InfrastructureError('Gateway network timeout', {
         retryable: true,
       }),
@@ -231,7 +236,7 @@ describe('ProcessRefundUseCase', () => {
     });
   });
 
-  it('yields retryable === false when gateway returns a success: false result', async () => {
+  it('yields retryable === false when provider returns a non-retryable error', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
       amount: 100,
@@ -242,11 +247,9 @@ describe('ProcessRefundUseCase', () => {
     const payment = PaymentMapper.toDomain(paymentEntity);
 
     paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
-    defaultGateway.refund.mockResolvedValueOnce(
-      Result.success({
-        success: false,
-        errorMessage: 'Card issuer declined refund',
-        status: PaymentStatusType.FAILED,
+    defaultProvider.refund.mockResolvedValueOnce(
+      ErrorFactory.InfrastructureError('Card issuer declined refund', {
+        retryable: false,
       }),
     );
 

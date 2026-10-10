@@ -1,14 +1,14 @@
-// src/modules/payments/infrastructure/gateways/stripe.gateway.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
-import { IPaymentGateway } from '../../core/domain/gateways/payment-gateway.interface';
-import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import {
-  PaymentResult,
-  PaymentIntentResult,
-} from '../../core/domain/gateways/payment-result';
+  PaymentProvider,
+  InitiatePaymentParams,
+  InitiatePaymentResult,
+  ProviderOperationResult,
+  RefundParams,
+} from '../../core/application/ports/payment-provider';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -17,28 +17,25 @@ import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { EnvConfigService } from '../../../../config/env-config.service';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
-export const MOCK_WEBHOOK_DELAY_MS = 1000;
+export const SIMULATED_WEBHOOK_DELAY_MS = 1000;
 
 @Injectable()
-export class StripeGateway implements IPaymentGateway {
-  private readonly logger = new Logger(StripeGateway.name);
+export class FakeStripeGateway extends PaymentProvider {
+  private readonly logger = new Logger(FakeStripeGateway.name);
 
   constructor(
     @InjectQueue('payments') private readonly paymentsQueue: Queue,
     private readonly envConfigService: EnvConfigService,
     private readonly jobConfigService: JobConfigService,
-  ) {}
-
-  getMethod(): PaymentMethodType {
-    return PaymentMethodType.STRIPE;
+  ) {
+    super();
   }
 
-  async createPaymentIntent(
-    amount: number,
-    currency: string,
-    metadata?: Record<string, string>,
-  ): Promise<Result<PaymentIntentResult, InfrastructureError>> {
+  async initiatePayment(
+    params: InitiatePaymentParams,
+  ): Promise<Result<InitiatePaymentResult, InfrastructureError>> {
     // STUB: Simulate Stripe PaymentIntent creation
     const paymentIntentId = `pi_${uuidv4().replace(/-/g, '')}`;
     const clientSecret = `${paymentIntentId}_secret_${uuidv4().substring(0, 24)}`;
@@ -51,20 +48,20 @@ export class StripeGateway implements IPaymentGateway {
           {
             paymentIntentId,
             transactionId: paymentIntentId,
-            metadata,
-            amountMinor: amount,
-            currency,
+            metadata: params.metadata,
+            amountMinor: params.amount.amount,
+            currency: params.amount.currency,
           },
           {
             ...this.jobConfigService.getJobOptions(
               JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
               paymentIntentId,
             ),
-            delay: MOCK_WEBHOOK_DELAY_MS,
+            delay: SIMULATED_WEBHOOK_DELAY_MS,
           },
         );
         this.logger.log(
-          `Scheduled mock payment webhook auto-completion for intent ${paymentIntentId} (${amount} ${currency}) with ${MOCK_WEBHOOK_DELAY_MS}ms delay`,
+          `Scheduled mock payment webhook auto-completion for intent ${paymentIntentId} (${params.amount.amount} ${params.amount.currency}) with ${SIMULATED_WEBHOOK_DELAY_MS}ms delay`,
         );
       } catch (error) {
         this.logger.error(
@@ -79,51 +76,48 @@ export class StripeGateway implements IPaymentGateway {
     }
 
     return Result.success({
-      paymentIntentId,
-      clientSecret,
+      providerReference: paymentIntentId,
       status: PaymentStatusType.PENDING,
+      nextAction: {
+        type: 'confirm_on_client',
+        clientSecret,
+      },
     });
   }
 
   authorize(
-    amount: number,
-    currency: string,
+    amount: Money,
     paymentMethodDetails?: string,
-  ): Promise<Result<PaymentResult, InfrastructureError>> {
+  ): Promise<Result<ProviderOperationResult, InfrastructureError>> {
+    void amount;
+    void paymentMethodDetails;
     // STUB: Simulate Stripe authorization
     return Promise.resolve(
       Result.success({
-        success: true,
+        providerReference: `stripe_pi_${uuidv4()}`,
         status: PaymentStatusType.AUTHORIZED,
-        transactionId: `stripe_pi_${uuidv4()}`,
-        metadata: {
-          method: 'Stripe',
-          amount,
-          currency,
-          details: paymentMethodDetails,
-        },
       }),
     );
   }
 
   capture(
-    transactionId: string,
-  ): Promise<Result<PaymentResult, InfrastructureError>> {
+    providerReference: string,
+    amount: Money,
+  ): Promise<Result<ProviderOperationResult, InfrastructureError>> {
+    void amount;
     // STUB: Simulate Stripe capture
     return Promise.resolve(
       Result.success({
-        success: true,
+        providerReference,
         status: PaymentStatusType.CAPTURED,
-        transactionId,
       }),
     );
   }
 
   refund(
-    transactionId: string,
-    amount: number,
-  ): Promise<Result<PaymentResult, InfrastructureError>> {
-    if (amount <= 0) {
+    params: RefundParams,
+  ): Promise<Result<ProviderOperationResult, InfrastructureError>> {
+    if (params.amount.amount <= 0) {
       return Promise.resolve(
         ErrorFactory.InfrastructureError(
           'Refund amount must be greater than zero',
@@ -133,12 +127,8 @@ export class StripeGateway implements IPaymentGateway {
     // STUB: Simulate Stripe refund
     return Promise.resolve(
       Result.success({
-        success: true,
+        providerReference: params.providerReference,
         status: PaymentStatusType.REFUNDED,
-        transactionId,
-        metadata: {
-          refundAmount: amount,
-        },
       }),
     );
   }

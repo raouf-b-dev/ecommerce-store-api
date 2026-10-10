@@ -329,18 +329,8 @@
       "count": 1
     }
   },
-  "src/modules/payments/core/application/usecases/create-payment/create-payment.usecase.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "src/modules/payments/core/application/usecases/verify-payment/verify-payment.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/domain/gateways/payment-result.ts": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },

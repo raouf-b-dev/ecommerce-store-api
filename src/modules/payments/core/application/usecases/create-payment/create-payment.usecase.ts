@@ -9,13 +9,14 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import {
   ORDER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { CreatePaymentCommand } from '../../commands/create-payment.command';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
 @Injectable()
 export class CreatePaymentUseCase extends UseCase<
@@ -25,7 +26,7 @@ export class CreatePaymentUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayResolver: PaymentGatewayResolver,
+    private readonly paymentProviderResolver: PaymentProviderResolver,
   ) {
     super();
   }
@@ -48,13 +49,20 @@ export class CreatePaymentUseCase extends UseCase<
       );
     }
 
-    const gateway = this.paymentGatewayResolver.getGateway(
+    const provider = this.paymentProviderResolver.getProvider(
       command.paymentMethod,
     );
 
-    const authResult = await gateway.authorize(
-      command.amount,
-      command.currency,
+    const moneyResult = Money.create(command.amount, command.currency);
+    if (isFailure(moneyResult)) {
+      return ErrorFactory.UseCaseError(
+        `Invalid payment amount: ${moneyResult.error.message}`,
+        moneyResult.error,
+      );
+    }
+
+    const authResult = await provider.authorize(
+      moneyResult.value,
       command.paymentMethodDetails
         ? JSON.stringify(command.paymentMethodDetails)
         : undefined,
@@ -67,7 +75,7 @@ export class CreatePaymentUseCase extends UseCase<
       );
     }
 
-    const paymentResult = authResult.value;
+    const { providerReference, status } = authResult.value;
 
     const payment = Payment.create(
       null,
@@ -81,23 +89,13 @@ export class CreatePaymentUseCase extends UseCase<
         : undefined,
     );
 
-    if (paymentResult.success) {
-      if (paymentResult.transactionId) {
-        if (paymentResult.status === PaymentStatusType.AUTHORIZED) {
-          payment.authorize(paymentResult.transactionId);
-        } else if (paymentResult.status === PaymentStatusType.CAPTURED) {
-          payment.authorize(paymentResult.transactionId);
-          payment.capture();
-        } else if (paymentResult.status === PaymentStatusType.COMPLETED) {
-          payment.complete(paymentResult.transactionId);
-        }
-      }
-    } else {
-      if (paymentResult.errorMessage) {
-        payment.fail(paymentResult.errorMessage);
-      } else {
-        payment.fail('Payment failed at gateway');
-      }
+    if (status === PaymentStatusType.AUTHORIZED) {
+      payment.authorize(providerReference);
+    } else if (status === PaymentStatusType.CAPTURED) {
+      payment.authorize(providerReference);
+      payment.capture();
+    } else if (status === PaymentStatusType.COMPLETED) {
+      payment.complete(providerReference);
     }
 
     const saveResult = await this.paymentRepository.save(payment);

@@ -8,11 +8,12 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Refund } from '../../../domain/entities/refund';
-import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ProcessRefundCommand } from '../../commands/process-refund.command';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
@@ -22,7 +23,7 @@ export class ProcessRefundUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayResolver: PaymentGatewayResolver,
+    private readonly paymentProviderResolver: PaymentProviderResolver,
     private readonly domainEventPublisher: DomainEventPublisher,
   ) {
     super();
@@ -60,48 +61,56 @@ export class ProcessRefundUseCase extends UseCase<
       );
     }
 
-    // 1. Get Gateway
-    const gateway = this.paymentGatewayResolver.getGateway(
+    if (payment.id === null) {
+      return ErrorFactory.UseCaseError('Payment has no ID');
+    }
+
+    // 1. Get Provider
+    const provider = this.paymentProviderResolver.getProvider(
       payment.paymentMethod,
     );
 
-    // 2. Refund via Gateway
-    // We need transaction ID to refund.
+    // 2. Refund via Provider
     if (!payment.transactionId) {
       return ErrorFactory.UseCaseError(
         'Cannot refund payment without transaction ID',
       );
     }
 
-    const gatewayResult = await gateway.refund(payment.transactionId, amount);
-    if (isFailure(gatewayResult)) {
+    const moneyResult = Money.create(amount, payment.currency);
+    if (isFailure(moneyResult)) {
       return ErrorFactory.UseCaseError(
-        `Gateway refund failed: ${gatewayResult.error.message}`,
-        {
-          cause: gatewayResult.error,
-          retryable: gatewayResult.error.retryable,
-        },
+        `Invalid refund amount: ${moneyResult.error.message}`,
+        moneyResult.error,
       );
     }
 
-    const refundResult = gatewayResult.value;
-    if (!refundResult.success) {
+    const idempotencyKey = `refund-${payment.id}-${payment.refunds.length}`;
+
+    const providerResult = await provider.refund({
+      providerReference: payment.transactionId,
+      amount: moneyResult.value,
+      idempotencyKey,
+    });
+
+    if (isFailure(providerResult)) {
       return ErrorFactory.UseCaseError(
-        `Gateway refund failed: ${refundResult.errorMessage || 'Unknown error'}`,
+        `Gateway refund failed: ${providerResult.error.message}`,
+        {
+          cause: providerResult.error,
+          retryable: providerResult.error.retryable,
+        },
       );
     }
 
     const refund = Refund.create(
       null,
-      payment.id!,
+      payment.id,
       amount,
       payment.currency,
       reason || 'Refund request',
     );
 
-    // We might need to set status to COMPLETED if that was the logic before
-    // The create method sets it to PENDING.
-    // Previous logic: status: 'COMPLETED'
     refund.markAsCompleted();
 
     const addRefundResult = payment.addRefund(refund);
@@ -111,7 +120,7 @@ export class ProcessRefundUseCase extends UseCase<
     if (isFailure(saveResult)) return saveResult;
 
     this.domainEventPublisher.publish('payment.refunded', {
-      paymentId: payment.id!,
+      paymentId: payment.id,
       refundId: refund.id,
     });
 

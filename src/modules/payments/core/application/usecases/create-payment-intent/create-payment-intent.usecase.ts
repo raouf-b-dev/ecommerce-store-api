@@ -8,8 +8,9 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { Payment } from '../../../domain/entities/payment';
-import { PaymentGatewayResolver } from '../../ports/payment-gateway-resolver';
+import { PaymentProviderResolver } from '../../ports/payment-provider-resolver';
 import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
 export interface CreatePaymentIntentResult {
   paymentId: number;
@@ -24,7 +25,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
 > {
   constructor(
     private readonly paymentRepository: PaymentRepository,
-    private readonly paymentGatewayResolver: PaymentGatewayResolver,
+    private readonly paymentProviderResolver: PaymentProviderResolver,
   ) {
     super();
   }
@@ -32,26 +33,37 @@ export class CreatePaymentIntentUseCase extends UseCase<
   async execute(
     dto: CreatePaymentIntentCommand,
   ): Promise<Result<CreatePaymentIntentResult, UseCaseError>> {
-    // 1. Get Gateway
-    const gateway = this.paymentGatewayResolver.getGateway(dto.paymentMethod);
-
-    // 2. Create Payment Intent via Gateway
-    const intentResult = await gateway.createPaymentIntent(
-      dto.amount,
-      dto.currency,
-      dto.metadata,
+    // 1. Get Provider
+    const provider = this.paymentProviderResolver.getProvider(
+      dto.paymentMethod,
     );
 
-    if (isFailure(intentResult)) {
+    // 2. Validate amount as Money
+    const moneyResult = Money.create(dto.amount, dto.currency);
+    if (isFailure(moneyResult)) {
       return ErrorFactory.UseCaseError(
-        `Failed to create payment intent: ${intentResult.error.message}`,
-        intentResult.error,
+        `Invalid payment amount: ${moneyResult.error.message}`,
+        moneyResult.error,
       );
     }
 
-    const { paymentIntentId, clientSecret } = intentResult.value;
+    // 3. Initiate Payment via Provider
+    const initiateResult = await provider.initiatePayment({
+      amount: moneyResult.value,
+      metadata: dto.metadata,
+    });
 
-    // 3. Create Payment Entity
+    if (isFailure(initiateResult)) {
+      return ErrorFactory.UseCaseError(
+        `Failed to create payment intent: ${initiateResult.error.message}`,
+        initiateResult.error,
+      );
+    }
+
+    const { providerReference, nextAction } = initiateResult.value;
+    const clientSecret = nextAction.clientSecret;
+
+    // 4. Create Payment Entity
     const payment = Payment.create(
       null,
       dto.orderId,
@@ -62,9 +74,9 @@ export class CreatePaymentIntentUseCase extends UseCase<
       dto.metadata ? JSON.stringify(dto.metadata) : undefined,
     );
 
-    // 4. Set Payment Intent Details
+    // 5. Set Payment Intent Details
     const setIntentResult = payment.setPaymentIntent(
-      paymentIntentId,
+      providerReference,
       clientSecret,
     );
 
@@ -75,7 +87,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
       );
     }
 
-    // 5. Save Payment
+    // 6. Save Payment
     const saveResult = await this.paymentRepository.save(payment);
 
     if (isFailure(saveResult)) {
@@ -85,8 +97,12 @@ export class CreatePaymentIntentUseCase extends UseCase<
       );
     }
 
+    if (saveResult.value.id === null) {
+      return ErrorFactory.UseCaseError('Payment was saved without an id');
+    }
+
     return Result.success({
-      paymentId: saveResult.value.id!,
+      paymentId: saveResult.value.id,
       clientSecret,
     });
   }
