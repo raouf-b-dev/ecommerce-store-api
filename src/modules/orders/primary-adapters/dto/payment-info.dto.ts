@@ -5,7 +5,7 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 
 export class PaymentMethodDto {
   @ApiProperty({
-    example: PaymentMethodType.STRIPE,
+    example: PaymentMethodType.CARD,
     description: 'Payment method',
     enum: PaymentMethodType,
   })

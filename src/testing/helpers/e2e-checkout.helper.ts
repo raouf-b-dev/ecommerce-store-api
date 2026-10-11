@@ -111,7 +111,7 @@ export class E2eCheckoutHelper {
 
     const payload = options.body ?? {
       cartId,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       ...(includeShipping
         ? { shippingAddress: this.shippingAddress(customer) }
         : {}),

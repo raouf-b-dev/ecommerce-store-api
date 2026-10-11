@@ -104,7 +104,7 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
     const order = Order.create({
       id: null,
       userId: seededData.customerUser.id,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddress: OrderTestFactory.createShippingAddressProps({
         id: null,
       }),

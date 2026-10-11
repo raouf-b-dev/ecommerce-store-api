@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class PaymentListItemResponseDto {
   @ApiProperty({ type: Number, example: 1 })
@@ -29,8 +30,11 @@ export class PaymentListItemResponseDto {
   @ApiProperty({ type: String, example: 'completed' })
   status!: string;
 
-  @ApiProperty({ type: String, example: 'stripe' })
-  paymentMethod!: string;
+  @ApiProperty({
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CARD,
+  })
+  paymentMethod!: PaymentMethodType;
 
   @ApiProperty({ type: String, example: 'txn_123' })
   transactionId!: string;

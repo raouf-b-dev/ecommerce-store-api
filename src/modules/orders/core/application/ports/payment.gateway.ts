@@ -41,7 +41,7 @@ export interface CreatePaymentIntentInput {
   currency: string;
   paymentMethod: PaymentMethodType;
   userId: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string>;
 }
 
 export interface PaymentIntentResult {
@@ -62,7 +62,7 @@ export abstract class PaymentGateway {
 
   abstract createPaymentIntent(
     input: CreatePaymentIntentInput,
-  ): Promise<Result<PaymentIntentResult, InfrastructureError>>;
+  ): Promise<Result<PaymentIntentResult, AppError>>;
 
   abstract processRefund(
     input: ProcessRefundInput,

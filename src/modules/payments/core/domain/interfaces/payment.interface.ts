@@ -10,6 +10,7 @@ export interface IPayment {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
+  provider: string;
   status: PaymentStatusType;
   transactionId: string | null;
   gatewayPaymentIntentId: string | null;

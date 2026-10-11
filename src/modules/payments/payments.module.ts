@@ -22,14 +22,12 @@ import { HandlePaymentWebhookService } from './core/application/services/handle-
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { CreatePaymentIntentUseCase } from './core/application/usecases/create-payment-intent/create-payment-intent.usecase';
 import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
-
 import { SeedDemoPaymentsUseCase } from './core/application/seed/seed-demo-payments.usecase';
 import { AuthenticationModule } from '../authentication/authentication.module';
-import { PaymentGatewayFactory } from './secondary-adapters/gateways/payment-gateway.factory';
-import { StripeGateway } from './secondary-adapters/gateways/stripe.gateway';
+import { PaymentProvider } from './core/application/ports/payment-provider';
+import { FakeStripePaymentProvider } from './secondary-adapters/gateways/fake-stripe-payment.provider';
 import { StripeSignatureService } from './secondary-adapters/services/stripe-signature.service';
 import { StripeSignatureVerifier } from './core/application/ports/stripe-signature-verifier';
-import { PaymentGatewayResolver } from './core/application/ports/payment-gateway-resolver';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentEventsScheduler } from './core/domain/schedulers/payment-events.scheduler';
 import { BullMqPaymentEventsScheduler } from './secondary-adapters/schedulers/bullmq-payment-events.scheduler';
@@ -54,12 +52,10 @@ import { PaymentsProcessor } from './primary-adapters/processors/payments.proces
   ],
   controllers: [PaymentsController],
   providers: [
-    // Gateways
-    StripeGateway,
-    PaymentGatewayFactory,
+    // Gateways & Providers
     {
-      provide: PaymentGatewayResolver,
-      useExisting: PaymentGatewayFactory,
+      provide: PaymentProvider,
+      useClass: FakeStripePaymentProvider,
     },
 
     // Services
@@ -130,7 +126,6 @@ import { PaymentsProcessor } from './primary-adapters/processors/payments.proces
     PaymentRepository,
     CreatePaymentUseCase,
     GetPaymentByOrderIdUseCase,
-    PaymentGatewayResolver,
     ProcessRefundUseCase,
     CreatePaymentIntentUseCase,
     SeedDemoPaymentsUseCase,

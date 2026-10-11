@@ -18,7 +18,7 @@ export class OrderPaymentResponseDto {
   @ApiProperty({ example: 'USD' })
   currency!: string;
 
-  @ApiProperty({ enum: PaymentMethodType, example: PaymentMethodType.STRIPE })
+  @ApiProperty({ enum: PaymentMethodType, example: PaymentMethodType.CARD })
   paymentMethod!: PaymentMethodType;
 
   @ApiProperty({ example: 'AUTHORIZED' })

@@ -1,3 +1,4 @@
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderItemDetailDTO } from './order-item-detail.result';
 
 export interface OrderDetailDTO {
@@ -7,6 +8,7 @@ export interface OrderDetailDTO {
   userName: string;
   userEmail: string;
   status: string;
+  paymentMethod: PaymentMethodType;
   shippingAddress: string;
   items: OrderItemDetailDTO[];
   subtotal: number;

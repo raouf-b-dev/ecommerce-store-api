@@ -1,13 +1,11 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
   cartId: number;
   userId: number;
   shippingAddress: ShippingAddressProps;
-  paymentMethod: PaymentMethodType;
   customerNotes?: string;
   orderId: number;
   flowId: string;

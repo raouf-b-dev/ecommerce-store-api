@@ -1,3 +1,5 @@
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
+
 export interface PaymentListItemDTO {
   id: number;
   orderId: number;
@@ -7,7 +9,7 @@ export interface PaymentListItemDTO {
   amount: number;
   currency: string;
   status: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethodType;
   transactionId: string;
   createdAt: string;
 }

@@ -1,8 +1,8 @@
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderTestFactory } from 'src/modules/orders/testing';
+import { DomainError } from 'src/shared-kernel/domain/exceptions/domain.error';
 
 describe('Order', () => {
   describe('confirmPayment', () => {

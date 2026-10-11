@@ -31,7 +31,7 @@ export class PaymentResponseDto {
 
   @ApiProperty({
     enum: PaymentMethodType,
-    example: PaymentMethodType.STRIPE,
+    example: PaymentMethodType.CARD,
     description: 'Payment method',
   })
   paymentMethod!: PaymentMethodType;
