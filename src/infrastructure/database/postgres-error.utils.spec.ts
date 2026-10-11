@@ -1,7 +1,6 @@
 import {
   PG_UNIQUE_VIOLATION,
   getPostgresErrorDetails,
-  getPostgresError,
 } from './postgres-error.utils';
 
 describe('postgres-error.utils', () => {
@@ -96,10 +95,6 @@ describe('postgres-error.utils', () => {
       expect(getPostgresErrorDetails({ driverError: 'not-object' })).toEqual(
         {},
       );
-    });
-
-    it('aliases getPostgresError to getPostgresErrorDetails', () => {
-      expect(getPostgresError).toBe(getPostgresErrorDetails);
     });
   });
 });

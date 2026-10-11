@@ -219,9 +219,7 @@ describe('OrdersController', () => {
       DECORATORS.API_MODEL_PROPERTIES_ARRAY,
       OrderDetailResponseDto.prototype,
     );
-    expect(Array.isArray(rawProps)).toBe(true);
-    const props = Array.isArray(rawProps) ? rawProps : [];
-    expect(props).toContain(':paymentMethod');
+    expect(rawProps).toEqual(expect.arrayContaining([':paymentMethod']));
   });
 
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
