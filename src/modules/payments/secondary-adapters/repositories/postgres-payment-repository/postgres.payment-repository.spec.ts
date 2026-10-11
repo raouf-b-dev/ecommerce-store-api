@@ -159,7 +159,7 @@ describe('PostgresPaymentRepository', () => {
         new Error('duplicate key value violates unique constraint'),
         {
           code: '23505',
-          constraint: 'chk_payments_provider',
+          constraint: 'PK_197ab7af18c93fbb0c9b28b4a59',
         },
       );
       const paymentProps = PaymentTestFactory.createMockPayment();

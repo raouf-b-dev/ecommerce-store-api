@@ -1,5 +1,5 @@
-// src/modules/orders/infrastructure/orm/order.schema.ts
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -19,6 +19,7 @@ import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 @Entity({ name: 'orders' })
+@Check('chk_orders_payment_method', `"payment_method" IN ('CARD')`)
 @Index('idx_orders_status', ['status'])
 @Index('idx_orders_user_id', ['userId'])
 @Index('idx_orders_payment_id', ['paymentId'])

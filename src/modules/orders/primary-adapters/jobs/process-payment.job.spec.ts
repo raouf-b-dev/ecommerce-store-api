@@ -6,11 +6,7 @@ import { CorrelationService } from '../../../../infrastructure/logging/correlati
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
-import {
-  MockCorrelationService,
-  ResultAssertionHelper,
-  createMockJob,
-} from '../../../../testing';
+import { MockCorrelationService, createMockJob } from '../../../../testing';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
@@ -189,10 +185,11 @@ describe('ProcessPaymentStep', () => {
     );
     createPaymentExecute.mockResolvedValueOnce(retryableFailure);
 
-    const result = await jobHandler['onExecute'](mockJob);
+    const run = jobHandler.handle(mockJob);
 
-    ResultAssertionHelper.assertResultFailure(result);
-    expect(result.error).toBe(retryableFailure.error);
-    expect(result.error.retryable).toBe(true);
+    await expect(run).rejects.toThrow(
+      'Pending payment already exists for order',
+    );
+    await expect(run).rejects.not.toBeInstanceOf(UnrecoverableError);
   });
 });
