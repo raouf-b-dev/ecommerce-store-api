@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import {
   PaymentGateway,
   CreatePaymentIntentInput,
@@ -15,7 +16,9 @@ export class CreateCheckoutPaymentUseCase implements UseCase<
 > {
   constructor(private readonly paymentGateway: PaymentGateway) {}
 
-  execute(input: CreatePaymentIntentInput) {
+  execute(
+    input: CreatePaymentIntentInput,
+  ): Promise<Result<PaymentIntentResult, AppError>> {
     return this.paymentGateway.createPaymentIntent(input);
   }
 }

@@ -22,19 +22,19 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 
 ### Subdomains
 
-| Subdomain          | Type            | Description                                                                                                                                                   |
-| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Orders**         | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows.                                                                                              |
-| **Identity**       | Supporting      | User accounts, profiles, contact info, and shipping addresses.                                                                                                |
-| **Authorization**  | Supporting      | RBAC, permission resolution, and user role assignments.                                                                                                       |
-| **Carts**          | Supporting      | Shopping sessions, item selection, and cart persistence (RedisJSON).                                                                                          |
-| **Inventory**      | Supporting      | Stock levels and reservations.                                                                                                                                |
-| **Products**       | Supporting      | Catalog, categories, and search indexing.                                                                                                                     |
-| **Payments**       | Generic         | Payment intents and provider abstraction. Fake Stripe provider adapter today.                                                                                 |
-| **Authentication** | Generic         | Credentials, password hashing, sessions, and JWT management.                                                                                                  |
-| **Notifications**  | Generic         | Real-time and background alerts.                                                                                                                              |
-| **Analytics**      | Supporting      | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
-| **Health**         | Generic         | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`).                                                                             |
+| Subdomain | Type | Description |
+| :-------- | :--- | :---------- |
+| **Orders** | **Core Domain** | Order lifecycle, checkout SAGA orchestration, and revenue flows. |
+| **Identity** | Supporting | User accounts, profiles, contact info, and shipping addresses. |
+| **Authorization** | Supporting | RBAC, permission resolution, and user role assignments. |
+| **Carts** | Supporting | Shopping sessions, item selection, and cart persistence (RedisJSON). |
+| **Inventory** | Supporting | Stock levels and reservations. |
+| **Products** | Supporting | Catalog, categories, and search indexing. |
+| **Payments** | Generic | Payment intents and provider abstraction. Fake Stripe provider adapter today. |
+| **Authentication** | Generic | Credentials, password hashing, sessions, and JWT management. |
+| **Notifications** | Generic | Real-time and background alerts. |
+| **Analytics** | Supporting | Admin ops reporting / query composition (revenue, series, top products, stock alerts). No write aggregates; see [domains/ANALYTICS.md](domains/ANALYTICS.md). |
+| **Health** | Generic | Liveness and readiness probes (process, PostgreSQL; Redis reported on `/health`). |
 
 ### Bounded Contexts and Context Mapping
 
