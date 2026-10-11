@@ -23,6 +23,7 @@ import { Order } from './core/domain/entities/order';
 import { OrderStatus } from './core/domain/value-objects/order-status';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
+import { OrderDetailResponseDto } from './primary-adapters/dto/order-detail-response.dto';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/payment-method';
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
@@ -211,6 +212,16 @@ describe('OrdersController', () => {
     expect(Array.isArray(rawProps)).toBe(true);
     const props = Array.isArray(rawProps) ? rawProps : [];
     expect(props).not.toContain(':idempotencyKey');
+  });
+
+  it('exposes paymentMethod in OrderDetailResponseDto Swagger properties', () => {
+    const rawProps: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
+      OrderDetailResponseDto.prototype,
+    );
+    expect(Array.isArray(rawProps)).toBe(true);
+    const props = Array.isArray(rawProps) ? rawProps : [];
+    expect(props).toContain(':paymentMethod');
   });
 
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {

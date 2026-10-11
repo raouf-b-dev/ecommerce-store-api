@@ -1,7 +1,7 @@
 import {
   PG_UNIQUE_VIOLATION,
-  getPostgresConstraint,
-  isPostgresErrorCode,
+  getPostgresErrorDetails,
+  getPostgresError,
 } from './postgres-error.utils';
 
 describe('postgres-error.utils', () => {
@@ -11,72 +11,95 @@ describe('postgres-error.utils', () => {
     });
   });
 
-  describe('isPostgresErrorCode', () => {
-    it('returns true when error has code directly matching target', () => {
-      expect(isPostgresErrorCode({ code: '23505' }, '23505')).toBe(true);
-    });
-
-    it('returns false when error has code directly not matching target', () => {
-      expect(isPostgresErrorCode({ code: '23503' }, '23505')).toBe(false);
-    });
-
-    it('returns true when driverError has matching code', () => {
+  describe('getPostgresErrorDetails', () => {
+    it('returns code and constraint directly present on error', () => {
       const error = {
-        driverError: { code: '23505' },
+        code: '23505',
+        constraint: 'idx_payments_order_id_pending_unique',
       };
-      expect(isPostgresErrorCode(error, '23505')).toBe(true);
+
+      const result = getPostgresErrorDetails(error);
+
+      expect(result).toEqual({
+        code: '23505',
+        constraint: 'idx_payments_order_id_pending_unique',
+      });
     });
 
-    it('returns false when driverError has non-matching code', () => {
+    it('returns code and constraint from driverError envelope', () => {
       const error = {
-        driverError: { code: '23503' },
-      };
-      expect(isPostgresErrorCode(error, '23505')).toBe(false);
-    });
-
-    it('returns false for null, undefined, primitive, or non-matching error shapes', () => {
-      expect(isPostgresErrorCode(null, '23505')).toBe(false);
-      expect(isPostgresErrorCode(undefined, '23505')).toBe(false);
-      expect(isPostgresErrorCode('string-error', '23505')).toBe(false);
-      expect(isPostgresErrorCode(12345, '23505')).toBe(false);
-      expect(isPostgresErrorCode({}, '23505')).toBe(false);
-      expect(isPostgresErrorCode({ code: 23505 }, '23505')).toBe(false);
-      expect(isPostgresErrorCode({ driverError: null }, '23505')).toBe(false);
-      expect(
-        isPostgresErrorCode({ driverError: { code: 23505 } }, '23505'),
-      ).toBe(false);
-    });
-  });
-
-  describe('getPostgresConstraint', () => {
-    it('returns constraint name directly present on error', () => {
-      expect(
-        getPostgresConstraint({
+        driverError: {
+          code: '23505',
           constraint: 'idx_payments_order_id_pending_unique',
-        }),
-      ).toBe('idx_payments_order_id_pending_unique');
+        },
+      };
+
+      const result = getPostgresErrorDetails(error);
+
+      expect(result).toEqual({
+        code: '23505',
+        constraint: 'idx_payments_order_id_pending_unique',
+      });
     });
 
-    it('returns constraint name from driverError envelope', () => {
-      expect(
-        getPostgresConstraint({
-          driverError: {
-            constraint: 'idx_payments_order_id_pending_unique',
-          },
-        }),
-      ).toBe('idx_payments_order_id_pending_unique');
+    it('prefers direct properties over driverError properties when present', () => {
+      const error = {
+        code: '23505',
+        constraint: 'direct_constraint',
+        driverError: {
+          code: '42P01',
+          constraint: 'driver_constraint',
+        },
+      };
+
+      const result = getPostgresErrorDetails(error);
+
+      expect(result).toEqual({
+        code: '23505',
+        constraint: 'direct_constraint',
+      });
     });
 
-    it('returns undefined when constraint is missing or non-string', () => {
-      expect(getPostgresConstraint(null)).toBeUndefined();
-      expect(getPostgresConstraint(undefined)).toBeUndefined();
-      expect(getPostgresConstraint('string-error')).toBeUndefined();
-      expect(getPostgresConstraint({})).toBeUndefined();
-      expect(getPostgresConstraint({ constraint: 123 })).toBeUndefined();
-      expect(getPostgresConstraint({ driverError: null })).toBeUndefined();
-      expect(
-        getPostgresConstraint({ driverError: { constraint: true } }),
-      ).toBeUndefined();
+    it('falls back to driverError when direct property is not a string', () => {
+      const error = {
+        code: 12345,
+        constraint: true,
+        driverError: {
+          code: '23505',
+          constraint: 'idx_payments_order_id_pending_unique',
+        },
+      };
+
+      const result = getPostgresErrorDetails(error);
+
+      expect(result).toEqual({
+        code: '23505',
+        constraint: 'idx_payments_order_id_pending_unique',
+      });
+    });
+
+    it('returns empty object for null or undefined', () => {
+      expect(getPostgresErrorDetails(null)).toEqual({});
+      expect(getPostgresErrorDetails(undefined)).toEqual({});
+    });
+
+    it('returns empty object for primitive values', () => {
+      expect(getPostgresErrorDetails('string-error')).toEqual({});
+      expect(getPostgresErrorDetails(12345)).toEqual({});
+      expect(getPostgresErrorDetails(true)).toEqual({});
+    });
+
+    it('returns empty object for empty objects or non-string fields', () => {
+      expect(getPostgresErrorDetails({})).toEqual({});
+      expect(getPostgresErrorDetails({ code: 123 })).toEqual({});
+      expect(getPostgresErrorDetails({ driverError: null })).toEqual({});
+      expect(getPostgresErrorDetails({ driverError: 'not-object' })).toEqual(
+        {},
+      );
+    });
+
+    it('aliases getPostgresError to getPostgresErrorDetails', () => {
+      expect(getPostgresError).toBe(getPostgresErrorDetails);
     });
   });
 });

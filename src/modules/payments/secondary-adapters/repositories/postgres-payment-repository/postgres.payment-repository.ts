@@ -14,8 +14,7 @@ import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
 import {
   PG_UNIQUE_VIOLATION,
-  getPostgresConstraint,
-  isPostgresErrorCode,
+  getPostgresErrorDetails,
 } from '../../../../../infrastructure/database/postgres-error.utils';
 
 @Injectable()
@@ -159,9 +158,10 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(PaymentMapper.toDomain(savedPayment));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
+      const { code, constraint } = getPostgresErrorDetails(error);
       if (
-        isPostgresErrorCode(error, PG_UNIQUE_VIOLATION) &&
-        getPostgresConstraint(error) === 'idx_payments_order_id_pending_unique'
+        code === PG_UNIQUE_VIOLATION &&
+        constraint === 'idx_payments_order_id_pending_unique'
       ) {
         return ErrorFactory.RepositoryError(
           'Pending payment already exists for order',
