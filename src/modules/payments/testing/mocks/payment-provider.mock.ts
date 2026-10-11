@@ -76,11 +76,11 @@ export class MockPaymentProvider implements PaymentProvider {
     );
   }
 
-  mockSuccessfulRefund(providerReference?: string): void {
+  mockSuccessfulRefund(): void {
     this.refund.mockImplementation((params: RefundParams) => {
       return Promise.resolve(
         Result.success({
-          providerReference: providerReference ?? params.providerReference,
+          providerReference: params.providerReference,
         }),
       );
     });

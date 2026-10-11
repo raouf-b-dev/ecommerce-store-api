@@ -89,7 +89,7 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(savedPayment.providerId.equals(paymentProvider.id)).toBe(true);
     expect(savedPayment.provider).toBe(paymentProvider.id.value);
     const expectedMoney = Money.create(command.amount, command.currency);
-    if (expectedMoney.isFailure) throw expectedMoney.error;
+    ResultAssertionHelper.assertResultSuccess(expectedMoney);
     expect(paymentProvider.initiatePayment).toHaveBeenCalledWith({
       amount: expectedMoney.value,
       metadata: { orderId: String(command.orderId) },
@@ -129,7 +129,7 @@ describe('CreatePaymentIntentUseCase', () => {
 
     expect(paymentRepository.save).not.toHaveBeenCalled();
     const expectedMoney = Money.create(command.amount, command.currency);
-    if (expectedMoney.isFailure) throw expectedMoney.error;
+    ResultAssertionHelper.assertResultSuccess(expectedMoney);
     expect(paymentProvider.initiatePayment).toHaveBeenCalledWith({
       amount: expectedMoney.value,
       metadata: { orderId: String(command.orderId) },
@@ -229,6 +229,7 @@ describe('CreatePaymentIntentUseCase', () => {
       UseCaseError,
     );
     expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     expect(paymentRepository.save).not.toHaveBeenCalled();
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
   });

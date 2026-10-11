@@ -1,4 +1,4 @@
-import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
+import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderItemDetailDTO } from './order-item-detail.result';
 
 export interface OrderDetailDTO {

@@ -14,7 +14,7 @@ function parseCountResult(result: unknown): number {
       return n;
     }
   }
-  return 0;
+  throw new Error('Unexpected query count result shape from database');
 }
 
 export class PaymentProviderAndCardMethod1787400000005 implements MigrationInterface {

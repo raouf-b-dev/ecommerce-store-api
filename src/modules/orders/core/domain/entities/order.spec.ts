@@ -1,8 +1,8 @@
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderTestFactory } from 'src/modules/orders/testing';
+import { DomainError } from 'src/shared-kernel/domain/exceptions/domain.error';
 
 describe('Order', () => {
   describe('confirmPayment', () => {
@@ -232,28 +232,6 @@ describe('Order', () => {
       expect(restored.userId).toBe(original.userId);
       expect(restored.status).toBe(original.status);
       expect(restored.totalPrice).toBe(original.totalPrice);
-    });
-  });
-
-  describe('validation', () => {
-    it('rejects an unknown payment method', () => {
-      const validProps = OrderTestFactory.createOrderProps();
-      expect(() => {
-        Reflect.construct(Order, [
-          {
-            ...validProps,
-            paymentMethod: 'UNKNOWN_METHOD',
-          },
-        ]);
-      }).toThrow(DomainError);
-      expect(() => {
-        Reflect.construct(Order, [
-          {
-            ...validProps,
-            paymentMethod: 'UNKNOWN_METHOD',
-          },
-        ]);
-      }).toThrow('Invalid payment method: UNKNOWN_METHOD');
     });
   });
 });

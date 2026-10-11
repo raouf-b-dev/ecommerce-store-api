@@ -8,11 +8,21 @@ export enum PaymentMethodType {
   CARD = 'CARD',
 }
 
+const VALID_PAYMENT_METHOD_TYPES = new Set<unknown>(
+  Object.values(PaymentMethodType),
+);
+
+export function isPaymentMethodType(
+  value: unknown,
+): value is PaymentMethodType {
+  return VALID_PAYMENT_METHOD_TYPES.has(value);
+}
+
 export class PaymentMethod {
   private readonly _type: PaymentMethodType;
 
-  constructor(type: PaymentMethodType) {
-    if (!Object.values(PaymentMethodType).includes(type)) {
+  constructor(type: string) {
+    if (!isPaymentMethodType(type)) {
       throw new DomainError(`Invalid payment method: ${type}`);
     }
     this._type = type;

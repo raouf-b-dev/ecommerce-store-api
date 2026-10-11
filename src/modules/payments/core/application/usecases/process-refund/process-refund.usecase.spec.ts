@@ -24,7 +24,7 @@ describe('ProcessRefundUseCase', () => {
 
   beforeEach(async () => {
     defaultProvider = new MockPaymentProvider();
-    defaultProvider.mockSuccessfulRefund('txn_refund_123');
+    defaultProvider.mockSuccessfulRefund();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

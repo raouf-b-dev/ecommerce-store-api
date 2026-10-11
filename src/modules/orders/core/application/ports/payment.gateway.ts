@@ -62,7 +62,7 @@ export abstract class PaymentGateway {
 
   abstract createPaymentIntent(
     input: CreatePaymentIntentInput,
-  ): Promise<Result<PaymentIntentResult, InfrastructureError>>;
+  ): Promise<Result<PaymentIntentResult, AppError>>;
 
   abstract processRefund(
     input: ProcessRefundInput,

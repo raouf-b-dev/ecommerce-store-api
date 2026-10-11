@@ -130,10 +130,13 @@ describe('PostgresPaymentRepository', () => {
       );
     });
 
-    it('should map Postgres 23505 error to a RepositoryError with status CONFLICT and retryable true', async () => {
+    it('should map Postgres 23505 pending unique constraint error to a RepositoryError with status CONFLICT and retryable true', async () => {
       const dbError = Object.assign(
         new Error('duplicate key value violates unique constraint'),
-        { code: '23505' },
+        {
+          code: '23505',
+          constraint: 'idx_payments_order_id_pending_unique',
+        },
       );
       const paymentProps = PaymentTestFactory.createMockPayment();
       const payment = Payment.fromPrimitives(paymentProps);
@@ -144,11 +147,34 @@ describe('PostgresPaymentRepository', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Payment conflict',
+        'Pending payment already exists for order',
         RepositoryError,
       );
       expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
       expect(result.error.retryable).toBe(true);
+    });
+
+    it('should map Postgres 23505 error for other constraints to generic RepositoryError', async () => {
+      const dbError = Object.assign(
+        new Error('duplicate key value violates unique constraint'),
+        {
+          code: '23505',
+          constraint: 'chk_payments_provider',
+        },
+      );
+      const paymentProps = PaymentTestFactory.createMockPayment();
+      const payment = Payment.fromPrimitives(paymentProps);
+
+      mockDataSource.transaction.mockRejectedValue(dbError);
+
+      const result = await repository.save(payment);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to save payment',
+        RepositoryError,
+      );
+      expect(result.error.statusCode).toBe(StatusCode.INTERNAL_SERVER_ERROR);
     });
   });
 

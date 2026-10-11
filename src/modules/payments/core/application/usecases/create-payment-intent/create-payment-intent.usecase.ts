@@ -14,6 +14,7 @@ import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { providerMismatchError } from '../../errors/provider-mismatch.error';
 
 export interface CreatePaymentIntentResult {
   paymentId: number;
@@ -55,12 +56,9 @@ export class CreatePaymentIntentUseCase extends UseCase<
 
     if (pendingPayment) {
       if (!pendingPayment.providerId.equals(this.paymentProvider.id)) {
-        return ErrorFactory.UseCaseError(
-          `Payment provider ${pendingPayment.provider} does not match active provider ${this.paymentProvider.id.value}`,
-          {
-            status: StatusCode.CONFLICT,
-            code: ErrorCode.PAYMENT_PROVIDER_MISMATCH,
-          },
+        return providerMismatchError(
+          pendingPayment.provider,
+          this.paymentProvider.id.value,
         );
       }
       if (!pendingPayment.money.equals(moneyResult.value)) {
@@ -68,6 +66,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
           `Payment amount or currency does not match pending payment for order ${dto.orderId}`,
           {
             status: StatusCode.CONFLICT,
+            code: ErrorCode.PAYMENT_AMOUNT_MISMATCH,
           },
         );
       }

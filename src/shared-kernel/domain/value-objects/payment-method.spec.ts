@@ -1,4 +1,8 @@
-import { PaymentMethod, PaymentMethodType } from './payment-method';
+import {
+  PaymentMethod,
+  PaymentMethodType,
+  isPaymentMethodType,
+} from './payment-method';
 import { DomainError } from '../exceptions/domain.error';
 
 describe('PaymentMethod', () => {
@@ -16,10 +20,23 @@ describe('PaymentMethod', () => {
 
   it('throws DomainError when invalid payment method type is passed', () => {
     expect(() => {
-      Reflect.construct(PaymentMethod, ['INVALID']);
+      new PaymentMethod('INVALID');
     }).toThrow(DomainError);
     expect(() => {
-      Reflect.construct(PaymentMethod, ['INVALID']);
+      new PaymentMethod('INVALID');
     }).toThrow('Invalid payment method: INVALID');
+  });
+
+  describe('isPaymentMethodType', () => {
+    it('returns true for CARD', () => {
+      expect(isPaymentMethodType('CARD')).toBe(true);
+    });
+
+    it('returns false for unknown string or non-string', () => {
+      expect(isPaymentMethodType('STRIPE')).toBe(false);
+      expect(isPaymentMethodType('UNKNOWN')).toBe(false);
+      expect(isPaymentMethodType(null)).toBe(false);
+      expect(isPaymentMethodType(123)).toBe(false);
+    });
   });
 });
