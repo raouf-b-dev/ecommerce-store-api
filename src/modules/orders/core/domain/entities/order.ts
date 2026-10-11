@@ -13,7 +13,10 @@ import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
-import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import {
+  PaymentMethodType,
+  isPaymentMethodType,
+} from '../../../../../shared-kernel/domain/value-objects/payment-method';
 
 export interface OrderProps {
   id: number | null;
@@ -44,7 +47,8 @@ export class Order implements IOrder {
   private _pricing: OrderPricing;
 
   constructor(props: OrderProps) {
-    this.validateProps(props);
+    const validationResult = this.validateProps(props);
+    if (validationResult.isFailure) throw validationResult.error;
 
     this._id = props.id || null;
     this._userId = props.userId;
@@ -77,6 +81,11 @@ export class Order implements IOrder {
     }
     if (!props.paymentMethod) {
       return ErrorFactory.DomainError('Payment method is required');
+    }
+    if (!isPaymentMethodType(props.paymentMethod)) {
+      return ErrorFactory.DomainError(
+        `Invalid payment method: ${String(props.paymentMethod)}`,
+      );
     }
 
     return Result.success(undefined);

@@ -5,6 +5,7 @@ import { GetOrderUseCase } from '../../core/application/usecases/get-order/get-o
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
 import { MockCorrelationService, createMockJob } from '../../../../testing';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
@@ -26,6 +27,7 @@ describe('ProcessPaymentStep', () => {
     userName: 'Test User',
     userEmail: 'test@example.com',
     status: 'PENDING_PAYMENT',
+    paymentMethod: PaymentMethodType.CARD,
     shippingAddress: '1 Market St',
     items: [],
     subtotal: 25.5,
@@ -42,7 +44,6 @@ describe('ProcessPaymentStep', () => {
     cartId: 100,
     userId: 10,
     orderId: 1,
-    paymentMethod: PaymentMethodType.STRIPE,
     shippingAddress: {
       id: null,
       firstName: 'Test',
@@ -111,7 +112,7 @@ describe('ProcessPaymentStep', () => {
       orderId: 1,
       amount: 2550,
       currency: 'USD',
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       userId: 10,
       metadata: {
         orderId: '1',
@@ -171,5 +172,24 @@ describe('ProcessPaymentStep', () => {
     await expect(jobHandler.handle(mockJob)).rejects.toThrow(
       UnrecoverableError,
     );
+  });
+
+  it('propagates a retryable:true failure from createPaymentUseCase unchanged to onExecute', async () => {
+    const mockJob = createMockJob('process-payment', jobData);
+    jest.spyOn(mockJob, 'getChildrenValues').mockResolvedValue({
+      'reserve-stock': validChildResult,
+    });
+    const retryableFailure = ErrorFactory.RepositoryError(
+      'Pending payment already exists for order',
+      { status: StatusCode.CONFLICT, retryable: true },
+    );
+    createPaymentExecute.mockResolvedValueOnce(retryableFailure);
+
+    const run = jobHandler.handle(mockJob);
+
+    await expect(run).rejects.toThrow(
+      'Pending payment already exists for order',
+    );
+    await expect(run).rejects.not.toBeInstanceOf(UnrecoverableError);
   });
 });

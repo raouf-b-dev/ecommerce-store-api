@@ -66,7 +66,7 @@ export class ModulePaymentGateway implements PaymentGateway {
 
   async createPaymentIntent(
     input: CreatePaymentIntentInput,
-  ): Promise<Result<PaymentIntentResult, InfrastructureError>> {
+  ): Promise<Result<PaymentIntentResult, AppError>> {
     const result = await this.createPaymentIntentUseCase.execute({
       orderId: input.orderId,
       amount: input.amount,
@@ -77,10 +77,7 @@ export class ModulePaymentGateway implements PaymentGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to create payment intent',
-        result.error,
-      );
+      return result;
     }
 
     return Result.success({

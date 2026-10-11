@@ -23,6 +23,7 @@ import { Order } from './core/domain/entities/order';
 import { OrderStatus } from './core/domain/value-objects/order-status';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
+import { OrderDetailResponseDto } from './primary-adapters/dto/order-detail-response.dto';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/payment-method';
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
@@ -213,6 +214,14 @@ describe('OrdersController', () => {
     expect(props).not.toContain(':idempotencyKey');
   });
 
+  it('exposes paymentMethod in OrderDetailResponseDto Swagger properties', () => {
+    const rawProps: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
+      OrderDetailResponseDto.prototype,
+    );
+    expect(rawProps).toEqual(expect.arrayContaining([':paymentMethod']));
+  });
+
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
     const res = await controller.findOne(mockOrder.id!, callerContext);
     expect(getOrderUseCase.execute).toHaveBeenCalledWith({
@@ -275,7 +284,7 @@ describe('OrdersController', () => {
 
   it('should call CreateOrderPaymentUseCase.execute when createPayment is called', async () => {
     const dto = {
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentMethodDetails: { cardLast4: '4242' },
     };
     createOrderPaymentUseCase.execute.mockResolvedValue(
@@ -301,7 +310,7 @@ describe('OrdersController', () => {
 
     const res = await controller.createPayment(
       123,
-      { paymentMethod: PaymentMethodType.STRIPE },
+      { paymentMethod: PaymentMethodType.CARD },
       callerContext,
     );
 

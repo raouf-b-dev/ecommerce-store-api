@@ -11,9 +11,42 @@ import { PaymentWebhookDto } from '../../core/application/services/handle-paymen
 import { PaymentEventType } from '../../core/domain/value-objects/payment-event-type';
 import { StripeWebhookPayload } from '../../core/application/ports/stripe-signature-verifier';
 import { StripeWebhookCommand } from '../../core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
+import { CreatePaymentIntentCommand } from '../../core/application/commands/create-payment-intent.command';
+import { CreatePaymentCommand } from '../../core/application/commands/create-payment.command';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { TEST_IDS } from '../../../../testing/helpers/test-data.helper';
 
 export class PaymentDtoTestFactory {
+  static createCreatePaymentIntentCommand(
+    overrides?: Partial<CreatePaymentIntentCommand>,
+  ): CreatePaymentIntentCommand {
+    return {
+      orderId: TEST_IDS.order,
+      amount: 5000,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.CARD,
+      userId: TEST_IDS.user,
+      metadata: { orderId: String(TEST_IDS.order) },
+      callerContext: null,
+      ...overrides,
+    };
+  }
+
+  static createCreatePaymentCommand(
+    overrides?: Partial<CreatePaymentCommand>,
+  ): CreatePaymentCommand {
+    return {
+      orderId: TEST_IDS.order,
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: PaymentMethodType.CARD,
+      userId: TEST_IDS.user,
+      paymentMethodDetails: { cardLast4: '4242' },
+      callerContext: null,
+      ...overrides,
+    };
+  }
+
   static createProcessRefundDto(
     overrides?: Partial<ProcessRefundDto>,
   ): ProcessRefundDto {
@@ -48,7 +81,7 @@ export class PaymentDtoTestFactory {
       amount: 99.99,
       currency: 'USD',
       status: 'COMPLETED',
-      paymentMethod: 'CREDIT_CARD',
+      paymentMethod: PaymentMethodType.CARD,
       transactionId: 'txn_123',
       gatewayPaymentIntentId: 'pi_123',
       failureReason: null,
@@ -71,7 +104,7 @@ export class PaymentDtoTestFactory {
       amount: 99.99,
       currency: 'USD',
       status: 'COMPLETED',
-      paymentMethod: 'CREDIT_CARD',
+      paymentMethod: PaymentMethodType.CARD,
       transactionId: 'txn_123456',
       createdAt: '2024-01-01T00:00:00.000Z',
       ...overrides,

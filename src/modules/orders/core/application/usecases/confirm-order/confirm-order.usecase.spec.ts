@@ -120,16 +120,16 @@ describe('ConfirmOrderUseCase', () => {
       expect(mockOrderRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should confirm order with Stripe payment method', async () => {
-      const stripeOrder = OrderTestFactory.createStripeOrder({
+    it('should confirm order with card payment method', async () => {
+      const cardOrder = OrderTestFactory.createCardOrder({
         status: OrderStatus.PENDING_PAYMENT,
         paymentId: 1,
       });
 
-      mockOrderRepository.mockSuccessfulFindByIdForUpdate(stripeOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(cardOrder);
       mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute(stripeOrder.id!);
+      const result = await useCase.execute(cardOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);

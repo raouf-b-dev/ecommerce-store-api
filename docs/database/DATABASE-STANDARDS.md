@@ -33,5 +33,5 @@ This document defines project-wide coding conventions for database schemas, tabl
 
 ## 4. Migration Rules
 
-- Schema alterations MUST be created as explicit TypeORM migration scripts in `src/infrastructure/database/migrations/`.
+- Schema alterations MUST be created as explicit TypeORM migration scripts in `src/migrations/`.
 - Direct `synchronize: true` is strictly prohibited in production environments.

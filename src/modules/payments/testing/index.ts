@@ -4,7 +4,7 @@ export * from './factories/payment-entity.test.factory';
 export * from './factories/payment.test.factory';
 export * from './factories/refund-entity.test.factory';
 export * from './factories/refund.test.factory';
-export * from './mocks/payment-gateway.mock';
+export * from './mocks/payment-provider.mock';
 export * from './mocks/payment-query-service.mock';
 export * from './mocks/payment-repository.mock';
 export * from './mocks/payment-events-scheduler.mock';

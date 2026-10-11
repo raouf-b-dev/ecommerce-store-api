@@ -135,7 +135,7 @@ describe('Checkout idempotency (e2e)', () => {
         omitIdempotencyKey: true,
         body: {
           cartId,
-          paymentMethod: PaymentMethodType.STRIPE,
+          paymentMethod: PaymentMethodType.CARD,
           idempotencyKey: IdempotencyTestFactory.createClientKey('body-only'),
         },
       }),
@@ -179,7 +179,7 @@ describe('Checkout idempotency (e2e)', () => {
       headers,
       body: {
         cartId,
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         shippingAddress: E2eCheckoutHelper.shippingAddress(customer),
         idempotencyKey: 'legacy-body-key',
       },

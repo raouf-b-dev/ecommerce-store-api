@@ -29,7 +29,7 @@ describe('DeliverOrderUseCase', () => {
   describe('execute', () => {
     it('should return Success if online payment order is delivered', async () => {
       const shippedOrder = OrderTestFactory.createShippedOrder({
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         paymentId: 1,
       });
 
@@ -209,18 +209,18 @@ describe('DeliverOrderUseCase', () => {
       expect(mockOrderRepository.save).toHaveBeenCalled();
     });
 
-    it('should deliver order with Stripe payment method', async () => {
-      const stripeOrder = OrderTestFactory.createStripeOrder({
-        status: OrderStatus.SHIPPED,
+    it('should deliver order with card payment method', async () => {
+      const cardOrder = OrderTestFactory.createShippedOrder({
+        paymentMethod: PaymentMethodType.CARD,
       });
 
       const deliverOrderDto: DeliverOrderCommand = {};
 
-      mockOrderRepository.mockSuccessfulFindByIdForUpdate(stripeOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(cardOrder);
       mockOrderRepository.mockSuccessfulSave();
 
       const result = await useCase.execute({
-        id: stripeOrder.id!,
+        id: cardOrder.id!,
         command: deliverOrderDto,
       });
 
@@ -233,7 +233,7 @@ describe('DeliverOrderUseCase', () => {
       const shippedMultiItem = {
         ...multiItemOrder,
         status: OrderStatus.SHIPPED,
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
       };
 
       const deliverOrderDto: DeliverOrderCommand = {};

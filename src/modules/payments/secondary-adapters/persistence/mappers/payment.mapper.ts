@@ -1,5 +1,5 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
-import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
+import { Payment } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
@@ -25,13 +25,14 @@ export type PaymentForCache = Omit<
 
 export class PaymentMapper {
   static toDomain(entity: PaymentEntity): Payment {
-    const props: PaymentProps = {
+    const data: IPayment = {
       id: entity.id,
       orderId: entity.orderId,
       userId: entity.userId,
       amount: requireMinorUnits(entity.amount),
       currency: entity.currency,
       paymentMethod: entity.paymentMethod,
+      provider: entity.provider,
       status: entity.status,
       transactionId: entity.transactionId,
       gatewayPaymentIntentId: entity.gatewayPaymentIntentId || null,
@@ -39,7 +40,7 @@ export class PaymentMapper {
       paymentMethodInfo: entity.paymentMethodInfo,
       refundedAmount: requireMinorUnits(entity.refundedAmount),
       refunds: entity.refunds
-        ? entity.refunds.map((r) => RefundMapper.toDomain(r).props)
+        ? entity.refunds.map((r) => RefundMapper.toDomain(r).toPrimitives())
         : [],
       failureReason: entity.failureReason,
       createdAt: entity.createdAt,
@@ -47,7 +48,7 @@ export class PaymentMapper {
       updatedAt: entity.updatedAt,
     };
 
-    return Payment.fromPrimitives(props);
+    return Payment.fromPrimitives(data);
   }
 
   static toEntity(domain: Payment): PaymentEntity {
@@ -60,6 +61,7 @@ export class PaymentMapper {
       amount: Number(decimalFromMinorUnits(primitives.amount)),
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,
+      provider: primitives.provider,
       status: primitives.status,
       transactionId: primitives.transactionId,
       gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,

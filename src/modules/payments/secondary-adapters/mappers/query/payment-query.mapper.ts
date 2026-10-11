@@ -8,12 +8,12 @@ export class PaymentQueryMapper {
       id: Number(row.id),
       orderId: Number(row.orderId),
       userId: Number(row.userId || 0),
-      userName: row.userName || 'Unknown User',
+      userName: row.userName,
       userEmail: row.userEmail || '',
       amount: Number(row.amount || 0),
       currency: row.currency,
       status: String(row.status),
-      paymentMethod: row.paymentMethod || 'CREDIT_CARD',
+      paymentMethod: row.paymentMethod,
       transactionId: row.transactionId || '',
       createdAt:
         row.createdAt instanceof Date
