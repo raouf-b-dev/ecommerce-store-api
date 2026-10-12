@@ -43,11 +43,44 @@ describe('Money', () => {
     expect(result.value.amount).toBe(1999);
   });
 
+  it('rejects invalid decimal amount with scale-2 decimal error message', () => {
+    const result = Money.fromDecimal('invalid', 'USD');
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Amount must be a non-negative scale-2 decimal',
+      DomainError,
+    );
+    expect(result.error.code).toBe(ErrorCode.AMOUNT_INVALID);
+  });
+
+  it('rejects negative decimal amount in fromDecimal', () => {
+    const result = Money.fromDecimal('-5.00', 'USD');
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Amount must be a non-negative scale-2 decimal',
+      DomainError,
+    );
+    expect(result.error.code).toBe(ErrorCode.AMOUNT_INVALID);
+  });
+
   it('snaps a major-unit number to minor units', () => {
     const result = Money.fromMajorUnits(19.99, 'USD');
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.amount).toBe(1999);
+  });
+
+  it('rejects negative major units in fromMajorUnits', () => {
+    const result = Money.fromMajorUnits(-10, 'USD');
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Amount must be a non-negative scale-2 decimal',
+      DomainError,
+    );
+    expect(result.error.code).toBe(ErrorCode.AMOUNT_INVALID);
   });
 
   it('adds amounts in the same currency as integers', () => {
@@ -96,25 +129,17 @@ describe('Money', () => {
     expect(moneyResult.value.toMajorUnits()).toBe(19.99);
   });
 
-  it('supports zero-decimal currencies like JPY', () => {
-    const jpyResult = Money.fromDecimal('1000', 'JPY');
-    ResultAssertionHelper.assertResultSuccess(jpyResult);
-    expect(jpyResult.value.amount).toBe(1000);
-    expect(jpyResult.value.currency).toBe('JPY');
-    expect(jpyResult.value.toDecimalString()).toBe('1000');
-    expect(jpyResult.value.toMajorUnits()).toBe(1000);
+  it.each(['JPY', 'KWD', 'BHD'])(
+    'returns CURRENCY_INVALID when the currency exponent is not 2 (%s)',
+    (currency) => {
+      const result = Money.create(100, currency);
 
-    const fromMajor = Money.fromMajorUnits(1000, 'JPY');
-    ResultAssertionHelper.assertResultSuccess(fromMajor);
-    expect(fromMajor.value.amount).toBe(1000);
-  });
-
-  it('supports three-decimal currencies like KWD', () => {
-    const kwdResult = Money.fromDecimal('5.125', 'KWD');
-    ResultAssertionHelper.assertResultSuccess(kwdResult);
-    expect(kwdResult.value.amount).toBe(5125);
-    expect(kwdResult.value.currency).toBe('KWD');
-    expect(kwdResult.value.toDecimalString()).toBe('5.125');
-    expect(kwdResult.value.toMajorUnits()).toBe(5.125);
-  });
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency must have 2 decimal places',
+        DomainError,
+      );
+      expect(result.error.code).toBe(ErrorCode.CURRENCY_INVALID);
+    },
+  );
 });

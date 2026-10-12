@@ -1,5 +1,6 @@
 import { Currency } from './currency';
 import { ResultAssertionHelper } from '../../../testing';
+import { DomainError } from '../exceptions/domain.error';
 
 describe('Currency', () => {
   describe('isValid', () => {
@@ -16,6 +17,17 @@ describe('Currency', () => {
         expect(Currency.isValid(code)).toBe(false);
       },
     );
+
+    it('never treats an empty Intl list as valid', () => {
+      Currency.resetSupportedCurrenciesCache(new Set());
+      try {
+        expect(Currency.isValid('USD')).toBe(false);
+        expect(Currency.isValid('EUR')).toBe(false);
+        expect(Currency.normalize('USD')).toBeUndefined();
+      } finally {
+        Currency.resetSupportedCurrenciesCache();
+      }
+    });
   });
 
   describe('normalize', () => {
@@ -49,69 +61,34 @@ describe('Currency', () => {
     });
   });
 
-  describe('toMinorUnits and toMajorDecimalString', () => {
-    it('converts standard 2-decimal currencies', () => {
-      expect(Currency.toMinorUnits(19.99, 'USD')).toBe(1999);
-      expect(Currency.toMajorDecimalString(1999, 'USD')).toBe('19.99');
-    });
-
-    it('converts zero-decimal currencies like JPY', () => {
-      expect(Currency.toMinorUnits(1000, 'JPY')).toBe(1000);
-      expect(Currency.toMajorDecimalString(1000, 'JPY')).toBe('1000');
-    });
-
-    it('converts three-decimal currencies like KWD', () => {
-      expect(Currency.toMinorUnits(5.125, 'KWD')).toBe(5125);
-      expect(Currency.toMajorDecimalString(5125, 'KWD')).toBe('5.125');
-    });
-  });
-
-  describe('instances and Value Object semantics', () => {
-    it('creates an immutable Currency instance via create', () => {
+  describe('create', () => {
+    it('creates an immutable Currency instance for valid 2-decimal currencies', () => {
       const result = Currency.create('usd');
       ResultAssertionHelper.assertResultSuccess(result);
       const currency = result.value;
       expect(currency.code).toBe('USD');
       expect(currency.exponent).toBe(2);
-      expect(currency.factor).toBe(100);
     });
 
-    it('returns failure for invalid currency in create', () => {
+    it('returns failure for invalid currency code in create', () => {
       const result = Currency.create('INVALID');
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency must be a 3-letter code (ISO 4217)',
+        DomainError,
+      );
     });
 
-    it('unwraps Currency via of or throws', () => {
-      const jpy = Currency.of('jpy');
-      expect(jpy.code).toBe('JPY');
-      expect(jpy.exponent).toBe(0);
-      expect(jpy.factor).toBe(1);
-
-      expect(() => Currency.of('BAD')).toThrow();
-    });
-
-    it('checks equality by code', () => {
-      const usd1 = Currency.of('USD');
-      const usd2 = Currency.of('usd');
-      const eur = Currency.of('EUR');
-
-      expect(usd1.equals(usd2)).toBe(true);
-      expect(usd1.equals('USD')).toBe(true);
-      expect(usd1.equals('usd')).toBe(true);
-      expect(usd1.equals(eur)).toBe(false);
-      expect(usd1.equals('EUR')).toBe(false);
-    });
-
-    it('converts via instance methods', () => {
-      const usd = Currency.of('USD');
-      expect(usd.toMinorUnits(19.99)).toBe(1999);
-      expect(usd.toMajorDecimalString(1999)).toBe('19.99');
-      expect(usd.toMajorUnits(1999)).toBe(19.99);
-
-      const jpy = Currency.of('JPY');
-      expect(jpy.toMinorUnits(1000)).toBe(1000);
-      expect(jpy.toMajorDecimalString(1000)).toBe('1000');
-      expect(jpy.toMajorUnits(1000)).toBe(1000);
-    });
+    it.each(['JPY', 'KRW', 'KWD', 'BHD'])(
+      'rejects currency %s because minor-unit exponent is not 2',
+      (code) => {
+        const result = Currency.create(code);
+        ResultAssertionHelper.assertResultFailure(
+          result,
+          'Currency must have 2 decimal places',
+          DomainError,
+        );
+      },
+    );
   });
 });

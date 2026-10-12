@@ -20,7 +20,7 @@ describe('CreateProductUseCase', () => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    mockCurrencyConfig = new MockCurrencyConfigAdapter('USD', ['USD']);
+    mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD']);
     useCase = new CreateProductUseCase(
       mockRepository,
       mockCategoryRepository,
@@ -129,6 +129,62 @@ describe('CreateProductUseCase', () => {
         HttpStatus.BAD_REQUEST,
       );
       expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when currency exponent is not 2 (e.g. JPY)', async () => {
+      mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD', 'JPY']);
+      useCase = new CreateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockCurrencyConfig,
+      );
+      const command = CreateProductInputFactory.createMockDto({
+        price: 1500,
+        currency: 'JPY',
+      });
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency must have 2 decimal places',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when currency code is invalid', async () => {
+      const command = CreateProductInputFactory.createMockDto({
+        currency: 'INVALID',
+      });
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency must be a 3-letter code (ISO 4217)',
+        UseCaseError,
+      );
+      expect(result.isFailure && result.error.statusCode).toBe(
+        HttpStatus.BAD_REQUEST,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('normalizes lowercase currency to uppercase when creating product', async () => {
+      const command = CreateProductInputFactory.createMockDto({
+        currency: 'usd',
+      });
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.currency).toBe('USD');
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
   });
 });

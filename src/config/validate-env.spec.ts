@@ -74,7 +74,7 @@ describe('assertStripeWebhookSecret', () => {
 });
 
 describe('assertValidIso4217Currency', () => {
-  it.each(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'aud'])(
+  it.each(['USD', 'EUR', 'GBP', 'CAD', 'aud'])(
     'accepts valid ISO currency %s',
     (curr) => {
       expect(() => assertValidIso4217Currency(curr)).not.toThrow();
@@ -87,6 +87,21 @@ describe('assertValidIso4217Currency', () => {
       expect(() => assertValidIso4217Currency(curr)).toThrow(EnvError);
     },
   );
+
+  it.each(['JPY', 'KWD', 'BHD'])(
+    'rejects currency %s whose exponent is not 2',
+    (curr) => {
+      expect(() => assertValidIso4217Currency(curr)).toThrow(EnvError);
+    },
+  );
+
+  it('includes custom variable name in error message', () => {
+    expect(() =>
+      assertValidIso4217Currency('INVALID', 'CUSTOM_CURRENCY'),
+    ).toThrow(
+      'CUSTOM_CURRENCY must be a valid ISO 4217 currency code (got "INVALID")',
+    );
+  });
 });
 
 describe('assertNoMockPaymentAutoComplete', () => {
@@ -130,6 +145,7 @@ describe('validateEnv', () => {
     JWT_PRIVATE_KEY: 'test-key',
     CORS_ALLOWED_ORIGINS: 'http://localhost:3000',
     PUBLIC_BASE_URL: 'http://localhost:3000',
+    STORE_DEFAULT_CURRENCY: 'USD',
   };
 
   it('defaults IS_DB_SYNCHRONIZE to false when omitted', () => {
@@ -147,14 +163,20 @@ describe('validateEnv', () => {
     expect(validated.IS_DB_SYNCHRONIZE).toBe(false);
   });
 
-  it('defaults STORE_DEFAULT_CURRENCY to USD when omitted', () => {
-    const validated = validateEnv(baseEnv);
-    expect(validated.STORE_DEFAULT_CURRENCY).toBe('USD');
+  it('rejects when STORE_DEFAULT_CURRENCY is missing', () => {
+    const { STORE_DEFAULT_CURRENCY: _omitted, ...envWithoutCurrency } = baseEnv;
+    expect(() => validateEnv(envWithoutCurrency)).toThrow();
   });
 
   it('rejects invalid STORE_DEFAULT_CURRENCY', () => {
     expect(() =>
       validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'INVALID' }),
+    ).toThrow(EnvError);
+  });
+
+  it('rejects STORE_DEFAULT_CURRENCY with non-2-decimal exponent (e.g. JPY)', () => {
+    expect(() =>
+      validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'JPY' }),
     ).toThrow(EnvError);
   });
 

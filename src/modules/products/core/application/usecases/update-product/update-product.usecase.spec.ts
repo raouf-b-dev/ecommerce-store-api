@@ -22,7 +22,7 @@ describe('UpdateProductUseCase', () => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    mockCurrencyConfig = new MockCurrencyConfigAdapter('USD', ['USD']);
+    mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD']);
     useCase = new UpdateProductUseCase(
       mockRepository,
       mockCategoryRepository,
@@ -153,7 +153,7 @@ describe('UpdateProductUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Effective product currency "EUR" is not supported by this store',
+        'Currency "EUR" is not supported by this store',
         UseCaseError,
       );
       expect(result.isFailure && result.error.statusCode).toBe(
@@ -162,7 +162,7 @@ describe('UpdateProductUseCase', () => {
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should return BAD_REQUEST when partial update leaves legacy unsupported currency in place', async () => {
+    it('allows partial update when product has legacy unsupported currency and currency is omitted', async () => {
       const productId = 1;
       const command = UpdateProductInputFactory.createMockDto({
         id: productId,
@@ -171,6 +171,7 @@ describe('UpdateProductUseCase', () => {
       const legacyProductWithUnsupportedCurrency = Product.fromPrimitives(
         ProductTestFactory.createMockProduct({
           id: productId,
+          name: 'Old Name',
           currency: 'GBP',
         }),
       );
@@ -179,18 +180,79 @@ describe('UpdateProductUseCase', () => {
         legacyProductWithUnsupportedCurrency,
         1,
       );
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.name).toBe('New Name Only');
+      expect(result.value.currency).toBe('GBP');
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return BAD_REQUEST when currency exponent is not 2 (e.g. JPY)', async () => {
+      mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD', 'JPY']);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockCurrencyConfig,
+      );
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        price: 2500,
+        currency: 'JPY',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          price: 1000,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
 
       const result = await useCase.execute(command);
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'Effective product currency "GBP" is not supported by this store',
+        'Currency must have 2 decimal places',
         UseCaseError,
       );
       expect(result.isFailure && result.error.statusCode).toBe(
         HttpStatus.BAD_REQUEST,
       );
       expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('normalizes lowercase currency when updating product', async () => {
+      mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD', 'EUR']);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockCurrencyConfig,
+      );
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        currency: 'eur',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.currency).toBe('EUR');
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
   });
 });

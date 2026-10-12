@@ -12,6 +12,7 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CreateProductCommand } from '../../commands/create-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
+import { Currency } from '../../../../../../shared-kernel/domain/value-objects/currency';
 
 @Injectable()
 export class CreateProductUseCase extends UseCase<
@@ -31,12 +32,15 @@ export class CreateProductUseCase extends UseCase<
     command: CreateProductCommand,
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
-      const normalizedCurrency = command.currency?.trim().toUpperCase();
+      const currencyResult = Currency.create(command.currency);
+      if (currencyResult.isFailure) {
+        return ErrorFactory.UseCaseError(currencyResult.error.message, {
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
+      const normalizedCurrency = currencyResult.value.code;
       const supportedCurrencies = this.currencyConfig.getSupportedCurrencies();
-      if (
-        !normalizedCurrency ||
-        !supportedCurrencies.includes(normalizedCurrency)
-      ) {
+      if (!supportedCurrencies.includes(normalizedCurrency)) {
         return ErrorFactory.UseCaseError(
           `Currency "${command.currency}" is not supported by this store`,
           { status: HttpStatus.BAD_REQUEST },

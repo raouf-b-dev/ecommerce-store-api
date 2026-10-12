@@ -11,6 +11,7 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UpdateProductCommand } from '../../commands/update-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
+import { Currency } from '../../../../../../shared-kernel/domain/value-objects/currency';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
@@ -61,23 +62,25 @@ export class UpdateProductUseCase extends UseCase<
 
       const { entity, expectedVersion } = findResult.value;
 
-      const effectiveCurrency = (command.currency ?? entity.currency)
-        ?.trim()
-        .toUpperCase();
-
-      const supportedCurrencies = this.currencyConfig.getSupportedCurrencies();
-      if (
-        !effectiveCurrency ||
-        !supportedCurrencies.includes(effectiveCurrency)
-      ) {
-        return ErrorFactory.UseCaseError(
-          `Effective product currency "${effectiveCurrency}" is not supported by this store`,
-          { status: HttpStatus.BAD_REQUEST },
-        );
+      let updatedCurrency: string | undefined;
+      if (command.currency !== undefined) {
+        const currencyResult = Currency.create(command.currency);
+        if (currencyResult.isFailure) {
+          return ErrorFactory.UseCaseError(currencyResult.error.message, {
+            status: HttpStatus.BAD_REQUEST,
+          });
+        }
+        const normalizedCurrency = currencyResult.value.code;
+        const supportedCurrencies =
+          this.currencyConfig.getSupportedCurrencies();
+        if (!supportedCurrencies.includes(normalizedCurrency)) {
+          return ErrorFactory.UseCaseError(
+            `Currency "${command.currency}" is not supported by this store`,
+            { status: HttpStatus.BAD_REQUEST },
+          );
+        }
+        updatedCurrency = normalizedCurrency;
       }
-
-      const updatedCurrency =
-        command.currency !== undefined ? effectiveCurrency : undefined;
 
       entity.updateProduct({
         name: command.name,

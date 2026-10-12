@@ -8,6 +8,7 @@ import {
   bool,
 } from 'envalid';
 import { duration } from './validators/duration';
+import { Currency } from '../shared-kernel/domain/value-objects/currency';
 
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
@@ -75,21 +76,20 @@ export function assertStripeWebhookSecret(
 
 /**
  * Validates that a string is an authoritative ISO 4217 3-letter currency code
- * supported by the runtime's Intl data. Fails fast at startup if invalid.
+ * with 2 decimal places (matching numeric scale-2 columns). Fails fast at startup if invalid.
  */
-export function assertValidIso4217Currency(currency: string): void {
-  const normalized = currency?.trim().toUpperCase();
-  const validCurrencies =
-    typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function'
-      ? Intl.supportedValuesOf('currency')
-      : [];
-  if (
-    !normalized ||
-    normalized.length !== 3 ||
-    !validCurrencies.includes(normalized)
-  ) {
+export function assertValidIso4217Currency(
+  currency: string,
+  variableName = 'STORE_DEFAULT_CURRENCY',
+): void {
+  if (!Currency.isValid(currency)) {
     throw new EnvError(
-      `STORE_DEFAULT_CURRENCY must be a valid ISO 4217 currency code (got "${currency}")`,
+      `${variableName} must be a valid ISO 4217 currency code (got "${currency}")`,
+    );
+  }
+  if (Currency.getExponent(currency) !== 2) {
+    throw new EnvError(
+      `${variableName} must be a currency with 2 decimal places (got "${currency}")`,
     );
   }
 }
@@ -134,7 +134,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     POSTGRES_IMAGE: str(),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
-    STORE_DEFAULT_CURRENCY: str({ default: 'USD' }),
+    STORE_DEFAULT_CURRENCY: str(),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
@@ -175,7 +175,10 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
   );
-  assertValidIso4217Currency(validated.STORE_DEFAULT_CURRENCY);
+  assertValidIso4217Currency(
+    validated.STORE_DEFAULT_CURRENCY,
+    'STORE_DEFAULT_CURRENCY',
+  );
   assertNoMockPaymentAutoComplete(
     validated.NODE_ENV,
     validated.PAYMENT_MOCK_AUTO_COMPLETE,

@@ -135,6 +135,10 @@ export class MockEnvConfigService extends EnvConfigService {
     return this.configState.payments;
   }
 
+  override get store() {
+    return this.configState.store;
+  }
+
   setMockConfig(config: Partial<IAppConfig>) {
     Object.assign(this.configState, config);
   }

@@ -6,10 +6,6 @@ import { CurrencyConfigPort } from '../../core/application/ports/currency-config
 export class EnvCurrencyConfigAdapter implements CurrencyConfigPort {
   constructor(private readonly envConfig: EnvConfigService) {}
 
-  getDefaultCurrency(): string {
-    return this.envConfig.store.defaultCurrency;
-  }
-
   getSupportedCurrencies(): string[] {
     return this.envConfig.store.supportedCurrencies;
   }

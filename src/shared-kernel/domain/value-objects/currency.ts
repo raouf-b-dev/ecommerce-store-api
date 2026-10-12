@@ -64,6 +64,7 @@ export class Currency {
 
   /**
    * Factory creating an immutable Currency Value Object.
+   * Rejects currencies whose minor-unit exponent is not 2 because storage is scale 2.
    */
   static create(currency: string): Result<Currency, DomainError> {
     const normalized = Currency.normalize(currency);
@@ -74,42 +75,42 @@ export class Currency {
       );
     }
     const exponent = Currency.getExponent(normalized);
+    if (exponent !== 2) {
+      return ErrorFactory.DomainError('Currency must have 2 decimal places', {
+        code: ErrorCode.CURRENCY_INVALID,
+      });
+    }
     return Result.success(new Currency(normalized, exponent));
-  }
-
-  /**
-   * Unwraps Currency or throws DomainError if invalid.
-   */
-  static of(currency: string): Currency {
-    const result = Currency.create(currency);
-    if (result.isFailure) {
-      throw result.error;
-    }
-    return result.value;
-  }
-
-  /**
-   * Validates whether a given string is an authoritative ISO 4217 currency code.
-   */
-  static isValid(currency: string): boolean {
-    const normalized = currency?.trim().toUpperCase();
-    if (!normalized || normalized.length !== 3) {
-      return false;
-    }
-    const supported = getSupportedCurrencySet();
-    if (supported.size > 0) {
-      return supported.has(normalized);
-    }
-    return /^[A-Z]{3}$/.test(normalized);
   }
 
   /**
    * Normalizes a currency code to uppercase, or returns undefined if invalid.
    */
   static normalize(currency: string): string | undefined {
-    return Currency.isValid(currency)
-      ? currency.trim().toUpperCase()
-      : undefined;
+    if (typeof currency !== 'string') {
+      return undefined;
+    }
+    const normalized = currency.trim().toUpperCase();
+    if (normalized.length !== 3) {
+      return undefined;
+    }
+    const supported = getSupportedCurrencySet();
+    if (supported.size === 0 || !supported.has(normalized)) {
+      return undefined;
+    }
+    return normalized;
+  }
+
+  /**
+   * Validates whether a given string is an authoritative ISO 4217 currency code.
+   */
+  static isValid(currency: string): boolean {
+    return Currency.normalize(currency) !== undefined;
+  }
+
+  /** @internal For testing runtime fallback behavior. */
+  static resetSupportedCurrenciesCache(override?: Set<string>): void {
+    cachedSupportedCurrencies = override;
   }
 
   /**
@@ -132,61 +133,5 @@ export class Currency {
   static getFactor(currency: string): number {
     const exponent = Currency.getExponent(currency);
     return Math.pow(10, exponent);
-  }
-
-  /**
-   * Converts a major-unit amount to integer minor units (e.g. 19.99 USD -> 1999 cents, 1000 JPY -> 1000).
-   */
-  static toMinorUnits(
-    amount: number | string,
-    currency: string,
-  ): number | undefined {
-    const num = typeof amount === 'string' ? Number(amount.trim()) : amount;
-    if (!Number.isFinite(num) || num < 0) {
-      return undefined;
-    }
-    const factor = Currency.getFactor(currency);
-    const minor = Math.round(num * factor);
-    if (!Number.isSafeInteger(minor)) {
-      return undefined;
-    }
-    return minor;
-  }
-
-  /**
-   * Converts integer minor units to a formatted decimal string (e.g. 1999 USD -> "19.99", 1000 JPY -> "1000").
-   */
-  static toMajorDecimalString(minorUnits: number, currency: string): string {
-    const exponent = Currency.getExponent(currency);
-    if (exponent === 0) {
-      return String(minorUnits);
-    }
-    const factor = Currency.getFactor(currency);
-    const whole = Math.trunc(minorUnits / factor);
-    const fraction = Math.abs(minorUnits % factor);
-    return `${whole}.${String(fraction).padStart(exponent, '0')}`;
-  }
-
-  get factor(): number {
-    return Math.pow(10, this.exponent);
-  }
-
-  equals(other: Currency | string): boolean {
-    if (typeof other === 'string') {
-      return this.code === other.trim().toUpperCase();
-    }
-    return this.code === other.code;
-  }
-
-  toMinorUnits(amount: number | string): number | undefined {
-    return Currency.toMinorUnits(amount, this.code);
-  }
-
-  toMajorDecimalString(minorUnits: number): string {
-    return Currency.toMajorDecimalString(minorUnits, this.code);
-  }
-
-  toMajorUnits(minorUnits: number): number {
-    return minorUnits / this.factor;
   }
 }
