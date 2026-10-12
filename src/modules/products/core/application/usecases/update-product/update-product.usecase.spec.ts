@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import {
   MockCategoryRepository,
   MockProductRepository,
-  MockCurrencyConfigAdapter,
+  MockSupportedCurrenciesAdapter,
   ProductTestFactory,
   UpdateProductInputFactory,
 } from 'src/modules/products/testing';
@@ -16,17 +16,17 @@ describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let mockRepository: MockProductRepository;
   let mockCategoryRepository: MockCategoryRepository;
-  let mockCurrencyConfig: MockCurrencyConfigAdapter;
+  let mockSupportedCurrencies: MockSupportedCurrenciesAdapter;
 
   beforeEach(() => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD']);
+    mockSupportedCurrencies = new MockSupportedCurrenciesAdapter(['USD']);
     useCase = new UpdateProductUseCase(
       mockRepository,
       mockCategoryRepository,
-      mockCurrencyConfig,
+      mockSupportedCurrencies,
     );
   });
 
@@ -108,9 +108,7 @@ describe('UpdateProductUseCase', () => {
         'categoryId cannot be null',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
@@ -128,9 +126,7 @@ describe('UpdateProductUseCase', () => {
         'Category with id 99 not found',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 
@@ -156,9 +152,7 @@ describe('UpdateProductUseCase', () => {
         'Currency "EUR" is not supported by this store',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
@@ -190,12 +184,15 @@ describe('UpdateProductUseCase', () => {
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should return BAD_REQUEST when currency exponent is not 2 (e.g. JPY)', async () => {
-      mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD', 'JPY']);
+    it('updates product with JPY (0 decimal places) when supported', async () => {
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'JPY',
+      ]);
       useCase = new UpdateProductUseCase(
         mockRepository,
         mockCategoryRepository,
-        mockCurrencyConfig,
+        mockSupportedCurrencies,
       );
       const productId = 1;
       const command = UpdateProductInputFactory.createMockDto({
@@ -212,26 +209,25 @@ describe('UpdateProductUseCase', () => {
       );
 
       mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+      mockRepository.mockSuccessfulSave();
 
       const result = await useCase.execute(command);
 
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Currency must have 2 decimal places',
-        UseCaseError,
-      );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
-      expect(mockRepository.save).not.toHaveBeenCalled();
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.currency).toBe('JPY');
+      expect(result.value.price).toBe(2500);
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('normalizes lowercase currency when updating product', async () => {
-      mockCurrencyConfig = new MockCurrencyConfigAdapter(['USD', 'EUR']);
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'EUR',
+      ]);
       useCase = new UpdateProductUseCase(
         mockRepository,
         mockCategoryRepository,
-        mockCurrencyConfig,
+        mockSupportedCurrencies,
       );
       const productId = 1;
       const command = UpdateProductInputFactory.createMockDto({

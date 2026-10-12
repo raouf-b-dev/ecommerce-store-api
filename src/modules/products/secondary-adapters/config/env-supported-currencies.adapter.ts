@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { EnvConfigService } from '../../../../config/env-config.service';
-import { CurrencyConfigPort } from '../../core/application/ports/currency-config.port';
+import { SupportedCurrenciesPort } from '../../core/application/ports/supported-currencies.port';
 
 @Injectable()
-export class EnvCurrencyConfigAdapter implements CurrencyConfigPort {
+export class EnvSupportedCurrenciesAdapter implements SupportedCurrenciesPort {
   constructor(private readonly envConfig: EnvConfigService) {}
 
   getSupportedCurrencies(): string[] {

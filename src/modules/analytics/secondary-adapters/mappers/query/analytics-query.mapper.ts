@@ -24,6 +24,8 @@ import type {
   RawAnalyticsSeriesRow,
   RawAnalyticsTopProductRow,
 } from '../../dto/raw-analytics-query-row.interface';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 
 export class AnalyticsQueryMapper {
   static toNumber(value: number | string | null | undefined): number {
@@ -34,15 +36,25 @@ export class AnalyticsQueryMapper {
     return Number.isFinite(n) ? n : 0;
   }
 
-  static roundMoney(value: number): number {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
+  static roundMoney(value: number, currency: string): number {
+    const moneyResult = Money.fromDecimal(value, currency);
+    if (moneyResult.isSuccess) {
+      return moneyResult.value.toMajorUnits();
+    }
+    const exponent = Currency.getExponent(currency);
+    const factor = Math.pow(10, exponent);
+    return Math.round((value + Number.EPSILON) * factor) / factor;
   }
 
-  static computeAov(netRevenue: number, paidOrderCount: number): number {
+  static computeAov(
+    netRevenue: number,
+    paidOrderCount: number,
+    currency: string,
+  ): number {
     if (paidOrderCount <= 0) {
       return 0;
     }
-    return this.roundMoney(netRevenue / paidOrderCount);
+    return this.roundMoney(netRevenue / paidOrderCount, currency);
   }
 
   static toIso(date: Date): string {
@@ -73,10 +85,14 @@ export class AnalyticsQueryMapper {
   static toKpiSnapshot(
     revenue: RawAnalyticsRevenueAggRow | undefined,
     orderCountRow: RawAnalyticsCountRow | undefined,
+    currency: string,
   ): AnalyticsKpiSnapshot {
-    const gross = this.roundMoney(this.toNumber(revenue?.gross));
-    const refunded = this.roundMoney(this.toNumber(revenue?.refunded));
-    const net = this.roundMoney(gross - refunded);
+    const gross = this.roundMoney(this.toNumber(revenue?.gross), currency);
+    const refunded = this.roundMoney(
+      this.toNumber(revenue?.refunded),
+      currency,
+    );
+    const net = this.roundMoney(gross - refunded, currency);
     const paidOrderCount = this.toNumber(revenue?.paid_count);
 
     return {
@@ -85,8 +101,8 @@ export class AnalyticsQueryMapper {
       refundedAmount: refunded,
       ordersCount: this.toNumber(orderCountRow?.count),
       paidOrderCount,
-      aov: this.computeAov(net, paidOrderCount),
-      currency: revenue?.currency ?? 'USD',
+      aov: this.computeAov(net, paidOrderCount, currency),
+      currency,
     };
   }
 
@@ -131,6 +147,7 @@ export class AnalyticsQueryMapper {
     to: Date;
     bucket: AnalyticsBucket;
     rows: RawAnalyticsSeriesRow[];
+    currency: string;
   }): PaymentsTimeSeriesResult {
     const byStart = new Map<string, RawAnalyticsSeriesRow>();
     for (const row of input.rows) {
@@ -138,7 +155,7 @@ export class AnalyticsQueryMapper {
       byStart.set(key, row);
     }
 
-    const currency = input.rows.find((r) => r.currency)?.currency ?? 'USD';
+    const currency = input.currency;
 
     const buckets: PaymentTimeSeriesBucket[] = enumerateUtcBuckets(
       input.from,
@@ -147,13 +164,13 @@ export class AnalyticsQueryMapper {
     ).map((bucketStart) => {
       const key = bucketStart.toISOString();
       const row = byStart.get(key);
-      const gross = this.roundMoney(this.toNumber(row?.gross));
-      const refunded = this.roundMoney(this.toNumber(row?.refunded));
+      const gross = this.roundMoney(this.toNumber(row?.gross), currency);
+      const refunded = this.roundMoney(this.toNumber(row?.refunded), currency);
       return {
         bucketStart: key,
         grossAmount: gross,
         refundedAmount: refunded,
-        netAmount: this.roundMoney(gross - refunded),
+        netAmount: this.roundMoney(gross - refunded, currency),
         capturedCount: this.toNumber(row?.captured_count),
         currency,
       };
@@ -172,6 +189,7 @@ export class AnalyticsQueryMapper {
     from: Date;
     to: Date;
     rows: RawAnalyticsTopProductRow[];
+    currency: string;
   }): TopProductsResult {
     return {
       timezone: ANALYTICS_TIMEZONE,
@@ -182,7 +200,10 @@ export class AnalyticsQueryMapper {
         name: row.name,
         sku: row.sku,
         unitsSold: this.toNumber(row.units_sold),
-        lineRevenue: this.roundMoney(this.toNumber(row.line_revenue)),
+        lineRevenue: this.roundMoney(
+          this.toNumber(row.line_revenue),
+          row.currency ?? input.currency,
+        ),
       })),
     };
   }

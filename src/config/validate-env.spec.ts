@@ -3,7 +3,7 @@ import {
   assertNoMockPaymentAutoComplete,
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
-  assertValidIso4217Currency,
+  parseCurrencyCode,
   parseHttpOrigin,
   validateEnv,
 } from './validate-env';
@@ -73,35 +73,29 @@ describe('assertStripeWebhookSecret', () => {
   });
 });
 
-describe('assertValidIso4217Currency', () => {
-  it.each(['USD', 'EUR', 'GBP', 'CAD', 'aud'])(
+describe('parseCurrencyCode', () => {
+  it.each(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'KWD', 'BHD'])(
     'accepts valid ISO currency %s',
     (curr) => {
-      expect(() => assertValidIso4217Currency(curr)).not.toThrow();
+      expect(parseCurrencyCode(curr)).toBe(curr);
     },
   );
 
-  it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$'])(
+  it('normalizes lowercase currency to uppercase', () => {
+    expect(parseCurrencyCode('usd')).toBe('USD');
+    expect(parseCurrencyCode('jpy')).toBe('JPY');
+    expect(parseCurrencyCode('  kwd  ')).toBe('KWD');
+  });
+
+  it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$', 'INVALID'])(
     'rejects invalid currency %s',
     (curr) => {
-      expect(() => assertValidIso4217Currency(curr)).toThrow(EnvError);
+      expect(() => parseCurrencyCode(curr)).toThrow(EnvError);
+      expect(() => parseCurrencyCode(curr)).toThrow(
+        'must be a valid ISO 4217 currency code with 0-3 decimal places',
+      );
     },
   );
-
-  it.each(['JPY', 'KWD', 'BHD'])(
-    'rejects currency %s whose exponent is not 2',
-    (curr) => {
-      expect(() => assertValidIso4217Currency(curr)).toThrow(EnvError);
-    },
-  );
-
-  it('includes custom variable name in error message', () => {
-    expect(() =>
-      assertValidIso4217Currency('INVALID', 'CUSTOM_CURRENCY'),
-    ).toThrow(
-      'CUSTOM_CURRENCY must be a valid ISO 4217 currency code (got "INVALID")',
-    );
-  });
 });
 
 describe('assertNoMockPaymentAutoComplete', () => {
@@ -171,13 +165,23 @@ describe('validateEnv', () => {
   it('rejects invalid STORE_DEFAULT_CURRENCY', () => {
     expect(() =>
       validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'INVALID' }),
-    ).toThrow(EnvError);
+    ).toThrow();
   });
 
-  it('rejects STORE_DEFAULT_CURRENCY with non-2-decimal exponent (e.g. JPY)', () => {
-    expect(() =>
-      validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'JPY' }),
-    ).toThrow(EnvError);
+  it('accepts valid STORE_DEFAULT_CURRENCY (e.g. JPY)', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      STORE_DEFAULT_CURRENCY: 'JPY',
+    });
+    expect(validated.STORE_DEFAULT_CURRENCY).toBe('JPY');
+  });
+
+  it('normalizes lowercase STORE_DEFAULT_CURRENCY to uppercase', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      STORE_DEFAULT_CURRENCY: 'usd',
+    });
+    expect(validated.STORE_DEFAULT_CURRENCY).toBe('USD');
   });
 
   it.each(['production', 'staging'])(

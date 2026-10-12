@@ -1,3 +1,3 @@
-export abstract class CurrencyConfigPort {
+export abstract class SupportedCurrenciesPort {
   abstract getSupportedCurrencies(): string[];
 }

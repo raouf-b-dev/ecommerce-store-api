@@ -20,7 +20,7 @@ export class RefundEntity {
   @Column({ name: 'payment_id', type: 'int' })
   paymentId!: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 11, scale: 3 })
   amount!: number;
 
   @Column({ type: 'varchar', length: 3 })

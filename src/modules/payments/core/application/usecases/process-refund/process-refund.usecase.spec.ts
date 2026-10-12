@@ -79,7 +79,7 @@ describe('ProcessRefundUseCase', () => {
   it('should process a refund successfully and pass idempotency key', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,
-      amount: 10000,
+      amount: 100,
       refundedAmount: 0,
       transactionId: 'txn_123',
     });
@@ -92,7 +92,7 @@ describe('ProcessRefundUseCase', () => {
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
-      amount: 5000,
+      amount: 50,
       reason: 'Defective product',
     };
 
@@ -139,7 +139,7 @@ describe('ProcessRefundUseCase', () => {
 
     const command: ProcessRefundCommand = {
       paymentId: 123,
-      amount: 15000,
+      amount: 150,
     };
 
     const result = await useCase.execute(command);
@@ -294,5 +294,91 @@ describe('ProcessRefundUseCase', () => {
     );
     expect(result.error).toBe(providerError);
     expect(result.error.retryable).toBe(false);
+  });
+
+  it('validates refund amount against payment currency with 0 decimals (JPY)', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 1000,
+      currency: 'JPY',
+      refundedAmount: 0,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 500,
+    };
+
+    const result = await useCase.execute(command);
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.refundedAmount).toBe(500);
+    expect(defaultProvider.refund).toHaveBeenCalledWith({
+      providerReference: 'txn_123',
+      amount: expect.objectContaining({ amount: 500, currency: 'JPY' }),
+      idempotencyKey: 'refund-123-0',
+    });
+  });
+
+  it('validates refund amount against payment currency with 3 decimals (KWD)', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 10,
+      currency: 'KWD',
+      refundedAmount: 0,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+    paymentRepository.update.mockImplementation((p) =>
+      Promise.resolve(Result.success(p)),
+    );
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 1.234,
+    };
+
+    const result = await useCase.execute(command);
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.refundedAmount).toBe(1234);
+    expect(defaultProvider.refund).toHaveBeenCalledWith({
+      providerReference: 'txn_123',
+      amount: expect.objectContaining({ amount: 1234, currency: 'KWD' }),
+      idempotencyKey: 'refund-123-0',
+    });
+  });
+
+  it('rejects refund when amount has too many decimal places for currency', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 100,
+      currency: 'USD',
+      refundedAmount: 0,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 1.2345,
+    };
+
+    const result = await useCase.execute(command);
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Amount must be a non-negative decimal',
+    );
+    expect(result.error.statusCode).toBe(400);
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
 });

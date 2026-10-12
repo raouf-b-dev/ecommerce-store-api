@@ -9,6 +9,7 @@ import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
 import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type OrderCreate = CreateFromEntity<OrderEntity, 'items' | 'version'>;
 
@@ -61,9 +62,24 @@ export class OrderMapper {
       status: primitives.status,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
-      subtotal: Number(decimalFromMinorUnits(primitives.subtotal)),
-      shippingCost: Number(decimalFromMinorUnits(primitives.shippingCost)),
-      totalPrice: Number(decimalFromMinorUnits(primitives.totalPrice)),
+      subtotal: Number(
+        decimalFromMinorUnits(
+          primitives.subtotal,
+          Currency.getExponent(primitives.currency),
+        ),
+      ),
+      shippingCost: Number(
+        decimalFromMinorUnits(
+          primitives.shippingCost,
+          Currency.getExponent(primitives.currency),
+        ),
+      ),
+      totalPrice: Number(
+        decimalFromMinorUnits(
+          primitives.totalPrice,
+          Currency.getExponent(primitives.currency),
+        ),
+      ),
       currency: primitives.currency,
     };
 

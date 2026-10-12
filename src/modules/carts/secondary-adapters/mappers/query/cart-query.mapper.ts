@@ -3,6 +3,7 @@ import {
   CartPresentationDTO,
 } from '../../../core/application/queries/results/cart-presentation.result';
 import { RawCartQueryRow } from '../../dto/raw-cart-query-row.interface';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export class CartQueryMapper {
   static toPresentationDto(
@@ -22,8 +23,11 @@ export class CartQueryMapper {
       if (row.itemId != null) {
         const qty = Number(row.quantity || 0);
         const unitPrice = Number(row.price || 0);
-        const itemTotal = Number((qty * unitPrice).toFixed(2));
         const itemCurrency = (row.currency ?? '').trim().toUpperCase();
+        const itemExponent = itemCurrency
+          ? Currency.getExponent(itemCurrency)
+          : 2;
+        const itemTotal = Number((qty * unitPrice).toFixed(itemExponent));
 
         totalQuantity += qty;
         grandTotal += itemTotal;
@@ -56,8 +60,9 @@ export class CartQueryMapper {
         : String(firstRow.cartUpdatedAt);
 
     const shippingCost = 0;
-    const subtotal = Number(grandTotal.toFixed(2));
-    const totalAmount = Number((subtotal + shippingCost).toFixed(2));
+    const cartExponent = currency ? Currency.getExponent(currency) : 2;
+    const subtotal = Number(grandTotal.toFixed(cartExponent));
+    const totalAmount = Number((subtotal + shippingCost).toFixed(cartExponent));
 
     return {
       id: Number(firstRow.cartId),

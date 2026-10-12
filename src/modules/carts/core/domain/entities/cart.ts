@@ -4,6 +4,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { ICartItem } from '../interfaces/cart-item.interface';
 import { ICart } from '../interfaces/cart.interface';
 import { CartItem, CartItemProps } from './cart-item';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export interface CartProps {
   id: number | null;
@@ -39,10 +40,6 @@ export class Cart implements ICart {
     return Result.success(undefined);
   }
 
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
-  }
-
   // Getters
   get id(): number | null {
     return this._id;
@@ -65,8 +62,7 @@ export class Cart implements ICart {
   }
 
   get totalAmount(): number {
-    const total = this._items.reduce((sum, item) => sum + item.subtotal, 0);
-    return this.roundPrice(total);
+    return this._items.reduce((sum, item) => sum + item.subtotal, 0);
   }
 
   /** Single-currency MVP: derived from line snapshots; null when empty. */
@@ -107,12 +103,11 @@ export class Cart implements ICart {
     currency: string,
     imageUrl?: string,
   ): Result<void, DomainError> {
-    const normalizedCurrency = currency?.trim().toUpperCase();
-    if (!normalizedCurrency || normalizedCurrency.length !== 3) {
-      return ErrorFactory.DomainError(
-        'Currency must be a 3-letter code (ISO 4217)',
-      );
+    const currencyResult = Currency.create(currency);
+    if (currencyResult.isFailure) {
+      return currencyResult;
     }
+    const normalizedCurrency = currencyResult.value.code;
 
     const cartCurrency = this.currency;
     if (cartCurrency && cartCurrency !== normalizedCurrency) {

@@ -50,9 +50,7 @@ describe('CreateCategoryUseCase', () => {
       'Category with name Electronics already exists',
       UseCaseError,
     );
-    expect(result.isFailure && result.error.statusCode).toBe(
-      HttpStatus.CONFLICT,
-    );
+    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 
@@ -69,9 +67,7 @@ describe('CreateCategoryUseCase', () => {
       'Category with slug electronics already exists',
       UseCaseError,
     );
-    expect(result.isFailure && result.error.statusCode).toBe(
-      HttpStatus.CONFLICT,
-    );
+    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 

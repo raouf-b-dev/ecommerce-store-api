@@ -1,8 +1,9 @@
-// src/modules/products/domain/entities/product.entity.ts
 import { IProduct } from '../interfaces/product.interface';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export interface ProductProps {
   id: number | null;
@@ -53,7 +54,7 @@ export class Product implements IProduct {
       ? this.generateSlug(props.slug)
       : this.generateSlug(props.name);
     this._description = props.description?.trim();
-    this._price = this.roundPrice(props.price);
+    this._price = this.roundPrice(props.price, props.currency);
     this._currency = props.currency.trim().toUpperCase();
     this._sku = props.sku?.trim().toUpperCase();
     this._imageUrl = props.imageUrl?.trim() || null;
@@ -93,8 +94,16 @@ export class Product implements IProduct {
       .replace(/(^-|-$)+/g, '');
   }
 
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
+  private roundPrice(price: number, currency: string): number {
+    const moneyResult = Money.fromDecimal(price, currency);
+    if (moneyResult.isSuccess) {
+      return moneyResult.value.toMajorUnits();
+    }
+    const exponent = Currency.getExponent(currency);
+    const factor = Math.pow(10, exponent);
+    const rounded = Math.round((price + Number.EPSILON) * factor) / factor;
+    const roundedMoney = Money.fromDecimal(rounded, currency);
+    return roundedMoney.isSuccess ? roundedMoney.value.toMajorUnits() : rounded;
   }
 
   // Getters
@@ -169,7 +178,7 @@ export class Product implements IProduct {
     if (price < 0) {
       return ErrorFactory.DomainError('Product price cannot be negative');
     }
-    this._price = this.roundPrice(price);
+    this._price = this.roundPrice(price, this._currency);
     this._updatedAt = new Date();
     return Result.success(undefined);
   }

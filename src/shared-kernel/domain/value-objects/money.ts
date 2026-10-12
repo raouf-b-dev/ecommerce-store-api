@@ -6,18 +6,18 @@ import { decimalFromMinorUnits, minorUnitsFromDecimal } from './money-decimal';
 import { Currency } from './currency';
 
 /**
- * Amount in integer minor units (cents for USD) plus an ISO 4217 currency code.
+ * Amount in integer minor units plus an ISO 4217 currency.
  * Arithmetic stays in integers.
  */
 export class Money {
   private constructor(
     private readonly minorUnits: number,
-    private readonly currencyCode: string,
+    private readonly currencyObj: Currency,
   ) {}
 
   static create(
     minorUnits: number,
-    currency: string,
+    currency: string | Currency,
   ): Result<Money, DomainError> {
     if (!Number.isSafeInteger(minorUnits) || minorUnits < 0) {
       return ErrorFactory.DomainError(
@@ -25,44 +25,54 @@ export class Money {
         { code: ErrorCode.AMOUNT_INVALID },
       );
     }
-    const currencyResult = Currency.create(currency);
+    const currencyResult =
+      currency instanceof Currency
+        ? Result.success(currency)
+        : Currency.create(currency);
     if (currencyResult.isFailure) {
       return currencyResult;
     }
-    return Result.success(new Money(minorUnits, currencyResult.value.code));
+    return Result.success(new Money(minorUnits, currencyResult.value));
   }
 
-  /** Persistence boundary: a scale-2 decimal such as "19.99". */
+  /** Persistence boundary: a decimal string or finite number representing major units. */
   static fromDecimal(
     amount: string | number,
-    currency: string,
+    currency: string | Currency,
   ): Result<Money, DomainError> {
-    const minorUnits = minorUnitsFromDecimal(amount);
-    if (minorUnits === undefined) {
-      return ErrorFactory.DomainError(
-        'Amount must be a non-negative scale-2 decimal',
-        { code: ErrorCode.AMOUNT_INVALID },
-      );
+    const currencyResult =
+      currency instanceof Currency
+        ? Result.success(currency)
+        : Currency.create(currency);
+    if (currencyResult.isFailure) {
+      return currencyResult;
     }
-    return Money.create(minorUnits, currency);
+    const curr = currencyResult.value;
+    const minorUnits = minorUnitsFromDecimal(amount, curr.exponent);
+    if (minorUnits === undefined) {
+      return ErrorFactory.DomainError('Amount must be a non-negative decimal', {
+        code: ErrorCode.AMOUNT_INVALID,
+      });
+    }
+    return Money.create(minorUnits, curr);
   }
 
   /**
-   * Catalog boundary. Snaps a major-unit number to scale 2, then stores minor units.
+   * Catalog boundary. Converts a major-unit number using the currency exponent into minor units.
    */
   static fromMajorUnits(
     amount: number,
-    currency: string,
+    currency: string | Currency,
   ): Result<Money, DomainError> {
     if (!Number.isFinite(amount)) {
       return ErrorFactory.DomainError('Amount must be a finite number', {
         code: ErrorCode.AMOUNT_INVALID,
       });
     }
-    return Money.fromDecimal(amount.toFixed(2), currency);
+    return Money.fromDecimal(amount, currency);
   }
 
-  static zero(currency: string): Result<Money, DomainError> {
+  static zero(currency: string | Currency): Result<Money, DomainError> {
     return Money.create(0, currency);
   }
 
@@ -77,17 +87,23 @@ export class Money {
   }
 
   get currency(): string {
-    return this.currencyCode;
+    return this.currencyObj.code;
   }
 
-  /** Formats the minor units as a scale-2 decimal string, e.g. "19.99". */
+  get currencyInstance(): Currency {
+    return this.currencyObj;
+  }
+
+  /** Formats the minor units as a decimal string using the currency exponent, e.g. "19.99", "1000", "1.234". */
   toDecimalString(): string {
-    return decimalFromMinorUnits(this.minorUnits);
+    return decimalFromMinorUnits(this.minorUnits, this.currencyObj.exponent);
   }
 
-  /** Converts the minor units to a major-unit number, e.g. 19.99. */
+  /** Converts the minor units to a major-unit number, e.g. 19.99, 1000, 1.234. */
   toMajorUnits(): number {
-    return Number(decimalFromMinorUnits(this.minorUnits));
+    return Number(
+      decimalFromMinorUnits(this.minorUnits, this.currencyObj.exponent),
+    );
   }
 
   add(other: Money): Result<Money, DomainError> {
@@ -95,7 +111,7 @@ export class Money {
     if (mismatch) {
       return mismatch;
     }
-    return Money.create(this.minorUnits + other.minorUnits, this.currencyCode);
+    return Money.create(this.minorUnits + other.minorUnits, this.currencyObj);
   }
 
   subtract(other: Money): Result<Money, DomainError> {
@@ -110,7 +126,7 @@ export class Money {
         { code: ErrorCode.AMOUNT_INVALID },
       );
     }
-    return Money.create(result, this.currencyCode);
+    return Money.create(result, this.currencyObj);
   }
 
   multiply(quantity: number): Result<Money, DomainError> {
@@ -126,13 +142,13 @@ export class Money {
         code: ErrorCode.AMOUNT_INVALID,
       });
     }
-    return Money.create(product, this.currencyCode);
+    return Money.create(product, this.currencyObj);
   }
 
   equals(other: Money): boolean {
     return (
       this.minorUnits === other.minorUnits &&
-      this.currencyCode === other.currencyCode
+      this.currencyObj.equals(other.currencyObj)
     );
   }
 
@@ -147,11 +163,11 @@ export class Money {
   private currencyMismatch(
     other: Money,
   ): Result<Money, DomainError> | undefined {
-    if (this.currencyCode === other.currencyCode) {
+    if (this.currencyObj.equals(other.currencyObj)) {
       return undefined;
     }
     return ErrorFactory.DomainError(
-      `Cannot combine amounts in different currencies: ${this.currencyCode} and ${other.currencyCode}`,
+      `Cannot combine amounts in different currencies: ${this.currency} and ${other.currency}`,
       { code: ErrorCode.CURRENCY_MISMATCH },
     );
   }

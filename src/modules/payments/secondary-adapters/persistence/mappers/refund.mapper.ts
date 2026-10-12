@@ -4,6 +4,7 @@ import { RefundStatusType } from '../../../core/domain/value-objects/refund-stat
 import { RefundEntity } from '../../orm/refund.schema';
 import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type RefundCreate = CreateFromEntity<RefundEntity, 'payment'>;
 
@@ -12,7 +13,7 @@ export class RefundMapper {
     const props: RefundProps = {
       id: entity.id,
       paymentId: entity.paymentId,
-      amount: requireMinorUnits(entity.amount),
+      amount: requireMinorUnits(entity.amount, entity.currency),
       currency: entity.currency,
       reason: entity.reason,
       status: entity.status as RefundStatusType,
@@ -25,11 +26,12 @@ export class RefundMapper {
 
   static toEntity(domain: Refund): RefundEntity {
     const primitives = domain.toPrimitives();
+    const exponent = Currency.getExponent(primitives.currency);
 
     const refundPayload: RefundCreate = {
       id: primitives.id || 0,
       paymentId: primitives.paymentId,
-      amount: Number(decimalFromMinorUnits(primitives.amount)),
+      amount: Number(decimalFromMinorUnits(primitives.amount, exponent)),
       currency: primitives.currency,
       reason: primitives.reason,
       status: primitives.status,

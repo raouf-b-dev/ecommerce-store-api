@@ -33,6 +33,7 @@ export interface RawAnalyticsTopProductRow {
   sku: string | null;
   units_sold: number;
   line_revenue: number;
+  currency: string | null;
 }
 
 export interface RawAnalyticsAlertRow {

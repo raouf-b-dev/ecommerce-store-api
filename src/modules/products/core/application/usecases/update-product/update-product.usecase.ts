@@ -1,7 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
-import { CurrencyConfigPort } from '../../ports/currency-config.port';
+import { SupportedCurrenciesPort } from '../../ports/supported-currencies.port';
+import { validateProductCurrency } from '../../helpers/validate-product-currency.helper';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -11,7 +12,6 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UpdateProductCommand } from '../../commands/update-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
-import { Currency } from '../../../../../../shared-kernel/domain/value-objects/currency';
 
 @Injectable()
 export class UpdateProductUseCase extends UseCase<
@@ -22,7 +22,7 @@ export class UpdateProductUseCase extends UseCase<
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly categoryRepository: CategoryRepository,
-    private readonly currencyConfig: CurrencyConfigPort,
+    private readonly supportedCurrencies: SupportedCurrenciesPort,
   ) {
     super();
   }
@@ -64,22 +64,14 @@ export class UpdateProductUseCase extends UseCase<
 
       let updatedCurrency: string | undefined;
       if (command.currency !== undefined) {
-        const currencyResult = Currency.create(command.currency);
+        const currencyResult = validateProductCurrency(
+          command.currency,
+          this.supportedCurrencies,
+        );
         if (currencyResult.isFailure) {
-          return ErrorFactory.UseCaseError(currencyResult.error.message, {
-            status: HttpStatus.BAD_REQUEST,
-          });
+          return currencyResult;
         }
-        const normalizedCurrency = currencyResult.value.code;
-        const supportedCurrencies =
-          this.currencyConfig.getSupportedCurrencies();
-        if (!supportedCurrencies.includes(normalizedCurrency)) {
-          return ErrorFactory.UseCaseError(
-            `Currency "${command.currency}" is not supported by this store`,
-            { status: HttpStatus.BAD_REQUEST },
-          );
-        }
-        updatedCurrency = normalizedCurrency;
+        updatedCurrency = currencyResult.value.code;
       }
 
       entity.updateProduct({

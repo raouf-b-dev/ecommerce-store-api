@@ -91,4 +91,38 @@ describe('CartQueryMapper', () => {
     expect(result?.items[0].id).toBe(0);
     expect(result?.subtotal).toBe(12.5);
   });
+
+  it('maps zero-decimal JPY currency correctly (1000 JPY)', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 1,
+      price: 1000,
+      quantity: 2,
+      currency: 'JPY',
+    });
+
+    const result = CartQueryMapper.toPresentationDto([row]);
+
+    expect(result?.currency).toBe('JPY');
+    expect(result?.items[0].price).toBe(1000);
+    expect(result?.items[0].subtotal).toBe(2000);
+    expect(result?.subtotal).toBe(2000);
+    expect(result?.totalAmount).toBe(2000);
+  });
+
+  it('maps three-decimal KWD currency correctly (1.234 KWD)', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 2,
+      price: 1.234,
+      quantity: 2,
+      currency: 'KWD',
+    });
+
+    const result = CartQueryMapper.toPresentationDto([row]);
+
+    expect(result?.currency).toBe('KWD');
+    expect(result?.items[0].price).toBe(1.234);
+    expect(result?.items[0].subtotal).toBe(2.468);
+    expect(result?.subtotal).toBe(2.468);
+    expect(result?.totalAmount).toBe(2.468);
+  });
 });

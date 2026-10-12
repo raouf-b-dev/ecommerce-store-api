@@ -74,25 +74,18 @@ export function assertStripeWebhookSecret(
   }
 }
 
-/**
- * Validates that a string is an authoritative ISO 4217 3-letter currency code
- * with 2 decimal places (matching numeric scale-2 columns). Fails fast at startup if invalid.
- */
-export function assertValidIso4217Currency(
-  currency: string,
-  variableName = 'STORE_DEFAULT_CURRENCY',
-): void {
-  if (!Currency.isValid(currency)) {
-    throw new EnvError(
-      `${variableName} must be a valid ISO 4217 currency code (got "${currency}")`,
-    );
+const CURRENCY_ERROR =
+  'must be a valid ISO 4217 currency code with 0-3 decimal places';
+
+export function parseCurrencyCode(value: string): string {
+  const normalized = Currency.normalize(value);
+  if (!normalized) {
+    throw new EnvError(CURRENCY_ERROR);
   }
-  if (Currency.getExponent(currency) !== 2) {
-    throw new EnvError(
-      `${variableName} must be a currency with 2 decimal places (got "${currency}")`,
-    );
-  }
+  return normalized;
 }
+
+export const currencyCode = makeValidator<string>(parseCurrencyCode);
 
 /**
  * Deployed environments must never enable mock payment auto-complete so
@@ -134,7 +127,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     POSTGRES_IMAGE: str(),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
-    STORE_DEFAULT_CURRENCY: str(),
+    STORE_DEFAULT_CURRENCY: currencyCode(),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
@@ -175,10 +168,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
   );
-  assertValidIso4217Currency(
-    validated.STORE_DEFAULT_CURRENCY,
-    'STORE_DEFAULT_CURRENCY',
-  );
+
   assertNoMockPaymentAutoComplete(
     validated.NODE_ENV,
     validated.PAYMENT_MOCK_AUTO_COMPLETE,
