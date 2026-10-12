@@ -8,6 +8,7 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 
 describe('ShipOrderUseCase', () => {
   let useCase: ShipOrderUseCase;
@@ -171,15 +172,16 @@ describe('ShipOrderUseCase', () => {
     });
 
     it('should ship order with online payment method', async () => {
-      const stripeOrder = OrderTestFactory.createStripeOrder({
+      const cardOrder = OrderTestFactory.createProcessingOrder({
         status: OrderStatus.PROCESSING,
         paymentId: 1, // Payment already completed
+        paymentMethod: PaymentMethodType.CARD,
       });
 
-      mockOrderRepository.mockSuccessfulFindByIdForUpdate(stripeOrder);
+      mockOrderRepository.mockSuccessfulFindByIdForUpdate(cardOrder);
       mockOrderRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute(stripeOrder.id!);
+      const result = await useCase.execute(cardOrder.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(result.value.status).toBe(OrderStatus.SHIPPED);

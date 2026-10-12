@@ -7,6 +7,6 @@ export interface CreatePaymentIntentCommand {
   currency: string;
   paymentMethod: PaymentMethodType;
   userId: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string>;
   callerContext?: CallerContext | null;
 }

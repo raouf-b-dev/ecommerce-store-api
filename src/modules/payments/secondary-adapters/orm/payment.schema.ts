@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -12,8 +13,16 @@ import { RefundEntity } from './refund.schema';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 
+const PROVIDER_SLUG_CHECK = `"provider" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`;
+
 @Entity({ name: 'payments' })
+@Check('chk_payments_payment_method', `"payment_method" IN ('CARD')`)
+@Check('chk_payments_provider', PROVIDER_SLUG_CHECK)
 @Index('idx_payments_order_id', ['orderId'])
+@Index('idx_payments_order_id_pending_unique', ['orderId'], {
+  unique: true,
+  where: `"status" = 'PENDING'`,
+})
 @Index('idx_payments_user_id', ['userId'])
 @Index('idx_payments_transaction_id', ['transactionId'])
 @Index('idx_payments_gateway_intent_id', ['gatewayPaymentIntentId'])
@@ -37,6 +46,9 @@ export class PaymentEntity {
 
   @Column({ name: 'payment_method', type: 'varchar' })
   paymentMethod!: PaymentMethodType;
+
+  @Column({ type: 'varchar' })
+  provider!: string;
 
   @Column({ type: 'varchar' })
   status!: PaymentStatusType;

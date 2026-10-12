@@ -1,5 +1,6 @@
 import { EnvError } from 'envalid';
 import {
+  assertNoMockPaymentAutoComplete,
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
   assertValidIso4217Currency,
@@ -88,6 +89,34 @@ describe('assertValidIso4217Currency', () => {
   );
 });
 
+describe('assertNoMockPaymentAutoComplete', () => {
+  it.each(['development', 'test'])(
+    'allows mock auto-complete in %s',
+    (nodeEnv) => {
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'true'),
+      ).not.toThrow();
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
+      ).not.toThrow();
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
+    },
+  );
+
+  it.each(['production', 'staging'])(
+    'rejects mock auto-complete in %s',
+    (nodeEnv) => {
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv, 'true')).toThrow(
+        EnvError,
+      );
+      expect(() =>
+        assertNoMockPaymentAutoComplete(nodeEnv, 'false'),
+      ).not.toThrow();
+      expect(() => assertNoMockPaymentAutoComplete(nodeEnv)).not.toThrow();
+    },
+  );
+});
+
 describe('validateEnv', () => {
   const baseEnv: NodeJS.ProcessEnv = {
     NODE_ENV: 'development',
@@ -128,4 +157,19 @@ describe('validateEnv', () => {
       validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'INVALID' }),
     ).toThrow(EnvError);
   });
+
+  it.each(['production', 'staging'])(
+    'rejects PAYMENT_MOCK_AUTO_COMPLETE=true in %s',
+    (nodeEnv) => {
+      expect(() =>
+        validateEnv({
+          ...baseEnv,
+          NODE_ENV: nodeEnv,
+          STRIPE_WEBHOOK_SECRET: 'whsec_test',
+          PUBLIC_BASE_URL: 'https://api.example.com',
+          PAYMENT_MOCK_AUTO_COMPLETE: 'true',
+        }),
+      ).toThrow(EnvError);
+    },
+  );
 });

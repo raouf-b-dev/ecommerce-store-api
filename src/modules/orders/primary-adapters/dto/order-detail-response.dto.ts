@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderItemDetailResponseDto {
   @ApiProperty({ example: 1, description: 'Product ID' })
@@ -69,6 +70,13 @@ export class OrderDetailResponseDto {
     description: 'Order status',
   })
   status!: OrderStatus;
+
+  @ApiProperty({
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CARD,
+    description: 'Payment method',
+  })
+  paymentMethod!: PaymentMethodType;
 
   @ApiProperty({
     example: 'Jane Doe, 123 Tech Boulevard, San Francisco, CA 94105, US',

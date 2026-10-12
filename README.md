@@ -24,7 +24,7 @@ Eleven modules under `src/modules/` talk through ACL gateways and domain events,
 
 | Topic    | Status                                                                                 |
 | :------- | :------------------------------------------------------------------------------------- |
-| Payments | Mock adapter behind a swappable hexagonal port. No live payment provider wired yet.    |
+| Payments | Fake Stripe provider behind a swappable port. No live payment provider wired yet.      |
 | Deploy   | Single-instance ops (migrations, health probes, backup/smoke). Not multi-instance yet. |
 | Scope    | Reference backend, not a hosted storefront.                                            |
 | Demo     | No public staging. Run locally with Docker.                                            |

@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Job } from 'bullmq';
 import {
   SimulateMockPaymentWebhookJob,
   SimulateMockPaymentWebhookProps,
@@ -8,19 +7,18 @@ import { HandlePaymentWebhookService } from '../../core/application/services/han
 import { PaymentEventType } from '../../core/domain/value-objects/payment-event-type';
 import { PaymentStatusType } from '../../core/domain/value-objects/payment-status';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-import { MockCorrelationService } from '../../../../testing';
+import { MockCorrelationService, createMockJob } from '../../../../testing';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
 
 describe('SimulateMockPaymentWebhookJob', () => {
   let jobHandler: SimulateMockPaymentWebhookJob;
-  let mockWebhookService: jest.Mocked<HandlePaymentWebhookService>;
+  let executeMock: jest.MockedFunction<HandlePaymentWebhookService['execute']>;
   let mockCorrelation: MockCorrelationService;
 
   beforeEach(async () => {
-    mockWebhookService = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<HandlePaymentWebhookService>;
+    executeMock = jest.fn();
     mockCorrelation = new MockCorrelationService();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -28,7 +26,7 @@ describe('SimulateMockPaymentWebhookJob', () => {
         SimulateMockPaymentWebhookJob,
         {
           provide: HandlePaymentWebhookService,
-          useValue: mockWebhookService,
+          useValue: { execute: executeMock },
         },
         {
           provide: CorrelationService,
@@ -37,24 +35,24 @@ describe('SimulateMockPaymentWebhookJob', () => {
       ],
     }).compile();
 
-    jobHandler = module.get<SimulateMockPaymentWebhookJob>(
-      SimulateMockPaymentWebhookJob,
-    );
+    jobHandler = module.get(SimulateMockPaymentWebhookJob);
   });
 
-  it('delegates to HandlePaymentWebhookService with SUCCEEDED event type', async () => {
+  it('delegates to HandlePaymentWebhookService with SUCCEEDED event type, amountMinor, and currency', async () => {
     const jobData: SimulateMockPaymentWebhookProps = {
       paymentIntentId: 'pi_test123',
       transactionId: 'pi_test123',
       metadata: { orderId: '10', cartId: '20' },
+      amountMinor: 5000,
+      currency: 'USD',
     };
 
-    const mockJob = {
-      data: jobData,
-      name: 'simulate-mock-payment-webhook',
-    } as Job<SimulateMockPaymentWebhookProps>;
+    const mockJob = createMockJob(
+      JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+      jobData,
+    );
 
-    mockWebhookService.execute.mockResolvedValue(
+    executeMock.mockResolvedValue(
       Result.success({
         orderId: 10,
         paymentId: 100,
@@ -64,11 +62,13 @@ describe('SimulateMockPaymentWebhookJob', () => {
 
     const result = await jobHandler.handle(mockJob);
 
-    expect(mockWebhookService.execute).toHaveBeenCalledWith({
+    expect(executeMock).toHaveBeenCalledWith({
       paymentIntentId: 'pi_test123',
       eventType: PaymentEventType.SUCCEEDED,
       transactionId: 'pi_test123',
       metadata: { orderId: '10', cartId: '20' },
+      amountMinor: 5000,
+      currency: 'USD',
     });
     expect(result.status).toBe(PaymentStatusType.COMPLETED);
   });
@@ -76,14 +76,16 @@ describe('SimulateMockPaymentWebhookJob', () => {
   it('returns failure when HandlePaymentWebhookService fails', async () => {
     const jobData: SimulateMockPaymentWebhookProps = {
       paymentIntentId: 'pi_nonexistent',
+      amountMinor: 5000,
+      currency: 'USD',
     };
 
-    const mockJob = {
-      data: jobData,
-      name: 'simulate-mock-payment-webhook',
-    } as Job<SimulateMockPaymentWebhookProps>;
+    const mockJob = createMockJob(
+      JobNames.SIMULATE_MOCK_PAYMENT_WEBHOOK,
+      jobData,
+    );
 
-    mockWebhookService.execute.mockResolvedValue(
+    executeMock.mockResolvedValue(
       ErrorFactory.ServiceError('Payment not found for intent: pi_nonexistent'),
     );
 

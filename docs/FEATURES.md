@@ -75,7 +75,7 @@ Checkout is a multi-step SAGA: **Validate → Reserve Stock → Process Payment 
 
 ### Idempotency (Redis-Backed)
 
-`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
+`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients must send the `Idempotency-Key` header (the header is the only source). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/decorators/`, `src/infrastructure/interceptors/`
 
@@ -85,13 +85,13 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Payment Gateway (Mock Adapter)
+### Payment Provider (Fake Stripe Payment Provider)
 
-Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
+Payments use the provider-neutral `PaymentProvider` port directly bound to `FakeStripePaymentProvider` (no resolver). Stored payments record provider `'stripe'` and payment method `'CARD'`. The `FakeStripePaymentProvider` adapter imitates Stripe payment intent flows for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
 
-- **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
+- **Flow**: SAGA Validate Cart -> Reserve Stock -> Process Payment (provider) -> (webhook / mock auto-complete) -> Confirm Order -> Clear Cart
 - **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 

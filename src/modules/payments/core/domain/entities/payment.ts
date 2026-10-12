@@ -12,8 +12,20 @@ import {
   PaymentStatus,
   PaymentStatusType,
 } from '../value-objects/payment-status';
+import { PaymentProviderId } from '../value-objects/payment-provider-id';
 
 import { Refund, RefundProps } from './refund';
+
+export interface CreatePaymentProps {
+  id?: number | null;
+  orderId: number;
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethodType;
+  provider: PaymentProviderId;
+  userId?: number | null;
+  paymentMethodInfo?: string | null;
+}
 
 export interface PaymentProps {
   id: number | null;
@@ -22,10 +34,11 @@ export interface PaymentProps {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
+  provider: PaymentProviderId;
   status: PaymentStatusType;
   transactionId: string | null;
-  gatewayPaymentIntentId: string | null; // Stripe/PayPal payment intent ID
-  gatewayClientSecret: string | null; // Client secret for frontend confirmation
+  gatewayPaymentIntentId: string | null;
+  gatewayClientSecret: string | null;
   paymentMethodInfo: string | null;
   refundedAmount: number;
   refunds: RefundProps[];
@@ -41,6 +54,7 @@ export class Payment implements IPayment {
   private _userId: number | null;
   private _amount: Money;
   private _paymentMethod: PaymentMethod;
+  private readonly _provider: PaymentProviderId;
   private _status: PaymentStatus;
   private _transactionId: string | null;
   private _gatewayPaymentIntentId: string | null;
@@ -66,6 +80,7 @@ export class Payment implements IPayment {
     }
     this._amount = amount.value;
     this._paymentMethod = new PaymentMethod(props.paymentMethod);
+    this._provider = props.provider;
     this._status = new PaymentStatus(props.status);
     this._transactionId = props.transactionId?.trim() || null;
     this._gatewayPaymentIntentId = props.gatewayPaymentIntentId?.trim() || null;
@@ -127,12 +142,24 @@ export class Payment implements IPayment {
     return this._amount.amount;
   }
 
+  get money(): Money {
+    return this._amount;
+  }
+
   get currency(): string {
     return this._amount.currency;
   }
 
   get paymentMethod(): PaymentMethodType {
     return this._paymentMethod.type;
+  }
+
+  get provider(): string {
+    return this._provider.value;
+  }
+
+  get providerId(): PaymentProviderId {
+    return this._provider;
   }
 
   get status(): PaymentStatusType {
@@ -184,7 +211,7 @@ export class Payment implements IPayment {
 
   /**
    * Set the payment intent details from gateway response.
-   * Called after creating a payment intent with Stripe/PayPal.
+   * Called after creating a payment intent.
    */
   setPaymentIntent(
     paymentIntentId: string,
@@ -371,6 +398,7 @@ export class Payment implements IPayment {
       amount: this._amount.amount,
       currency: this._amount.currency,
       paymentMethod: this._paymentMethod.type,
+      provider: this._provider.value,
       status: this._status.status,
       transactionId: this._transactionId,
       gatewayPaymentIntentId: this._gatewayPaymentIntentId,
@@ -385,31 +413,51 @@ export class Payment implements IPayment {
     };
   }
 
-  static fromPrimitives(data: PaymentProps): Payment {
-    return new Payment(data);
+  static fromPrimitives(data: IPayment): Payment {
+    const providerResult = PaymentProviderId.create(data.provider);
+    if (providerResult.isFailure) {
+      throw providerResult.error;
+    }
+
+    const props: PaymentProps = {
+      id: data.id,
+      orderId: data.orderId,
+      userId: data.userId,
+      amount: data.amount,
+      currency: data.currency,
+      paymentMethod: data.paymentMethod,
+      provider: providerResult.value,
+      status: data.status,
+      transactionId: data.transactionId,
+      gatewayPaymentIntentId: data.gatewayPaymentIntentId,
+      gatewayClientSecret: data.gatewayClientSecret,
+      paymentMethodInfo: data.paymentMethodInfo,
+      refundedAmount: data.refundedAmount,
+      refunds: data.refunds
+        ? data.refunds.map((r) => (r instanceof Refund ? r.props : r))
+        : [],
+      failureReason: data.failureReason,
+      createdAt: data.createdAt,
+      completedAt: data.completedAt,
+      updatedAt: data.updatedAt,
+    };
+    return new Payment(props);
   }
 
-  static create(
-    id: number | null,
-    orderId: number,
-    amount: number,
-    currency: string,
-    paymentMethod: PaymentMethodType,
-    userId?: number,
-    paymentMethodInfo?: string,
-  ): Payment {
+  static create(props: CreatePaymentProps): Payment {
     return new Payment({
-      id,
-      orderId,
-      userId: userId || null,
-      amount,
-      currency,
-      paymentMethod,
+      id: props.id ?? null,
+      orderId: props.orderId,
+      userId: props.userId ?? null,
+      amount: props.amount,
+      currency: props.currency,
+      paymentMethod: props.paymentMethod,
+      provider: props.provider,
       status: PaymentStatusType.PENDING,
       transactionId: null,
       gatewayPaymentIntentId: null,
       gatewayClientSecret: null,
-      paymentMethodInfo: paymentMethodInfo || null,
+      paymentMethodInfo: props.paymentMethodInfo ?? null,
       refundedAmount: 0,
       refunds: [],
       failureReason: null,

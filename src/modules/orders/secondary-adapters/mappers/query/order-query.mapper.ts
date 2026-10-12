@@ -69,6 +69,7 @@ export class OrderQueryMapper {
       userName,
       userEmail,
       status: orderEntity.status,
+      paymentMethod: orderEntity.paymentMethod,
       shippingAddress: shippingAddrStr,
       items,
       subtotal: Number(orderEntity.subtotal),

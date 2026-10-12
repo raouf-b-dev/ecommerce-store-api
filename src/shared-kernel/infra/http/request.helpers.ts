@@ -1,9 +1,7 @@
 import type { Request } from 'express';
-import { isRecord } from '../lang/is-record';
 
 /** Express lowercases incoming header names. */
 export const IDEMPOTENCY_KEY_HEADER = 'idempotency-key';
-export const X_IDEMPOTENCY_KEY_HEADER = 'x-idempotency-key';
 
 const API_VERSION_PREFIX = /^\/v\d+/;
 const ANON_USER_SEGMENT = 'anon';
@@ -28,26 +26,11 @@ function readHeaderValue(
 }
 
 /**
- * Client idempotency key precedence:
- * `Idempotency-Key` → `x-idempotency-key` → body `idempotencyKey`.
+ * Client idempotency key:
+ * `Idempotency-Key` header is the only source.
  */
 export function extractIdempotencyKey(request: Request): string | undefined {
-  const standard = readHeaderValue(request, IDEMPOTENCY_KEY_HEADER);
-  if (standard) {
-    return standard;
-  }
-
-  const legacy = readHeaderValue(request, X_IDEMPOTENCY_KEY_HEADER);
-  if (legacy) {
-    return legacy;
-  }
-
-  const body: unknown = request.body;
-  if (isRecord(body)) {
-    return asNonEmptyString(body.idempotencyKey);
-  }
-
-  return undefined;
+  return readHeaderValue(request, IDEMPOTENCY_KEY_HEADER);
 }
 
 export function getUnversionedRoutePath(request: Request): string {

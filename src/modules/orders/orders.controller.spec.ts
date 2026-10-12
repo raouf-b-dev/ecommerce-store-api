@@ -23,11 +23,28 @@ import { Order } from './core/domain/entities/order';
 import { OrderStatus } from './core/domain/value-objects/order-status';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
+import { OrderDetailResponseDto } from './primary-adapters/dto/order-detail-response.dto';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
 import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/payment-method';
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
+import { DECORATORS } from '@nestjs/swagger';
+import { isRecord } from '../../shared-kernel/infra/lang/is-record';
 import { ResultAssertionHelper } from '../../testing';
+
+function findHeaderParam(target: object, paramName: string): unknown {
+  const rawParams: unknown = Reflect.getMetadata(
+    DECORATORS.API_PARAMETERS,
+    target,
+  );
+  if (!Array.isArray(rawParams)) {
+    return undefined;
+  }
+  return rawParams.find(
+    (param: unknown) =>
+      isRecord(param) && param.name === paramName && param.in === 'header',
+  );
+}
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -167,6 +184,44 @@ describe('OrdersController', () => {
     });
   });
 
+  it.each([
+    { endpoint: 'checkout', handler: OrdersController.prototype.checkout },
+    {
+      endpoint: 'createPayment',
+      handler: OrdersController.prototype.createPayment,
+    },
+  ])(
+    'documents Idempotency-Key as required header and omits legacy or response headers for $endpoint',
+    ({ handler }) => {
+      const idempotencyKeyHeader = findHeaderParam(handler, 'Idempotency-Key');
+      expect(idempotencyKeyHeader).toMatchObject({
+        in: 'header',
+        required: true,
+      });
+
+      expect(findHeaderParam(handler, 'x-idempotency-key')).toBeUndefined();
+      expect(findHeaderParam(handler, 'Retry-After')).toBeUndefined();
+    },
+  );
+
+  it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {
+    const rawProps: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
+      CheckoutDto.prototype,
+    );
+    expect(Array.isArray(rawProps)).toBe(true);
+    const props = Array.isArray(rawProps) ? rawProps : [];
+    expect(props).not.toContain(':idempotencyKey');
+  });
+
+  it('exposes paymentMethod in OrderDetailResponseDto Swagger properties', () => {
+    const rawProps: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
+      OrderDetailResponseDto.prototype,
+    );
+    expect(rawProps).toEqual(expect.arrayContaining([':paymentMethod']));
+  });
+
   it('should call GetOrderUseCase.execute when findOne is called and return its result', async () => {
     const res = await controller.findOne(mockOrder.id!, callerContext);
     expect(getOrderUseCase.execute).toHaveBeenCalledWith({
@@ -229,7 +284,7 @@ describe('OrdersController', () => {
 
   it('should call CreateOrderPaymentUseCase.execute when createPayment is called', async () => {
     const dto = {
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentMethodDetails: { cardLast4: '4242' },
     };
     createOrderPaymentUseCase.execute.mockResolvedValue(
@@ -255,7 +310,7 @@ describe('OrdersController', () => {
 
     const res = await controller.createPayment(
       123,
-      { paymentMethod: PaymentMethodType.STRIPE },
+      { paymentMethod: PaymentMethodType.CARD },
       callerContext,
     );
 

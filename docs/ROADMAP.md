@@ -407,16 +407,17 @@ Moved to Phase **16c**.
 
 ### [ ] Real Stripe Integration & Webhook Idempotency
 
-**What**: Stripe SDK adapter + authentic signature verification + event.id dedupe.
+**What**: Real Stripe SDK adapter + env-based provider binding + event.id dedupe.
 
 **Scope**:
 
-- Stripe SDK secondary adapter for PaymentIntent create/capture/refund.
+- Real `StripePaymentProvider` implementing `PaymentProvider` using the official Stripe SDK, reusing `stripe-provider-id.ts` (`'stripe'`).
+- Env-based provider binding with startup validation refusing `FakeStripePaymentProvider` in production and staging environments.
 - Resolve TODO in `stripe-signature.service.ts` with real HMAC verification using webhook secret.
 - Persist processed Stripe `event.id` (Redis/DB + TTL) to ignore replays.
 - Checkout SAGA (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
 
-**Location**: `src/modules/payments/secondary-adapters/stripe/`, `src/modules/payments/secondary-adapters/services/`
+**Location**: `src/modules/payments/secondary-adapters/gateways/`
 
 ---
 
@@ -462,7 +463,7 @@ Moved to Phase **16c**.
 >
 > **Hard prerequisite:** Shopper HTTP contract **15b** (done).
 >
-> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens, remove unused body `idempotencyKey` `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
+> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
 
 ### [x] Checkout SAGA & real-time order events
 

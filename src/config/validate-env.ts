@@ -94,6 +94,24 @@ export function assertValidIso4217Currency(currency: string): void {
   }
 }
 
+/**
+ * Deployed environments must never enable mock payment auto-complete so
+ * checkouts cannot be confirmed without a verified gateway webhook.
+ */
+export function assertNoMockPaymentAutoComplete(
+  nodeEnv: string,
+  enabled?: string,
+): void {
+  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+    return;
+  }
+  if (enabled === 'true') {
+    throw new EnvError(
+      `PAYMENT_MOCK_AUTO_COMPLETE must not be true in ${nodeEnv}`,
+    );
+  }
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv) {
   const validated = cleanEnv(env, {
     NODE_ENV: str({
@@ -158,5 +176,9 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.STRIPE_WEBHOOK_SECRET,
   );
   assertValidIso4217Currency(validated.STORE_DEFAULT_CURRENCY);
+  assertNoMockPaymentAutoComplete(
+    validated.NODE_ENV,
+    validated.PAYMENT_MOCK_AUTO_COMPLETE,
+  );
   return validated;
 }

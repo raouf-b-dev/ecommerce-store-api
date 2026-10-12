@@ -99,6 +99,11 @@ function buildLinesForEnv(lines, envName) {
       return 'LOG_LEVEL=info';
     }
 
+    if (key === 'PAYMENT_MOCK_AUTO_COMPLETE') {
+      if (envName === 'development') return 'PAYMENT_MOCK_AUTO_COMPLETE=true';
+      return 'PAYMENT_MOCK_AUTO_COMPLETE=false';
+    }
+
     if (key === 'JWT_PRIVATE_KEY') {
       return `JWT_PRIVATE_KEY=${toDotenvEscaped(generatePEM())}`;
     }

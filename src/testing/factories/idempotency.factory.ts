@@ -1,7 +1,4 @@
-import {
-  IDEMPOTENCY_KEY_HEADER,
-  X_IDEMPOTENCY_KEY_HEADER,
-} from '../../shared-kernel/infra/http/request.helpers';
+import { IDEMPOTENCY_KEY_HEADER } from '../../shared-kernel/infra/http/request.helpers';
 import { CurrentUserPayload } from '../../shared-kernel/domain/interfaces/current-user.interface';
 import { TEST_IDS } from '../helpers/test-data.helper';
 
@@ -37,7 +34,7 @@ export class IdempotencyTestFactory {
     variant: IdempotencyHeaderVariant = 'standard',
   ): Record<string, string> {
     if (variant === 'legacy') {
-      return { [X_IDEMPOTENCY_KEY_HEADER]: clientKey };
+      return { 'x-idempotency-key': clientKey };
     }
     return { [IDEMPOTENCY_KEY_HEADER]: clientKey };
   }

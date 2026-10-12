@@ -39,6 +39,8 @@ export class E2eOrderHelper {
   ): Promise<{
     gatewayPaymentIntentId: string;
     reservationId: string;
+    amount: number;
+    currency: string;
   }> {
     return pollUntil(
       async () => {
@@ -56,6 +58,8 @@ export class E2eOrderHelper {
         return {
           gatewayPaymentIntentId: String(gatewayPaymentIntentId),
           reservationId: String(reservationId),
+          amount: Number(response.body.amount),
+          currency: String(response.body.currency),
         };
       },
       {

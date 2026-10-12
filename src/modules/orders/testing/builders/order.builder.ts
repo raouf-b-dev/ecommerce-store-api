@@ -67,13 +67,13 @@ export class OrderBuilder {
   }
 
   asOnlinePaymentPending(): this {
-    return this.withPaymentMethod(PaymentMethodType.STRIPE)
+    return this.withPaymentMethod(PaymentMethodType.CARD)
       .withStatus(OrderStatus.PENDING_PAYMENT)
       .withPaymentId(null);
   }
 
   asOnlinePaymentCompleted(): this {
-    return this.withPaymentMethod(PaymentMethodType.STRIPE)
+    return this.withPaymentMethod(PaymentMethodType.CARD)
       .withStatus(OrderStatus.CONFIRMED)
       .withPaymentId(1);
   }

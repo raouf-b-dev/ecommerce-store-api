@@ -3,7 +3,6 @@ import {
   extractIdempotencyKey,
   getUnversionedRoutePath,
   IDEMPOTENCY_KEY_HEADER,
-  X_IDEMPOTENCY_KEY_HEADER,
 } from './request.helpers';
 import {
   createMockRequest,
@@ -13,46 +12,42 @@ import {
 
 describe('idempotency HTTP helpers', () => {
   describe('extractIdempotencyKey', () => {
-    it('prefers Idempotency-Key over legacy header and body', () => {
+    it('extracts Idempotency-Key from standard header', () => {
       const clientKey = IdempotencyTestFactory.createClientKey('standard');
       const request = createMockRequest({
         headers: {
           [IDEMPOTENCY_KEY_HEADER]: clientKey,
-          [X_IDEMPOTENCY_KEY_HEADER]: 'legacy-ignored',
         },
-        body: { idempotencyKey: 'body-ignored' },
       });
 
       expect(extractIdempotencyKey(request)).toBe(clientKey);
     });
 
-    it('falls back to x-idempotency-key when standard header is absent', () => {
+    it('ignores legacy x-idempotency-key header when standard header is absent', () => {
       const clientKey = IdempotencyTestFactory.createClientKey('legacy');
       const request = createMockRequest({
         headers: IdempotencyTestFactory.createHeaders(clientKey, 'legacy'),
         body: { idempotencyKey: 'body-ignored' },
       });
 
-      expect(extractIdempotencyKey(request)).toBe(clientKey);
+      expect(extractIdempotencyKey(request)).toBeUndefined();
     });
 
-    it('falls back to body idempotencyKey', () => {
+    it('ignores body idempotencyKey when header is absent', () => {
       const clientKey = IdempotencyTestFactory.createClientKey('body');
       const request = createMockRequest({
         headers: {},
         body: { idempotencyKey: clientKey },
       });
 
-      expect(extractIdempotencyKey(request)).toBe(clientKey);
+      expect(extractIdempotencyKey(request)).toBeUndefined();
     });
 
-    it('rejects blank header and body values', () => {
+    it('rejects blank and whitespace header values', () => {
       const request = createMockRequest({
         headers: {
           [IDEMPOTENCY_KEY_HEADER]: '   ',
-          [X_IDEMPOTENCY_KEY_HEADER]: '',
         },
-        body: { idempotencyKey: '  ' },
       });
 
       expect(extractIdempotencyKey(request)).toBeUndefined();

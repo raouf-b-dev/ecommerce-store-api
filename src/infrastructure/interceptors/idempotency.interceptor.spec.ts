@@ -3,7 +3,6 @@ import { IdempotencyInterceptor } from './idempotency.interceptor';
 import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.store';
 import {
   CallHandler,
-  BadRequestException,
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -16,6 +15,7 @@ import {
   IdempotencyTestFactory,
   MockIdempotencyStore,
 } from '../../testing';
+import { ErrorCode } from '../../shared-kernel/domain/exceptions/error-code';
 
 describe('IdempotencyInterceptor', () => {
   let interceptor: IdempotencyInterceptor;
@@ -27,6 +27,7 @@ describe('IdempotencyInterceptor', () => {
   function createContext(
     clientKey: string | undefined,
     variant: 'standard' | 'legacy' = 'standard',
+    body?: unknown,
   ) {
     const headers =
       clientKey === undefined
@@ -35,6 +36,7 @@ describe('IdempotencyInterceptor', () => {
     const request = createMockRequestWithUser(user, {
       method: 'POST',
       headers,
+      body,
       path: `/v1${routePath}`,
       route: { path: routePath },
     });
@@ -69,13 +71,39 @@ describe('IdempotencyInterceptor', () => {
     expect(interceptor).toBeDefined();
   });
 
-  it('rejects the request when no idempotency key is provided', async () => {
-    const { context } = createContext(undefined);
+  it.each([
+    {
+      scenario: 'no idempotency key is provided',
+      create: () => createContext(undefined),
+    },
+    {
+      scenario: 'only legacy x-idempotency-key header is provided',
+      create: () =>
+        createContext(
+          IdempotencyTestFactory.createClientKey('legacy'),
+          'legacy',
+        ),
+    },
+    {
+      scenario: 'Idempotency-Key header is whitespace only',
+      create: () => createContext('   '),
+    },
+    {
+      scenario: 'idempotencyKey is only sent in the body',
+      create: () =>
+        createContext(undefined, 'standard', {
+          idempotencyKey: 'body-only-key',
+        }),
+    },
+  ])('rejects the request when $scenario', async ({ create }) => {
+    const { context } = create();
     const next = createMockCallHandler(of('response'));
 
     await expect(
       firstValueFrom(interceptor.intercept(context, next)),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toMatchObject({
+      response: { code: ErrorCode.IDEMPOTENCY_KEY_REQUIRED },
+    });
 
     expect(idempotencyStore.checkAndLock).not.toHaveBeenCalled();
     expect(next.handle).not.toHaveBeenCalled();
@@ -96,20 +124,6 @@ describe('IdempotencyInterceptor', () => {
       expectedScopedKey(clientKey),
     );
     expect(next.handle).not.toHaveBeenCalled();
-  });
-
-  it('should accept the legacy x-idempotency-key header', async () => {
-    const clientKey = IdempotencyTestFactory.createClientKey('legacy');
-    const { context } = createContext(clientKey, 'legacy');
-    const next = createMockCallHandler(of({ ok: true }));
-
-    idempotencyStore.mockNewLock();
-
-    await firstValueFrom(interceptor.intercept(context, next));
-
-    expect(idempotencyStore.checkAndLock).toHaveBeenCalledWith(
-      expectedScopedKey(clientKey),
-    );
   });
 
   it('should throw ConflictException with Retry-After when in progress', async () => {
