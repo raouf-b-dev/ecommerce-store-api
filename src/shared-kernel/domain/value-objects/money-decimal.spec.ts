@@ -42,12 +42,6 @@ describe('minorUnitsFromDecimal', () => {
     expect(minorUnitsFromDecimal(Number.NaN, 2)).toBeUndefined();
     expect(minorUnitsFromDecimal(-5, 2)).toBeUndefined();
   });
-
-  it('returns undefined for invalid exponents', () => {
-    expect(minorUnitsFromDecimal('19.99', -1)).toBeUndefined();
-    expect(minorUnitsFromDecimal('19.99', 4)).toBeUndefined();
-    expect(minorUnitsFromDecimal('19.99', 1.5)).toBeUndefined();
-  });
 });
 
 describe('decimalFromMinorUnits', () => {
@@ -67,14 +61,5 @@ describe('decimalFromMinorUnits', () => {
     expect(decimalFromMinorUnits(1234, 3)).toBe('1.234');
     expect(decimalFromMinorUnits(5, 3)).toBe('0.005');
     expect(decimalFromMinorUnits(2000, 3)).toBe('2.000');
-  });
-
-  it('throws an error for invalid exponents', () => {
-    expect(() => decimalFromMinorUnits(100, -1)).toThrow(
-      'Invalid currency exponent -1: must be between 0 and 3',
-    );
-    expect(() => decimalFromMinorUnits(100, 4)).toThrow(
-      'Invalid currency exponent 4: must be between 0 and 3',
-    );
   });
 });

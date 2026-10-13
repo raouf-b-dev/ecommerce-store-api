@@ -5,7 +5,11 @@ import { OrderPaymentResponseDto } from '../dto/order-payment-response.dto';
 
 export class OrderPaymentDtoMapper {
   static toResponse(payment: CreatedPayment): OrderPaymentResponseDto {
-    const exponent = Currency.getExponent(payment.currency);
+    const currencyResult = Currency.create(payment.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     return {
       id: payment.id,
       orderId: payment.orderId,

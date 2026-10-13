@@ -3,14 +3,16 @@ import { DomainError } from '../exceptions/domain.error';
 import { ErrorCode } from '../exceptions/error-code';
 import { ErrorFactory } from '../exceptions/error.factory';
 
+export type CurrencyExponent = 0 | 1 | 2 | 3;
+
 /**
  * Authoritative ISO 4217 currency code to minor-unit exponent mapping.
  * Only exponents between 0 and 3 are supported.
  */
-const ISO_4217_EXPONENTS: Readonly<Record<string, number>> = {
+const ISO_4217_EXPONENTS: Readonly<Record<string, CurrencyExponent>> = {
   AED: 2,
-  AFN: 0,
-  ALL: 0,
+  AFN: 2,
+  ALL: 2,
   AMD: 2,
   ANG: 2,
   AOA: 2,
@@ -93,7 +95,7 @@ const ISO_4217_EXPONENTS: Readonly<Record<string, number>> = {
   LYD: 3,
   MAD: 2,
   MDL: 2,
-  MGA: 0,
+  MGA: 2,
   MKD: 2,
   MMK: 2,
   MNT: 2,
@@ -161,10 +163,8 @@ const ISO_4217_EXPONENTS: Readonly<Record<string, number>> = {
   XAF: 0,
   XCD: 2,
   XCG: 2,
-  XDR: 2,
   XOF: 0,
   XPF: 0,
-  XSU: 2,
   YER: 2,
   ZAR: 2,
   ZMW: 2,
@@ -179,7 +179,7 @@ const ISO_4217_EXPONENTS: Readonly<Record<string, number>> = {
 export class Currency {
   private constructor(
     readonly code: string,
-    readonly exponent: number,
+    readonly exponent: CurrencyExponent,
   ) {}
 
   /**
@@ -195,12 +195,6 @@ export class Currency {
       );
     }
     const exponent = ISO_4217_EXPONENTS[normalized];
-    if (exponent === undefined) {
-      return ErrorFactory.DomainError(
-        'Currency must be a 3-letter code (ISO 4217)',
-        { code: ErrorCode.CURRENCY_INVALID },
-      );
-    }
     return Result.success(new Currency(normalized, exponent));
   }
 
@@ -208,9 +202,6 @@ export class Currency {
    * Normalizes a currency code to uppercase, or returns undefined if invalid.
    */
   static normalize(currency: string): string | undefined {
-    if (typeof currency !== 'string') {
-      return undefined;
-    }
     const normalized = currency.trim().toUpperCase();
     if (normalized.length !== 3) {
       return undefined;
@@ -226,18 +217,6 @@ export class Currency {
    */
   static isValid(currency: string): boolean {
     return Currency.normalize(currency) !== undefined;
-  }
-
-  /**
-   * Returns the minor-unit exponent for the given currency (e.g. 2 for USD, 0 for JPY, 3 for KWD).
-   */
-  static getExponent(currency: string): number {
-    const normalized = Currency.normalize(currency);
-    if (!normalized) {
-      return 2;
-    }
-    const exponent = ISO_4217_EXPONENTS[normalized];
-    return exponent !== undefined ? exponent : 2;
   }
 
   equals(other: Currency): boolean {

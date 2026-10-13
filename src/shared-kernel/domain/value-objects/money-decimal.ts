@@ -1,3 +1,5 @@
+import { CurrencyExponent } from './currency';
+
 const NON_ZERO_DIGIT_PATTERN = /[^0]/;
 const DIGITS_ONLY_PATTERN = /^\d+$/;
 
@@ -17,10 +19,6 @@ function isPositiveDecimalText(text: string): boolean {
   return false;
 }
 
-function isValidExponent(exponent: number): boolean {
-  return Number.isInteger(exponent) && exponent >= 0 && exponent <= 3;
-}
-
 /**
  * Parses a decimal string or finite number into integer minor units using the given currency exponent (0..3).
  * Extra fraction digits are allowed only if they are trailing zeros (e.g. "19.990" with exponent 2 yields 1999).
@@ -28,12 +26,8 @@ function isValidExponent(exponent: number): boolean {
  */
 export function minorUnitsFromDecimal(
   value: string | number,
-  exponent: number,
+  exponent: CurrencyExponent,
 ): number | undefined {
-  if (!isValidExponent(exponent)) {
-    return undefined;
-  }
-
   let text: string;
   if (typeof value === 'number') {
     if (!Number.isFinite(value) || value < 0) {
@@ -83,14 +77,8 @@ export function minorUnitsFromDecimal(
  */
 export function decimalFromMinorUnits(
   minorUnits: number,
-  exponent: number,
+  exponent: CurrencyExponent,
 ): string {
-  if (!isValidExponent(exponent)) {
-    throw new Error(
-      `Invalid currency exponent ${exponent}: must be between 0 and 3`,
-    );
-  }
-
   if (exponent === 0) {
     return String(Math.trunc(minorUnits));
   }

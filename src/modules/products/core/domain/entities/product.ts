@@ -3,7 +3,6 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
-import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export interface ProductProps {
   id: number | null;
@@ -54,7 +53,7 @@ export class Product implements IProduct {
       ? this.generateSlug(props.slug)
       : this.generateSlug(props.name);
     this._description = props.description?.trim();
-    this._price = this.roundPrice(props.price, props.currency);
+    this._price = props.price;
     this._currency = props.currency.trim().toUpperCase();
     this._sku = props.sku?.trim().toUpperCase();
     this._imageUrl = props.imageUrl?.trim() || null;
@@ -76,6 +75,10 @@ export class Product implements IProduct {
         'Product currency must be a valid 3-letter ISO 4217 code',
       );
     }
+    const moneyResult = Money.fromMajorUnits(props.price, props.currency);
+    if (moneyResult.isFailure) {
+      return moneyResult;
+    }
     const slug = props.slug?.trim()
       ? this.generateSlug(props.slug)
       : this.generateSlug(props.name);
@@ -92,18 +95,6 @@ export class Product implements IProduct {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
-  }
-
-  private roundPrice(price: number, currency: string): number {
-    const moneyResult = Money.fromDecimal(price, currency);
-    if (moneyResult.isSuccess) {
-      return moneyResult.value.toMajorUnits();
-    }
-    const exponent = Currency.getExponent(currency);
-    const factor = Math.pow(10, exponent);
-    const rounded = Math.round((price + Number.EPSILON) * factor) / factor;
-    const roundedMoney = Money.fromDecimal(rounded, currency);
-    return roundedMoney.isSuccess ? roundedMoney.value.toMajorUnits() : rounded;
   }
 
   // Getters
@@ -178,7 +169,11 @@ export class Product implements IProduct {
     if (price < 0) {
       return ErrorFactory.DomainError('Product price cannot be negative');
     }
-    this._price = this.roundPrice(price, this._currency);
+    const moneyResult = Money.fromMajorUnits(price, this._currency);
+    if (moneyResult.isFailure) {
+      return moneyResult;
+    }
+    this._price = moneyResult.value.toMajorUnits();
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
@@ -213,11 +208,11 @@ export class Product implements IProduct {
     if (updates.description !== undefined) {
       this.updateDescription(updates.description);
     }
-    if (updates.price !== undefined) {
-      this.updatePrice(updates.price);
-    }
     if (updates.currency !== undefined) {
       this._currency = updates.currency.trim().toUpperCase();
+    }
+    if (updates.price !== undefined) {
+      this.updatePrice(updates.price);
     }
     if (updates.sku !== undefined) {
       this.updateSku(updates.sku);

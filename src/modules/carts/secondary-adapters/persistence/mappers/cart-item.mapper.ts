@@ -29,7 +29,11 @@ export class CartItemMapper {
 
   static toEntity(domain: CartItem): CartItemEntity {
     const primitives = domain.toPrimitives();
-    const exponent = Currency.getExponent(primitives.currency);
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     const itemPayload: Omit<CartItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,

@@ -48,6 +48,11 @@ export class OrderMapper {
 
   static toEntity(domain: Order): OrderEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const orderPayload: OrderCreate = {
       id: primitives.id || 0,
@@ -62,23 +67,12 @@ export class OrderMapper {
       status: primitives.status,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
-      subtotal: Number(
-        decimalFromMinorUnits(
-          primitives.subtotal,
-          Currency.getExponent(primitives.currency),
-        ),
-      ),
+      subtotal: Number(decimalFromMinorUnits(primitives.subtotal, exponent)),
       shippingCost: Number(
-        decimalFromMinorUnits(
-          primitives.shippingCost,
-          Currency.getExponent(primitives.currency),
-        ),
+        decimalFromMinorUnits(primitives.shippingCost, exponent),
       ),
       totalPrice: Number(
-        decimalFromMinorUnits(
-          primitives.totalPrice,
-          Currency.getExponent(primitives.currency),
-        ),
+        decimalFromMinorUnits(primitives.totalPrice, exponent),
       ),
       currency: primitives.currency,
     };

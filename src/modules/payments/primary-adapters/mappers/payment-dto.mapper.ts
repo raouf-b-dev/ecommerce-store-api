@@ -11,7 +11,11 @@ import { Currency } from '../../../../shared-kernel/domain/value-objects/currenc
 
 export class PaymentDtoMapper {
   static toResponse(payment: IPayment): PaymentResponseDto {
-    const exponent = Currency.getExponent(payment.currency);
+    const currencyResult = Currency.create(payment.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     return {
       id: payment.id!,
       orderId: payment.orderId,

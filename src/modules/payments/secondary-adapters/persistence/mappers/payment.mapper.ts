@@ -54,7 +54,11 @@ export class PaymentMapper {
 
   static toEntity(domain: Payment): PaymentEntity {
     const primitives = domain.toPrimitives();
-    const exponent = Currency.getExponent(primitives.currency);
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const paymentPayload: PaymentCreate = {
       id: primitives.id || 0,

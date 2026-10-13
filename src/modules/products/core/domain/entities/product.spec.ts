@@ -42,12 +42,12 @@ describe('Product', () => {
       expect(product.sku).toBe('GADGET-001');
     });
 
-    it('rounds price to two decimal places', () => {
-      const product = ProductTestFactory.createDomainProduct({
-        price: 19.999,
-      });
-
-      expect(product.price).toBe(20);
+    it('rejects price with fractional digits exceeding currency exponent', () => {
+      expect(() =>
+        ProductTestFactory.createDomainProduct({
+          price: 19.999,
+        }),
+      ).toThrow(DomainError);
     });
   });
 

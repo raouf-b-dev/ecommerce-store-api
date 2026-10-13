@@ -41,9 +41,18 @@ export class AnalyticsQueryMapper {
     if (moneyResult.isSuccess) {
       return moneyResult.value.toMajorUnits();
     }
-    const exponent = Currency.getExponent(currency);
-    const factor = Math.pow(10, exponent);
-    return Math.round((value + Number.EPSILON) * factor) / factor;
+    throw moneyResult.error;
+  }
+
+  static sumMinorUnits(amounts: Money[]): Money {
+    if (amounts.length === 0) {
+      throw new Error('Cannot sum an empty amount list');
+    }
+    const result = Money.sum(amounts);
+    if (result.isFailure) {
+      throw result.error;
+    }
+    return result.value;
   }
 
   static computeAov(
@@ -54,7 +63,16 @@ export class AnalyticsQueryMapper {
     if (paidOrderCount <= 0) {
       return 0;
     }
-    return this.roundMoney(netRevenue / paidOrderCount, currency);
+    const currencyResult = Currency.create(currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
+    const factor = Math.pow(10, exponent);
+    return (
+      Math.round((netRevenue / paidOrderCount + Number.EPSILON) * factor) /
+      factor
+    );
   }
 
   static toIso(date: Date): string {
@@ -87,12 +105,31 @@ export class AnalyticsQueryMapper {
     orderCountRow: RawAnalyticsCountRow | undefined,
     currency: string,
   ): AnalyticsKpiSnapshot {
-    const gross = this.roundMoney(this.toNumber(revenue?.gross), currency);
-    const refunded = this.roundMoney(
+    const grossMoneyResult = Money.fromDecimal(
+      this.toNumber(revenue?.gross),
+      currency,
+    );
+    if (grossMoneyResult.isFailure) {
+      throw grossMoneyResult.error;
+    }
+    const refundedMoneyResult = Money.fromDecimal(
       this.toNumber(revenue?.refunded),
       currency,
     );
-    const net = this.roundMoney(gross - refunded, currency);
+    if (refundedMoneyResult.isFailure) {
+      throw refundedMoneyResult.error;
+    }
+    const gross = grossMoneyResult.value.toMajorUnits();
+    const refunded = refundedMoneyResult.value.toMajorUnits();
+    const netMinor = Math.max(
+      0,
+      grossMoneyResult.value.amount - refundedMoneyResult.value.amount,
+    );
+    const netMoneyResult = Money.create(netMinor, currency);
+    if (netMoneyResult.isFailure) {
+      throw netMoneyResult.error;
+    }
+    const net = netMoneyResult.value.toMajorUnits();
     const paidOrderCount = this.toNumber(revenue?.paid_count);
 
     return {
@@ -164,13 +201,36 @@ export class AnalyticsQueryMapper {
     ).map((bucketStart) => {
       const key = bucketStart.toISOString();
       const row = byStart.get(key);
-      const gross = this.roundMoney(this.toNumber(row?.gross), currency);
-      const refunded = this.roundMoney(this.toNumber(row?.refunded), currency);
+      const grossMoneyResult = Money.fromDecimal(
+        this.toNumber(row?.gross),
+        currency,
+      );
+      if (grossMoneyResult.isFailure) {
+        throw grossMoneyResult.error;
+      }
+      const refundedMoneyResult = Money.fromDecimal(
+        this.toNumber(row?.refunded),
+        currency,
+      );
+      if (refundedMoneyResult.isFailure) {
+        throw refundedMoneyResult.error;
+      }
+      const gross = grossMoneyResult.value.toMajorUnits();
+      const refunded = refundedMoneyResult.value.toMajorUnits();
+      const netMinor = Math.max(
+        0,
+        grossMoneyResult.value.amount - refundedMoneyResult.value.amount,
+      );
+      const netMoneyResult = Money.create(netMinor, currency);
+      if (netMoneyResult.isFailure) {
+        throw netMoneyResult.error;
+      }
+      const net = netMoneyResult.value.toMajorUnits();
       return {
         bucketStart: key,
         grossAmount: gross,
         refundedAmount: refunded,
-        netAmount: this.roundMoney(gross - refunded, currency),
+        netAmount: net,
         capturedCount: this.toNumber(row?.captured_count),
         currency,
       };
@@ -195,16 +255,23 @@ export class AnalyticsQueryMapper {
       timezone: ANALYTICS_TIMEZONE,
       from: this.toIso(input.from),
       to: this.toIso(input.to),
-      items: input.rows.map((row) => ({
-        productId: Number(row.product_id),
-        name: row.name,
-        sku: row.sku,
-        unitsSold: this.toNumber(row.units_sold),
-        lineRevenue: this.roundMoney(
+      items: input.rows.map((row) => {
+        const itemCurrency = row.currency ?? input.currency;
+        const lineMoneyResult = Money.fromDecimal(
           this.toNumber(row.line_revenue),
-          row.currency ?? input.currency,
-        ),
-      })),
+          itemCurrency,
+        );
+        if (lineMoneyResult.isFailure) {
+          throw lineMoneyResult.error;
+        }
+        return {
+          productId: Number(row.product_id),
+          name: row.name,
+          sku: row.sku,
+          unitsSold: this.toNumber(row.units_sold),
+          lineRevenue: lineMoneyResult.value.toMajorUnits(),
+        };
+      }),
     };
   }
 

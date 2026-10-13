@@ -28,7 +28,11 @@ export class OrderItemMapper {
 
   static toEntity(domain: OrderItem): OrderItemEntity {
     const primitives = domain.toPrimitives();
-    const exponent = Currency.getExponent(primitives.currency);
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     const itemPayload: Omit<OrderItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,

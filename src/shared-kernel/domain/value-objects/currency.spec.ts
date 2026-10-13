@@ -4,14 +4,22 @@ import { DomainError } from '../exceptions/domain.error';
 
 describe('Currency', () => {
   describe('isValid', () => {
-    it.each(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'aud', 'kwd'])(
-      'returns true for valid ISO currency %s',
-      (code) => {
-        expect(Currency.isValid(code)).toBe(true);
-      },
-    );
+    it.each([
+      'USD',
+      'EUR',
+      'GBP',
+      'JPY',
+      'CAD',
+      'aud',
+      'kwd',
+      'AFN',
+      'ALL',
+      'MGA',
+    ])('returns true for valid ISO currency %s', (code) => {
+      expect(Currency.isValid(code)).toBe(true);
+    });
 
-    it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$'])(
+    it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$', 'XDR', 'XSU'])(
       'returns false for invalid currency %s',
       (code) => {
         expect(Currency.isValid(code)).toBe(false);
@@ -28,26 +36,8 @@ describe('Currency', () => {
     it('returns undefined for invalid currency', () => {
       expect(Currency.normalize('INVALID')).toBeUndefined();
       expect(Currency.normalize('XYZ')).toBeUndefined();
-    });
-  });
-
-  describe('getExponent', () => {
-    it('returns 0 for zero-decimal currencies (JPY, KRW, VND)', () => {
-      expect(Currency.getExponent('JPY')).toBe(0);
-      expect(Currency.getExponent('KRW')).toBe(0);
-      expect(Currency.getExponent('VND')).toBe(0);
-    });
-
-    it('returns 3 for three-decimal currencies (KWD, BHD, OMR)', () => {
-      expect(Currency.getExponent('KWD')).toBe(3);
-      expect(Currency.getExponent('BHD')).toBe(3);
-      expect(Currency.getExponent('OMR')).toBe(3);
-    });
-
-    it('returns 2 for standard currencies (USD, EUR, GBP)', () => {
-      expect(Currency.getExponent('USD')).toBe(2);
-      expect(Currency.getExponent('EUR')).toBe(2);
-      expect(Currency.getExponent('GBP')).toBe(2);
+      expect(Currency.normalize('XDR')).toBeUndefined();
+      expect(Currency.normalize('XSU')).toBeUndefined();
     });
   });
 
@@ -67,12 +57,40 @@ describe('Currency', () => {
       ResultAssertionHelper.assertResultSuccess(kwdResult);
       expect(kwdResult.value.code).toBe('KWD');
       expect(kwdResult.value.exponent).toBe(3);
+
+      const afnResult = Currency.create('AFN');
+      ResultAssertionHelper.assertResultSuccess(afnResult);
+      expect(afnResult.value.exponent).toBe(2);
+
+      const allResult = Currency.create('ALL');
+      ResultAssertionHelper.assertResultSuccess(allResult);
+      expect(allResult.value.exponent).toBe(2);
+
+      const mgaResult = Currency.create('MGA');
+      ResultAssertionHelper.assertResultSuccess(mgaResult);
+      expect(mgaResult.value.exponent).toBe(2);
     });
 
     it('returns failure for invalid currency code in create', () => {
       const result = Currency.create('INVALID');
       ResultAssertionHelper.assertResultFailure(
         result,
+        'Currency must be a 3-letter code (ISO 4217)',
+        DomainError,
+      );
+    });
+
+    it('returns failure for removed currency codes XDR and XSU', () => {
+      const xdrResult = Currency.create('XDR');
+      ResultAssertionHelper.assertResultFailure(
+        xdrResult,
+        'Currency must be a 3-letter code (ISO 4217)',
+        DomainError,
+      );
+
+      const xsuResult = Currency.create('XSU');
+      ResultAssertionHelper.assertResultFailure(
+        xsuResult,
         'Currency must be a 3-letter code (ISO 4217)',
         DomainError,
       );

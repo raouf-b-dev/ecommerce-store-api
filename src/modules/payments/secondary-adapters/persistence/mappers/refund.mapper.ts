@@ -26,7 +26,11 @@ export class RefundMapper {
 
   static toEntity(domain: Refund): RefundEntity {
     const primitives = domain.toPrimitives();
-    const exponent = Currency.getExponent(primitives.currency);
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const refundPayload: RefundCreate = {
       id: primitives.id || 0,

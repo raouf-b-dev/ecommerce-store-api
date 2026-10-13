@@ -9,8 +9,14 @@ export function requireMinorUnits(
   value: string | number,
   currency: string,
 ): number {
-  const exponent = Currency.getExponent(currency);
-  const minorUnits = minorUnitsFromDecimal(value, exponent);
+  const currencyResult = Currency.create(currency);
+  if (currencyResult.isFailure) {
+    throw currencyResult.error;
+  }
+  const minorUnits = minorUnitsFromDecimal(
+    value,
+    currencyResult.value.exponent,
+  );
   if (minorUnits === undefined) {
     throw new Error(
       `Invalid money amount "${String(value)}" for currency "${currency}"`,
