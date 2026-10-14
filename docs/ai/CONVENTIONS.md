@@ -84,7 +84,7 @@ Checklist: `add-job` skill.
 
 ## 9. Verification
 
-Run `npm run verify` (see AGENTS.md). Narrow while iterating: `npm run typecheck`, `npx jest <path>`, `npm run test:arch` when layers, ports, or adapters change.
+In an agent chat, run `npm run check:agent` (see AGENTS.md). It reads the worktree and commits since `develop`. While iterating, `node scripts/agent-run.mjs -- npx vitest run <path> --reporter=minimal`. A pass is one line. `npm run test:arch` is Jest; `check:agent` runs it when `core/`, `domain/`, `ports/`, `adapters/`, or `test/architecture/` changes. Leave `npm run verify` for a terminal.
 
 ## 10. Docs and comments
 

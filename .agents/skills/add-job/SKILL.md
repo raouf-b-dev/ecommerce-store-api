@@ -20,4 +20,4 @@ Rules: [CONVENTIONS.md](../../../docs/ai/CONVENTIONS.md) section 6. Model it on 
 7. Module: provide the port bound to the adapter, the handler, and the use case; register the queue with `BullModule.registerQueue`.
 8. Audit-style jobs (reconciliation) are read-only: report and emit metrics, never write.
 9. Tests: handler and scheduler specs per `write-tests` (golden job spec in its `references/golden-specs.md`).
-10. Run `npm run verify`.
+10. Run `npm run check:agent` once. The user runs `npm run verify` in a terminal before the PR.

@@ -18,4 +18,4 @@ A side effect is anything that leaves the database: a `queue.add`, a gateway or 
 5. Fail loudly. If the effect cannot be fired, return the failure so the caller or job retries. Never log and return success, and never default a missing value (`total || 0`): reject it.
 6. Test it by failure injection (golden spec "Failure injection" in `write-tests`): the effect succeeds and the next step fails, or the effect itself fails. Assert the state a retry needs is saved, the error is retryable, and a second run leaves exactly one effect.
 7. Keep the tests honest: no `expect` inside `if`, `try`, `catch`, or a ternary (`write-tests` rule 4). If you copied a block twice, extract it before the PR.
-8. Run `npm run verify`.
+8. Run `npm run check:agent` once. The user runs `npm run verify` in a terminal before the PR.

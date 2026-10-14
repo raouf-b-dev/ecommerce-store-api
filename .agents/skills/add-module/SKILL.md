@@ -46,4 +46,4 @@ Port (abstract class) in the caller's `core/application/ports`; adapter `seconda
 
 ## Finish
 
-`npm run verify`. Update docs per the `write-docs` skill. For a new module also add it to [CODE-MAP.md](../../../docs/ai/CODE-MAP.md) and check the ADR triggers.
+`npm run check:agent` once. The user runs `npm run verify` in a terminal before the PR. Update docs per the `write-docs` skill. For a new module also add it to [CODE-MAP.md](../../../docs/ai/CODE-MAP.md) and check the ADR triggers.

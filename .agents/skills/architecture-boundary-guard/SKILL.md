@@ -18,7 +18,7 @@ Rules: [ARCHITECTURE-INVARIANTS.md](../../../docs/ai/ARCHITECTURE-INVARIANTS.md)
 
 ## Run
 
-`npm run test:arch`, then `npm run verify`.
+`npm run test:arch -- --silent` when the diff touches layers, ports, or adapters, then `npm run check:agent` once. The user runs `npm run verify` in a terminal before the PR.
 
 ## Report
 
