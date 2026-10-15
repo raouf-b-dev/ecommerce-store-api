@@ -153,12 +153,12 @@
       "count": 2
     }
   },
-  "src/modules/health/indicators/websocket.health-indicator.ts": {
+  "src/infrastructure/health/indicators/websocket.health-indicator.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },
-  "src/modules/health/testing/mocks/health.mock.ts": {
+  "src/infrastructure/health/testing/mocks/health.mock.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
     }

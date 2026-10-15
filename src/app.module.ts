@@ -16,7 +16,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { WebsocketModule } from './infrastructure/websocket/websocket.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { HealthModule } from './modules/health/health.module';
+import { HealthModule } from './infrastructure/health/health.module';
+import { PlatformModule } from './infrastructure/platform/platform.module';
 import { ShutdownModule } from './infrastructure/shutdown/shutdown.module';
 import { APP_GUARD } from '@nestjs/core';
 import { PermissionsGuard } from './modules/authorization/primary-adapter/guards/permissions.guard';
@@ -30,6 +31,7 @@ const loadEnvFile = resolveEnvFilePath();
     ScheduleModule.forRoot(),
     EnvConfigModule,
     InfrastructureModule,
+    PlatformModule,
     ProductsModule,
     OrdersModule,
     CartsModule,

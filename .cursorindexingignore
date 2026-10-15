@@ -1,0 +1,5 @@
+# Large human docs. rg a heading; do not load the file from search.
+
+docs/ROADMAP.md
+docs/ROADMAP-CHANGELOG.md
+docs/FEATURES.md

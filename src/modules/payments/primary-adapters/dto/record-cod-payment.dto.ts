@@ -15,7 +15,7 @@ export class RecordCodPaymentDto {
     description: 'Amount collected as a major-unit decimal',
     type: Number,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNumber()
   @Min(0.01)
   amountCollected!: number;
 

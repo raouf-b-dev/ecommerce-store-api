@@ -5,6 +5,7 @@ import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
 import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 
@@ -29,7 +30,7 @@ export class PaymentMapper {
       id: entity.id,
       orderId: entity.orderId,
       userId: entity.userId,
-      amount: requireMinorUnits(entity.amount),
+      amount: requireMinorUnits(entity.amount, entity.currency),
       currency: entity.currency,
       paymentMethod: entity.paymentMethod,
       provider: entity.provider,
@@ -38,7 +39,7 @@ export class PaymentMapper {
       gatewayPaymentIntentId: entity.gatewayPaymentIntentId || null,
       gatewayClientSecret: entity.gatewayClientSecret || null,
       paymentMethodInfo: entity.paymentMethodInfo,
-      refundedAmount: requireMinorUnits(entity.refundedAmount),
+      refundedAmount: requireMinorUnits(entity.refundedAmount, entity.currency),
       refunds: entity.refunds
         ? entity.refunds.map((r) => RefundMapper.toDomain(r).toPrimitives())
         : [],
@@ -53,12 +54,17 @@ export class PaymentMapper {
 
   static toEntity(domain: Payment): PaymentEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const paymentPayload: PaymentCreate = {
       id: primitives.id || 0,
       orderId: primitives.orderId,
       userId: primitives.userId,
-      amount: Number(decimalFromMinorUnits(primitives.amount)),
+      amount: Number(decimalFromMinorUnits(primitives.amount, exponent)),
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,
       provider: primitives.provider,
@@ -67,7 +73,9 @@ export class PaymentMapper {
       gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,
       gatewayClientSecret: primitives.gatewayClientSecret,
       paymentMethodInfo: primitives.paymentMethodInfo,
-      refundedAmount: Number(decimalFromMinorUnits(primitives.refundedAmount)),
+      refundedAmount: Number(
+        decimalFromMinorUnits(primitives.refundedAmount, exponent),
+      ),
       failureReason: primitives.failureReason,
       createdAt: primitives.createdAt,
       completedAt: primitives.completedAt,

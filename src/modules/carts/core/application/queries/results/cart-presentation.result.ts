@@ -1,5 +1,5 @@
 export interface CartItemPresentationDTO {
-  id: number;
+  id: number | null;
   productId: number;
   productName: string;
   price: number;

@@ -111,7 +111,7 @@ export class CancelOrderUseCase implements UseCase<
     const refundResult = await this.orderScheduler.scheduleRefundPayment({
       orderId,
       paymentId: order.paymentId,
-      amount: order.totalPrice,
+      amount: order.getPricing().getTotalPriceMoney().toMajorUnits(),
       reason,
     });
 

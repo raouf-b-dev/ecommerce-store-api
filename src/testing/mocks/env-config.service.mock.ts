@@ -56,6 +56,10 @@ function createDefaultMockConfig(): IAppConfig {
       mockAutoComplete: false,
       stripeWebhookSecret: '',
     },
+    store: {
+      defaultCurrency: 'USD',
+      supportedCurrencies: ['USD'],
+    },
   };
 }
 
@@ -129,6 +133,10 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get payments() {
     return this.configState.payments;
+  }
+
+  override get store() {
+    return this.configState.store;
   }
 
   setMockConfig(config: Partial<IAppConfig>) {

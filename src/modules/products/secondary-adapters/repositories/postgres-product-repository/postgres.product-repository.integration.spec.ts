@@ -116,15 +116,17 @@ describe('PostgresProductRepository (Integration - Real DB)', () => {
     );
 
     const product = forUpdate.value.entity;
-    product.updateProduct({
-      name: 'Parity Renamed Laptop',
-      description: 'Parity description',
-      price: 1999.99,
-      currency: 'eur',
-      sku: 'int-parity-01',
-      imageUrl: 'https://cdn.example.com/parity.png',
-      categoryId: 7,
-    });
+    ResultAssertionHelper.assertResultSuccess(
+      product.updateProduct({
+        name: 'Parity Renamed Laptop',
+        description: 'Parity description',
+        price: 1999.99,
+        currency: 'eur',
+        sku: 'int-parity-01',
+        imageUrl: 'https://cdn.example.com/parity.png',
+        categoryId: 7,
+      }),
+    );
     ResultAssertionHelper.assertResultSuccess(product.deactivate());
 
     const result = await repository.save(

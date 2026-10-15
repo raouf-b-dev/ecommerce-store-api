@@ -68,29 +68,29 @@ export class OrderEntity {
 
   @Column({
     type: 'numeric',
-    precision: 12,
-    scale: 2,
+    precision: 13,
+    scale: 3,
     transformer: numericToNumber,
   })
   subtotal!: number;
 
   @Column({
     type: 'numeric',
-    precision: 12,
-    scale: 2,
+    precision: 13,
+    scale: 3,
     transformer: numericToNumber,
   })
   shippingCost!: number;
 
   @Column({
     type: 'numeric',
-    precision: 12,
-    scale: 2,
+    precision: 13,
+    scale: 3,
     transformer: numericToNumber,
   })
   totalPrice!: number;
 
-  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  @Column({ type: 'varchar', length: 3 })
   currency!: string;
 
   @Column({

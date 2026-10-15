@@ -39,6 +39,7 @@ describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
         productName: seededData.product.name,
         price: seededData.product.price,
         quantity: 2,
+        currency: seededData.product.currency,
         imageUrl: 'https://example.com/laptop.jpg',
       }),
     );

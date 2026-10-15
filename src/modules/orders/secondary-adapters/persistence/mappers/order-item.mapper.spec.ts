@@ -47,4 +47,42 @@ describe('OrderItemMapper', () => {
 
     expect(entity.id).toBeUndefined();
   });
+
+  it('round-trips zero-decimal JPY 1000 correctly', () => {
+    const item = new OrderItem({
+      id: 1,
+      productId: 10,
+      productName: 'Matcha',
+      unitPrice: 1000,
+      quantity: 2,
+      currency: 'JPY',
+    });
+    const entity = OrderItemMapper.toEntity(item);
+    expect(entity.unitPrice).toBe(1000);
+    expect(entity.lineTotal).toBe(2000);
+
+    const reloaded = OrderItemMapper.toDomain(entity);
+    expect(reloaded.toPrimitives().unitPrice).toBe(1000);
+    expect(reloaded.toPrimitives().lineTotal).toBe(2000);
+    expect(reloaded.toPrimitives().currency).toBe('JPY');
+  });
+
+  it('round-trips three-decimal KWD 1.234 correctly', () => {
+    const item = new OrderItem({
+      id: 2,
+      productId: 20,
+      productName: 'Oud',
+      unitPrice: 1234,
+      quantity: 1,
+      currency: 'KWD',
+    });
+    const entity = OrderItemMapper.toEntity(item);
+    expect(entity.unitPrice).toBe(1.234);
+    expect(entity.lineTotal).toBe(1.234);
+
+    const reloaded = OrderItemMapper.toDomain(entity);
+    expect(reloaded.toPrimitives().unitPrice).toBe(1234);
+    expect(reloaded.toPrimitives().lineTotal).toBe(1234);
+    expect(reloaded.toPrimitives().currency).toBe('KWD');
+  });
 });

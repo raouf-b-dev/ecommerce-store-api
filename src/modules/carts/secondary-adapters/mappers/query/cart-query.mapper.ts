@@ -3,6 +3,8 @@ import {
   CartPresentationDTO,
 } from '../../../core/application/queries/results/cart-presentation.result';
 import { RawCartQueryRow } from '../../dto/raw-cart-query-row.interface';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 
 export class CartQueryMapper {
   static toPresentationDto(
@@ -14,38 +16,50 @@ export class CartQueryMapper {
 
     const firstRow = rows[0];
     const items: CartItemPresentationDTO[] = [];
+    const itemMoneys: Money[] = [];
     let totalQuantity = 0;
-    let grandTotal = 0;
     let currency: string | null = null;
 
     for (const row of rows) {
       if (row.itemId != null) {
         const qty = Number(row.quantity || 0);
         const unitPrice = Number(row.price || 0);
-        const itemTotal = Number((qty * unitPrice).toFixed(2));
-        const itemCurrency = (row.currency ?? '').trim().toUpperCase();
+        const rawCurrency = (row.currency ?? '').trim().toUpperCase();
+        const currencyResult = Currency.create(rawCurrency);
+        if (currencyResult.isFailure) {
+          throw currencyResult.error;
+        }
+        const curr = currencyResult.value;
+        const itemMoneyResult = Money.fromDecimal(unitPrice, curr);
+        if (itemMoneyResult.isFailure) {
+          throw itemMoneyResult.error;
+        }
+        const lineMoneyResult = itemMoneyResult.value.multiply(qty);
+        if (lineMoneyResult.isFailure) {
+          throw lineMoneyResult.error;
+        }
 
         totalQuantity += qty;
-        grandTotal += itemTotal;
-        if (!currency && itemCurrency) {
-          currency = itemCurrency;
+        itemMoneys.push(lineMoneyResult.value);
+        if (!currency) {
+          currency = curr.code;
         }
 
         items.push({
           id: Number(row.itemId),
           productId: Number(row.productId || 0),
           productName: row.productName || 'Unknown Product',
-          price: unitPrice,
-          currency: itemCurrency,
+          price: itemMoneyResult.value.toMajorUnits(),
+          currency: curr.code,
           quantity: qty,
-          subtotal: itemTotal,
+          subtotal: lineMoneyResult.value.toMajorUnits(),
           imageUrl: row.imageUrl || null,
         });
       }
     }
 
     // Stable shopper UX: keep add order even if the DB returns updated rows last.
-    items.sort((a, b) => a.id - b.id);
+    items.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
 
     const createdAt = firstRow.cartCreatedAt
       ? firstRow.cartCreatedAt instanceof Date
@@ -56,8 +70,19 @@ export class CartQueryMapper {
         : String(firstRow.cartUpdatedAt);
 
     const shippingCost = 0;
-    const subtotal = Number(grandTotal.toFixed(2));
-    const totalAmount = Number((subtotal + shippingCost).toFixed(2));
+    let subtotal = 0;
+    let totalAmount = 0;
+
+    if (itemMoneys.length > 0) {
+      const sumResult = Money.sum(itemMoneys);
+      if (sumResult.isFailure) {
+        throw sumResult.error;
+      }
+      subtotal = sumResult.value.toMajorUnits();
+      totalAmount = subtotal;
+    } else {
+      currency = null;
+    }
 
     return {
       id: Number(firstRow.cartId),

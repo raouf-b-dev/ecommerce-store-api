@@ -56,7 +56,7 @@ describe('GetProductUseCase', () => {
         'Product with id 999 not found',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(404);
+      expect(result.error.statusCode).toBe(404);
     });
 
     it('hides inactive products from shoppers as not found', async () => {
@@ -74,7 +74,7 @@ describe('GetProductUseCase', () => {
         'Product with id 4 not found',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(404);
+      expect(result.error.statusCode).toBe(404);
     });
 
     it('returns inactive products to operators with view_all_products', async () => {

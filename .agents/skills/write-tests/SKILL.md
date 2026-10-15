@@ -57,4 +57,4 @@ Fix them when you touch the file, not in one sweep, then run `npm run lint:prune
 
 ## Run
 
-`npx jest <path>` while iterating, then `npm run verify`. After removing a baselined cast, run `npm run lint:prune` (see AGENTS.md rule 1).
+`node scripts/agent-run.mjs -- npx vitest run <path> --reporter=minimal` while iterating, then `npm run check:agent` once. A pass is one line. A failure is the error block only. Unit specs are Vitest. `npx jest` is only the architecture suite (`npm run test:arch`). Leave `npm run verify` for the user's terminal. After removing a baselined cast, run `npm run lint:prune` (see AGENTS.md rule 1).

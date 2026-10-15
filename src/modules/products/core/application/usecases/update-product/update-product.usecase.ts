@@ -1,12 +1,14 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { SupportedCurrenciesPort } from '../../ports/supported-currencies.port';
+import { validateProductCurrency } from '../../helpers/validate-product-currency.helper';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UpdateProductCommand } from '../../commands/update-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
@@ -15,18 +17,19 @@ import { IProduct } from '../../../domain/interfaces/product.interface';
 export class UpdateProductUseCase extends UseCase<
   UpdateProductCommand,
   IProduct,
-  UseCaseError
+  AppError
 > {
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly supportedCurrencies: SupportedCurrenciesPort,
   ) {
     super();
   }
 
   async execute(
     command: UpdateProductCommand,
-  ): Promise<Result<IProduct, UseCaseError>> {
+  ): Promise<Result<IProduct, AppError>> {
     try {
       if (command.categoryId === null) {
         return ErrorFactory.UseCaseError('categoryId cannot be null', {
@@ -59,15 +62,30 @@ export class UpdateProductUseCase extends UseCase<
 
       const { entity, expectedVersion } = findResult.value;
 
-      entity.updateProduct({
+      let updatedCurrency: string | undefined;
+      if (command.currency !== undefined) {
+        const currencyResult = validateProductCurrency(
+          command.currency,
+          this.supportedCurrencies,
+        );
+        if (currencyResult.isFailure) {
+          return currencyResult;
+        }
+        updatedCurrency = currencyResult.value.code;
+      }
+
+      const updateResult = entity.updateProduct({
         name: command.name,
         description: command.description,
         price: command.price,
-        currency: command.currency,
+        currency: updatedCurrency,
         sku: command.sku,
         imageUrl: command.imageUrl,
         categoryId: command.categoryId,
       });
+      if (isFailure(updateResult)) {
+        return updateResult;
+      }
 
       const saveResult = await this.productRepository.save(
         entity,

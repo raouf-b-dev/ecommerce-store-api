@@ -114,5 +114,5 @@ if (isFailure(result)) {
 - [ ] Type rules in AGENTS.md rule 1 hold (no `as`, `any`, `@ts-ignore`, new baseline entries).
 - [ ] A `Result` failure is returned as-is. A new error is only for a decision this function makes (CONVENTIONS.md section 14).
 - [ ] `ErrorFactory` status, retryable, and code are passed as an options object. No `undefined` placeholders.
-- [ ] Tests cover success, failure, and authorization; `npm run verify` is green.
+- [ ] Tests cover success, failure, and authorization. `npm run check:agent` in the chat; `npm run verify` in a terminal before the PR.
 - [ ] Docs updated when a feature ships (`write-docs` skill); an ADR written when a trigger applies.

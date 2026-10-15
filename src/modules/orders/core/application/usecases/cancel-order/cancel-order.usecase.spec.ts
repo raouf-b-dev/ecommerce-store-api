@@ -211,7 +211,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId: 42,
-        amount: paidOrder.totalPrice,
+        amount: paidOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
         reason: 'Order cancelled',
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
@@ -286,7 +286,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId: 42,
-        amount: cancelledOrder.totalPrice,
+        amount: cancelledOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
         reason: 'Order cancelled',
       });
     });
@@ -445,7 +445,10 @@ describe('CancelOrderUseCase', () => {
           {
             orderId,
             paymentId: 42,
-            amount: cancelledOrder.totalPrice,
+            amount: cancelledOrder
+              .getPricing()
+              .getTotalPriceMoney()
+              .toMajorUnits(),
             reason: 'Order cancelled',
           },
         ]);

@@ -3,6 +3,7 @@ import {
   assertNoMockPaymentAutoComplete,
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
+  parseCurrencyCode,
   parseHttpOrigin,
   validateEnv,
 } from './validate-env';
@@ -72,6 +73,31 @@ describe('assertStripeWebhookSecret', () => {
   });
 });
 
+describe('parseCurrencyCode', () => {
+  it.each(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'KWD', 'BHD'])(
+    'accepts valid ISO currency %s',
+    (curr) => {
+      expect(parseCurrencyCode(curr)).toBe(curr);
+    },
+  );
+
+  it('normalizes lowercase currency to uppercase', () => {
+    expect(parseCurrencyCode('usd')).toBe('USD');
+    expect(parseCurrencyCode('jpy')).toBe('JPY');
+    expect(parseCurrencyCode('  kwd  ')).toBe('KWD');
+  });
+
+  it.each(['', 'US', 'USDD', 'XYZ', '123', '$$$', 'INVALID'])(
+    'rejects invalid currency %s',
+    (curr) => {
+      expect(() => parseCurrencyCode(curr)).toThrow(EnvError);
+      expect(() => parseCurrencyCode(curr)).toThrow(
+        'must be a valid ISO 4217 currency code with 0-3 decimal places',
+      );
+    },
+  );
+});
+
 describe('assertNoMockPaymentAutoComplete', () => {
   it.each(['development', 'test'])(
     'allows mock auto-complete in %s',
@@ -113,6 +139,7 @@ describe('validateEnv', () => {
     JWT_PRIVATE_KEY: 'test-key',
     CORS_ALLOWED_ORIGINS: 'http://localhost:3000',
     PUBLIC_BASE_URL: 'http://localhost:3000',
+    STORE_DEFAULT_CURRENCY: 'USD',
   };
 
   it('defaults IS_DB_SYNCHRONIZE to false when omitted', () => {
@@ -128,6 +155,33 @@ describe('validateEnv', () => {
   it('parses IS_DB_SYNCHRONIZE=false', () => {
     const validated = validateEnv({ ...baseEnv, IS_DB_SYNCHRONIZE: 'false' });
     expect(validated.IS_DB_SYNCHRONIZE).toBe(false);
+  });
+
+  it('rejects when STORE_DEFAULT_CURRENCY is missing', () => {
+    const { STORE_DEFAULT_CURRENCY: _omitted, ...envWithoutCurrency } = baseEnv;
+    expect(() => validateEnv(envWithoutCurrency)).toThrow();
+  });
+
+  it('rejects invalid STORE_DEFAULT_CURRENCY', () => {
+    expect(() =>
+      validateEnv({ ...baseEnv, STORE_DEFAULT_CURRENCY: 'INVALID' }),
+    ).toThrow();
+  });
+
+  it('accepts valid STORE_DEFAULT_CURRENCY (e.g. JPY)', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      STORE_DEFAULT_CURRENCY: 'JPY',
+    });
+    expect(validated.STORE_DEFAULT_CURRENCY).toBe('JPY');
+  });
+
+  it('normalizes lowercase STORE_DEFAULT_CURRENCY to uppercase', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      STORE_DEFAULT_CURRENCY: 'usd',
+    });
+    expect(validated.STORE_DEFAULT_CURRENCY).toBe('USD');
   });
 
   it.each(['production', 'staging'])(

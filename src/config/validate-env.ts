@@ -8,6 +8,7 @@ import {
   bool,
 } from 'envalid';
 import { duration } from './validators/duration';
+import { Currency } from '../shared-kernel/domain/value-objects/currency';
 
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
@@ -73,6 +74,19 @@ export function assertStripeWebhookSecret(
   }
 }
 
+const CURRENCY_ERROR =
+  'must be a valid ISO 4217 currency code with 0-3 decimal places';
+
+export function parseCurrencyCode(value: string): string {
+  const normalized = Currency.normalize(value);
+  if (!normalized) {
+    throw new EnvError(CURRENCY_ERROR);
+  }
+  return normalized;
+}
+
+export const currencyCode = makeValidator<string>(parseCurrencyCode);
+
 /**
  * Deployed environments must never enable mock payment auto-complete so
  * checkouts cannot be confirmed without a verified gateway webhook.
@@ -113,6 +127,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     POSTGRES_IMAGE: str(),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
+    STORE_DEFAULT_CURRENCY: currencyCode(),
+
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
     JWT_REFRESH_TOKEN_TTL: duration({ default: '7d' }),
@@ -152,6 +168,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
   );
+
   assertNoMockPaymentAutoComplete(
     validated.NODE_ENV,
     validated.PAYMENT_MOCK_AUTO_COMPLETE,

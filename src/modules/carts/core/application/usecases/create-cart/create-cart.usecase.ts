@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { CartRepository } from '../../../domain/repositories/cart.repository';
 import {
   isFailure,
@@ -16,7 +16,7 @@ import { CartPresentationDTO } from '../../queries/results/cart-presentation.res
 export class CreateCartUseCase extends UseCase<
   CallerContext | null,
   CartPresentationDTO,
-  UseCaseError
+  AppError
 > {
   constructor(private readonly cartRepository: CartRepository) {
     super();
@@ -24,7 +24,7 @@ export class CreateCartUseCase extends UseCase<
 
   async execute(
     callerContext: CallerContext | null,
-  ): Promise<Result<CartPresentationDTO, UseCaseError>> {
+  ): Promise<Result<CartPresentationDTO, AppError>> {
     if (
       !callerContext ||
       callerContext.userId === null ||
@@ -38,9 +38,7 @@ export class CreateCartUseCase extends UseCase<
     const userId = callerContext.userId;
     const existingResult = await this.cartRepository.findByuserId(userId);
     if (existingResult.isSuccess) {
-      return Result.success(
-        CartPresentationMapper.fromDomain(existingResult.value),
-      );
+      return CartPresentationMapper.fromDomain(existingResult.value);
     }
 
     const cart = Cart.createUserCart(userId);
@@ -53,6 +51,6 @@ export class CreateCartUseCase extends UseCase<
       );
     }
 
-    return Result.success(CartPresentationMapper.fromDomain(saveResult.value));
+    return CartPresentationMapper.fromDomain(saveResult.value);
   }
 }

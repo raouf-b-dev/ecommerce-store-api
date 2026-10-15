@@ -50,6 +50,10 @@ export class ProcessRefundUseCase extends UseCase<
       return Result.success(payment.toPrimitives());
     }
 
+    const moneyResult = Money.fromDecimal(amount, payment.currency);
+    if (isFailure(moneyResult)) return moneyResult;
+    const refundMinorUnits = moneyResult.value.amount;
+
     if (!payment.providerId.equals(this.paymentProvider.id)) {
       return providerMismatchError(
         payment.provider,
@@ -63,7 +67,7 @@ export class ProcessRefundUseCase extends UseCase<
       );
     }
 
-    if (amount > payment.remainingAmount) {
+    if (refundMinorUnits > payment.remainingAmount) {
       return ErrorFactory.UseCaseError(
         'Refund amount exceeds remaining payment amount',
       );
@@ -80,9 +84,6 @@ export class ProcessRefundUseCase extends UseCase<
       );
     }
 
-    const moneyResult = Money.create(amount, payment.currency);
-    if (isFailure(moneyResult)) return moneyResult;
-
     const idempotencyKey = `refund-${payment.id}-${payment.refunds.length}`;
 
     const providerResult = await this.paymentProvider.refund({
@@ -95,7 +96,7 @@ export class ProcessRefundUseCase extends UseCase<
     const refund = Refund.create(
       null,
       payment.id,
-      amount,
+      refundMinorUnits,
       payment.currency,
       reason || 'Refund request',
     );

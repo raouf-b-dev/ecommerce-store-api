@@ -39,15 +39,13 @@ The domain core does not depend on infrastructure. Databases, caches, and queues
 
 **Location**: `src/modules/*/secondary-adapters/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
-### ACL Gateway Pattern
-
-Eleven modules live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)); Health has no gateways. There are no direct executable imports of another module's domain.
+Ten domain bounded contexts live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)). Health probes and platform runtime config live under `src/infrastructure/`. There are no direct executable imports of another module's domain.
 
 **Location**: `src/modules/*/secondary-adapters/adapters/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md), [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Modular Monolith
 
-All eleven modules (Analytics, Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
+All ten domain modules (Analytics, Authentication, Authorization, Carts, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
 
 **Location**: `src/modules/`
 
@@ -220,7 +218,13 @@ Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on N
 - `GET /health/liveness`: process health (`ProcessHealthIndicator`)
 - `GET /health/readiness`: PostgreSQL required (Redis degradation is reported on `/health` and metrics)
 
-**Location**: `src/modules/health/`
+**Location**: `src/infrastructure/health/`
+
+### Platform Configuration
+
+- `GET /v1/platform/config`: public platform configuration providing default store currency, minor-unit exponent, and supported currencies for client bootstrapping.
+
+**Location**: `src/infrastructure/platform/`
 
 ### OpenAPI Truthfulness
 

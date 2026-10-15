@@ -38,7 +38,7 @@ export class PaymentEntity {
   @Column({ name: 'user_id', type: 'int', nullable: true })
   userId!: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 11, scale: 3 })
   amount!: number;
 
   @Column({ type: 'varchar', length: 3 })
@@ -72,8 +72,8 @@ export class PaymentEntity {
   @Column({
     name: 'refunded_amount',
     type: 'decimal',
-    precision: 10,
-    scale: 2,
+    precision: 11,
+    scale: 3,
     default: 0,
   })
   refundedAmount!: number;

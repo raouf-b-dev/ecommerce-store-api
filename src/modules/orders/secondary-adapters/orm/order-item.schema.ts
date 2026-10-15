@@ -31,8 +31,8 @@ export class OrderItemEntity {
 
   @Column({
     type: 'numeric',
-    precision: 12,
-    scale: 2,
+    precision: 13,
+    scale: 3,
     transformer: numericToNumber,
   })
   unitPrice!: number;
@@ -42,13 +42,13 @@ export class OrderItemEntity {
 
   @Column({
     type: 'numeric',
-    precision: 12,
-    scale: 2,
+    precision: 13,
+    scale: 3,
     transformer: numericToNumber,
   })
   lineTotal!: number;
 
-  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  @Column({ type: 'varchar', length: 3 })
   currency!: string;
 
   @ManyToOne(() => OrderEntity, (order: OrderEntity) => order.items, {

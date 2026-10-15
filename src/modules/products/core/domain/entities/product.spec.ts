@@ -42,12 +42,12 @@ describe('Product', () => {
       expect(product.sku).toBe('GADGET-001');
     });
 
-    it('rounds price to two decimal places', () => {
-      const product = ProductTestFactory.createDomainProduct({
-        price: 19.999,
-      });
-
-      expect(product.price).toBe(20);
+    it('rejects price with fractional digits exceeding currency exponent', () => {
+      expect(() =>
+        ProductTestFactory.createDomainProduct({
+          price: 19.999,
+        }),
+      ).toThrow(DomainError);
     });
   });
 
@@ -63,6 +63,51 @@ describe('Product', () => {
 
       expect(product.name).toBe('New Product Name');
       expect(product.slug).toBe('new-product-name');
+    });
+  });
+
+  describe('updateProduct', () => {
+    it('returns a failure and leaves currency unchanged when only currency changes to an incompatible exponent', () => {
+      const product = ProductTestFactory.createDomainProduct({
+        price: 19.99,
+        currency: 'USD',
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        product.updateProduct({ currency: 'JPY' }),
+        'Amount must be a non-negative decimal',
+        DomainError,
+      );
+      expect(product.currency).toBe('USD');
+      expect(product.price).toBe(19.99);
+    });
+
+    it('returns a failure and leaves price unchanged when the new price exceeds the currency exponent', () => {
+      const product = ProductTestFactory.createDomainProduct({
+        price: 1000,
+        currency: 'JPY',
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        product.updateProduct({ price: 19.99 }),
+        'Amount must be a non-negative decimal',
+        DomainError,
+      );
+      expect(product.price).toBe(1000);
+      expect(product.currency).toBe('JPY');
+    });
+
+    it('applies a compatible currency and price together', () => {
+      const product = ProductTestFactory.createDomainProduct({
+        price: 19.99,
+        currency: 'USD',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(
+        product.updateProduct({ currency: 'JPY', price: 2500 }),
+      );
+      expect(product.currency).toBe('JPY');
+      expect(product.price).toBe(2500);
     });
   });
 

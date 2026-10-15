@@ -8,6 +8,7 @@ import { persistedChildId } from '../../../../../infrastructure/mappers/utils/pe
 import { CartItemEntity } from '../../orm/cart-item.schema';
 import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export type CartItemCreate = CreateFromEntity<CartItemEntity, 'cart'>;
 
@@ -17,7 +18,7 @@ export class CartItemMapper {
       id: entity.id ?? null,
       productId: entity.productId,
       productName: entity.productName,
-      price: requireMinorUnits(entity.price),
+      price: requireMinorUnits(entity.price, entity.currency),
       currency: entity.currency,
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
@@ -28,10 +29,15 @@ export class CartItemMapper {
 
   static toEntity(domain: CartItem): CartItemEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     const itemPayload: Omit<CartItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,
-      price: Number(decimalFromMinorUnits(primitives.price)),
+      price: Number(decimalFromMinorUnits(primitives.price, exponent)),
       currency: primitives.currency,
       quantity: primitives.quantity,
       imageUrl: primitives.imageUrl,

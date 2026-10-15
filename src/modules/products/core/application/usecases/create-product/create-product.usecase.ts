@@ -1,6 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { SupportedCurrenciesPort } from '../../ports/supported-currencies.port';
+import { validateProductCurrency } from '../../helpers/validate-product-currency.helper';
 import { Product } from '../../../domain/entities/product';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -21,6 +23,7 @@ export class CreateProductUseCase extends UseCase<
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly supportedCurrencies: SupportedCurrenciesPort,
   ) {
     super();
   }
@@ -29,6 +32,14 @@ export class CreateProductUseCase extends UseCase<
     command: CreateProductCommand,
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
+      const currencyResult = validateProductCurrency(
+        command.currency,
+        this.supportedCurrencies,
+      );
+      if (currencyResult.isFailure) {
+        return currencyResult;
+      }
+      const normalizedCurrency = currencyResult.value.code;
       if (command.categoryId == null) {
         return ErrorFactory.UseCaseError('categoryId is required', {
           status: HttpStatus.BAD_REQUEST,
@@ -53,7 +64,7 @@ export class CreateProductUseCase extends UseCase<
         name: command.name,
         description: command.description,
         price: command.price,
-        currency: command.currency,
+        currency: normalizedCurrency,
         sku: command.sku,
         imageUrl: command.imageUrl,
         categoryId: command.categoryId,

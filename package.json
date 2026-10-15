@@ -130,7 +130,8 @@
     "audit:check": "npm audit --omit=dev --audit-level=high",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint:check && npm run format:check && npm run test:arch && npm test"
+    "verify": "npm run typecheck && npm run lint:check && npm run format:check && npm run test:arch && npm test",
+    "check:agent": "node scripts/agent-check.mjs"
   },
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.2.0",

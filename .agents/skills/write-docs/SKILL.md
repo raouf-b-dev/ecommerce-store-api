@@ -40,4 +40,4 @@ Write `docs/architecture/adr/ADR-XXXX-title.md` when a change: overrides a trans
 
 ## Check
 
-Links resolve, headings match the index, no deleted file is still linked (`rg '<old-name>' docs README.md CONTRIBUTING.md`), then `npm run lint:check`.
+Links resolve, headings match the index, no deleted file is still linked (`rg '<old-name>' docs README.md CONTRIBUTING.md`), then `npm run check:agent`. A docs-only diff runs the ASCII prose lint and skips the suite.

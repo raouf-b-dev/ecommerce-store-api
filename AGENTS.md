@@ -2,11 +2,15 @@
 
 NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node 24+.
 
-## Verify
+## Checks
 
-`npm run verify` runs typecheck, lint (ESLint + ASCII prose), format check, architecture tests, and unit tests. Run it before reporting a task done. One spec: `npx vitest <path>`.
+`npm run verify` is the pre-PR command in your terminal (typecheck, lint, format, architecture tests, unit tests). Do not run it in this chat. Do not run `test:e2e`, `test:cov`, or a build here either. The log stays in the transcript and every later step re-reads it.
 
-In your final message give: what changed, the commands you ran with results, open risks or assumptions, and for each side effect in the diff (queue add, gateway call, notification, event) what happens if the process dies right after it.
+In this chat a passing command is one line. A failing command is the error block only, from the first `FAIL` or `error`. While iterating: `node scripts/agent-run.mjs -- npx vitest run <path> --reporter=minimal`. Once before you stop: `npm run check:agent`. It covers uncommitted files and commits on this branch since `develop`. A docs-only diff skips the suite. Unit specs are Vitest (`globals: true`, so `jest.fn` in a spec is the Vitest global). `npx jest` is only `test:arch`. `check:agent` runs that Jest suite when the diff touches `core/`, `domain/`, `ports/`, `adapters/`, or `test/architecture/`, and Prettier on the changed `src` and `test` files.
+
+`agent-check: ok` means those commands ran and passed. `agent-check: skipped` means nothing was proven (clean tree, or a wide diff). Do not run `npm test`, `npm run verify`, `test:e2e`, coverage, or a build directly.
+
+In your final message give: what changed, the `agent-check:` line, open risks or assumptions, and for each side effect in the diff (queue add, gateway call, notification, event) what happens if the process dies right after it. Name `npm run verify` as the command the user runs. Do not paste a green log.
 
 ## Never
 

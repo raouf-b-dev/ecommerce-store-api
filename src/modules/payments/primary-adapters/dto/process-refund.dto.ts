@@ -8,12 +8,12 @@ export class ProcessRefundDto {
     description: 'Refund amount as a major-unit decimal',
     type: Number,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsNumber()
   @Min(0.01)
   amount!: number;
 
   @ApiPropertyOptional({
-    example: 'User  requested cancellation',
+    example: 'User requested cancellation',
     description: 'Reason for refund',
   })
   @IsOptional()
