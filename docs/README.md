@@ -140,3 +140,4 @@ Technical reference for this repository, organised by layer.
 
 - [development/LOCAL-SETUP.md](development/LOCAL-SETUP.md): Environment files, auto-generated secrets, and first boot order.
 - [development/SEEDING.md](development/SEEDING.md): Local seed accounts, catalog, and idempotency behavior.
+- [development/FULL-STACK.md](development/FULL-STACK.md): Running the API with the admin dashboard and storefront: clone order, env, CORS, port table.

@@ -288,7 +288,7 @@ Fan-out pipeline: lint, typecheck, unit, arch, audit, build, integration, e2e, s
 
 - **Unit**: Domain logic, use cases, services, utilities
 - **Integration**: PostgreSQL Testcontainers for query adapters and write repositories (transactions, locks, cache-aside)
-- **E2E**: Auth lifecycle, IDOR denial, checkout SAGA, idempotency, CQRS read shapes
+- **E2E**: Auth lifecycle, IDOR denial (including another customer's real order and payment), checkout SAGA, idempotency, CQRS read shapes
 - **Architecture**: Hexagonal and module boundary rules (`npm run test:arch`)
 - **Coverage**: `npm run test:cov`
 
@@ -311,6 +311,12 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING.md).
 
 **Location**: `scripts/seed.ts`, module seed use cases
+
+### Full-Stack Local Run
+
+Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use `.github/pull_request_template.md`.
+
+**Location**: `docs/development/FULL-STACK.md`, `.github/pull_request_template.md`
 
 ---
 
