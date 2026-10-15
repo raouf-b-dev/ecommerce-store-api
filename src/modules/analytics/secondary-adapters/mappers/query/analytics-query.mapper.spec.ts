@@ -12,8 +12,8 @@ describe('AnalyticsQueryMapper', () => {
       expect(AnalyticsQueryMapper.computeAov(100, 0, 'USD')).toBe(0);
     });
 
-    it('computeAov divides net by paid count with standard currency (USD)', () => {
-      expect(AnalyticsQueryMapper.computeAov(100, 4, 'USD')).toBe(25);
+    it('computeAov divides net minor units by paid count with standard currency (USD)', () => {
+      expect(AnalyticsQueryMapper.computeAov(10000, 4, 'USD')).toBe(25);
     });
 
     it('computeAov rounds to 0 decimal places for zero-decimal currency (JPY)', () => {
@@ -21,7 +21,7 @@ describe('AnalyticsQueryMapper', () => {
     });
 
     it('computeAov rounds to 3 decimal places for three-decimal currency (KWD)', () => {
-      expect(AnalyticsQueryMapper.computeAov(10, 3, 'KWD')).toBe(3.333);
+      expect(AnalyticsQueryMapper.computeAov(10000, 3, 'KWD')).toBe(3.333);
     });
   });
 
@@ -49,6 +49,22 @@ describe('AnalyticsQueryMapper', () => {
         aov: 65.25,
         currency: 'USD',
       });
+    });
+
+    it('keeps a signed net when refunds exceed gross', () => {
+      const revenue: RawAnalyticsRevenueAggRow = {
+        gross: 20,
+        refunded: 50,
+        paid_count: 2,
+        currency: 'USD',
+      };
+      const snapshot = AnalyticsQueryMapper.toKpiSnapshot(
+        revenue,
+        { count: 2 },
+        'USD',
+      );
+      expect(snapshot.netRevenue).toBe(-30);
+      expect(snapshot.aov).toBe(-15);
     });
   });
 

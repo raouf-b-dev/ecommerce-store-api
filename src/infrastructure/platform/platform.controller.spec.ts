@@ -1,67 +1,30 @@
+import { Test } from '@nestjs/testing';
 import { PlatformController } from './platform.controller';
-import { MockEnvConfigService } from '../../testing/mocks/env-config.service.mock';
+import { GetPlatformConfigQuery } from './get-platform-config.query';
+import { Result } from '../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../testing';
-import { DomainError } from '../../shared-kernel/domain/exceptions/domain.error';
 
 describe('PlatformController', () => {
-  let mockEnvConfig: MockEnvConfigService;
-  let controller: PlatformController;
-
-  beforeEach(() => {
-    mockEnvConfig = new MockEnvConfigService();
-    controller = new PlatformController(mockEnvConfig);
-  });
-
-  it('returns a success Result with exponent 2 for USD', () => {
-    mockEnvConfig.setMockConfig({
-      store: {
-        defaultCurrency: 'USD',
-        supportedCurrencies: ['USD'],
-      },
-    });
-
-    const result = controller.getConfig();
-
-    ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value).toEqual({
+  it('delegates getConfig to GetPlatformConfigQuery', async () => {
+    const execute: jest.MockedFunction<GetPlatformConfigQuery['execute']> =
+      jest.fn();
+    const config = {
       defaultCurrency: 'USD',
       defaultCurrencyExponent: 2,
       supportedCurrencies: ['USD'],
-    });
-  });
+    };
+    execute.mockReturnValue(Result.success(config));
 
-  it('returns a success Result with exponent 3 for KWD', () => {
-    mockEnvConfig.setMockConfig({
-      store: {
-        defaultCurrency: 'KWD',
-        supportedCurrencies: ['KWD', 'USD'],
-      },
-    });
+    const module = await Test.createTestingModule({
+      controllers: [PlatformController],
+      providers: [{ provide: GetPlatformConfigQuery, useValue: { execute } }],
+    }).compile();
 
+    const controller = module.get(PlatformController);
     const result = controller.getConfig();
 
+    expect(execute).toHaveBeenCalledTimes(1);
     ResultAssertionHelper.assertResultSuccess(result);
-    expect(result.value).toEqual({
-      defaultCurrency: 'KWD',
-      defaultCurrencyExponent: 3,
-      supportedCurrencies: ['KWD', 'USD'],
-    });
-  });
-
-  it('returns a failure Result for an unknown currency code', () => {
-    mockEnvConfig.setMockConfig({
-      store: {
-        defaultCurrency: 'UNKNOWN',
-        supportedCurrencies: ['USD'],
-      },
-    });
-
-    const result = controller.getConfig();
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Currency must be a 3-letter code (ISO 4217)',
-      DomainError,
-    );
+    expect(result.value).toEqual(config);
   });
 });

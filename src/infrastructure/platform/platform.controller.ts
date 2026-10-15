@@ -1,16 +1,15 @@
 import { Controller, Get, Header, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../guards/decorators/public.decorator';
-import { EnvConfigService } from '../../config/env-config.service';
-import { Currency } from '../../shared-kernel/domain/value-objects/currency';
 import { PlatformConfigResponseDto } from './dto/platform-config-response.dto';
+import { GetPlatformConfigQuery } from './get-platform-config.query';
 import { Result } from '../../shared-kernel/domain/result';
 import { DomainError } from '../../shared-kernel/domain/exceptions/domain.error';
 
 @ApiTags('platform')
 @Controller('platform')
 export class PlatformController {
-  constructor(private readonly envConfig: EnvConfigService) {}
+  constructor(private readonly getPlatformConfig: GetPlatformConfigQuery) {}
 
   @Get('config')
   @Public()
@@ -26,17 +25,6 @@ export class PlatformController {
     type: PlatformConfigResponseDto,
   })
   getConfig(): Result<PlatformConfigResponseDto, DomainError> {
-    const currencyResult = Currency.create(
-      this.envConfig.store.defaultCurrency,
-    );
-    if (currencyResult.isFailure) {
-      return currencyResult;
-    }
-    const currency = currencyResult.value;
-    return Result.success({
-      defaultCurrency: currency.code,
-      defaultCurrencyExponent: currency.exponent,
-      supportedCurrencies: this.envConfig.store.supportedCurrencies,
-    });
+    return this.getPlatformConfig.execute();
   }
 }

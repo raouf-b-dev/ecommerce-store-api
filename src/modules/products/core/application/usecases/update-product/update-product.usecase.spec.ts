@@ -9,6 +9,7 @@ import {
 import { UpdateProductUseCase } from './update-product.usecase';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Product } from '../../../domain/entities/product';
 
@@ -217,6 +218,42 @@ describe('UpdateProductUseCase', () => {
       expect(result.value.currency).toBe('JPY');
       expect(result.value.price).toBe(2500);
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns BAD_REQUEST and does not save when currency-only update is invalid for the existing price', async () => {
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'JPY',
+      ]);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockSupportedCurrencies,
+      );
+      const productId = 1;
+      const command = {
+        id: productId,
+        currency: 'JPY',
+      };
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          price: 19.99,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Amount must be a non-negative decimal',
+        DomainError,
+      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
     it('normalizes lowercase currency when updating product', async () => {

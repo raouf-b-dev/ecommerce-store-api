@@ -67,17 +67,12 @@ export class Product implements IProduct {
     if (!props.name?.trim()) {
       return ErrorFactory.DomainError('Product name is required');
     }
-    if (props.price < 0) {
-      return ErrorFactory.DomainError('Product price cannot be negative');
-    }
-    if (!props.currency?.trim() || props.currency.trim().length !== 3) {
-      return ErrorFactory.DomainError(
-        'Product currency must be a valid 3-letter ISO 4217 code',
-      );
-    }
-    const moneyResult = Money.fromMajorUnits(props.price, props.currency);
-    if (moneyResult.isFailure) {
-      return moneyResult;
+    const priceResult = Product.validatePrice(
+      props.price,
+      props.currency?.trim() ?? '',
+    );
+    if (priceResult.isFailure) {
+      return priceResult;
     }
     const slug = props.slug?.trim()
       ? this.generateSlug(props.slug)
@@ -88,6 +83,21 @@ export class Product implements IProduct {
       );
     }
     return Result.success(undefined);
+  }
+
+  private static validatePrice(
+    price: number,
+    currency: string,
+  ): Result<Money, DomainError> {
+    if (price < 0) {
+      return ErrorFactory.DomainError('Product price cannot be negative');
+    }
+    if (currency.length !== 3) {
+      return ErrorFactory.DomainError(
+        'Product currency must be a valid 3-letter ISO 4217 code',
+      );
+    }
+    return Money.fromMajorUnits(price, currency);
   }
 
   private generateSlug(name: string): string {
@@ -166,10 +176,7 @@ export class Product implements IProduct {
   }
 
   updatePrice(price: number): Result<void, DomainError> {
-    if (price < 0) {
-      return ErrorFactory.DomainError('Product price cannot be negative');
-    }
-    const moneyResult = Money.fromMajorUnits(price, this._currency);
+    const moneyResult = Product.validatePrice(price, this._currency);
     if (moneyResult.isFailure) {
       return moneyResult;
     }
@@ -201,21 +208,34 @@ export class Product implements IProduct {
     return Result.success(undefined);
   }
 
-  updateProduct(updates: UpdateProductDomainProps): void {
+  updateProduct(updates: UpdateProductDomainProps): Result<void, DomainError> {
+    const nextName =
+      updates.name !== undefined ? updates.name.trim() : this._name;
+    if (!nextName) {
+      return ErrorFactory.DomainError('Product name cannot be empty');
+    }
+
+    const nextCurrency =
+      updates.currency !== undefined
+        ? updates.currency.trim().toUpperCase()
+        : this._currency;
+    const nextPrice = updates.price !== undefined ? updates.price : this._price;
+    const moneyResult = Product.validatePrice(nextPrice, nextCurrency);
+    if (moneyResult.isFailure) {
+      return moneyResult;
+    }
+
     if (updates.name !== undefined) {
-      this.updateName(updates.name);
+      this._name = nextName;
+      this._slug = this.generateSlug(this._name);
     }
     if (updates.description !== undefined) {
-      this.updateDescription(updates.description);
+      this._description = updates.description?.trim();
     }
-    if (updates.currency !== undefined) {
-      this._currency = updates.currency.trim().toUpperCase();
-    }
-    if (updates.price !== undefined) {
-      this.updatePrice(updates.price);
-    }
+    this._currency = nextCurrency;
+    this._price = moneyResult.value.toMajorUnits();
     if (updates.sku !== undefined) {
-      this.updateSku(updates.sku);
+      this._sku = updates.sku.trim().toUpperCase();
     }
     if (updates.imageUrl !== undefined) {
       this._imageUrl = updates.imageUrl?.trim() || null;
@@ -224,6 +244,7 @@ export class Product implements IProduct {
       this._categoryId = updates.categoryId;
     }
     this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
   // Serialization

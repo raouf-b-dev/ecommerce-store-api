@@ -175,6 +175,31 @@ describe('ProcessRefundUseCase', () => {
     expect(paymentRepository.update).not.toHaveBeenCalled();
   });
 
+  it('returns success idempotently for an already REFUNDED payment even when the retry amount is invalid for the currency', async () => {
+    const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+      id: 123,
+      amount: 1000,
+      currency: 'JPY',
+      refundedAmount: 1000,
+      status: PaymentStatusType.REFUNDED,
+      transactionId: 'txn_123',
+    });
+    const payment = PaymentMapper.toDomain(paymentEntity);
+
+    paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+    const command: ProcessRefundCommand = {
+      paymentId: 123,
+      amount: 100.5,
+    };
+
+    const result = await useCase.execute(command);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(defaultProvider.refund).not.toHaveBeenCalled();
+    expect(paymentRepository.update).not.toHaveBeenCalled();
+  });
+
   it('fails without calling provider if payment cannot be refunded in current status', async () => {
     const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
       id: 123,

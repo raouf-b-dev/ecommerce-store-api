@@ -20,6 +20,36 @@ function isPositiveDecimalText(text: string): boolean {
 }
 
 /**
+ * V8 uses exponent notation for |n| < 1e-6 and |n| >= 1e21.
+ * Money parsing must see ordinary decimal text, not "1e-7".
+ */
+function numberToPlainDecimalText(value: number): string {
+  const raw = String(value);
+  if (!/e/i.test(raw)) {
+    return raw;
+  }
+
+  const sign = value < 0 ? '-' : '';
+  const unsigned = raw.startsWith('-') ? raw.slice(1) : raw;
+  const [mantissaRaw, exponentRaw] = unsigned.split(/e/i);
+  const exponent = Number(exponentRaw);
+  if (!Number.isInteger(exponent)) {
+    return raw;
+  }
+  const [whole, fraction = ''] = mantissaRaw.split('.');
+  const digits = `${whole}${fraction}`;
+  const decimalIndex = whole.length + exponent;
+
+  if (decimalIndex <= 0) {
+    return `${sign}0.${'0'.repeat(-decimalIndex)}${digits}`;
+  }
+  if (decimalIndex >= digits.length) {
+    return `${sign}${digits}${'0'.repeat(decimalIndex - digits.length)}`;
+  }
+  return `${sign}${digits.slice(0, decimalIndex)}.${digits.slice(decimalIndex)}`;
+}
+
+/**
  * Parses a decimal string or finite number into integer minor units using the given currency exponent (0..3).
  * Extra fraction digits are allowed only if they are trailing zeros (e.g. "19.990" with exponent 2 yields 1999).
  * Non-zero extra fraction digits (e.g. "1.2345" with exponent 2) are rejected (returns undefined).
@@ -33,7 +63,7 @@ export function minorUnitsFromDecimal(
     if (!Number.isFinite(value) || value < 0) {
       return undefined;
     }
-    text = String(value);
+    text = numberToPlainDecimalText(value);
   } else if (typeof value === 'string') {
     text = value.trim();
   } else {
@@ -87,4 +117,13 @@ export function decimalFromMinorUnits(
   const whole = Math.trunc(minorUnits / factor);
   const fraction = Math.abs(minorUnits % factor);
   return `${whole}.${String(fraction).padStart(exponent, '0')}`;
+}
+
+/** Formats a signed minor-unit integer as a major-unit number. */
+export function majorUnitsFromSignedMinor(
+  minorUnits: number,
+  exponent: CurrencyExponent,
+): number {
+  const sign = minorUnits < 0 ? -1 : 1;
+  return sign * Number(decimalFromMinorUnits(Math.abs(minorUnits), exponent));
 }

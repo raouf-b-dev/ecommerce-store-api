@@ -8,7 +8,7 @@ import {
   isFailure,
   Result,
 } from '../../../../../../shared-kernel/domain/result';
-import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UpdateProductCommand } from '../../commands/update-product.command';
 import { IProduct } from '../../../domain/interfaces/product.interface';
@@ -17,7 +17,7 @@ import { IProduct } from '../../../domain/interfaces/product.interface';
 export class UpdateProductUseCase extends UseCase<
   UpdateProductCommand,
   IProduct,
-  UseCaseError
+  AppError
 > {
   constructor(
     private readonly productRepository: ProductRepository,
@@ -29,7 +29,7 @@ export class UpdateProductUseCase extends UseCase<
 
   async execute(
     command: UpdateProductCommand,
-  ): Promise<Result<IProduct, UseCaseError>> {
+  ): Promise<Result<IProduct, AppError>> {
     try {
       if (command.categoryId === null) {
         return ErrorFactory.UseCaseError('categoryId cannot be null', {
@@ -74,7 +74,7 @@ export class UpdateProductUseCase extends UseCase<
         updatedCurrency = currencyResult.value.code;
       }
 
-      entity.updateProduct({
+      const updateResult = entity.updateProduct({
         name: command.name,
         description: command.description,
         price: command.price,
@@ -83,6 +83,9 @@ export class UpdateProductUseCase extends UseCase<
         imageUrl: command.imageUrl,
         categoryId: command.categoryId,
       });
+      if (isFailure(updateResult)) {
+        return updateResult;
+      }
 
       const saveResult = await this.productRepository.save(
         entity,

@@ -26,6 +26,7 @@ import type {
 } from '../../dto/raw-analytics-query-row.interface';
 import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
+import { majorUnitsFromSignedMinor } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
 
 export class AnalyticsQueryMapper {
   static toNumber(value: number | string | null | undefined): number {
@@ -36,27 +37,8 @@ export class AnalyticsQueryMapper {
     return Number.isFinite(n) ? n : 0;
   }
 
-  static roundMoney(value: number, currency: string): number {
-    const moneyResult = Money.fromDecimal(value, currency);
-    if (moneyResult.isSuccess) {
-      return moneyResult.value.toMajorUnits();
-    }
-    throw moneyResult.error;
-  }
-
-  static sumMinorUnits(amounts: Money[]): Money {
-    if (amounts.length === 0) {
-      throw new Error('Cannot sum an empty amount list');
-    }
-    const result = Money.sum(amounts);
-    if (result.isFailure) {
-      throw result.error;
-    }
-    return result.value;
-  }
-
   static computeAov(
-    netRevenue: number,
+    netMinor: number,
     paidOrderCount: number,
     currency: string,
   ): number {
@@ -67,12 +49,8 @@ export class AnalyticsQueryMapper {
     if (currencyResult.isFailure) {
       throw currencyResult.error;
     }
-    const exponent = currencyResult.value.exponent;
-    const factor = Math.pow(10, exponent);
-    return (
-      Math.round((netRevenue / paidOrderCount + Number.EPSILON) * factor) /
-      factor
-    );
+    const aovMinor = Math.round(netMinor / paidOrderCount);
+    return majorUnitsFromSignedMinor(aovMinor, currencyResult.value.exponent);
   }
 
   static toIso(date: Date): string {
@@ -119,17 +97,18 @@ export class AnalyticsQueryMapper {
     if (refundedMoneyResult.isFailure) {
       throw refundedMoneyResult.error;
     }
+    const currencyResult = Currency.create(currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
     const gross = grossMoneyResult.value.toMajorUnits();
     const refunded = refundedMoneyResult.value.toMajorUnits();
-    const netMinor = Math.max(
-      0,
-      grossMoneyResult.value.amount - refundedMoneyResult.value.amount,
+    const netMinor =
+      grossMoneyResult.value.amount - refundedMoneyResult.value.amount;
+    const net = majorUnitsFromSignedMinor(
+      netMinor,
+      currencyResult.value.exponent,
     );
-    const netMoneyResult = Money.create(netMinor, currency);
-    if (netMoneyResult.isFailure) {
-      throw netMoneyResult.error;
-    }
-    const net = netMoneyResult.value.toMajorUnits();
     const paidOrderCount = this.toNumber(revenue?.paid_count);
 
     return {
@@ -138,7 +117,7 @@ export class AnalyticsQueryMapper {
       refundedAmount: refunded,
       ordersCount: this.toNumber(orderCountRow?.count),
       paidOrderCount,
-      aov: this.computeAov(net, paidOrderCount, currency),
+      aov: this.computeAov(netMinor, paidOrderCount, currency),
       currency,
     };
   }
@@ -193,6 +172,11 @@ export class AnalyticsQueryMapper {
     }
 
     const currency = input.currency;
+    const seriesCurrencyResult = Currency.create(currency);
+    if (seriesCurrencyResult.isFailure) {
+      throw seriesCurrencyResult.error;
+    }
+    const seriesExponent = seriesCurrencyResult.value.exponent;
 
     const buckets: PaymentTimeSeriesBucket[] = enumerateUtcBuckets(
       input.from,
@@ -217,15 +201,9 @@ export class AnalyticsQueryMapper {
       }
       const gross = grossMoneyResult.value.toMajorUnits();
       const refunded = refundedMoneyResult.value.toMajorUnits();
-      const netMinor = Math.max(
-        0,
-        grossMoneyResult.value.amount - refundedMoneyResult.value.amount,
-      );
-      const netMoneyResult = Money.create(netMinor, currency);
-      if (netMoneyResult.isFailure) {
-        throw netMoneyResult.error;
-      }
-      const net = netMoneyResult.value.toMajorUnits();
+      const netMinor =
+        grossMoneyResult.value.amount - refundedMoneyResult.value.amount;
+      const net = majorUnitsFromSignedMinor(netMinor, seriesExponent);
       return {
         bucketStart: key,
         grossAmount: gross,

@@ -1,4 +1,8 @@
-import { decimalFromMinorUnits, minorUnitsFromDecimal } from './money-decimal';
+import {
+  decimalFromMinorUnits,
+  majorUnitsFromSignedMinor,
+  minorUnitsFromDecimal,
+} from './money-decimal';
 
 describe('minorUnitsFromDecimal', () => {
   it('parses scale-2 decimals correctly', () => {
@@ -41,6 +45,20 @@ describe('minorUnitsFromDecimal', () => {
     expect(minorUnitsFromDecimal('abc', 2)).toBeUndefined();
     expect(minorUnitsFromDecimal(Number.NaN, 2)).toBeUndefined();
     expect(minorUnitsFromDecimal(-5, 2)).toBeUndefined();
+  });
+
+  it('expands scientific notation from numeric input before validation', () => {
+    expect(String(1e-7)).toMatch(/e/i);
+    expect(minorUnitsFromDecimal(1e-7, 2)).toBeUndefined();
+    expect(minorUnitsFromDecimal(1e2, 2)).toBe(10000);
+  });
+});
+
+describe('majorUnitsFromSignedMinor', () => {
+  it('preserves the sign for amounts between -1 and 0', () => {
+    expect(majorUnitsFromSignedMinor(-50, 2)).toBe(-0.5);
+    expect(majorUnitsFromSignedMinor(-1999, 2)).toBe(-19.99);
+    expect(majorUnitsFromSignedMinor(0, 2)).toBe(0);
   });
 });
 

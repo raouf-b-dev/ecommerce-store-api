@@ -46,13 +46,13 @@ export class ProcessRefundUseCase extends UseCase<
 
     const payment = paymentResult.value;
 
-    const moneyResult = Money.fromDecimal(amount, payment.currency);
-    if (isFailure(moneyResult)) return moneyResult;
-    const refundMinorUnits = moneyResult.value.amount;
-
     if (payment.status === PaymentStatusType.REFUNDED) {
       return Result.success(payment.toPrimitives());
     }
+
+    const moneyResult = Money.fromDecimal(amount, payment.currency);
+    if (isFailure(moneyResult)) return moneyResult;
+    const refundMinorUnits = moneyResult.value.amount;
 
     if (!payment.providerId.equals(this.paymentProvider.id)) {
       return providerMismatchError(

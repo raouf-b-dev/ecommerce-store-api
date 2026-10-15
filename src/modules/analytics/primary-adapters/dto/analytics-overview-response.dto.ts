@@ -5,7 +5,12 @@ import {
 } from '../../core/application/analytics.policy';
 
 export class AnalyticsKpiSnapshotDto {
-  @ApiProperty({ type: Number, example: 12500.5 })
+  @ApiProperty({
+    type: Number,
+    description:
+      'grossRevenue - refundedAmount. Negative when refunds in the window exceed captures.',
+    example: 12500.5,
+  })
   netRevenue!: number;
 
   @ApiProperty({ type: Number, example: 13000 })
@@ -31,12 +36,18 @@ export class AnalyticsKpiSnapshotDto {
 
   @ApiProperty({
     type: Number,
-    description: 'netRevenue / paidOrderCount (0 if none)',
+    description:
+      'netRevenue / paidOrderCount (0 if none). Negative when netRevenue is negative.',
     example: 297.63,
   })
   aov!: number;
 
-  @ApiProperty({ type: String, example: 'USD' })
+  @ApiProperty({
+    type: String,
+    description:
+      'Store default currency. Only payments in this currency are counted.',
+    example: 'USD',
+  })
   currency!: string;
 }
 

@@ -98,14 +98,19 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
           WHERE p.status = ANY($1::varchar[])
             AND COALESCE(p.completed_at, p.created_at) >= $2
             AND COALESCE(p.completed_at, p.created_at) <= $3
+            AND p.currency = $4
           GROUP BY 1
           ORDER BY 1 ASC
           `,
-          [[...REVENUE_PAYMENT_STATUSES], query.from, query.to],
+          [
+            [...REVENUE_PAYMENT_STATUSES],
+            query.from,
+            query.to,
+            this.storeCurrency,
+          ],
         );
 
-        const currency =
-          rows.find((r) => r.currency)?.currency ?? this.storeCurrency;
+        const currency = this.storeCurrency;
         return Result.success(
           AnalyticsQueryMapper.toPaymentsTimeSeriesResult({
             from: query.from,
@@ -143,14 +148,21 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
           WHERE o.status = ANY($1::varchar[])
             AND o."createdAt" >= $2
             AND o."createdAt" <= $3
+            AND COALESCE(oi.currency, o.currency) = $5
           GROUP BY oi.product_id
           ORDER BY SUM(oi."lineTotal") DESC, SUM(oi.quantity) DESC
           LIMIT $4
           `,
-          [[...TOP_PRODUCT_ORDER_STATUSES], query.from, query.to, query.limit],
+          [
+            [...TOP_PRODUCT_ORDER_STATUSES],
+            query.from,
+            query.to,
+            query.limit,
+            this.storeCurrency,
+          ],
         );
 
-        const currency = rows[0]?.currency ?? this.storeCurrency;
+        const currency = this.storeCurrency;
         return Result.success(
           AnalyticsQueryMapper.toTopProductsResult({
             from: query.from,
@@ -213,8 +225,9 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
         WHERE p.status = ANY($1::varchar[])
           AND COALESCE(p.completed_at, p.created_at) >= $2
           AND COALESCE(p.completed_at, p.created_at) <= $3
+          AND p.currency = $4
         `,
-        [[...REVENUE_PAYMENT_STATUSES], from, to],
+        [[...REVENUE_PAYMENT_STATUSES], from, to, this.storeCurrency],
       ),
       queryFn<RawAnalyticsCountRow[]>(
         `
@@ -227,7 +240,7 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
       ),
     ]);
 
-    const currency = revenueRows[0]?.currency ?? this.storeCurrency;
+    const currency = this.storeCurrency;
     return AnalyticsQueryMapper.toKpiSnapshot(
       revenueRows[0],
       orderCountRows[0],
