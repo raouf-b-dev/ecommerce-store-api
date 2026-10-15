@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ResolveRolePermissionsService } from './resolve-role-permissions.service';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { ResultAssertionHelper } from 'src/testing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 
 describe('ResolveRolePermissionsService', () => {
@@ -34,10 +35,8 @@ describe('ResolveRolePermissionsService', () => {
     const result = await service.execute(
       undefined as unknown as string, // Intentional negative test for missing input
     );
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.codes).toEqual([]);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.codes).toEqual([]);
   });
 
   it('should return failure if roleRepository fails', async () => {
@@ -55,11 +54,9 @@ describe('ResolveRolePermissionsService', () => {
     );
 
     const result = await service.execute('ADMIN');
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.has('manage_products')).toBe(true);
-      expect(result.value.has('manage_users')).toBe(true);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.has('manage_products')).toBe(true);
+    expect(result.value.has('manage_users')).toBe(true);
     expect(
       mockRoleRepository.findPermissionCodesByRoleCode,
     ).toHaveBeenCalledWith('ADMIN');

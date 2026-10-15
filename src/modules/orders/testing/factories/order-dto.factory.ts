@@ -18,6 +18,7 @@ import { OrderDetailDTO } from '../../core/application/queries/results/order-det
 import { OrderItemDetailDTO } from '../../core/application/queries/results/order-item-detail.result';
 import { RawOrderListQueryRow } from '../../secondary-adapters/dto/raw-order-list-query-row.interface';
 import { CheckoutDto } from '../../primary-adapters/dto/checkout.dto';
+import { CreatedPayment } from '../../core/application/ports/payment.gateway';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 
 export class OrderDtoTestFactory {
@@ -55,7 +56,7 @@ export class OrderDtoTestFactory {
   ): CheckoutCommand {
     const baseCommand: CheckoutCommand = {
       cartId: 1,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddress: this.createCheckoutShippingAddressInput(),
       callerContext: AuthPayloadFactory.createCallerContext(),
       customerNotes: 'customerNotes',
@@ -107,7 +108,7 @@ export class OrderDtoTestFactory {
       cartId: 1,
       userId: 1,
       shippingAddress: this.createShippingAddressProps(),
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
     };
 
     return { ...baseInput, ...overrides };
@@ -207,6 +208,7 @@ export class OrderDtoTestFactory {
       userName: 'John Customer',
       userEmail: 'john@example.com',
       status: 'pending_payment',
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddress: '123 Main St',
       items: [this.createOrderItemDetailDTO()],
       subtotal: 100,
@@ -224,13 +226,14 @@ export class OrderDtoTestFactory {
     overrides?: Partial<RawOrderListQueryRow>,
   ): RawOrderListQueryRow {
     return {
-      id: '42',
-      userId: '10',
+      id: 42,
+      userId: 10,
       userName: 'Alice Smith',
       userEmail: 'alice@example.com',
       status: 'PENDING_PAYMENT',
-      itemCount: '3',
-      totalAmount: '199.99',
+      itemCount: 3,
+      totalAmount: 199.99,
+      currency: 'USD',
       createdAt: '2026-08-09T20:00:00.000Z',
       ...overrides,
     };
@@ -245,6 +248,30 @@ export class OrderDtoTestFactory {
       email: 'alice@example.com',
       ...overrides,
     };
+  }
+
+  static createCreatedPayment(
+    overrides?: Partial<CreatedPayment>,
+  ): CreatedPayment {
+    const createdAt = new Date('2026-01-01T00:00:00.000Z');
+    const basePayment: CreatedPayment = {
+      id: 5,
+      orderId: 123,
+      userId: 2,
+      amount: 2550,
+      currency: 'EUR',
+      paymentMethod: PaymentMethodType.CARD,
+      status: 'AUTHORIZED',
+      transactionId: 'txn_123',
+      gatewayPaymentIntentId: null,
+      paymentMethodInfo: null,
+      refundedAmount: 0,
+      failureReason: null,
+      createdAt,
+      completedAt: null,
+      updatedAt: createdAt,
+    };
+    return { ...basePayment, ...overrides };
   }
 
   static createOrderListItemDTO(

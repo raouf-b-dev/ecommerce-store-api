@@ -12,7 +12,8 @@ export class RecordCodPaymentDto {
 
   @ApiProperty({
     example: 299.99,
-    description: 'Amount collected',
+    description: 'Amount collected as a major-unit decimal',
+    type: Number,
   })
   @IsNumber()
   @Min(0.01)

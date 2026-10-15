@@ -39,15 +39,13 @@ The domain core does not depend on infrastructure. Databases, caches, and queues
 
 **Location**: `src/modules/*/secondary-adapters/` · **Deep-dive**: [DDD-HEXAGONAL.md](architecture/DDD-HEXAGONAL.md)
 
-### ACL Gateway Pattern
-
-Eleven modules live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)); Health has no gateways. There are no direct executable imports of another module's domain.
+Ten domain bounded contexts live under `src/modules/`. Write-side contexts talk through **eight ACL gateway ports** (Orders, Carts, Authentication). Analytics composes reads in SQL ([domains/ANALYTICS.md](architecture/domains/ANALYTICS.md)). Health probes and platform runtime config live under `src/infrastructure/`. There are no direct executable imports of another module's domain.
 
 **Location**: `src/modules/*/secondary-adapters/adapters/` · **Deep-dive**: [INTEGRATION-PATTERNS.md](integration/INTEGRATION-PATTERNS.md), [ARCHITECTURE.md](architecture/ARCHITECTURE.md)
 
 ### Modular Monolith
 
-All eleven modules (Analytics, Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
+All ten domain modules (Analytics, Authentication, Authorization, Carts, Identity, Inventory, Notifications, Orders, Payments, Products) ship as one deployable unit with strict isolation. Extraction to services later should not require rewriting domain logic.
 
 **Location**: `src/modules/`
 
@@ -77,7 +75,7 @@ Checkout is a multi-step SAGA: **Validate → Reserve Stock → Process Payment 
 
 ### Idempotency (Redis-Backed)
 
-`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients may send `Idempotency-Key` or `x-idempotency-key` (body `idempotencyKey` as fallback). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
+`@Idempotent()` with a Redis store protects the HTTP checkout command so retries do not create duplicate side effects. Keys are namespaced by authenticated `userId` + method + route. Clients must send the `Idempotency-Key` header (the header is the only source). The interceptor replays completed responses, returns 409 + `Retry-After` while in progress, and **fails closed** with HTTP 503 if Redis is unavailable. It does **not** cover the BullMQ worker or SAGA compensation chain.
 
 **Location**: `src/infrastructure/idempotency/`, `src/infrastructure/decorators/`, `src/infrastructure/interceptors/`
 
@@ -87,13 +85,13 @@ Background job processing with nested flow orchestration. Notifications use `Flo
 
 **Location**: `src/modules/notifications/`, `src/infrastructure/queue/`
 
-### Payment Gateway (Mock Adapter)
+### Payment Provider (Fake Stripe Payment Provider)
 
-Payments use a gateway **port** and strategy resolver. The Stripe adapter is a **mock** used for local and CI checkout proofs. A live Stripe SDK and production webhook HMAC verification are Phase 18. In the mock era, `POST /v1/payments/webhooks/stripe` is fail-closed: signatures must verify, except a documented `NODE_ENV=test` bypass used by e2e helpers.
+Payments use the provider-neutral `PaymentProvider` port directly bound to `FakeStripePaymentProvider` (no resolver). Stored payments record provider `'stripe'` and payment method `'CARD'`. The `FakeStripePaymentProvider` adapter imitates Stripe payment intent flows for local and CI checkout proofs. Stripe webhook HMAC verification over the raw body via the official stripe SDK is active on `POST /v1/payments/webhooks/stripe`. The endpoint fails closed: valid signatures constructed with `STRIPE_WEBHOOK_SECRET` are required across all environments with no bypasses.
 
-- **Flow**: SAGA Validate Cart → Reserve Stock → Process Payment (gateway) → (webhook / mock auto-complete) → Confirm Order → Clear Cart
-- **Webhooks**: Handler and job path exist; signature verification is stubbed for testing
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so the mock gateway enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races.
+- **Flow**: SAGA Validate Cart -> Reserve Stock -> Process Payment (provider) -> (webhook / mock auto-complete) -> Confirm Order -> Clear Cart
+- **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -220,7 +218,13 @@ Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on N
 - `GET /health/liveness`: process health (`ProcessHealthIndicator`)
 - `GET /health/readiness`: PostgreSQL required (Redis degradation is reported on `/health` and metrics)
 
-**Location**: `src/modules/health/`
+**Location**: `src/infrastructure/health/`
+
+### Platform Configuration
+
+- `GET /v1/platform/config`: public platform configuration providing default store currency, minor-unit exponent, and supported currencies for client bootstrapping.
+
+**Location**: `src/infrastructure/platform/`
 
 ### OpenAPI Truthfulness
 
@@ -284,7 +288,7 @@ Fan-out pipeline: lint, typecheck, unit, arch, audit, build, integration, e2e, s
 
 - **Unit**: Domain logic, use cases, services, utilities
 - **Integration**: PostgreSQL Testcontainers for query adapters and write repositories (transactions, locks, cache-aside)
-- **E2E**: Auth lifecycle, IDOR denial, checkout SAGA, idempotency, CQRS read shapes
+- **E2E**: Auth lifecycle, IDOR denial (including another customer's real order and payment), checkout SAGA, idempotency, CQRS read shapes
 - **Architecture**: Hexagonal and module boundary rules (`npm run test:arch`)
 - **Coverage**: `npm run test:cov`
 
@@ -307,6 +311,12 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING.md).
 
 **Location**: `scripts/seed.ts`, module seed use cases
+
+### Full-Stack Local Run
+
+Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use `.github/pull_request_template.md`.
+
+**Location**: `docs/development/FULL-STACK.md`, `.github/pull_request_template.md`
 
 ---
 

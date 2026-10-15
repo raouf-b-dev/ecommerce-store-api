@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -9,6 +10,8 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'inventory' })
+@Check('chk_inventory_available_quantity', '"availableQuantity" >= 0')
+@Check('chk_inventory_reserved_quantity', '"reservedQuantity" >= 0')
 @Index('idx_inventory_product_id', ['productId'], { unique: true })
 @Index('idx_inventory_available_quantity', ['availableQuantity'])
 export class InventoryEntity {

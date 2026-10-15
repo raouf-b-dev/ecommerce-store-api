@@ -37,8 +37,7 @@ export class ActivateProductUseCase extends UseCase<
     if (product.categoryId == null) {
       return ErrorFactory.UseCaseError(
         'Cannot activate a product without a category',
-        undefined,
-        HttpStatus.BAD_REQUEST,
+        { status: HttpStatus.BAD_REQUEST },
       );
     }
 

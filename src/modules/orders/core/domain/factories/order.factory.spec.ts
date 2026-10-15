@@ -9,7 +9,7 @@ describe('OrderFactory', () => {
     productId: 7,
     productName: 'Headphones',
     imageUrl,
-    price: 199.99,
+    price: 19999,
     quantity: 1,
     currency: 'USD',
   });
@@ -19,7 +19,7 @@ describe('OrderFactory', () => {
       cart: { items },
       userId: 1,
       shippingAddress: OrderTestFactory.createShippingAddressProps(),
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
     });
 
   it('snapshots the cart line image on the order line', () => {

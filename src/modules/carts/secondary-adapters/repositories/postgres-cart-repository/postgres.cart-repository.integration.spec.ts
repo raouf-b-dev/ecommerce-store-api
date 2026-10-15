@@ -5,6 +5,13 @@ import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/produ
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
+
+const minorUnitsFromCatalog = (amount: number, currency: string): number => {
+  const money = Money.fromMajorUnits(amount, currency);
+  ResultAssertionHelper.assertResultSuccess(money);
+  return money.value.amount;
+};
 
 describe('PostgresCartRepository (Integration - Real DB)', () => {
   let repository: PostgresCartRepository;
@@ -46,7 +53,10 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       cart.addItem(
         seededData.product.id,
         seededData.product.name,
-        seededData.product.price,
+        minorUnitsFromCatalog(
+          seededData.product.price,
+          seededData.product.currency,
+        ),
         1,
         seededData.product.currency,
         seededData.product.imageUrl,
@@ -56,7 +66,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       cart.addItem(
         secondProduct.id,
         secondProduct.name,
-        secondProduct.price,
+        minorUnitsFromCatalog(secondProduct.price, secondProduct.currency),
         2,
         secondProduct.currency,
         secondProduct.imageUrl,
@@ -123,7 +133,10 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       cart.addItem(
         seededData.product.id,
         seededData.product.name,
-        seededData.product.price,
+        minorUnitsFromCatalog(
+          seededData.product.price,
+          seededData.product.currency,
+        ),
         2,
         seededData.product.currency,
         seededData.product.imageUrl,
@@ -163,7 +176,10 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       withItem.value.entity.addItem(
         seededData.product.id,
         seededData.product.name,
-        seededData.product.price,
+        minorUnitsFromCatalog(
+          seededData.product.price,
+          seededData.product.currency,
+        ),
         1,
         seededData.product.currency,
         seededData.product.imageUrl,
@@ -208,7 +224,10 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       cart.addItem(
         seededData.product.id,
         seededData.product.name,
-        seededData.product.price,
+        minorUnitsFromCatalog(
+          seededData.product.price,
+          seededData.product.currency,
+        ),
         1,
         seededData.product.currency,
         seededData.product.imageUrl,
@@ -225,7 +244,10 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
       cart.addItem(
         seededData.product.id,
         seededData.product.name,
-        seededData.product.price,
+        minorUnitsFromCatalog(
+          seededData.product.price,
+          seededData.product.currency,
+        ),
         1,
         seededData.product.currency,
         seededData.product.imageUrl,

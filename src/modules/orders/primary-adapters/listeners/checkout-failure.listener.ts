@@ -2,11 +2,11 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { ReleaseCheckoutStockUseCase } from '../../core/application/usecases/release-checkout-stock/release-checkout-stock.usecase';
-import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { InventoryReservationGateway } from '../../core/application/ports/inventory-reservation.gateway';
 import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order/cancel-order.usecase';
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
 import { parseCheckoutCompensationJobData } from './checkout-compensation-job-data';
+import { JobNames } from '../../../../infrastructure/jobs/job-names';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -17,7 +17,6 @@ export class CheckoutFailureListener implements OnModuleInit {
     private readonly queueEventsService: QueueEventsService,
     private readonly releaseStockUseCase: ReleaseCheckoutStockUseCase,
     private readonly cancelOrderUseCase: CancelOrderUseCase,
-    private readonly refundPaymentUseCase: RefundCheckoutPaymentUseCase,
     private readonly inventoryGateway: InventoryReservationGateway,
   ) {}
 
@@ -36,9 +35,16 @@ export class CheckoutFailureListener implements OnModuleInit {
             return;
           }
 
+          if (job.name === JobNames.REFUND_PAYMENT) {
+            this.logger.debug(
+              `Job ${jobId} is a refund payment job. Skipping checkout compensation.`,
+            );
+            return;
+          }
+
           const jobData = parseCheckoutCompensationJobData(job.data);
           let { reservationId } = jobData;
-          const { orderId, paymentId, orderTotal } = jobData;
+          const { orderId } = jobData;
 
           if (!reservationId && orderId) {
             const reservationResult =
@@ -53,20 +59,6 @@ export class CheckoutFailureListener implements OnModuleInit {
                   `Retrieved reservationId ${reservationId} for order ${orderId}`,
                 );
               }
-            }
-          }
-
-          if (paymentId) {
-            this.logger.log(`Refunding payment ${paymentId}...`);
-            const refundResult = await this.refundPaymentUseCase.execute({
-              paymentId,
-              amount: orderTotal || 0,
-              reason: `Checkout compensation: ${failedReason}`,
-            });
-            if (refundResult.isFailure) {
-              this.logger.error(
-                `Failed to refund payment ${paymentId}: ${refundResult.error.message}`,
-              );
             }
           }
 

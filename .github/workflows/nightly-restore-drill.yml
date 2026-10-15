@@ -23,6 +23,7 @@ jobs:
       redis_image: ${{ steps.resolve.outputs.redis_image }}
       redis_container_name: ${{ steps.resolve.outputs.redis_container_name }}
       cors_allowed_origins: ${{ steps.resolve.outputs.cors_allowed_origins }}
+      store_default_currency: ${{ steps.resolve.outputs.store_default_currency }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -89,6 +90,7 @@ jobs:
       POSTGRES_IMAGE: ${{ needs.resolve-env.outputs.postgres_image }}
       POSTGRES_CONTAINER_NAME: ${{ needs.resolve-env.outputs.postgres_container_name }}
       CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
+      STORE_DEFAULT_CURRENCY: ${{ needs.resolve-env.outputs.store_default_currency }}
 
     steps:
       - name: Checkout
@@ -156,6 +158,7 @@ jobs:
       REDIS_IMAGE: ${{ needs.resolve-env.outputs.redis_image }}
       REDIS_CONTAINER_NAME: ${{ needs.resolve-env.outputs.redis_container_name }}
       CORS_ALLOWED_ORIGINS: ${{ needs.resolve-env.outputs.cors_allowed_origins }}
+      STORE_DEFAULT_CURRENCY: ${{ needs.resolve-env.outputs.store_default_currency }}
 
     steps:
       - name: Checkout

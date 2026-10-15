@@ -87,7 +87,7 @@ describe('Authentication lifecycle (e2e)', () => {
     ).toBeDefined();
   });
 
-  it('rotates refresh tokens and rejects the previous refresh token', async () => {
+  it('rotates refresh tokens and revokes every session when the previous token is replayed', async () => {
     const rotated = await AuthTestHelper.refresh(http, session.refreshToken);
     expect(rotated.accessToken).toBeDefined();
     expect(rotated.refreshToken).toBeDefined();
@@ -99,6 +99,16 @@ describe('Authentication lifecycle (e2e)', () => {
 
     expect(replay.status).toBe(HttpStatus.UNAUTHORIZED);
     HttpErrorAssertionHelper.assertErrorContract(replay, {
+      statusCode: HttpStatus.UNAUTHORIZED,
+      messageContains: 'Refresh token reuse detected',
+    });
+
+    const rotatedReplay = await http
+      .post(`${E2E_API_PREFIX}/authentication/refresh`)
+      .send({ refreshToken: rotated.refreshToken });
+
+    expect(rotatedReplay.status).toBe(HttpStatus.UNAUTHORIZED);
+    HttpErrorAssertionHelper.assertErrorContract(rotatedReplay, {
       statusCode: HttpStatus.UNAUTHORIZED,
       messageContains: 'Invalid or expired session',
     });

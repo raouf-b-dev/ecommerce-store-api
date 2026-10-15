@@ -93,6 +93,46 @@ describe('Reservation', () => {
       ResultAssertionHelper.assertResultSuccess(reservation.release());
       expect(reservation.status).toBe(ReservationStatus.RELEASED);
     });
+
+    it('rejects release when in CONFIRMED status', () => {
+      const reservation = ReservationTestFactory.createConfirmedReservation();
+
+      ResultAssertionHelper.assertResultFailure(
+        reservation.release(),
+        'Cannot release confirmed reservation directly; use returnConfirmedToStock',
+        DomainError,
+      );
+    });
+  });
+
+  describe('returnConfirmedToStock', () => {
+    it('marks confirmed reservation as released', () => {
+      const reservation = ReservationTestFactory.createConfirmedReservation();
+
+      ResultAssertionHelper.assertResultSuccess(
+        reservation.returnConfirmedToStock(),
+      );
+      expect(reservation.status).toBe(ReservationStatus.RELEASED);
+    });
+
+    it('is idempotent when already released', () => {
+      const reservation = ReservationTestFactory.createReleasedReservation();
+
+      ResultAssertionHelper.assertResultSuccess(
+        reservation.returnConfirmedToStock(),
+      );
+      expect(reservation.status).toBe(ReservationStatus.RELEASED);
+    });
+
+    it('rejects when not confirmed', () => {
+      const reservation = ReservationTestFactory.createPendingReservation();
+
+      ResultAssertionHelper.assertResultFailure(
+        reservation.returnConfirmedToStock(),
+        `Cannot return reservation to stock in ${ReservationStatus.PENDING} status`,
+        DomainError,
+      );
+    });
   });
 
   describe('expire', () => {

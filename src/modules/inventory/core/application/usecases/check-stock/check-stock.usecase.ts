@@ -1,4 +1,5 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
@@ -27,7 +28,7 @@ export class CheckStockUseCase implements UseCase<
       input.productId,
     );
     if (inventoryResult.isFailure) {
-      if (inventoryResult.error.statusCode === HttpStatus.NOT_FOUND) {
+      if (inventoryResult.error.statusCode === StatusCode.NOT_FOUND) {
         return Result.success({
           isAvailable: false,
           availableQuantity: 0,

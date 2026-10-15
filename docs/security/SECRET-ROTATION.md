@@ -8,12 +8,12 @@ Companion docs: [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md) (lifecycle & inje
 
 ## 1. Purpose & assumptions
 
-| Assumption  | Detail                                                                                                                    |
-| :---------- | :------------------------------------------------------------------------------------------------------------------------ |
-| Topology    | One API container; managed or Compose PostgreSQL + Redis                                                                  |
-| Config load | Env validated at startup (`validate-env.ts` → `EnvConfigService`); no runtime secret reload                               |
-| JWT         | Single RSA private key (`JWT_PRIVATE_KEY`) → one JWKS entry; verifier uses that public key only                           |
-| CI secrets | `CI_JWT_PRIVATE_KEY`, `CI_DB_PASSWORD`, etc. are **test/CI only**: rotate via GitHub Secrets independently of production |
+| Assumption  | Detail                                                                                                                   |
+| :---------- | :----------------------------------------------------------------------------------------------------------------------- |
+| Topology    | One API container; managed or Compose PostgreSQL + Redis                                                                 |
+| Config load | Env validated at startup (`validate-env.ts` → `EnvConfigService`); no runtime secret reload                              |
+| JWT         | Single RSA private key (`JWT_PRIVATE_KEY`) → one JWKS entry; verifier uses that public key only                          |
+| CI secrets  | `CI_JWT_PRIVATE_KEY`, `CI_DB_PASSWORD`, etc. are **test/CI only**: rotate via GitHub Secrets independently of production |
 
 **Not in this ship gate:** dual-key JWKS overlap (keep previous public key until access-token TTL expires). That pattern is documented conceptually in [JWT-RSA-JWKS.md §3.5](JWT-RSA-JWKS.md#35-key-rotation) but is **not implemented** (`JwksService` exposes one key). Until it ships, JWT rotation requires a maintenance window and forces re-login.
 
@@ -30,14 +30,14 @@ flowchart TD
 
 ## 2. Inventory & schedule
 
-| Secret                                    | Tier            | Cadence                                                 | Restart              | Primary impact                                                                  |
-| :---------------------------------------- | :-------------- | :------------------------------------------------------ | :------------------- | :------------------------------------------------------------------------------ |
-| `JWT_PRIVATE_KEY`                         | T1              | 90 days, or immediately on compromise / staff departure | API                  | All RS256 JWTs (access, refresh, cart session) fail verify → users **re-login** |
-| `DB_PASSWORD`                             | T1              | 90 days, or on incident                                 | API + backup scripts | Wrong cutover order → readiness / migrate failure                               |
-| `REDIS_PASSWORD`                          | T1              | 90 days, or on incident                                 | API                  | Cache, carts, idempotency, queues, Socket.IO reconnect                          |
-| `METRICS_API_KEY`                         | T1              | 90 days, or on leak                                     | API                  | Scrapers / `GET /metrics` get 401 until updated                                 |
-| `GRAFANA_ADMIN_PASSWORD`                  | T1              | 90 days, or on leak                                     | Grafana              | Ops UI only                                                                     |
-| Stripe / email / outbound webhook secrets | T1 (when wired) | Per provider policy, or on leak | API | Phase 17: see §8 |
+| Secret                   | Tier | Cadence                                                 | Restart              | Primary impact                                                                  |
+| :----------------------- | :--- | :------------------------------------------------------ | :------------------- | :------------------------------------------------------------------------------ |
+| `JWT_PRIVATE_KEY`        | T1   | 90 days, or immediately on compromise / staff departure | API                  | All RS256 JWTs (access, refresh, cart session) fail verify → users **re-login** |
+| `DB_PASSWORD`            | T1   | 90 days, or on incident                                 | API + backup scripts | Wrong cutover order → readiness / migrate failure                               |
+| `REDIS_PASSWORD`         | T1   | 90 days, or on incident                                 | API                  | Cache, carts, idempotency, queues, Socket.IO reconnect                          |
+| `METRICS_API_KEY`        | T1   | 90 days, or on leak                                     | API                  | Scrapers / `GET /metrics` get 401 until updated                                 |
+| `GRAFANA_ADMIN_PASSWORD` | T1   | 90 days, or on leak                                     | Grafana              | Ops UI only                                                                     |
+| `STRIPE_WEBHOOK_SECRET`  | T1   | Per provider policy, or on leak                         | API                  | `POST /v1/payments/webhooks/stripe` fails verification; see Section 8           |
 
 Rotate **immediately** when: suspected breach, secret in logs/git, or team member with production access departs.
 
@@ -192,18 +192,39 @@ Update the monitoring stack env / Compose secret, restart Grafana, confirm login
 
 ---
 
-## 8. Third-party secrets (Phase 17: when adapters land)
+## 8. Third-party secrets (Stripe and webhooks)
 
-These are **not** required env vars for the current ship gate. Use this pattern when Stripe, email, or outbound webhooks are enabled.
+`STRIPE_WEBHOOK_SECRET` is required in production and staging environments to verify webhook signatures on `POST /v1/payments/webhooks/stripe`.
 
-| Secret                 | Typical env (planned)      | Rotation pattern                                                                            |
+| Secret                 | Typical env                | Rotation pattern                                                                            |
 | :--------------------- | :------------------------- | :------------------------------------------------------------------------------------------ |
-| Stripe webhook signing | `STRIPE_WEBHOOK_SECRET`    | Prefer Stripe dual-secret roll: add new endpoint secret → deploy API → remove old           |
-| Stripe secret API key  | `STRIPE_SECRET_KEY`        | Roll in Stripe dashboard → update env → restart → confirm PaymentIntent / test charge       |
-| Email provider API key | Provider-specific          | Rotate in provider → update env → restart → send test notification                          |
-| Outbound webhook HMAC  | Per-subscription or global | Generate new secret → update store → restart delivery workers → verify signed test delivery |
+| Stripe webhook signing | `STRIPE_WEBHOOK_SECRET`    | Roll endpoint secret in Stripe dashboard -> update env -> restart API -> confirm deliveries |
+| Stripe secret API key  | `STRIPE_SECRET_KEY`        | Roll in Stripe dashboard -> update env -> restart -> confirm PaymentIntent / test charge    |
+| Email provider API key | Provider-specific          | Rotate in provider -> update env -> restart -> send test notification                       |
+| Outbound webhook HMAC  | Per-subscription or global | Generate new secret -> update store -> restart delivery workers -> verify signed delivery   |
 
-Always: generate → configure provider → update app secret → restart → one successful test event before retiring the old value.
+### Stripe webhook endpoint and local development
+
+The Stripe webhook endpoint is served at:
+
+```
+POST /v1/payments/webhooks/stripe
+```
+
+For local testing and development using the Stripe CLI:
+
+```bash
+# 1. Forward Stripe events to the local endpoint
+stripe listen --forward-to localhost:3000/v1/payments/webhooks/stripe
+
+# 2. Copy the printed webhook signing secret (whsec_...) and set it in your local env:
+# STRIPE_WEBHOOK_SECRET=whsec_...
+
+# 3. Trigger a test event in another terminal
+stripe trigger payment_intent.succeeded
+```
+
+Always: generate -> configure provider -> update app secret -> restart -> one successful test event before retiring the old value.
 
 ---
 
@@ -238,4 +259,3 @@ If a secret was exposed (logs, git, chat, departed staff):
 3. Follow the full playbook in [SECRETS-MANAGEMENT.md §12](SECRETS-MANAGEMENT.md#12-incident-response--compromised-secrets) (scope assessment, log audit, history scrub if committed, notify, post-mortem).
 
 Do not delay rotation waiting for a perfect forensic picture.
-

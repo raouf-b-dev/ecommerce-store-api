@@ -1,6 +1,6 @@
 # Repository & Query Adapter Integration Testing Guide (Real DB)
 
-> **Companion docs**: [`AGENT.md`](../../AGENT.md) (testing standards §9), [`TESTING-TASK-TEMPLATE.md`](TESTING-TASK-TEMPLATE.md) (task checklist), [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (architecture constraints).
+> **Companion docs**: [`AGENTS.md`](../../AGENTS.md) (agent rules), [`TESTING-TASK-TEMPLATE.md`](TESTING-TASK-TEMPLATE.md) (task checklist), [`DDD-HEXAGONAL.md`](../architecture/DDD-HEXAGONAL.md) (architecture constraints).
 
 This guide details best practices and conventions for writing repository and CQRS query adapter integration tests using a real PostgreSQL instance via **Testcontainers** in the `ecommerce-store-api` codebase.
 
@@ -13,7 +13,7 @@ Repository and Query Adapter integration tests validate transactional persistenc
 ### Key Principles
 
 - **Real Database Container**: Tests run against an isolated containerized PostgreSQL instance managed via `@testcontainers/postgresql`.
-- **Isolated Suite**: Integration tests use the file pattern `*.integration.spec.ts` and are executed via a dedicated Jest project (`test/integration/jest-integration.json`). Adapter/repository specs stay co-located under `src/modules/**/secondary-adapters/`; suite-level DB checks live under `test/integration/database/`. Default unit test runs (`npm run test`) explicitly ignore them via `testPathIgnorePatterns: [".*\\.integration\\.spec\\.ts$"]`.
+- **Isolated Suite**: Integration tests use the file pattern `*.integration.spec.ts` and are executed via a dedicated Vitest configuration (`vitest.integration.config.mts`). Adapter/repository specs stay co-located under `src/modules/**/secondary-adapters/`; suite-level DB checks live under `test/integration/database/`. Default unit test runs (`npm run test`) explicitly ignore them via `exclude: ['**/*.integration.spec.ts']`.
 - **Serial Execution**: Standard unit tests remain fast and lightweight without Docker dependencies (`npm run test`). Integration tests run in serial mode (`npm run test:integration`) to ensure total database isolation without connection conflicts.
 
 ### Command Execution
@@ -37,10 +37,8 @@ Integration testing infrastructure is located under `test/integration/`:
 
 ```
 test/integration/
-├── jest-integration.json                    # Dedicated Jest configuration
 ├── harness/
-│ ├── testcontainers.global-setup.ts # Jest globalSetup: starts Postgres container
-│ ├── testcontainers.global-teardown.ts # Jest globalTeardown: stops Postgres container
+│ ├── vitest-integration.global-setup.ts # Vitest globalSetup: starts and stops Postgres container
 │ ├── testcontainers.setup.ts # Per-file hook: shared DataSource singleton
 │   ├── integration-test.constants.ts        # Postgres image version and DB credentials
 │   ├── seed-reference-data.ts               # Minimal deterministic FK reference data seeder
@@ -244,4 +242,3 @@ AFTER:  exactly 1 success, availableQuantity = 0, reservedQuantity = 1, 1 reserv
 Use `seedSingleUnitInventory()` from `test/integration/harness/inventory-seed.helper.ts` for explicit absolute initial state: do not assert relative to default seed quantities.
 
 **Contention design:** Launch N concurrent `save()` calls via `Promise.all`. If overlap is uncertain, escalate to a barrier/hold or `pg_locks` inspection: do not weaken assertions to pass.
-

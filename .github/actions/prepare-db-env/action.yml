@@ -108,6 +108,10 @@ runs:
               console.error("CORS_ALLOWED_ORIGINS is required (workflow env / .env.example)");
               process.exit(1);
             }
+            if (!process.env.STORE_DEFAULT_CURRENCY) {
+              console.error("STORE_DEFAULT_CURRENCY is required (workflow env / .env.example)");
+              process.exit(1);
+            }
             const lines = [
             "NODE_ENV=test",
             "PORT=3000",
@@ -129,6 +133,7 @@ runs:
             `JWT_REFRESH_TOKEN_TTL=${JSON.stringify("7d")}`,
             `CORS_ALLOWED_ORIGINS=${JSON.stringify(process.env.CORS_ALLOWED_ORIGINS)}`,
             `METRICS_API_KEY=${JSON.stringify(process.env.CI_METRICS_API_KEY || "restore-drill-ci")}`,
+            `STORE_DEFAULT_CURRENCY=${JSON.stringify(process.env.STORE_DEFAULT_CURRENCY)}`,
           ];
           fs.writeFileSync(".env.test", lines.join("\n") + "\n");
           console.log(".env.test written by prepare-db-env");

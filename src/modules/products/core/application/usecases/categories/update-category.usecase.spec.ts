@@ -86,9 +86,7 @@ describe('UpdateCategoryUseCase', () => {
       'Category with name Clothing already exists',
       UseCaseError,
     );
-    expect(result.isFailure && result.error.statusCode).toBe(
-      HttpStatus.CONFLICT,
-    );
+    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 

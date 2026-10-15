@@ -18,6 +18,7 @@ import {
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
+import { Result, isFailure } from '../../shared-kernel/domain/result';
 import { CheckoutDto } from './primary-adapters/dto/checkout.dto';
 import { CheckoutResponseDto } from './primary-adapters/dto/checkout-response.dto';
 import {
@@ -27,10 +28,14 @@ import {
 import { PaginatedOrdersResponseDto } from './primary-adapters/dto/order-list-response.dto';
 import { ListOrdersQueryDto } from './primary-adapters/dto/list-orders-query.dto';
 import { DeliverOrderDto } from './primary-adapters/dto/deliver-order.dto';
+import { CreateOrderPaymentDto } from './primary-adapters/dto/create-order-payment.dto';
+import { OrderPaymentResponseDto } from './primary-adapters/dto/order-payment-response.dto';
+import { OrderPaymentDtoMapper } from './primary-adapters/mappers/order-payment-dto.mapper';
 import { Idempotent } from '../../infrastructure/decorators/idempotent.decorator';
 import { IDEMPOTENCY_REDIS } from '../../infrastructure/redis/constants/redis.constants';
 
 import { CheckoutUseCase } from './core/application/usecases/checkout/checkout.usecase';
+import { CreateOrderPaymentUseCase } from './core/application/usecases/create-order-payment/create-order-payment.usecase';
 import { ListOrdersUsecase } from './core/application/usecases/list-orders/list-orders.usecase';
 import { GetOrderUseCase } from './core/application/usecases/get-order/get-order.usecase';
 import { ConfirmOrderUseCase } from './core/application/usecases/confirm-order/confirm-order.usecase';
@@ -52,6 +57,7 @@ export class OrdersController {
     private readonly deliverOrderUseCase: DeliverOrderUseCase,
     private readonly cancelOrderUseCase: CancelOrderUseCase,
     private readonly checkoutUseCase: CheckoutUseCase,
+    private readonly createOrderPaymentUseCase: CreateOrderPaymentUseCase,
   ) {}
 
   @Post('checkout')
@@ -72,7 +78,7 @@ export class OrdersController {
   @ApiResponse({
     status: 400,
     description:
-      'Invalid checkout data, empty cart, or omitted shippingAddress with no default address on the user profile.',
+      'Invalid checkout data, missing Idempotency-Key, empty cart, or omitted shippingAddress with no default address on the user profile.',
   })
   @ApiResponse({
     status: 401,
@@ -99,19 +105,8 @@ export class OrdersController {
   })
   @ApiHeader({
     name: 'Idempotency-Key',
-    description:
-      'Preferred client idempotency key (also accepted as x-idempotency-key or body idempotencyKey).',
-    required: false,
-  })
-  @ApiHeader({
-    name: 'x-idempotency-key',
-    description: 'Legacy alias for Idempotency-Key.',
-    required: false,
-  })
-  @ApiHeader({
-    name: 'Retry-After',
-    description: `Present on HTTP 409 when the idempotency key is still in progress. Value is ${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds.`,
-    required: false,
+    description: 'Client idempotency key. Required.',
+    required: true,
   })
   @Idempotent()
   async checkout(
@@ -161,6 +156,60 @@ export class OrdersController {
       orderId: id,
       callerContext,
     });
+  }
+
+  @Post(':id/payments')
+  @RequirePermissions('view_all_orders', 'view_own_orders')
+  @ApiOperation({
+    summary: 'Create a payment for an order',
+    description:
+      'Charges the order total for an order the caller can see. ' +
+      'The amount, currency, and owner come from the order. ' +
+      'A caller who cannot see the order receives the same not-found result as a missing order.',
+  })
+  @ApiResponse({ status: 201, type: OrderPaymentResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Missing Idempotency-Key.',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Conflict - a request with this idempotency key is already in progress. ' +
+      `Clients must honor the Retry-After response header (${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS} seconds) before retrying.`,
+    headers: {
+      'Retry-After': {
+        description: `Seconds to wait before retrying (${IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS}).`,
+        schema: {
+          type: 'integer',
+          example: IDEMPOTENCY_REDIS.RETRY_AFTER_SECONDS,
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 503,
+    description: 'Service unavailable - idempotency store unavailable.',
+  })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Client idempotency key. Required.',
+    required: true,
+  })
+  @Idempotent()
+  async createPayment(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Body() dto: CreateOrderPaymentDto,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    const result = await this.createOrderPaymentUseCase.execute({
+      orderId,
+      paymentMethod: dto.paymentMethod,
+      paymentMethodDetails: dto.paymentMethodDetails,
+      callerContext,
+    });
+    if (isFailure(result)) return result;
+    return Result.success(OrderPaymentDtoMapper.toResponse(result.value));
   }
 
   @Patch(':id/confirm')
@@ -244,7 +293,10 @@ export class OrdersController {
     type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
-  @ApiResponse({ status: 400, description: 'Order cannot be cancelled.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Order cannot be cancelled in current state.',
+  })
   async cancelOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.cancelOrderUseCase.execute({ orderId: id });
   }

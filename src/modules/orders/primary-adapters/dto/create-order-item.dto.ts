@@ -10,7 +10,11 @@ export class CreateOrderItemDto {
   @IsString()
   productName!: string;
 
-  @ApiProperty({ example: 29.99, description: 'Unit price of the product' })
+  @ApiProperty({
+    example: 2999,
+    description: 'Unit price in minor currency units',
+    type: 'integer',
+  })
   @IsNumber()
   unitPrice!: number;
 

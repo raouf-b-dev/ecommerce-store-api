@@ -12,7 +12,7 @@ export class OrderTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
       currency: 'USD',
       // Order items
@@ -24,6 +24,7 @@ export class OrderTestFactory {
           quantity: 1,
           unitPrice: 10,
           lineTotal: 10,
+          currency: 'USD',
         },
       ],
 
@@ -104,9 +105,9 @@ export class OrderTestFactory {
     return this.createDeliveredOrder(overrides);
   }
 
-  static createStripeOrder(overrides?: Partial<IOrder>): IOrder {
+  static createCardOrder(overrides?: Partial<IOrder>): IOrder {
     return this.createMockOrder({
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
       ...overrides,
     });
@@ -120,6 +121,7 @@ export class OrderTestFactory {
       quantity: i + 1,
       unitPrice: 10 * (i + 1),
       lineTotal: 10 * (i + 1) * (i + 1),
+      currency: 'USD',
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -136,14 +138,14 @@ export class OrderTestFactory {
   static createOnlineOrderReadyForConfirmation(): IOrder {
     return this.createMockOrder({
       status: OrderStatus.PENDING_PAYMENT,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
     });
   }
 
   static createOrderWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType = PaymentMethodType.CARD,
     overrides?: Partial<IOrder>,
   ): IOrder {
     return this.createMockOrder({
@@ -178,7 +180,7 @@ export class OrderTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
       items: [
         {
@@ -187,6 +189,7 @@ export class OrderTestFactory {
           productName: 'Product 1',
           quantity: 1,
           unitPrice: 10,
+          currency: 'USD',
         },
       ],
       shippingAddress: this.createShippingAddressProps(),

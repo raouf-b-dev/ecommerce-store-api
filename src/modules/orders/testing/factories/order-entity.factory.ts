@@ -18,7 +18,7 @@ export class OrderEntityTestFactory {
       id: 1,
       userId: 1,
       paymentId: null,
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       shippingAddressId: 1,
 
       shippingAddress: this.createShippingAddressEntity(),
@@ -28,6 +28,7 @@ export class OrderEntityTestFactory {
       subtotal: 100,
       shippingCost: 0,
       totalPrice: 100,
+      currency: 'USD',
       status: OrderStatus.PENDING_PAYMENT,
       version: 1,
       createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -44,12 +45,13 @@ export class OrderEntityTestFactory {
       {
         userId: 1,
         paymentId: null,
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         shippingAddressId: 1,
         userNotes: 'Test order notes',
         subtotal: 100,
         shippingCost: 0,
         totalPrice: 100,
+        currency: 'USD',
         status: OrderStatus.PENDING_PAYMENT,
         version: 1,
         createdAt: new Date('2025-01-01T10:00:00Z'),
@@ -97,6 +99,7 @@ export class OrderEntityTestFactory {
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
+      currency: 'USD',
       order: null as unknown as OrderEntity,
     };
 
@@ -114,6 +117,7 @@ export class OrderEntityTestFactory {
       unitPrice: 100,
       quantity: 1,
       lineTotal: 100,
+      currency: 'USD',
       order: null as unknown as OrderEntity,
     };
 
@@ -188,7 +192,7 @@ export class OrderEntityTestFactory {
    */
   static createOrderEntityWithPayment(
     paymentId: number,
-    paymentMethod: PaymentMethodType = PaymentMethodType.STRIPE,
+    paymentMethod: PaymentMethodType = PaymentMethodType.CARD,
     overrides?: Partial<OrderEntity>,
   ): OrderEntity {
     return this.createOrderEntity({
@@ -201,11 +205,9 @@ export class OrderEntityTestFactory {
   /**
    * Creates Stripe OrderEntity
    */
-  static createStripeOrderEntity(
-    overrides?: Partial<OrderEntity>,
-  ): OrderEntity {
+  static createCardOrderEntity(overrides?: Partial<OrderEntity>): OrderEntity {
     return this.createOrderEntity({
-      paymentMethod: PaymentMethodType.STRIPE,
+      paymentMethod: PaymentMethodType.CARD,
       paymentId: 1,
       ...overrides,
     });

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-15
+
+Admin v0.5.0 and web v0.4.0 are the matching client releases; older clients send `STRIPE` and fail.
+
+### Added
+
+- `GET /v1/platform/config` returns the default currency, its minor-unit exponent, and the supported currencies (#313).
+- `POST /v1/orders/:id/payments` creates a payment for an order the caller can see. The server charges the order total and currency, and the request is idempotent (#306).
+- Provider-neutral payment port with a fake Stripe provider behind it (#316).
+- Error responses always carry a stable `code` (#300).
+- E2E: cross-user order and payment reads return the same result as a missing id and leak no fields.
+- Pull request template and a full-stack local guide (`docs/development/FULL-STACK.md`).
+
+### Changed
+
+- **Breaking:** Payment method `STRIPE` is now `CARD` in requests and responses. A migration rewrites existing orders and payments (#316).
+- **Breaking:** `POST /v1/orders/checkout` requires the `Idempotency-Key` header. The `x-idempotency-key` header and the body `idempotencyKey` field are no longer read (#300, #314).
+- **Breaking:** `POST /v1/payments` is removed. Create payments with `POST /v1/orders/:id/payments`; clients no longer send the amount, currency, or owner (#306).
+- **Breaking:** Local dev: the Loki host port default is `13100`, not `3100` (#286).
+- Money is held as integer minor units internally, with per-currency decimal places and scale-3 money columns. HTTP amounts stay major-unit decimals, as in 0.9.2 (#300, #301, #305, #313).
+- NestJS 12. Unit, e2e, integration, and chaos suites run on Vitest; Jest remains only for `test:arch` (#307).
+- Platform and health modules moved under `src/infrastructure` (#313).
+- Five new migrations (inventory stock check constraints, order currency, payment provider and `CARD` method, scale-3 money columns, currency column alignment). Run them before starting 0.10.0.
+- CI: sharded unit tests and Codecov coverage reporting (#307). Contributor test guardrails and agent tooling (#291, #295, #297).
+
+### Fixed
+
+- Carts: 100x pricing regression and strict currency matching (#301); `GET` cart returns 404 when the cart does not exist (#298).
+- Orders: the currency snapshotted from the cart is persisted (#304); a payment charges the owned order total (#306); cancelling a paid order refunds it (#294); local mock checkout confirms orders (#315).
+- Payments: amounts in responses and refund and COD requests are major-unit decimals again, after #300 briefly switched them to minor units during this cycle (#305); the capture domain failure is returned unchanged (#302); webhooks are reliable and idempotent (#289).
+- Inventory: reservation release, expiry, and stock constraints are safe (#293).
+- Auth: refresh rotation is rejected after the session expires (#303).
+
+### Security
+
+- Reusing a refresh token revokes all of the user's sessions (#299).
+- Stripe webhook signatures are verified over the raw request body (#292).
+- Sanitize interceptor is scoped to handlers, skips auth and webhook routes, and preserves passwords on registration (#285).
+- Dependency bumps: `socket.io` (#275), `undici` (#264), `piscina` (#267), `brace-expansion`, and `js-yaml`.
+
+[Compare v0.9.2...v0.10.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.9.2...v0.10.0)
+
 ## [0.9.2] - 2026-09-29
 
 ### Added

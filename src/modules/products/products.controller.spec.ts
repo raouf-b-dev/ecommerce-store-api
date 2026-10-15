@@ -36,6 +36,7 @@ describe('ProductsController', () => {
       name: 'Car',
       description: 'A fast red sports car',
       price: 35000,
+      currency: 'USD',
       sku: 'CAR-001',
       createdAt: new Date('2025-01-01T10:00:00Z'),
       updatedAt: new Date('2025-08-13T15:00:00Z'),
@@ -47,6 +48,7 @@ describe('ProductsController', () => {
       name: 'Car',
       description: 'A fast red sports car',
       price: 35000,
+      currency: 'USD',
       sku: 'CAR-001',
       categoryId: 1,
     };

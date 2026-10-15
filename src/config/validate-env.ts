@@ -1,4 +1,14 @@
-import { cleanEnv, str, port, num, makeValidator, EnvError } from 'envalid';
+import {
+  cleanEnv,
+  str,
+  port,
+  num,
+  makeValidator,
+  EnvError,
+  bool,
+} from 'envalid';
+import { duration } from './validators/duration';
+import { Currency } from '../shared-kernel/domain/value-objects/currency';
 
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
@@ -48,6 +58,53 @@ export function assertSecurePublicOrigin(
   );
 }
 
+/**
+ * Deployed environments must configure STRIPE_WEBHOOK_SECRET to receive
+ * verified Stripe webhooks. Fails fast at startup if missing.
+ */
+export function assertStripeWebhookSecret(
+  nodeEnv: string,
+  secret?: string,
+): void {
+  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+    return;
+  }
+  if (!secret?.trim()) {
+    throw new EnvError(`STRIPE_WEBHOOK_SECRET is required in ${nodeEnv}`);
+  }
+}
+
+const CURRENCY_ERROR =
+  'must be a valid ISO 4217 currency code with 0-3 decimal places';
+
+export function parseCurrencyCode(value: string): string {
+  const normalized = Currency.normalize(value);
+  if (!normalized) {
+    throw new EnvError(CURRENCY_ERROR);
+  }
+  return normalized;
+}
+
+export const currencyCode = makeValidator<string>(parseCurrencyCode);
+
+/**
+ * Deployed environments must never enable mock payment auto-complete so
+ * checkouts cannot be confirmed without a verified gateway webhook.
+ */
+export function assertNoMockPaymentAutoComplete(
+  nodeEnv: string,
+  enabled?: string,
+): void {
+  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+    return;
+  }
+  if (enabled === 'true') {
+    throw new EnvError(
+      `PAYMENT_MOCK_AUTO_COMPLETE must not be true in ${nodeEnv}`,
+    );
+  }
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv) {
   const validated = cleanEnv(env, {
     NODE_ENV: str({
@@ -68,10 +125,13 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DB_DATABASE: str(),
     POSTGRES_CONTAINER_NAME: str(),
     POSTGRES_IMAGE: str(),
+    IS_DB_SYNCHRONIZE: bool({ default: false }),
+
+    STORE_DEFAULT_CURRENCY: currencyCode(),
 
     JWT_PRIVATE_KEY: str(),
     JWT_ACCESS_TOKEN_TTL: str({ default: '15m' }),
-    JWT_REFRESH_TOKEN_TTL: str({ default: '7d' }),
+    JWT_REFRESH_TOKEN_TTL: duration({ default: '7d' }),
 
     JWT_CART_SESSION_TTL: str({ default: '7d' }),
 
@@ -101,7 +161,17 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
       choices: ['true', 'false'],
       default: 'false',
     }),
+    STRIPE_WEBHOOK_SECRET: str({ default: '' }),
   });
   assertSecurePublicOrigin(validated.NODE_ENV, validated.PUBLIC_BASE_URL);
+  assertStripeWebhookSecret(
+    validated.NODE_ENV,
+    validated.STRIPE_WEBHOOK_SECRET,
+  );
+
+  assertNoMockPaymentAutoComplete(
+    validated.NODE_ENV,
+    validated.PAYMENT_MOCK_AUTO_COMPLETE,
+  );
   return validated;
 }

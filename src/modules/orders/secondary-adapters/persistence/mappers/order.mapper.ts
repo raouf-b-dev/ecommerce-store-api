@@ -8,6 +8,8 @@ import { OrderItemEntity } from '../../orm/order-item.schema';
 import { OrderEntity } from '../../orm/order.schema';
 import { OrderItemMapper } from './order-item.mapper';
 import { ShippingAddressMapper } from './shipping-address.mapper';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type OrderCreate = CreateFromEntity<OrderEntity, 'items' | 'version'>;
 
@@ -46,6 +48,11 @@ export class OrderMapper {
 
   static toEntity(domain: Order): OrderEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const orderPayload: OrderCreate = {
       id: primitives.id || 0,
@@ -60,9 +67,14 @@ export class OrderMapper {
       status: primitives.status,
       createdAt: primitives.createdAt,
       updatedAt: primitives.updatedAt,
-      subtotal: primitives.subtotal,
-      shippingCost: primitives.shippingCost,
-      totalPrice: primitives.totalPrice,
+      subtotal: Number(decimalFromMinorUnits(primitives.subtotal, exponent)),
+      shippingCost: Number(
+        decimalFromMinorUnits(primitives.shippingCost, exponent),
+      ),
+      totalPrice: Number(
+        decimalFromMinorUnits(primitives.totalPrice, exponent),
+      ),
+      currency: primitives.currency,
     };
 
     const orderEntity: OrderEntity = Object.assign(
@@ -94,6 +106,7 @@ export class OrderMapper {
       subtotal: entity.subtotal,
       shippingCost: entity.shippingCost,
       totalPrice: entity.totalPrice,
+      currency: entity.currency,
       status: entity.status,
     };
   }

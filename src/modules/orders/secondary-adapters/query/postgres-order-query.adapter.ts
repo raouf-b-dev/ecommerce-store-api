@@ -15,7 +15,6 @@ import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interface
 import { UserEntity } from '../../../identity/secondary-adapters/orm/user.schema';
 import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
 import type { SelectQueryBuilder } from 'typeorm';
-
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function toCreatedAfterBound(value: string): Date {
@@ -183,6 +182,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
           'order.userId AS "userId"',
           'order.status AS "status"',
           'order.totalPrice AS "totalAmount"',
+          'order.currency AS "currency"',
           'order.createdAt AS "createdAt"',
           "COALESCE(user.firstName || ' ' || user.lastName, 'Unknown User') AS \"userName\"",
           'COALESCE(user.email, \'\') AS "userEmail"',

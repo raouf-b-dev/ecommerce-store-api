@@ -37,6 +37,8 @@ import { InventoryProcessor } from './inventory.processor';
 import { InventoryQueryService } from './core/application/ports/inventory-query.service';
 import { PostgresInventoryQueryAdapter } from './secondary-adapters/query/postgres-inventory-query.adapter';
 import { ListInventoryUseCase } from './core/application/usecases/list-inventory/list-inventory.usecase';
+import { SweepExpiredReservationsUseCase } from './core/application/usecases/sweep-expired-reservations/sweep-expired-reservations.usecase';
+import { SweepExpiredReservationsJob } from './primary-adapters/jobs/sweep-expired-reservations.job';
 
 @Module({
   imports: [
@@ -107,6 +109,7 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
     SeedDemoInventoryFromOrdersUseCase,
     ReconcileInventoryUseCase,
     ListInventoryUseCase,
+    SweepExpiredReservationsUseCase,
 
     // CQRS Presentation Query Service
 
@@ -117,6 +120,7 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
 
     // Jobs & Processors:
     InventoryReconciliationJob,
+    SweepExpiredReservationsJob,
     InventoryProcessor,
   ],
   exports: [
@@ -127,6 +131,7 @@ import { ListInventoryUseCase } from './core/application/usecases/list-inventory
     ConfirmReservationUseCase,
     GetOrderReservationsUseCase,
     ReconcileInventoryUseCase,
+    SweepExpiredReservationsUseCase,
     SeedDemoInventoryUseCase,
     SeedDemoInventoryFromOrdersUseCase,
   ],

@@ -107,8 +107,7 @@ export class PostgresProductRepository implements ProductRepository {
     }
     return ErrorFactory.RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      undefined,
-      HttpStatus.CONFLICT,
+      { status: HttpStatus.CONFLICT },
     );
   }
 

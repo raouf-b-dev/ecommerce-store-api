@@ -2,7 +2,7 @@ export interface CreateProductCommand {
   name: string;
   description?: string;
   price: number;
-  currency?: string;
+  currency: string;
   sku?: string;
   imageUrl?: string | null;
   categoryId?: number | null;

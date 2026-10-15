@@ -4,6 +4,7 @@ import { Cart } from '../../../domain/entities/cart';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
@@ -45,6 +46,45 @@ describe('CreateCartUseCase', () => {
       expect(result.value.shippingCost).toBe(0);
       expect(result.value.totalAmount).toBe(0);
       expect(result.value.currency).toBeNull();
+    });
+
+    it('returns a failure when the existing cart cannot be presented as a single currency', async () => {
+      const mixedCart = CartTestFactory.createMockCart({
+        id: 42,
+        userId: 123,
+        items: [
+          {
+            id: 1,
+            productId: 10,
+            productName: 'Shirt',
+            price: 3250,
+            currency: 'USD',
+            quantity: 1,
+            imageUrl: null,
+          },
+          {
+            id: 2,
+            productId: 11,
+            productName: 'Matcha',
+            price: 1000,
+            currency: 'JPY',
+            quantity: 1,
+            imageUrl: null,
+          },
+        ],
+      });
+      mockCartRepository.findByuserId.mockResolvedValue(
+        Result.success(mixedCart),
+      );
+
+      const result = await usecase.execute(customerContext);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot combine amounts in different currencies: USD and JPY',
+        DomainError,
+      );
+      expect(mockCartRepository.save).not.toHaveBeenCalled();
     });
 
     it('should return the existing cart if the user already has one', async () => {

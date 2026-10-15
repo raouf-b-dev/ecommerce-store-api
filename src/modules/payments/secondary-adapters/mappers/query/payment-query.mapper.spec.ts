@@ -1,5 +1,6 @@
 import { PaymentDtoTestFactory } from 'src/modules/payments/testing';
 import { PaymentQueryMapper } from './payment-query.mapper';
+import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 
 describe('PaymentQueryMapper', () => {
   it('should correctly map raw row to PaymentListItemDTO and PaymentDetailDTO', () => {
@@ -17,7 +18,7 @@ describe('PaymentQueryMapper', () => {
       amount: 99.99,
       currency: 'USD',
       status: 'COMPLETED',
-      paymentMethod: 'CREDIT_CARD',
+      paymentMethod: PaymentMethodType.CARD,
       transactionId: 'txn_123',
       createdAt: '2024-01-01T00:00:00.000Z',
     });

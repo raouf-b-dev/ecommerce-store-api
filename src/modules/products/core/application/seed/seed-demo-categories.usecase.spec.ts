@@ -6,6 +6,7 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { Category } from '../../domain/entities/category';
 import { DEMO_SEED_CATEGORIES } from './demo-categories';
 import { MockCategoryRepository } from '../../../testing/mocks/category-repository.mock';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('SeedDemoCategoriesUseCase', () => {
   let useCase: SeedDemoCategoriesUseCase;
@@ -33,12 +34,10 @@ describe('SeedDemoCategoriesUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value).toHaveLength(DEMO_SEED_CATEGORIES.length);
-      expect(result.value.every((c) => c.status === 'created')).toBe(true);
-      expect(result.value[0].slug).toBe('electronics');
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toHaveLength(DEMO_SEED_CATEGORIES.length);
+    expect(result.value.every((c) => c.status === 'created')).toBe(true);
+    expect(result.value[0].slug).toBe('electronics');
     expect(categoryRepository.save).toHaveBeenCalledTimes(
       DEMO_SEED_CATEGORIES.length,
     );
@@ -64,11 +63,9 @@ describe('SeedDemoCategoriesUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.every((c) => c.status === 'existing')).toBe(true);
-      expect(result.value[0].name).toBe('Custom Electronics');
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.every((c) => c.status === 'existing')).toBe(true);
+    expect(result.value[0].name).toBe('Custom Electronics');
     expect(categoryRepository.save).not.toHaveBeenCalled();
   });
 
@@ -105,13 +102,11 @@ describe('SeedDemoCategoriesUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value[0].status).toBe('reactivated');
-      expect(result.value.slice(1).every((c) => c.status === 'existing')).toBe(
-        true,
-      );
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value[0].status).toBe('reactivated');
+    expect(result.value.slice(1).every((c) => c.status === 'existing')).toBe(
+      true,
+    );
     expect(categoryRepository.save).toHaveBeenCalledTimes(1);
     expect(inactive.isActive).toBe(true);
   });
@@ -123,9 +118,9 @@ describe('SeedDemoCategoriesUseCase', () => {
 
     const result = await useCase.execute();
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain('Failed to lookup category');
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Failed to lookup category',
+    );
   });
 });

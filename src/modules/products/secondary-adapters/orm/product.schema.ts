@@ -41,10 +41,10 @@ export class ProductEntity {
   @Column({ nullable: true })
   sku?: string;
 
-  @Column('decimal', { precision: 12, scale: 2, transformer: numericToNumber })
+  @Column('decimal', { precision: 13, scale: 3, transformer: numericToNumber })
   price!: number;
 
-  @Column({ default: 'USD' })
+  @Column({ type: 'varchar', length: 3 })
   currency!: string;
 
   @Column({ nullable: true, name: 'image_url' })

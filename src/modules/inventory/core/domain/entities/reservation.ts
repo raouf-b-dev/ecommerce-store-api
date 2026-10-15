@@ -112,11 +112,33 @@ export class Reservation implements IReservation {
   }
 
   public release(): Result<void, DomainError> {
+    if (this._status === ReservationStatus.CONFIRMED) {
+      return ErrorFactory.DomainError(
+        'Cannot release confirmed reservation directly; use returnConfirmedToStock',
+      );
+    }
+
     if (
       this._status === ReservationStatus.RELEASED ||
       this._status === ReservationStatus.EXPIRED
     ) {
       return Result.success(undefined);
+    }
+
+    this._status = ReservationStatus.RELEASED;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
+  public returnConfirmedToStock(): Result<void, DomainError> {
+    if (this._status === ReservationStatus.RELEASED) {
+      return Result.success(undefined);
+    }
+
+    if (this._status !== ReservationStatus.CONFIRMED) {
+      return ErrorFactory.DomainError(
+        `Cannot return reservation to stock in ${this._status} status`,
+      );
     }
 
     this._status = ReservationStatus.RELEASED;

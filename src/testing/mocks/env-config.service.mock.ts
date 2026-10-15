@@ -29,6 +29,7 @@ function createDefaultMockConfig(): IAppConfig {
       database: 'test-db',
       containerName: 'postgres-db',
       image: 'postgres:18.4',
+      synchronize: false,
     },
     logging: {
       level: 'info',
@@ -53,6 +54,11 @@ function createDefaultMockConfig(): IAppConfig {
     },
     payments: {
       mockAutoComplete: false,
+      stripeWebhookSecret: '',
+    },
+    store: {
+      defaultCurrency: 'USD',
+      supportedCurrencies: ['USD'],
     },
   };
 }
@@ -127,6 +133,10 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get payments() {
     return this.configState.payments;
+  }
+
+  override get store() {
+    return this.configState.store;
   }
 
   setMockConfig(config: Partial<IAppConfig>) {

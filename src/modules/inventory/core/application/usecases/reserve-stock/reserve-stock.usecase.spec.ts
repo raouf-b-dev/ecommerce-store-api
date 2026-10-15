@@ -7,6 +7,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReserveStockUseCase } from './reserve-stock.usecase';
 import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
+import { ResultAssertionHelper } from 'src/testing';
 
 describe('ReserveStockUseCase', () => {
   let useCase: ReserveStockUseCase;
@@ -46,10 +47,8 @@ describe('ReserveStockUseCase', () => {
 
       const result = await useCase.execute(dto);
 
-      expect(result.isSuccess).toBe(true);
-      if (result.isSuccess) {
-        expect(result.value).toEqual(reservation);
-      }
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual(reservation);
       expect(reservationRepository.save).toHaveBeenCalledWith(dto);
     });
 
@@ -60,10 +59,7 @@ describe('ReserveStockUseCase', () => {
 
       const result = await useCase.execute(dto);
 
-      expect(result.isFailure).toBe(true);
-      if (result.isFailure) {
-        expect(result.error.message).toBe(errorMessage);
-      }
+      ResultAssertionHelper.assertResultFailure(result, errorMessage);
       expect(reservationRepository.save).toHaveBeenCalledWith(dto);
     });
   });

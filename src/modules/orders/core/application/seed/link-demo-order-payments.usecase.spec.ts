@@ -33,6 +33,7 @@ describe('LinkDemoOrderPaymentsUseCase', () => {
           sku: 'ELEC-ANC-001',
           unitPrice: 100,
           quantity: 1,
+          currency: 'USD',
         },
       ],
       shippingAddress: {

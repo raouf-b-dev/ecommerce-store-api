@@ -12,6 +12,9 @@ import { UseCaseError } from '../../../../shared-kernel/domain/exceptions/usecas
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CallerContext } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
+
+import { CartPresentationDTO } from '../../../carts/core/application/queries/results/cart-presentation.result';
 
 @Injectable()
 export class ModuleCartGateway implements CartGateway {
@@ -39,7 +42,7 @@ export class ModuleCartGateway implements CartGateway {
       return Result.failure(result.error);
     }
 
-    return Result.success(this.toCheckoutCartInfo(result.value));
+    return this.toCheckoutCartInfo(result.value);
   }
 
   async getCart(
@@ -81,34 +84,44 @@ export class ModuleCartGateway implements CartGateway {
       );
     }
 
-    const cart = result.value;
-
-    return Result.success(this.toCheckoutCartInfo(cart));
+    return this.toCheckoutCartInfo(result.value);
   }
 
-  private toCheckoutCartInfo(cart: {
-    id: number | null;
-    userId: number;
-    items?: Array<{
-      productId: number;
-      productName: string;
-      imageUrl: string | null;
-      price: number;
-      quantity: number;
-      currency?: string;
-    }>;
-  }): CheckoutCartInfo {
-    return {
-      id: cart.id,
-      userId: cart.userId,
-      items: (cart.items || []).map((item): CheckoutCartItem => ({
+  private toCheckoutCartInfo(
+    cart: CartPresentationDTO,
+  ): Result<CheckoutCartInfo, InfrastructureError> {
+    const items: CheckoutCartItem[] = [];
+
+    for (const item of cart.items || []) {
+      const currency = item.currency?.trim().toUpperCase();
+      if (!currency) {
+        return ErrorFactory.InfrastructureError(
+          `Cart item "${item.productName}" is missing a currency`,
+        );
+      }
+
+      const moneyResult = Money.fromMajorUnits(item.price, currency);
+      if (isFailure(moneyResult)) {
+        return ErrorFactory.InfrastructureError(
+          `Invalid money for cart item "${item.productName}": ${moneyResult.error.message}`,
+          moneyResult.error,
+        );
+      }
+
+      items.push({
         productId: item.productId,
         productName: item.productName,
         imageUrl: item.imageUrl,
-        price: item.price,
+        price: moneyResult.value.amount,
         quantity: item.quantity,
-        currency: (item.currency || 'USD').trim().toUpperCase(),
-      })),
-    };
+        currency,
+      });
+    }
+
+    return Result.success({
+      id: cart.id,
+      userId: cart.userId,
+      items,
+    });
   }
 }

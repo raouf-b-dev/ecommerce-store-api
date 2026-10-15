@@ -5,7 +5,7 @@ export interface NotificationListItemDTO {
   type: string;
   title: string;
   message: string;
-  payload: any;
+  payload: Record<string, unknown> | null;
   status: string;
   createdAt: string;
 }

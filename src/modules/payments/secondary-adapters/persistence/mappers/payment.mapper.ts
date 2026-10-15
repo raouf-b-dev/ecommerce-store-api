@@ -1,8 +1,11 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
-import { Payment, PaymentProps } from '../../../core/domain/entities/payment';
+import { Payment } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 
@@ -23,21 +26,22 @@ export type PaymentForCache = Omit<
 
 export class PaymentMapper {
   static toDomain(entity: PaymentEntity): Payment {
-    const props: PaymentProps = {
+    const data: IPayment = {
       id: entity.id,
       orderId: entity.orderId,
       userId: entity.userId,
-      amount: Number(entity.amount),
+      amount: requireMinorUnits(entity.amount, entity.currency),
       currency: entity.currency,
       paymentMethod: entity.paymentMethod,
+      provider: entity.provider,
       status: entity.status,
       transactionId: entity.transactionId,
       gatewayPaymentIntentId: entity.gatewayPaymentIntentId || null,
       gatewayClientSecret: entity.gatewayClientSecret || null,
       paymentMethodInfo: entity.paymentMethodInfo,
-      refundedAmount: Number(entity.refundedAmount),
+      refundedAmount: requireMinorUnits(entity.refundedAmount, entity.currency),
       refunds: entity.refunds
-        ? entity.refunds.map((r) => RefundMapper.toDomain(r).props)
+        ? entity.refunds.map((r) => RefundMapper.toDomain(r).toPrimitives())
         : [],
       failureReason: entity.failureReason,
       createdAt: entity.createdAt,
@@ -45,25 +49,33 @@ export class PaymentMapper {
       updatedAt: entity.updatedAt,
     };
 
-    return Payment.fromPrimitives(props);
+    return Payment.fromPrimitives(data);
   }
 
   static toEntity(domain: Payment): PaymentEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const paymentPayload: PaymentCreate = {
       id: primitives.id || 0,
       orderId: primitives.orderId,
       userId: primitives.userId,
-      amount: primitives.amount,
+      amount: Number(decimalFromMinorUnits(primitives.amount, exponent)),
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,
+      provider: primitives.provider,
       status: primitives.status,
       transactionId: primitives.transactionId,
       gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,
       gatewayClientSecret: primitives.gatewayClientSecret,
       paymentMethodInfo: primitives.paymentMethodInfo,
-      refundedAmount: primitives.refundedAmount,
+      refundedAmount: Number(
+        decimalFromMinorUnits(primitives.refundedAmount, exponent),
+      ),
       failureReason: primitives.failureReason,
       createdAt: primitives.createdAt,
       completedAt: primitives.completedAt,

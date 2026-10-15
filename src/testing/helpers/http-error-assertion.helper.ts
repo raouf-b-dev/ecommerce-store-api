@@ -1,4 +1,6 @@
-import { Response } from 'supertest';
+export interface HttpResponseLike {
+  body: unknown;
+}
 
 export interface HttpErrorAssertionInput {
   statusCode: number;
@@ -16,12 +18,19 @@ interface HttpErrorResponseShape {
   errors?: string[];
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export class HttpErrorAssertionHelper {
-  static assertErrorContract(
-    response: Response,
+  static assertErrorContract<T extends HttpResponseLike>(
+    response: T,
     expected: HttpErrorAssertionInput,
-  ): asserts response is Response & { body: HttpErrorResponseShape } {
+  ): asserts response is T & { body: HttpErrorResponseShape } {
     expect(response.body).toBeDefined();
+    if (!isRecord(response.body)) {
+      throw new Error('Response body must be an object');
+    }
     expect(response.body.success).toBe(false);
     expect(response.body.statusCode).toBe(expected.statusCode);
     expect(response.body.message).toEqual(expect.any(String));
@@ -36,8 +45,8 @@ export class HttpErrorAssertionHelper {
     }
 
     if (expected.hasValidationErrors === true) {
-      expect(Array.isArray(response.body.errors)).toBe(true);
-      expect(response.body.errors.length).toBeGreaterThan(0);
+      expect(response.body.errors).toEqual(expect.any(Array));
+      expect(response.body.errors).not.toHaveLength(0);
     }
   }
 }

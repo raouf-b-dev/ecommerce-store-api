@@ -22,7 +22,9 @@ export class ProductQueryMapper {
       slug: String(row.slug || ''),
       sku: row.sku || 'N/A',
       price: Number(row.price || 0),
-      currency: row.currency || 'USD',
+      currency: String(row.currency || '')
+        .trim()
+        .toUpperCase(),
       imageUrl: row.imageUrl || null,
       categoryId: row.categoryId ? Number(row.categoryId) : null,
       categoryName: row.categoryName != null ? String(row.categoryName) : null,

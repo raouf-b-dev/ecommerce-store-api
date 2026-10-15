@@ -4,39 +4,45 @@ import { BaseJobHandler } from '../../../../infrastructure/jobs/base-job.handler
 import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
-import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
+import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+
+export interface RefundPaymentJobData {
+  orderId: number;
+  paymentId: number;
+  amount: number;
+  reason: string;
+  correlationId?: string;
+}
 
 @Injectable()
 export class RefundPaymentStep extends BaseJobHandler<
-  ScheduleCheckoutProps & { paymentId?: number; orderTotal?: number },
+  RefundPaymentJobData,
   void
 > {
   protected readonly logger = new Logger(RefundPaymentStep.name);
 
   constructor(
     private readonly refundPaymentUseCase: RefundCheckoutPaymentUseCase,
+    private readonly correlation: CorrelationService,
   ) {
     super();
   }
 
+  protected getCorrelationService(): CorrelationService {
+    return this.correlation;
+  }
+
   protected async onExecute(
-    job: Job<
-      ScheduleCheckoutProps & { paymentId?: number; orderTotal?: number }
-    >,
+    job: Job<RefundPaymentJobData>,
   ): Promise<Result<void, AppError>> {
-    const { paymentId, orderTotal } = job.data;
+    const { paymentId, amount, reason } = job.data;
 
-    if (!paymentId) {
-      this.logger.warn('No payment ID found to refund.');
-      return Result.success(undefined);
-    }
-
-    this.logger.log(`Refunding payment ${paymentId}...`);
+    this.logger.log(`Refunding payment ${paymentId} for amount ${amount}...`);
 
     const result = await this.refundPaymentUseCase.execute({
       paymentId,
-      amount: orderTotal || 0,
-      reason: 'Checkout compensation',
+      amount,
+      reason,
     });
 
     if (isFailure(result)) {

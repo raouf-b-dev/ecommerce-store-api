@@ -8,6 +8,7 @@ import { RefundEntity } from '../../orm/refund.schema';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { ResultAssertionHelper } from 'src/testing';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 
 describe('PostgresPaymentRepository (Integration - Real DB)', () => {
   let repository: PostgresPaymentRepository;
@@ -58,10 +59,12 @@ describe('PostgresPaymentRepository (Integration - Real DB)', () => {
 
   it('saveRefund persists a refund against an existing payment', async () => {
     const payment = await persistPayment(9100);
+    const refundAmount = Money.fromMajorUnits(25, 'USD');
+    ResultAssertionHelper.assertResultSuccess(refundAmount);
     const refund = RefundTestFactory.createDomainRefund({
       id: null,
       paymentId: payment.id!,
-      amount: 25,
+      amount: refundAmount.value.amount,
     });
 
     const result = await repository.saveRefund(refund);
@@ -70,6 +73,6 @@ describe('PostgresPaymentRepository (Integration - Real DB)', () => {
 
     const loaded = await repository.findRefundById(result.value.id!);
     ResultAssertionHelper.assertResultSuccess(loaded);
-    expect(Number(loaded.value.amount)).toBe(25);
+    expect(Number(loaded.value.amount)).toBe(refundAmount.value.amount);
   });
 });

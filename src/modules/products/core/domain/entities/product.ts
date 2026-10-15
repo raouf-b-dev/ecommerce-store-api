@@ -1,8 +1,8 @@
-// src/modules/products/domain/entities/product.entity.ts
 import { IProduct } from '../interfaces/product.interface';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 
 export interface ProductProps {
   id: number | null;
@@ -10,7 +10,7 @@ export interface ProductProps {
   slug?: string;
   description?: string;
   price: number;
-  currency?: string;
+  currency: string;
   sku?: string;
   imageUrl?: string | null;
   categoryId?: number | null;
@@ -53,8 +53,8 @@ export class Product implements IProduct {
       ? this.generateSlug(props.slug)
       : this.generateSlug(props.name);
     this._description = props.description?.trim();
-    this._price = this.roundPrice(props.price);
-    this._currency = props.currency?.trim().toUpperCase() || 'USD';
+    this._price = props.price;
+    this._currency = props.currency.trim().toUpperCase();
     this._sku = props.sku?.trim().toUpperCase();
     this._imageUrl = props.imageUrl?.trim() || null;
     this._categoryId = props.categoryId ?? null;
@@ -67,8 +67,12 @@ export class Product implements IProduct {
     if (!props.name?.trim()) {
       return ErrorFactory.DomainError('Product name is required');
     }
-    if (props.price < 0) {
-      return ErrorFactory.DomainError('Product price cannot be negative');
+    const priceResult = Product.validatePrice(
+      props.price,
+      props.currency?.trim() ?? '',
+    );
+    if (priceResult.isFailure) {
+      return priceResult;
     }
     const slug = props.slug?.trim()
       ? this.generateSlug(props.slug)
@@ -81,15 +85,26 @@ export class Product implements IProduct {
     return Result.success(undefined);
   }
 
+  private static validatePrice(
+    price: number,
+    currency: string,
+  ): Result<Money, DomainError> {
+    if (price < 0) {
+      return ErrorFactory.DomainError('Product price cannot be negative');
+    }
+    if (currency.length !== 3) {
+      return ErrorFactory.DomainError(
+        'Product currency must be a valid 3-letter ISO 4217 code',
+      );
+    }
+    return Money.fromMajorUnits(price, currency);
+  }
+
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
-  }
-
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
   }
 
   // Getters
@@ -161,10 +176,11 @@ export class Product implements IProduct {
   }
 
   updatePrice(price: number): Result<void, DomainError> {
-    if (price < 0) {
-      return ErrorFactory.DomainError('Product price cannot be negative');
+    const moneyResult = Product.validatePrice(price, this._currency);
+    if (moneyResult.isFailure) {
+      return moneyResult;
     }
-    this._price = this.roundPrice(price);
+    this._price = moneyResult.value.toMajorUnits();
     this._updatedAt = new Date();
     return Result.success(undefined);
   }
@@ -192,21 +208,34 @@ export class Product implements IProduct {
     return Result.success(undefined);
   }
 
-  updateProduct(updates: UpdateProductDomainProps): void {
+  updateProduct(updates: UpdateProductDomainProps): Result<void, DomainError> {
+    const nextName =
+      updates.name !== undefined ? updates.name.trim() : this._name;
+    if (!nextName) {
+      return ErrorFactory.DomainError('Product name cannot be empty');
+    }
+
+    const nextCurrency =
+      updates.currency !== undefined
+        ? updates.currency.trim().toUpperCase()
+        : this._currency;
+    const nextPrice = updates.price !== undefined ? updates.price : this._price;
+    const moneyResult = Product.validatePrice(nextPrice, nextCurrency);
+    if (moneyResult.isFailure) {
+      return moneyResult;
+    }
+
     if (updates.name !== undefined) {
-      this.updateName(updates.name);
+      this._name = nextName;
+      this._slug = this.generateSlug(this._name);
     }
     if (updates.description !== undefined) {
-      this.updateDescription(updates.description);
+      this._description = updates.description?.trim();
     }
-    if (updates.price !== undefined) {
-      this.updatePrice(updates.price);
-    }
-    if (updates.currency !== undefined) {
-      this._currency = updates.currency.trim().toUpperCase();
-    }
+    this._currency = nextCurrency;
+    this._price = moneyResult.value.toMajorUnits();
     if (updates.sku !== undefined) {
-      this.updateSku(updates.sku);
+      this._sku = updates.sku.trim().toUpperCase();
     }
     if (updates.imageUrl !== undefined) {
       this._imageUrl = updates.imageUrl?.trim() || null;
@@ -215,6 +244,7 @@ export class Product implements IProduct {
       this._categoryId = updates.categoryId;
     }
     this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
   // Serialization

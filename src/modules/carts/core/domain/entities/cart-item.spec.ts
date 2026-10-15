@@ -66,21 +66,36 @@ describe('CartItem', () => {
       ).toThrow(DomainError);
     });
 
-    it('trims product name and rounds price', () => {
+    it('rejects a fractional price', () => {
+      expect(
+        () =>
+          new CartItem({
+            id: null,
+            productId: 1,
+            productName: 'Widget',
+            price: 10.556,
+            currency: 'USD',
+            quantity: 2,
+            imageUrl: null,
+          }),
+      ).toThrow(DomainError);
+    });
+
+    it('trims product name and stores integer minor units', () => {
       const item = new CartItem({
         id: null,
         productId: 1,
         productName: '  Widget  ',
-        price: 10.556,
+        price: 1056,
         currency: 'usd',
         quantity: 2,
         imageUrl: null,
       });
 
       expect(item.productName).toBe('Widget');
-      expect(item.price).toBe(10.56);
+      expect(item.price).toBe(1056);
       expect(item.currency).toBe('USD');
-      expect(item.subtotal).toBe(21.12);
+      expect(item.subtotal).toBe(2112);
     });
   });
 
@@ -131,7 +146,7 @@ describe('CartItem', () => {
     it('updates price and product metadata', () => {
       const item = CartItem.create(1, 'Old', 10, 1, 'USD');
 
-      ResultAssertionHelper.assertResultSuccess(item.updatePrice(12.5));
+      ResultAssertionHelper.assertResultSuccess(item.updatePrice(1250));
       ResultAssertionHelper.assertResultSuccess(
         item.updateProductInfo('New Name', 15, 'http://img.test/a.png'),
       );

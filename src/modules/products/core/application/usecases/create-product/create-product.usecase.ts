@@ -1,6 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
+import { SupportedCurrenciesPort } from '../../ports/supported-currencies.port';
+import { validateProductCurrency } from '../../helpers/validate-product-currency.helper';
 import { Product } from '../../../domain/entities/product';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -21,6 +23,7 @@ export class CreateProductUseCase extends UseCase<
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly categoryRepository: CategoryRepository,
+    private readonly supportedCurrencies: SupportedCurrenciesPort,
   ) {
     super();
   }
@@ -29,25 +32,30 @@ export class CreateProductUseCase extends UseCase<
     command: CreateProductCommand,
   ): Promise<Result<IProduct, UseCaseError>> {
     try {
+      const currencyResult = validateProductCurrency(
+        command.currency,
+        this.supportedCurrencies,
+      );
+      if (currencyResult.isFailure) {
+        return currencyResult;
+      }
+      const normalizedCurrency = currencyResult.value.code;
       if (command.categoryId == null) {
-        return ErrorFactory.UseCaseError(
-          'categoryId is required',
-          undefined,
-          HttpStatus.BAD_REQUEST,
-        );
+        return ErrorFactory.UseCaseError('categoryId is required', {
+          status: HttpStatus.BAD_REQUEST,
+        });
       }
 
       const categoryResult = await this.categoryRepository.findById(
         command.categoryId,
       );
       if (isFailure(categoryResult)) {
-        return ErrorFactory.UseCaseError(categoryResult.error.message);
+        return categoryResult;
       }
       if (!categoryResult.value || !categoryResult.value.isActive) {
         return ErrorFactory.UseCaseError(
           `Category with id ${command.categoryId} not found`,
-          undefined,
-          HttpStatus.BAD_REQUEST,
+          { status: HttpStatus.BAD_REQUEST },
         );
       }
 
@@ -56,7 +64,7 @@ export class CreateProductUseCase extends UseCase<
         name: command.name,
         description: command.description,
         price: command.price,
-        currency: command.currency,
+        currency: normalizedCurrency,
         sku: command.sku,
         imageUrl: command.imageUrl,
         categoryId: command.categoryId,
@@ -65,7 +73,7 @@ export class CreateProductUseCase extends UseCase<
       const saveResult = await this.productRepository.save(product);
 
       if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(saveResult.error.message);
+        return saveResult;
       }
 
       return Result.success<IProduct>(product.toPrimitives());

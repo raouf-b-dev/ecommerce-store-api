@@ -5,7 +5,7 @@ export interface RawNotificationListQueryRow {
   type: string;
   title: string;
   message: string;
-  payload?: any;
+  payload?: Record<string, unknown> | null;
   status: string;
   createdAt: Date | string;
 }

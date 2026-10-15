@@ -39,6 +39,8 @@ export class E2eOrderHelper {
   ): Promise<{
     gatewayPaymentIntentId: string;
     reservationId: string;
+    amount: number;
+    currency: string;
   }> {
     return pollUntil(
       async () => {
@@ -56,10 +58,38 @@ export class E2eOrderHelper {
         return {
           gatewayPaymentIntentId: String(gatewayPaymentIntentId),
           reservationId: String(reservationId),
+          amount: Number(response.body.amount),
+          currency: String(response.body.currency),
         };
       },
       {
         description: `payment intent for order ${orderId}`,
+        timeoutMs: options.timeoutMs ?? 90_000,
+      },
+    );
+  }
+
+  static async waitForPaymentStatus(
+    http: E2eHttpClient,
+    customer: AuthSession,
+    orderId: number,
+    status: string,
+    options: { timeoutMs?: number } = {},
+  ): Promise<Record<string, unknown>> {
+    const expected = status.toUpperCase();
+    return pollUntil(
+      async () => {
+        const response = await http
+          .get(`${E2E_API_PREFIX}/payments/orders/${orderId}`)
+          .set(AuthTestHelper.bearer(customer.accessToken));
+        if (response.status !== 200 || !response.body) {
+          return null;
+        }
+        const current = String(response.body.status).toUpperCase();
+        return current === expected ? response.body : null;
+      },
+      {
+        description: `payment for order ${orderId} status ${status}`,
         timeoutMs: options.timeoutMs ?? 90_000,
       },
     );

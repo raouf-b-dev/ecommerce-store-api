@@ -93,8 +93,7 @@ describe('AssignRoleUseCase', () => {
       'Role UNKNOWN not found',
       UseCaseError,
     );
-    if (result.isFailure)
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
     expect(userRoleAssignmentRepository.save).not.toHaveBeenCalled();
   });
 });

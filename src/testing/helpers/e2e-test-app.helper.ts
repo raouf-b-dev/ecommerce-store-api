@@ -31,10 +31,23 @@ export interface E2eAppContext {
   moduleRef: TestingModule;
 }
 
+export const E2E_STRIPE_WEBHOOK_SECRET = 'whsec_e2e_test_secret';
+
 export class E2eTestAppHelper {
+  private static originalStripeWebhookSecret: string | undefined = undefined;
+  private static hasCapturedStripeWebhookSecret = false;
+
   static async createApp(
     options: CreateE2eAppOptions = {},
   ): Promise<E2eAppContext> {
+    if (!this.hasCapturedStripeWebhookSecret) {
+      this.originalStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      this.hasCapturedStripeWebhookSecret = true;
+    }
+
+    process.env.STRIPE_WEBHOOK_SECRET =
+      process.env.STRIPE_WEBHOOK_SECRET || E2E_STRIPE_WEBHOOK_SECRET;
+
     const imports = options.imports ?? [AppModule];
     const applyGlobals = options.applyGlobalPipesAndInterceptors !== false;
 
@@ -45,7 +58,7 @@ export class E2eTestAppHelper {
     }
 
     const moduleRef = await builder.compile();
-    const app = moduleRef.createNestApplication();
+    const app = moduleRef.createNestApplication({ rawBody: true });
 
     app.enableVersioning({
       type: VersioningType.URI,
@@ -81,6 +94,16 @@ export class E2eTestAppHelper {
   static async closeApp(
     appOrContext?: INestApplication | E2eAppContext,
   ): Promise<void> {
+    if (this.hasCapturedStripeWebhookSecret) {
+      if (this.originalStripeWebhookSecret !== undefined) {
+        process.env.STRIPE_WEBHOOK_SECRET = this.originalStripeWebhookSecret;
+      } else {
+        delete process.env.STRIPE_WEBHOOK_SECRET;
+      }
+      this.hasCapturedStripeWebhookSecret = false;
+      this.originalStripeWebhookSecret = undefined;
+    }
+
     if (!appOrContext) return;
     const app = 'app' in appOrContext ? appOrContext.app : appOrContext;
     if (app && typeof app.close === 'function') {

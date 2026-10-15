@@ -30,7 +30,11 @@ export class CartItem implements ICartItem {
     this._id = props.id ?? null;
     this._productId = props.productId;
     this._productName = props.productName.trim();
-    this._unitPrice = new Money(props.price, props.currency);
+    const unitPrice = Money.create(props.price, props.currency);
+    if (unitPrice.isFailure) {
+      throw unitPrice.error;
+    }
+    this._unitPrice = unitPrice.value;
     this._quantity = Quantity.from(props.quantity);
     this._imageUrl = props.imageUrl?.trim() || null;
   }
@@ -147,15 +151,12 @@ export class CartItem implements ICartItem {
   }
 
   updatePrice(price: number): Result<void, DomainError> {
-    try {
-      this._unitPrice = new Money(price, this._unitPrice.currency);
-      return Result.success(undefined);
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Result.failure(error);
-      }
-      return ErrorFactory.DomainError('Invalid price value');
+    const unitPrice = Money.create(price, this._unitPrice.currency);
+    if (unitPrice.isFailure) {
+      return unitPrice;
     }
+    this._unitPrice = unitPrice.value;
+    return Result.success(undefined);
   }
 
   updateProductInfo(
@@ -171,14 +172,11 @@ export class CartItem implements ICartItem {
     }
 
     this._productName = name.trim();
-    try {
-      this._unitPrice = new Money(price, this._unitPrice.currency);
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Result.failure(error);
-      }
-      return ErrorFactory.DomainError('Invalid price value');
+    const unitPrice = Money.create(price, this._unitPrice.currency);
+    if (unitPrice.isFailure) {
+      return unitPrice;
     }
+    this._unitPrice = unitPrice.value;
     if (imageUrl !== undefined) {
       this._imageUrl = imageUrl?.trim() || null;
     }

@@ -88,11 +88,9 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     multiplier: 2,
   },
   [JobNames.REFUND_PAYMENT]: {
-    maxAttempts: 3,
+    maxAttempts: 8,
     backoffStrategy: BackoffStrategy.EXPONENTIAL,
-    initialDelay: 1000,
-    maxDelay: 5000,
-    multiplier: 2,
+    initialDelay: 5000,
   },
   [JobNames.FINALIZE_CHECKOUT]: {
     maxAttempts: 1,
@@ -145,6 +143,11 @@ export const JOB_RETRY_POLICIES: Record<JobName, RetryConfig> = {
     initialDelay: 0,
   },
   [JobNames.INVENTORY_RECONCILIATION]: {
+    maxAttempts: 1,
+    backoffStrategy: BackoffStrategy.FIXED,
+    initialDelay: 0,
+  },
+  [JobNames.SWEEP_EXPIRED_RESERVATIONS]: {
     maxAttempts: 1,
     backoffStrategy: BackoffStrategy.FIXED,
     initialDelay: 0,

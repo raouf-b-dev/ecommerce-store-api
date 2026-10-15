@@ -2,6 +2,9 @@ import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/cr
 import { Refund, RefundProps } from '../../../core/domain/entities/refund';
 import { RefundStatusType } from '../../../core/domain/value-objects/refund-status';
 import { RefundEntity } from '../../orm/refund.schema';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 type RefundCreate = CreateFromEntity<RefundEntity, 'payment'>;
 
@@ -10,7 +13,7 @@ export class RefundMapper {
     const props: RefundProps = {
       id: entity.id,
       paymentId: entity.paymentId,
-      amount: Number(entity.amount),
+      amount: requireMinorUnits(entity.amount, entity.currency),
       currency: entity.currency,
       reason: entity.reason,
       status: entity.status as RefundStatusType,
@@ -23,11 +26,16 @@ export class RefundMapper {
 
   static toEntity(domain: Refund): RefundEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
 
     const refundPayload: RefundCreate = {
       id: primitives.id || 0,
       paymentId: primitives.paymentId,
-      amount: primitives.amount,
+      amount: Number(decimalFromMinorUnits(primitives.amount, exponent)),
       currency: primitives.currency,
       reason: primitives.reason,
       status: primitives.status,

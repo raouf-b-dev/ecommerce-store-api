@@ -5,6 +5,9 @@ import {
 } from '../../../core/domain/entities/order-items';
 import { persistedChildId } from '../../../../../infrastructure/mappers/utils/persisted-child-id.util';
 import { OrderItemEntity } from '../../orm/order-item.schema';
+import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
+import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
+import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 
 export type OrderItemCreate = CreateFromEntity<OrderItemEntity, 'order'>;
 
@@ -16,22 +19,29 @@ export class OrderItemMapper {
       productName: entity.productName || 'Unknown Product',
       sku: entity.sku || null,
       imageUrl: entity.imageUrl || null,
-      unitPrice: entity.unitPrice,
+      unitPrice: requireMinorUnits(entity.unitPrice, entity.currency),
       quantity: entity.quantity,
+      currency: entity.currency,
     };
     return new OrderItem(orderItemProps);
   }
 
   static toEntity(domain: OrderItem): OrderItemEntity {
     const primitives = domain.toPrimitives();
+    const currencyResult = Currency.create(primitives.currency);
+    if (currencyResult.isFailure) {
+      throw currencyResult.error;
+    }
+    const exponent = currencyResult.value.exponent;
     const itemPayload: Omit<OrderItemCreate, 'id'> & { id?: number } = {
       productId: primitives.productId,
       productName: primitives.productName,
       sku: primitives.sku || null,
       imageUrl: primitives.imageUrl || null,
-      unitPrice: primitives.unitPrice,
+      unitPrice: Number(decimalFromMinorUnits(primitives.unitPrice, exponent)),
       quantity: primitives.quantity,
-      lineTotal: primitives.lineTotal,
+      lineTotal: Number(decimalFromMinorUnits(primitives.lineTotal, exponent)),
+      currency: primitives.currency,
     };
     const entity = Object.assign(new OrderItemEntity(), itemPayload);
     const persistedId = persistedChildId(primitives.id);

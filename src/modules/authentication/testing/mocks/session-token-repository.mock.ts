@@ -12,6 +12,10 @@ export class MockSessionTokenRepository implements SessionTokenRepository {
     Promise<Result<SessionToken | null, RepositoryError>>,
     [string]
   >();
+  replaceTokenIfCurrent = jest.fn<
+    Promise<Result<SessionToken, RepositoryError>>,
+    [SessionToken, string]
+  >();
   revokeAllForUser = jest.fn<
     Promise<Result<void, RepositoryError>>,
     [number]

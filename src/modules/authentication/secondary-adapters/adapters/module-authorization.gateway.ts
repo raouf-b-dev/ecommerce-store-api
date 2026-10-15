@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { StatusCode } from 'src/shared-kernel/domain/exceptions/status-code';
 import { InfrastructureError } from 'src/shared-kernel/domain/exceptions/infrastructure-error';
 import { isFailure, Result } from 'src/shared-kernel/domain/result';
 import {
@@ -45,7 +46,7 @@ export class ModuleAuthorizationGateway extends AuthorizationGateway {
   ): Promise<Result<RoleRecord | null, InfrastructureError>> {
     const result = await this.findRoleByUserIdUseCase.execute(userId);
     if (isFailure(result)) {
-      if (result.error.statusCode === HttpStatus.NOT_FOUND) {
+      if (result.error.statusCode === StatusCode.NOT_FOUND) {
         return Result.success(null);
       }
       return Result.failure(new InfrastructureError(result.error.message));

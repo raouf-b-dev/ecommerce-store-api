@@ -4,20 +4,26 @@
  * Prerequisites: PostgreSQL + Redis running (`npm run d:up:dev`) and migrations applied.
  */
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
 import {
   AuthSession,
   AuthTestHelper,
   E2E_API_PREFIX,
 } from 'src/testing/helpers/auth-test.helper';
+import { E2eCatalogHelper } from 'src/testing/helpers/e2e-catalog.helper';
 import { E2eCheckoutHelper } from 'src/testing/helpers/e2e-checkout.helper';
+import { E2eOrderHelper } from 'src/testing/helpers/e2e-order.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
 import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
 
+const MISSING_ORDER_ID = 999999;
+
 describe('Security IDOR (e2e)', () => {
   let app: INestApplication;
+  let moduleRef: TestingModule;
   let http: E2eHttpClient;
   let userA: AuthSession;
   let userB: AuthSession;
@@ -25,6 +31,7 @@ describe('Security IDOR (e2e)', () => {
   beforeAll(async () => {
     const context = await E2eTestAppHelper.createApp();
     app = context.app;
+    moduleRef = context.moduleRef;
     http = E2eTestAppHelper.getHttp(app);
 
     userA = await AuthTestHelper.registerAndLogin(http, {
@@ -44,6 +51,20 @@ describe('Security IDOR (e2e)', () => {
   async function cartIdFor(user: AuthSession): Promise<number> {
     const cart = await E2eCheckoutHelper.createCart(http, user.accessToken);
     return cart.id;
+  }
+
+  // Nest serializes JSON null; some clients may surface it as empty body.
+  function isEmptyBody(body: unknown): boolean {
+    return (
+      body == null ||
+      (typeof body === 'object' && Object.keys(body).length === 0)
+    );
+  }
+
+  function getAs(user: AuthSession, path: string) {
+    return http
+      .get(`${E2E_API_PREFIX}${path}`)
+      .set(AuthTestHelper.bearer(user.accessToken));
   }
 
   describe('users', () => {
@@ -106,9 +127,9 @@ describe('Security IDOR (e2e)', () => {
         .get(`${E2E_API_PREFIX}/carts/${cartId}`)
         .set(AuthTestHelper.bearer(userA.accessToken));
 
-      expect(crossRead.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(crossRead.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(crossRead, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
         messageContains: 'not found',
       });
     });
@@ -118,45 +139,109 @@ describe('Security IDOR (e2e)', () => {
     it('denies checkout with another users cart', async () => {
       const cartId = await cartIdFor(userB);
 
-      const checkoutResponse = await http
-        .post(`${E2E_API_PREFIX}/orders/checkout`)
-        .set(AuthTestHelper.bearer(userA.accessToken))
-        .send({
-          cartId,
-          paymentMethod: 'STRIPE',
-        });
+      const checkoutResponse = await E2eCheckoutHelper.checkout(
+        http,
+        userA,
+        cartId,
+        { includeShipping: false },
+      );
 
-      expect(checkoutResponse.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(checkoutResponse.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(checkoutResponse, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
         messageContains: 'not found',
       });
     });
   });
 
   describe('orders and payments', () => {
+    let customerBOrderId: number;
+
+    beforeAll(async () => {
+      const admin = await E2eCatalogHelper.seedAdminSession(moduleRef, http);
+      const product = await E2eCatalogHelper.createProductWithStock(
+        moduleRef,
+        http,
+        admin,
+        1,
+        'idor',
+      );
+      const cartId = await E2eCheckoutHelper.createCartWithItem(
+        http,
+        userB.accessToken,
+        product.id,
+      );
+      const checkoutResponse = await E2eCheckoutHelper.checkout(
+        http,
+        userB,
+        cartId,
+      );
+      expect(checkoutResponse.status).toBeLessThan(300);
+      customerBOrderId = Number(checkoutResponse.body.orderId);
+      expect(customerBOrderId).toBeGreaterThan(0);
+
+      await E2eOrderHelper.waitForPaymentIntent(http, userB, customerBOrderId);
+    }, 180_000);
+
     it('denies user reading a non-owned order id', async () => {
-      const response = await http
-        .get(`${E2E_API_PREFIX}/orders/999999`)
-        .set(AuthTestHelper.bearer(userA.accessToken));
+      const response = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);
 
       expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
       HttpErrorAssertionHelper.assertErrorContract(response, {
         statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-        messageContains: 'Order with id 999999 not found',
+        messageContains: `Order with id ${MISSING_ORDER_ID} not found`,
       });
     });
 
+    it('returns the missing-id not-found when reading another customers real order', async () => {
+      const ownerRead = await getAs(userB, `/orders/${customerBOrderId}`);
+      expect(ownerRead.status).toBe(HttpStatus.OK);
+      expect(Number(ownerRead.body.id)).toBe(customerBOrderId);
+
+      const missing = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);
+      const crossRead = await getAs(userA, `/orders/${customerBOrderId}`);
+
+      expect(crossRead.status).toBe(missing.status);
+      HttpErrorAssertionHelper.assertErrorContract(crossRead, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(Object.keys(crossRead.body).sort()).toEqual(
+        Object.keys(missing.body).sort(),
+      );
+      expect(crossRead.body).not.toHaveProperty('items');
+      expect(crossRead.body).not.toHaveProperty('userId');
+      expect(crossRead.body).not.toHaveProperty('userEmail');
+    });
+
     it('returns null when no payment exists for the requested order', async () => {
-      const response = await http
-        .get(`${E2E_API_PREFIX}/payments/orders/999999`)
-        .set(AuthTestHelper.bearer(userA.accessToken));
+      const response = await getAs(
+        userA,
+        `/payments/orders/${MISSING_ORDER_ID}`,
+      );
 
       expect(response.status).toBe(HttpStatus.OK);
-      // Nest serializes JSON null; some clients may surface it as empty body.
-      expect(
-        response.body == null || Object.keys(response.body).length === 0,
-      ).toBe(true);
+      expect(isEmptyBody(response.body)).toBe(true);
+    });
+
+    it('returns the missing-id empty result for another customers real payment', async () => {
+      const ownerRead = await getAs(
+        userB,
+        `/payments/orders/${customerBOrderId}`,
+      );
+      expect(ownerRead.status).toBe(HttpStatus.OK);
+      expect(Number(ownerRead.body.orderId)).toBe(customerBOrderId);
+
+      const crossRead = await getAs(
+        userA,
+        `/payments/orders/${customerBOrderId}`,
+      );
+
+      expect(crossRead.status).toBe(HttpStatus.OK);
+      expect(isEmptyBody(crossRead.body)).toBe(true);
+      expect(crossRead.text).not.toContain(
+        String(ownerRead.body.gatewayPaymentIntentId),
+      );
     });
 
     it('scopes order list to the authenticated user', async () => {
@@ -170,11 +255,10 @@ describe('Security IDOR (e2e)', () => {
         : response.body.items;
       expect(Array.isArray(orders)).toBe(true);
 
-      for (const order of orders) {
-        if (order.userId != null) {
-          expect(order.userId).toBe(userA.userId);
-        }
-      }
+      const userIds: unknown[] = orders
+        .map((order: { userId?: unknown }) => order.userId)
+        .filter((userId: unknown) => userId != null);
+      expect(userIds).toEqual(userIds.map(() => userA.userId));
     });
   });
 });

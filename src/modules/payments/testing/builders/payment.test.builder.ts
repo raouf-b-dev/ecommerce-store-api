@@ -40,6 +40,11 @@ export class PaymentBuilder {
     return this;
   }
 
+  withProvider(provider: string): this {
+    this.payment.provider = provider;
+    return this;
+  }
+
   withStatus(status: PaymentStatusType): this {
     this.payment.status = status;
     return this;

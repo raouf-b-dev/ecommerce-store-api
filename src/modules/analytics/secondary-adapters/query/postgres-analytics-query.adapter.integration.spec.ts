@@ -9,6 +9,7 @@ import { PaymentEntity } from 'src/modules/payments/secondary-adapters/orm/payme
 import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
 import { OrderStatus } from 'src/modules/orders/core/domain/value-objects/order-status';
 import { PaymentStatusType } from 'src/modules/payments/core/domain/value-objects/payment-status';
+import { MockEnvConfigService } from 'src/testing';
 import { PostgresAnalyticsQueryAdapter } from './postgres-analytics-query.adapter';
 
 describe('PostgresAnalyticsQueryAdapter (Integration - Real DB)', () => {
@@ -20,6 +21,7 @@ describe('PostgresAnalyticsQueryAdapter (Integration - Real DB)', () => {
     seededData = await IntegrationTestHelper.seedReferenceData();
     queryAdapter = new PostgresAnalyticsQueryAdapter(
       IntegrationTestHelper.getDataSource(),
+      new MockEnvConfigService(),
     );
   });
 

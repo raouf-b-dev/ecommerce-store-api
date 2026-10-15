@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { EnvConfigService } from '../../../../config/env-config.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../shared-kernel/domain/exceptions/query.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -34,7 +35,14 @@ import type {
 
 @Injectable()
 export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly envConfig: EnvConfigService,
+  ) {}
+
+  private get storeCurrency(): string {
+    return this.envConfig.store.defaultCurrency;
+  }
 
   async getOverview(
     query: AnalyticsOverviewQuery,
@@ -85,23 +93,31 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
             COALESCE(SUM(p.amount), 0) AS gross,
             COALESCE(SUM(p.refunded_amount), 0) AS refunded,
             COUNT(*)::int AS captured_count,
-            COALESCE(MIN(p.currency), 'USD') AS currency
+            MIN(p.currency) AS currency
           FROM payments p
           WHERE p.status = ANY($1::varchar[])
             AND COALESCE(p.completed_at, p.created_at) >= $2
             AND COALESCE(p.completed_at, p.created_at) <= $3
+            AND p.currency = $4
           GROUP BY 1
           ORDER BY 1 ASC
           `,
-          [[...REVENUE_PAYMENT_STATUSES], query.from, query.to],
+          [
+            [...REVENUE_PAYMENT_STATUSES],
+            query.from,
+            query.to,
+            this.storeCurrency,
+          ],
         );
 
+        const currency = this.storeCurrency;
         return Result.success(
           AnalyticsQueryMapper.toPaymentsTimeSeriesResult({
             from: query.from,
             to: query.to,
             bucket: query.bucket,
             rows,
+            currency,
           }),
         );
       });
@@ -125,24 +141,34 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
             COALESCE(NULLIF(MAX(oi.product_name), ''), 'Unknown') AS name,
             MAX(oi.sku) AS sku,
             SUM(oi.quantity)::int AS units_sold,
-            COALESCE(SUM(oi."lineTotal"), 0) AS line_revenue
+            COALESCE(SUM(oi."lineTotal"), 0) AS line_revenue,
+            COALESCE(MIN(oi.currency), MIN(o.currency)) AS currency
           FROM order_items oi
           INNER JOIN orders o ON o.id = oi.order_id
           WHERE o.status = ANY($1::varchar[])
             AND o."createdAt" >= $2
             AND o."createdAt" <= $3
+            AND COALESCE(oi.currency, o.currency) = $5
           GROUP BY oi.product_id
           ORDER BY SUM(oi."lineTotal") DESC, SUM(oi.quantity) DESC
           LIMIT $4
           `,
-          [[...TOP_PRODUCT_ORDER_STATUSES], query.from, query.to, query.limit],
+          [
+            [...TOP_PRODUCT_ORDER_STATUSES],
+            query.from,
+            query.to,
+            query.limit,
+            this.storeCurrency,
+          ],
         );
 
+        const currency = this.storeCurrency;
         return Result.success(
           AnalyticsQueryMapper.toTopProductsResult({
             from: query.from,
             to: query.to,
             rows,
+            currency,
           }),
         );
       });
@@ -194,13 +220,14 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
           COALESCE(SUM(p.amount), 0) AS gross,
           COALESCE(SUM(p.refunded_amount), 0) AS refunded,
           COUNT(*)::int AS paid_count,
-          COALESCE(MIN(p.currency), 'USD') AS currency
+          MIN(p.currency) AS currency
         FROM payments p
         WHERE p.status = ANY($1::varchar[])
           AND COALESCE(p.completed_at, p.created_at) >= $2
           AND COALESCE(p.completed_at, p.created_at) <= $3
+          AND p.currency = $4
         `,
-        [[...REVENUE_PAYMENT_STATUSES], from, to],
+        [[...REVENUE_PAYMENT_STATUSES], from, to, this.storeCurrency],
       ),
       queryFn<RawAnalyticsCountRow[]>(
         `
@@ -213,9 +240,11 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
       ),
     ]);
 
+    const currency = this.storeCurrency;
     return AnalyticsQueryMapper.toKpiSnapshot(
       revenueRows[0],
       orderCountRows[0],
+      currency,
     );
   }
 

@@ -63,8 +63,7 @@ export class UpdateCategoryUseCase extends UseCase<
     if (nameExists.value) {
       return ErrorFactory.UseCaseError(
         `Category with name ${category.name} already exists`,
-        undefined,
-        HttpStatus.CONFLICT,
+        { status: HttpStatus.CONFLICT },
       );
     }
 
@@ -81,8 +80,7 @@ export class UpdateCategoryUseCase extends UseCase<
     if (slugExists.value) {
       return ErrorFactory.UseCaseError(
         `Category with slug ${category.slug} already exists`,
-        undefined,
-        HttpStatus.CONFLICT,
+        { status: HttpStatus.CONFLICT },
       );
     }
 

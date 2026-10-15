@@ -41,14 +41,14 @@ export class CartResponseDto {
   @ApiProperty({
     example: 0,
     description:
-      'Shipping cost for the cart. MVP policy: always 0 until a shipping engine ships.',
+      'Shipping cost. MVP policy: always 0 until a shipping engine ships.',
     type: Number,
   })
   shippingCost!: number;
 
   @ApiProperty({
     example: 299.97,
-    description: 'Cart total amount (subtotal + shippingCost)',
+    description: 'Cart total (subtotal + shippingCost)',
     type: Number,
   })
   totalAmount!: number;

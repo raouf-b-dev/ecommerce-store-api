@@ -9,6 +9,7 @@ import { Refund } from '../../domain/entities/refund';
 import { PaymentRepository } from '../../domain/repositories/payment.repository';
 import { PaymentStatusType } from '../../domain/value-objects/payment-status';
 import { RefundStatusType } from '../../domain/value-objects/refund-status';
+import { PaymentProvider } from '../ports/payment-provider';
 
 export interface SeedDemoPaymentItemInput {
   orderId: number;
@@ -32,7 +33,10 @@ export class SeedDemoPaymentsUseCase extends UseCase<
   SeededDemoPayment[],
   UseCaseError
 > {
-  constructor(private readonly paymentRepository: PaymentRepository) {
+  constructor(
+    private readonly paymentRepository: PaymentRepository,
+    private readonly paymentProvider: PaymentProvider,
+  ) {
     super();
   }
 
@@ -90,6 +94,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
       amount: item.amount,
       currency: item.currency,
       paymentMethod: item.paymentMethod,
+      provider: this.paymentProvider.id.value,
       status: PaymentStatusType.CAPTURED,
       transactionId: `seed_tx_order_${item.orderId}`,
       gatewayPaymentIntentId: `seed_pi_order_${item.orderId}`,

@@ -45,9 +45,7 @@ describe('ActivateProductUseCase', () => {
       'Cannot activate a product without a category',
       UseCaseError,
     );
-    expect(result.isFailure && result.error.statusCode).toBe(
-      HttpStatus.BAD_REQUEST,
-    );
+    expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
     expect(productRepository.save).not.toHaveBeenCalled();
   });
 
@@ -78,7 +76,6 @@ describe('ActivateProductUseCase', () => {
       `Product with id 999 not found`,
       UseCaseError,
     );
-    if (result.isFailure)
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
   });
 });

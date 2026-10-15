@@ -1,14 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { createClient } from 'redis';
 import { RedisService } from './redis.service';
 import { EnvConfigService } from '../../config/env-config.service';
 import { MockEnvConfigService, MockLogger } from '../../testing';
 import { MockRedisNodeClient, RedisIndexTestFactory } from './testing';
+import { vi } from 'vitest';
 import { buildNodeRedisClientOptions } from './redis-connection.options';
 
-jest.mock('redis', () => ({
-  createClient: jest.fn(),
+const { mockCreateClient } = vi.hoisted(() => ({
+  mockCreateClient: vi.fn<(options?: unknown) => MockRedisNodeClient>(),
+}));
+
+vi.mock('redis', () => ({
+  createClient: mockCreateClient,
 }));
 
 describe('RedisService', () => {
@@ -19,7 +23,7 @@ describe('RedisService', () => {
 
   beforeEach(async () => {
     mockClient = new MockRedisNodeClient();
-    (createClient as jest.Mock).mockReturnValue(mockClient);
+    mockCreateClient.mockReturnValue(mockClient);
 
     envConfig = new MockEnvConfigService();
     envConfig.setMockConfig({
@@ -50,7 +54,7 @@ describe('RedisService', () => {
     it('should create client and connect', async () => {
       await service.onModuleInit();
 
-      expect(createClient).toHaveBeenCalledWith(
+      expect(mockCreateClient).toHaveBeenCalledWith(
         buildNodeRedisClientOptions({
           host: 'localhost',
           port: 6379,

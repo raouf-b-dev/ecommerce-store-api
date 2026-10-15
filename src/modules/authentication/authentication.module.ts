@@ -17,7 +17,7 @@ import {
 } from './authentication.tokens';
 import { ModuleIdentityGateway } from './secondary-adapters/adapters/module-identity.gateway';
 import { JwtSignerPort } from './core/application/ports/jwt-signer.port';
-import { JwtSignerService } from './core/application/services/jwt-signer.service';
+import { JwtSignerService } from './secondary-adapters/services/jwt-signer.service';
 import { RedisModule } from '../../infrastructure/redis/redis.module';
 import { PostgresSessionTokenRepository } from './secondary-adapters/repositories/postgres-session-token-repository/postgres-session-token.repository';
 import { IdentityModule } from '../identity/identity.module';

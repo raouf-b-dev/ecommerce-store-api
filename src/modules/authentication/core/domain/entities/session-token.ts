@@ -13,8 +13,8 @@ export interface SessionTokenProps {
 export class SessionToken {
   private readonly _id: string;
   private readonly _userId: number;
-  private readonly _tokenHash: string;
-  private readonly _expiresAt: Date;
+  private _tokenHash: string;
+  private _expiresAt: Date;
   private _isRevoked: boolean;
   private _revokedAt: Date | null;
   private readonly _createdAt: Date;
@@ -60,8 +60,16 @@ export class SessionToken {
   }
 
   isTokenMatch(rawToken: string): boolean {
-    const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    return this._tokenHash === hash;
+    return this._tokenHash === SessionToken.hash(rawToken);
+  }
+
+  /**
+   * Replaces the stored secret. Callers copy tokenHash first and persist
+   * with that expected hash so a second writer cannot commit.
+   */
+  rotate(rawToken: string, expiresAt: Date): void {
+    this._tokenHash = SessionToken.hash(rawToken);
+    this._expiresAt = expiresAt;
   }
 
   revoke(): void {
@@ -95,11 +103,15 @@ export class SessionToken {
     return new SessionToken({
       id: id || crypto.randomUUID(),
       userId,
-      tokenHash: crypto.createHash('sha256').update(rawToken).digest('hex'),
+      tokenHash: SessionToken.hash(rawToken),
       expiresAt,
       isRevoked: false,
       revokedAt: null,
       createdAt: new Date(),
     });
+  }
+
+  private static hash(rawToken: string): string {
+    return crypto.createHash('sha256').update(rawToken).digest('hex');
   }
 }

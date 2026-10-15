@@ -51,10 +51,7 @@ export class HandlePaymentWebhookService {
       );
 
     if (isFailure(paymentResult)) {
-      return ErrorFactory.ServiceError(
-        `Payment not found for intent: ${dto.paymentIntentId}`,
-        paymentResult.error,
-      );
+      return paymentResult;
     }
 
     const payment = paymentResult.value;
@@ -110,10 +107,9 @@ export class HandlePaymentWebhookService {
     }
 
     if (dto.amountMinor !== undefined) {
-      const expectedAmountMinor = Math.round(payment.amount * 100);
-      if (dto.amountMinor !== expectedAmountMinor) {
+      if (dto.amountMinor !== payment.amount) {
         return ErrorFactory.ServiceError(
-          `Payment amount mismatch: expected ${expectedAmountMinor}, received ${dto.amountMinor}`,
+          `Payment amount mismatch: expected ${payment.amount}, received ${dto.amountMinor}`,
         );
       }
     }

@@ -9,25 +9,37 @@ import type {
 describe('AnalyticsQueryMapper', () => {
   describe('money helpers', () => {
     it('computeAov returns 0 when paidOrderCount is 0', () => {
-      expect(AnalyticsQueryMapper.computeAov(100, 0)).toBe(0);
+      expect(AnalyticsQueryMapper.computeAov(100, 0, 'USD')).toBe(0);
     });
 
-    it('computeAov divides net by paid count', () => {
-      expect(AnalyticsQueryMapper.computeAov(100, 4)).toBe(25);
+    it('computeAov divides net minor units by paid count with standard currency (USD)', () => {
+      expect(AnalyticsQueryMapper.computeAov(10000, 4, 'USD')).toBe(25);
+    });
+
+    it('computeAov rounds to 0 decimal places for zero-decimal currency (JPY)', () => {
+      expect(AnalyticsQueryMapper.computeAov(1000, 3, 'JPY')).toBe(333);
+    });
+
+    it('computeAov rounds to 3 decimal places for three-decimal currency (KWD)', () => {
+      expect(AnalyticsQueryMapper.computeAov(10000, 3, 'KWD')).toBe(3.333);
     });
   });
 
   describe('toKpiSnapshot', () => {
     it('maps revenue and order count rows', () => {
       const revenue: RawAnalyticsRevenueAggRow = {
-        gross: '150.5',
-        refunded: '20',
-        paid_count: '2',
+        gross: 150.5,
+        refunded: 20,
+        paid_count: 2,
         currency: 'USD',
       };
-      const snapshot = AnalyticsQueryMapper.toKpiSnapshot(revenue, {
-        count: '5',
-      });
+      const snapshot = AnalyticsQueryMapper.toKpiSnapshot(
+        revenue,
+        {
+          count: 5,
+        },
+        'USD',
+      );
       expect(snapshot).toEqual({
         netRevenue: 130.5,
         grossRevenue: 150.5,
@@ -37,6 +49,22 @@ describe('AnalyticsQueryMapper', () => {
         aov: 65.25,
         currency: 'USD',
       });
+    });
+
+    it('keeps a signed net when refunds exceed gross', () => {
+      const revenue: RawAnalyticsRevenueAggRow = {
+        gross: 20,
+        refunded: 50,
+        paid_count: 2,
+        currency: 'USD',
+      };
+      const snapshot = AnalyticsQueryMapper.toKpiSnapshot(
+        revenue,
+        { count: 2 },
+        'USD',
+      );
+      expect(snapshot.netRevenue).toBe(-30);
+      expect(snapshot.aov).toBe(-15);
     });
   });
 
@@ -68,6 +96,7 @@ describe('AnalyticsQueryMapper', () => {
         to: new Date('2026-08-03T23:59:59.999Z'),
         bucket: 'day',
         rows,
+        currency: 'USD',
       });
       expect(result.buckets).toHaveLength(3);
       expect(result.buckets[0].netAmount).toBe(0);
@@ -87,14 +116,16 @@ describe('AnalyticsQueryMapper', () => {
           product_id: 9,
           name: 'Mat',
           sku: 'SPOR-1',
-          units_sold: '3',
-          line_revenue: '89.97',
+          units_sold: 3,
+          line_revenue: 89.97,
+          currency: 'USD',
         },
       ];
       const result = AnalyticsQueryMapper.toTopProductsResult({
         from: new Date('2026-08-01T00:00:00.000Z'),
         to: new Date('2026-08-31T00:00:00.000Z'),
         rows,
+        currency: 'USD',
       });
       expect(result.items[0]).toEqual({
         productId: 9,

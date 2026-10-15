@@ -12,8 +12,20 @@ import {
   PaymentStatus,
   PaymentStatusType,
 } from '../value-objects/payment-status';
+import { PaymentProviderId } from '../value-objects/payment-provider-id';
 
 import { Refund, RefundProps } from './refund';
+
+export interface CreatePaymentProps {
+  id?: number | null;
+  orderId: number;
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethodType;
+  provider: PaymentProviderId;
+  userId?: number | null;
+  paymentMethodInfo?: string | null;
+}
 
 export interface PaymentProps {
   id: number | null;
@@ -22,10 +34,11 @@ export interface PaymentProps {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethodType;
+  provider: PaymentProviderId;
   status: PaymentStatusType;
   transactionId: string | null;
-  gatewayPaymentIntentId: string | null; // Stripe/PayPal payment intent ID
-  gatewayClientSecret: string | null; // Client secret for frontend confirmation
+  gatewayPaymentIntentId: string | null;
+  gatewayClientSecret: string | null;
   paymentMethodInfo: string | null;
   refundedAmount: number;
   refunds: RefundProps[];
@@ -41,6 +54,7 @@ export class Payment implements IPayment {
   private _userId: number | null;
   private _amount: Money;
   private _paymentMethod: PaymentMethod;
+  private readonly _provider: PaymentProviderId;
   private _status: PaymentStatus;
   private _transactionId: string | null;
   private _gatewayPaymentIntentId: string | null;
@@ -60,14 +74,23 @@ export class Payment implements IPayment {
     this._id = props.id || null;
     this._orderId = props.orderId;
     this._userId = props.userId || null;
-    this._amount = Money.from(props.amount, props.currency);
+    const amount = Money.create(props.amount, props.currency);
+    if (amount.isFailure) {
+      throw amount.error;
+    }
+    this._amount = amount.value;
     this._paymentMethod = new PaymentMethod(props.paymentMethod);
+    this._provider = props.provider;
     this._status = new PaymentStatus(props.status);
     this._transactionId = props.transactionId?.trim() || null;
     this._gatewayPaymentIntentId = props.gatewayPaymentIntentId?.trim() || null;
     this._gatewayClientSecret = props.gatewayClientSecret?.trim() || null;
     this._paymentMethodInfo = props.paymentMethodInfo?.trim() || null;
-    this._refundedAmount = Money.from(props.refundedAmount, props.currency);
+    const refundedAmount = Money.create(props.refundedAmount, props.currency);
+    if (refundedAmount.isFailure) {
+      throw refundedAmount.error;
+    }
+    this._refundedAmount = refundedAmount.value;
     this._refunds = props.refunds
       ? props.refunds.map((r) => new Refund(r))
       : [];
@@ -119,12 +142,24 @@ export class Payment implements IPayment {
     return this._amount.amount;
   }
 
+  get money(): Money {
+    return this._amount;
+  }
+
   get currency(): string {
     return this._amount.currency;
   }
 
   get paymentMethod(): PaymentMethodType {
     return this._paymentMethod.type;
+  }
+
+  get provider(): string {
+    return this._provider.value;
+  }
+
+  get providerId(): PaymentProviderId {
+    return this._provider;
   }
 
   get status(): PaymentStatusType {
@@ -176,7 +211,7 @@ export class Payment implements IPayment {
 
   /**
    * Set the payment intent details from gateway response.
-   * Called after creating a payment intent with Stripe/PayPal.
+   * Called after creating a payment intent.
    */
   setPaymentIntent(
     paymentIntentId: string,
@@ -290,7 +325,11 @@ export class Payment implements IPayment {
       );
     }
 
-    this._refundedAmount = Money.from(totalRefunded, this._amount.currency);
+    const refunded = Money.create(totalRefunded, this._amount.currency);
+    if (refunded.isFailure) {
+      return refunded;
+    }
+    this._refundedAmount = refunded.value;
     this._refunds.push(refund);
 
     // Update status based on refund amount
@@ -334,6 +373,10 @@ export class Payment implements IPayment {
     return this._status.isRefunded();
   }
 
+  canBeRefunded(): boolean {
+    return this._status.canBeRefunded();
+  }
+
   isFullyRefunded(): boolean {
     return this._refundedAmount.equals(this._amount);
   }
@@ -355,6 +398,7 @@ export class Payment implements IPayment {
       amount: this._amount.amount,
       currency: this._amount.currency,
       paymentMethod: this._paymentMethod.type,
+      provider: this._provider.value,
       status: this._status.status,
       transactionId: this._transactionId,
       gatewayPaymentIntentId: this._gatewayPaymentIntentId,
@@ -369,31 +413,51 @@ export class Payment implements IPayment {
     };
   }
 
-  static fromPrimitives(data: PaymentProps): Payment {
-    return new Payment(data);
+  static fromPrimitives(data: IPayment): Payment {
+    const providerResult = PaymentProviderId.create(data.provider);
+    if (providerResult.isFailure) {
+      throw providerResult.error;
+    }
+
+    const props: PaymentProps = {
+      id: data.id,
+      orderId: data.orderId,
+      userId: data.userId,
+      amount: data.amount,
+      currency: data.currency,
+      paymentMethod: data.paymentMethod,
+      provider: providerResult.value,
+      status: data.status,
+      transactionId: data.transactionId,
+      gatewayPaymentIntentId: data.gatewayPaymentIntentId,
+      gatewayClientSecret: data.gatewayClientSecret,
+      paymentMethodInfo: data.paymentMethodInfo,
+      refundedAmount: data.refundedAmount,
+      refunds: data.refunds
+        ? data.refunds.map((r) => (r instanceof Refund ? r.props : r))
+        : [],
+      failureReason: data.failureReason,
+      createdAt: data.createdAt,
+      completedAt: data.completedAt,
+      updatedAt: data.updatedAt,
+    };
+    return new Payment(props);
   }
 
-  static create(
-    id: number | null,
-    orderId: number,
-    amount: number,
-    currency: string,
-    paymentMethod: PaymentMethodType,
-    userId?: number,
-    paymentMethodInfo?: string,
-  ): Payment {
+  static create(props: CreatePaymentProps): Payment {
     return new Payment({
-      id,
-      orderId,
-      userId: userId || null,
-      amount,
-      currency,
-      paymentMethod,
+      id: props.id ?? null,
+      orderId: props.orderId,
+      userId: props.userId ?? null,
+      amount: props.amount,
+      currency: props.currency,
+      paymentMethod: props.paymentMethod,
+      provider: props.provider,
       status: PaymentStatusType.PENDING,
       transactionId: null,
       gatewayPaymentIntentId: null,
       gatewayClientSecret: null,
-      paymentMethodInfo: paymentMethodInfo || null,
+      paymentMethodInfo: props.paymentMethodInfo ?? null,
       refundedAmount: 0,
       refunds: [],
       failureReason: null,

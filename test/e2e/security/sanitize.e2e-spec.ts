@@ -27,6 +27,7 @@ import {
   E2E_API_PREFIX,
 } from 'src/testing/helpers/auth-test.helper';
 import { E2eCatalogHelper } from 'src/testing/helpers/e2e-catalog.helper';
+import { E2eStripeWebhookHelper } from 'src/testing/helpers/e2e-stripe-webhook.helper';
 import {
   E2eHttpClient,
   E2eTestAppHelper,
@@ -62,6 +63,10 @@ describe('Input sanitization (e2e)', () => {
 
   afterAll(async () => {
     await E2eTestAppHelper.closeApp(app);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('registers over HTTP with a <>& password and logs in with the exact same password', async () => {
@@ -109,22 +114,24 @@ describe('Input sanitization (e2e)', () => {
       },
     };
 
-    const response = await http
-      .post(`${E2E_API_PREFIX}/payments/webhooks/stripe`)
-      .set('stripe-signature', 'e2e-test')
-      .send(rawPayload);
+    const rawPayloadString = JSON.stringify(rawPayload);
+    const response = await E2eStripeWebhookHelper.postSignedWebhook(
+      http,
+      rawPayloadString,
+    );
 
     expect(response.status).toBe(HttpStatus.OK);
     expect(executeSpy).toHaveBeenCalledTimes(1);
 
     const receivedCommand = executeSpy.mock.calls[0][0];
-    expect(receivedCommand.signature).toBe('e2e-test');
-    expect(receivedCommand.payload).toEqual(rawPayload);
-    expect(receivedCommand.payload.data.object.metadata.note).toBe(
-      '<script>alert("xss")</script> Raw & Untouched Payload',
-    );
+    expect(receivedCommand.signature).toBeDefined();
+    expect(receivedCommand.rawBody).toBeDefined();
+    if (!receivedCommand.rawBody) {
+      throw new Error('rawBody was expected to be defined');
+    }
 
-    executeSpy.mockRestore();
+    const rawBodyString = receivedCommand.rawBody.toString('utf8');
+    expect(JSON.parse(rawBodyString)).toEqual(rawPayload);
   });
 
   it('sanitizes payloads sent to /v1/authorization/... routes', async () => {

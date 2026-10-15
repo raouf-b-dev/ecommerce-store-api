@@ -2,12 +2,13 @@
 
 <p align="center">
   <a href="https://github.com/raouf-b-dev/ecommerce-store-api/actions"><img src="https://github.com/raouf-b-dev/ecommerce-store-api/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://codecov.io/gh/raouf-b-dev/ecommerce-store-api"><img src="https://codecov.io/gh/raouf-b-dev/ecommerce-store-api/graph/badge.svg" alt="Coverage"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></a>
   <a href="https://nestjs.com/"><img src="https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS"></a>
   <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"></a>
   <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white" alt="Redis"></a>
   <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a>
-  <a href="https://jestjs.io/"><img src="https://img.shields.io/badge/Jest-C21325?style=flat&logo=jest&logoColor=white" alt="Jest"></a>
+  <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-FCC72B?style=flat&logo=vitest&logoColor=black" alt="Vitest"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24-green?style=flat&logo=node.js" alt="Node.js 24"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
@@ -23,7 +24,7 @@ Eleven modules under `src/modules/` talk through ACL gateways and domain events,
 
 | Topic    | Status                                                                                 |
 | :------- | :------------------------------------------------------------------------------------- |
-| Payments | Mock adapter behind a swappable hexagonal port. No live payment provider wired yet.    |
+| Payments | Fake Stripe provider behind a swappable port. No live payment provider wired yet.      |
 | Deploy   | Single-instance ops (migrations, health probes, backup/smoke). Not multi-instance yet. |
 | Scope    | Reference backend, not a hosted storefront.                                            |
 | Demo     | No public staging. Run locally with Docker.                                            |
@@ -183,7 +184,7 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 | [`ecommerce-admin-dashboard`](https://github.com/raouf-b-dev/ecommerce-admin-dashboard) | Operator SPA        |
 | [`ecommerce-store-web`](https://github.com/raouf-b-dev/ecommerce-store-web)             | Customer storefront |
 
-Each repository runs independently. Clone companions from the table when you need a full local stack.
+Each repository runs independently. To run all three together (clone order, env, CORS, ports), follow [`docs/development/FULL-STACK.md`](docs/development/FULL-STACK.md).
 
 ## License
 

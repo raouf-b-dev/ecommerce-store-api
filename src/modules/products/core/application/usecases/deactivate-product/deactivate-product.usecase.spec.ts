@@ -52,7 +52,6 @@ describe('DeactivateProductUseCase', () => {
       `Product with id 999 not found`,
       UseCaseError,
     );
-    if (result.isFailure)
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
   });
 });

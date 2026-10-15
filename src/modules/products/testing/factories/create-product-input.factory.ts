@@ -10,6 +10,7 @@ export class CreateProductInputFactory {
       name: 'Test Product',
       description: 'A test product description',
       price: 100,
+      currency: 'USD',
       sku: 'TEST-001',
       categoryId: 1,
     };
@@ -43,6 +44,7 @@ export class CreateProductInputFactory {
     return {
       name: 'Minimal Product',
       price: 50,
+      currency: 'USD',
       categoryId: 1,
     };
   }
@@ -51,6 +53,7 @@ export class CreateProductInputFactory {
     return {
       name: '',
       price: -10,
+      currency: 'USD',
       sku: '',
     };
   }

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 /** Payment read model for GET /payments/orders/:orderId (and similar detail reads). */
 export class PaymentDetailResponseDto {
@@ -20,7 +21,11 @@ export class PaymentDetailResponseDto {
   })
   userEmail!: string;
 
-  @ApiProperty({ example: 224.94, description: 'Payment amount' })
+  @ApiProperty({
+    example: 224.94,
+    description: 'Payment amount as a major-unit decimal',
+    type: Number,
+  })
   amount!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })
@@ -29,8 +34,12 @@ export class PaymentDetailResponseDto {
   @ApiProperty({ example: 'completed', description: 'Payment status' })
   status!: string;
 
-  @ApiProperty({ example: 'stripe', description: 'Payment method' })
-  paymentMethod!: string;
+  @ApiProperty({
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CARD,
+    description: 'Payment method',
+  })
+  paymentMethod!: PaymentMethodType;
 
   @ApiProperty({ example: 'txn_123', description: 'Transaction ID' })
   transactionId!: string;

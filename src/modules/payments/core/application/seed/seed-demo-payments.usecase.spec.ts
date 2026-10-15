@@ -1,4 +1,7 @@
-import { MockPaymentRepository } from 'src/modules/payments/testing';
+import {
+  MockPaymentProvider,
+  MockPaymentRepository,
+} from 'src/modules/payments/testing';
 import { SeedDemoPaymentsUseCase } from './seed-demo-payments.usecase';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { PaymentTestFactory } from '../../../testing/factories/payment.test.factory';
@@ -10,12 +13,17 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 describe('SeedDemoPaymentsUseCase', () => {
   let useCase: SeedDemoPaymentsUseCase;
   let mockPaymentRepository: MockPaymentRepository;
+  let mockPaymentProvider: MockPaymentProvider;
 
   const createdAt = new Date('2026-08-30T12:00:00.000Z');
 
   beforeEach(() => {
     mockPaymentRepository = new MockPaymentRepository();
-    useCase = new SeedDemoPaymentsUseCase(mockPaymentRepository);
+    mockPaymentProvider = new MockPaymentProvider();
+    useCase = new SeedDemoPaymentsUseCase(
+      mockPaymentRepository,
+      mockPaymentProvider,
+    );
   });
 
   afterEach(() => {
@@ -41,7 +49,7 @@ describe('SeedDemoPaymentsUseCase', () => {
         userId: 1,
         amount: 61,
         currency: 'USD',
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         createdAt,
         withPartialRefundAmount: 20,
       },
@@ -54,6 +62,8 @@ describe('SeedDemoPaymentsUseCase', () => {
       seedStatus: 'created',
     });
     expect(mockPaymentRepository.save).toHaveBeenCalledTimes(1);
+    const saved = mockPaymentRepository.save.mock.calls[0][0];
+    expect(saved.providerId.value).toBe(mockPaymentProvider.id.value);
     expect(mockPaymentRepository.update).toHaveBeenCalledTimes(1);
     const updated = mockPaymentRepository.update.mock.calls[0][0];
     expect(updated.status).toBe(PaymentStatusType.PARTIALLY_REFUNDED);
@@ -79,7 +89,7 @@ describe('SeedDemoPaymentsUseCase', () => {
         userId: 1,
         amount: 61,
         currency: 'USD',
-        paymentMethod: PaymentMethodType.STRIPE,
+        paymentMethod: PaymentMethodType.CARD,
         createdAt,
       },
     ]);

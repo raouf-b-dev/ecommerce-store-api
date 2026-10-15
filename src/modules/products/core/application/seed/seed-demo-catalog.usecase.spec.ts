@@ -14,6 +14,7 @@ import { Category } from '../../domain/entities/category';
 import { Product } from '../../domain/entities/product';
 import { MockCategoryRepository } from '../../../testing/mocks/category-repository.mock';
 import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 const input = { publicBaseUrl: 'http://localhost:3000' };
 const headphonesImage = 'http://localhost:3000/media/demo/v1/elec-anc-001.webp';
@@ -121,11 +122,9 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
-      expect(result.value[0].status).toBe('created');
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
+    expect(result.value[0].status).toBe('created');
     expect(createProductUseCase.execute).toHaveBeenCalledTimes(
       DEMO_SEED_PRODUCTS.length,
     );
@@ -166,10 +165,8 @@ describe('SeedDemoCatalogUseCase', () => {
         imageUrl: headphonesImage,
       }),
     );
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value[0].imageUrl).toBe(headphonesImage);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value[0].imageUrl).toBe(headphonesImage);
   });
 
   it('should backfill null categoryId on existing demo SKUs only', async () => {
@@ -182,12 +179,10 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
-      expect(result.value[0].status).toBe('existing');
-      expect(result.value[0].id).toBe(500);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
+    expect(result.value[0].status).toBe('existing');
+    expect(result.value[0].id).toBe(500);
     expect(createProductUseCase.execute).not.toHaveBeenCalled();
     expect(updateProductUseCase.execute).toHaveBeenCalledTimes(
       DEMO_SEED_PRODUCTS.length,
@@ -229,10 +224,8 @@ describe('SeedDemoCatalogUseCase', () => {
       id: 501,
       imageUrl: 'http://localhost:3000/media/demo/v1/elec-sfw-002.webp',
     });
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value[0].imageUrl).toBe(headphonesImage);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value[0].imageUrl).toBe(headphonesImage);
   });
 
   it('should keep operator-provided image URLs on demo SKUs', async () => {
@@ -246,10 +239,8 @@ describe('SeedDemoCatalogUseCase', () => {
     const result = await useCase.execute(input);
 
     expect(updateProductUseCase.execute).not.toHaveBeenCalled();
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value[0].imageUrl).toBe(operatorUrl);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value[0].imageUrl).toBe(operatorUrl);
   });
 
   it('should not update existing demo SKUs that already have a category and image', async () => {
@@ -257,12 +248,10 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isSuccess).toBe(true);
-    if (result.isSuccess) {
-      expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
-      expect(result.value[0].status).toBe('existing');
-      expect(result.value[0].id).toBe(500);
-    }
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.length).toBe(DEMO_SEED_PRODUCTS.length);
+    expect(result.value[0].status).toBe('existing');
+    expect(result.value[0].id).toBe(500);
     expect(productRepository.findAll).toHaveBeenCalled();
     expect(createProductUseCase.execute).not.toHaveBeenCalled();
     expect(updateProductUseCase.execute).not.toHaveBeenCalled();
@@ -274,12 +263,10 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain(
-        'Demo category slug electronics is missing or inactive',
-      );
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Demo category slug electronics is missing or inactive',
+    );
   });
 
   it('should propagate error if listing existing products fails', async () => {
@@ -287,12 +274,10 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain(
-        'Failed to load existing products',
-      );
-    }
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Failed to load existing products',
+    );
   });
 
   it('should propagate failure if individual product creation fails', async () => {
@@ -303,9 +288,6 @@ describe('SeedDemoCatalogUseCase', () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.isFailure).toBe(true);
-    if (result.isFailure) {
-      expect(result.error.message).toContain('Failed to seed product');
-    }
+    ResultAssertionHelper.assertResultFailure(result, 'Failed to seed product');
   });
 });

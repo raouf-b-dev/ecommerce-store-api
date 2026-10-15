@@ -9,6 +9,10 @@ export abstract class SessionTokenRepository {
   abstract findById(
     id: string,
   ): Promise<Result<SessionToken | null, RepositoryError>>;
+  abstract replaceTokenIfCurrent(
+    session: SessionToken,
+    expectedTokenHash: string,
+  ): Promise<Result<SessionToken, RepositoryError>>;
   abstract revokeAllForUser(
     userId: number,
   ): Promise<Result<void, RepositoryError>>;

@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsPositive,
   IsInt,
+  Length,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -33,10 +34,10 @@ export class CreateProductDto {
   @IsPositive()
   price!: number;
 
-  @ApiPropertyOptional({ example: 'USD' })
-  @IsOptional()
+  @ApiProperty({ example: 'USD', description: 'ISO 4217 currency code' })
   @IsString()
-  currency?: string;
+  @Length(3, 3)
+  currency!: string;
 
   @ApiPropertyOptional({ example: 'https://example.com/laptop.jpg' })
   @IsOptional()

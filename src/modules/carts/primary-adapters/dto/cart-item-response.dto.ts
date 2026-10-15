@@ -23,7 +23,7 @@ export class CartItemResponseDto {
 
   @ApiProperty({
     example: 99.99,
-    description: 'Unit price snapshotted at add time',
+    description: 'Unit price, snapshotted at add time',
     type: Number,
   })
   price!: number;
@@ -43,7 +43,7 @@ export class CartItemResponseDto {
 
   @ApiProperty({
     example: 199.98,
-    description: 'Subtotal (price * quantity)',
+    description: 'Line subtotal',
     type: Number,
   })
   subtotal!: number;

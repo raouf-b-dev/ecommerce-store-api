@@ -5,14 +5,15 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ProcessRefundDto {
   @ApiProperty({
     example: 99.99,
-    description: 'Refund amount',
+    description: 'Refund amount as a major-unit decimal',
+    type: Number,
   })
   @IsNumber()
   @Min(0.01)
   amount!: number;
 
   @ApiPropertyOptional({
-    example: 'User  requested cancellation',
+    example: 'User requested cancellation',
     description: 'Reason for refund',
   })
   @IsOptional()

@@ -10,7 +10,7 @@ import { ChangePasswordUseCase } from './core/application/usecases/change-passwo
 import { UserTestFactory } from 'src/modules/identity/testing';
 import { Result } from '../../shared-kernel/domain/result';
 import { JwksPort } from '../../infrastructure/jwt/ports/jwks.port';
-import { MockJwksService } from 'src/testing';
+import { MockJwksService, ResultAssertionHelper } from 'src/testing';
 import { EnvConfigService } from '../../config/env-config.service';
 import { RegisterDto } from './primary-adapters/dto/register.dto';
 import { LoginDto } from './primary-adapters/dto/login.dto';
@@ -179,9 +179,8 @@ describe('AuthController', () => {
     const res = await controller.refresh('refresh-456', dto);
 
     expect(refreshTokenUseCase.execute).toHaveBeenCalledWith('refresh-456');
-    if (res.isSuccess) {
-      expect(res.value.accessToken).toBe('new-access-123');
-    }
+    ResultAssertionHelper.assertResultSuccess(res);
+    expect(res.value.accessToken).toBe('new-access-123');
   });
 
   it('should read refresh token from cookie when body is empty', async () => {

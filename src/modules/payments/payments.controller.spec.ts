@@ -1,20 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { PaymentsController } from './payments.controller';
 import { Result } from '../../shared-kernel/domain/result';
 import { AuthPayloadFactory } from '../../testing/factories/auth-payload.factory';
 import { PaymentDtoTestFactory, PaymentTestFactory } from './testing';
 import { CapturePaymentUseCase } from './core/application/usecases/capture-payment/capture-payment.usecase';
-import { CreatePaymentUseCase } from './core/application/usecases/create-payment/create-payment.usecase';
 import { GetPaymentUseCase } from './core/application/usecases/get-payment/get-payment.usecase';
 import { ListPaymentsUseCase } from './core/application/usecases/list-payments/list-payments.usecase';
 import { ProcessRefundUseCase } from './core/application/usecases/process-refund/process-refund.usecase';
 import { VerifyPaymentUseCase } from './core/application/usecases/verify-payment/verify-payment.usecase';
 import { HandleStripeWebhookUseCase } from './core/application/usecases/handle-stripe-webhook/handle-stripe-webhook.usecase';
 import { GetPaymentByOrderIdUseCase } from './core/application/usecases/get-payment-by-order-id/get-payment-by-order-id.usecase';
+import { IS_PUBLIC_KEY } from '../../guards/decorators/public.decorator';
+import { SKIP_SANITIZATION_KEY } from '../../interceptors/sanitize.interceptor';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
-  let createPaymentUseCase: jest.Mocked<CreatePaymentUseCase>;
   let getPaymentUseCase: jest.Mocked<GetPaymentUseCase>;
   let listPaymentsUseCase: jest.Mocked<ListPaymentsUseCase>;
   let capturePaymentUseCase: jest.Mocked<CapturePaymentUseCase>;
@@ -29,12 +31,6 @@ describe('PaymentsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PaymentsController],
       providers: [
-        {
-          provide: CreatePaymentUseCase,
-          useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(mockPayment)),
-          },
-        },
         {
           provide: GetPaymentUseCase,
           useValue: {
@@ -80,8 +76,7 @@ describe('PaymentsController', () => {
       ],
     }).compile();
 
-    controller = module.get<PaymentsController>(PaymentsController);
-    createPaymentUseCase = module.get(CreatePaymentUseCase);
+    controller = module.get(PaymentsController);
     getPaymentUseCase = module.get(GetPaymentUseCase);
     listPaymentsUseCase = module.get(ListPaymentsUseCase);
     capturePaymentUseCase = module.get(CapturePaymentUseCase);
@@ -91,27 +86,29 @@ describe('PaymentsController', () => {
     getPaymentByOrderIdUseCase = module.get(GetPaymentByOrderIdUseCase);
   });
 
-  it('should delegate handleStripeWebhook to HandleStripeWebhookUseCase', async () => {
+  it('should delegate handleStripeWebhook to HandleStripeWebhookUseCase with signature and rawBody', async () => {
     const signature = 'stripe-signature';
-    const body = { id: 'evt_123' };
+    const rawBody = Buffer.from('{"id":"evt_123"}');
+    const req: Pick<RawBodyRequest<Request>, 'rawBody'> = { rawBody };
 
-    await controller.handleStripeWebhook(signature, body);
+    await controller.handleStripeWebhook(signature, req);
 
     expect(handleStripeWebhookUseCase.execute).toHaveBeenCalledWith({
       signature,
-      payload: body,
+      rawBody,
     });
   });
 
-  it('should delegate createPayment to CreatePaymentUseCase', async () => {
-    const dto = PaymentDtoTestFactory.createCreatePaymentDto();
-
-    await controller.createPayment(dto, callerContext);
-
-    expect(createPaymentUseCase.execute).toHaveBeenCalledWith({
-      ...dto,
-      callerContext,
-    });
+  it('declares public and skip-sanitization metadata on handleStripeWebhook', () => {
+    expect(
+      Reflect.getMetadata(IS_PUBLIC_KEY, controller.handleStripeWebhook),
+    ).toBe(true);
+    expect(
+      Reflect.getMetadata(
+        SKIP_SANITIZATION_KEY,
+        controller.handleStripeWebhook,
+      ),
+    ).toBe(true);
   });
 
   it('should delegate getPayment to GetPaymentUseCase', async () => {

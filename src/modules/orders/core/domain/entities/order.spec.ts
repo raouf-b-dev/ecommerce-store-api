@@ -1,8 +1,8 @@
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
-import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { OrderTestFactory } from 'src/modules/orders/testing';
+import { DomainError } from 'src/shared-kernel/domain/exceptions/domain.error';
 
 describe('Order', () => {
   describe('confirmPayment', () => {
@@ -93,7 +93,6 @@ describe('Order', () => {
       OrderStatus.PAYMENT_FAILED,
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-      OrderStatus.SHIPPED,
     ])('allows cancellation when status is %s', (status) => {
       const order = OrderTestFactory.createDomainOrder({
         status,
@@ -107,6 +106,7 @@ describe('Order', () => {
     });
 
     it.each([
+      OrderStatus.SHIPPED,
       OrderStatus.DELIVERED,
       OrderStatus.REFUNDED,
       OrderStatus.CANCELLED,
@@ -123,6 +123,10 @@ describe('Order', () => {
         'Order cannot be cancelled in current state',
         DomainError,
       );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 409 },
+      });
     });
   });
 
@@ -134,6 +138,7 @@ describe('Order', () => {
         productName: 'Updated',
         quantity: 2,
         unitPrice: 15,
+        currency: 'USD',
       },
     ];
 

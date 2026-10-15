@@ -19,7 +19,7 @@ export class OrderQueryMapper {
       status: String(row.status || ''),
       itemCount: Number(row.itemCount || 0),
       totalAmount: Number(row.totalAmount || 0),
-      currency: 'USD',
+      currency: row.currency,
       createdAt: new Date(row.createdAt),
     };
   }
@@ -36,9 +36,9 @@ export class OrderQueryMapper {
       sku: item.sku || productInfo?.sku || `SKU-${item.productId}`,
       title:
         item.productName || productInfo?.title || `Product #${item.productId}`,
-      unitPrice: item.unitPrice,
+      unitPrice: Number(item.unitPrice),
       quantity: item.quantity,
-      subtotal: item.lineTotal,
+      subtotal: Number(item.lineTotal),
       imageUrl: item.imageUrl ?? null,
     };
   }
@@ -69,13 +69,14 @@ export class OrderQueryMapper {
       userName,
       userEmail,
       status: orderEntity.status,
+      paymentMethod: orderEntity.paymentMethod,
       shippingAddress: shippingAddrStr,
       items,
-      subtotal: orderEntity.subtotal,
-      shippingCost: orderEntity.shippingCost,
-      totalAmount: orderEntity.totalPrice,
-      totalPrice: orderEntity.totalPrice,
-      currency: 'USD',
+      subtotal: Number(orderEntity.subtotal),
+      shippingCost: Number(orderEntity.shippingCost),
+      totalAmount: Number(orderEntity.totalPrice),
+      totalPrice: Number(orderEntity.totalPrice),
+      currency: orderEntity.currency,
       createdAt: orderEntity.createdAt,
       updatedAt: orderEntity.updatedAt,
     };

@@ -2,11 +2,14 @@ import { HttpStatus } from '@nestjs/common';
 import {
   MockCategoryRepository,
   MockProductRepository,
+  MockSupportedCurrenciesAdapter,
   ProductTestFactory,
   UpdateProductInputFactory,
 } from 'src/modules/products/testing';
 import { UpdateProductUseCase } from './update-product.usecase';
+import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Product } from '../../../domain/entities/product';
 
@@ -14,12 +17,18 @@ describe('UpdateProductUseCase', () => {
   let useCase: UpdateProductUseCase;
   let mockRepository: MockProductRepository;
   let mockCategoryRepository: MockCategoryRepository;
+  let mockSupportedCurrencies: MockSupportedCurrenciesAdapter;
 
   beforeEach(() => {
     mockRepository = new MockProductRepository();
     mockCategoryRepository = new MockCategoryRepository();
     mockCategoryRepository.mockSuccessfulFindById();
-    useCase = new UpdateProductUseCase(mockRepository, mockCategoryRepository);
+    mockSupportedCurrencies = new MockSupportedCurrenciesAdapter(['USD']);
+    useCase = new UpdateProductUseCase(
+      mockRepository,
+      mockCategoryRepository,
+      mockSupportedCurrencies,
+    );
   });
 
   afterEach(() => {
@@ -54,7 +63,7 @@ describe('UpdateProductUseCase', () => {
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
     });
 
-    it('should return Failure(UseCaseError) if product is not found', async () => {
+    it('returns the repository failure when the product is not found', async () => {
       const productId = 999;
       const command = UpdateProductInputFactory.createMockDto({
         id: productId,
@@ -67,7 +76,7 @@ describe('UpdateProductUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         `Product with id ${productId} not found`,
-        UseCaseError,
+        RepositoryError,
       );
     });
 
@@ -100,9 +109,7 @@ describe('UpdateProductUseCase', () => {
         'categoryId cannot be null',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
@@ -120,10 +127,165 @@ describe('UpdateProductUseCase', () => {
         'Category with id 99 not found',
         UseCaseError,
       );
-      expect(result.isFailure && result.error.statusCode).toBe(
-        HttpStatus.BAD_REQUEST,
-      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should return BAD_REQUEST when updating with an unsupported currency', async () => {
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        currency: 'EUR',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Currency "EUR" is not supported by this store',
+        UseCaseError,
+      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('allows partial update when product has legacy unsupported currency and currency is omitted', async () => {
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        name: 'New Name Only',
+      });
+      const legacyProductWithUnsupportedCurrency = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          name: 'Old Name',
+          currency: 'GBP',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(
+        legacyProductWithUnsupportedCurrency,
+        1,
+      );
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.name).toBe('New Name Only');
+      expect(result.value.currency).toBe('GBP');
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates product with JPY (0 decimal places) when supported', async () => {
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'JPY',
+      ]);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockSupportedCurrencies,
+      );
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        price: 2500,
+        currency: 'JPY',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          price: 1000,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.currency).toBe('JPY');
+      expect(result.value.price).toBe(2500);
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns BAD_REQUEST and does not save when currency-only update is invalid for the existing price', async () => {
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'JPY',
+      ]);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockSupportedCurrencies,
+      );
+      const productId = 1;
+      const command = {
+        id: productId,
+        currency: 'JPY',
+      };
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          price: 19.99,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Amount must be a non-negative decimal',
+        DomainError,
+      );
+      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('normalizes lowercase currency when updating product', async () => {
+      mockSupportedCurrencies = new MockSupportedCurrenciesAdapter([
+        'USD',
+        'EUR',
+      ]);
+      useCase = new UpdateProductUseCase(
+        mockRepository,
+        mockCategoryRepository,
+        mockSupportedCurrencies,
+      );
+      const productId = 1;
+      const command = UpdateProductInputFactory.createMockDto({
+        id: productId,
+        currency: 'eur',
+      });
+      const existingProduct = Product.fromPrimitives(
+        ProductTestFactory.createMockProduct({
+          id: productId,
+          currency: 'USD',
+        }),
+      );
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(existingProduct, 1);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.currency).toBe('EUR');
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
   });
 });

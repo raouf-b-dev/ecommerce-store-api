@@ -164,8 +164,7 @@ export class PostgresUserRepository implements UserRepository {
     }
     return new RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      undefined,
-      HttpStatus.CONFLICT,
+      { status: HttpStatus.CONFLICT },
     );
   }
 

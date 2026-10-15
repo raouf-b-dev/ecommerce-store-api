@@ -33,12 +33,4 @@ export class CheckoutDto {
   @IsOptional()
   @IsString()
   customerNotes?: string;
-
-  @ApiPropertyOptional({
-    description: 'Idempotency key for preventing duplicate checkouts',
-    example: 'checkout-abc123-xyz789',
-  })
-  @IsOptional()
-  @IsString()
-  idempotencyKey?: string;
 }

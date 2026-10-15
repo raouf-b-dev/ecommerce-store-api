@@ -1,3 +1,4 @@
+import { type StringValue } from 'ms';
 import { validateEnv } from './validate-env';
 
 export interface IAppConfig {
@@ -20,11 +21,12 @@ export interface IAppConfig {
     database?: string;
     containerName: string;
     image: string;
+    synchronize: boolean;
   };
   jwt: {
     privateKey: string;
     accessTokenTtl: string;
-    refreshTokenTtl: string;
+    refreshTokenTtl: StringValue;
     cartSessionTtl: string;
   };
   logging: { level: string; dir: string; transport: string };
@@ -52,6 +54,11 @@ export interface IAppConfig {
   };
   payments: {
     mockAutoComplete: boolean;
+    stripeWebhookSecret: string;
+  };
+  store: {
+    defaultCurrency: string;
+    supportedCurrencies: string[];
   };
 }
 
@@ -80,6 +87,7 @@ export default (): IAppConfig => {
       database: env.DB_DATABASE,
       containerName: env.POSTGRES_CONTAINER_NAME,
       image: env.POSTGRES_IMAGE,
+      synchronize: env.IS_DB_SYNCHRONIZE,
     },
     jwt: {
       privateKey: env.JWT_PRIVATE_KEY,
@@ -111,6 +119,11 @@ export default (): IAppConfig => {
     },
     payments: {
       mockAutoComplete: env.PAYMENT_MOCK_AUTO_COMPLETE === 'true',
+      stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
+    },
+    store: {
+      defaultCurrency: env.STORE_DEFAULT_CURRENCY.toUpperCase(),
+      supportedCurrencies: [env.STORE_DEFAULT_CURRENCY.toUpperCase()],
     },
   };
 };

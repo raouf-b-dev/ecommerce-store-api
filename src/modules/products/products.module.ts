@@ -6,9 +6,12 @@ import {
   POSTGRES_PRODUCT_REPOSITORY,
   CACHED_PRODUCT_REPOSITORY,
   POSTGRES_CATEGORY_REPOSITORY,
+  SUPPORTED_CURRENCIES_PORT,
 } from './product.tokens';
 import { ProductRepository } from './core/domain/repositories/product-repository';
 import { CategoryRepository } from './core/domain/repositories/category-repository';
+import { SupportedCurrenciesPort } from './core/application/ports/supported-currencies.port';
+import { EnvSupportedCurrenciesAdapter } from './secondary-adapters/config/env-supported-currencies.adapter';
 import { CachedProductRepository } from './secondary-adapters/repositories/cached-product-repository/cached.product-repository';
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
 import { PostgresProductRepository } from './secondary-adapters/repositories/postgres-product-repository/postgres.product-repository';
@@ -77,6 +80,15 @@ import { PostgresCategoryQueryAdapter } from './secondary-adapters/query/postgre
     {
       provide: CategoryRepository,
       useExisting: POSTGRES_CATEGORY_REPOSITORY,
+    },
+
+    {
+      provide: SUPPORTED_CURRENCIES_PORT,
+      useClass: EnvSupportedCurrenciesAdapter,
+    },
+    {
+      provide: SupportedCurrenciesPort,
+      useExisting: SUPPORTED_CURRENCIES_PORT,
     },
 
     // Usecases

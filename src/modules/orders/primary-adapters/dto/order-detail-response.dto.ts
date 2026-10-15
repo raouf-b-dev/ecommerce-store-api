@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OrderStatus } from '../../core/domain/value-objects/order-status';
+import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 
 export class OrderItemDetailResponseDto {
   @ApiProperty({ example: 1, description: 'Product ID' })
@@ -14,13 +15,21 @@ export class OrderItemDetailResponseDto {
   })
   title!: string;
 
-  @ApiProperty({ example: 199.99, description: 'Unit price' })
+  @ApiProperty({
+    example: 199.99,
+    description: 'Unit price',
+    type: Number,
+  })
   unitPrice!: number;
 
   @ApiProperty({ example: 1, description: 'Quantity ordered' })
   quantity!: number;
 
-  @ApiProperty({ example: 199.99, description: 'Line subtotal' })
+  @ApiProperty({
+    example: 199.99,
+    description: 'Line subtotal',
+    type: Number,
+  })
   subtotal!: number;
 
   @ApiProperty({
@@ -63,6 +72,13 @@ export class OrderDetailResponseDto {
   status!: OrderStatus;
 
   @ApiProperty({
+    enum: PaymentMethodType,
+    example: PaymentMethodType.CARD,
+    description: 'Payment method',
+  })
+  paymentMethod!: PaymentMethodType;
+
+  @ApiProperty({
     example: 'Jane Doe, 123 Tech Boulevard, San Francisco, CA 94105, US',
     description: 'Formatted shipping address',
   })
@@ -73,7 +89,8 @@ export class OrderDetailResponseDto {
 
   @ApiProperty({
     example: 199.99,
-    description: 'Order subtotal (sum of line items)',
+    description: 'Order subtotal',
+    type: Number,
   })
   subtotal!: number;
 
@@ -84,10 +101,18 @@ export class OrderDetailResponseDto {
   })
   shippingCost!: number;
 
-  @ApiProperty({ example: 224.94, description: 'Order total amount' })
+  @ApiProperty({
+    example: 224.94,
+    description: 'Order total amount',
+    type: Number,
+  })
   totalAmount!: number;
 
-  @ApiProperty({ example: 224.94, description: 'Order total price' })
+  @ApiProperty({
+    example: 224.94,
+    description: 'Order total price',
+    type: Number,
+  })
   totalPrice!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })
@@ -121,7 +146,11 @@ export class OrderMutationResponseDto {
   })
   status!: OrderStatus;
 
-  @ApiProperty({ example: 224.94, description: 'Order total price' })
+  @ApiProperty({
+    example: 224.94,
+    description: 'Order total price',
+    type: Number,
+  })
   totalPrice!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })

@@ -6,6 +6,7 @@ import { DomainError } from '../../../../../shared-kernel/domain/exceptions/doma
 describe('Refund', () => {
   describe('construction', () => {
     it.each([
+      ['zero amount', { amount: 0 }],
       ['negative amount', { amount: -1 }],
       ['missing reason', { reason: '' }],
       ['missing paymentId', { paymentId: 0 }],

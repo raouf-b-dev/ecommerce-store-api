@@ -27,6 +27,7 @@ export const JobNames = {
 
   // Inventory Jobs
   INVENTORY_RECONCILIATION: 'inventory-reconciliation',
+  SWEEP_EXPIRED_RESERVATIONS: 'sweep-expired-reservations',
 
   // Order Maintenance Jobs
   EXPIRE_PENDING_ORDERS: 'expire-pending-orders',

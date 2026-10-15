@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common';
 import {
   MockCartQueryService,
   CartDtoTestFactory,
@@ -5,6 +6,8 @@ import {
 import { GetCartUseCase } from './get-cart.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
+import { Result } from '../../../../../../shared-kernel/domain/result';
 import {
   CallerContext,
   createUserCallerContext,
@@ -67,6 +70,25 @@ describe('GetCartUseCase', () => {
         'Cart 999 not found',
         UseCaseError,
       );
+      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return failure with 500 when query service fails', async () => {
+      mockCartQueryService.getById.mockResolvedValue(
+        Result.failure(new QueryError('Database connection error')),
+      );
+
+      const result = await usecase.execute({
+        cartId: 1,
+        callerContext: customerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Database connection error',
+        UseCaseError,
+      );
+      expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
     });
 
     it('should allow admin to access cart by cartId without user constraint', async () => {

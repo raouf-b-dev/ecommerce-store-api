@@ -3,12 +3,13 @@
  * when selecting flat order list projections across cross-context JOINs.
  */
 export interface RawOrderListQueryRow {
-  id: number | string;
-  userId: number | string;
+  id: number;
+  userId: number;
   userName?: string | null;
   userEmail?: string | null;
   status: string;
-  itemCount: number | string;
-  totalAmount: number | string;
+  itemCount: number;
+  totalAmount: number;
+  currency: string;
   createdAt: Date | string;
 }

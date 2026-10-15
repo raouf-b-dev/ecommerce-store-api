@@ -2,7 +2,7 @@
 
 > A living roadmap for the E-Commerce Store API project. Each phase includes enough context for any contributor or AI agent to pick up tasks in a fresh session.
 >
-> **Companion docs**: [`AGENT.md`](../AGENT.md) (coding guidelines), [`docs/architecture/DDD-HEXAGONAL.md`](architecture/DDD-HEXAGONAL.md) (strict DDD reference), [`docs/architecture/CQRS.md`](architecture/CQRS.md) (CQRS read-path analysis), [`docs/integration/INTEGRATION-PATTERNS.md`](integration/INTEGRATION-PATTERNS.md) (cross-context communication), [`docs/security/SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) (secrets & env management)
+> **Companion docs**: [`AGENTS.md`](../AGENTS.md) (agent rules), [`docs/architecture/DDD-HEXAGONAL.md`](architecture/DDD-HEXAGONAL.md) (strict DDD reference), [`docs/architecture/CQRS.md`](architecture/CQRS.md) (CQRS read-path analysis), [`docs/integration/INTEGRATION-PATTERNS.md`](integration/INTEGRATION-PATTERNS.md) (cross-context communication), [`docs/security/SECRETS-MANAGEMENT.md`](security/SECRETS-MANAGEMENT.md) (secrets & env management)
 
 ---
 
@@ -27,16 +27,15 @@ Work top to bottom. Letter suffixes (`15b`, `14c`, `16b`, ...) are stable IDs - 
 
 **Next**
 
-2. **Phase 16d** - Full-stack local DX (run-the-stack guide, port table, Loki to `13100`, PR template).
-3. **Phase 16e** - Stable error codes (one documented error envelope).
-4. **Phase 18** - Real Stripe SDK and webhook idempotency.
+2. **Phase 16e** - Stable error codes (one documented error envelope).
+3. **Phase 18** - Real Stripe SDK and webhook idempotency.
 
 **Later**
 
-5. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
-6. **Phases 21 → 25** in the pending table. Phase **25** items are demand-driven.
+4. **Phase 19** - Multi-instance and distributed consistency. **Complete before 2+ application instances.**
+5. **Phases 21 → 25** in the pending table. Phase **25** items are demand-driven.
 
-Phases **15-17**, **16b**, and **20** are done.
+Phases **15-17**, **16b**, **16d**, and **20** are done.
 
 ---
 
@@ -46,7 +45,7 @@ Phases **15-17**, **16b**, and **20** are done.
 
 | Phase   | Name                                        | Status | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                      | Location                                                                                                                   |
 | ------- | ------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **0**   | Foundation                                  | Done   | DDD/Hexagonal scaffold · 10 modules (Authentication, Authorization, Carts, Health, Identity, Inventory, Notifications, Orders, Payments, Products) · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                                                         | `src/modules/`, `src/infrastructure/`                                                                                      |
+| **0**   | Foundation                                  | Done   | DDD/Hexagonal scaffold · 9 initial domain contexts (Authentication, Authorization, Carts, Identity, Inventory, Notifications, Orders, Payments, Products) + infrastructure health probes · JWT auth · Passport strategies · Redis WebSocket adapter · BullMQ jobs · Swagger/OpenAPI                                                                                                                   | `src/modules/`, `src/infrastructure/`                                                                                      |
 | **1**   | ACL Gateway & SAGA                          | Done   | 8 ACL Gateways across Orders, Carts, Authentication · BullMQ checkout SAGA with `CheckoutFailureListener` compensation (refund, stock release, order cancellation) · Gateway DTOs decoupled from domain entities                                                                                                                                                                                      | `src/modules/orders/`, `src/modules/carts/`                                                                                |
 | **2**   | Result Pattern & Idempotency                | Done   | Functional `Result<T, E>` across all layers · `@Idempotent()` decorator with Redis `SET NX` store for checkout protection · idempotency **fail-closed** on Redis errors (HTTP 503)                                                                                                                                                                                                                    | `src/shared-kernel/`, `src/infrastructure/idempotency/`                                                                    |
 | **3**   | Decorator-based Caching                     | Done   | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                            | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                  |
@@ -54,7 +53,7 @@ Phases **15-17**, **16b**, and **20** are done.
 | **5**   | Code Quality (v0.2.0)                       | Done   | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                             | `data-source.ts`, `package.json`                                                                                           |
 | **6**   | Deployment Blockers                         | Done   | Multi-stage `Dockerfile` (Node 24 Alpine, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                 | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                        |
 | **7**   | Security & Authentication                   | Done   | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                              | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                    |
-| **8**   | Observability & SaaS                        | Done   | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENT.md`, `.agents/`, `docs/ai/`)                                                              | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENT.md`                             |
+| **8**   | Observability & SaaS                        | Done   | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENTS.md`, `.agents/`, `docs/ai/`)                                                             | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENTS.md`                            |
 | **9**   | Local DB Seeding                            | Done   | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                          | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                    |
 | **10**  | Security Hardening Phase 2                  | Done   | OWASP Top 10:2025 audit document (`OWASP-COMPLIANCE.md`) · Dependabot + CI `npm audit` scanning · `eslint-plugin-security` static analysis · Winston PII log redaction · `GlobalExceptionFilter` production error code masking · User-scoped `UserThrottlerGuard` rate limiting                                                                                                                       | `.github/`, `docs/security/`, `src/infrastructure/`                                                                        |
 | **11**  | Data Integrity & Concurrency                | Done   | OCC version locking (`@VersionColumn`, HTTP 409 conflict filter) · Pessimistic inventory reservation row locking (`SELECT FOR UPDATE`) · Redis-backed cart TTL (30 days) with RedisJSON storage & graceful re-initialization · BullMQ inventory reconciliation audit job (`inventory_drift_count` Prometheus metric) · Transaction isolation level audit & query composite/partial index optimization | `src/modules/*/`, `src/infrastructure/database/`, `docs/data/`                                                             |
@@ -76,10 +75,10 @@ Phases **15-17**, **16b**, and **20** are done.
 
 ## Pending Work: Execution Sequence
 
-> **Execution guide**: Phases **15-17**, **16b**, and **20** are complete. Pick the next unchecked phase in this order: **16c → 16d → 16e → 18**. Complete **Phase 19** before deploying to 2+ application instances.
+> **Execution guide**: Phases **15-17**, **16b**, **16d**, and **20** are complete. Pick the next unchecked phase in this order: **16c → 16e → 18**. Complete **Phase 19** before deploying to 2+ application instances.
 >
 > - **16c** needs **16b** (seeded image URLs use the public base URL) and stays single-instance.
-> - **16d** and **16e** are independent of **16c** and can run in parallel with it.
+> - **16e** is independent of **16c** and can run in parallel with it.
 > - Remaining notifications work is Phase **21**.
 > - Phase **25** items are demand-driven; pick one only when a client needs it.
 
@@ -89,7 +88,7 @@ Phases **15-17**, **16b**, and **20** are done.
 | **16**  | Complete Onboarding DX & Architecture Assets      | `[x]`  |  `[P0]`  | Remainder of 14e: value matrix, C4/SAGA assets, Bruno/Postman                                       |
 | **16b** | Demo Catalog Media                                | `[x]`  |  `[P1]`  | API-served seed product images; public base URL config; cross-origin image loading                  |
 | **16c** | Hosted Staging & Public Demo                      | `[ ]`  |  `[P1]`  | Single-instance deploy; sibling-subdomain cookies; public Swagger flag; RBAC demo role; seed reset  |
-| **16d** | Full-Stack Local DX                               | `[ ]`  |  `[P1]`  | Run-the-stack guide + port table; Loki to `13100`; PR template                                      |
+| **16d** | Full-Stack Local DX                               | `[x]`  |  `[P1]`  | Run-the-stack guide + port table; Loki to `13100`; PR template                                      |
 | **16e** | Stable Error Codes                                | `[ ]`  |  `[P1]`  | Framework errors mapped to stable machine codes; one error schema in OpenAPI; ADR; e2e assertions   |
 | **17**  | Money & Currency Domain Alignment                 | `[x]`  |  `[P1]`  | Pricing truth before real Stripe (Money VO + explicit shipping; FX deferred)                        |
 | **18**  | Real Stripe SDK & Webhook Idempotency             | `[ ]`  |  `[P1]`  | HMAC + event.id dedupe (mock fail-closed already in 15)                                             |
@@ -123,11 +122,11 @@ Phases **15-17**, **16b**, and **20** are done.
 
 ### Step 2: Verification & Test Safety Net
 
-| Task / Item                                                       | Phase   | Critical Purpose                          |
-| ----------------------------------------------------------------- | ------- | ----------------------------------------- |
-| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies  | **13**  | Pre-deploy HTTP confidence                |
-| [ ] E2E: customer A reads customer B's real order and its payment | **16e** | Current order/payment cases use id 999999 |
-| [x] Repository integration + concurrent checkout lock proof       | **13**  | Real DB + stock race                      |
+| Task / Item                                                       | Phase   | Critical Purpose                                  |
+| ----------------------------------------------------------------- | ------- | ------------------------------------------------- |
+| [x] E2E auth + IDOR + SAGA + CQRS shapes + idempotency + cookies  | **13**  | Pre-deploy HTTP confidence                        |
+| [x] E2E: customer A reads customer B's real order and its payment | **16e** | Real other-customer order and payment stay hidden |
+| [x] Repository integration + concurrent checkout lock proof       | **13**  | Real DB + stock race                              |
 
 ### Step 3: Multi-Instance (Before 2+ pods)
 
@@ -175,16 +174,16 @@ Phases **15-17**, **16b**, and **20** are done.
 
 ---
 
-### [x] Track 15-C: Fail-Closed Stripe Webhook Signature (Mock Era)
+### [x] Track 15-C: Fail-Closed Stripe Webhook Signature (Raw Body Verification)
 
-**What**: `POST /v1/payments/webhooks/stripe` is `@Public()` and `StripeSignatureService.verify()` currently returns `true` always - forgeable in any environment that exposes the route.
+**What**: `POST /v1/payments/webhooks/stripe` verifies webhook signatures over raw request bytes via the official stripe SDK using `STRIPE_WEBHOOK_SECRET`.
 
 **Scope**:
 
-- In production (and staging): reject unless a real secret verifies the signature (or disable the route until Phase 18).
-- Keep local/test paths explicit (documented bypass only when `NODE_ENV=test` or equivalent).
-- Do **not** treat full Stripe SDK / PaymentIntent adapter as P0 - that is Phase 18.
-- Optionally rename/clarify mock `StripeGateway` vs real adapter to reduce confusion.
+- Enable rawBody on Nest application instances and extract raw bytes in the controller.
+- Verify signatures with `Stripe.webhooks.constructEvent` with 300s tolerance (forward and backward).
+- Enforce `STRIPE_WEBHOOK_SECRET` presence at boot in production and staging environments.
+- Eliminate signature bypasses across all environments, including test.
 
 **Location**: `src/modules/payments/secondary-adapters/services/stripe-signature.service.ts`, `payments.controller.ts`, env docs
 
@@ -297,7 +296,7 @@ Moved to Phase **16c**.
 
 **Done when**: the demo operator gets 403 with the existing permission error code on delete and user/role writes; a reset restores the seed; the health response reports `demoMode` and `nextResetAt` and both are in OpenAPI.
 
-**Location**: `src/modules/authorization/`, `src/modules/authentication/core/application/seed/`, `src/modules/*/core/application/seed/`, `src/modules/health/`, `docs/development/SEEDING.md`
+**Location**: `src/modules/authorization/`, `src/modules/authentication/core/application/seed/`, `src/modules/*/core/application/seed/`, `src/infrastructure/health/`, `docs/development/SEEDING.md`
 
 ---
 
@@ -305,7 +304,7 @@ Moved to Phase **16c**.
 
 > **Goal**: A newcomer runs this API with companion HTTP clients locally without port clashes, and contributions follow one PR checklist.
 
-### [ ] Run-the-Stack Guide & Port Table
+### [x] Run-the-Stack Guide & Port Table
 
 **What**: `docs/development/FULL-STACK.md`: clone order, env steps, CORS origins for local clients, seeded accounts, and one port table (API `3000`, Redis Insight `8001`, Grafana `3001`, Loki, and the ports the companion clients use by default). Link it from `README.md` "Related repositories".
 
@@ -321,7 +320,7 @@ Moved to Phase **16c**.
 
 ---
 
-### [ ] Pull Request Template
+### [x] Pull Request Template
 
 **What**: Add `.github/pull_request_template.md` (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates.
 
@@ -348,14 +347,14 @@ Moved to Phase **16c**.
 
 **Location**: `src/filters/global-exception.filter.ts`, `src/infrastructure/swagger/`, `docs/architecture/adr/`, `test/e2e/`
 
-### [ ] Cross-user order and payment reads
+### [x] Cross-user order and payment reads
 
-**What**: Cart IDOR e2e already uses another customer's real cart. The order case calls `GET /v1/orders/999999`, and the payment case calls `GET /v1/payments/orders/999999` and accepts an empty 200. Neither proves that a real other customer's order or payment stays hidden. The use case already scopes payment reads and returns not-found when the caller is not allowed; the HTTP suite does not exercise that with two real users.
+**What**: Cart IDOR e2e already uses another customer's real cart. The order case called `GET /v1/orders/999999`, and the payment case called `GET /v1/payments/orders/999999` and accepted an empty 200. Neither proved that a real other customer's order or payment stays hidden. A customer with `view_own_payments` gets a payment query scoped to their own user id, so another customer's payment reads as absent (empty 200), the same as a missing order; only callers without the permission get the not-found failure.
 
 **Scope**:
 
 - Customer A requests customer B's real order id. The response is the same not-found result as a missing id, not the order body.
-- Customer A requests the payment for that order. The response is the not-found failure, not customer B's payment.
+- Customer A requests the payment for that order. The response is the same empty result as a missing order, not customer B's payment.
 - Keep the missing-id cases. Do not change status codes here. The error envelope above owns that.
 
 **Done when**: both cases are in `test/e2e/security/security-idor.e2e-spec.ts` and pass in CI.
@@ -407,16 +406,17 @@ Moved to Phase **16c**.
 
 ### [ ] Real Stripe Integration & Webhook Idempotency
 
-**What**: Stripe SDK adapter + authentic signature verification + event.id dedupe.
+**What**: Real Stripe SDK adapter + env-based provider binding + event.id dedupe.
 
 **Scope**:
 
-- Stripe SDK secondary adapter for PaymentIntent create/capture/refund.
+- Real `StripePaymentProvider` implementing `PaymentProvider` using the official Stripe SDK, reusing `stripe-provider-id.ts` (`'stripe'`).
+- Env-based provider binding with startup validation refusing `FakeStripePaymentProvider` in production and staging environments.
 - Resolve TODO in `stripe-signature.service.ts` with real HMAC verification using webhook secret.
 - Persist processed Stripe `event.id` (Redis/DB + TTL) to ignore replays.
 - Checkout SAGA (Phase 20) can still run on mock if Stripe is not ready; do not block 20 solely on this.
 
-**Location**: `src/modules/payments/secondary-adapters/stripe/`, `src/modules/payments/secondary-adapters/services/`
+**Location**: `src/modules/payments/secondary-adapters/gateways/`
 
 ---
 
@@ -462,7 +462,7 @@ Moved to Phase **16c**.
 >
 > **Hard prerequisite:** Shopper HTTP contract **15b** (done).
 >
-> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens, remove unused body `idempotencyKey` `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
+> **Deferred from 15b** (do not block this phase): self-profile PATCH (`manage_own_profile`) `[P1]`; `GET /v1/orders/mine`, register returns tokens `[P2]`. Shipping/tax/discount → **17**. Receipt email → **21**.
 
 ### [x] Checkout SAGA & real-time order events
 
@@ -649,7 +649,7 @@ Moved to Phase **16c**.
 - [ ] **Living architecture dependency graphs**: auto-generate directional dependency maps in CI.
 - [ ] **Module architecture scorecards**: per-bounded-context health metrics (entities, repos, events, tests).
 - [ ] **ADR validation in CI**: require linked ADR when core architectural policies change.
-- [ ] **Modularize CONVENTIONS.md**: split when file exceeds ~500-700 lines.
+- [x] **Modularize CONVENTIONS.md**: `docs/ai/CONVENTIONS.md` is short; procedures live in `.agents/skills`.
 - [ ] **Property-based domain testing**: evaluate `fast-check` for value-object validation.
 - [ ] **Mutation testing**: evaluate Stryker on domain layer.
 

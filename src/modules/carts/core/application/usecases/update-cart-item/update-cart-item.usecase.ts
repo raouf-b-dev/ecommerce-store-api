@@ -61,7 +61,7 @@ export class UpdateCartItemUseCase extends UseCase<
     );
 
     if (isFailure(stockCheckResult)) {
-      return ErrorFactory.UseCaseError(stockCheckResult.error.message);
+      return stockCheckResult;
     }
 
     if (!stockCheckResult.value.isAvailable) {

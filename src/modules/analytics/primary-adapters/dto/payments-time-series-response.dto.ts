@@ -14,13 +14,23 @@ export class PaymentTimeSeriesBucketDto {
   @ApiProperty({ type: Number, example: 50 })
   refundedAmount!: number;
 
-  @ApiProperty({ type: Number, example: 1450.25 })
+  @ApiProperty({
+    type: Number,
+    description:
+      'grossAmount - refundedAmount. Negative when refunds in the bucket exceed captures.',
+    example: 1450.25,
+  })
   netAmount!: number;
 
   @ApiProperty({ type: Number, example: 12 })
   capturedCount!: number;
 
-  @ApiProperty({ type: String, example: 'USD' })
+  @ApiProperty({
+    type: String,
+    description:
+      'Store default currency. Only payments in this currency are counted.',
+    example: 'USD',
+  })
   currency!: string;
 }
 

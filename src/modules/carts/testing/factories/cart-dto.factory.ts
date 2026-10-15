@@ -33,7 +33,7 @@ export class CartDtoTestFactory {
       itemId: 100,
       productId: 5,
       productName: 'Mechanical Keyboard',
-      price: '89.99',
+      price: 89.99,
       currency: 'USD',
       quantity: 2,
       imageUrl: 'https://example.com/keyboard.jpg',

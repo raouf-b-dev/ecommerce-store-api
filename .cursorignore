@@ -1,0 +1,22 @@
+# Cursor already skips .gitignore paths and a default list (node_modules,
+# lockfiles, images). Listed again so a window that misses .gitignore still
+# cannot open them. Terminal output is unaffected: a command can still print
+# a file. See the workspace doc docs/agent-workflow.md.
+
+node_modules/
+dist/
+coverage/
+logs/
+.turbo/
+*.tsbuildinfo
+openapi.json
+package-lock.json
+
+# Secrets
+.secrets
+.env
+.env.*
+!.env.example
+
+# Tracked binaries
+assets/demo-media/

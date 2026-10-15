@@ -1,15 +1,15 @@
 export interface RawProductListQueryRow {
-  id: number | string;
+  id: number;
   name: string;
   slug: string;
   description?: string | null;
   sku?: string | null;
-  price: number | string;
+  price: number;
   currency: string;
   imageUrl?: string | null;
-  categoryId?: number | string | null;
+  categoryId?: number | null;
   categoryName?: string | null;
-  isActive: boolean | number | string;
+  isActive: boolean;
   createdAt: Date | string;
   updatedAt?: Date | string;
 }

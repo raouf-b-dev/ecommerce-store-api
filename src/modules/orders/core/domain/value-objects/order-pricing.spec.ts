@@ -13,6 +13,7 @@ describe('OrderPricing', () => {
       productName: `Product ${productId}`,
       unitPrice,
       quantity,
+      currency: 'USD',
     });
 
   describe('calculate', () => {
@@ -27,10 +28,10 @@ describe('OrderPricing', () => {
     });
 
     it('handles single-item orders', () => {
-      const pricing = OrderPricing.calculate([createItem(99.99, 1)]);
+      const pricing = OrderPricing.calculate([createItem(9999, 1)]);
 
-      expect(pricing.subtotal).toBe(99.99);
-      expect(pricing.totalPrice).toBe(99.99);
+      expect(pricing.subtotal).toBe(9999);
+      expect(pricing.totalPrice).toBe(9999);
     });
   });
 
@@ -50,12 +51,12 @@ describe('OrderPricing', () => {
 
   describe('toPrimitives and equals', () => {
     it('round-trips numeric breakdown', () => {
-      const pricing = OrderPricing.calculate([createItem(12.5, 2)]);
+      const pricing = OrderPricing.calculate([createItem(1250, 2)]);
 
       expect(pricing.toPrimitives()).toEqual({
-        subtotal: 25,
+        subtotal: 2500,
         shippingCost: 0,
-        totalPrice: 25,
+        totalPrice: 2500,
       });
     });
 
