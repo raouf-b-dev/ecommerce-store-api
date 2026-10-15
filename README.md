@@ -184,7 +184,7 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 | [`ecommerce-admin-dashboard`](https://github.com/raouf-b-dev/ecommerce-admin-dashboard) | Operator SPA        |
 | [`ecommerce-store-web`](https://github.com/raouf-b-dev/ecommerce-store-web)             | Customer storefront |
 
-Each repository runs independently. Clone companions from the table when you need a full local stack.
+Each repository runs independently. To run all three together (clone order, env, CORS, ports), follow [`docs/development/FULL-STACK.md`](docs/development/FULL-STACK.md).
 
 ## License
 
