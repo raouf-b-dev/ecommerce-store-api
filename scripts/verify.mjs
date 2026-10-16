@@ -12,16 +12,25 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Run npm via node + npm-cli.js so Windows never needs shell:true + args (DEP0190). */
 function resolveNpmCli() {
-  const bundled = path.join(
-    path.dirname(process.execPath),
-    'node_modules',
-    'npm',
-    'bin',
-    'npm-cli.js',
-  );
-  if (existsSync(bundled)) return bundled;
+  const execDir = path.dirname(process.execPath);
+  const candidates = [
+    // Windows / some official installs: node_modules beside the binary
+    path.join(execDir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    // nvm / fnm / many Unix installs: lib/node_modules beside bin/
+    path.join(
+      path.dirname(execDir),
+      'lib',
+      'node_modules',
+      'npm',
+      'bin',
+      'npm-cli.js',
+    ),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
   throw new Error(
-    `Could not resolve npm CLI at ${bundled}. Is Node installed with npm?`,
+    `Could not resolve npm CLI. Tried:\n${candidates.map((c) => `  - ${c}`).join('\n')}`,
   );
 }
 

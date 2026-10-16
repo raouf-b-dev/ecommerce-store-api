@@ -26,15 +26,16 @@ export function redisReconnectDelay(retries: number): number {
 export function buildNodeRedisClientOptions(
   redis: RedisConfig,
 ): RedisClientOptions {
+  const common = {
+    host: redis.host,
+    port: redis.port,
+    reconnectStrategy: redisReconnectDelay,
+  };
   return {
     password: redis.password || undefined,
     database: redis.db,
-    socket: {
-      host: redis.host,
-      port: redis.port,
-      ...(redis.tls ? { tls: true as const } : {}),
-      reconnectStrategy: redisReconnectDelay,
-    },
+    // Discriminated union: tls:true vs omitted/false (node-redis RedisSocketOptions).
+    socket: redis.tls ? { ...common, tls: true } : common,
   };
 }
 
@@ -60,10 +61,19 @@ export function buildIoRedisConnection(redis: RedisConfig): {
 /**
  * ioredis options for throttler storage (fail fast when Redis is down).
  */
-export function buildThrottlerIoRedisOptions(redis: RedisConfig) {
+export function buildThrottlerIoRedisOptions(redis: RedisConfig): {
+  host: string;
+  port: number;
+  password: string | undefined;
+  db: number;
+  tls?: Record<string, never>;
+  enableOfflineQueue: false;
+  maxRetriesPerRequest: number;
+  retryStrategy: (retries: number) => number;
+} {
   return {
     ...buildIoRedisConnection(redis),
-    enableOfflineQueue: false as const,
+    enableOfflineQueue: false,
     maxRetriesPerRequest: 1,
     retryStrategy: redisReconnectDelay,
   };
