@@ -184,8 +184,8 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
           'order.totalPrice AS "totalAmount"',
           'order.currency AS "currency"',
           'order.createdAt AS "createdAt"',
-          "COALESCE(user.firstName || ' ' || user.lastName, 'Unknown User') AS \"userName\"",
-          'COALESCE(user.email, \'\') AS "userEmail"',
+          "NULLIF(TRIM(user.firstName || ' ' || user.lastName), '') AS \"userName\"",
+          'user.email AS "userEmail"',
           'COUNT(item.id)::int AS "itemCount"',
         ])
         .groupBy('order.id')

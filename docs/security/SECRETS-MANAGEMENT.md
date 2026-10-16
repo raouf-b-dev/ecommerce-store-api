@@ -205,25 +205,28 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### PostgreSQL
 
-| Variable                  | Type     | Required | Default | Tier      | Description                                        |
-| :------------------------ | :------- | :------- | :------ | :-------- | :------------------------------------------------- |
-| `DB_HOST`                 | `string` | ✅       | :       | T2        | Database server hostname                           |
-| `DB_PORT`                 | `number` | ✅       | `5432`  | T2        | Database port                                      |
-| `DB_USERNAME`             | `string` | ✅       | :       | T2        | Database role name                                 |
-| `DB_PASSWORD`             | `string` | ✅       | :       | **T1** 🔑 | Database role password                             |
-| `DB_DATABASE`             | `string` | ✅       | :       | T3        | Database name                                      |
-| `POSTGRES_CONTAINER_NAME` | `string` | ✅       | :       | T3        | Compose / `docker exec` container name             |
-| `POSTGRES_IMAGE`          | `string` | ✅       | :       | T3        | Postgres image tag (Compose + dump/restore client) |
+| Variable                     | Type      | Required | Default         | Tier      | Description                                        |
+| :--------------------------- | :-------- | :------- | :-------------- | :-------- | :------------------------------------------------- |
+| `DB_HOST`                    | `string`  | ✅       | :               | T2        | Database server hostname                           |
+| `DB_PORT`                    | `number`  | ✅       | `5432`          | T2        | Database port                                      |
+| `DB_USERNAME`                | `string`  | ✅       | :               | T2        | Database role name                                 |
+| `DB_PASSWORD`                | `string`  | ✅       | :               | **T1** 🔑 | Database role password                             |
+| `DB_DATABASE`                | `string`  | ✅       | :               | T3        | Database name                                      |
+| `DB_SSL`                     | `boolean` | ❌       | `false`         | T3        | Enable TLS for Postgres (managed hosts)            |
+| `DB_SSL_REJECT_UNAUTHORIZED` | `boolean` | ❌       | `true`          | T3        | Verify Postgres TLS cert when `DB_SSL=true`        |
+| `POSTGRES_CONTAINER_NAME`    | `string`  | ❌       | `postgres-db`   | T3        | Compose / `docker exec` container name             |
+| `POSTGRES_IMAGE`             | `string`  | ❌       | `postgres:18.4` | T3        | Postgres image tag (Compose + dump/restore client) |
 
 ### Redis
 
-| Variable          | Type     | Required | Default | Tier      | Description           |
-| :---------------- | :------- | :------- | :------ | :-------- | :-------------------- |
-| `REDIS_HOST`      | `string` | ✅       | :       | T2        | Redis server hostname |
-| `REDIS_PORT`      | `number` | ❌       | `6379`  | T2        | Redis server port     |
-| `REDIS_PASSWORD`  | `string` | ❌       | `""`    | **T1** 🔑 | Redis AUTH password   |
-| `REDIS_KEYPREFIX` | `string` | ❌       | `""`    | T3        | Key namespace prefix  |
-| `REDIS_DB`        | `number` | ❌       | `0`     | T3        | Redis database index  |
+| Variable          | Type      | Required | Default | Tier      | Description                          |
+| :---------------- | :-------- | :------- | :------ | :-------- | :----------------------------------- |
+| `REDIS_HOST`      | `string`  | ✅       | :       | T2        | Redis server hostname                |
+| `REDIS_PORT`      | `number`  | ❌       | `6379`  | T2        | Redis server port                    |
+| `REDIS_PASSWORD`  | `string`  | ❌       | `""`    | **T1** 🔑 | Redis AUTH password                  |
+| `REDIS_KEYPREFIX` | `string`  | ❌       | `""`    | T3        | Key namespace prefix                 |
+| `REDIS_DB`        | `number`  | ❌       | `0`     | T3        | Redis database index                 |
+| `REDIS_TLS`       | `boolean` | ❌       | `false` | T3        | Enable TLS for Redis (managed hosts) |
 
 ### Authentication (JWT)
 
@@ -236,10 +239,10 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### Payments (Stripe)
 
-| Variable                     | Type     | Required     | Default | Tier   | Description                                                                                                       |
-| :--------------------------- | :------- | :----------- | :------ | :----- | :---------------------------------------------------------------------------------------------------------------- |
-| `PAYMENT_MOCK_AUTO_COMPLETE` | `string` | ❌           | `false` | T3     | When true (development only), local checkouts auto-schedule a simulated webhook; fails startup in prod or staging |
-| `STRIPE_WEBHOOK_SECRET`      | `string` | Prod/Staging | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production and staging                                   |
+| Variable                     | Type     | Required     | Default | Tier   | Description                                                                                                      |
+| :--------------------------- | :------- | :----------- | :------ | :----- | :--------------------------------------------------------------------------------------------------------------- |
+| `PAYMENT_MOCK_AUTO_COMPLETE` | `string` | ❌           | `false` | T3     | When true, checkouts auto-schedule a simulated webhook (dev + staging demo); fails startup if true in production |
+| `STRIPE_WEBHOOK_SECRET`      | `string` | Prod/Staging | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production and staging                                  |
 
 ---
 

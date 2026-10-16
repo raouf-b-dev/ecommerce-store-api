@@ -21,34 +21,39 @@ export function redisReconnectDelay(retries: number): number {
 /**
  * Shared node-redis client options (cache, Socket.IO pub/sub).
  * Key prefixing is applied in application code via RedisService.getFullKey.
+ * Uses discrete host/port (+ optional TLS) so passwords need not be URL-encoded.
  */
 export function buildNodeRedisClientOptions(
   redis: RedisConfig,
 ): RedisClientOptions {
   return {
-    url: `redis://${redis.host}:${redis.port}`,
     password: redis.password || undefined,
     database: redis.db,
     socket: {
+      host: redis.host,
+      port: redis.port,
+      ...(redis.tls ? { tls: true as const } : {}),
       reconnectStrategy: redisReconnectDelay,
     },
   };
 }
 
 /**
- * Shared ioredis / BullMQ connection fields (host, port, password, db).
+ * Shared ioredis / BullMQ connection fields (host, port, password, db, tls).
  */
 export function buildIoRedisConnection(redis: RedisConfig): {
   host: string;
   port: number;
   password: string | undefined;
   db: number;
+  tls?: Record<string, never>;
 } {
   return {
     host: redis.host,
     port: redis.port,
     password: redis.password || undefined,
     db: redis.db,
+    ...(redis.tls ? { tls: {} } : {}),
   };
 }
 

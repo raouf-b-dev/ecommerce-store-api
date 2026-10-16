@@ -3,9 +3,10 @@ import { Payment } from '../../../core/domain/entities/payment';
 import { IPayment } from '../../../core/domain/interfaces/payment.interface';
 import { PaymentEntity } from '../../orm/payment.schema';
 import { RefundMapper } from './refund.mapper';
-import { decimalFromMinorUnits } from '../../../../../shared-kernel/domain/value-objects/money-decimal';
-import { requireMinorUnits } from '../../../../../infrastructure/mappers/utils/decimal-money.util';
-import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
+import {
+  requireMajorUnitsFromMinor,
+  requireMinorUnits,
+} from '../../../../../infrastructure/mappers/utils/decimal-money.util';
 
 type PaymentCreate = CreateFromEntity<PaymentEntity, 'refunds'>;
 
@@ -54,17 +55,15 @@ export class PaymentMapper {
 
   static toEntity(domain: Payment): PaymentEntity {
     const primitives = domain.toPrimitives();
-    const currencyResult = Currency.create(primitives.currency);
-    if (currencyResult.isFailure) {
-      throw currencyResult.error;
-    }
-    const exponent = currencyResult.value.exponent;
 
     const paymentPayload: PaymentCreate = {
       id: primitives.id || 0,
       orderId: primitives.orderId,
       userId: primitives.userId,
-      amount: Number(decimalFromMinorUnits(primitives.amount, exponent)),
+      amount: requireMajorUnitsFromMinor(
+        primitives.amount,
+        primitives.currency,
+      ),
       currency: primitives.currency,
       paymentMethod: primitives.paymentMethod,
       provider: primitives.provider,
@@ -73,8 +72,9 @@ export class PaymentMapper {
       gatewayPaymentIntentId: primitives.gatewayPaymentIntentId,
       gatewayClientSecret: primitives.gatewayClientSecret,
       paymentMethodInfo: primitives.paymentMethodInfo,
-      refundedAmount: Number(
-        decimalFromMinorUnits(primitives.refundedAmount, exponent),
+      refundedAmount: requireMajorUnitsFromMinor(
+        primitives.refundedAmount,
+        primitives.currency,
       ),
       failureReason: primitives.failureReason,
       createdAt: primitives.createdAt,

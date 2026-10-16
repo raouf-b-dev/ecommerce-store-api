@@ -125,4 +125,29 @@ describe('CartQueryMapper', () => {
     expect(result?.subtotal).toBe(2.468);
     expect(result?.totalAmount).toBe(2.468);
   });
+
+  it('throws when a cart line is missing productName', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 10,
+      productName: '   ',
+      price: 10,
+      quantity: 1,
+    });
+
+    expect(() => CartQueryMapper.toPresentationDto([row])).toThrow(
+      /missing productName/,
+    );
+  });
+
+  it('throws when a cart line is missing price', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 10,
+      price: null,
+      quantity: 1,
+    });
+
+    expect(() => CartQueryMapper.toPresentationDto([row])).toThrow(
+      /missing a valid price/,
+    );
+  });
 });

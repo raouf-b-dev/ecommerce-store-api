@@ -91,7 +91,7 @@ Payments use the provider-neutral `PaymentProvider` port directly bound to `Fake
 
 - **Flow**: SAGA Validate Cart -> Reserve Stock -> Process Payment (provider) -> (webhook / mock auto-complete) -> Confirm Order -> Clear Cart
 - **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production and staging (startup fails if true).
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development` and staging demo via `env:init`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production (startup fails if true). Staging may enable it for the public demo until a real Stripe provider ships.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 
@@ -228,7 +228,7 @@ Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on N
 
 ### OpenAPI Truthfulness
 
-Swagger at `/api/docs` is the published contract. Decorators on controllers and DTOs must match runtime handler shapes so generated clients stay accurate.
+Swagger at `/api/docs` is the published contract. Decorators on controllers and DTOs must match runtime handler shapes so generated clients stay accurate. Mounting is controlled by `SWAGGER_ENABLED` (`true`/`false`; env:init leaves it on for development/staging/test and off for production).
 
 - **`npm run generate:openapi`**: bootstraps `AppModule`, writes `openapi.json` (gitignored) via `SwaggerModule.createDocument()`
 - **`npm run audit:openapi`**: generates the spec and runs `scripts/audit-openapi.js` (nullable scalars without `type`, missing 200/201 schemas, empty summaries, nullable prose mismatches)

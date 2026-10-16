@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Optional Postgres SSL (`DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`) and Redis TLS (`REDIS_TLS`) for managed hosts.
+- `SWAGGER_ENABLED` to control `/api/docs` independently of `NODE_ENV`.
+
+### Changed
+- Staging may enable `PAYMENT_MOCK_AUTO_COMPLETE` for demo checkout; production still rejects it at startup.
+- `env:init` sets mock auto-complete and Swagger on for staging, OTEL off for staging/production.
+- Cart `id` and order customer/shipping presentation fields may be null instead of placeholder values.
+- Persistence/DTO money major-unit conversion goes through `Money.toMajorUnits` via `requireMajorUnitsFromMinor`.
+
+### Fixed
+- Cart query mapper no longer invents zero prices or `Unknown Product`.
+- Order list/detail query mapping no longer invents `Unknown User`, empty totals, or `N/A` shipping.
+- Removed unused `RecordCodPaymentDto`.
+
 ## [0.10.0] - 2026-10-15
 
 Admin v0.5.0 and web v0.4.0 are the matching client releases; older clients send `STRIPE` and fail.

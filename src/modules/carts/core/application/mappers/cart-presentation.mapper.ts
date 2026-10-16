@@ -6,18 +6,20 @@ import {
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
+import { cartTotalsFromSubtotal } from './cart-totals.helper';
 
 export class CartPresentationMapper {
   static fromDomain(cart: Cart): Result<CartPresentationDTO, DomainError> {
     if (!cart.currency || cart.items.length === 0) {
+      const emptyTotals = cartTotalsFromSubtotal(0);
       return Result.success({
-        id: cart.id ?? 0,
+        id: cart.id,
         userId: cart.userId,
         items: [],
         itemCount: 0,
         subtotal: 0,
-        shippingCost: 0,
-        totalAmount: 0,
+        shippingCost: emptyTotals.shippingCost,
+        totalAmount: emptyTotals.totalAmount,
         currency: cart.currency,
         createdAt: cart.createdAt.toISOString(),
         updatedAt: cart.updatedAt.toISOString(),
@@ -56,16 +58,16 @@ export class CartPresentationMapper {
     }
 
     const subtotal = sumResult.value.toMajorUnits();
-    const shippingCost = 0;
+    const { shippingCost, totalAmount } = cartTotalsFromSubtotal(subtotal);
 
     return Result.success({
-      id: cart.id ?? 0,
+      id: cart.id,
       userId: cart.userId,
       items,
       itemCount: cart.itemCount,
       subtotal,
       shippingCost,
-      totalAmount: subtotal,
+      totalAmount,
       currency: cart.currency,
       createdAt: cart.createdAt.toISOString(),
       updatedAt: cart.updatedAt.toISOString(),

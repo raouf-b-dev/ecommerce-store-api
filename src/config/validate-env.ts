@@ -13,6 +13,9 @@ import { Currency } from '../shared-kernel/domain/value-objects/currency';
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
 
+const CORS_ORIGINS_ERROR =
+  'CORS_ALLOWED_ORIGINS must be a comma-separated list of http(s) origins';
+
 /** Parses an http(s) origin and returns it normalized (lowercase host, no trailing slash). */
 export function parseHttpOrigin(value: string): string {
   let url: URL;
@@ -35,6 +38,23 @@ export function parseHttpOrigin(value: string): string {
 }
 
 const httpOrigin = makeValidator<string>(parseHttpOrigin);
+
+/**
+ * Splits, trims, drops empties, and validates each CORS origin.
+ * Returns a comma-joined string of normalized origins for envalid storage.
+ */
+export function parseCorsAllowedOrigins(value: string): string {
+  const parts = value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0) {
+    throw new EnvError(CORS_ORIGINS_ERROR);
+  }
+  return parts.map(parseHttpOrigin).join(',');
+}
+
+const corsAllowedOrigins = makeValidator<string>(parseCorsAllowedOrigins);
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -88,19 +108,20 @@ export function parseCurrencyCode(value: string): string {
 export const currencyCode = makeValidator<string>(parseCurrencyCode);
 
 /**
- * Deployed environments must never enable mock payment auto-complete so
- * checkouts cannot be confirmed without a verified gateway webhook.
+ * Production must never enable mock payment auto-complete so checkouts
+ * cannot be confirmed without a verified gateway webhook. Staging may
+ * enable it for the public demo until a real Stripe provider ships.
  */
 export function assertNoMockPaymentAutoComplete(
   nodeEnv: string,
   enabled?: string,
 ): void {
-  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+  if (nodeEnv !== 'production') {
     return;
   }
   if (enabled === 'true') {
     throw new EnvError(
-      `PAYMENT_MOCK_AUTO_COMPLETE must not be true in ${nodeEnv}`,
+      'PAYMENT_MOCK_AUTO_COMPLETE must not be true in production',
     );
   }
 }
@@ -117,14 +138,17 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     REDIS_PASSWORD: str({ default: '' }),
     REDIS_KEYPREFIX: str({ default: '' }),
     REDIS_DB: num({ default: 0 }),
+    REDIS_TLS: bool({ default: false }),
 
     DB_HOST: str(),
     DB_PORT: port({ default: 5432 }),
     DB_USERNAME: str(),
     DB_PASSWORD: str(),
     DB_DATABASE: str(),
-    POSTGRES_CONTAINER_NAME: str(),
-    POSTGRES_IMAGE: str(),
+    DB_SSL: bool({ default: false }),
+    DB_SSL_REJECT_UNAUTHORIZED: bool({ default: true }),
+    POSTGRES_CONTAINER_NAME: str({ default: 'postgres-db' }),
+    POSTGRES_IMAGE: str({ default: 'postgres:18.4' }),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
     STORE_DEFAULT_CURRENCY: currencyCode(),
@@ -135,7 +159,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     JWT_CART_SESSION_TTL: str({ default: '7d' }),
 
-    CORS_ALLOWED_ORIGINS: str(),
+    CORS_ALLOWED_ORIGINS: corsAllowedOrigins(),
 
     LOG_LEVEL: str({
       choices: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
@@ -156,6 +180,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     METRICS_API_KEY: str({ default: '' }),
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
     OTEL_EXPORTER_OTLP_ENDPOINT: str({ default: 'http://localhost:4317' }),
+
+    SWAGGER_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
 
     PAYMENT_MOCK_AUTO_COMPLETE: str({
       choices: ['true', 'false'],

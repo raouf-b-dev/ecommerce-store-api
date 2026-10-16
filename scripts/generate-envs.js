@@ -100,8 +100,22 @@ function buildLinesForEnv(lines, envName) {
     }
 
     if (key === 'PAYMENT_MOCK_AUTO_COMPLETE') {
-      if (envName === 'development') return 'PAYMENT_MOCK_AUTO_COMPLETE=true';
+      if (envName === 'development' || envName === 'staging') {
+        return 'PAYMENT_MOCK_AUTO_COMPLETE=true';
+      }
       return 'PAYMENT_MOCK_AUTO_COMPLETE=false';
+    }
+
+    if (key === 'OTEL_TRACING_ENABLED') {
+      if (envName === 'production' || envName === 'staging') {
+        return 'OTEL_TRACING_ENABLED=false';
+      }
+      return 'OTEL_TRACING_ENABLED=true';
+    }
+
+    if (key === 'SWAGGER_ENABLED') {
+      if (envName === 'production') return 'SWAGGER_ENABLED=false';
+      return 'SWAGGER_ENABLED=true';
     }
 
     if (key === 'JWT_PRIVATE_KEY') {

@@ -20,6 +20,7 @@ function createDefaultMockConfig(): IAppConfig {
       password: '',
       key_prefix: 'test:',
       db: 0,
+      tls: false,
     },
     postgres: {
       host: 'localhost',
@@ -30,6 +31,8 @@ function createDefaultMockConfig(): IAppConfig {
       containerName: 'postgres-db',
       image: 'postgres:18.4',
       synchronize: false,
+      ssl: false,
+      sslRejectUnauthorized: true,
     },
     logging: {
       level: 'info',
@@ -52,6 +55,7 @@ function createDefaultMockConfig(): IAppConfig {
       tracingEnabled: false,
       exporterEndpoint: 'http://localhost:4317',
     },
+    swaggerEnabled: true,
     payments: {
       mockAutoComplete: false,
       stripeWebhookSecret: '',
@@ -129,6 +133,10 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get otel() {
     return this.configState.otel;
+  }
+
+  override get swaggerEnabled() {
+    return this.configState.swaggerEnabled;
   }
 
   override get payments() {

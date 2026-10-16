@@ -10,7 +10,7 @@ export interface CartItemPresentationDTO {
 }
 
 export interface CartPresentationDTO {
-  id: number;
+  id: number | null;
   userId: number;
   items: CartItemPresentationDTO[];
   itemCount: number;

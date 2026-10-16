@@ -8,6 +8,9 @@
 const { DataSource } = require('typeorm');
 const { join } = require('path');
 
+const useSsl = process.env.DB_SSL === 'true';
+const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+
 const ds = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST,
@@ -19,6 +22,13 @@ const ds = new DataSource({
   logging: ['error'],
   migrations: [join(__dirname, '..', 'dist', 'migrations', '*.js')],
   migrationsTableName: 'typeorm_migrations',
+  ...(useSsl
+    ? {
+        ssl: {
+          rejectUnauthorized,
+        },
+      }
+    : {}),
 });
 
 ds.initialize()
