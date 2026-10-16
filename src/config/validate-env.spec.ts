@@ -3,6 +3,8 @@ import {
   assertNoMockPaymentAutoComplete,
   assertSecurePublicOrigin,
   assertStripeWebhookSecret,
+  assertSwaggerDisabledInProduction,
+  assertVerifiedDbTlsInProduction,
   parseCorsAllowedOrigins,
   parseCurrencyCode,
   parseHttpOrigin,
@@ -92,6 +94,21 @@ describe('assertStripeWebhookSecret', () => {
     expect(() => assertStripeWebhookSecret(nodeEnv, '   ')).toThrow(EnvError);
     expect(() => assertStripeWebhookSecret(nodeEnv)).toThrow(EnvError);
   });
+
+  it('allows empty secret in staging when mock auto-complete is enabled', () => {
+    expect(() =>
+      assertStripeWebhookSecret('staging', '', 'true'),
+    ).not.toThrow();
+    expect(() =>
+      assertStripeWebhookSecret('staging', undefined, 'true'),
+    ).not.toThrow();
+  });
+
+  it('still requires secret in staging when mock auto-complete is off', () => {
+    expect(() => assertStripeWebhookSecret('staging', '', 'false')).toThrow(
+      EnvError,
+    );
+  });
 });
 
 describe('parseCurrencyCode', () => {
@@ -144,6 +161,52 @@ describe('assertNoMockPaymentAutoComplete', () => {
   });
 });
 
+describe('assertSwaggerDisabledInProduction', () => {
+  it.each(['development', 'test', 'staging'])(
+    'allows swagger in %s',
+    (nodeEnv) => {
+      expect(() =>
+        assertSwaggerDisabledInProduction(nodeEnv, 'true'),
+      ).not.toThrow();
+    },
+  );
+
+  it('rejects swagger in production', () => {
+    expect(() =>
+      assertSwaggerDisabledInProduction('production', 'true'),
+    ).toThrow(EnvError);
+    expect(() =>
+      assertSwaggerDisabledInProduction('production', 'false'),
+    ).not.toThrow();
+  });
+});
+
+describe('assertVerifiedDbTlsInProduction', () => {
+  it('allows rejectUnauthorized=false outside production', () => {
+    expect(() =>
+      assertVerifiedDbTlsInProduction('staging', true, false),
+    ).not.toThrow();
+  });
+
+  it('allows SSL with verification in production', () => {
+    expect(() =>
+      assertVerifiedDbTlsInProduction('production', true, true),
+    ).not.toThrow();
+  });
+
+  it('rejects unverified SSL in production', () => {
+    expect(() =>
+      assertVerifiedDbTlsInProduction('production', true, false),
+    ).toThrow(EnvError);
+  });
+
+  it('allows SSL off with rejectUnauthorized=false in production', () => {
+    expect(() =>
+      assertVerifiedDbTlsInProduction('production', false, false),
+    ).not.toThrow();
+  });
+});
+
 describe('validateEnv', () => {
   const baseEnv: NodeJS.ProcessEnv = {
     NODE_ENV: 'development',
@@ -152,8 +215,6 @@ describe('validateEnv', () => {
     DB_USERNAME: 'postgres',
     DB_PASSWORD: 'password',
     DB_DATABASE: 'test_db',
-    POSTGRES_CONTAINER_NAME: 'postgres-db',
-    POSTGRES_IMAGE: 'postgres:18.4',
     JWT_PRIVATE_KEY: 'test-key',
     CORS_ALLOWED_ORIGINS: 'http://localhost:3000',
     PUBLIC_BASE_URL: 'http://localhost:3000',
@@ -225,19 +286,24 @@ describe('validateEnv', () => {
     expect(validated.PAYMENT_MOCK_AUTO_COMPLETE).toBe('true');
   });
 
-  it('defaults TLS and Postgres Docker vars when omitted', () => {
-    const {
-      POSTGRES_CONTAINER_NAME: _c,
-      POSTGRES_IMAGE: _i,
-      ...withoutPg
-    } = baseEnv;
-    const validated = validateEnv(withoutPg);
+  it('allows empty STRIPE_WEBHOOK_SECRET in staging when mock auto-complete is on', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      NODE_ENV: 'staging',
+      STRIPE_WEBHOOK_SECRET: '',
+      PUBLIC_BASE_URL: 'https://api.example.com',
+      PAYMENT_MOCK_AUTO_COMPLETE: 'true',
+    });
+    expect(validated.PAYMENT_MOCK_AUTO_COMPLETE).toBe('true');
+    expect(validated.STRIPE_WEBHOOK_SECRET).toBe('');
+  });
+
+  it('defaults TLS off and Swagger off when omitted', () => {
+    const validated = validateEnv(baseEnv);
     expect(validated.DB_SSL).toBe(false);
     expect(validated.DB_SSL_REJECT_UNAUTHORIZED).toBe(true);
     expect(validated.REDIS_TLS).toBe(false);
-    expect(validated.POSTGRES_CONTAINER_NAME).toBe('postgres-db');
-    expect(validated.POSTGRES_IMAGE).toBe('postgres:18.4');
-    expect(validated.SWAGGER_ENABLED).toBe('true');
+    expect(validated.SWAGGER_ENABLED).toBe('false');
   });
 
   it('parses DB_SSL and REDIS_TLS when enabled', () => {
@@ -246,12 +312,37 @@ describe('validateEnv', () => {
       DB_SSL: 'true',
       DB_SSL_REJECT_UNAUTHORIZED: 'false',
       REDIS_TLS: 'true',
-      SWAGGER_ENABLED: 'false',
+      SWAGGER_ENABLED: 'true',
     });
     expect(validated.DB_SSL).toBe(true);
     expect(validated.DB_SSL_REJECT_UNAUTHORIZED).toBe(false);
     expect(validated.REDIS_TLS).toBe(true);
-    expect(validated.SWAGGER_ENABLED).toBe('false');
+    expect(validated.SWAGGER_ENABLED).toBe('true');
+  });
+
+  it('rejects SWAGGER_ENABLED=true in production', () => {
+    expect(() =>
+      validateEnv({
+        ...baseEnv,
+        NODE_ENV: 'production',
+        STRIPE_WEBHOOK_SECRET: 'whsec_test',
+        PUBLIC_BASE_URL: 'https://api.example.com',
+        SWAGGER_ENABLED: 'true',
+      }),
+    ).toThrow(EnvError);
+  });
+
+  it('rejects DB_SSL with rejectUnauthorized=false in production', () => {
+    expect(() =>
+      validateEnv({
+        ...baseEnv,
+        NODE_ENV: 'production',
+        STRIPE_WEBHOOK_SECRET: 'whsec_test',
+        PUBLIC_BASE_URL: 'https://api.example.com',
+        DB_SSL: 'true',
+        DB_SSL_REJECT_UNAUTHORIZED: 'false',
+      }),
+    ).toThrow(EnvError);
   });
 
   it('rejects invalid CORS_ALLOWED_ORIGINS entries', () => {

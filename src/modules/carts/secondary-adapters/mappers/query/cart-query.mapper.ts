@@ -2,7 +2,7 @@ import {
   CartItemPresentationDTO,
   CartPresentationDTO,
 } from '../../../core/application/queries/results/cart-presentation.result';
-import { cartTotalsFromSubtotal } from '../../../core/application/mappers/cart-totals.helper';
+import { applyCartShipping } from '../../../core/domain/policies/cart-shipping.policy';
 import { RawCartQueryRow } from '../../dto/raw-cart-query-row.interface';
 import { Currency } from '../../../../../shared-kernel/domain/value-objects/currency';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
@@ -94,28 +94,42 @@ export class CartQueryMapper {
         ? firstRow.cartUpdatedAt.toISOString()
         : String(firstRow.cartUpdatedAt);
 
-    let subtotal = 0;
-
-    if (itemMoneys.length > 0) {
-      const sumResult = Money.sum(itemMoneys);
-      if (sumResult.isFailure) {
-        throw sumResult.error;
-      }
-      subtotal = sumResult.value.toMajorUnits();
-    } else {
-      currency = null;
+    if (itemMoneys.length === 0) {
+      return {
+        id: Number(firstRow.cartId),
+        userId: Number(firstRow.userId),
+        items,
+        itemCount: totalQuantity,
+        subtotal: 0,
+        shippingCost: 0,
+        totalAmount: 0,
+        currency: null,
+        createdAt,
+        updatedAt:
+          firstRow.cartUpdatedAt instanceof Date
+            ? firstRow.cartUpdatedAt.toISOString()
+            : String(firstRow.cartUpdatedAt),
+      };
     }
 
-    const { shippingCost, totalAmount } = cartTotalsFromSubtotal(subtotal);
+    const sumResult = Money.sum(itemMoneys);
+    if (sumResult.isFailure) {
+      throw sumResult.error;
+    }
+    const totalsResult = applyCartShipping(sumResult.value);
+    if (totalsResult.isFailure) {
+      throw totalsResult.error;
+    }
+    const { shippingCost, totalAmount } = totalsResult.value;
 
     return {
       id: Number(firstRow.cartId),
       userId: Number(firstRow.userId),
       items,
       itemCount: totalQuantity,
-      subtotal,
-      shippingCost,
-      totalAmount,
+      subtotal: sumResult.value.toMajorUnits(),
+      shippingCost: shippingCost.toMajorUnits(),
+      totalAmount: totalAmount.toMajorUnits(),
       currency,
       createdAt,
       updatedAt:

@@ -81,11 +81,17 @@ export function assertSecurePublicOrigin(
 /**
  * Deployed environments must configure STRIPE_WEBHOOK_SECRET to receive
  * verified Stripe webhooks. Fails fast at startup if missing.
+ * Skipped when mock payment auto-complete is on (staging demo path);
+ * production already forbids that flag via assertNoMockPaymentAutoComplete.
  */
 export function assertStripeWebhookSecret(
   nodeEnv: string,
   secret?: string,
+  mockAutoComplete?: string,
 ): void {
+  if (mockAutoComplete === 'true') {
+    return;
+  }
   if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
     return;
   }
@@ -126,6 +132,41 @@ export function assertNoMockPaymentAutoComplete(
   }
 }
 
+/**
+ * Production must never publish Swagger. Default SWAGGER_ENABLED is false;
+ * this blocks an explicit true the way NODE_ENV gating did before the flag.
+ */
+export function assertSwaggerDisabledInProduction(
+  nodeEnv: string,
+  enabled?: string,
+): void {
+  if (nodeEnv !== 'production') {
+    return;
+  }
+  if (enabled === 'true') {
+    throw new EnvError('SWAGGER_ENABLED must not be true in production');
+  }
+}
+
+/**
+ * When Postgres TLS is on in production, certificate verification is required
+ * so a managed host cannot silently accept MITM with rejectUnauthorized=false.
+ */
+export function assertVerifiedDbTlsInProduction(
+  nodeEnv: string,
+  ssl: boolean,
+  rejectUnauthorized: boolean,
+): void {
+  if (nodeEnv !== 'production') {
+    return;
+  }
+  if (ssl && !rejectUnauthorized) {
+    throw new EnvError(
+      'DB_SSL_REJECT_UNAUTHORIZED must be true when DB_SSL=true in production',
+    );
+  }
+}
+
 export function validateEnv(env: NodeJS.ProcessEnv) {
   const validated = cleanEnv(env, {
     NODE_ENV: str({
@@ -147,8 +188,6 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DB_DATABASE: str(),
     DB_SSL: bool({ default: false }),
     DB_SSL_REJECT_UNAUTHORIZED: bool({ default: true }),
-    POSTGRES_CONTAINER_NAME: str({ default: 'postgres-db' }),
-    POSTGRES_IMAGE: str({ default: 'postgres:18.4' }),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
     STORE_DEFAULT_CURRENCY: currencyCode(),
@@ -181,7 +220,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
     OTEL_EXPORTER_OTLP_ENDPOINT: str({ default: 'http://localhost:4317' }),
 
-    SWAGGER_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
+    // Fail closed: omitted flag means no docs (production-safe).
+    SWAGGER_ENABLED: str({ choices: ['true', 'false'], default: 'false' }),
 
     PAYMENT_MOCK_AUTO_COMPLETE: str({
       choices: ['true', 'false'],
@@ -193,11 +233,21 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
   assertStripeWebhookSecret(
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
+    validated.PAYMENT_MOCK_AUTO_COMPLETE,
   );
 
   assertNoMockPaymentAutoComplete(
     validated.NODE_ENV,
     validated.PAYMENT_MOCK_AUTO_COMPLETE,
+  );
+  assertSwaggerDisabledInProduction(
+    validated.NODE_ENV,
+    validated.SWAGGER_ENABLED,
+  );
+  assertVerifiedDbTlsInProduction(
+    validated.NODE_ENV,
+    validated.DB_SSL,
+    validated.DB_SSL_REJECT_UNAUTHORIZED,
   );
   return validated;
 }

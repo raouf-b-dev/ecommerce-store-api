@@ -20,8 +20,6 @@ export interface IAppConfig {
     username?: string;
     password?: string;
     database?: string;
-    containerName: string;
-    image: string;
     synchronize: boolean;
     ssl: boolean;
     sslRejectUnauthorized: boolean;
@@ -90,8 +88,6 @@ export default (): IAppConfig => {
       username: env.DB_USERNAME,
       password: env.DB_PASSWORD,
       database: env.DB_DATABASE,
-      containerName: env.POSTGRES_CONTAINER_NAME,
-      image: env.POSTGRES_IMAGE,
       synchronize: env.IS_DB_SYNCHRONIZE,
       ssl: env.DB_SSL,
       sslRejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED,

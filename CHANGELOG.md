@@ -8,19 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Optional Postgres SSL (`DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`) and Redis TLS (`REDIS_TLS`) for managed hosts.
-- `SWAGGER_ENABLED` to control `/api/docs` independently of `NODE_ENV`.
+- `SWAGGER_ENABLED` to control `/api/docs` (fail-closed default; production rejects `true` at boot).
+- `npm run verify` phase banners via `scripts/verify.mjs` (aligned with admin/web DX).
 
 ### Changed
+
 - Staging may enable `PAYMENT_MOCK_AUTO_COMPLETE` for demo checkout; production still rejects it at startup.
-- `env:init` sets mock auto-complete and Swagger on for staging, OTEL off for staging/production.
+- Staging mock checkout may omit `STRIPE_WEBHOOK_SECRET` when mock auto-complete is on.
+- `env:init` sets mock auto-complete and Swagger on for staging/dev, OTEL off for staging/production, Swagger off for production.
 - Cart `id` and order customer/shipping presentation fields may be null instead of placeholder values.
 - Persistence/DTO money major-unit conversion goes through `Money.toMajorUnits` via `requireMajorUnitsFromMinor`.
+- Cart free-shipping totals live in domain policy `applyCartShipping` (Money), shared by presentation and query mappers.
+- Postgres container name/image stay Compose/script concerns; Nest no longer validates `POSTGRES_*`.
+- ESLint uses `--cache` for faster local lint.
 
 ### Fixed
+
 - Cart query mapper no longer invents zero prices or `Unknown Product`.
 - Order list/detail query mapping no longer invents `Unknown User`, empty totals, or `N/A` shipping.
+- OpenAPI nullable order fields emit explicit `type: string` (audit:openapi).
+- Docker migrate entrypoint parses `DB_SSL` / `DB_SSL_REJECT_UNAUTHORIZED` like envalid (`true`/`1`, `false`/`0`).
 - Removed unused `RecordCodPaymentDto`.
+
+### Security
+
+- Production rejects `SWAGGER_ENABLED=true` and unverified Postgres TLS (`DB_SSL=true` with `DB_SSL_REJECT_UNAUTHORIZED=false`).
+- Documented archunit/braces npm audit noise as accepted **dev-only** risk; CI/`audit:check` still use `--omit=dev`.
 
 ## [0.10.0] - 2026-10-15
 

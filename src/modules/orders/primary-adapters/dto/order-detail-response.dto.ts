@@ -59,6 +59,7 @@ export class OrderDetailResponseDto {
     example: 'Jane Doe',
     description:
       'Customer display name. Null when user details are unavailable.',
+    type: String,
     nullable: true,
   })
   userName!: string | null;
@@ -66,6 +67,7 @@ export class OrderDetailResponseDto {
   @ApiProperty({
     example: 'customer@store.local',
     description: 'Customer email. Null when user details are unavailable.',
+    type: String,
     nullable: true,
   })
   userEmail!: string | null;
@@ -88,6 +90,7 @@ export class OrderDetailResponseDto {
     example: 'Jane Doe, 123 Tech Boulevard, San Francisco, CA 94105, US',
     description:
       'Formatted shipping address. Null when the order has no shipping address.',
+    type: String,
     nullable: true,
   })
   shippingAddress!: string | null;

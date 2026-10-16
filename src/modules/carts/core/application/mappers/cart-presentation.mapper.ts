@@ -6,20 +6,20 @@ import {
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
-import { cartTotalsFromSubtotal } from './cart-totals.helper';
+import { applyCartShipping } from '../../domain/policies/cart-shipping.policy';
 
 export class CartPresentationMapper {
   static fromDomain(cart: Cart): Result<CartPresentationDTO, DomainError> {
     if (!cart.currency || cart.items.length === 0) {
-      const emptyTotals = cartTotalsFromSubtotal(0);
+      // Empty cart has no currency to bind Money to; MVP shipping is still 0.
       return Result.success({
         id: cart.id,
         userId: cart.userId,
         items: [],
         itemCount: 0,
         subtotal: 0,
-        shippingCost: emptyTotals.shippingCost,
-        totalAmount: emptyTotals.totalAmount,
+        shippingCost: 0,
+        totalAmount: 0,
         currency: cart.currency,
         createdAt: cart.createdAt.toISOString(),
         updatedAt: cart.updatedAt.toISOString(),
@@ -57,17 +57,20 @@ export class CartPresentationMapper {
       return sumResult;
     }
 
-    const subtotal = sumResult.value.toMajorUnits();
-    const { shippingCost, totalAmount } = cartTotalsFromSubtotal(subtotal);
+    const totalsResult = applyCartShipping(sumResult.value);
+    if (totalsResult.isFailure) {
+      return totalsResult;
+    }
+    const { shippingCost, totalAmount } = totalsResult.value;
 
     return Result.success({
       id: cart.id,
       userId: cart.userId,
       items,
       itemCount: cart.itemCount,
-      subtotal,
-      shippingCost,
-      totalAmount,
+      subtotal: sumResult.value.toMajorUnits(),
+      shippingCost: shippingCost.toMajorUnits(),
+      totalAmount: totalAmount.toMajorUnits(),
       currency: cart.currency,
       createdAt: cart.createdAt.toISOString(),
       updatedAt: cart.updatedAt.toISOString(),

@@ -205,17 +205,17 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 
 ### PostgreSQL
 
-| Variable                     | Type      | Required | Default         | Tier      | Description                                        |
-| :--------------------------- | :-------- | :------- | :-------------- | :-------- | :------------------------------------------------- |
-| `DB_HOST`                    | `string`  | ✅       | :               | T2        | Database server hostname                           |
-| `DB_PORT`                    | `number`  | ✅       | `5432`          | T2        | Database port                                      |
-| `DB_USERNAME`                | `string`  | ✅       | :               | T2        | Database role name                                 |
-| `DB_PASSWORD`                | `string`  | ✅       | :               | **T1** 🔑 | Database role password                             |
-| `DB_DATABASE`                | `string`  | ✅       | :               | T3        | Database name                                      |
-| `DB_SSL`                     | `boolean` | ❌       | `false`         | T3        | Enable TLS for Postgres (managed hosts)            |
-| `DB_SSL_REJECT_UNAUTHORIZED` | `boolean` | ❌       | `true`          | T3        | Verify Postgres TLS cert when `DB_SSL=true`        |
-| `POSTGRES_CONTAINER_NAME`    | `string`  | ❌       | `postgres-db`   | T3        | Compose / `docker exec` container name             |
-| `POSTGRES_IMAGE`             | `string`  | ❌       | `postgres:18.4` | T3        | Postgres image tag (Compose + dump/restore client) |
+| Variable                     | Type      | Required | Default         | Tier      | Description                                      |
+| :--------------------------- | :-------- | :------- | :-------------- | :-------- | :----------------------------------------------- |
+| `DB_HOST`                    | `string`  | ✅       | :               | T2        | Database server hostname                         |
+| `DB_PORT`                    | `number`  | ✅       | `5432`          | T2        | Database port                                    |
+| `DB_USERNAME`                | `string`  | ✅       | :               | T2        | Database role name                               |
+| `DB_PASSWORD`                | `string`  | ✅       | :               | **T1** 🔑 | Database role password                           |
+| `DB_DATABASE`                | `string`  | ✅       | :               | T3        | Database name                                    |
+| `DB_SSL`                     | `boolean` | ❌       | `false`         | T3        | Enable TLS for Postgres (managed hosts)          |
+| `DB_SSL_REJECT_UNAUTHORIZED` | `boolean` | ❌       | `true`          | T3        | Verify Postgres TLS cert when `DB_SSL=true`      |
+| `POSTGRES_CONTAINER_NAME`    | `string`  | ❌       | `postgres-db`   | T3        | Compose / scripts only (not Nest-validated)      |
+| `POSTGRES_IMAGE`             | `string`  | ❌       | `postgres:18.4` | T3        | Compose / dump-restore only (not Nest-validated) |
 
 ### Redis
 
@@ -344,12 +344,12 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 
 ### Why a Generator?
 
-| Problem                                              | Solution                                                                |
-| :--------------------------------------------------- | :---------------------------------------------------------------------- |
-| New developer forgets to create `.env.development`   | `npm run env:init` scaffolds all files                                  |
-| `.env.example` adds a new key; existing devs miss it | Regenerate with `--force`; `envalid` crashes if key is missing          |
-| Production `.env` created with dev defaults          | Generator **wipes** credentials for prod/staging, forcing manual config |
-| Team has no canonical list of required variables     | `.env.example` is the single source of truth                            |
+| Problem                                              | Solution                                                                                                                                         |
+| :--------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| New developer forgets to create `.env.development`   | `npm run env:init` scaffolds all files                                                                                                           |
+| `.env.example` adds a new key; existing devs miss it | Regenerate with `--force`; `envalid` crashes if key is missing                                                                                   |
+| Production `.env` created with blind copy-paste      | Generator clears `PUBLIC_BASE_URL`, forces sync off / trust proxy, and generates JWT/metrics secrets; operators still replace DB/Redis passwords |
+| Team has no canonical list of required variables     | `.env.example` is the single source of truth                                                                                                     |
 
 ### Commands
 
@@ -364,12 +364,12 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 
 ### Per-Environment Behaviour
 
-| Environment   | Credential Values                                |
-| :------------ | :----------------------------------------------- |
-| `development` | Copied from `.env.example` (safe local defaults) |
-| `test`        | Copied from `.env.example` (safe local defaults) |
-| `production`  | **Emptied**: must be explicitly set              |
-| `staging`     | **Emptied**: must be explicitly set              |
+| Environment   | Behaviour                                                                                                                                                                                                                       |
+| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `development` | Copied from `.env.example` (safe local defaults)                                                                                                                                                                                |
+| `test`        | Copied from `.env.example` (safe local defaults)                                                                                                                                                                                |
+| `production`  | Clears `PUBLIC_BASE_URL`; generates JWT/metrics/Grafana secrets; template placeholders for `DB_*` / `REDIS_*` still copy through and **must** be replaced for real hosts. Set `DB_SSL` / `REDIS_TLS` on managed Postgres/Redis. |
+| `staging`     | Same as production, plus mock payment auto-complete on and Swagger on by default. Same password and TLS checklist as production.                                                                                                |
 
 ---
 
@@ -752,11 +752,11 @@ If a secret has been (or may have been) exposed:
 
 ### Layer 1: Prevention
 
-| Control                                 | Implementation                                       |
-| :-------------------------------------- | :--------------------------------------------------- |
-| `.gitignore` rules                      | `.env.*` ignored, `!.env.example` allowed            |
-| Generator produces empty prod values    | Prevents copy-paste of dev credentials to production |
-| Boot validation crashes on missing vars | Impossible to start with incomplete config           |
+| Control                                             | Implementation                                         |
+| :-------------------------------------------------- | :----------------------------------------------------- |
+| `.gitignore` rules                                  | `.env.*` ignored, `!.env.example` allowed              |
+| Generator clears public URL and rotates JWT/metrics | Forces operators to set real host config before deploy |
+| Boot validation crashes on missing vars             | Impossible to start with incomplete config             |
 
 ### Layer 2: Detection
 
