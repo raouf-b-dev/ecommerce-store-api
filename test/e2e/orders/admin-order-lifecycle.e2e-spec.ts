@@ -215,14 +215,14 @@ describe('Admin order lifecycle (e2e)', () => {
     const deleteResponse = await http
       .delete(`${E2E_API_PREFIX}/products/${product.id}`)
       .set(AuthTestHelper.bearer(admin.accessToken));
-    expect(deleteResponse.status).toBeLessThan(300);
+    expect(deleteResponse.status).toBe(HttpStatus.NO_CONTENT);
 
     const customerView = await http
       .get(`${E2E_API_PREFIX}/orders/${orderId}`)
       .set(AuthTestHelper.bearer(customer.accessToken));
     expect(customerView.status).toBe(HttpStatus.OK);
     expect(customerView.body.items[0].title).toBe(purchasedName);
-    expect(customerView.body.items[0].sku).toBeNull();
+    expect(customerView.body.items[0].sku).toBe(product.sku);
   }, 180_000);
 
   it('rejects admin cancel of a shipped order with 409 Conflict', async () => {

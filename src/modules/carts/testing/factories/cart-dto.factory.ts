@@ -37,6 +37,7 @@ export class CartDtoTestFactory {
       currency: 'USD',
       quantity: 2,
       imageUrl: 'https://example.com/keyboard.jpg',
+      sku: 'KEY-001',
       ...overrides,
     };
   }
@@ -57,6 +58,7 @@ export class CartDtoTestFactory {
           quantity: 2,
           subtotal: 179.98,
           imageUrl: 'https://example.com/keyboard.jpg',
+          sku: 'KEY-001',
         },
       ],
       itemCount: 2,

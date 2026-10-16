@@ -31,6 +31,7 @@ describe('CartQueryMapper', () => {
           quantity: 2,
           subtotal: 100,
           imageUrl: 'https://example.com/keyboard.jpg',
+          sku: 'KEY-001',
         },
         {
           id: 101,
@@ -41,6 +42,7 @@ describe('CartQueryMapper', () => {
           quantity: 1,
           subtotal: 30,
           imageUrl: 'https://example.com/keyboard.jpg',
+          sku: 'KEY-001',
         },
       ],
       itemCount: 3,

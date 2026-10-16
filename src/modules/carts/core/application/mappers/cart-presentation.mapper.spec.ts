@@ -45,6 +45,7 @@ describe('CartPresentationMapper', () => {
         quantity: 2,
         subtotal: 65,
         imageUrl: 'https://example.com/shirt.jpg',
+        sku: null,
       },
     ]);
   });
@@ -92,6 +93,7 @@ describe('CartPresentationMapper', () => {
           currency: 'USD',
           quantity: 1,
           imageUrl: null,
+          sku: null,
         },
         {
           id: 2,
@@ -101,6 +103,7 @@ describe('CartPresentationMapper', () => {
           currency: 'JPY',
           quantity: 1,
           imageUrl: null,
+          sku: null,
         },
       ],
     });

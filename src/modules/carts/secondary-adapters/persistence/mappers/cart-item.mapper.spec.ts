@@ -21,6 +21,7 @@ describe('CartItemMapper', () => {
       currency: 'USD',
       quantity: 1,
       imageUrl: null,
+      sku: null,
     });
     const entity = CartItemMapper.toEntity(item);
 
@@ -37,6 +38,7 @@ describe('CartItemMapper', () => {
       currency: 'USD',
       quantity: 1,
       imageUrl: null,
+      sku: null,
     });
 
     const domain = CartItemMapper.toDomain(entity);

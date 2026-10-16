@@ -25,12 +25,14 @@ export class ModuleProductGateway implements CartProductGateway {
     }
 
     const product = result.value;
+    const sku = product.sku?.trim() || null;
     return Result.success({
       id: product.id,
       name: product.name,
       price: product.price,
       currency: product.currency,
       imageUrl: product.imageUrl,
+      sku,
     });
   }
 }

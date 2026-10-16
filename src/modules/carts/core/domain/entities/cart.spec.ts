@@ -32,6 +32,7 @@ describe('Cart', () => {
               currency: 'USD',
               quantity: 1,
               imageUrl: null,
+              sku: null,
             },
           ],
         });
@@ -56,6 +57,7 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
         ],
       });
@@ -111,6 +113,7 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 2,
             imageUrl: null,
+            sku: null,
           },
           {
             id: 2,
@@ -120,6 +123,7 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
         ],
       });

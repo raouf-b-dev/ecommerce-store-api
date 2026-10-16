@@ -80,6 +80,7 @@ export class CartQueryMapper {
         quantity: qty,
         subtotal: lineMoneyResult.value.toMajorUnits(),
         imageUrl: row.imageUrl || null,
+        sku: row.sku?.trim() || null,
       });
     }
 

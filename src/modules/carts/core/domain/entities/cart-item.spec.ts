@@ -61,6 +61,7 @@ describe('CartItem', () => {
           new CartItem({
             id: null,
             imageUrl: null,
+            sku: null,
             ...props,
           }),
       ).toThrow(DomainError);
@@ -77,6 +78,7 @@ describe('CartItem', () => {
             currency: 'USD',
             quantity: 2,
             imageUrl: null,
+            sku: null,
           }),
       ).toThrow(DomainError);
     });
@@ -90,12 +92,28 @@ describe('CartItem', () => {
         currency: 'usd',
         quantity: 2,
         imageUrl: null,
+        sku: null,
       });
 
       expect(item.productName).toBe('Widget');
       expect(item.price).toBe(1056);
       expect(item.currency).toBe('USD');
       expect(item.subtotal).toBe(2112);
+    });
+
+    it('stores a null sku when sku is blank', () => {
+      const item = new CartItem({
+        id: null,
+        productId: 1,
+        productName: 'Widget',
+        price: 100,
+        currency: 'USD',
+        quantity: 1,
+        imageUrl: null,
+        sku: '   ',
+      });
+
+      expect(item.sku).toBeNull();
     });
   });
 

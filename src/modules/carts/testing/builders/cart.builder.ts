@@ -29,6 +29,7 @@ export class CartBuilder {
       quantity: 1,
       subtotal: 10 * (i + 1),
       imageUrl: `http://example.com/image-${i + 1}.jpg`,
+      sku: `SKU-${i + 1}`,
     }));
 
     this.cart.items = items;

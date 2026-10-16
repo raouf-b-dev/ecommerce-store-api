@@ -49,6 +49,7 @@ describe('ModuleCartGateway', () => {
             quantity: 2,
             subtotal: 179.98,
             imageUrl: 'https://example.com/keyboard.jpg',
+            sku: null,
           },
         ],
       });
@@ -70,6 +71,7 @@ describe('ModuleCartGateway', () => {
             productId: 5,
             productName: 'Mechanical Keyboard',
             imageUrl: 'https://example.com/keyboard.jpg',
+            sku: null,
             price: 8999,
             quantity: 2,
             currency: 'USD',
@@ -105,6 +107,7 @@ describe('ModuleCartGateway', () => {
             quantity: 2,
             subtotal: 179.98,
             imageUrl: null,
+            sku: null,
           },
         ],
       });
@@ -133,6 +136,7 @@ describe('ModuleCartGateway', () => {
             quantity: 2,
             subtotal: 179.98,
             imageUrl: null,
+            sku: null,
           },
         ],
       });
@@ -163,6 +167,7 @@ describe('ModuleCartGateway', () => {
             quantity: 1,
             subtotal: 15.5,
             imageUrl: null,
+            sku: null,
           },
         ],
       });
