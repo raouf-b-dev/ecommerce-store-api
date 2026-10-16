@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order list/detail query mapping no longer invents `Unknown User`, empty totals, or `N/A` shipping.
 - OpenAPI nullable order fields emit explicit `type: string` (audit:openapi).
 - Docker migrate entrypoint parses `DB_SSL` / `DB_SSL_REJECT_UNAUTHORIZED` like envalid (`true`/`t`/`yes`/`on`/`1`, `false`/`f`/`no`/`off`/`0`).
-- `scripts/verify.mjs` resolves npm on Windows and Unix (nvm/fnm `lib/node_modules` layout).
+- `scripts/verify.mjs` resolves the npm CLI from `npm_execpath` (set by `npm run`).
 - Removed unused `RecordCodPaymentDto`.
 
 ### Security

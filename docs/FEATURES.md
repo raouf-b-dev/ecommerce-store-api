@@ -91,7 +91,7 @@ Payments use the provider-neutral `PaymentProvider` port directly bound to `Fake
 
 - **Flow**: SAGA Validate Cart -> Reserve Stock -> Process Payment (provider) -> (webhook / mock auto-complete) -> Confirm Order -> Clear Cart
 - **Webhooks**: Handler, raw-body signature verification via Stripe SDK, and job path exist; signatures fail closed across all environments.
-- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development` and staging demo via `env:init`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production (startup fails if true). Staging may enable it for the public demo until a real Stripe provider ships.
+- **Mock auto-complete**: Set `PAYMENT_MOCK_AUTO_COMPLETE=true` (enabled in `.env.development` and staging demo via `env:init`) so `FakeStripePaymentProvider` enqueues a delayed simulated `payment_intent.succeeded` after creating an intent. Leave it `false` in `.env.test` so API e2e suites keep posting webhooks explicitly without races; must be false in production (startup fails if true). Staging may enable it for the public demo until a real Stripe provider ships. Because mock checkout confirms orders without payment, the public staging demo must use demo-only seed data and keep throttling on.
 
 **Location**: `src/modules/payments/`, `src/modules/orders/`
 

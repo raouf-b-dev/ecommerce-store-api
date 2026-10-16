@@ -244,6 +244,8 @@ The single pattern `.env.*` catches all environment-specific files. The negation
 | `PAYMENT_MOCK_AUTO_COMPLETE` | `string` | ❌              | `false` | T3     | When true, checkouts auto-schedule a simulated webhook (dev + staging demo); fails startup if true in production                  |
 | `STRIPE_WEBHOOK_SECRET`      | `string` | Prod / Staging* | `""`    | **T1** | Stripe webhook signing secret (`whsec_...`); required in production; required in staging unless `PAYMENT_MOCK_AUTO_COMPLETE=true` |
 
+\*Staging: optional only when `PAYMENT_MOCK_AUTO_COMPLETE=true`.
+
 ---
 
 ## 6. Boot-Time Configuration Pipeline
