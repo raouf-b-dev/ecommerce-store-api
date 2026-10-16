@@ -26,6 +26,7 @@ describe('CartPresentationMapper', () => {
       3250,
       2,
       'USD',
+      null,
       'https://example.com/shirt.jpg',
     );
 
@@ -53,7 +54,7 @@ describe('CartPresentationMapper', () => {
   it('maps zero-decimal JPY amounts correctly (1000 JPY)', () => {
     const cart = CartTestFactory.createEmptyCart({ id: 8, userId: 3 });
     cart.setId(8);
-    cart.addItem(11, 'Matcha', 1000, 1, 'JPY');
+    cart.addItem(11, 'Matcha', 1000, 1, 'JPY', null);
 
     const result = CartPresentationMapper.fromDomain(cart);
 
@@ -68,7 +69,7 @@ describe('CartPresentationMapper', () => {
   it('maps three-decimal KWD amounts correctly (1.234 KWD)', () => {
     const cart = CartTestFactory.createEmptyCart({ id: 9, userId: 3 });
     cart.setId(9);
-    cart.addItem(12, 'Perfume', 1234, 1, 'KWD');
+    cart.addItem(12, 'Perfume', 1234, 1, 'KWD', null);
 
     const result = CartPresentationMapper.fromDomain(cart);
 

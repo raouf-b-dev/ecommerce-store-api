@@ -232,8 +232,8 @@ export class CartItem implements ICartItem {
     price: number,
     quantity: number,
     currency: string,
+    sku: string | null,
     imageUrl?: string | null,
-    sku?: string | null,
   ): CartItem {
     return new CartItem({
       id: null,
@@ -243,7 +243,7 @@ export class CartItem implements ICartItem {
       currency,
       quantity,
       imageUrl: imageUrl || null,
-      sku: sku ?? null,
+      sku,
     });
   }
 }
