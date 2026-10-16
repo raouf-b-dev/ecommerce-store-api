@@ -62,6 +62,10 @@ The following files contain secrets and are **git-ignored**:
 
 ## Dependency Management
 
-- Dependencies are regularly audited with `npm audit`
+- CI and `npm run audit:check` run `npm audit --omit=dev --audit-level=high` (production runtime deps only)
 - Dependabot alerts are enabled on the repository
 - Security patches are prioritized in all releases
+
+### Known developer-tooling advisory
+
+Full `npm audit` (including `devDependencies`) may report high severity on the `archunit` -> `plantuml-parser` -> `fast-glob` -> `micromatch` -> `braces` chain ([GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)). That tree is used only by architecture tests, is not installed in the production image, and currently has **no upstream fix**. Treat it as an accepted tooling risk until `archunit` or `braces` ships a remediation; do not confuse it with a failing `audit:check` / CI audit job.

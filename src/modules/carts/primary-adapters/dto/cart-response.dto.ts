@@ -5,10 +5,11 @@ import { CartItemResponseDto } from './cart-item-response.dto';
 export class CartResponseDto {
   @ApiProperty({
     example: 1,
-    description: 'Cart ID',
+    description: 'Cart ID. Null when the cart has not been persisted yet.',
     type: Number,
+    nullable: true,
   })
-  id!: number;
+  id!: number | null;
 
   @ApiPropertyOptional({
     example: 123,

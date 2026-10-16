@@ -55,14 +55,22 @@ export class OrderDetailResponseDto {
   @ApiProperty({ example: 3, description: 'Customer user ID' })
   userId!: number;
 
-  @ApiProperty({ example: 'Jane Doe', description: 'Customer display name' })
-  userName!: string;
+  @ApiProperty({
+    example: 'Jane Doe',
+    description:
+      'Customer display name. Null when user details are unavailable.',
+    type: String,
+    nullable: true,
+  })
+  userName!: string | null;
 
   @ApiProperty({
     example: 'customer@store.local',
-    description: 'Customer email',
+    description: 'Customer email. Null when user details are unavailable.',
+    type: String,
+    nullable: true,
   })
-  userEmail!: string;
+  userEmail!: string | null;
 
   @ApiProperty({
     enum: OrderStatus,
@@ -80,9 +88,12 @@ export class OrderDetailResponseDto {
 
   @ApiProperty({
     example: 'Jane Doe, 123 Tech Boulevard, San Francisco, CA 94105, US',
-    description: 'Formatted shipping address',
+    description:
+      'Formatted shipping address. Null when the order has no shipping address.',
+    type: String,
+    nullable: true,
   })
-  shippingAddress!: string;
+  shippingAddress!: string | null;
 
   @ApiProperty({ type: [OrderItemDetailResponseDto] })
   items!: OrderItemDetailResponseDto[];

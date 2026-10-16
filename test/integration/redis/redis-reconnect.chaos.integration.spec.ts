@@ -65,6 +65,7 @@ describe('Redis reconnect chaos (Testcontainers)', () => {
         password: '',
         key_prefix: REDIS_CHAOS_CONSTANTS.KEY_PREFIX,
         db: 0,
+        tls: false,
       },
     });
 

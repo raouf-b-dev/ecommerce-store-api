@@ -87,5 +87,55 @@ describe('OrderQueryMapper', () => {
         imageUrl: 'https://cdn.example.com/keyboard.webp',
       });
     });
+
+    it('returns null user and shipping fields when details are missing', () => {
+      const orderEntity = OrderEntityTestFactory.createOrderEntity({
+        id: 2,
+        userId: 10,
+        status: OrderStatus.CONFIRMED,
+        shippingAddress: undefined,
+        items: [
+          OrderEntityTestFactory.createOrderItemEntity({
+            productId: 5,
+            productName: 'Mechanical Keyboard',
+            sku: 'KEY-001',
+            unitPrice: 120,
+            quantity: 1,
+            lineTotal: 120,
+          }),
+        ],
+        totalPrice: 120,
+      });
+
+      const result = OrderQueryMapper.toDetailDto(orderEntity, null);
+
+      expect(result.userName).toBeNull();
+      expect(result.userEmail).toBeNull();
+      expect(result.shippingAddress).toBeNull();
+    });
+  });
+
+  describe('toListItemDto honesty', () => {
+    it('maps null user fields without inventing placeholders', () => {
+      const rawRow = OrderDtoTestFactory.createRawOrderListQueryRow({
+        userName: null,
+        userEmail: null,
+      });
+
+      const result = OrderQueryMapper.toListItemDto(rawRow);
+
+      expect(result.userName).toBeNull();
+      expect(result.userEmail).toBeNull();
+    });
+
+    it('throws when totalAmount is missing', () => {
+      const rawRow = OrderDtoTestFactory.createRawOrderListQueryRow({
+        totalAmount: null,
+      });
+
+      expect(() => OrderQueryMapper.toListItemDto(rawRow)).toThrow(
+        /missing a valid totalAmount/,
+      );
+    });
   });
 });

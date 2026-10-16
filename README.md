@@ -148,6 +148,14 @@ src/
 
 ## Verify
 
+Pre-PR gate (typecheck, lint, format, architecture tests, unit tests):
+
+```bash
+npm run verify
+```
+
+Deeper suites (CI / on demand):
+
 ```bash
 npm test                      # unit (app + setup scripts)
 npm run test:integration      # Postgres / Redis (Testcontainers)
@@ -156,6 +164,7 @@ npm run test:arch             # module boundary rules
 npm run audit:openapi         # Swagger matches handlers
 npm run test:redis:chaos      # Redis reconnect / degradation
 npm run smoke-test            # live process: health, auth
+npm run audit:check           # production dependency audit (omit=dev)
 ```
 
 | Layer        | What it proves                                                     |

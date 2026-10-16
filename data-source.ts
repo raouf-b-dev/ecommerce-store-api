@@ -28,6 +28,13 @@ const options: DataSourceOptions = {
   entities: [join(__dirname, 'src/**/*.schema.{ts,js}')],
   migrations: [join(__dirname, 'src/migrations/*.{ts,js}')],
   migrationsTableName: 'typeorm_migrations',
+  ...(dbConfig.ssl
+    ? {
+        ssl: {
+          rejectUnauthorized: dbConfig.sslRejectUnauthorized,
+        },
+      }
+    : {}),
 };
 
 export const AppDataSource = new DataSource(options);

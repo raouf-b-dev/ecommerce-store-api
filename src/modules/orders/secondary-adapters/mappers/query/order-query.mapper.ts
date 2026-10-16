@@ -5,21 +5,51 @@ import { OrderDetailDTO } from '../../../core/application/queries/results/order-
 import { OrderItemDetailDTO } from '../../../core/application/queries/results/order-item-detail.result';
 import { RawOrderListQueryRow } from '../../dto/raw-order-list-query-row.interface';
 
+function requireFiniteNumber(value: unknown, field: string): number {
+  if (value === null || value === undefined || value === '') {
+    throw new Error(`Order query row is missing a valid ${field}`);
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    throw new Error(`Order query row is missing a valid ${field}`);
+  }
+  return n;
+}
+
+function optionalTrimmedString(
+  value: string | null | undefined,
+): string | null {
+  if (value == null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export class OrderQueryMapper {
   /**
    * Maps a raw SQL projection row to a clean presentation OrderListItemDTO.
    */
   static toListItemDto(row: RawOrderListQueryRow): OrderListItemDTO {
+    const status = optionalTrimmedString(row.status);
+    if (!status) {
+      throw new Error(`Order ${row.id} is missing status`);
+    }
+    const currency = optionalTrimmedString(row.currency);
+    if (!currency) {
+      throw new Error(`Order ${row.id} is missing currency`);
+    }
+
     return {
-      id: Number(row.id),
+      id: requireFiniteNumber(row.id, 'id'),
       orderNumber: `ORD-${row.id}`,
-      userId: Number(row.userId),
-      userName: row.userName || 'Unknown User',
-      userEmail: row.userEmail || '',
-      status: String(row.status || ''),
-      itemCount: Number(row.itemCount || 0),
-      totalAmount: Number(row.totalAmount || 0),
-      currency: row.currency,
+      userId: requireFiniteNumber(row.userId, 'userId'),
+      userName: optionalTrimmedString(row.userName),
+      userEmail: optionalTrimmedString(row.userEmail),
+      status,
+      itemCount: requireFiniteNumber(row.itemCount, 'itemCount'),
+      totalAmount: requireFiniteNumber(row.totalAmount, 'totalAmount'),
+      currency,
       createdAt: new Date(row.createdAt),
     };
   }
@@ -31,14 +61,30 @@ export class OrderQueryMapper {
     item: OrderItemEntity,
     productInfo?: { sku: string; title: string },
   ): OrderItemDetailDTO {
+    const title =
+      optionalTrimmedString(item.productName) ??
+      optionalTrimmedString(productInfo?.title);
+    if (!title) {
+      throw new Error(
+        `Order item for product ${item.productId} is missing a title`,
+      );
+    }
+    const sku =
+      optionalTrimmedString(item.sku) ??
+      optionalTrimmedString(productInfo?.sku);
+    if (!sku) {
+      throw new Error(
+        `Order item for product ${item.productId} is missing a sku`,
+      );
+    }
+
     return {
       productId: item.productId,
-      sku: item.sku || productInfo?.sku || `SKU-${item.productId}`,
-      title:
-        item.productName || productInfo?.title || `Product #${item.productId}`,
-      unitPrice: Number(item.unitPrice),
-      quantity: item.quantity,
-      subtotal: Number(item.lineTotal),
+      sku,
+      title,
+      unitPrice: requireFiniteNumber(item.unitPrice, 'unitPrice'),
+      quantity: requireFiniteNumber(item.quantity, 'quantity'),
+      subtotal: requireFiniteNumber(item.lineTotal, 'lineTotal'),
       imageUrl: item.imageUrl ?? null,
     };
   }
@@ -57,10 +103,12 @@ export class OrderQueryMapper {
 
     const shippingAddrStr = orderEntity.shippingAddress
       ? `${orderEntity.shippingAddress.street}, ${orderEntity.shippingAddress.city}, ${orderEntity.shippingAddress.state} ${orderEntity.shippingAddress.postalCode}`
-      : 'N/A';
+      : null;
 
-    const userName = user ? `${user.firstName} ${user.lastName}` : 'Customer';
-    const userEmail = user ? user.email : '';
+    const userName = user
+      ? optionalTrimmedString(`${user.firstName} ${user.lastName}`)
+      : null;
+    const userEmail = user ? optionalTrimmedString(user.email) : null;
 
     return {
       id: orderEntity.id,
@@ -72,10 +120,13 @@ export class OrderQueryMapper {
       paymentMethod: orderEntity.paymentMethod,
       shippingAddress: shippingAddrStr,
       items,
-      subtotal: Number(orderEntity.subtotal),
-      shippingCost: Number(orderEntity.shippingCost),
-      totalAmount: Number(orderEntity.totalPrice),
-      totalPrice: Number(orderEntity.totalPrice),
+      subtotal: requireFiniteNumber(orderEntity.subtotal, 'subtotal'),
+      shippingCost: requireFiniteNumber(
+        orderEntity.shippingCost,
+        'shippingCost',
+      ),
+      totalAmount: requireFiniteNumber(orderEntity.totalPrice, 'totalPrice'),
+      totalPrice: requireFiniteNumber(orderEntity.totalPrice, 'totalPrice'),
       currency: orderEntity.currency,
       createdAt: orderEntity.createdAt,
       updatedAt: orderEntity.updatedAt,

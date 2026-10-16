@@ -12,6 +12,7 @@ export interface IAppConfig {
     password: string;
     key_prefix: string;
     db: number;
+    tls: boolean;
   };
   postgres: {
     host: string;
@@ -19,9 +20,9 @@ export interface IAppConfig {
     username?: string;
     password?: string;
     database?: string;
-    containerName: string;
-    image: string;
     synchronize: boolean;
+    ssl: boolean;
+    sslRejectUnauthorized: boolean;
   };
   jwt: {
     privateKey: string;
@@ -52,6 +53,7 @@ export interface IAppConfig {
     tracingEnabled: boolean;
     exporterEndpoint: string;
   };
+  swaggerEnabled: boolean;
   payments: {
     mockAutoComplete: boolean;
     stripeWebhookSecret: string;
@@ -78,6 +80,7 @@ export default (): IAppConfig => {
       password: env.REDIS_PASSWORD,
       key_prefix: env.REDIS_KEYPREFIX,
       db: env.REDIS_DB,
+      tls: env.REDIS_TLS,
     },
     postgres: {
       host: env.DB_HOST,
@@ -85,9 +88,9 @@ export default (): IAppConfig => {
       username: env.DB_USERNAME,
       password: env.DB_PASSWORD,
       database: env.DB_DATABASE,
-      containerName: env.POSTGRES_CONTAINER_NAME,
-      image: env.POSTGRES_IMAGE,
       synchronize: env.IS_DB_SYNCHRONIZE,
+      ssl: env.DB_SSL,
+      sslRejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED,
     },
     jwt: {
       privateKey: env.JWT_PRIVATE_KEY,
@@ -102,7 +105,9 @@ export default (): IAppConfig => {
     },
 
     cors: {
-      allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim()),
+      allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').filter(
+        (origin) => origin.length > 0,
+      ),
     },
     throttle: {
       globalLimit: env.THROTTLE_GLOBAL_LIMIT,
@@ -117,6 +122,7 @@ export default (): IAppConfig => {
       tracingEnabled: env.OTEL_TRACING_ENABLED !== 'false',
       exporterEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
     },
+    swaggerEnabled: env.SWAGGER_ENABLED === 'true',
     payments: {
       mockAutoComplete: env.PAYMENT_MOCK_AUTO_COMPLETE === 'true',
       stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,

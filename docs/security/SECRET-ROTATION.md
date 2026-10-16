@@ -194,7 +194,7 @@ Update the monitoring stack env / Compose secret, restart Grafana, confirm login
 
 ## 8. Third-party secrets (Stripe and webhooks)
 
-`STRIPE_WEBHOOK_SECRET` is required in production and staging environments to verify webhook signatures on `POST /v1/payments/webhooks/stripe`.
+`STRIPE_WEBHOOK_SECRET` is required in production to verify webhook signatures on `POST /v1/payments/webhooks/stripe`. Staging may omit it only when `PAYMENT_MOCK_AUTO_COMPLETE=true` (demo mock checkout).
 
 | Secret                 | Typical env                | Rotation pattern                                                                            |
 | :--------------------- | :------------------------- | :------------------------------------------------------------------------------------------ |

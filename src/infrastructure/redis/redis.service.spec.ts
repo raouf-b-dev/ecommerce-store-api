@@ -61,6 +61,7 @@ describe('RedisService', () => {
           password: 'testpass',
           key_prefix: 'test:',
           db: 0,
+          tls: false,
         }),
       );
       expect(mockClient.on).toHaveBeenCalledWith('error', expect.any(Function));
