@@ -215,7 +215,7 @@ describe('Admin order lifecycle (e2e)', () => {
     const deleteResponse = await http
       .delete(`${E2E_API_PREFIX}/products/${product.id}`)
       .set(AuthTestHelper.bearer(admin.accessToken));
-    expect(deleteResponse.status).toBe(HttpStatus.NO_CONTENT);
+    expect(deleteResponse.status).toBe(HttpStatus.OK);
 
     const customerView = await http
       .get(`${E2E_API_PREFIX}/orders/${orderId}`)

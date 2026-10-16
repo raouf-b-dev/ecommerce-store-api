@@ -158,7 +158,6 @@ export class ProductsController {
   @Delete(':id')
   @ApiBearerAuth()
   @RequirePermissions('manage_products')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete product by ID',
     description:
