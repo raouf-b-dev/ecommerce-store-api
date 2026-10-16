@@ -35,6 +35,7 @@ export class CartTestFactory {
       currency: 'USD',
       quantity: 1,
       imageUrl: `http://example.com/image-${i + 1}.jpg`,
+      sku: `SKU-${i + 1}`,
     }));
 
     return this.createMockCart({

@@ -86,6 +86,39 @@ describe('AddCartItemUseCase', () => {
       ResultAssertionHelper.assertResultSuccess(result);
     });
 
+    it('persists gateway sku and imageUrl on the saved cart item', async () => {
+      const command: AddCartItemCommand = {
+        cartId: 123,
+        productId: 1,
+        quantity: 1,
+        callerContext: adminContext,
+      };
+
+      const productWithSkuAndImage = CartGatewayDtoFactory.createProductData({
+        sku: 'SKU-ADD-1',
+        imageUrl: 'https://img.test/a.png',
+      });
+      const mockCartData = CartTestFactory.createUserCart(123);
+
+      mockCartRepository.mockSuccessfulFind(mockCartData);
+      mockProductGateway.mockSuccessfulFindById(productWithSkuAndImage);
+      mockInventoryGateway.mockSuccessfulCheckStock({
+        isAvailable: true,
+        availableQuantity: 10,
+        requestedQuantity: 1,
+      });
+      mockCartRepository.mockSuccessfulSave();
+
+      const result = await usecase.execute(command);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockCartRepository.save).toHaveBeenCalled();
+      const savedCart = mockCartRepository.save.mock.calls[0][0];
+      const savedItem = savedCart.getItems()[0];
+      expect(savedItem.sku).toBe('SKU-ADD-1');
+      expect(savedItem.imageUrl).toBe('https://img.test/a.png');
+    });
+
     it('should return failure (404) when customer does not own the cart', async () => {
       const command: AddCartItemCommand = {
         cartId: 123,

@@ -7,6 +7,7 @@ export interface CartItemPresentationDTO {
   quantity: number;
   subtotal: number;
   imageUrl: string | null;
+  sku: string | null;
 }
 
 export interface CartPresentationDTO {

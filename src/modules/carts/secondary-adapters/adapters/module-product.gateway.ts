@@ -31,6 +31,7 @@ export class ModuleProductGateway implements CartProductGateway {
       price: product.price,
       currency: product.currency,
       imageUrl: product.imageUrl,
+      sku: product.sku ?? null,
     });
   }
 }

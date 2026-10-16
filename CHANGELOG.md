@@ -36,6 +36,7 @@ OpenAPI clients should regenerate if they consume cart/order schemas that newly 
 - Docker migrate entrypoint parses `DB_SSL` / `DB_SSL_REJECT_UNAUTHORIZED` like envalid (`true`/`t`/`yes`/`on`/`1`, `false`/`f`/`no`/`off`/`0`).
 - `scripts/verify.mjs` resolves the npm CLI from `npm_execpath` (set by `npm run`).
 - Removed unused `RecordCodPaymentDto`.
+- Order detail reads items from their purchase snapshot, so deleting a product no longer breaks `GET /orders/:id`; checkout snapshots product `sku` onto cart and order items (nullable `cart_items.sku`); item `sku` may be null; cart item responses also expose nullable `sku`.
 
 ### Security
 

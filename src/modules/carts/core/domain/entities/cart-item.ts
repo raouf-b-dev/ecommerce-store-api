@@ -13,6 +13,7 @@ export interface CartItemProps {
   currency: string;
   quantity: number;
   imageUrl: string | null;
+  sku: string | null;
 }
 
 export class CartItem implements ICartItem {
@@ -22,6 +23,7 @@ export class CartItem implements ICartItem {
   private _unitPrice: Money;
   private _quantity: Quantity;
   private _imageUrl: string | null;
+  private readonly _sku: string | null;
 
   constructor(props: CartItemProps) {
     const validationResult = this.validateProps(props);
@@ -37,6 +39,7 @@ export class CartItem implements ICartItem {
     this._unitPrice = unitPrice.value;
     this._quantity = Quantity.from(props.quantity);
     this._imageUrl = props.imageUrl?.trim() || null;
+    this._sku = props.sku?.trim() || null;
   }
 
   private validateProps(props: CartItemProps): Result<void, DomainError> {
@@ -102,6 +105,10 @@ export class CartItem implements ICartItem {
 
   get imageUrl(): string | null {
     return this._imageUrl;
+  }
+
+  get sku(): string | null {
+    return this._sku;
   }
 
   get subtotal(): number {
@@ -198,6 +205,7 @@ export class CartItem implements ICartItem {
       quantity: this._quantity.value,
       subtotal: this.subtotal,
       imageUrl: this._imageUrl,
+      sku: this._sku,
     };
   }
 
@@ -210,6 +218,7 @@ export class CartItem implements ICartItem {
       currency: this._unitPrice.currency,
       quantity: this._quantity.value,
       imageUrl: this._imageUrl,
+      sku: this._sku,
     };
   }
 
@@ -223,7 +232,8 @@ export class CartItem implements ICartItem {
     price: number,
     quantity: number,
     currency: string,
-    imageUrl?: string,
+    sku: string | null,
+    imageUrl?: string | null,
   ): CartItem {
     return new CartItem({
       id: null,
@@ -233,6 +243,7 @@ export class CartItem implements ICartItem {
       currency,
       quantity,
       imageUrl: imageUrl || null,
+      sku,
     });
   }
 }

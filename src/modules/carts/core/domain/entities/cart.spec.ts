@@ -9,7 +9,7 @@ describe('Cart', () => {
         const cart = CartTestFactory.createEmptyCart();
 
         ResultAssertionHelper.assertResultSuccess(
-          cart.addItem(1, 'Product A', 10, 2, 'USD'),
+          cart.addItem(1, 'Product A', 10, 2, 'USD', null),
         );
 
         expect(cart.items).toHaveLength(1);
@@ -32,12 +32,13 @@ describe('Cart', () => {
               currency: 'USD',
               quantity: 1,
               imageUrl: null,
+              sku: null,
             },
           ],
         });
 
         ResultAssertionHelper.assertResultSuccess(
-          cart.addItem(5, 'Existing', 20, 3, 'USD'),
+          cart.addItem(5, 'Existing', 20, 3, 'USD', null),
         );
 
         expect(cart.items).toHaveLength(1);
@@ -56,12 +57,13 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
         ],
       });
 
       ResultAssertionHelper.assertResultFailure(
-        cart.addItem(2, 'B', 10, 1, 'EUR'),
+        cart.addItem(2, 'B', 10, 1, 'EUR', null),
         'Cannot mix currencies in one cart (USD vs EUR)',
         DomainError,
       );
@@ -111,6 +113,7 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 2,
             imageUrl: null,
+            sku: null,
           },
           {
             id: 2,
@@ -120,6 +123,7 @@ describe('Cart', () => {
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
         ],
       });

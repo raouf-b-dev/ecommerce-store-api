@@ -7,6 +7,7 @@ export interface ProductData {
   price: number;
   currency: string;
   imageUrl: string | null;
+  sku: string | null;
 }
 
 export interface CartProductGateway {

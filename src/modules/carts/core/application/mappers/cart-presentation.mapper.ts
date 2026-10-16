@@ -49,6 +49,7 @@ export class CartPresentationMapper {
         quantity: item.quantity,
         subtotal: lineMoneyResult.value.toMajorUnits(),
         imageUrl: item.imageUrl,
+        sku: item.sku,
       });
     }
 

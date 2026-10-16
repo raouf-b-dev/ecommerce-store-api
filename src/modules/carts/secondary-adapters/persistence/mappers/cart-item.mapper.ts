@@ -23,6 +23,7 @@ export class CartItemMapper {
       currency: entity.currency,
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
+      sku: entity.sku,
     };
 
     return CartItem.fromPrimitives(props);
@@ -37,6 +38,7 @@ export class CartItemMapper {
       currency: primitives.currency,
       quantity: primitives.quantity,
       imageUrl: primitives.imageUrl,
+      sku: primitives.sku,
     };
     const entity = Object.assign(new CartItemEntity(), itemPayload);
     const persistedId = persistedChildId(primitives.id);

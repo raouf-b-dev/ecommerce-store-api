@@ -37,6 +37,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
           'item.currency AS "currency"',
           'item.quantity AS "quantity"',
           'item.imageUrl AS "imageUrl"',
+          'item.sku AS "sku"',
         ])
         .where('cart.id = :cartId', { cartId });
 
@@ -77,6 +78,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
           'item.currency AS "currency"',
           'item.quantity AS "quantity"',
           'item.imageUrl AS "imageUrl"',
+          'item.sku AS "sku"',
         ])
         .where('cart.userId = :userId', { userId });
 
