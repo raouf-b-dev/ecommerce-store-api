@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-16
+
+OpenAPI clients should regenerate if they consume cart/order schemas that newly allow null. No forced admin/web bump.
+
 ### Added
 
 - Optional Postgres SSL (`DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`) and Redis TLS (`REDIS_TLS`) for managed hosts.
@@ -37,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Production rejects `SWAGGER_ENABLED=true` and unverified Postgres TLS (`DB_SSL=true` with `DB_SSL_REJECT_UNAUTHORIZED=false`).
 - Documented archunit/braces npm audit noise as accepted **dev-only** risk; CI/`audit:check` still use `--omit=dev`.
+
+[Compare v0.10.0...v0.11.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.10.0...v0.11.0)
 
 ## [0.10.0] - 2026-10-15
 
