@@ -13,7 +13,6 @@ import { QueryError } from '../../../../shared-kernel/domain/exceptions/query.er
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
 import { UserEntity } from '../../../identity/secondary-adapters/orm/user.schema';
-import { ProductEntity } from '../../../products/secondary-adapters/orm/product.schema';
 import type { SelectQueryBuilder } from 'typeorm';
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -270,32 +269,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
         .where('user.id = :userId', { userId: orderEntity.userId })
         .getOne();
 
-      // Fetch product SKUs and titles for line items
-      const productIds = orderEntity.items
-        .map((i: { productId: number }) => i.productId)
-        .filter(Boolean);
-      let productMap = new Map<number, { sku: string; title: string }>();
-
-      if (productIds.length > 0) {
-        const products = await this.orderRepo.manager
-          .createQueryBuilder(ProductEntity, 'product')
-          .select(['product.id', 'product.sku', 'product.name'])
-          .where('product.id IN (:...productIds)', { productIds })
-          .getMany();
-
-        productMap = new Map(
-          products.map((p) => [
-            p.id,
-            { sku: p.sku || `SKU-${p.id}`, title: p.name },
-          ]),
-        );
-      }
-
-      const detailDTO = OrderQueryMapper.toDetailDto(
-        orderEntity,
-        rawUser,
-        productMap,
-      );
+      const detailDTO = OrderQueryMapper.toDetailDto(orderEntity, rawUser);
 
       return Result.success(detailDTO);
     } catch (error) {

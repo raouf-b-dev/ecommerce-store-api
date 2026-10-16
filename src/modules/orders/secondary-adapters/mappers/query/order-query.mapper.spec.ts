@@ -28,7 +28,7 @@ describe('OrderQueryMapper', () => {
   });
 
   describe('toDetailDto', () => {
-    it('should map an OrderEntity, raw user, and productMap to OrderDetailDTO', () => {
+    it('should map an OrderEntity and raw user to OrderDetailDTO', () => {
       const shippingAddress =
         OrderEntityTestFactory.createShippingAddressEntity({
           street: '123 Tech Lane',
@@ -60,15 +60,7 @@ describe('OrderQueryMapper', () => {
 
       const user = OrderDtoTestFactory.createOrderDetailUserInfo();
 
-      const productMap = new Map([
-        [5, { sku: 'KEY-001', title: 'Mechanical Keyboard' }],
-      ]);
-
-      const result = OrderQueryMapper.toDetailDto(
-        orderEntity,
-        user,
-        productMap,
-      );
+      const result = OrderQueryMapper.toDetailDto(orderEntity, user);
 
       expect(result.id).toBe(1);
       expect(result.orderNumber).toBe('ORD-1');
@@ -112,6 +104,70 @@ describe('OrderQueryMapper', () => {
       expect(result.userName).toBeNull();
       expect(result.userEmail).toBeNull();
       expect(result.shippingAddress).toBeNull();
+    });
+
+    it('returns sku null from the item snapshot when sku is missing', () => {
+      const item = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 5,
+        productName: 'Mechanical Keyboard',
+        sku: null,
+        unitPrice: 120,
+        quantity: 2,
+        lineTotal: 240,
+      });
+      const orderEntity = OrderEntityTestFactory.createOrderEntity({
+        id: 3,
+        items: [item],
+        totalPrice: 240,
+      });
+
+      const result = OrderQueryMapper.toDetailDto(orderEntity, null);
+
+      expect(result.items[0]).toEqual({
+        productId: 5,
+        sku: null,
+        title: 'Mechanical Keyboard',
+        unitPrice: 120,
+        quantity: 2,
+        subtotal: 240,
+        imageUrl: null,
+      });
+    });
+
+    it('returns the item sku when present on the snapshot', () => {
+      const item = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 5,
+        productName: 'Mechanical Keyboard',
+        sku: 'KEY-001',
+        unitPrice: 120,
+        quantity: 1,
+        lineTotal: 120,
+      });
+      const orderEntity = OrderEntityTestFactory.createOrderEntity({
+        id: 4,
+        items: [item],
+        totalPrice: 120,
+      });
+
+      const result = OrderQueryMapper.toDetailDto(orderEntity, null);
+
+      expect(result.items[0].sku).toBe('KEY-001');
+    });
+
+    it('throws when productName is blank', () => {
+      const item = OrderEntityTestFactory.createOrderItemEntity({
+        productId: 5,
+        productName: '   ',
+        sku: 'KEY-001',
+      });
+      const orderEntity = OrderEntityTestFactory.createOrderEntity({
+        id: 5,
+        items: [item],
+      });
+
+      expect(() => OrderQueryMapper.toDetailDto(orderEntity, null)).toThrow(
+        /missing a title/,
+      );
     });
   });
 

@@ -6,8 +6,14 @@ export class OrderItemDetailResponseDto {
   @ApiProperty({ example: 1, description: 'Product ID' })
   productId!: number;
 
-  @ApiProperty({ example: 'ELEC-ANC-001', description: 'Product SKU' })
-  sku!: string;
+  @ApiProperty({
+    example: 'ELEC-ANC-001',
+    description:
+      'Product SKU captured at purchase. Null when the product had no SKU.',
+    type: String,
+    nullable: true,
+  })
+  sku!: string | null;
 
   @ApiProperty({
     example: 'Wireless Noise-Canceling Headphones',

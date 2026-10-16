@@ -55,28 +55,16 @@ export class OrderQueryMapper {
   }
 
   /**
-   * Maps a single OrderItemEntity and optional product information to OrderItemDetailDTO.
+   * Maps a single OrderItemEntity from its purchase snapshot to OrderItemDetailDTO.
    */
-  static toItemDetailDto(
-    item: OrderItemEntity,
-    productInfo?: { sku: string; title: string },
-  ): OrderItemDetailDTO {
-    const title =
-      optionalTrimmedString(item.productName) ??
-      optionalTrimmedString(productInfo?.title);
+  static toItemDetailDto(item: OrderItemEntity): OrderItemDetailDTO {
+    const title = optionalTrimmedString(item.productName);
     if (!title) {
       throw new Error(
         `Order item for product ${item.productId} is missing a title`,
       );
     }
-    const sku =
-      optionalTrimmedString(item.sku) ??
-      optionalTrimmedString(productInfo?.sku);
-    if (!sku) {
-      throw new Error(
-        `Order item for product ${item.productId} is missing a sku`,
-      );
-    }
+    const sku = optionalTrimmedString(item.sku);
 
     return {
       productId: item.productId,
@@ -90,15 +78,14 @@ export class OrderQueryMapper {
   }
 
   /**
-   * Maps an OrderEntity aggregate, user details, and product map into OrderDetailDTO.
+   * Maps an OrderEntity aggregate and user details into OrderDetailDTO.
    */
   static toDetailDto(
     orderEntity: OrderEntity,
     user?: { firstName: string; lastName: string; email: string } | null,
-    productMap?: Map<number, { sku: string; title: string }>,
   ): OrderDetailDTO {
     const items: OrderItemDetailDTO[] = (orderEntity.items || []).map((item) =>
-      this.toItemDetailDto(item, productMap?.get(item.productId)),
+      this.toItemDetailDto(item),
     );
 
     const shippingAddrStr = orderEntity.shippingAddress
