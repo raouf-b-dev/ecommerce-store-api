@@ -98,6 +98,7 @@ describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
         quantity: 1,
         currency: 'USD',
         imageUrl: null,
+        sku: null,
       }),
       itemRepo.create({
         cart,
@@ -107,6 +108,7 @@ describe('PostgresCartQueryAdapter (Integration - Real DB)', () => {
         quantity: 2,
         currency: 'USD',
         imageUrl: null,
+        sku: null,
       }),
     ]);
 

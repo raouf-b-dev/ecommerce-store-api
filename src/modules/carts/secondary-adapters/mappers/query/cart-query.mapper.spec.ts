@@ -31,6 +31,7 @@ describe('CartQueryMapper', () => {
           quantity: 2,
           subtotal: 100,
           imageUrl: 'https://example.com/keyboard.jpg',
+          sku: 'KEY-001',
         },
         {
           id: 101,
@@ -41,6 +42,7 @@ describe('CartQueryMapper', () => {
           quantity: 1,
           subtotal: 30,
           imageUrl: 'https://example.com/keyboard.jpg',
+          sku: 'KEY-001',
         },
       ],
       itemCount: 3,
@@ -124,5 +126,30 @@ describe('CartQueryMapper', () => {
     expect(result?.items[0].subtotal).toBe(2.468);
     expect(result?.subtotal).toBe(2.468);
     expect(result?.totalAmount).toBe(2.468);
+  });
+
+  it('throws when a cart line is missing productName', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 10,
+      productName: '   ',
+      price: 10,
+      quantity: 1,
+    });
+
+    expect(() => CartQueryMapper.toPresentationDto([row])).toThrow(
+      /missing productName/,
+    );
+  });
+
+  it('throws when a cart line is missing price', () => {
+    const row = CartDtoTestFactory.createRawCartQueryRow({
+      itemId: 10,
+      price: null,
+      quantity: 1,
+    });
+
+    expect(() => CartQueryMapper.toPresentationDto([row])).toThrow(
+      /missing a valid price/,
+    );
   });
 });

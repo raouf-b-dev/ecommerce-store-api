@@ -1,19 +1,13 @@
 import { CreatedPayment } from '../../core/application/ports/payment.gateway';
-import { decimalFromMinorUnits } from '../../../../shared-kernel/domain/value-objects/money-decimal';
-import { Currency } from '../../../../shared-kernel/domain/value-objects/currency';
+import { requireMajorUnitsFromMinor } from '../../../../infrastructure/mappers/utils/decimal-money.util';
 import { OrderPaymentResponseDto } from '../dto/order-payment-response.dto';
 
 export class OrderPaymentDtoMapper {
   static toResponse(payment: CreatedPayment): OrderPaymentResponseDto {
-    const currencyResult = Currency.create(payment.currency);
-    if (currencyResult.isFailure) {
-      throw currencyResult.error;
-    }
-    const exponent = currencyResult.value.exponent;
     return {
       id: payment.id,
       orderId: payment.orderId,
-      amount: Number(decimalFromMinorUnits(payment.amount, exponent)),
+      amount: requireMajorUnitsFromMinor(payment.amount, payment.currency),
       currency: payment.currency,
       paymentMethod: payment.paymentMethod,
       status: payment.status,
@@ -21,8 +15,9 @@ export class OrderPaymentDtoMapper {
       gatewayPaymentIntentId: payment.gatewayPaymentIntentId,
       userId: payment.userId,
       paymentMethodInfo: payment.paymentMethodInfo,
-      refundedAmount: Number(
-        decimalFromMinorUnits(payment.refundedAmount, exponent),
+      refundedAmount: requireMajorUnitsFromMinor(
+        payment.refundedAmount,
+        payment.currency,
       ),
       failureReason: payment.failureReason,
       createdAt: payment.createdAt,

@@ -23,6 +23,13 @@ import { EnvConfigModule } from 'src/config/config.module';
           synchronize: dbConfig.synchronize && nodeConfig.env !== 'production',
           logging:
             nodeConfig.env !== 'production' ? ['error', 'warn'] : ['error'],
+          ...(dbConfig.ssl
+            ? {
+                ssl: {
+                  rejectUnauthorized: dbConfig.sslRejectUnauthorized,
+                },
+              }
+            : {}),
         };
       },
     }),

@@ -7,4 +7,5 @@ export interface ICartItem {
   quantity: number;
   subtotal: number;
   imageUrl: string | null;
+  sku: string | null;
 }

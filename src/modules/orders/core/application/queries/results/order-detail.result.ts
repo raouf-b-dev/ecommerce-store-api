@@ -5,11 +5,11 @@ export interface OrderDetailDTO {
   id: number;
   orderNumber: string;
   userId: number;
-  userName: string;
-  userEmail: string;
+  userName: string | null;
+  userEmail: string | null;
   status: string;
   paymentMethod: PaymentMethodType;
-  shippingAddress: string;
+  shippingAddress: string | null;
   items: OrderItemDetailDTO[];
   subtotal: number;
   shippingCost: number;

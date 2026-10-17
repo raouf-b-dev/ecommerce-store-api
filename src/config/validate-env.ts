@@ -13,6 +13,9 @@ import { Currency } from '../shared-kernel/domain/value-objects/currency';
 const HTTP_ORIGIN_ERROR =
   'must be an http(s) origin with no path, query, or credentials (for example https://api.example.com)';
 
+const CORS_ORIGINS_ERROR =
+  'CORS_ALLOWED_ORIGINS must be a comma-separated list of http(s) origins';
+
 /** Parses an http(s) origin and returns it normalized (lowercase host, no trailing slash). */
 export function parseHttpOrigin(value: string): string {
   let url: URL;
@@ -35,6 +38,23 @@ export function parseHttpOrigin(value: string): string {
 }
 
 const httpOrigin = makeValidator<string>(parseHttpOrigin);
+
+/**
+ * Splits, trims, drops empties, and validates each CORS origin.
+ * Returns a comma-joined string of normalized origins for envalid storage.
+ */
+export function parseCorsAllowedOrigins(value: string): string {
+  const parts = value
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0) {
+    throw new EnvError(CORS_ORIGINS_ERROR);
+  }
+  return parts.map(parseHttpOrigin).join(',');
+}
+
+const corsAllowedOrigins = makeValidator<string>(parseCorsAllowedOrigins);
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -61,11 +81,17 @@ export function assertSecurePublicOrigin(
 /**
  * Deployed environments must configure STRIPE_WEBHOOK_SECRET to receive
  * verified Stripe webhooks. Fails fast at startup if missing.
+ * Skipped when mock payment auto-complete is on (staging demo path);
+ * production already forbids that flag via assertNoMockPaymentAutoComplete.
  */
 export function assertStripeWebhookSecret(
   nodeEnv: string,
   secret?: string,
+  mockAutoComplete?: string,
 ): void {
+  if (mockAutoComplete === 'true') {
+    return;
+  }
   if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
     return;
   }
@@ -88,19 +114,55 @@ export function parseCurrencyCode(value: string): string {
 export const currencyCode = makeValidator<string>(parseCurrencyCode);
 
 /**
- * Deployed environments must never enable mock payment auto-complete so
- * checkouts cannot be confirmed without a verified gateway webhook.
+ * Production must never enable mock payment auto-complete so checkouts
+ * cannot be confirmed without a verified gateway webhook. Staging may
+ * enable it for the public demo until a real Stripe provider ships.
  */
 export function assertNoMockPaymentAutoComplete(
   nodeEnv: string,
   enabled?: string,
 ): void {
-  if (nodeEnv !== 'production' && nodeEnv !== 'staging') {
+  if (nodeEnv !== 'production') {
     return;
   }
   if (enabled === 'true') {
     throw new EnvError(
-      `PAYMENT_MOCK_AUTO_COMPLETE must not be true in ${nodeEnv}`,
+      'PAYMENT_MOCK_AUTO_COMPLETE must not be true in production',
+    );
+  }
+}
+
+/**
+ * Production must never publish Swagger. Default SWAGGER_ENABLED is false;
+ * this blocks an explicit true the way NODE_ENV gating did before the flag.
+ */
+export function assertSwaggerDisabledInProduction(
+  nodeEnv: string,
+  enabled?: string,
+): void {
+  if (nodeEnv !== 'production') {
+    return;
+  }
+  if (enabled === 'true') {
+    throw new EnvError('SWAGGER_ENABLED must not be true in production');
+  }
+}
+
+/**
+ * When Postgres TLS is on in production, certificate verification is required
+ * so a managed host cannot silently accept MITM with rejectUnauthorized=false.
+ */
+export function assertVerifiedDbTlsInProduction(
+  nodeEnv: string,
+  ssl: boolean,
+  rejectUnauthorized: boolean,
+): void {
+  if (nodeEnv !== 'production') {
+    return;
+  }
+  if (ssl && !rejectUnauthorized) {
+    throw new EnvError(
+      'DB_SSL_REJECT_UNAUTHORIZED must be true when DB_SSL=true in production',
     );
   }
 }
@@ -117,14 +179,15 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     REDIS_PASSWORD: str({ default: '' }),
     REDIS_KEYPREFIX: str({ default: '' }),
     REDIS_DB: num({ default: 0 }),
+    REDIS_TLS: bool({ default: false }),
 
     DB_HOST: str(),
     DB_PORT: port({ default: 5432 }),
     DB_USERNAME: str(),
     DB_PASSWORD: str(),
     DB_DATABASE: str(),
-    POSTGRES_CONTAINER_NAME: str(),
-    POSTGRES_IMAGE: str(),
+    DB_SSL: bool({ default: false }),
+    DB_SSL_REJECT_UNAUTHORIZED: bool({ default: true }),
     IS_DB_SYNCHRONIZE: bool({ default: false }),
 
     STORE_DEFAULT_CURRENCY: currencyCode(),
@@ -135,7 +198,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
 
     JWT_CART_SESSION_TTL: str({ default: '7d' }),
 
-    CORS_ALLOWED_ORIGINS: str(),
+    CORS_ALLOWED_ORIGINS: corsAllowedOrigins(),
 
     LOG_LEVEL: str({
       choices: ['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'],
@@ -157,6 +220,9 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     OTEL_TRACING_ENABLED: str({ choices: ['true', 'false'], default: 'true' }),
     OTEL_EXPORTER_OTLP_ENDPOINT: str({ default: 'http://localhost:4317' }),
 
+    // Fail closed: omitted flag means no docs (production-safe).
+    SWAGGER_ENABLED: str({ choices: ['true', 'false'], default: 'false' }),
+
     PAYMENT_MOCK_AUTO_COMPLETE: str({
       choices: ['true', 'false'],
       default: 'false',
@@ -167,11 +233,21 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
   assertStripeWebhookSecret(
     validated.NODE_ENV,
     validated.STRIPE_WEBHOOK_SECRET,
+    validated.PAYMENT_MOCK_AUTO_COMPLETE,
   );
 
   assertNoMockPaymentAutoComplete(
     validated.NODE_ENV,
     validated.PAYMENT_MOCK_AUTO_COMPLETE,
+  );
+  assertSwaggerDisabledInProduction(
+    validated.NODE_ENV,
+    validated.SWAGGER_ENABLED,
+  );
+  assertVerifiedDbTlsInProduction(
+    validated.NODE_ENV,
+    validated.DB_SSL,
+    validated.DB_SSL_REJECT_UNAUTHORIZED,
   );
   return validated;
 }

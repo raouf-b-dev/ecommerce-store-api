@@ -71,6 +71,10 @@ export class EnvConfigService {
     return this.get('otel');
   }
 
+  get swaggerEnabled(): boolean {
+    return this.get('swaggerEnabled');
+  }
+
   get payments() {
     return this.get('payments');
   }

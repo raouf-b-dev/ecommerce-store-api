@@ -8,6 +8,7 @@ export class CartGatewayDtoFactory {
       price: 29.99,
       currency: 'USD',
       imageUrl: null,
+      sku: 'TEST-SKU-001',
     };
 
     return { ...baseProduct, ...overrides };
