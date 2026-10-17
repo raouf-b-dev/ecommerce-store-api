@@ -13,7 +13,10 @@ import { OrderEntity } from './order.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
 @Entity({ name: 'order_items' })
-@Check('CHK_order_items_product_name_not_blank', `btrim("product_name") <> ''`)
+@Check(
+  'CHK_order_items_product_name_not_blank',
+  `"product_name" ~ '[^[:space:]]'`,
+)
 @Index('idx_order_items_product_id', ['productId'])
 export class OrderItemEntity {
   @PrimaryGeneratedColumn('increment')

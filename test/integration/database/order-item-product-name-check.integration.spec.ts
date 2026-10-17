@@ -13,10 +13,8 @@ describe('order_items product_name check constraint (Integration)', () => {
     seededData = await IntegrationTestHelper.seedReferenceData();
   });
 
-  it('rejects blank product_name and registers CHK_order_items_product_name_not_blank', async () => {
-    const dataSource = IntegrationTestHelper.getDataSource();
+  async function createOrder(): Promise<OrderEntity> {
     const orderRepo = IntegrationTestHelper.getRepository(OrderEntity);
-    const itemRepo = IntegrationTestHelper.getRepository(OrderItemEntity);
     const shippingAddressRepo = IntegrationTestHelper.getRepository(
       ShippingAddressEntity,
     );
@@ -27,7 +25,7 @@ describe('order_items product_name check constraint (Integration)', () => {
       ),
     );
 
-    const order = await orderRepo.save(
+    return orderRepo.save(
       orderRepo.create(
         OrderEntityTestFactory.createUnsavedOrderEntity({
           userId: seededData.customerUser.id,
@@ -35,6 +33,12 @@ describe('order_items product_name check constraint (Integration)', () => {
         }),
       ),
     );
+  }
+
+  it('rejects blank product_name and registers CHK_order_items_product_name_not_blank', async () => {
+    const dataSource = IntegrationTestHelper.getDataSource();
+    const itemRepo = IntegrationTestHelper.getRepository(OrderItemEntity);
+    const order = await createOrder();
 
     const constraints = await dataSource.query(
       `SELECT conname
@@ -61,5 +65,57 @@ describe('order_items product_name check constraint (Integration)', () => {
       code: '23514',
       constraint: 'CHK_order_items_product_name_not_blank',
     });
+  });
+
+  it('rejects tab-only product_name with 23514 and CHK_order_items_product_name_not_blank', async () => {
+    const dataSource = IntegrationTestHelper.getDataSource();
+    const order = await createOrder();
+
+    await expect(
+      dataSource.query(
+        `INSERT INTO "order_items"
+          ("product_id", "product_name", "sku", "image_url", "unitPrice", "quantity", "lineTotal", "currency", "order_id")
+         VALUES ($1, E'\\t', $2, NULL, 1, 1, 1, 'USD', $3)`,
+        [seededData.product.id, seededData.product.sku, order.id],
+      ),
+    ).rejects.toMatchObject({
+      code: '23514',
+      constraint: 'CHK_order_items_product_name_not_blank',
+    });
+  });
+
+  it('rejects newline-only product_name with 23514 and CHK_order_items_product_name_not_blank', async () => {
+    const dataSource = IntegrationTestHelper.getDataSource();
+    const order = await createOrder();
+
+    await expect(
+      dataSource.query(
+        `INSERT INTO "order_items"
+          ("product_id", "product_name", "sku", "image_url", "unitPrice", "quantity", "lineTotal", "currency", "order_id")
+         VALUES ($1, E'\\n', $2, NULL, 1, 1, 1, 'USD', $3)`,
+        [seededData.product.id, seededData.product.sku, order.id],
+      ),
+    ).rejects.toMatchObject({
+      code: '23514',
+      constraint: 'CHK_order_items_product_name_not_blank',
+    });
+  });
+
+  it('accepts a non-blank product_name', async () => {
+    const itemRepo = IntegrationTestHelper.getRepository(OrderItemEntity);
+    const order = await createOrder();
+
+    const saved = await itemRepo.save(
+      itemRepo.create(
+        OrderEntityTestFactory.createUnsavedOrderItemEntity({
+          order,
+          productId: seededData.product.id,
+          productName: 'Keyboard',
+          sku: seededData.product.sku,
+        }),
+      ),
+    );
+
+    expect(saved.productName).toBe('Keyboard');
   });
 });
