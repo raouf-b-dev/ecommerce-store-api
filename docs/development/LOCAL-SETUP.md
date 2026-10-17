@@ -55,7 +55,13 @@ This reads [`.env.example`](../../.env.example) and creates:
 | `.env.test`        | Test / migration scripts                                                         |
 | `.secrets`         | CI values for GitHub Actions (from [`.secrets.example`](../../.secrets.example)) |
 
-Existing files are skipped unless you pass `--overwrite`:
+`npm run env:init` (and `npm run setup`) check existing env files against `.env.example`. If keys are missing, the command exits 1 and lists them. Append only the missing keys (non-destructive):
+
+```bash
+npm run env:init:merge
+```
+
+`--overwrite` / `env:init:force` regenerates every targeted file, including JWT/metrics/Grafana secrets and `.secrets`. Prefer merge when you only need new keys:
 
 ```bash
 npm run env:init:force

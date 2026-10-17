@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `npm run env:init:merge` appends only missing keys from `.env.example` into existing env files.
+
+### Fixed
+
+- Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.
+
 ## [0.11.0] - 2026-10-16
 
 OpenAPI clients should regenerate if they consume cart/order schemas that newly allow null. No forced admin/web bump.

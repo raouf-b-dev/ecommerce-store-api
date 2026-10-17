@@ -349,20 +349,21 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 | Problem                                              | Solution                                                                                                                                         |
 | :--------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
 | New developer forgets to create `.env.development`   | `npm run env:init` scaffolds all files                                                                                                           |
-| `.env.example` adds a new key; existing devs miss it | Regenerate with `--force`; `envalid` crashes if key is missing                                                                                   |
+| `.env.example` adds a new key; existing devs miss it | `env:init` / `setup` fail listing missing keys; `env:init:merge` appends them; `--force` regenerates (and replaces secrets)                      |
 | Production `.env` created with blind copy-paste      | Generator clears `PUBLIC_BASE_URL`, forces sync off / trust proxy, and generates JWT/metrics secrets; operators still replace DB/Redis passwords |
 | Team has no canonical list of required variables     | `.env.example` is the single source of truth                                                                                                     |
 
 ### Commands
 
-| Command                       | Scope                         |
-| :---------------------------- | :---------------------------- |
-| `npm run env:init`            | All environments + `.secrets` |
-| `npm run env:init:dev`        | `.env.development` only       |
-| `npm run env:init:prod`       | `.env.production` only        |
-| `npm run env:init:staging`    | `.env.staging` only           |
-| `npm run env:init:test`       | `.env.test` only              |
-| `npm run env:init -- --force` | Overwrite existing files      |
+| Command                       | Scope                                                      |
+| :---------------------------- | :--------------------------------------------------------- |
+| `npm run env:init`            | All environments + `.secrets`                              |
+| `npm run env:init:dev`        | `.env.development` only                                    |
+| `npm run env:init:prod`       | `.env.production` only                                     |
+| `npm run env:init:staging`    | `.env.staging` only                                        |
+| `npm run env:init:test`       | `.env.test` only                                           |
+| `npm run env:init:merge`      | Append missing keys from templates into existing env files |
+| `npm run env:init -- --force` | Overwrite existing files                                   |
 
 ### Per-Environment Behaviour
 
@@ -796,7 +797,7 @@ When a new feature requires configuration, follow this checklist to maintain con
 - [ ] **Step 3**: Add to `IAppConfig` interface and factory in `src/config/configuration.ts`
 - [ ] **Step 4**: Add typed getter(s) in `src/config/env-config.service.ts`
 - [ ] **Step 5**: Update `scripts/generate-envs.js` if the variable needs per-environment logic
-- [ ] **Step 6**: Regenerate local files: `npm run env:init -- --force`
+- [ ] **Step 6**: Sync local files: `npm run env:init:merge`
 - [ ] **Step 7**: Add to the [Variables Reference](#5-environment-variables-reference) table in this document
 
 > [!IMPORTANT]
@@ -867,11 +868,19 @@ npm run d:up:dev    # ✅ Passes --env-file .env.development
 docker compose up   # ❌ Variables not interpolated securely for the app override
 ```
 
-### `env:init` skips existing files
+### `env:init` fails because env files are missing keys
 
-By design: prevents accidental overwrite. Use `--force`:
+When `.env.example` gains keys that your local `.env.*` files do not have, `env:init` (and `setup`) lists the missing keys and exits 1. Append only those keys:
 
 ```bash
+npm run env:init:merge
+```
+
+To regenerate every file (replaces JWT/metrics/Grafana values and rewrites `.secrets`):
+
+```bash
+npm run env:init:force
+# or
 npm run env:init -- --force
 ```
 
