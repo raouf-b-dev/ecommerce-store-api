@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -6,7 +6,6 @@ import { ReserveStockCommand } from '../../commands/reserve-stock.command';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import { Reservation } from '../../../domain/entities/reservation';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 
 @Injectable()
 export class ReserveStockUseCase implements UseCase<
@@ -14,10 +13,7 @@ export class ReserveStockUseCase implements UseCase<
   Reservation,
   UseCaseError
 > {
-  constructor(
-    @Inject(POSTGRES_RESERVATION_REPOSITORY)
-    private readonly reservationRepository: ReservationRepository,
-  ) {}
+  constructor(private readonly reservationRepository: ReservationRepository) {}
 
   async execute(
     command: ReserveStockCommand,

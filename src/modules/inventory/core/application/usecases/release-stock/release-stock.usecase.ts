@@ -1,10 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 
 @Injectable()
 export class ReleaseStockUseCase implements UseCase<
@@ -12,10 +11,7 @@ export class ReleaseStockUseCase implements UseCase<
   void,
   UseCaseError
 > {
-  constructor(
-    @Inject(POSTGRES_RESERVATION_REPOSITORY)
-    private readonly reservationRepository: ReservationRepository,
-  ) {}
+  constructor(private readonly reservationRepository: ReservationRepository) {}
 
   async execute(reservationId: number): Promise<Result<void, UseCaseError>> {
     const reservationResult =

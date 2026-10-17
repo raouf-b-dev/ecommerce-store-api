@@ -5,7 +5,7 @@ import {
 } from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReleaseStockUseCase } from './release-stock.usecase';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
+import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import { ReservationStatus } from '../../../domain/value-objects/reservation-status';
 
 import { ResultAssertionHelper } from 'src/testing';
@@ -19,14 +19,17 @@ describe('ReleaseStockUseCase', () => {
       providers: [
         ReleaseStockUseCase,
         {
-          provide: POSTGRES_RESERVATION_REPOSITORY,
+          provide: ReservationRepository,
           useFactory: () => ReservationRepositoryMockFactory.createMock(),
         },
       ],
     }).compile();
 
     useCase = module.get<ReleaseStockUseCase>(ReleaseStockUseCase);
-    reservationRepository = module.get(POSTGRES_RESERVATION_REPOSITORY);
+    reservationRepository = module.get<
+      ReservationRepository,
+      MockReservationRepository
+    >(ReservationRepository);
   });
 
   afterEach(() => {

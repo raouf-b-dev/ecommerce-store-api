@@ -1,10 +1,9 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
 
 export interface SweepExpiredReservationsCommand {
   asOfDate?: Date;
@@ -27,10 +26,7 @@ export class SweepExpiredReservationsUseCase implements UseCase<
   private readonly logger = new Logger(SweepExpiredReservationsUseCase.name);
   private static readonly DEFAULT_BATCH_SIZE = 100;
 
-  constructor(
-    @Inject(POSTGRES_RESERVATION_REPOSITORY)
-    private readonly reservationRepository: ReservationRepository,
-  ) {}
+  constructor(private readonly reservationRepository: ReservationRepository) {}
 
   async execute(
     command?: SweepExpiredReservationsCommand,
