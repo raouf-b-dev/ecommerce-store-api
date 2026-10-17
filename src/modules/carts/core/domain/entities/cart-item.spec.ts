@@ -61,6 +61,7 @@ describe('CartItem', () => {
           new CartItem({
             id: null,
             imageUrl: null,
+            sku: null,
             ...props,
           }),
       ).toThrow(DomainError);
@@ -77,6 +78,7 @@ describe('CartItem', () => {
             currency: 'USD',
             quantity: 2,
             imageUrl: null,
+            sku: null,
           }),
       ).toThrow(DomainError);
     });
@@ -90,6 +92,7 @@ describe('CartItem', () => {
         currency: 'usd',
         quantity: 2,
         imageUrl: null,
+        sku: null,
       });
 
       expect(item.productName).toBe('Widget');
@@ -97,11 +100,26 @@ describe('CartItem', () => {
       expect(item.currency).toBe('USD');
       expect(item.subtotal).toBe(2112);
     });
+
+    it('stores a null sku when sku is blank', () => {
+      const item = new CartItem({
+        id: null,
+        productId: 1,
+        productName: 'Widget',
+        price: 100,
+        currency: 'USD',
+        quantity: 1,
+        imageUrl: null,
+        sku: '   ',
+      });
+
+      expect(item.sku).toBeNull();
+    });
   });
 
   describe('updateQuantity', () => {
     it('updates quantity when positive', () => {
-      const item = CartItem.create(1, 'Widget', 10, 1, 'USD');
+      const item = CartItem.create(1, 'Widget', 10, 1, 'USD', null);
 
       ResultAssertionHelper.assertResultSuccess(item.updateQuantity(3));
 
@@ -110,7 +128,7 @@ describe('CartItem', () => {
     });
 
     it('rejects zero or negative quantity', () => {
-      const item = CartItem.create(1, 'Widget', 10, 2, 'USD');
+      const item = CartItem.create(1, 'Widget', 10, 2, 'USD', null);
 
       ResultAssertionHelper.assertResultFailure(
         item.updateQuantity(0),
@@ -122,7 +140,7 @@ describe('CartItem', () => {
 
   describe('increaseQuantity and decreaseQuantity', () => {
     it('increases and decreases quantity within bounds', () => {
-      const item = CartItem.create(1, 'Widget', 10, 2, 'USD');
+      const item = CartItem.create(1, 'Widget', 10, 2, 'USD', null);
 
       ResultAssertionHelper.assertResultSuccess(item.increaseQuantity(2));
       expect(item.quantity).toBe(4);
@@ -132,7 +150,7 @@ describe('CartItem', () => {
     });
 
     it('rejects decrease that would zero out quantity', () => {
-      const item = CartItem.create(1, 'Widget', 10, 1, 'USD');
+      const item = CartItem.create(1, 'Widget', 10, 1, 'USD', null);
 
       ResultAssertionHelper.assertResultFailure(
         item.decreaseQuantity(1),
@@ -144,7 +162,7 @@ describe('CartItem', () => {
 
   describe('updatePrice and updateProductInfo', () => {
     it('updates price and product metadata', () => {
-      const item = CartItem.create(1, 'Old', 10, 1, 'USD');
+      const item = CartItem.create(1, 'Old', 10, 1, 'USD', null);
 
       ResultAssertionHelper.assertResultSuccess(item.updatePrice(1250));
       ResultAssertionHelper.assertResultSuccess(

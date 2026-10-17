@@ -1,6 +1,6 @@
 export interface OrderItemDetailDTO {
   productId: number;
-  sku: string;
+  sku: string | null;
   title: string;
   unitPrice: number;
   quantity: number;

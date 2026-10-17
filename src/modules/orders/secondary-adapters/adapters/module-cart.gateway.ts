@@ -112,6 +112,7 @@ export class ModuleCartGateway implements CartGateway {
         productId: item.productId,
         productName: item.productName,
         imageUrl: item.imageUrl,
+        sku: item.sku,
         price: moneyResult.value.amount,
         quantity: item.quantity,
         currency,

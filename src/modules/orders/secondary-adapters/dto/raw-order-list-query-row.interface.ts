@@ -8,8 +8,8 @@ export interface RawOrderListQueryRow {
   userName?: string | null;
   userEmail?: string | null;
   status: string;
-  itemCount: number;
-  totalAmount: number;
+  itemCount: number | null;
+  totalAmount: number | null;
   currency: string;
   createdAt: Date | string;
 }

@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-16
+
+OpenAPI clients should regenerate if they consume cart/order schemas that newly allow null. No forced admin/web bump.
+
+### Added
+
+- Optional Postgres SSL (`DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`) and Redis TLS (`REDIS_TLS`) for managed hosts.
+- `SWAGGER_ENABLED` to control `/api/docs` (fail-closed default; production rejects `true` at boot).
+- `npm run verify` phase banners via `scripts/verify.mjs` (aligned with admin/web DX).
+
+### Changed
+
+- Staging may enable `PAYMENT_MOCK_AUTO_COMPLETE` for demo checkout; production still rejects it at startup.
+- Staging mock checkout may omit `STRIPE_WEBHOOK_SECRET` when mock auto-complete is on.
+- `env:init` sets mock auto-complete and Swagger on for staging/dev, OTEL off for staging/production, Swagger off for production.
+- Cart `id` and order customer/shipping presentation fields may be null instead of placeholder values.
+- Persistence/DTO money major-unit conversion goes through `Money.toMajorUnits` via `requireMajorUnitsFromMinor`.
+- Cart free-shipping totals live in domain policy `applyCartShipping` (Money), shared by presentation and query mappers.
+- Postgres container name/image stay Compose/script concerns; Nest no longer validates `POSTGRES_*`.
+- ESLint uses `--cache` for faster local lint.
+
+### Fixed
+
+- Cart query mapper no longer invents zero prices or `Unknown Product`.
+- Order list/detail query mapping no longer invents `Unknown User`, empty totals, or `N/A` shipping.
+- OpenAPI nullable order fields emit explicit `type: string` (audit:openapi).
+- Docker migrate entrypoint parses `DB_SSL` / `DB_SSL_REJECT_UNAUTHORIZED` like envalid (`true`/`t`/`yes`/`on`/`1`, `false`/`f`/`no`/`off`/`0`).
+- `scripts/verify.mjs` resolves the npm CLI from `npm_execpath` (set by `npm run`).
+- Removed unused `RecordCodPaymentDto`.
+- Order detail reads items from their purchase snapshot, so deleting a product no longer breaks `GET /orders/:id`; checkout snapshots product `sku` onto cart and order items (nullable `cart_items.sku`); item `sku` may be null; cart item responses also expose nullable `sku`.
+- Order item product names are required at the database level (blank means whitespace-only: spaces, tabs or newlines; blank legacy names backfilled from the catalog; migration stops if any remain), and the order item mapper no longer substitutes "Unknown Product".
+
+### Security
+
+- Production rejects `SWAGGER_ENABLED=true` and unverified Postgres TLS (`DB_SSL=true` with `DB_SSL_REJECT_UNAUTHORIZED=false`).
+- Documented archunit/braces npm audit noise as accepted **dev-only** risk; CI/`audit:check` still use `--omit=dev`.
+
+[Compare v0.10.0...v0.11.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.10.0...v0.11.0)
+
 ## [0.10.0] - 2026-10-15
 
 Admin v0.5.0 and web v0.4.0 are the matching client releases; older clients send `STRIPE` and fail.

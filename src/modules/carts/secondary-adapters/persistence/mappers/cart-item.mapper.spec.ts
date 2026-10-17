@@ -4,7 +4,7 @@ import { CartItemMapper } from './cart-item.mapper';
 
 describe('CartItemMapper', () => {
   it('toEntity omits id when domain id is null', () => {
-    const item = CartItem.create(1, 'Widget', 999, 1, 'USD');
+    const item = CartItem.create(1, 'Widget', 999, 1, 'USD', null);
     const entity = CartItemMapper.toEntity(item);
 
     expect(entity.id).toBeUndefined();
@@ -21,6 +21,7 @@ describe('CartItemMapper', () => {
       currency: 'USD',
       quantity: 1,
       imageUrl: null,
+      sku: null,
     });
     const entity = CartItemMapper.toEntity(item);
 
@@ -37,6 +38,7 @@ describe('CartItemMapper', () => {
       currency: 'USD',
       quantity: 1,
       imageUrl: null,
+      sku: null,
     });
 
     const domain = CartItemMapper.toDomain(entity);

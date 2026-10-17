@@ -59,6 +59,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         ),
         1,
         seededData.product.currency,
+        null,
         seededData.product.imageUrl,
       ),
     );
@@ -69,6 +70,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         minorUnitsFromCatalog(secondProduct.price, secondProduct.currency),
         2,
         secondProduct.currency,
+        null,
         secondProduct.imageUrl,
       ),
     );
@@ -139,6 +141,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         ),
         2,
         seededData.product.currency,
+        null,
         seededData.product.imageUrl,
       ),
     );
@@ -182,6 +185,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         ),
         1,
         seededData.product.currency,
+        null,
         seededData.product.imageUrl,
       ),
     );
@@ -230,6 +234,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         ),
         1,
         seededData.product.currency,
+        null,
         seededData.product.imageUrl,
       ),
     );
@@ -250,6 +255,7 @@ describe('PostgresCartRepository (Integration - Real DB)', () => {
         ),
         1,
         seededData.product.currency,
+        null,
         seededData.product.imageUrl,
       ),
     );

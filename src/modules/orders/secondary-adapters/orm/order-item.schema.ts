@@ -1,5 +1,6 @@
 // src/modules/orders/infrastructure/orm/order-item.schema.ts
 import {
+  Check,
   Column,
   Entity,
   Index,
@@ -12,6 +13,10 @@ import { OrderEntity } from './order.schema';
 import { numericToNumber } from '../../../../infrastructure/database/number.transformer';
 
 @Entity({ name: 'order_items' })
+@Check(
+  'CHK_order_items_product_name_not_blank',
+  `"product_name" ~ '[^[:space:]]'`,
+)
 @Index('idx_order_items_product_id', ['productId'])
 export class OrderItemEntity {
   @PrimaryGeneratedColumn('increment')
@@ -20,7 +25,7 @@ export class OrderItemEntity {
   @Column({ name: 'product_id', type: 'int' })
   productId!: number;
 
-  @Column({ type: 'varchar', name: 'product_name', default: '' })
+  @Column({ type: 'varchar', name: 'product_name' })
   productName!: string;
 
   @Column({ type: 'varchar', nullable: true })

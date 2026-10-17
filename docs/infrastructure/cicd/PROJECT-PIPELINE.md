@@ -56,29 +56,29 @@ graph TD
 
 All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with `actions/setup-node` npm cache (no shared `node_modules` artifact).
 
-| Job                     | Command / action                                                                     | Purpose                                        |
-| ----------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- |
-| **lint**                | `lint:check`, `format:check`                                                         | ESLint + Prettier                              |
-| **typecheck**           | `typecheck`                                                                          | TypeScript compile check                       |
-| **unit-tests**          | `test:ci`                                                                            | Jest unit tests + setup script tests           |
-| **arch**                | `test:arch`                                                                          | Hexagonal architecture boundaries              |
-| **audit**               | `npm audit --omit=dev --audit-level=high`                                            | Blocks high/critical vulnerabilities           |
-| **dependency-review**   | `dependency-review-action`                                                           | PR supply-chain review (PRs only)              |
-| **build**               | `build` + upload `dist-app` artifact                                                 | Compile + artifact for smoke                   |
-| **integration-tests**   | `test:integration`                                                                   | Testcontainers Postgres 18.4 (no GHA services) |
-| **e2e-tests**           | Postgres 18.4 + Redis → `prepare-test-env` → migrations → `test:e2e`                 | Full-stack E2E including IDOR suite            |
-| **smoke-test**          | Same infra + `dist` → start app → `smoke-test`                                       | HTTP runtime probes                            |
-| **restore-drill**       | `prepare-db-env` → `migration:run:test` → `db:restore:drill` (marker + known tables) | Backup/restore ops check                       |
-| **restore-drill-smoke** | `master` push: drill `--keep-dump` → app on restored DB → smoke                      | Full recovery DoD                              |
-| **ci**                  | Aggregator                                                                           | Required branch protection check               |
-| **docker-validate**     | `docker build` (no push)                                                             | PR container recipe validation                 |
-| **docker-publish**      | Build + push to GHCR                                                                 | `master` push and `v*.*.*` tags only           |
+| Job                     | Command / action                                                                     | Purpose                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| **lint**                | `lint:check`, `format:check`                                                         | ESLint + Prettier                                                                          |
+| **typecheck**           | `typecheck`                                                                          | TypeScript compile check                                                                   |
+| **unit-tests**          | `test:ci`                                                                            | Jest unit tests + setup script tests                                                       |
+| **arch**                | `test:arch`                                                                          | Hexagonal architecture boundaries                                                          |
+| **audit**               | `npm audit --omit=dev --audit-level=high`                                            | Blocks high/critical **runtime** vulns (`omit=dev`; archunit/braces noise is tooling-only) |
+| **dependency-review**   | `dependency-review-action`                                                           | PR supply-chain review (PRs only)                                                          |
+| **build**               | `build` + upload `dist-app` artifact                                                 | Compile + artifact for smoke                                                               |
+| **integration-tests**   | `test:integration`                                                                   | Testcontainers Postgres 18.4 (no GHA services)                                             |
+| **e2e-tests**           | Postgres 18.4 + Redis → `prepare-test-env` → migrations → `test:e2e`                 | Full-stack E2E including IDOR suite                                                        |
+| **smoke-test**          | Same infra + `dist` → start app → `smoke-test`                                       | HTTP runtime probes                                                                        |
+| **restore-drill**       | `prepare-db-env` → `migration:run:test` → `db:restore:drill` (marker + known tables) | Backup/restore ops check                                                                   |
+| **restore-drill-smoke** | `master` push: drill `--keep-dump` → app on restored DB → smoke                      | Full recovery DoD                                                                          |
+| **ci**                  | Aggregator                                                                           | Required branch protection check                                                           |
+| **docker-validate**     | `docker build` (no push)                                                             | PR container recipe validation                                                             |
+| **docker-publish**      | Build + push to GHCR                                                                 | `master` push and `v*.*.*` tags only                                                       |
 
 ---
 
 ## 3. Postgres version policy
 
-`POSTGRES_IMAGE` and `POSTGRES_CONTAINER_NAME` are defined once in **`.env.example`** (validated by Nest, used by Compose and dump/restore scripts).
+`POSTGRES_IMAGE` and `POSTGRES_CONTAINER_NAME` are defined once in **`.env.example`** (Compose and dump/restore scripts; not Nest boot validation).
 
 CI cannot load `.env` before GHA service containers start, so a `resolve-env` job reads those keys from `.env.example` and passes them via job outputs into service `image:` and job env. Bump the image only in `.env.example`.
 
@@ -185,4 +185,3 @@ Require a single status check: **CI Status Check**.
 - [GitHub Actions service containers](https://docs.github.com/en/actions/using-containerized-services/about-service-containers)
 - [Dependency Review Action](https://github.com/actions/dependency-review-action)
 - [Publishing Docker images to GHCR](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)
-

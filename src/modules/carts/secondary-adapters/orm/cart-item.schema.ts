@@ -21,6 +21,9 @@ export class CartItemEntity {
   @Column({ name: 'product_name', type: 'varchar' })
   productName!: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  sku!: string | null;
+
   @Column({
     type: 'numeric',
     precision: 13,

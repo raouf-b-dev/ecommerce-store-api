@@ -55,4 +55,13 @@ export class CartItemResponseDto {
     nullable: true,
   })
   imageUrl!: string | null;
+
+  @ApiProperty({
+    example: 'ELEC-ANC-001',
+    description:
+      'Product SKU snapshotted at add time. Null when the product had no SKU.',
+    type: String,
+    nullable: true,
+  })
+  sku!: string | null;
 }

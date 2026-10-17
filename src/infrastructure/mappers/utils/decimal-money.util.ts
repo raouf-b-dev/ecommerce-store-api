@@ -1,4 +1,5 @@
 import { Currency } from '../../../shared-kernel/domain/value-objects/currency';
+import { Money } from '../../../shared-kernel/domain/value-objects/money';
 import { minorUnitsFromDecimal } from '../../../shared-kernel/domain/value-objects/money-decimal';
 
 /**
@@ -23,4 +24,19 @@ export function requireMinorUnits(
     );
   }
   return minorUnits;
+}
+
+/**
+ * Converts integer minor units to a major-unit number via Money.toMajorUnits.
+ * Throws in persistence/DTO adapters if the amount or currency is invalid.
+ */
+export function requireMajorUnitsFromMinor(
+  minorUnits: number,
+  currency: string,
+): number {
+  const moneyResult = Money.create(minorUnits, currency);
+  if (moneyResult.isFailure) {
+    throw moneyResult.error;
+  }
+  return moneyResult.value.toMajorUnits();
 }
