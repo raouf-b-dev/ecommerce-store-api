@@ -1,7 +1,18 @@
+import { OrderEntityTestFactory } from '../../../testing';
 import { OrderItem } from '../../../core/domain/entities/order-items';
 import { OrderItemMapper } from './order-item.mapper';
 
 describe('OrderItemMapper', () => {
+  it('toDomain keeps the stored productName unchanged', () => {
+    const entity = OrderEntityTestFactory.createOrderItemEntity({
+      productName: 'Mechanical Keyboard',
+    });
+
+    const domain = OrderItemMapper.toDomain(entity);
+
+    expect(domain.productName).toBe('Mechanical Keyboard');
+  });
+
   it('toEntity omits id when domain id is null', () => {
     const item = new OrderItem({
       id: null,

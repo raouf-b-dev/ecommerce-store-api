@@ -17,7 +17,7 @@ export class OrderItemMapper {
     const orderItemProps: OrderItemProps = {
       id: entity.id,
       productId: entity.productId,
-      productName: entity.productName || 'Unknown Product',
+      productName: entity.productName,
       sku: entity.sku || null,
       imageUrl: entity.imageUrl || null,
       unitPrice: requireMinorUnits(entity.unitPrice, entity.currency),
