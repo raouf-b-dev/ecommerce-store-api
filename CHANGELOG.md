@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stock checks and add-to-cart no longer read cached inventory that is stale after a reservation is placed, released, confirmed or expired; each reservation write now evicts the affected inventory cache keys.
 - The `.secrets` missing-key warning no longer recommends a blind overwrite of CI credentials and names every value `--overwrite` resets.
 - `env:init` exits 1 and writes nothing when the env or secrets template is missing or has no keys (for example a mistyped `--from`).
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.

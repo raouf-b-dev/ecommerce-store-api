@@ -25,6 +25,14 @@ export const INVENTORY_REDIS: IRedisContstant = {
   EXPIRATION: 3600 * 24 * 7, // 7 days
 };
 
+export function inventoryIdCacheKey(id: number): string {
+  return `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
+}
+
+export function inventoryProductCacheKey(productId: number): string {
+  return `${INVENTORY_REDIS.CACHE_KEY}:product:${productId}`;
+}
+
 export const CART_REDIS: IRedisContstant = {
   INDEX: 'cart_index',
   CACHE_KEY: 'cart_cache',

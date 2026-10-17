@@ -4,7 +4,11 @@ import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { CachePort } from '../../../../../shared-kernel/domain/interfaces/cache.port';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { INVENTORY_REDIS } from '../../../../../infrastructure/redis/constants/redis.constants';
+import {
+  INVENTORY_REDIS,
+  inventoryIdCacheKey,
+  inventoryProductCacheKey,
+} from '../../../../../infrastructure/redis/constants/redis.constants';
 import {
   InventoryCacheMapper,
   InventoryForCache,
@@ -23,18 +27,10 @@ export class CachedInventoryRepository implements InventoryRepository {
     private readonly postgresRepo: InventoryRepository,
   ) {}
 
-  private idKey(id: number) {
-    return `${INVENTORY_REDIS.CACHE_KEY}:${id}`;
-  }
-
-  private productKey(productId: number) {
-    return `${INVENTORY_REDIS.CACHE_KEY}:product:${productId}`;
-  }
-
   async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
-        this.idKey(id),
+        inventoryIdCacheKey(id),
       );
       if (cached) {
         const inventory = InventoryCacheMapper.fromCache(cached);
@@ -48,7 +44,7 @@ export class CachedInventoryRepository implements InventoryRepository {
 
       if (inventory.id) {
         await this.cacheService.set(
-          this.idKey(inventory.id),
+          inventoryIdCacheKey(inventory.id),
           InventoryCacheMapper.toCache(inventory),
           {
             ttl: INVENTORY_REDIS.EXPIRATION,
@@ -57,7 +53,7 @@ export class CachedInventoryRepository implements InventoryRepository {
       }
 
       await this.cacheService.set(
-        this.productKey(inventory.productId),
+        inventoryProductCacheKey(inventory.productId),
         InventoryCacheMapper.toCache(inventory),
         {
           ttl: INVENTORY_REDIS.EXPIRATION,
@@ -75,7 +71,7 @@ export class CachedInventoryRepository implements InventoryRepository {
   ): Promise<Result<Inventory, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
-        this.productKey(productId),
+        inventoryProductCacheKey(productId),
       );
       if (cached) {
         const inventory = InventoryCacheMapper.fromCache(cached);
@@ -88,7 +84,7 @@ export class CachedInventoryRepository implements InventoryRepository {
       const inventory = dbResult.value;
 
       await this.cacheService.set(
-        this.productKey(inventory.productId),
+        inventoryProductCacheKey(inventory.productId),
         InventoryCacheMapper.toCache(inventory),
         {
           ttl: INVENTORY_REDIS.EXPIRATION,
@@ -97,7 +93,7 @@ export class CachedInventoryRepository implements InventoryRepository {
 
       if (inventory.id) {
         await this.cacheService.set(
-          this.idKey(inventory.id),
+          inventoryIdCacheKey(inventory.id),
           InventoryCacheMapper.toCache(inventory),
           {
             ttl: INVENTORY_REDIS.EXPIRATION,
@@ -126,7 +122,7 @@ export class CachedInventoryRepository implements InventoryRepository {
       await Promise.all(
         productIds.map(async (productId) => {
           const cached = await this.cacheService.get<InventoryForCache>(
-            this.productKey(productId),
+            inventoryProductCacheKey(productId),
           );
           const inventory = cached
             ? InventoryCacheMapper.fromCache(cached)
@@ -148,13 +144,13 @@ export class CachedInventoryRepository implements InventoryRepository {
         const entries = dbInventories.flatMap((inv) => {
           const items = [
             {
-              key: this.productKey(inv.productId),
+              key: inventoryProductCacheKey(inv.productId),
               value: InventoryCacheMapper.toCache(inv),
             },
           ];
           if (inv.id) {
             items.push({
-              key: this.idKey(inv.id),
+              key: inventoryIdCacheKey(inv.id),
               value: InventoryCacheMapper.toCache(inv),
             });
           }
@@ -197,13 +193,13 @@ export class CachedInventoryRepository implements InventoryRepository {
         const entries = inventories.flatMap((inv) => {
           const items = [
             {
-              key: this.productKey(inv.productId),
+              key: inventoryProductCacheKey(inv.productId),
               value: InventoryCacheMapper.toCache(inv),
             },
           ];
           if (inv.id) {
             items.push({
-              key: this.idKey(inv.id),
+              key: inventoryIdCacheKey(inv.id),
               value: InventoryCacheMapper.toCache(inv),
             });
           }
@@ -264,7 +260,7 @@ export class CachedInventoryRepository implements InventoryRepository {
       const savedInventory = dbResult.value;
       if (savedInventory.id) {
         await this.cacheService.set(
-          this.idKey(savedInventory.id),
+          inventoryIdCacheKey(savedInventory.id),
           InventoryCacheMapper.toCache(savedInventory),
           {
             ttl: INVENTORY_REDIS.EXPIRATION,
@@ -273,7 +269,7 @@ export class CachedInventoryRepository implements InventoryRepository {
       }
 
       await this.cacheService.set(
-        this.productKey(savedInventory.productId),
+        inventoryProductCacheKey(savedInventory.productId),
         InventoryCacheMapper.toCache(savedInventory),
         {
           ttl: INVENTORY_REDIS.EXPIRATION,
@@ -290,17 +286,19 @@ export class CachedInventoryRepository implements InventoryRepository {
   async delete(id: number): Promise<Result<void, RepositoryError>> {
     try {
       const cached = await this.cacheService.get<InventoryForCache>(
-        this.idKey(id),
+        inventoryIdCacheKey(id),
       );
       // Invalidate the product key even when the ID document fails full mapping.
       if (cached && typeof cached.productId === 'number') {
-        await this.cacheService.delete(this.productKey(cached.productId));
+        await this.cacheService.delete(
+          inventoryProductCacheKey(cached.productId),
+        );
       }
 
       const dbResult = await this.postgresRepo.delete(id);
       if (dbResult.isFailure) return dbResult;
 
-      await this.cacheService.delete(this.idKey(id));
+      await this.cacheService.delete(inventoryIdCacheKey(id));
 
       await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
 
