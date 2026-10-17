@@ -169,7 +169,7 @@
     "jose": "^6.2.12",
     "pg": "^8.23.1",
     "prom-client": "^15.1.3",
-    "redis": "^5.8.0",
+    "redis": "^6.3.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sanitize-html": "^2.18.0",
@@ -226,6 +226,9 @@
     "@nest-lab/throttler-storage-redis": {
       "@nestjs/common": "$@nestjs/common",
       "@nestjs/core": "$@nestjs/core"
+    },
+    "typeorm": {
+      "redis": "$redis"
     },
     "handlebars": "^4.7.10",
     "js-yaml": "^4.1.0"
