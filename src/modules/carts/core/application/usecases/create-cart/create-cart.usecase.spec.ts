@@ -61,6 +61,7 @@ describe('CreateCartUseCase', () => {
             currency: 'USD',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
           {
             id: 2,
@@ -70,6 +71,7 @@ describe('CreateCartUseCase', () => {
             currency: 'JPY',
             quantity: 1,
             imageUrl: null,
+            sku: null,
           },
         ],
       });

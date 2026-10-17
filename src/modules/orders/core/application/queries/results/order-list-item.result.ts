@@ -2,8 +2,8 @@ export interface OrderListItemDTO {
   id: number;
   orderNumber: string;
   userId: number;
-  userName: string;
-  userEmail: string;
+  userName: string | null;
+  userEmail: string | null;
   status: string;
   itemCount: number;
   totalAmount: number;

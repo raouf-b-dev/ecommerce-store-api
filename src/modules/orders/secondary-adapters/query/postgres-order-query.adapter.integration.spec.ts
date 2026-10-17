@@ -1,11 +1,13 @@
 import { OrderEntityTestFactory } from 'src/modules/orders/testing';
-import { ResultAssertionHelper } from 'src/testing';
+import { assertDefined, ResultAssertionHelper } from 'src/testing';
 import { IntegrationTestHelper } from 'test/integration/harness/integration-test.helper';
 import { SeededData } from 'test/integration/harness/seed-reference-data';
 import { PostgresOrderQueryAdapter } from './postgres-order-query.adapter';
 import { OrderEntity } from '../orm/order.schema';
 import { OrderItemEntity } from '../orm/order-item.schema';
 import { ShippingAddressEntity } from '../orm/shipping-address.schema';
+import { ProductEntity } from 'src/modules/products/secondary-adapters/orm/product.schema';
+import { InventoryEntity } from 'src/modules/inventory/secondary-adapters/orm/inventory.schema';
 
 describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
   let queryAdapter: PostgresOrderQueryAdapter;
@@ -157,7 +159,7 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
     expect(result.value.items[1].id).toBe(high.id);
   });
 
-  it('returns order detail DTO with line items and product SKU mapping', async () => {
+  it('returns order detail DTO with line items from the purchase snapshot', async () => {
     const order = await createOrderRow();
 
     const result = await queryAdapter.getById(order.id);
@@ -169,6 +171,55 @@ describe('PostgresOrderQueryAdapter (Integration - Real DB)', () => {
     expect(result.value?.id).toBe(order.id);
     expect(result.value?.userName).toBe('Customer One');
     expect(result.value?.items[0].sku).toBe('INT-LAPTOP-01');
+  });
+
+  it('returns order detail after the catalog product row is deleted', async () => {
+    const orderRepo = IntegrationTestHelper.getRepository(OrderEntity);
+    const itemRepo = IntegrationTestHelper.getRepository(OrderItemEntity);
+    const shippingAddressRepo = IntegrationTestHelper.getRepository(
+      ShippingAddressEntity,
+    );
+    const inventoryRepo = IntegrationTestHelper.getRepository(InventoryEntity);
+    const productRepo = IntegrationTestHelper.getRepository(ProductEntity);
+
+    const shippingAddress = await shippingAddressRepo.save(
+      shippingAddressRepo.create(
+        OrderEntityTestFactory.createShippingAddressEntity({ id: undefined }),
+      ),
+    );
+    const order = await orderRepo.save(
+      orderRepo.create(
+        OrderEntityTestFactory.createUnsavedOrderEntity({
+          userId: seededData.customerUser.id,
+          shippingAddressId: shippingAddress.id,
+          totalPrice: 1200.0,
+        }),
+      ),
+    );
+    const purchasedName = seededData.product.name;
+    await itemRepo.save(
+      itemRepo.create(
+        OrderEntityTestFactory.createUnsavedOrderItemEntity({
+          order,
+          productId: seededData.product.id,
+          productName: purchasedName,
+          sku: null,
+          quantity: 1,
+          unitPrice: 1200.0,
+          lineTotal: 1200.0,
+        }),
+      ),
+    );
+
+    await inventoryRepo.delete({ productId: seededData.product.id });
+    await productRepo.delete(seededData.product.id);
+
+    const result = await queryAdapter.getById(order.id);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    assertDefined(result.value);
+    expect(result.value.items[0].title).toBe(purchasedName);
+    expect(result.value.items[0].sku).toBeNull();
   });
 
   it('returns QueryNotFoundError when querying non-existent order ID', async () => {

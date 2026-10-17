@@ -201,6 +201,30 @@ describe('Admin order lifecycle (e2e)', () => {
     );
   }, 180_000);
 
+  it('returns order detail from purchase snapshot after product delete', async () => {
+    const product = await E2eCatalogHelper.createProductWithStock(
+      moduleRef,
+      http,
+      admin,
+      1,
+      'snapshot-read',
+    );
+    const purchasedName = product.name;
+    const orderId = await checkoutAndConfirm(product);
+
+    const deleteResponse = await http
+      .delete(`${E2E_API_PREFIX}/products/${product.id}`)
+      .set(AuthTestHelper.bearer(admin.accessToken));
+    expect(deleteResponse.status).toBe(HttpStatus.OK);
+
+    const customerView = await http
+      .get(`${E2E_API_PREFIX}/orders/${orderId}`)
+      .set(AuthTestHelper.bearer(customer.accessToken));
+    expect(customerView.status).toBe(HttpStatus.OK);
+    expect(customerView.body.items[0].title).toBe(purchasedName);
+    expect(customerView.body.items[0].sku).toBe(product.sku);
+  }, 180_000);
+
   it('rejects admin cancel of a shipped order with 409 Conflict', async () => {
     const orderId = await checkoutAndConfirm(shippedProduct);
 

@@ -7,6 +7,7 @@ export interface CheckoutCartItem {
   productId: number;
   productName: string;
   imageUrl: string | null;
+  sku: string | null;
   price: number;
   quantity: number;
   currency: string;

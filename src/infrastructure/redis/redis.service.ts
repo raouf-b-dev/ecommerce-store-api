@@ -4,14 +4,11 @@ import {
   OnApplicationShutdown,
   OnModuleInit,
 } from '@nestjs/common';
-import { RedisJSON } from '@redis/json/dist/lib/commands';
 import {
   createClient,
   FtSearchOptions,
-  RedisClientType,
-  RedisDefaultModules,
-  RedisFunctions,
-  RedisScripts,
+  type RedisClientType,
+  type RedisJSON,
 } from 'redis';
 import { EnvConfigService } from '../../config/env-config.service';
 import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
@@ -25,15 +22,9 @@ import {
 import { buildNodeRedisClientOptions } from './redis-connection.options';
 import { logRedisError } from './redis-error.utils';
 
-export type AppRedisClient = RedisClientType<
-  RedisDefaultModules,
-  RedisFunctions,
-  RedisScripts
->;
-
 @Injectable()
 export class RedisService implements OnModuleInit, OnApplicationShutdown {
-  public client: AppRedisClient | null = null;
+  public client: RedisClientType | null = null;
   private connected = false;
   private wasConnected = false;
   private cacheGeneration = 0;
@@ -51,7 +42,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
   async onModuleInit() {
     this.client = createClient(
       buildNodeRedisClientOptions(this.envConfigService.redis),
-    ) as AppRedisClient;
+    );
 
     this.client.on('error', (err: unknown) =>
       logRedisError(this.logger, 'Redis client', err),
@@ -333,7 +324,7 @@ export class RedisService implements OnModuleInit, OnApplicationShutdown {
     try {
       await this.client.ft.create(
         this.getFullKey(index),
-        schema as Parameters<AppRedisClient['ft']['create']>[1],
+        schema as Parameters<RedisClientType['ft']['create']>[1],
         {
           ON: 'JSON',
           PREFIX: [this.getFullKey(prefix)],

@@ -79,7 +79,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
 
-  if (nodeEnv !== 'production') {
+  if (configService.swaggerEnabled) {
     const document = SwaggerModule.createDocument(
       app,
       buildSwaggerDocumentConfig(),

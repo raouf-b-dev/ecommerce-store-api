@@ -76,10 +76,10 @@ The API will be available at `http://localhost:3000` with Swagger docs at `http:
 
 3. **Write or update tests** for your changes
 
-4. **Run the test suite** to ensure everything passes:
+4. **Run the pre-PR gate** to ensure everything passes:
 
    ```bash
-   npm test
+   npm run verify
    ```
 
 5. **Commit your changes** with a clear message:
@@ -128,7 +128,10 @@ This project follows **Domain-Driven Design (DDD)** and **Hexagonal Architecture
 We maintain high test coverage. Please include tests for any new functionality:
 
 ```bash
-# Run all tests
+# Pre-PR gate (typecheck, lint, format, arch, unit)
+npm run verify
+
+# Unit tests only
 npm test
 
 # Run tests in watch mode
@@ -171,7 +174,7 @@ npm run audit:openapi
 ### PR Checklist
 
 - [ ] Code follows the project's style guidelines
-- [ ] Tests pass locally (`npm test`)
+- [ ] Pre-PR gate passes locally (`npm run verify`)
 - [ ] New functionality includes appropriate tests
 - [ ] Documentation is updated if needed
 - [ ] Commit messages are clear and descriptive
