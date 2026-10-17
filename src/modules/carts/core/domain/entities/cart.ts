@@ -101,7 +101,8 @@ export class Cart implements ICart {
     price: number,
     quantity: number,
     currency: string,
-    imageUrl?: string,
+    sku: string | null,
+    imageUrl?: string | null,
   ): Result<void, DomainError> {
     const currencyResult = Currency.create(currency);
     if (currencyResult.isFailure) {
@@ -134,6 +135,7 @@ export class Cart implements ICart {
           price,
           quantity,
           normalizedCurrency,
+          sku,
           imageUrl,
         );
         this._items.push(newItem);

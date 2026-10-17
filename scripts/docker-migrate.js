@@ -7,6 +7,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { DataSource } = require('typeorm');
 const { join } = require('path');
+const { isEnvTruthy, isEnvFalsy } = require('./lib/env-bool');
+
+// Match envalid bool() so managed hosts that set DB_SSL=1 stay consistent
+// between Nest runtime and this entrypoint migrate script.
+const useSsl = isEnvTruthy(process.env.DB_SSL);
+const rejectUnauthorized = !isEnvFalsy(process.env.DB_SSL_REJECT_UNAUTHORIZED);
 
 const ds = new DataSource({
   type: 'postgres',
@@ -19,6 +25,13 @@ const ds = new DataSource({
   logging: ['error'],
   migrations: [join(__dirname, '..', 'dist', 'migrations', '*.js')],
   migrationsTableName: 'typeorm_migrations',
+  ...(useSsl
+    ? {
+        ssl: {
+          rejectUnauthorized,
+        },
+      }
+    : {}),
 });
 
 ds.initialize()

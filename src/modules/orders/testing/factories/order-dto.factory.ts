@@ -164,6 +164,7 @@ export class OrderDtoTestFactory {
       productId: 1,
       productName: 'productName',
       imageUrl: null,
+      sku: null,
       price: 10,
       quantity: 1,
       currency: 'USD',

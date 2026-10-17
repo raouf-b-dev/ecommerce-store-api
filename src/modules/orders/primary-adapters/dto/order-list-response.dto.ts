@@ -15,14 +15,21 @@ export class OrderListItemResponseDto {
   @ApiProperty({ example: 3, description: 'Customer user ID' })
   userId!: number;
 
-  @ApiProperty({ example: 'Jane Doe', description: 'Customer display name' })
-  userName!: string;
+  @ApiProperty({
+    example: 'Jane Doe',
+    description: 'Customer display name. Null when the user join has no name.',
+    type: String,
+    nullable: true,
+  })
+  userName!: string | null;
 
   @ApiProperty({
     example: 'customer@store.local',
-    description: 'Customer email',
+    description: 'Customer email. Null when the user join has no email.',
+    type: String,
+    nullable: true,
   })
-  userEmail!: string;
+  userEmail!: string | null;
 
   @ApiProperty({
     enum: OrderStatus,

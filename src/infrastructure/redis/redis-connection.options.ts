@@ -21,45 +21,60 @@ export function redisReconnectDelay(retries: number): number {
 /**
  * Shared node-redis client options (cache, Socket.IO pub/sub).
  * Key prefixing is applied in application code via RedisService.getFullKey.
+ * Uses discrete host/port (+ optional TLS) so passwords need not be URL-encoded.
  * Uses redis@6 defaults (RESP 3, matching RedisClientOptions / RedisClientType).
  */
 export function buildNodeRedisClientOptions(
   redis: RedisConfig,
 ): RedisClientOptions {
+  const common = {
+    host: redis.host,
+    port: redis.port,
+    reconnectStrategy: redisReconnectDelay,
+  };
   return {
-    url: `redis://${redis.host}:${redis.port}`,
     password: redis.password || undefined,
     database: redis.db,
-    socket: {
-      reconnectStrategy: redisReconnectDelay,
-    },
+    // Discriminated union: tls:true vs omitted/false (node-redis RedisSocketOptions).
+    socket: redis.tls ? { ...common, tls: true } : common,
   };
 }
 
 /**
- * Shared ioredis / BullMQ connection fields (host, port, password, db).
+ * Shared ioredis / BullMQ connection fields (host, port, password, db, tls).
  */
 export function buildIoRedisConnection(redis: RedisConfig): {
   host: string;
   port: number;
   password: string | undefined;
   db: number;
+  tls?: Record<string, never>;
 } {
   return {
     host: redis.host,
     port: redis.port,
     password: redis.password || undefined,
     db: redis.db,
+    ...(redis.tls ? { tls: {} } : {}),
   };
 }
 
 /**
  * ioredis options for throttler storage (fail fast when Redis is down).
  */
-export function buildThrottlerIoRedisOptions(redis: RedisConfig) {
+export function buildThrottlerIoRedisOptions(redis: RedisConfig): {
+  host: string;
+  port: number;
+  password: string | undefined;
+  db: number;
+  tls?: Record<string, never>;
+  enableOfflineQueue: false;
+  maxRetriesPerRequest: number;
+  retryStrategy: (retries: number) => number;
+} {
   return {
     ...buildIoRedisConnection(redis),
-    enableOfflineQueue: false as const,
+    enableOfflineQueue: false,
     maxRetriesPerRequest: 1,
     retryStrategy: redisReconnectDelay,
   };

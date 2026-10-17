@@ -78,6 +78,7 @@ export class SeedDemoCartUseCase extends UseCase<
         price.value.amount,
         seedItem.quantity,
         price.value.currency,
+        product.sku,
         product.imageUrl ?? undefined,
       );
       if (isFailure(addResult)) {

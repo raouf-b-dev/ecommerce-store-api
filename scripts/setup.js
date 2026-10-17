@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 'use strict';
 
-const { existsSync } = require('fs');
 const { resolve } = require('path');
 const { spawnSync } = require('child_process');
 const { loadEnv, printFailure } = require('./lib/cli');
@@ -13,12 +12,10 @@ const {
 const { runSetup } = require('./lib/setup-bootstrap');
 
 const repoRoot = resolve(__dirname, '..');
-const envDevPath = resolve(repoRoot, '.env.development');
 const runDocker = createDockerRunner(repoRoot);
 
 const result = runSetup({
   log: console,
-  envDevExists: () => existsSync(envDevPath),
   generateEnvs: () =>
     spawnSync('node', ['scripts/generate-envs.js'], {
       cwd: repoRoot,

@@ -10,4 +10,5 @@ export interface RawCartQueryRow {
   currency?: string | null;
   quantity?: number | null;
   imageUrl?: string | null;
+  sku?: string | null;
 }

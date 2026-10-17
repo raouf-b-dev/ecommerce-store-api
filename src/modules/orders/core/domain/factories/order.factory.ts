@@ -6,6 +6,7 @@ export interface OrderCartItemInput {
   productId: number;
   productName: string;
   imageUrl: string | null;
+  sku: string | null;
   price: number;
   quantity: number;
   currency: string;
@@ -30,6 +31,7 @@ export class OrderFactory {
         productId: item.productId,
         productName: item.productName,
         imageUrl: item.imageUrl,
+        sku: item.sku,
         unitPrice: item.price,
         quantity: item.quantity,
         currency: item.currency,
