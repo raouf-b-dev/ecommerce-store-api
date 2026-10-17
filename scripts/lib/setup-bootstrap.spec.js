@@ -29,7 +29,6 @@ function setupDeps(overrides) {
   const calls = [];
   const deps = {
     log: silentLog,
-    envDevExists: () => true,
     generateEnvs: () => {
       calls.push('generateEnvs');
       return ok();
@@ -77,25 +76,19 @@ describe('runSetup', () => {
     assert.deepEqual(calls, ['checkDocker']);
   });
 
-  it('generates env files when .env.development is missing', () => {
-    const { deps, calls } = setupDeps({
-      envDevExists: () => false,
-    });
+  it('always runs env generation after Docker check', () => {
+    const { deps, calls } = setupDeps();
     const result = runSetup(deps);
     assert.equal(result.ok, true);
-    assert.deepEqual(calls, [
+    assert.deepEqual(calls.slice(0, 3), [
       'checkDocker',
       'generateEnvs',
       'loadEnv',
-      'startInfra',
-      'runMigrations',
-      'runSeed',
     ]);
   });
 
   it('stops when env generation fails', () => {
     const { deps, calls } = setupDeps({
-      envDevExists: () => false,
       generateEnvs: () => {
         calls.push('generateEnvs');
         return fail(1);
@@ -103,22 +96,11 @@ describe('runSetup', () => {
     });
     const result = runSetup(deps);
     assert.equal(result.ok, false);
-    assert.equal(result.message, 'Failed to generate environment files.');
+    assert.equal(
+      result.message,
+      'Environment files are missing keys. See the output above for env:init:merge / env:init:force.',
+    );
     assert.equal(calls.includes('startInfra'), false);
-  });
-
-  it('skips env generation when .env.development already exists', () => {
-    const { deps, calls } = setupDeps();
-    const result = runSetup(deps);
-    assert.equal(result.ok, true);
-    assert.equal(calls.includes('generateEnvs'), false);
-    assert.deepEqual(calls, [
-      'checkDocker',
-      'loadEnv',
-      'startInfra',
-      'runMigrations',
-      'runSeed',
-    ]);
   });
 
   it('does not run migrations when compose up fails', () => {
@@ -139,7 +121,10 @@ describe('runSetup', () => {
     assert.match(result.hints.join('\n'), /5432, 6379, 8001/);
     assert.match(result.hints.join('\n'), /REDIS_INSIGHT_PORT/);
     assert.match(result.hints.join('\n'), /logs postgres redis/);
-    assert.match(result.hints.join('\n'), /setup:reset \(wipes local volumes\)/);
+    assert.match(
+      result.hints.join('\n'),
+      /setup:reset \(wipes local volumes\)/,
+    );
   });
 
   it('does not seed when migrations fail', () => {
@@ -168,6 +153,7 @@ describe('runSetup', () => {
     assert.equal(result.message, 'Database seeding failed.');
     assert.deepEqual(calls, [
       'checkDocker',
+      'generateEnvs',
       'loadEnv',
       'startInfra',
       'runMigrations',
