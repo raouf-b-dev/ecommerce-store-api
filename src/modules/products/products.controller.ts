@@ -156,6 +156,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @RequirePermissions('manage_products')
   @ApiOperation({

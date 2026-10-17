@@ -355,15 +355,15 @@ Flat environment variables are mapped to a nested, domain-organised `IAppConfig`
 
 ### Commands
 
-| Command                       | Scope                                                      |
-| :---------------------------- | :--------------------------------------------------------- |
-| `npm run env:init`            | All environments + `.secrets`                              |
-| `npm run env:init:dev`        | `.env.development` only                                    |
-| `npm run env:init:prod`       | `.env.production` only                                     |
-| `npm run env:init:staging`    | `.env.staging` only                                        |
-| `npm run env:init:test`       | `.env.test` only                                           |
-| `npm run env:init:merge`      | Append missing keys from templates into existing env files |
-| `npm run env:init -- --force` | Overwrite existing files                                   |
+| Command                       | Scope                                                                    |
+| :---------------------------- | :----------------------------------------------------------------------- |
+| `npm run env:init`            | All environments + `.secrets`                                            |
+| `npm run env:init:dev`        | `.env.development` only                                                  |
+| `npm run env:init:prod`       | `.env.production` only                                                   |
+| `npm run env:init:staging`    | `.env.staging` only                                                      |
+| `npm run env:init:test`       | `.env.test` only                                                         |
+| `npm run env:init:merge`      | Append missing keys from templates into existing env files               |
+| `npm run env:init -- --force` | Regenerate every file, including JWT/metrics/Grafana keys and `.secrets` |
 
 ### Per-Environment Behaviour
 

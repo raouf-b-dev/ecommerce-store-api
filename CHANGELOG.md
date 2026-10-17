@@ -11,9 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `npm run env:init:merge` appends only missing keys from `.env.example` into existing env files.
 
+### Changed
+
+- `DELETE` for products, categories, users, roles and user addresses now returns 204 No Content, as the OpenAPI spec already documented (was 200 with an empty body). Admin and web clients already expect 204; no regeneration needed.
+- `db:backup`, `db:restore` and `db:restore:drill` fail fast when `DB_HOST`, `DB_USERNAME`, `DB_PASSWORD` or `DB_DATABASE` is unset instead of falling back to local defaults.
+
 ### Fixed
 
-- The `.secrets` missing-key warning no longer recommends a blind overwrite of CI credentials.
+- The `.secrets` missing-key warning no longer recommends a blind overwrite of CI credentials and names every value `--overwrite` resets.
+- `env:init` exits 1 and writes nothing when the env or secrets template is missing or has no keys (for example a mistyped `--from`).
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.
 
 ## [0.11.0] - 2026-10-16
