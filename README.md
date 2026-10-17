@@ -66,6 +66,8 @@ npm run start:dev
 
 `npm run setup` writes `.env.development`, starts Postgres and Redis, runs migrations, and seeds fixtures.
 
+Setup fails if existing env files are missing keys that were added to `.env.example`. Use `npm run env:init:merge` to append only the missing keys, or `npm run env:init:force` to regenerate every file (including JWT/metrics keys and `.secrets`).
+
 ### Local endpoints
 
 | Service       | URL                                                          |

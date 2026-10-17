@@ -7,29 +7,17 @@
 //   node scripts/generate-envs.js --envs=development,staging
 //   node scripts/generate-envs.js --secrets-only
 //   node scripts/generate-envs.js --from=.env.example --fromSecrets=.secrets.example --overwrite
+//   node scripts/generate-envs.js --merge
 //   npm run env:init -- --overwrite
+//   npm run env:init:merge
 
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const { generateKeyPairSync } = crypto;
-
-const args = process.argv.slice(2).reduce((acc, a) => {
-  const [k, v] = a.startsWith('--') ? a.slice(2).split('=') : [a, true];
-  acc[k] = v === undefined ? true : v;
-  return acc;
-}, {});
-
-const ENV_LIST = (args.envs || 'development,production,staging,test')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-const ENV_TEMPLATE = args.from || '.env.example';
-const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
-const FORCE = Boolean(args.overwrite || args.force);
-const SECRETS_ONLY = Boolean(args.secretsOnly || args['secrets-only']);
+const dotenv = require('dotenv');
+const { parseArgs } = require('./lib/cli');
 
 const RSA_MODULUS_LENGTH = 4096;
 
@@ -66,11 +54,8 @@ function keyOf(line) {
   return line.split('=')[0];
 }
 
-function buildLinesForEnv(lines, envName) {
+function buildLinesForEnv(lines, envName, pkgVersion) {
   const isProdLike = envName === 'production' || envName === 'staging';
-  const pkgVersion = require(
-    path.resolve(process.cwd(), 'package.json'),
-  ).version;
 
   return lines.map((line) => {
     if (!isKV(line)) return line;
@@ -164,58 +149,147 @@ async function writeFile(targetPath, contentLines) {
   });
 }
 
-(async () => {
+function missingTemplateLines(raw, templateLines) {
+  const existing = dotenv.parse(raw);
+  return templateLines.filter(
+    (line) => isKV(line) && !Object.hasOwn(existing, keyOf(line)),
+  );
+}
+
+function newlineFor(raw) {
+  return raw.includes('\r\n') ? '\r\n' : '\n';
+}
+
+/**
+ * @param {{ argv?: string[], cwd?: string, log?: { log: Function, error: Function } }} [options]
+ * @returns {Promise<number>} exit code
+ */
+async function generateEnvs({ argv, cwd = process.cwd(), log = console } = {}) {
+  const args = parseArgs(argv);
+
+  const ENV_LIST = (args.envs || 'development,production,staging,test')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const ENV_TEMPLATE = args.from || '.env.example';
+  const SECRETS_TEMPLATE = args.fromSecrets || '.secrets.example';
+  const FORCE = Boolean(args.overwrite || args.force);
+  const MERGE = Boolean(args.merge);
+  const SECRETS_ONLY = Boolean(args.secretsOnly || args['secrets-only']);
+
+  if (MERGE && (FORCE || SECRETS_ONLY)) {
+    log.error(
+      'Error: --merge cannot be combined with --overwrite/--force or --secrets-only.',
+    );
+    return 1;
+  }
+
+  const missingByFile = [];
+  const pkgVersion = require(path.resolve(cwd, 'package.json')).version;
+
   if (!SECRETS_ONLY) {
-    const envTemplatePath = path.resolve(process.cwd(), ENV_TEMPLATE);
+    const envTemplatePath = path.resolve(cwd, ENV_TEMPLATE);
     const envTemplateLines = await readTemplate(envTemplatePath);
 
     if (envTemplateLines.length === 0) {
-      console.error(`⚠️  Env template not found or empty: ${ENV_TEMPLATE}`);
+      log.error(`⚠️  Env template not found or empty: ${ENV_TEMPLATE}`);
     } else {
       for (const env of ENV_LIST) {
         const outName = `.env.${env}`;
-        const outPath = path.resolve(process.cwd(), outName);
+        const outPath = path.resolve(cwd, outName);
 
         const exists = fs.existsSync(outPath);
         if (exists && !FORCE) {
-          console.log(
-            `⏭️  Skipping ${outName} (exists). Use --overwrite to overwrite.`,
-          );
+          const raw = await fsp.readFile(outPath, 'utf8');
+          const missing = missingTemplateLines(raw, envTemplateLines);
+
+          if (missing.length === 0) {
+            log.log(
+              `⏭️  Skipping ${outName} (exists). Use --overwrite to overwrite.`,
+            );
+            continue;
+          }
+
+          if (!MERGE) {
+            missingByFile.push({ file: outName, keys: missing.map(keyOf) });
+            continue;
+          }
+
+          const nl = newlineFor(raw);
+          const generated = buildLinesForEnv(missing, env, pkgVersion);
+          const header = `# Added by env:init --merge (${new Date().toISOString()})`;
+          let block = [header, ...generated].join(nl) + nl;
+          if (raw.length > 0 && !raw.endsWith('\n')) {
+            block = nl + block;
+          }
+
+          await fsp.appendFile(outPath, block, 'utf8');
+          log.log(`Merged ${missing.length} key(s) into ${outName}`);
           continue;
         }
 
-        const lines = buildLinesForEnv(envTemplateLines, env);
+        const lines = buildLinesForEnv(envTemplateLines, env, pkgVersion);
         await writeFile(outPath, lines);
 
-        console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
+        log.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outName}`);
       }
     }
   }
 
-  const secretsTemplatePath = path.resolve(process.cwd(), SECRETS_TEMPLATE);
+  const secretsTemplatePath = path.resolve(cwd, SECRETS_TEMPLATE);
   const secretsTemplateLines = await readTemplate(secretsTemplatePath);
 
   if (secretsTemplateLines.length === 0) {
-    console.error(
-      `⚠️  Secrets template not found or empty: ${SECRETS_TEMPLATE}`,
-    );
+    log.error(`⚠️  Secrets template not found or empty: ${SECRETS_TEMPLATE}`);
   } else {
     const outSecrets = `.secrets`;
-    const outSecretsPath = path.resolve(process.cwd(), outSecrets);
+    const outSecretsPath = path.resolve(cwd, outSecrets);
 
     const exists = fs.existsSync(outSecretsPath);
     if (exists && !FORCE) {
-      console.log(
+      log.log(
         `⏭️  Skipping ${outSecrets} (exists). Use --overwrite to overwrite.`,
       );
+
+      const raw = await fsp.readFile(outSecretsPath, 'utf8');
+      const missing = missingTemplateLines(raw, secretsTemplateLines).map(
+        keyOf,
+      );
+      if (missing.length > 0) {
+        log.error(
+          `⚠️  .secrets is missing keys: ${missing.join(', ')}. Copy the missing keys from .secrets.example into .secrets by hand. npm run env:init:secrets -- --overwrite regenerates the whole file: it replaces CI_JWT_PRIVATE_KEY and CI_METRICS_API_KEY and clears CODECOV_TOKEN, so update GitHub Secrets afterwards.`,
+        );
+      }
     } else {
       const lines = buildLinesForSecrets(secretsTemplateLines);
 
       await writeFile(outSecretsPath, lines);
-      console.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outSecrets}`);
-      console.log(
+      log.log(`${exists ? '♻️  Overwrote' : '✅ Created'} ${outSecrets}`);
+      log.log(
         `   → Copy CI_JWT_PRIVATE_KEY and CI_METRICS_API_KEY into GitHub Secrets as-is.`,
       );
     }
   }
-})();
+
+  if (missingByFile.length > 0) {
+    log.error('Environment files are missing keys from the templates:');
+    for (const { file, keys } of missingByFile) {
+      log.error(`  ${file}: ${keys.join(', ')}`);
+    }
+    log.error(
+      'Run npm run env:init:merge to append missing keys, or npm run env:init:force to regenerate.',
+    );
+    return 1;
+  }
+
+  return 0;
+}
+
+module.exports = { generateEnvs };
+
+if (require.main === module) {
+  generateEnvs().then((code) => {
+    process.exitCode = code;
+  });
+}
