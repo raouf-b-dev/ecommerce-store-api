@@ -21,6 +21,7 @@ export function redisReconnectDelay(retries: number): number {
 /**
  * Shared node-redis client options (cache, Socket.IO pub/sub).
  * Key prefixing is applied in application code via RedisService.getFullKey.
+ * Uses redis@6 defaults (RESP 3, matching RedisClientOptions / RedisClientType).
  */
 export function buildNodeRedisClientOptions(
   redis: RedisConfig,
