@@ -74,11 +74,6 @@ describe('generateEnvs', () => {
       'utf8',
     );
     await fsp.writeFile(
-      path.join(cwd, '.env.test'),
-      'NODE_ENV=test\nFOO=keep-me\nNEW_KEY=already\n',
-      'utf8',
-    );
-    await fsp.writeFile(
       path.join(cwd, '.secrets'),
       'CI_DB_USERNAME=postgres\n',
       'utf8',
@@ -96,7 +91,10 @@ describe('generateEnvs', () => {
     assert.match(joined, /\.env\.development: NEW_KEY/);
     assert.match(joined, /\.env\.production: NEW_KEY/);
     assert.doesNotMatch(joined, /\.env\.staging:/);
-    assert.doesNotMatch(joined, /\.env\.test:/);
+    assert.match(joined, /Created \.env\.test/);
+    assert.equal(fs.existsSync(path.join(cwd, '.env.test')), true);
+    assert.match(joined, /\.secrets is missing keys: CI_DB_PASSWORD/);
+    assert.match(joined, /npm run env:init:secrets -- --overwrite/);
     assert.match(joined, /env:init:merge/);
     assert.match(joined, /env:init:force/);
     assert.equal(
@@ -191,7 +189,9 @@ describe('generateEnvs', () => {
 
     assert.equal(code, 0);
     assert.equal(await read(cwd, '.secrets'), secretsBody);
-    assert.match(log.lines.join('\n'), /\.secrets is missing keys: CI_EXTRA/);
+    const joined = log.lines.join('\n');
+    assert.match(joined, /\.secrets is missing keys: CI_EXTRA/);
+    assert.match(joined, /npm run env:init:secrets -- --overwrite/);
   });
 
   it('overwrite regenerates existing env files', async () => {
@@ -249,22 +249,77 @@ describe('generateEnvs', () => {
     assert.equal(await read(cwd, '.secrets'), secretsBefore);
   });
 
-  it('sets THROTTLE_GLOBAL_LIMIT=100000 for development only', async () => {
+  it('treats export KEY= as present and leaves the file unchanged on merge', async () => {
     cwd = await makeCwd({
-      envExample: 'NODE_ENV=development\nTHROTTLE_GLOBAL_LIMIT=100\n',
+      envExample: 'NODE_ENV=development\nFOO=bar\n',
     });
-
-    const code = await generateEnvs({
-      argv: ['--envs=development,test'],
-      cwd,
-      log: silentLog(),
-    });
-
-    assert.equal(code, 0);
-    assert.match(
-      await read(cwd, '.env.development'),
-      /^THROTTLE_GLOBAL_LIMIT=100000$/m,
+    const existing = 'NODE_ENV=development\nexport FOO=keep\n';
+    await fsp.writeFile(path.join(cwd, '.env.development'), existing, 'utf8');
+    await fsp.writeFile(
+      path.join(cwd, '.secrets'),
+      'CI_DB_USERNAME=postgres\nCI_DB_PASSWORD=postgres\n',
+      'utf8',
     );
-    assert.match(await read(cwd, '.env.test'), /^THROTTLE_GLOBAL_LIMIT=100$/m);
+
+    const checkLog = silentLog();
+    const checkCode = await generateEnvs({
+      argv: ['--envs=development'],
+      cwd,
+      log: checkLog,
+    });
+    assert.equal(checkCode, 0);
+    assert.equal(await read(cwd, '.env.development'), existing);
+
+    const mergeLog = silentLog();
+    const mergeCode = await generateEnvs({
+      argv: ['--merge', '--envs=development'],
+      cwd,
+      log: mergeLog,
+    });
+    assert.equal(mergeCode, 0);
+    assert.equal(await read(cwd, '.env.development'), existing);
+  });
+
+  it('merge twice leaves a single merge header and skips on the second run', async () => {
+    cwd = await makeCwd({
+      envExample: 'NODE_ENV=development\nFOO=bar\nNEW_KEY=added\n',
+    });
+    await fsp.writeFile(
+      path.join(cwd, '.env.development'),
+      'NODE_ENV=development\nFOO=keep\n',
+      'utf8',
+    );
+    await fsp.writeFile(
+      path.join(cwd, '.secrets'),
+      'CI_DB_USERNAME=postgres\nCI_DB_PASSWORD=postgres\n',
+      'utf8',
+    );
+
+    const first = silentLog();
+    assert.equal(
+      await generateEnvs({
+        argv: ['--merge', '--envs=development'],
+        cwd,
+        log: first,
+      }),
+      0,
+    );
+
+    const second = silentLog();
+    assert.equal(
+      await generateEnvs({
+        argv: ['--merge', '--envs=development'],
+        cwd,
+        log: second,
+      }),
+      0,
+    );
+
+    assert.match(
+      second.lines.join('\n'),
+      /Skipping \.env\.development \(exists\)/,
+    );
+    const after = await read(cwd, '.env.development');
+    assert.equal((after.match(/# Added by env:init --merge/g) || []).length, 1);
   });
 });

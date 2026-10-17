@@ -11,10 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `npm run env:init:merge` appends only missing keys from `.env.example` into existing env files.
 
-### Changed
-
-- `env:init` sets `THROTTLE_GLOBAL_LIMIT=100000` for `.env.development` so companion e2e is not rate-limited against a local API.
-
 ### Fixed
 
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.

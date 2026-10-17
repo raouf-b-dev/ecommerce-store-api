@@ -98,7 +98,7 @@ describe('runSetup', () => {
     assert.equal(result.ok, false);
     assert.equal(
       result.message,
-      'Environment files are missing keys. See the output above for env:init:merge / env:init:force.',
+      'Environment file generation failed. See the output above (missing keys: npm run env:init:merge or npm run env:init:force).',
     );
     assert.equal(calls.includes('startInfra'), false);
   });

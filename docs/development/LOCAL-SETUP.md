@@ -69,8 +69,6 @@ npm run env:init:force
 npm run env:init -- --overwrite
 ```
 
-For `.env.development`, `env:init` sets `THROTTLE_GLOBAL_LIMIT=100000` so companion (admin/web) e2e against a local API is not blocked by the default 100 req/60s limit. Other environments keep the template value.
-
 Targeted generation:
 
 ```bash

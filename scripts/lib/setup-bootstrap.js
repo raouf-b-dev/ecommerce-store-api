@@ -35,7 +35,7 @@ function runSetup({
   const envResult = generateEnvs();
   if (!envResult || envResult.status !== 0) {
     return failedCommand(
-      'Environment files are missing keys. See the output above for env:init:merge / env:init:force.',
+      'Environment file generation failed. See the output above (missing keys: npm run env:init:merge or npm run env:init:force).',
       envResult && envResult.status,
     );
   }
