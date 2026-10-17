@@ -138,7 +138,7 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
           `
           SELECT
             oi.product_id AS product_id,
-            COALESCE(NULLIF(MAX(oi.product_name), ''), 'Unknown') AS name,
+            MAX(oi.product_name) AS name,
             MAX(oi.sku) AS sku,
             SUM(oi.quantity)::int AS units_sold,
             COALESCE(SUM(oi."lineTotal"), 0) AS line_revenue,

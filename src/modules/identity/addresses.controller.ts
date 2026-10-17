@@ -6,6 +6,8 @@ import {
   Body,
   Delete,
   Patch,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -71,6 +73,7 @@ export class AddressesController {
   }
 
   @Delete(':id/addresses/:addressId')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Delete customer address' })
   @ApiResponse({ status: 204, description: 'Address deleted' })

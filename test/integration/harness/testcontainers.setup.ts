@@ -25,16 +25,25 @@ declare global {
   var __INTEGRATION_DATA_SOURCE__: DataSource | undefined;
 }
 
+function requireIntegrationEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} is missing - globalSetup did not start the PostgreSQL container`,
+    );
+  }
+  return value;
+}
+
 beforeAll(async () => {
   if (!globalThis.__INTEGRATION_DATA_SOURCE__) {
     const dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.INTEGRATION_DB_HOST || 'localhost',
-      port: parseInt(process.env.INTEGRATION_DB_PORT || '5432', 10),
-      username: process.env.INTEGRATION_DB_USER || 'test_user',
-      password: process.env.INTEGRATION_DB_PASS || 'test_pass',
-      database:
-        process.env.INTEGRATION_DB_NAME || 'ecommerce_store_test_integration',
+      host: requireIntegrationEnv('INTEGRATION_DB_HOST'),
+      port: parseInt(requireIntegrationEnv('INTEGRATION_DB_PORT'), 10),
+      username: requireIntegrationEnv('INTEGRATION_DB_USER'),
+      password: requireIntegrationEnv('INTEGRATION_DB_PASS'),
+      database: requireIntegrationEnv('INTEGRATION_DB_NAME'),
       synchronize: true,
       logging: false,
       entities: [

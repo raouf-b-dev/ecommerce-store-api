@@ -7,6 +7,8 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -70,6 +72,7 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a custom role' })
   @ApiResponse({ status: 204, description: 'Role deleted' })
   async delete(@Param('id', ParseIntPipe) id: number) {

@@ -97,11 +97,13 @@ Composite action: [`.github/actions/prepare-test-env/action.yml`](../../.github/
 3. Writes `.env.test` using the **ecommerce env contract** (`DB_*`, `REDIS_*`, not CRM `POSTGRES_*`).
 4. Decodes `CI_JWT_PRIVATE_KEY` from base64 when needed.
 
-Generate secrets locally:
+Generate secrets locally (creates `.secrets` only when it is missing):
 
 ```bash
-npm run env:init:secrets -- --overwrite
+npm run env:init:secrets
 ```
+
+`npm run env:init:secrets -- --overwrite` regenerates the whole file: new `CI_JWT_PRIVATE_KEY` and `CI_METRICS_API_KEY`, `CI_DB_*` and `CI_REDIS_*` reset to local defaults, and `CODECOV_TOKEN` cleared. Update GitHub Secrets afterwards.
 
 ### 4.2 `prepare-db-env` (schema-only restore-drill)
 
