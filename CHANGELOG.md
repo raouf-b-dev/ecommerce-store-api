@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `.secrets` missing-key warning no longer recommends a blind overwrite of CI credentials.
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.
 
 ## [0.11.0] - 2026-10-16

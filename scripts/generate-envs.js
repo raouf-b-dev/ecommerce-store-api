@@ -258,7 +258,7 @@ async function generateEnvs({ argv, cwd = process.cwd(), log = console } = {}) {
       );
       if (missing.length > 0) {
         log.error(
-          `⚠️  .secrets is missing keys: ${missing.join(', ')}. Run npm run env:init:secrets -- --overwrite to regenerate.`,
+          `⚠️  .secrets is missing keys: ${missing.join(', ')}. Copy the missing keys from .secrets.example into .secrets by hand. npm run env:init:secrets -- --overwrite regenerates the whole file: it replaces CI_JWT_PRIVATE_KEY and CI_METRICS_API_KEY and clears CODECOV_TOKEN, so update GitHub Secrets afterwards.`,
         );
       }
     } else {
