@@ -37,7 +37,7 @@ OpenAPI clients should regenerate if they consume cart/order schemas that newly 
 - `scripts/verify.mjs` resolves the npm CLI from `npm_execpath` (set by `npm run`).
 - Removed unused `RecordCodPaymentDto`.
 - Order detail reads items from their purchase snapshot, so deleting a product no longer breaks `GET /orders/:id`; checkout snapshots product `sku` onto cart and order items (nullable `cart_items.sku`); item `sku` may be null; cart item responses also expose nullable `sku`.
-- Order item product names are required at the database level (blank legacy names backfilled from the catalog; migration stops if any remain), and the order item mapper no longer substitutes "Unknown Product".
+- Order item product names are required at the database level (blank means whitespace-only: spaces, tabs or newlines; blank legacy names backfilled from the catalog; migration stops if any remain), and the order item mapper no longer substitutes "Unknown Product".
 
 ### Security
 
