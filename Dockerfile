@@ -17,6 +17,12 @@ WORKDIR /app
 COPY . .
 RUN npm run build
 
+# ── Stage 2b: seed (demo data job for ecommerce-platform) ───────
+# Full workspace with ts-node; published as ecommerce-store-api-seed.
+FROM build AS seed
+WORKDIR /app
+CMD ["node_modules/.bin/ts-node", "-r", "tsconfig-paths/register", "scripts/seed.ts"]
+
 # ── Stage 3: prod-deps ──────────────────────────────────────────
 # Clean install of production-only dependencies in an isolated stage.
 # Avoids deprecated `npm prune --production` and guarantees no dev
