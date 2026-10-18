@@ -249,6 +249,44 @@ describe('generateEnvs', () => {
     assert.equal(await read(cwd, '.secrets'), secretsBefore);
   });
 
+  it('returns 1 and writes nothing when --from names a missing env template', async () => {
+    cwd = await makeCwd();
+
+    const log = silentLog();
+    const code = await generateEnvs({
+      argv: ['--from=missing.example', '--envs=development'],
+      cwd,
+      log,
+    });
+
+    assert.equal(code, 1);
+    assert.match(
+      log.lines.join('\n'),
+      /Env template not found or empty: missing\.example/,
+    );
+    assert.equal(fs.existsSync(path.join(cwd, '.env.development')), false);
+    assert.equal(fs.existsSync(path.join(cwd, '.secrets')), false);
+  });
+
+  it('returns 1 and writes nothing when the secrets template has no keys', async () => {
+    cwd = await makeCwd({ secretsExample: '# comments only\n' });
+
+    const log = silentLog();
+    const code = await generateEnvs({
+      argv: ['--envs=development'],
+      cwd,
+      log,
+    });
+
+    assert.equal(code, 1);
+    assert.match(
+      log.lines.join('\n'),
+      /Secrets template not found or empty: \.secrets\.example/,
+    );
+    assert.equal(fs.existsSync(path.join(cwd, '.env.development')), false);
+    assert.equal(fs.existsSync(path.join(cwd, '.secrets')), false);
+  });
+
   it('treats export KEY= as present and leaves the file unchanged on merge', async () => {
     cwd = await makeCwd({
       envExample: 'NODE_ENV=development\nFOO=bar\n',

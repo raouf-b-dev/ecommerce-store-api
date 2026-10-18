@@ -155,6 +155,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @RequirePermissions('manage_products')
   @ApiOperation({

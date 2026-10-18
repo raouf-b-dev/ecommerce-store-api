@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SweepExpiredReservationsUseCase } from './sweep-expired-reservations.usecase';
-import { POSTGRES_RESERVATION_REPOSITORY } from '../../../../inventory.token';
+import { ReservationRepository } from '../../../domain/repositories/reservation.repository';
 import {
   MockReservationRepository,
   ReservationRepositoryMockFactory,
@@ -23,7 +23,7 @@ describe('SweepExpiredReservationsUseCase', () => {
       providers: [
         SweepExpiredReservationsUseCase,
         {
-          provide: POSTGRES_RESERVATION_REPOSITORY,
+          provide: ReservationRepository,
           useValue: reservations,
         },
       ],

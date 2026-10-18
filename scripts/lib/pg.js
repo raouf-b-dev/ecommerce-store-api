@@ -8,15 +8,27 @@ const DEFAULT_CONTAINER_NAME = 'postgres-db';
 const DUMP_PREFIX = 'ecommerce-store-api_';
 
 /**
+ * Read a `DB_*` key that src/config/validate-env.ts requires (no default there either).
+ */
+function requireDbEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required for db scripts (set in .env or CI)`);
+  }
+  return value;
+}
+
+/**
  * Resolve PostgreSQL connection settings from the ecommerce `DB_*` env contract.
+ * DB_PORT keeps the same 5432 default as src/config/validate-env.ts.
  */
 function getDbConfig(overrides = {}) {
   return {
-    host: overrides.host || process.env.DB_HOST || 'localhost',
+    host: overrides.host || requireDbEnv('DB_HOST'),
     port: String(overrides.port || process.env.DB_PORT || '5432'),
-    username: overrides.username || process.env.DB_USERNAME || 'postgres',
-    password: overrides.password || process.env.DB_PASSWORD || 'postgres',
-    database: overrides.database || process.env.DB_DATABASE || 'ecommerce_db',
+    username: overrides.username || requireDbEnv('DB_USERNAME'),
+    password: overrides.password || requireDbEnv('DB_PASSWORD'),
+    database: overrides.database || requireDbEnv('DB_DATABASE'),
     containerName:
       overrides.containerName ||
       process.env.POSTGRES_CONTAINER_NAME ||

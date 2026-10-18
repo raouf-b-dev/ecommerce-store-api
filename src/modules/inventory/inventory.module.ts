@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { InventoryController } from './inventory.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
@@ -24,8 +24,12 @@ import { ConfirmReservationUseCase } from './core/application/usecases/confirm-r
 import { ReservationEntity } from './secondary-adapters/orm/reservation.schema';
 import { ReservationItemEntity } from './secondary-adapters/orm/reservation-item.schema';
 import { GetOrderReservationsUseCase } from './core/application/usecases/get-order-reservations/get-order-reservations.usecase';
-import { POSTGRES_RESERVATION_REPOSITORY } from './inventory.token';
+import {
+  POSTGRES_RESERVATION_REPOSITORY,
+  CACHED_RESERVATION_REPOSITORY,
+} from './inventory.token';
 import { PostgresReservationRepository } from './secondary-adapters/repositories/postgres-reservation-repository/postgres.reservation-repository';
+import { CachedReservationRepository } from './secondary-adapters/repositories/cached-reservation-repository/cached-reservation-repository';
 import { ReservationRepository } from './core/domain/repositories/reservation.repository';
 import { SeedDemoInventoryUseCase } from './core/application/seed/seed-demo-inventory.usecase';
 import { SeedDemoInventoryFromOrdersUseCase } from './core/application/seed/seed-demo-inventory-from-orders.usecase';
@@ -84,9 +88,23 @@ import { SweepExpiredReservationsJob } from './primary-adapters/jobs/sweep-expir
       provide: POSTGRES_RESERVATION_REPOSITORY,
       useClass: PostgresReservationRepository,
     },
+    // Evicts cached inventory after each reservation write
+    {
+      provide: CACHED_RESERVATION_REPOSITORY,
+      useFactory: (
+        cacheService: CachePort,
+        postgresRepo: PostgresReservationRepository,
+      ) =>
+        new CachedReservationRepository(
+          cacheService,
+          postgresRepo,
+          new Logger(CachedReservationRepository.name),
+        ),
+      inject: [CachePort, POSTGRES_RESERVATION_REPOSITORY],
+    },
     {
       provide: ReservationRepository,
-      useExisting: POSTGRES_RESERVATION_REPOSITORY,
+      useExisting: CACHED_RESERVATION_REPOSITORY,
     },
 
     // Schedulers (Secondary Adapter Port -> Adapter)
