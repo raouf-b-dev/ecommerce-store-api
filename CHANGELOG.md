@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.11.2] - 2026-10-18
+
+### Added
+
+- Dockerfile `seed` stage and GHCR image `ecommerce-store-api-seed` (same semver tags as the API) for the ecommerce-platform demo seed job.
+
+### Changed
+
+- Docker validate/publish builds `linux/amd64` and `linux/arm64` for the API and seed images.
+
+[Compare v0.11.1...v0.11.2](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.11.1...v0.11.2)
+
 ## [0.11.1] - 2026-10-18
 
 ### Added
@@ -25,16 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.
 
 [Compare v0.11.0...v0.11.1](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.11.0...v0.11.1)
-
-## [Unreleased]
-
-### Added
-
-- Dockerfile `seed` stage and GHCR image `ecommerce-store-api-seed` (same semver tags as the API) for the ecommerce-platform demo seed job.
-
-### Changed
-
-- Docker validate/publish builds `linux/amd64` and `linux/arm64` for the API and seed images.
 
 ## [0.11.0] - 2026-10-16
 
