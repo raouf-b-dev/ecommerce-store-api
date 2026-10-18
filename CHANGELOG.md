@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Docker Validate/Publish build each arch on a native runner (`ubuntu-latest` / `ubuntu-24.04-arm`) and merge multi-arch manifests by digest (no QEMU).
+
 ## [0.11.2] - 2026-10-18
 
 ### Added
