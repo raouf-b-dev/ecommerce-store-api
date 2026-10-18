@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-18
+
 ### Changed
 
 - Docker Validate/Publish build each arch on a native runner (`ubuntu-latest` / `ubuntu-24.04-arm`) and merge multi-arch manifests by digest (no QEMU).
+
+[Compare v0.11.2...v0.11.3](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.11.2...v0.11.3)
 
 ## [0.11.2] - 2026-10-18
 
