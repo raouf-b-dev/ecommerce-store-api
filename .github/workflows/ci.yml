@@ -779,13 +779,26 @@ jobs:
 
           echo "All checks passed successfully!"
 
+  # Native multi-arch (no QEMU): each platform builds on its own runner
+  # (ubuntu-latest / ubuntu-24.04-arm). Publish pushes by digest, then
+  # docker-publish-merge creates the multi-arch manifests. Matches Docker's
+  # distributed multi-platform pattern; kept inline so API + seed share one
+  # BuildKit session per arch (shared deps/build stages).
   docker-validate:
-    name: Docker Validate
-    runs-on: ubuntu-latest
+    name: Docker Validate (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
     needs: [ci]
     # ci runs with always() and depends on jobs that skip outside master, so the
     # implicit success() check would skip this job; gate on ci's result instead.
     if: ${{ !cancelled() && needs.ci.result == 'success' && github.event_name == 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -795,41 +808,54 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-
-      - name: Build production image (amd64, arm64)
+      - name: Build production image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: production
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: false
           tags: ecommerce-store-api:ci-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.platform }}
 
-      - name: Build seed image (amd64, arm64)
+      - name: Build seed image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: seed
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: false
           tags: ecommerce-store-api-seed:ci-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=docker-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.platform }}
 
   docker-publish:
-    name: Docker Publish
-    runs-on: ubuntu-latest
+    name: Docker Publish (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
     needs: [ci]
     if: ${{ !cancelled() && needs.ci.result == 'success' && github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
     permissions:
       contents: read
       packages: write
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    env:
+      API_IMAGE: ghcr.io/raouf-b-dev/ecommerce-store-api
+      SEED_IMAGE: ghcr.io/raouf-b-dev/ecommerce-store-api-seed
     steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -837,9 +863,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Log in to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -852,7 +875,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/raouf-b-dev/ecommerce-store-api
+          images: ${{ env.API_IMAGE }}
           tags: |
             type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=semver,pattern={{version}}
@@ -861,35 +884,149 @@ jobs:
         id: meta-seed
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/raouf-b-dev/ecommerce-store-api-seed
+          images: ${{ env.SEED_IMAGE }}
           tags: |
             type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
             type=semver,pattern={{version}}
 
-      - name: Build and push API (amd64, arm64)
+      - name: Build and push API by digest
+        id: build-api
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: production
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.API_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=docker-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.platform }}
           sbom: true
           provenance: mode=max
 
-      - name: Build and push seed (amd64, arm64)
+      - name: Build and push seed by digest
+        id: build-seed
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           target: seed
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta-seed.outputs.tags }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta-seed.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.SEED_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=docker-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.platform }}
           sbom: true
           provenance: mode=max
+
+      - name: Export digests
+        run: |
+          mkdir -p "${{ runner.temp }}/digests/api" "${{ runner.temp }}/digests/seed"
+          api_digest="${{ steps.build-api.outputs.digest }}"
+          seed_digest="${{ steps.build-seed.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/api/${api_digest#sha256:}"
+          touch "${{ runner.temp }}/digests/seed/${seed_digest#sha256:}"
+
+      - name: Upload API digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-api-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/api/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload seed digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-seed-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/seed/*
+          if-no-files-found: error
+          retention-days: 1
+
+  docker-publish-merge:
+    name: Docker Publish Merge
+    runs-on: ubuntu-latest
+    needs: [docker-publish]
+    if: ${{ !cancelled() && needs.docker-publish.result == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+    env:
+      API_IMAGE: ghcr.io/raouf-b-dev/ecommerce-store-api
+      SEED_IMAGE: ghcr.io/raouf-b-dev/ecommerce-store-api-seed
+    steps:
+      - name: Download API digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests/api
+          pattern: digests-api-*
+          merge-multiple: true
+
+      - name: Download seed digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests/seed
+          pattern: digests-seed-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (API)
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.API_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
+            type=semver,pattern={{version}}
+
+      - name: Docker metadata (seed)
+        id: meta-seed
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.SEED_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,enable=${{ github.ref_type == 'branch' }}
+            type=semver,pattern={{version}}
+
+      - name: Create API multi-arch manifest
+        working-directory: ${{ runner.temp }}/digests/api
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta.outputs.json }}
+        run: |
+          shopt -s nullglob
+          digests=(*)
+          if [ "${#digests[@]}" -lt 2 ]; then
+            echo "expected digests for amd64 and arm64, found ${#digests[@]}"
+            exit 1
+          fi
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.API_IMAGE }}@sha256:%s ' "${digests[@]}")
+
+      - name: Create seed multi-arch manifest
+        working-directory: ${{ runner.temp }}/digests/seed
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ steps.meta-seed.outputs.json }}
+        run: |
+          shopt -s nullglob
+          digests=(*)
+          if [ "${#digests[@]}" -lt 2 ]; then
+            echo "expected digests for amd64 and arm64, found ${#digests[@]}"
+            exit 1
+          fi
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.SEED_IMAGE }}@sha256:%s ' "${digests[@]}")
+
+      - name: Inspect API image
+        run: docker buildx imagetools inspect ${{ env.API_IMAGE }}:${{ steps.meta.outputs.version }}
+
+      - name: Inspect seed image
+        run: docker buildx imagetools inspect ${{ env.SEED_IMAGE }}:${{ steps.meta-seed.outputs.version }}
