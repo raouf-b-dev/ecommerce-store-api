@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.11.1] - 2026-10-18
 
 ### Added
 
@@ -18,10 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Production Docker image copies scripts/lib/env-bool.js so scripts/docker-migrate.js can run (0.11.0 image failed with Cannot find module './lib/env-bool').
 - Stock checks and add-to-cart no longer read cached inventory that is stale after a reservation is placed, released, confirmed or expired; each reservation write now evicts the affected inventory cache keys.
 - The `.secrets` missing-key warning no longer recommends a blind overwrite of CI credentials and names every value `--overwrite` resets.
 - `env:init` exits 1 and writes nothing when the env or secrets template is missing or has no keys (for example a mistyped `--from`).
 - Setup / `env:init` detect env files that are missing keys from the templates and exit with guidance to merge or force.
+
+[Compare v0.11.0...v0.11.1](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.11.0...v0.11.1)
+
+## [Unreleased]
 
 ## [0.11.0] - 2026-10-16
 

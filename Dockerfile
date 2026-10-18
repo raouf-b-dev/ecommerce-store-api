@@ -54,6 +54,7 @@ COPY assets/demo-media ./assets/demo-media
 # Entrypoint + migration runner (runs pending DB migrations, then starts the app)
 COPY docker-entrypoint.sh ./
 COPY scripts/docker-migrate.js ./scripts/
+COPY scripts/lib/env-bool.js ./scripts/lib/
 RUN chmod +x docker-entrypoint.sh
 
 # Non-root user for security
