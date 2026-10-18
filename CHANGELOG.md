@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Dockerfile `seed` stage and GHCR image `ecommerce-store-api-seed` (same semver tags as the API) for the ecommerce-platform demo seed job.
+
+### Changed
+
+- Docker validate/publish builds `linux/amd64` and `linux/arm64` for the API and seed images.
+
 ## [0.11.0] - 2026-10-16
 
 OpenAPI clients should regenerate if they consume cart/order schemas that newly allow null. No forced admin/web bump.
