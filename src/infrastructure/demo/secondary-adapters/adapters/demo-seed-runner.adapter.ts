@@ -62,7 +62,9 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
   async run(
     options: DemoSeedRunOptions,
   ): Promise<Result<DemoSeedReport, UseCaseError>> {
-    const authUsersResult = await this.seedAuthUsersUseCase.execute();
+    const authUsersResult = await this.seedAuthUsersUseCase.execute({
+      readOnly: this.config.demo.readOnly,
+    });
     if (authUsersResult.isFailure) {
       return authUsersResult;
     }
@@ -72,6 +74,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       authOnly: options.authOnly,
       superAdmin: auth.superAdmin,
       admin: auth.admin,
+      viewer: auth.viewer,
       customer: auth.customer,
       categories: 0,
       categoriesCreated: 0,
@@ -234,6 +237,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       authOnly: false,
       superAdmin: auth.superAdmin,
       admin: auth.admin,
+      viewer: auth.viewer,
       customer: auth.customer,
       categories: categoriesResult.value.length,
       categoriesCreated: categoriesResult.value.filter(

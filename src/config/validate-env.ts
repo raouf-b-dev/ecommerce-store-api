@@ -271,6 +271,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     // Hosted demo reset is off unless a deployment opts in with a long token.
     DEMO_RESET_ENABLED: bool({ default: false }),
     DEMO_RESET_TOKEN: str({ default: '' }),
+    // Shared hosted demo: reject admin manage_* mutations; seed viewer+customer only.
+    DEMO_READ_ONLY: bool({ default: false }),
 
     AUTH_COOKIE_SAMESITE: str({
       choices: ['strict', 'lax', 'none'],

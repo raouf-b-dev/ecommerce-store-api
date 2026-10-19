@@ -68,6 +68,7 @@ function createDefaultMockConfig(): IAppConfig {
     demo: {
       resetEnabled: false,
       resetToken: '',
+      readOnly: false,
     },
   };
 }

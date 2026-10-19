@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted seed account `viewer@store.local` when `DEMO_READ_ONLY=true`.
+- `DEMO_READ_ONLY` (default `false`): seeds viewer+customer only (neutralizes any existing local writable demo operators) and skips forced password change on those accounts. Public viewer has no `manage_*`; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+
 ## [0.12.0] - 2026-10-19
 
 ### Added

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -10,6 +11,20 @@ import { CredentialRepository } from '../../domain/repositories/credential.repos
 import { Credential } from '../../domain/entities/credential';
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 
+export const DEMO_SUPERADMIN_EMAIL = 'superadmin@store.local';
+export const DEMO_ADMIN_EMAIL = 'admin@store.local';
+export const DEMO_VIEWER_EMAIL = 'viewer@store.local';
+export const DEMO_CUSTOMER_EMAIL = 'customer@store.local';
+
+export interface SeedDemoAuthUsersInput {
+  /**
+   * Hosted shared demo: seed viewer + customer only and neutralize any
+   * existing writable local demo operators. Adapters read DEMO_READ_ONLY
+   * and pass it here - application never loads env/config infrastructure.
+   */
+  readOnly: boolean;
+}
+
 export interface SeededDemoAuthUser {
   userId: number;
   email: string;
@@ -17,14 +32,18 @@ export interface SeededDemoAuthUser {
 }
 
 export interface SeedDemoAuthUsersResult {
-  superAdmin: SeededDemoAuthUser;
-  admin: SeededDemoAuthUser;
+  /** Present only when readOnly is false. */
+  superAdmin: SeededDemoAuthUser | null;
+  /** Present only when readOnly is false. */
+  admin: SeededDemoAuthUser | null;
+  /** Present only when readOnly is true. */
+  viewer: SeededDemoAuthUser | null;
   customer: SeededDemoAuthUser;
 }
 
 @Injectable()
 export class SeedDemoAuthUsersUseCase extends UseCase<
-  void,
+  SeedDemoAuthUsersInput,
   SeedDemoAuthUsersResult,
   UseCaseError
 > {
@@ -37,40 +56,82 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     super();
   }
 
-  async execute(): Promise<Result<SeedDemoAuthUsersResult, UseCaseError>> {
+  async execute({
+    readOnly,
+  }: SeedDemoAuthUsersInput): Promise<
+    Result<SeedDemoAuthUsersResult, UseCaseError>
+  > {
+    if (readOnly) {
+      await this.neutralizeWritableDemoOperator(DEMO_SUPERADMIN_EMAIL);
+      await this.neutralizeWritableDemoOperator(DEMO_ADMIN_EMAIL);
+
+      const viewer = await this.seedUser({
+        email: DEMO_VIEWER_EMAIL,
+        password: 'Viewer123!',
+        roleCode: SystemRoleCode.ADMIN_READONLY,
+        firstName: 'Demo',
+        lastName: 'Viewer',
+        phone: '',
+        mustChangePassword: false,
+      });
+      if (isFailure(viewer)) return viewer;
+
+      const customer = await this.seedUser({
+        email: DEMO_CUSTOMER_EMAIL,
+        password: 'Customer123!',
+        roleCode: SystemRoleCode.CUSTOMER,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        phone: '',
+        mustChangePassword: false,
+      });
+      if (isFailure(customer)) return customer;
+
+      return Result.success({
+        superAdmin: null,
+        admin: null,
+        viewer: viewer.value,
+        customer: customer.value,
+      });
+    }
+
     const superAdmin = await this.seedUser({
-      email: 'superadmin@store.local',
+      email: DEMO_SUPERADMIN_EMAIL,
       password: 'SuperAdmin123!',
       roleCode: SystemRoleCode.SUPER_ADMIN,
       firstName: 'Super',
       lastName: 'Admin',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(superAdmin)) return superAdmin;
 
     const admin = await this.seedUser({
-      email: 'admin@store.local',
+      email: DEMO_ADMIN_EMAIL,
       password: 'Admin123!',
       roleCode: SystemRoleCode.ADMIN,
       firstName: 'Store',
       lastName: 'Administrator',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(admin)) return admin;
 
     const customer = await this.seedUser({
-      email: 'customer@store.local',
+      email: DEMO_CUSTOMER_EMAIL,
       password: 'Customer123!',
       roleCode: SystemRoleCode.CUSTOMER,
       firstName: 'Jane',
       lastName: 'Doe',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(customer)) return customer;
 
     return Result.success({
       superAdmin: superAdmin.value,
       admin: admin.value,
+      viewer: null,
       customer: customer.value,
     });
   }
@@ -82,6 +143,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     firstName: string;
     lastName: string;
     phone: string;
+    mustChangePassword: boolean;
   }): Promise<Result<SeededDemoAuthUser, UseCaseError>> {
     const existingResult = await this.identityGateway.findUserByEmail(
       input.email,
@@ -97,6 +159,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       await this.resetExistingDemoCredential(
         existingResult.value.id,
         input.password,
+        input.mustChangePassword,
       );
 
       return Result.success({
@@ -108,7 +171,6 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
     const passwordHash = await this.passwordHasher.hash(input.password);
 
-    // Step 1: Create user identity (Identity)
     const createUserResult = await this.identityGateway.createUser({
       firstName: input.firstName,
       lastName: input.lastName,
@@ -119,30 +181,28 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
     const user = createUserResult.value;
 
-    // Step 2: Create credential (Authentication)
     const credentialResult = await this.credentialRepository.save(
       Credential.create({
         userId: user.id,
         passwordHash,
-        mustChangePassword: true,
+        mustChangePassword: input.mustChangePassword,
       }),
     );
     if (isFailure(credentialResult)) {
-      await this.identityGateway.deleteUser(user.id); // compensate step 1
+      await this.identityGateway.deleteUser(user.id);
       return ErrorFactory.UseCaseError(
         `Failed to seed credentials for ${input.email}`,
         credentialResult.error,
       );
     }
 
-    // Step 3: Assign role (Authorization)
     const roleResult = await this.authorizationGateway.assignRole(
       user.id,
       input.roleCode,
     );
     if (isFailure(roleResult)) {
-      await this.credentialRepository.deleteByUserId(user.id); // compensate step 2
-      await this.identityGateway.deleteUser(user.id); // compensate step 1
+      await this.credentialRepository.deleteByUserId(user.id);
+      await this.identityGateway.deleteUser(user.id);
       return ErrorFactory.UseCaseError(
         `Failed to assign role for ${input.email}`,
         roleResult.error,
@@ -158,11 +218,12 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
   /**
    * Re-applies demo credential defaults so local re-seed restores documented
-   * passwords and the forced-rotation flow without manual SQL.
+   * passwords (and forced-rotation when mustChangePassword is true).
    */
   private async resetExistingDemoCredential(
     userId: number,
     plainPassword: string,
+    mustChangePassword: boolean,
   ): Promise<void> {
     const credentialResult =
       await this.credentialRepository.findByUserId(userId);
@@ -173,11 +234,30 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     const passwordHash = await this.passwordHasher.hash(plainPassword);
     const credential = credentialResult.value;
     credential.passwordHash = passwordHash;
-    credential.mustChangePassword = true;
+    credential.mustChangePassword = mustChangePassword;
 
     const updateResult = await this.credentialRepository.update(credential);
     if (isFailure(updateResult)) {
       return;
     }
+  }
+
+  /**
+   * Hosted read-only seed: if a writable local demo operator exists from a
+   * prior seed, rotate its password to an unpublished random value so the
+   * documented local passwords cannot sign in.
+   */
+  private async neutralizeWritableDemoOperator(email: string): Promise<void> {
+    const existingResult = await this.identityGateway.findUserByEmail(email);
+    if (isFailure(existingResult) || !existingResult.value) {
+      return;
+    }
+
+    const randomPassword = randomBytes(32).toString('base64url');
+    await this.resetExistingDemoCredential(
+      existingResult.value.id,
+      randomPassword,
+      true,
+    );
   }
 }

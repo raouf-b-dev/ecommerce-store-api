@@ -15,6 +15,7 @@ import {
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 import { ResultAssertionHelper } from '../../../../../testing';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { Credential } from '../../domain/entities/credential';
 
 describe('SeedDemoAuthUsersUseCase', () => {
   let useCase: SeedDemoAuthUsersUseCase;
@@ -58,29 +59,21 @@ describe('SeedDemoAuthUsersUseCase', () => {
     });
 
     identityGateway.createUser
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: superAdminUser,
-      } as any)
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: adminUser,
-      } as any)
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: customerUser,
-      } as any);
+      .mockResolvedValueOnce(Result.success(superAdminUser))
+      .mockResolvedValueOnce(Result.success(adminUser))
+      .mockResolvedValueOnce(Result.success(customerUser));
 
     passwordHasher.hash.mockResolvedValue('hashed_password');
-    credentialRepository.save.mockImplementation((c) =>
-      Promise.resolve({ isSuccess: true, isFailure: false, value: c } as any),
+    credentialRepository.mockSuccessfulSave(
+      Credential.create({
+        userId: 1,
+        passwordHash: 'hashed_password',
+        mustChangePassword: true,
+      }),
     );
     authorizationGateway.mockSuccessfulAssignRole();
 
-    const result = await useCase.execute();
+    const result = await useCase.execute({ readOnly: false });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
@@ -90,17 +83,9 @@ describe('SeedDemoAuthUsersUseCase', () => {
         status: 'created',
       },
       admin: { userId: 2, email: 'admin@store.local', status: 'created' },
+      viewer: null,
       customer: { userId: 3, email: 'customer@store.local', status: 'created' },
     });
-    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
-      'superadmin@store.local',
-    );
-    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
-      'admin@store.local',
-    );
-    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
-      'customer@store.local',
-    );
     expect(authorizationGateway.assignRole).toHaveBeenCalledWith(
       1,
       SystemRoleCode.SUPER_ADMIN,
@@ -113,6 +98,61 @@ describe('SeedDemoAuthUsersUseCase', () => {
       3,
       SystemRoleCode.CUSTOMER,
     );
+  });
+
+  it('should seed viewer and customer only when readOnly is true', async () => {
+    identityGateway.mockFindUserByEmail(null);
+
+    const viewerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 10,
+      email: 'viewer@store.local',
+    });
+    const customerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 11,
+      email: 'customer@store.local',
+    });
+
+    identityGateway.createUser
+      .mockResolvedValueOnce(Result.success(viewerUser))
+      .mockResolvedValueOnce(Result.success(customerUser));
+
+    passwordHasher.hash.mockResolvedValue('hashed_password');
+    credentialRepository.save.mockImplementation((credential) =>
+      Promise.resolve(Result.success(credential)),
+    );
+    authorizationGateway.mockSuccessfulAssignRole();
+
+    const result = await useCase.execute({ readOnly: true });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual({
+      superAdmin: null,
+      admin: null,
+      viewer: {
+        userId: 10,
+        email: 'viewer@store.local',
+        status: 'created',
+      },
+      customer: {
+        userId: 11,
+        email: 'customer@store.local',
+        status: 'created',
+      },
+    });
+    expect(authorizationGateway.assignRole).toHaveBeenCalledWith(
+      10,
+      SystemRoleCode.ADMIN_READONLY,
+    );
+    expect(credentialRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ mustChangePassword: false }),
+    );
+    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
+      'superadmin@store.local',
+    );
+    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
+      'admin@store.local',
+    );
+    expect(identityGateway.createUser).toHaveBeenCalledTimes(2);
   });
 
   it('should skip creation if users already exist', async () => {
@@ -130,21 +170,9 @@ describe('SeedDemoAuthUsersUseCase', () => {
     });
 
     identityGateway.findUserByEmail
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: existingSuperAdmin,
-      } as any)
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: existingAdmin,
-      } as any)
-      .mockResolvedValueOnce({
-        isSuccess: true,
-        isFailure: false,
-        value: existingCustomer,
-      } as any);
+      .mockResolvedValueOnce(Result.success(existingSuperAdmin))
+      .mockResolvedValueOnce(Result.success(existingAdmin))
+      .mockResolvedValueOnce(Result.success(existingCustomer));
 
     credentialRepository.findByUserId.mockImplementation((userId: number) =>
       Promise.resolve(
@@ -161,7 +189,7 @@ describe('SeedDemoAuthUsersUseCase', () => {
     credentialRepository.mockSuccessfulUpdate();
     passwordHasher.hash.mockResolvedValue('reset-hash');
 
-    const result = await useCase.execute();
+    const result = await useCase.execute({ readOnly: false });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
@@ -171,6 +199,7 @@ describe('SeedDemoAuthUsersUseCase', () => {
         status: 'existing',
       },
       admin: { userId: 2, email: 'admin@store.local', status: 'existing' },
+      viewer: null,
       customer: {
         userId: 3,
         email: 'customer@store.local',

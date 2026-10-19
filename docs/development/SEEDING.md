@@ -51,6 +51,8 @@ The seeder initializes the database with the following test credentials and prod
 
 Local development only (`npm run db:seed` refuses to run when `NODE_ENV=production`).
 
+### Local Compose (`DEMO_READ_ONLY=false`, default)
+
 Seeded accounts are created with `mustChangePassword: true`. On first login, clients should route to a mandatory password-change flow before normal admin use (see [`ADMIN-BOOTSTRAP.md`](../security/ADMIN-BOOTSTRAP.md)).
 
 The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo credentials to the documented passwords below and sets `must_change_password = true` again, so you can re-test forced rotation without manual SQL. This only applies to the three demo accounts in this table (local dev; seeding is blocked in production).
@@ -60,6 +62,20 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 | **Super Administrator** | `superadmin@store.local` | `SuperAdmin123!` | All permissions (including `access_admin`, `manage_roles`).             |
 | **Administrator**       | `admin@store.local`      | `Admin123!`      | Full admin permissions except `manage_roles` (includes `access_admin`). |
 | **Customer**            | `customer@store.local`   | `Customer123!`   | Storefront customer; no `access_admin`.                                 |
+
+### Hosted shared demo (`DEMO_READ_ONLY=true`)
+
+When `DEMO_READ_ONLY=true` (hosted public instance), the seeder:
+
+- Seeds **only** `viewer@store.local` (`ADMIN_READONLY`) and `customer@store.local`
+- Does **not** seed `superadmin@` / `admin@`. If those emails already exist, their passwords are rotated to unpublished random values so the local table above cannot sign in
+- Sets `mustChangePassword: false` on the hosted accounts (one-click demo login)
+- Mutations stay on RBAC: `ADMIN_READONLY` has `access_admin` + `view_all_*` and no `manage_*`. A private writable owner is created with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (see [`ADMIN-BOOTSTRAP.md`](../security/ADMIN-BOOTSTRAP.md)), not from the public README
+
+| Role                    | Email                  | Password       | Details                                                                 |
+| :---------------------- | :--------------------- | :------------- | :---------------------------------------------------------------------- |
+| **Admin (read-only)**   | `viewer@store.local`   | `Viewer123!`   | `access_admin` + all `view_all_*`. No `manage_*`.                       |
+| **Customer**            | `customer@store.local` | `Customer123!` | Storefront customer; cart/checkout still work.                          |
 
 ### 2. Seeded Shipping Address (for `customer@store.local`)
 

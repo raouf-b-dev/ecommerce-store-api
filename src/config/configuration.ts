@@ -68,6 +68,11 @@ export interface IAppConfig {
   demo: {
     resetEnabled: boolean;
     resetToken: string;
+    /**
+     * Hosted shared demo: block admin mutations and seed viewer+customer only.
+     * Local Compose keeps this false (full writable demo accounts).
+     */
+    readOnly: boolean;
   };
 }
 
@@ -144,6 +149,7 @@ export default (): IAppConfig => {
     demo: {
       resetEnabled: env.DEMO_RESET_ENABLED,
       resetToken: env.DEMO_RESET_TOKEN,
+      readOnly: env.DEMO_READ_ONLY,
     },
   };
 };

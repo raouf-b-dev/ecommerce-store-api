@@ -29,6 +29,19 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
     ),
   },
   {
+    code: SystemRoleCode.ADMIN_READONLY,
+    name: 'Admin (read-only)',
+    isSystem: true,
+    permissions: [
+      'access_admin',
+      'view_all_products',
+      'view_all_orders',
+      'view_all_inventory',
+      'view_all_payments',
+      'view_all_users',
+    ],
+  },
+  {
     code: SystemRoleCode.CUSTOMER,
     name: 'Customer',
     isSystem: true,

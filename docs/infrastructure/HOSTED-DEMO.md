@@ -11,6 +11,15 @@ The API is the public origin. Admin and storefront are separate sites. They call
 - Leave `AUTH_COOKIE_SAMESITE=strict` (the default) for local http development.
 - Set `CORS_ALLOWED_ORIGINS` to the exact UI origins, comma-separated, for example `https://admin.example.com,https://shop.example.com`. Credentials are enabled. Do not use `*`.
 
+## Shared demo accounts (RBAC)
+
+For a **public** admin URL, set `DEMO_READ_ONLY=true` on the host (default is `false` for local Compose).
+
+- Seed creates `viewer@store.local` (`ADMIN_READONLY`) + `customer@store.local` only - never the writable local `superadmin@` / `admin@` accounts. See [SEEDING.md](../development/SEEDING.md).
+- Public visitors use the viewer account: `access_admin` + `view_all_*`, no `manage_*`. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
+- Private writable owner (optional): set `ADMIN_EMAIL` / `ADMIN_PASSWORD` once on the VM so boot creates a Super Admin, change the password on first login, then clear or rotate the env secret. See [ADMIN-BOOTSTRAP.md](../security/ADMIN-BOOTSTRAP.md). Do not publish that account in the README.
+- Pair with a scheduled demo reset below so shopper drift (orders, registrations) is healed.
+
 ## Demo reset
 
 `POST /v1/admin/demo/reset` is an **ops** surface under `src/infrastructure/demo/` (same tier as health/platform; not a domain bounded context). See [ADR-0009](../architecture/adr/ADR-0009-demo-reset-ops-infrastructure.md). It reconciles demo data for a scheduled job (GitHub Actions or similar). It is off unless both of these are set on the host:
@@ -22,7 +31,7 @@ The cron sends header `X-Demo-Reset-Token`. There is no user JWT. Missing and wr
 
 On success the handler runs the same pipeline as `npm run db:seed`:
 
-- Demo account passwords return to the values in [SEEDING.md](../development/SEEDING.md) (`superadmin@store.local`, `admin@store.local`, `customer@store.local`).
+- Demo accounts match the mode: with `DEMO_READ_ONLY=true`, `viewer@store.local` + `customer@store.local` (see [SEEDING.md](../development/SEEDING.md)); with the flag false, the local writable trio.
 - Categories and products are upserted.
 - Demo SKU stock is reset to catalog baselines, then the four fixture orders are applied again. Shopper checkouts do not keep reducing that baseline.
 - Shopper-created accounts and orders are not deleted. `npm run db:seed` stays non-destructive in that same way, and it still refuses `NODE_ENV=production`. The HTTP route is the opt-in for a hosted demo that runs with production mode.
