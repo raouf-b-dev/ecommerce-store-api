@@ -195,7 +195,7 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 | [`ecommerce-admin-dashboard`](https://github.com/raouf-b-dev/ecommerce-admin-dashboard) | Operator SPA        |
 | [`ecommerce-store-web`](https://github.com/raouf-b-dev/ecommerce-store-web)             | Customer storefront |
 
-Each repository runs independently. To run all three together (clone order, env, CORS, ports), follow [`docs/development/FULL-STACK.md`](docs/development/FULL-STACK.md).
+Each repository runs independently. To run all three together (clone order, env, CORS, ports), follow [`docs/development/FULL-STACK.md`](docs/development/FULL-STACK.md). A hybrid hosted demo (Pages or Vercel calling a public API) is [`docs/infrastructure/HOSTED-DEMO.md`](docs/infrastructure/HOSTED-DEMO.md).
 
 ## License
 

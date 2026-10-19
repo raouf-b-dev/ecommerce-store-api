@@ -15,9 +15,10 @@ import { Product } from '../../domain/entities/product';
 import { MockCategoryRepository } from '../../../testing/mocks/category-repository.mock';
 import { MockProductRepository } from '../../../testing/mocks/product-repository.mock';
 import { ResultAssertionHelper } from '../../../../../testing';
+import { DEMO_MEDIA_VERSION } from './demo-media';
 
 const input = { publicBaseUrl: 'http://localhost:3000' };
-const headphonesImage = 'http://localhost:3000/media/demo/v1/elec-anc-001.webp';
+const headphonesImage = `http://localhost:3000/media/demo/${DEMO_MEDIA_VERSION}/elec-anc-001.webp`;
 
 function existingDemoProducts(
   overrides: (idx: number) => {
@@ -36,7 +37,7 @@ function existingDemoProducts(
       categoryId:
         DEMO_SEED_CATEGORIES.find((c) => c.slug === seed.categorySlug)?.id ??
         null,
-      imageUrl: `http://localhost:3000/media/demo/v1/${seed.sku.toLowerCase()}.webp`,
+      imageUrl: `http://localhost:3000/media/demo/${DEMO_MEDIA_VERSION}/${seed.sku.toLowerCase()}.webp`,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -222,7 +223,7 @@ describe('SeedDemoCatalogUseCase', () => {
     });
     expect(updateProductUseCase.execute).toHaveBeenCalledWith({
       id: 501,
-      imageUrl: 'http://localhost:3000/media/demo/v1/elec-sfw-002.webp',
+      imageUrl: `http://localhost:3000/media/demo/${DEMO_MEDIA_VERSION}/elec-sfw-002.webp`,
     });
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value[0].imageUrl).toBe(headphonesImage);

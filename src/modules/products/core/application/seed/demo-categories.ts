@@ -1,5 +1,5 @@
 export interface DemoSeedCategory {
-  /** Documentation only - matches migration seed ids. Runtime identity is slug. */
+  /** Documentation only. Migration inserts ids 1-5; later rows are seed-only. Runtime identity is slug. */
   id: number;
   name: string;
   slug: string;
@@ -35,6 +35,18 @@ export const DEMO_SEED_CATEGORIES: DemoSeedCategory[] = [
     id: 5,
     name: 'Books',
     slug: 'books',
+    description: null,
+  },
+  {
+    id: 6,
+    name: 'Beauty',
+    slug: 'beauty',
+    description: null,
+  },
+  {
+    id: 7,
+    name: 'Outdoors',
+    slug: 'outdoors',
     description: null,
   },
 ];

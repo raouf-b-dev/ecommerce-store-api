@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-19
+
+### Added
+
+- Demo catalog is 29 products across 7 categories, with stock headroom for public click-through checkout (`ELEC-EWM-005` stays out of stock; `ELEC-PRJ-003` stays at its low-stock threshold).
+- `POST /v1/admin/demo/reset` reconciles the demo seed for a scheduled job (`src/infrastructure/demo/`, ADR-0009). Off unless `DEMO_RESET_ENABLED=true` and `DEMO_RESET_TOKEN` is at least 32 characters. Header `X-Demo-Reset-Token`. Rate-limited, single-flight, constant-time token compare. Returns 404 when disabled.
+- `AUTH_COOKIE_SAMESITE=strict|lax|none` (default `strict`). `none` requires an https `PUBLIC_BASE_URL` and the refresh cookie stays `Secure`.
+
+### Changed
+
+- `db:seed` and the demo reset rebuild inventory from the four fixture orders, so shopper checkouts do not permanently drain demo stock. Shopper accounts and orders are not deleted. `db:seed` still refuses `NODE_ENV=production`.
+- Demo product photos: one unique WebP per SKU under `assets/demo-media/v2/` (`DEMO_MEDIA_VERSION=v2`). Only the current version folder is shipped; the path segment is a cache bust, not a second photo set.
+
+[Compare v0.11.3...v0.12.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.11.3...v0.12.0)
+
 ## [0.11.3] - 2026-10-18
 
 ### Changed

@@ -39,7 +39,7 @@ Strategic DDD defines boundaries and relationships between parts of the system.
 
 ### Bounded Contexts and Context Mapping
 
-Each folder under `src/modules/` represents a domain Bounded Context (Analytics is a query-only composition context, not a write aggregate). Operational health probes and runtime platform configuration live under `src/infrastructure/`. Context mapping keeps write-side boundaries explicit and avoids a tangled dependency graph.
+Each folder under `src/modules/` represents a domain Bounded Context (Analytics is a query-only composition context, not a write aggregate). Operational health probes, runtime platform configuration, and hosted-demo reset live under `src/infrastructure/` (`health`, `platform`, `demo`; ADR-0009). Context mapping keeps write-side boundaries explicit and avoids a tangled dependency graph.
 
 ```mermaid
 graph TD

@@ -1,5 +1,5 @@
 import { type StringValue } from 'ms';
-import { validateEnv } from './validate-env';
+import { AuthCookieSameSite, validateEnv } from './validate-env';
 
 export interface IAppConfig {
   node: {
@@ -61,6 +61,13 @@ export interface IAppConfig {
   store: {
     defaultCurrency: string;
     supportedCurrencies: string[];
+  };
+  auth: {
+    cookieSameSite: AuthCookieSameSite;
+  };
+  demo: {
+    resetEnabled: boolean;
+    resetToken: string;
   };
 }
 
@@ -130,6 +137,13 @@ export default (): IAppConfig => {
     store: {
       defaultCurrency: env.STORE_DEFAULT_CURRENCY.toUpperCase(),
       supportedCurrencies: [env.STORE_DEFAULT_CURRENCY.toUpperCase()],
+    },
+    auth: {
+      cookieSameSite: env.AUTH_COOKIE_SAMESITE,
+    },
+    demo: {
+      resetEnabled: env.DEMO_RESET_ENABLED,
+      resetToken: env.DEMO_RESET_TOKEN,
     },
   };
 };

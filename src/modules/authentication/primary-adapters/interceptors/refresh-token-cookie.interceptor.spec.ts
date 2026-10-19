@@ -1,6 +1,7 @@
 import { CallHandler } from '@nestjs/common';
 import { firstValueFrom, of } from 'rxjs';
 import {
+  buildRefreshCookieOptions,
   RefreshTokenCookieInterceptor,
   REFRESH_COOKIE_NAME,
   REFRESH_COOKIE_PATH,
@@ -44,6 +45,8 @@ describe('RefreshTokenCookieInterceptor', () => {
       'token123',
       expect.objectContaining({
         httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
         path: REFRESH_COOKIE_PATH,
       }),
     );
@@ -67,9 +70,54 @@ describe('RefreshTokenCookieInterceptor', () => {
         REFRESH_COOKIE_NAME,
         expect.objectContaining({
           httpOnly: true,
+          secure: true,
+          sameSite: 'strict',
           path: REFRESH_COOKIE_PATH,
         }),
       );
     },
   );
+
+  it('sets SameSite=None and secure when configured', async () => {
+    mockConfigService.setMockConfig({
+      auth: { cookieSameSite: 'none' },
+    });
+    const mockResponse = { cookie: jest.fn() };
+    const context = createMockExecutionContext(
+      { route: { path: '/authentication/login' } },
+      mockResponse,
+    );
+    const next: CallHandler = {
+      handle: () => of(Result.success({ refreshToken: 'token123' })),
+    };
+
+    await firstValueFrom(interceptor.intercept(context, next));
+
+    expect(mockResponse.cookie).toHaveBeenCalledWith(
+      REFRESH_COOKIE_NAME,
+      'token123',
+      expect.objectContaining({
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        path: REFRESH_COOKIE_PATH,
+      }),
+    );
+  });
+});
+
+describe('buildRefreshCookieOptions', () => {
+  it('forces secure true for strict, lax, and none', () => {
+    expect(buildRefreshCookieOptions('strict')).toEqual({
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: REFRESH_COOKIE_PATH,
+    });
+    expect(buildRefreshCookieOptions('lax').secure).toBe(true);
+    expect(buildRefreshCookieOptions('none')).toMatchObject({
+      secure: true,
+      sameSite: 'none',
+    });
+  });
 });

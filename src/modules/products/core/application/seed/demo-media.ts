@@ -1,12 +1,13 @@
 /**
  * Demo product photos ship in `assets/demo-media/<version>/` and are served
- * by the API under DEMO_MEDIA_ROUTE. Bump DEMO_MEDIA_VERSION when a file
- * changes so long-lived browser and CDN caches pick up the new image. These
- * describe files committed to the repo, so they are code constants: only the
- * public host varies per deployment (PUBLIC_BASE_URL).
+ * by the API under DEMO_MEDIA_ROUTE. Only that one version folder is mounted.
+ * Bump DEMO_MEDIA_VERSION (and add a new folder) when a file changes so
+ * long-lived browser and CDN caches (immutable, 1y) fetch a new URL path.
+ * Do not keep two version folders with identical bytes. These are code
+ * constants: only the public host varies per deployment (PUBLIC_BASE_URL).
  */
 export const DEMO_MEDIA_ROUTE = '/media/demo';
-export const DEMO_MEDIA_VERSION = 'v1';
+export const DEMO_MEDIA_VERSION = 'v2';
 
 export function demoImageFileForSku(sku: string): string {
   return `${sku.toLowerCase()}.webp`;

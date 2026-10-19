@@ -152,6 +152,45 @@ export function assertSwaggerDisabledInProduction(
  * When Postgres TLS is on in production, certificate verification is required
  * so a managed host cannot silently accept MITM with rejectUnauthorized=false.
  */
+export const DEMO_RESET_TOKEN_MIN_LENGTH = 32;
+
+export const AUTH_COOKIE_SAMESITE_VALUES = ['strict', 'lax', 'none'] as const;
+
+export type AuthCookieSameSite = (typeof AUTH_COOKIE_SAMESITE_VALUES)[number];
+
+/**
+ * Cross-origin refresh cookies (SameSite=None) are only valid with Secure,
+ * which requires the API to be served over HTTPS.
+ */
+export function assertAuthCookieSameSite(
+  sameSite: string,
+  publicBaseUrl: string,
+): void {
+  if (sameSite !== 'none') {
+    return;
+  }
+  if (new URL(publicBaseUrl).protocol !== 'https:') {
+    throw new EnvError(
+      'AUTH_COOKIE_SAMESITE=none requires PUBLIC_BASE_URL to use https so the refresh cookie can be Secure',
+    );
+  }
+}
+
+/**
+ * The hosted-demo reset route is off unless explicitly enabled. A short or
+ * empty token must not boot, so a default placeholder cannot authenticate.
+ */
+export function assertDemoResetToken(enabled: boolean, token: string): void {
+  if (!enabled) {
+    return;
+  }
+  if (token.trim().length < DEMO_RESET_TOKEN_MIN_LENGTH) {
+    throw new EnvError(
+      `DEMO_RESET_TOKEN must be at least ${DEMO_RESET_TOKEN_MIN_LENGTH} characters when DEMO_RESET_ENABLED=true`,
+    );
+  }
+}
+
 export function assertVerifiedDbTlsInProduction(
   nodeEnv: string,
   ssl: boolean,
@@ -228,6 +267,15 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
       default: 'false',
     }),
     STRIPE_WEBHOOK_SECRET: str({ default: '' }),
+
+    // Hosted demo reset is off unless a deployment opts in with a long token.
+    DEMO_RESET_ENABLED: bool({ default: false }),
+    DEMO_RESET_TOKEN: str({ default: '' }),
+
+    AUTH_COOKIE_SAMESITE: str({
+      choices: ['strict', 'lax', 'none'],
+      default: 'strict',
+    }),
   });
   assertSecurePublicOrigin(validated.NODE_ENV, validated.PUBLIC_BASE_URL);
   assertStripeWebhookSecret(
@@ -248,6 +296,14 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     validated.NODE_ENV,
     validated.DB_SSL,
     validated.DB_SSL_REJECT_UNAUTHORIZED,
+  );
+  assertAuthCookieSameSite(
+    validated.AUTH_COOKIE_SAMESITE,
+    validated.PUBLIC_BASE_URL,
+  );
+  assertDemoResetToken(
+    validated.DEMO_RESET_ENABLED,
+    validated.DEMO_RESET_TOKEN,
   );
   return validated;
 }

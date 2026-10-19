@@ -124,6 +124,8 @@ import { PostgresCategoryQueryAdapter } from './secondary-adapters/query/postgre
     GetProductUseCase,
     ProductQueryService,
     CategoryQueryService,
+    SeedDemoCategoriesUseCase,
+    SeedDemoCatalogUseCase,
   ],
 })
 export class ProductsModule {}
