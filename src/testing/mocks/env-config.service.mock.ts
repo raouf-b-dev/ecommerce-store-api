@@ -62,6 +62,13 @@ function createDefaultMockConfig(): IAppConfig {
       defaultCurrency: 'USD',
       supportedCurrencies: ['USD'],
     },
+    auth: {
+      cookieSameSite: 'strict',
+    },
+    demo: {
+      resetEnabled: false,
+      resetToken: '',
+    },
   };
 }
 
@@ -143,6 +150,14 @@ export class MockEnvConfigService extends EnvConfigService {
 
   override get store() {
     return this.configState.store;
+  }
+
+  override get auth() {
+    return this.configState.auth;
+  }
+
+  override get demo() {
+    return this.configState.demo;
   }
 
   setMockConfig(config: Partial<IAppConfig>) {

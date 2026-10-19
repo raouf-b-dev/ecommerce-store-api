@@ -25,7 +25,7 @@ With the API running, `npm run api:generate` in either client reads `http://loca
 
 ## 3. CORS
 
-The API sends credentialed CORS (`credentials: true`), so the refresh cookie works across origins. Allowed origins come from `CORS_ALLOWED_ORIGINS`; `.env.example` already lists `http://localhost:3000`, `http://localhost:3100`, `http://localhost:5173`, and `http://localhost:5174`. If you move a client to another port, add that exact origin. Never use `*`: browsers reject a wildcard origin on credentialed requests, and it would expose the API to any site.
+The API sends credentialed CORS (`credentials: true`), so the refresh cookie works across origins. Allowed origins come from `CORS_ALLOWED_ORIGINS`; `.env.example` already lists `http://localhost:3000`, `http://localhost:3100`, `http://localhost:5173`, and `http://localhost:5174`. If you move a client to another port, add that exact origin. Never use `*`: browsers reject a wildcard origin on credentialed requests, and it would expose the API to any site. Cross-origin hosted clients (Pages, Vercel) need `AUTH_COOKIE_SAMESITE=none`, an https `PUBLIC_BASE_URL`, and those UI origins on the allowlist. See [HOSTED-DEMO.md](../infrastructure/HOSTED-DEMO.md).
 
 ## 4. Seeded accounts
 

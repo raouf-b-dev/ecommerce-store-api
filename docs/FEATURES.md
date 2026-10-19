@@ -152,7 +152,7 @@ Security headers via `helmet` (X-Content-Type-Options, X-Frame-Options, Strict-T
 
 ### CORS with Environment Whitelist
 
-CORS origins come from `.env` files. No wildcard `*` in production.
+CORS origins come from `CORS_ALLOWED_ORIGINS` (comma-separated allowlist). Credentials stay enabled. No wildcard `*`.
 
 **Location**: `src/main.ts`, `src/config/`
 
@@ -306,11 +306,11 @@ Each module has `testing/` with factories and typed mocks for gateways and repos
 
 ### Mock Catalog and Test Accounts
 
-`npm run db:seed` loads local accounts and a catalog. Blocked when `NODE_ENV=production`. Idempotent on reruns.
+`npm run db:seed` loads local accounts and a catalog. Blocked when `NODE_ENV=production`. Idempotent on reruns. `POST /v1/admin/demo/reset` runs that pipeline when `DEMO_RESET_ENABLED` is set; it is off by default. The HTTP entry is ops infrastructure, not a domain module ([ADR-0009](architecture/adr/ADR-0009-demo-reset-ops-infrastructure.md)).
 
-Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING.md).
+Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING.md). Hosted clients and the reset token: [HOSTED-DEMO.md](infrastructure/HOSTED-DEMO.md).
 
-**Location**: `scripts/seed.ts`, module seed use cases
+**Location**: `scripts/seed.ts`, `src/infrastructure/demo/`, module seed use cases
 
 ### Full-Stack Local Run
 

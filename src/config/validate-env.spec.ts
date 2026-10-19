@@ -345,6 +345,51 @@ describe('validateEnv', () => {
     ).toThrow(EnvError);
   });
 
+  it('defaults demo reset off and refresh cookie SameSite strict', () => {
+    const validated = validateEnv(baseEnv);
+    expect(validated.DEMO_RESET_ENABLED).toBe(false);
+    expect(validated.DEMO_RESET_TOKEN).toBe('');
+    expect(validated.AUTH_COOKIE_SAMESITE).toBe('strict');
+  });
+
+  it('rejects demo reset when enabled without a long token', () => {
+    expect(() =>
+      validateEnv({
+        ...baseEnv,
+        DEMO_RESET_ENABLED: 'true',
+        DEMO_RESET_TOKEN: 'change-me',
+      }),
+    ).toThrow(EnvError);
+  });
+
+  it('accepts demo reset when enabled with a long placeholder token', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      DEMO_RESET_ENABLED: 'true',
+      DEMO_RESET_TOKEN: 'x'.repeat(32),
+    });
+    expect(validated.DEMO_RESET_ENABLED).toBe(true);
+  });
+
+  it('rejects SameSite=None unless PUBLIC_BASE_URL is https', () => {
+    expect(() =>
+      validateEnv({
+        ...baseEnv,
+        AUTH_COOKIE_SAMESITE: 'none',
+        PUBLIC_BASE_URL: 'http://localhost:3000',
+      }),
+    ).toThrow(EnvError);
+  });
+
+  it('accepts SameSite=None when PUBLIC_BASE_URL is https', () => {
+    const validated = validateEnv({
+      ...baseEnv,
+      AUTH_COOKIE_SAMESITE: 'none',
+      PUBLIC_BASE_URL: 'https://api.example.com',
+    });
+    expect(validated.AUTH_COOKIE_SAMESITE).toBe('none');
+  });
+
   it('rejects invalid CORS_ALLOWED_ORIGINS entries', () => {
     expect(() =>
       validateEnv({

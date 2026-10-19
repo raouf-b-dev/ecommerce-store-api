@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import ms from 'ms';
+import { AuthCookieSameSite } from '../../../../config/validate-env';
 import { EnvConfigService } from '../../../../config/env-config.service';
 import { DEFAULT_API_PREFIX } from '../../../../infrastructure/http/api-version';
 import { getUnversionedRoutePath } from '../../../../shared-kernel/infra/http/request.helpers';
@@ -28,12 +29,23 @@ const CLEAR_COOKIE_ROUTES = [
   '/authentication/logout-all',
 ];
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'strict' as const,
-  path: REFRESH_COOKIE_PATH,
-};
+/**
+ * Refresh cookie flags. `secure` is always true. `sameSite: 'none'` is only
+ * accepted at boot when PUBLIC_BASE_URL is https (see assertAuthCookieSameSite).
+ */
+export function buildRefreshCookieOptions(sameSite: AuthCookieSameSite): {
+  httpOnly: true;
+  secure: true;
+  sameSite: AuthCookieSameSite;
+  path: string;
+} {
+  return {
+    httpOnly: true,
+    secure: true,
+    sameSite,
+    path: REFRESH_COOKIE_PATH,
+  };
+}
 
 @Injectable()
 export class RefreshTokenCookieInterceptor implements NestInterceptor {
@@ -55,18 +67,22 @@ export class RefreshTokenCookieInterceptor implements NestInterceptor {
           return result;
         }
 
+        const cookieOptions = buildRefreshCookieOptions(
+          this.configService.auth.cookieSameSite,
+        );
+
         if (SET_COOKIE_ROUTES.includes(path)) {
           const refreshToken = result.value?.refreshToken;
           if (refreshToken) {
             response.cookie(REFRESH_COOKIE_NAME, refreshToken, {
-              ...COOKIE_OPTIONS,
+              ...cookieOptions,
               maxAge: this.cookieMaxAge,
             });
           }
         }
 
         if (CLEAR_COOKIE_ROUTES.includes(path)) {
-          response.clearCookie(REFRESH_COOKIE_NAME, COOKIE_OPTIONS);
+          response.clearCookie(REFRESH_COOKIE_NAME, cookieOptions);
         }
 
         return result;

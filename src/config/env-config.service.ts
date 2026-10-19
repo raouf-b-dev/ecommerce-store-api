@@ -82,4 +82,12 @@ export class EnvConfigService {
   get store() {
     return this.get('store');
   }
+
+  get auth() {
+    return this.get('auth');
+  }
+
+  get demo() {
+    return this.get('demo');
+  }
 }

@@ -21,7 +21,8 @@ describe('SeedDemoOrdersUseCase', () => {
   ].map((p) => ({
     ...p,
     currency: 'USD',
-    imageUrl: `http://localhost:3000/media/demo/v1/${p.sku.toLowerCase()}.webp`,
+    // Mirror DEMO_MEDIA_VERSION; do not import products (arch Rule 6).
+    imageUrl: `http://localhost:3000/media/demo/v2/${p.sku.toLowerCase()}.webp`,
   }));
 
   beforeEach(() => {
