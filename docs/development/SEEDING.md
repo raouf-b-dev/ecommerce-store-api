@@ -87,45 +87,58 @@ The **Delivered Home & Books Order** demo includes a ceramic planter plus `BOOK-
 
 ### 4. Seeded Categories & Product Catalog
 
-Categories are seeded **before** products. `SeedDemoCategoriesUseCase` ensures the five canonical rows by **slug** (`electronics`, `clothing`, `home-garden`, `sports`, `books`). Missing rows are created; inactive ones are reactivated; active rows are left alone (names are not overwritten). The migration still inserts ids 1-5 on a fresh database; the seed step makes re-runs safe even if that insert was skipped or categories were deactivated.
+Categories are seeded **before** products. `SeedDemoCategoriesUseCase` ensures seven rows by **slug** (`electronics`, `clothing`, `home-garden`, `sports`, `books`, `beauty`, `outdoors`). Missing rows are created; inactive ones are reactivated; active rows are left alone (names are not overwritten). The migration still inserts ids 1-5 on a fresh database; `beauty` and `outdoors` exist only after seed. The seed step makes re-runs safe even if that insert was skipped or categories were deactivated.
 
-The seeder then inserts **15 products** across those **5 categories** with specified initial stock levels. Each demo SKU references a category by **slug** (resolved to id at seed time). Re-running `db:seed` creates missing SKUs and backfills `categoryId` only when a demo SKU still has a null category. It does not overwrite a category you already set, and it does not assign categories to leftover `E2E-*` rows from API e2e runs. Search `ELEC-`, `CLOT-`, `HOME-`, `SPOR-`, or `BOOK-` to find the demo catalog.
+The seeder then inserts **29 products** across those **7 categories** with specified initial stock levels. Each demo SKU references a category by **slug** (resolved to id at seed time). Re-running `db:seed` creates missing SKUs and backfills `categoryId` only when a demo SKU still has a null category. It does not overwrite a category you already set, and it does not assign categories to leftover `E2E-*` rows from API e2e runs. Search `ELEC-`, `CLOT-`, `HOME-`, `SPOR-`, `BOOK-`, `BEAU-`, or `OUTD-` to find the demo catalog.
 
-- **5 High Stock** (Quantity > low stock threshold, e.g. 80-250 units)
-- **5 Medium Stock** (Quantity > low stock threshold, e.g. 25-45 units)
-- **3 Low Stock** (Quantity <= low stock threshold, e.g. 3-8 units)
-- **2 Out of Stock** (Quantity = 0 units)
+Most SKUs start at 25 units or more so a public click-through checkout does not 409 on the first orders. `ELEC-PRJ-003` sits on its low-stock threshold (10). `ELEC-EWM-005` is the only out-of-stock SKU.
 
 | Product Name                        | SKU            | Category      | Price   | Initial Stock | Low Stock Threshold | Status       |
 | :---------------------------------- | :------------- | :------------ | :------ | :-----------: | :-----------------: | :----------- |
 | **Electronics**                     |                |               |         |               |                     |              |
 | Wireless Noise-Canceling Headphones | `ELEC-ANC-001` | Electronics   | $199.99 |      150      |         15          | High Stock   |
 | Smart Fitness Watch v2              | `ELEC-SFW-002` | Electronics   | $129.50 |      45       |         10          | Medium Stock |
-| 4K Ultra HD Portable Projector      | `ELEC-PRJ-003` | Electronics   | $349.00 |       8       |         10          | Low Stock    |
+| 4K Ultra HD Portable Projector      | `ELEC-PRJ-003` | Electronics   | $349.00 |      10       |         10          | Low Stock    |
 | Mechanical Backlit Keyboard         | `ELEC-MBK-004` | Electronics   | $79.99  |      120      |         15          | High Stock   |
 | Ergonomic Wireless Mouse            | `ELEC-EWM-005` | Electronics   | $24.95  |       0       |          5          | Out of Stock |
+| USB-C GaN Charger 65W               | `ELEC-GNC-006` | Electronics   | $34.99  |      140      |         15          | High Stock   |
+| Bluetooth Portable Speaker          | `ELEC-BPS-007` | Electronics   | $59.00  |      90       |         10          | High Stock   |
 | **Clothing**                        |                |               |         |               |                     |              |
 | Unisex Organic Cotton Hoodie        | `CLOT-OCH-001` | Clothing      | $55.00  |      250      |         20          | High Stock   |
 | Classic Denim Jacket                | `CLOT-CDJ-002` | Clothing      | $68.00  |      35       |         10          | Medium Stock |
-| Breathable Running Socks (3-Pack)   | `CLOT-BRS-003` | Clothing      | $14.99  |       3       |          5          | Low Stock    |
+| Breathable Running Socks (3-Pack)   | `CLOT-BRS-003` | Clothing      | $14.99  |      40       |          5          | High Stock   |
+| Merino Wool Beanie                  | `CLOT-MWB-004` | Clothing      | $28.00  |      120      |         15          | High Stock   |
+| Linen Summer Shirt                  | `CLOT-LSS-005` | Clothing      | $48.00  |      80       |         10          | High Stock   |
 | **Home & Garden**                   |                |               |         |               |                     |              |
 | Self-Watering Ceramic Planter       | `HOME-SCP-001` | Home & Garden | $32.50  |      80       |         12          | High Stock   |
 | Stainless Steel French Press        | `HOME-SFP-002` | Home & Garden | $39.99  |      25       |          8          | Medium Stock |
-| Ultrasonic Cool Mist Humidifier     | `HOME-UCH-003` | Home & Garden | $45.90  |       0       |          5          | Out of Stock |
+| Ultrasonic Cool Mist Humidifier     | `HOME-UCH-003` | Home & Garden | $45.90  |      50       |          5          | High Stock   |
+| Linen Throw Blanket                 | `HOME-LTB-004` | Home & Garden | $64.00  |      100      |         12          | High Stock   |
+| Scented Soy Candle Set              | `HOME-SSC-005` | Home & Garden | $36.00  |      160      |         15          | High Stock   |
 | **Sports**                          |                |               |         |               |                     |              |
 | Eco-Friendly TPE Yoga Mat           | `SPOR-EYM-001` | Sports        | $29.99  |      110      |         15          | High Stock   |
 | Insulated Sports Water Bottle       | `SPOR-IWB-002` | Sports        | $19.99  |      40       |         10          | Medium Stock |
+| Adjustable Dumbbell Pair            | `SPOR-ADS-003` | Sports        | $189.00 |      50       |          8          | High Stock   |
+| Resistance Band Kit                 | `SPOR-RBK-004` | Sports        | $22.00  |      130      |         15          | High Stock   |
 | **Books**                           |                |               |         |               |                     |              |
 | The Art of Clean Code               | `BOOK-ACC-001` | Books         | $28.50  |      30       |          5          | Medium Stock |
-| Designing Data-Intensive Systems    | `BOOK-DDS-002` | Books         | $42.00  |       4       |          5          | Low Stock    |
+| Designing Data-Intensive Systems    | `BOOK-DDS-002` | Books         | $42.00  |      30       |          5          | High Stock   |
+| The Pragmatic Programmer            | `BOOK-TPP-003` | Books         | $39.95  |      70       |          8          | High Stock   |
+| Domain-Driven Design                | `BOOK-DDD-004` | Books         | $54.99  |      55       |          8          | High Stock   |
+| **Beauty**                          |                |               |         |               |                     |              |
+| Daily Mineral Sunscreen             | `BEAU-DMS-001` | Beauty        | $18.00  |      180      |         20          | High Stock   |
+| Gentle Foaming Cleanser             | `BEAU-GFC-002` | Beauty        | $16.50  |      150      |         20          | High Stock   |
+| **Outdoors**                        |                |               |         |               |                     |              |
+| Compact Camping Lantern             | `OUTD-CCL-001` | Outdoors      | $27.50  |      95       |         10          | High Stock   |
+| Stainless Travel Mug                | `OUTD-STM-002` | Outdoors      | $24.00  |      110      |         12          | High Stock   |
 
 #### Demo product photos
 
-Every demo SKU gets a product photo. The files live in `assets/demo-media/v1/<sku-lowercase>.webp` (800x800 WebP, AI-generated; see [`assets/demo-media/LICENSE.md`](../../assets/demo-media/LICENSE.md)) and the API serves them itself at `/media/demo/v1/<file>`:
+Every demo SKU gets a product photo. The files live in `assets/demo-media/v2/<sku-lowercase>.webp` (800x800 WebP, AI-generated; see [`assets/demo-media/LICENSE.md`](../../assets/demo-media/LICENSE.md)) and the API serves them itself at `/media/demo/v2/<file>`:
 
-- **Stored URL**: the seed writes absolute URLs built from `PUBLIC_BASE_URL`, for example `http://localhost:3000/media/demo/v1/elec-anc-001.webp`. `PUBLIC_BASE_URL` is required and must be a bare http(s) origin; the API refuses to start without it. Locally it matches `PORT` (`http://localhost:3000`); on a deployed host it is the public origin browsers use to reach the API, and staging and production reject plain `http` (loopback hosts excepted).
+- **Stored URL**: the seed writes absolute URLs built from `PUBLIC_BASE_URL`, for example `http://localhost:3000/media/demo/v2/elec-anc-001.webp`. `PUBLIC_BASE_URL` is required and must be a bare http(s) origin; the API refuses to start without it. Locally it matches `PORT` (`http://localhost:3000`); on a deployed host it is the public origin browsers use to reach the API, and staging and production reject plain `http` (loopback hosts excepted).
 - **Re-runs**: `db:seed` fills `imageUrl` when it is null and rewrites URLs whose path has the demo shape `/media/demo/v<n>/<sku>.webp` (an older version or an old base URL). Any other URL was set by an operator and is left alone.
-- **Cross-origin loading**: responses carry `Cross-Origin-Resource-Policy: cross-origin` (helmet defaults every other route to `same-origin`) and `Cache-Control: public, max-age=31536000, immutable`. Bump `DEMO_MEDIA_VERSION` in `src/modules/products/core/application/seed/demo-media.ts` and add a new folder when a photo changes.
+- **Cross-origin loading**: responses carry `Cross-Origin-Resource-Policy: cross-origin` (helmet defaults every other route to `same-origin`) and `Cache-Control: public, max-age=31536000, immutable`. The `v2` in the URL is a **cache-bust version**, not a second set of alternate photos: only the folder named by `DEMO_MEDIA_VERSION` is served. When any photo changes, create a new folder (for example `v3`), bump the constant, and drop the previous folder once you no longer need those old URLs.
 - **Clients**: the storefront renders images through `next/image` and allows its `NEXT_PUBLIC_API_BASE_URL` origin, so `PUBLIC_BASE_URL` must share that origin (or be added to `NEXT_PUBLIC_IMAGE_ALLOWED_HOSTS`). The admin loads URLs directly with `<img>`.
 - **Docker**: the production image copies `assets/demo-media`; the static handler resolves it from the working directory (`/app`) and fails the boot when the `DEMO_MEDIA_VERSION` folder is missing.
 
@@ -164,4 +177,4 @@ After payments, inventory is **rebuilt** from catalog baselines using domain `re
 | `pending_payment`                                    | hold    | available ↓, reserved ↑ |
 | `confirmed` / `processing` / `shipped` / `delivered` | consume | available ↓, reserved 0 |
 
-Every `db:seed` resets touched demo SKUs to catalog `initialStock` with `reserved = 0`, then re-applies line effects (idempotent; no stacking).
+Every `db:seed` resets touched demo SKUs to catalog `initialStock` with `reserved = 0`, then re-applies the four fixture order lines (idempotent; shopper checkouts are not stacked onto the baseline). `POST /v1/admin/demo/reset` runs this same pipeline when demo reset is enabled. See [HOSTED-DEMO.md](../infrastructure/HOSTED-DEMO.md).

@@ -20,3 +20,10 @@ export const AUTH_STRICT_THROTTLE = {
 export const AUTH_REFRESH_THROTTLE = {
   default: { limit: AUTH_REFRESH_LIMIT, ttl: THROTTLE_WINDOW_MS },
 } as const;
+
+/** Hosted-demo reset. Cron is rare; the cap stops a leaked token from looping. */
+export const DEMO_RESET_LIMIT = 5;
+
+export const DEMO_RESET_THROTTLE = {
+  default: { limit: DEMO_RESET_LIMIT, ttl: THROTTLE_WINDOW_MS },
+} as const;

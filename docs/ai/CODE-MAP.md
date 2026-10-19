@@ -15,9 +15,9 @@ Write-side contexts talk through ACL gateways and domain events. Analytics is qu
 - `orders`: core domain. Checkout saga with `CheckoutFailureListener` compensation (stock release, refund, cancel).
 - `payments`: payment intents, transactions, direct `PaymentProvider` port binding with `FakeStripePaymentProvider` adapter.
 - `notifications`: email and SMS orchestration through BullMQ flows.
-- `analytics`: `/v1/admin/analytics/*` reports. See [ANALYTICS.md](../architecture/domains/ANALYTICS.md).
+- `analytics`: `/v1/admin/analytics/*` reports. Query-only composition (ADR-0007). See [ANALYTICS.md](../architecture/domains/ANALYTICS.md).
 
-All ten modules represent domain bounded contexts and follow `core/{domain,application}`, `primary-adapters`, `secondary-adapters`, `testing`, plus `<m>.module.ts`, `<m>.controller.ts`, `<m>.token.ts`.
+Domain modules follow `core/{domain,application}`, `primary-adapters`, `secondary-adapters`, `testing`, plus `<m>.module.ts`, `<m>.controller.ts`, `<m>.token.ts`.
 
 ## Access control and shared code
 
@@ -25,7 +25,7 @@ All ten modules represent domain bounded contexts and follow `core/{domain,appli
 - `src/shared-kernel/domain/policies/owned-resource-access.policy.ts`: `OwnedResourceAccessPolicy` (`canViewResource`, `canMutateResource`, `resolveListScope`, `resolveResourceScope`). Carts use `CartOwnershipValidator` (`modules/carts/core/application/services`).
 - Controllers: `@CallerCtx()` supplies the context; `@RequirePermissions()` plus `PermissionsGuard` enforce RBAC.
 - `src/shared-kernel/domain/`: `result.ts` (`Result`, `isFailure`), `interfaces/base.usecase.ts` (`UseCase`), `exceptions/` (error classes, `ErrorFactory`). `src/shared-kernel/infra/lang/error.utils.ts`.
-- `src/infrastructure/`: `database`, `redis`, `queue`, `jobs` (`job-names.ts`, `job-retry-policies.ts`, `BaseJobHandler`), `idempotency` and `decorators/idempotent.decorator.ts` (`@Idempotent()`), `throttler`, `events` (`DomainEventPublisher` over EventEmitter2), `logging` (Winston, `X-Request-Id`), `metrics` (`/metrics`), `health` (`/health`, `/health/liveness`, `/health/readiness`), `platform` (`/v1/platform/config`), `tracing` (OpenTelemetry), `shutdown`, `websocket` (Socket.io gateway, Redis adapter), `mappers/utils`, `jwt`, `swagger`.
+- `src/infrastructure/`: `database`, `redis`, `queue`, `jobs` (`job-names.ts`, `job-retry-policies.ts`, `BaseJobHandler`), `idempotency` and `decorators/idempotent.decorator.ts` (`@Idempotent()`), `throttler`, `events` (`DomainEventPublisher` over EventEmitter2), `logging` (Winston, `X-Request-Id`), `metrics` (`/metrics`), `health` (`/health`, `/health/liveness`, `/health/readiness`), `platform` (`/v1/platform/config`), `demo` (`POST /v1/admin/demo/reset` ops seed reconcile; ADR-0009), `tracing` (OpenTelemetry), `shutdown`, `websocket` (Socket.io gateway, Redis adapter), `mappers/utils`, `jwt`, `swagger`. See [HOSTED-DEMO.md](../infrastructure/HOSTED-DEMO.md).
 - `src/config/`: env schema and validation. `src/guards`, `src/filters`, `src/interceptors` (`ResultInterceptor` maps `Result` to HTTP).
 - `data-source.ts`: TypeORM CLI. `src/migrations/`: migrations.
 

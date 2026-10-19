@@ -271,7 +271,7 @@ Moved to Phase **16c**.
 
 **Scope**:
 
-- Custom domain with sibling subdomains (for example `api.<domain>` for this API, clients on other subdomains of the same domain). The refresh cookie is `Secure`, `SameSite=Strict` and host-only (`refresh-token-cookie.interceptor.ts`). Platform default domains are separate sites, so the cookie would not reach the API from a client hosted on another platform domain.
+- Custom domain with sibling subdomains (for example `api.<domain>` for this API, clients on other subdomains of the same domain). The refresh cookie defaults to `Secure`, `HttpOnly`, `SameSite=Strict`, path-scoped to authentication routes. Cross-origin clients set `AUTH_COOKIE_SAMESITE=none`, which requires an https `PUBLIC_BASE_URL`. See `docs/infrastructure/HOSTED-DEMO.md`. Platform default domains are separate sites, so `SameSite=Strict` would not reach the API from a client hosted on another platform domain.
 - `CORS_ALLOWED_ORIGINS` lists the exact client origins; credentials stay enabled. Document the refresh cookie attributes (`Secure`, `SameSite`, host-only, path) and why they work with sibling subdomains.
 - The public base URL setting from Phase **16b** points at the hosted origin.
 - Swagger: add an explicit env flag so `/api/docs` can be public in staging while production defaults stay closed. Today `src/main.ts` mounts Swagger only when `NODE_ENV !== 'production'`.

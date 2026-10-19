@@ -34,6 +34,7 @@ Technical reference for this repository, organised by layer.
 - [adr/ADR-0005-typed-atomic-occ-update-contract.md](architecture/adr/ADR-0005-typed-atomic-occ-update-contract.md): Why every versioned aggregate uses QueryBuilder OCC, `UpdateFromEntity` payloads, and persistence-owned `version` / `updatedAt` stamps.
 - [adr/ADR-0006-redis-fail-open-cache-aside.md](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md): Why Redis cache-aside fails open, idempotency fails closed, and generation-based invalidation drops prior indexes.
 - [adr/ADR-0007-admin-analytics-query-composition.md](architecture/adr/ADR-0007-admin-analytics-query-composition.md): Why admin analytics is a query-only composition module (SQL projections, not ACL/Prometheus).
+- [adr/ADR-0009-demo-reset-ops-infrastructure.md](architecture/adr/ADR-0009-demo-reset-ops-infrastructure.md): Why hosted demo reset lives under `src/infrastructure/demo/`, not a domain BC.
 
 ---
 
@@ -62,6 +63,7 @@ Technical reference for this repository, organised by layer.
 - [REDIS.md](infrastructure/REDIS.md): Redis roles, fail-open degradation, key-space generation, and shared connection options (see also [ADR-0006](architecture/adr/ADR-0006-redis-fail-open-cache-aside.md)).
 - [RELEASE-BACKUP-RECOVERY.md](infrastructure/RELEASE-BACKUP-RECOVERY.md): Release checklist, rollback matrix, `db:backup` / `db:restore`, smoke probes, restore drill.
 - [TROUBLESHOOTING.md](infrastructure/TROUBLESHOOTING.md): Common issues and solutions for the API.
+- [HOSTED-DEMO.md](infrastructure/HOSTED-DEMO.md): Cross-origin refresh cookies, CORS allowlist, and the token-gated demo reset.
 
 ### CI/CD & Deployment
 
