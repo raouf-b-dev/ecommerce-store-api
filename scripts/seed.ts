@@ -33,16 +33,27 @@ async function bootstrap() {
     }
     const report = reportResult.value;
 
-    console.log(
-      `Super admin user ${statusLabel(report.superAdmin.status)}: ${maskEmail(
-        report.superAdmin.email,
-      )}`,
-    );
-    console.log(
-      `Admin user ${statusLabel(report.admin.status)}: ${maskEmail(
-        report.admin.email,
-      )}`,
-    );
+    if (report.superAdmin) {
+      console.log(
+        `Super admin user ${statusLabel(report.superAdmin.status)}: ${maskEmail(
+          report.superAdmin.email,
+        )}`,
+      );
+    }
+    if (report.admin) {
+      console.log(
+        `Admin user ${statusLabel(report.admin.status)}: ${maskEmail(
+          report.admin.email,
+        )}`,
+      );
+    }
+    if (report.viewer) {
+      console.log(
+        `Viewer user ${statusLabel(report.viewer.status)}: ${maskEmail(
+          report.viewer.email,
+        )}`,
+      );
+    }
     console.log(
       `Customer user ${statusLabel(report.customer.status)}: ${maskEmail(
         report.customer.email,

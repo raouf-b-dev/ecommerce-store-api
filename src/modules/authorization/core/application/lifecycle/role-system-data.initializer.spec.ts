@@ -166,6 +166,8 @@ describe('RoleSystemDataInitializer', () => {
   });
 
   it('should skip role and continue if findByCode fails', async () => {
+    const { SYSTEM_ROLES } =
+      await import('../../domain/reference-data/system-roles');
     mockRoleRepo.findByCode.mockResolvedValueOnce(
       ErrorFactory.RepositoryError('DB error'),
     );
@@ -175,8 +177,8 @@ describe('RoleSystemDataInitializer', () => {
     await initializer.onApplicationBootstrap();
 
     expect(mockRoleRepo.findByCode).toHaveBeenCalled();
-    // Assuming SYSTEM_ROLES has 3 roles. One failed findByCode, so save is called 2 times.
-    expect(mockRoleRepo.save).toHaveBeenCalledTimes(2);
+    // One failed findByCode; the remaining SYSTEM_ROLES entries are saved.
+    expect(mockRoleRepo.save).toHaveBeenCalledTimes(SYSTEM_ROLES.length - 1);
   });
 
   it('should handle save failure gracefully', async () => {

@@ -345,10 +345,14 @@ describe('validateEnv', () => {
     ).toThrow(EnvError);
   });
 
-  it('defaults demo reset off and refresh cookie SameSite strict', () => {
+  it('defaults demo reset off, read-only off, demo accounts, and refresh cookie SameSite strict', () => {
     const validated = validateEnv(baseEnv);
     expect(validated.DEMO_RESET_ENABLED).toBe(false);
     expect(validated.DEMO_RESET_TOKEN).toBe('');
+    expect(validated.DEMO_READ_ONLY).toBe(false);
+    expect(validated.DEMO_VIEWER_EMAIL).toBe('viewer@store.local');
+    expect(validated.DEMO_VIEWER_PASSWORD).toBe('Viewer123!');
+    expect(validated.DEMO_CUSTOMER_EMAIL).toBe('customer@store.local');
     expect(validated.AUTH_COOKIE_SAMESITE).toBe('strict');
   });
 

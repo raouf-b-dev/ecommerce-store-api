@@ -10,6 +10,26 @@ import { CredentialRepository } from '../../domain/repositories/credential.repos
 import { Credential } from '../../domain/entities/credential';
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 
+export interface DemoSeedAccountCreds {
+  email: string;
+  password: string;
+}
+
+export interface SeedDemoAuthUsersInput {
+  /**
+   * Hosted shared demo: seed viewer + fixture customer only; do not create or
+   * update writable local demo operators. Adapters read DEMO_READ_ONLY and
+   * pass credentials from env - application never loads env/config.
+   */
+  readOnly: boolean;
+  accounts: {
+    superAdmin: DemoSeedAccountCreds;
+    admin: DemoSeedAccountCreds;
+    viewer: DemoSeedAccountCreds;
+    customer: DemoSeedAccountCreds;
+  };
+}
+
 export interface SeededDemoAuthUser {
   userId: number;
   email: string;
@@ -17,14 +37,18 @@ export interface SeededDemoAuthUser {
 }
 
 export interface SeedDemoAuthUsersResult {
-  superAdmin: SeededDemoAuthUser;
-  admin: SeededDemoAuthUser;
+  /** Present only when readOnly is false. */
+  superAdmin: SeededDemoAuthUser | null;
+  /** Present only when readOnly is false. */
+  admin: SeededDemoAuthUser | null;
+  /** Present only when readOnly is true. */
+  viewer: SeededDemoAuthUser | null;
   customer: SeededDemoAuthUser;
 }
 
 @Injectable()
 export class SeedDemoAuthUsersUseCase extends UseCase<
-  void,
+  SeedDemoAuthUsersInput,
   SeedDemoAuthUsersResult,
   UseCaseError
 > {
@@ -37,40 +61,80 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     super();
   }
 
-  async execute(): Promise<Result<SeedDemoAuthUsersResult, UseCaseError>> {
+  async execute({
+    readOnly,
+    accounts,
+  }: SeedDemoAuthUsersInput): Promise<
+    Result<SeedDemoAuthUsersResult, UseCaseError>
+  > {
+    if (readOnly) {
+      const viewer = await this.seedUser({
+        email: accounts.viewer.email,
+        password: accounts.viewer.password,
+        roleCode: SystemRoleCode.ADMIN_READONLY,
+        firstName: 'Demo',
+        lastName: 'Viewer',
+        phone: '',
+        mustChangePassword: false,
+      });
+      if (isFailure(viewer)) return viewer;
+
+      const customer = await this.seedUser({
+        email: accounts.customer.email,
+        password: accounts.customer.password,
+        roleCode: SystemRoleCode.CUSTOMER,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        phone: '',
+        mustChangePassword: false,
+      });
+      if (isFailure(customer)) return customer;
+
+      return Result.success({
+        superAdmin: null,
+        admin: null,
+        viewer: viewer.value,
+        customer: customer.value,
+      });
+    }
+
     const superAdmin = await this.seedUser({
-      email: 'superadmin@store.local',
-      password: 'SuperAdmin123!',
+      email: accounts.superAdmin.email,
+      password: accounts.superAdmin.password,
       roleCode: SystemRoleCode.SUPER_ADMIN,
       firstName: 'Super',
       lastName: 'Admin',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(superAdmin)) return superAdmin;
 
     const admin = await this.seedUser({
-      email: 'admin@store.local',
-      password: 'Admin123!',
+      email: accounts.admin.email,
+      password: accounts.admin.password,
       roleCode: SystemRoleCode.ADMIN,
       firstName: 'Store',
       lastName: 'Administrator',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(admin)) return admin;
 
     const customer = await this.seedUser({
-      email: 'customer@store.local',
-      password: 'Customer123!',
+      email: accounts.customer.email,
+      password: accounts.customer.password,
       roleCode: SystemRoleCode.CUSTOMER,
       firstName: 'Jane',
       lastName: 'Doe',
       phone: '',
+      mustChangePassword: true,
     });
     if (isFailure(customer)) return customer;
 
     return Result.success({
       superAdmin: superAdmin.value,
       admin: admin.value,
+      viewer: null,
       customer: customer.value,
     });
   }
@@ -82,6 +146,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     firstName: string;
     lastName: string;
     phone: string;
+    mustChangePassword: boolean;
   }): Promise<Result<SeededDemoAuthUser, UseCaseError>> {
     const existingResult = await this.identityGateway.findUserByEmail(
       input.email,
@@ -97,6 +162,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       await this.resetExistingDemoCredential(
         existingResult.value.id,
         input.password,
+        input.mustChangePassword,
       );
 
       return Result.success({
@@ -108,7 +174,6 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
     const passwordHash = await this.passwordHasher.hash(input.password);
 
-    // Step 1: Create user identity (Identity)
     const createUserResult = await this.identityGateway.createUser({
       firstName: input.firstName,
       lastName: input.lastName,
@@ -119,30 +184,28 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
     const user = createUserResult.value;
 
-    // Step 2: Create credential (Authentication)
     const credentialResult = await this.credentialRepository.save(
       Credential.create({
         userId: user.id,
         passwordHash,
-        mustChangePassword: true,
+        mustChangePassword: input.mustChangePassword,
       }),
     );
     if (isFailure(credentialResult)) {
-      await this.identityGateway.deleteUser(user.id); // compensate step 1
+      await this.identityGateway.deleteUser(user.id);
       return ErrorFactory.UseCaseError(
         `Failed to seed credentials for ${input.email}`,
         credentialResult.error,
       );
     }
 
-    // Step 3: Assign role (Authorization)
     const roleResult = await this.authorizationGateway.assignRole(
       user.id,
       input.roleCode,
     );
     if (isFailure(roleResult)) {
-      await this.credentialRepository.deleteByUserId(user.id); // compensate step 2
-      await this.identityGateway.deleteUser(user.id); // compensate step 1
+      await this.credentialRepository.deleteByUserId(user.id);
+      await this.identityGateway.deleteUser(user.id);
       return ErrorFactory.UseCaseError(
         `Failed to assign role for ${input.email}`,
         roleResult.error,
@@ -158,11 +221,12 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
   /**
    * Re-applies demo credential defaults so local re-seed restores documented
-   * passwords and the forced-rotation flow without manual SQL.
+   * passwords (and forced-rotation when mustChangePassword is true).
    */
   private async resetExistingDemoCredential(
     userId: number,
     plainPassword: string,
+    mustChangePassword: boolean,
   ): Promise<void> {
     const credentialResult =
       await this.credentialRepository.findByUserId(userId);
@@ -173,7 +237,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     const passwordHash = await this.passwordHasher.hash(plainPassword);
     const credential = credentialResult.value;
     credential.passwordHash = passwordHash;
-    credential.mustChangePassword = true;
+    credential.mustChangePassword = mustChangePassword;
 
     const updateResult = await this.credentialRepository.update(credential);
     if (isFailure(updateResult)) {

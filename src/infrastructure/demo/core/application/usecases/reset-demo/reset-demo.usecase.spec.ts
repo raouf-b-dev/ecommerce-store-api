@@ -16,6 +16,7 @@ function report(): DemoSeedReport {
     authOnly: false,
     superAdmin: { email: 'superadmin@store.local', status: 'existing' },
     admin: { email: 'admin@store.local', status: 'existing' },
+    viewer: null,
     customer: { email: 'customer@store.local', status: 'existing' },
     categories: 7,
     categoriesCreated: 0,
