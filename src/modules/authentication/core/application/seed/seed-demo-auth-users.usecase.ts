@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { randomBytes } from 'crypto';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -11,18 +10,24 @@ import { CredentialRepository } from '../../domain/repositories/credential.repos
 import { Credential } from '../../domain/entities/credential';
 import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
 
-export const DEMO_SUPERADMIN_EMAIL = 'superadmin@store.local';
-export const DEMO_ADMIN_EMAIL = 'admin@store.local';
-export const DEMO_VIEWER_EMAIL = 'viewer@store.local';
-export const DEMO_CUSTOMER_EMAIL = 'customer@store.local';
+export interface DemoSeedAccountCreds {
+  email: string;
+  password: string;
+}
 
 export interface SeedDemoAuthUsersInput {
   /**
-   * Hosted shared demo: seed viewer + customer only and neutralize any
-   * existing writable local demo operators. Adapters read DEMO_READ_ONLY
-   * and pass it here - application never loads env/config infrastructure.
+   * Hosted shared demo: seed viewer + fixture customer only; do not create or
+   * update writable local demo operators. Adapters read DEMO_READ_ONLY and
+   * pass credentials from env - application never loads env/config.
    */
   readOnly: boolean;
+  accounts: {
+    superAdmin: DemoSeedAccountCreds;
+    admin: DemoSeedAccountCreds;
+    viewer: DemoSeedAccountCreds;
+    customer: DemoSeedAccountCreds;
+  };
 }
 
 export interface SeededDemoAuthUser {
@@ -58,16 +63,14 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
 
   async execute({
     readOnly,
+    accounts,
   }: SeedDemoAuthUsersInput): Promise<
     Result<SeedDemoAuthUsersResult, UseCaseError>
   > {
     if (readOnly) {
-      await this.neutralizeWritableDemoOperator(DEMO_SUPERADMIN_EMAIL);
-      await this.neutralizeWritableDemoOperator(DEMO_ADMIN_EMAIL);
-
       const viewer = await this.seedUser({
-        email: DEMO_VIEWER_EMAIL,
-        password: 'Viewer123!',
+        email: accounts.viewer.email,
+        password: accounts.viewer.password,
         roleCode: SystemRoleCode.ADMIN_READONLY,
         firstName: 'Demo',
         lastName: 'Viewer',
@@ -77,8 +80,8 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       if (isFailure(viewer)) return viewer;
 
       const customer = await this.seedUser({
-        email: DEMO_CUSTOMER_EMAIL,
-        password: 'Customer123!',
+        email: accounts.customer.email,
+        password: accounts.customer.password,
         roleCode: SystemRoleCode.CUSTOMER,
         firstName: 'Jane',
         lastName: 'Doe',
@@ -96,8 +99,8 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     }
 
     const superAdmin = await this.seedUser({
-      email: DEMO_SUPERADMIN_EMAIL,
-      password: 'SuperAdmin123!',
+      email: accounts.superAdmin.email,
+      password: accounts.superAdmin.password,
       roleCode: SystemRoleCode.SUPER_ADMIN,
       firstName: 'Super',
       lastName: 'Admin',
@@ -107,8 +110,8 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(superAdmin)) return superAdmin;
 
     const admin = await this.seedUser({
-      email: DEMO_ADMIN_EMAIL,
-      password: 'Admin123!',
+      email: accounts.admin.email,
+      password: accounts.admin.password,
       roleCode: SystemRoleCode.ADMIN,
       firstName: 'Store',
       lastName: 'Administrator',
@@ -118,8 +121,8 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(admin)) return admin;
 
     const customer = await this.seedUser({
-      email: DEMO_CUSTOMER_EMAIL,
-      password: 'Customer123!',
+      email: accounts.customer.email,
+      password: accounts.customer.password,
       roleCode: SystemRoleCode.CUSTOMER,
       firstName: 'Jane',
       lastName: 'Doe',
@@ -240,24 +243,5 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(updateResult)) {
       return;
     }
-  }
-
-  /**
-   * Hosted read-only seed: if a writable local demo operator exists from a
-   * prior seed, rotate its password to an unpublished random value so the
-   * documented local passwords cannot sign in.
-   */
-  private async neutralizeWritableDemoOperator(email: string): Promise<void> {
-    const existingResult = await this.identityGateway.findUserByEmail(email);
-    if (isFailure(existingResult) || !existingResult.value) {
-      return;
-    }
-
-    const randomPassword = randomBytes(32).toString('base64url');
-    await this.resetExistingDemoCredential(
-      existingResult.value.id,
-      randomPassword,
-      true,
-    );
   }
 }

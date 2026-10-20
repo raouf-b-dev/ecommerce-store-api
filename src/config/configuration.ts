@@ -69,10 +69,17 @@ export interface IAppConfig {
     resetEnabled: boolean;
     resetToken: string;
     /**
-     * Hosted shared demo: block admin mutations and seed viewer+customer only.
+     * Hosted shared demo: seed viewer + fixture customer only (no writable
+     * local operators). Mutations stay on PermissionsGuard / RBAC.
      * Local Compose keeps this false (full writable demo accounts).
      */
     readOnly: boolean;
+    accounts: {
+      superAdmin: { email: string; password: string };
+      admin: { email: string; password: string };
+      viewer: { email: string; password: string };
+      customer: { email: string; password: string };
+    };
   };
 }
 
@@ -150,6 +157,24 @@ export default (): IAppConfig => {
       resetEnabled: env.DEMO_RESET_ENABLED,
       resetToken: env.DEMO_RESET_TOKEN,
       readOnly: env.DEMO_READ_ONLY,
+      accounts: {
+        superAdmin: {
+          email: env.DEMO_SUPERADMIN_EMAIL,
+          password: env.DEMO_SUPERADMIN_PASSWORD,
+        },
+        admin: {
+          email: env.DEMO_ADMIN_EMAIL,
+          password: env.DEMO_ADMIN_PASSWORD,
+        },
+        viewer: {
+          email: env.DEMO_VIEWER_EMAIL,
+          password: env.DEMO_VIEWER_PASSWORD,
+        },
+        customer: {
+          email: env.DEMO_CUSTOMER_EMAIL,
+          password: env.DEMO_CUSTOMER_PASSWORD,
+        },
+      },
     },
   };
 };

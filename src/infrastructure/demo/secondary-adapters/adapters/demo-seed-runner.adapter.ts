@@ -64,6 +64,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
   ): Promise<Result<DemoSeedReport, UseCaseError>> {
     const authUsersResult = await this.seedAuthUsersUseCase.execute({
       readOnly: this.config.demo.readOnly,
+      accounts: this.config.demo.accounts,
     });
     if (authUsersResult.isFailure) {
       return authUsersResult;

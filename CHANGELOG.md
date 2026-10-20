@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted seed account `viewer@store.local` when `DEMO_READ_ONLY=true`.
-- `DEMO_READ_ONLY` (default `false`): seeds viewer+customer only (neutralizes any existing local writable demo operators) and skips forced password change on those accounts. Public viewer has no `manage_*`; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true`.
+- `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts).
 
 ## [0.12.0] - 2026-10-19
 

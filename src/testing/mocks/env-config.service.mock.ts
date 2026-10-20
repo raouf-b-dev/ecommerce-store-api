@@ -69,6 +69,18 @@ function createDefaultMockConfig(): IAppConfig {
       resetEnabled: false,
       resetToken: '',
       readOnly: false,
+      accounts: {
+        superAdmin: {
+          email: 'superadmin@store.local',
+          password: 'SuperAdmin123!',
+        },
+        admin: { email: 'admin@store.local', password: 'Admin123!' },
+        viewer: { email: 'viewer@store.local', password: 'Viewer123!' },
+        customer: {
+          email: 'customer@store.local',
+          password: 'Customer123!',
+        },
+      },
     },
   };
 }
@@ -161,7 +173,24 @@ export class MockEnvConfigService extends EnvConfigService {
     return this.configState.demo;
   }
 
-  setMockConfig(config: Partial<IAppConfig>) {
-    Object.assign(this.configState, config);
+  setMockConfig(
+    config: Omit<Partial<IAppConfig>, 'demo'> & {
+      demo?: Partial<Omit<IAppConfig['demo'], 'accounts'>> & {
+        accounts?: Partial<IAppConfig['demo']['accounts']>;
+      };
+    },
+  ) {
+    const { demo, ...rest } = config;
+    Object.assign(this.configState, rest);
+    if (demo) {
+      this.configState.demo = {
+        ...this.configState.demo,
+        ...demo,
+        accounts: {
+          ...this.configState.demo.accounts,
+          ...(demo.accounts ?? {}),
+        },
+      };
+    }
   }
 }

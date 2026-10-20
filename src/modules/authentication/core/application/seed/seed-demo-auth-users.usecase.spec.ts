@@ -17,6 +17,16 @@ import { ResultAssertionHelper } from '../../../../../testing';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { Credential } from '../../domain/entities/credential';
 
+const DEFAULT_ACCOUNTS = {
+  superAdmin: {
+    email: 'superadmin@store.local',
+    password: 'SuperAdmin123!',
+  },
+  admin: { email: 'admin@store.local', password: 'Admin123!' },
+  viewer: { email: 'viewer@store.local', password: 'Viewer123!' },
+  customer: { email: 'customer@store.local', password: 'Customer123!' },
+};
+
 describe('SeedDemoAuthUsersUseCase', () => {
   let useCase: SeedDemoAuthUsersUseCase;
   let identityGateway: IdentityAccessGatewayMock;
@@ -73,7 +83,10 @@ describe('SeedDemoAuthUsersUseCase', () => {
     );
     authorizationGateway.mockSuccessfulAssignRole();
 
-    const result = await useCase.execute({ readOnly: false });
+    const result = await useCase.execute({
+      readOnly: false,
+      accounts: DEFAULT_ACCOUNTS,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
@@ -122,7 +135,10 @@ describe('SeedDemoAuthUsersUseCase', () => {
     );
     authorizationGateway.mockSuccessfulAssignRole();
 
-    const result = await useCase.execute({ readOnly: true });
+    const result = await useCase.execute({
+      readOnly: true,
+      accounts: DEFAULT_ACCOUNTS,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
@@ -147,9 +163,15 @@ describe('SeedDemoAuthUsersUseCase', () => {
       expect.objectContaining({ mustChangePassword: false }),
     );
     expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
-      'superadmin@store.local',
+      'viewer@store.local',
     );
     expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
+      'customer@store.local',
+    );
+    expect(identityGateway.findUserByEmail).not.toHaveBeenCalledWith(
+      'superadmin@store.local',
+    );
+    expect(identityGateway.findUserByEmail).not.toHaveBeenCalledWith(
       'admin@store.local',
     );
     expect(identityGateway.createUser).toHaveBeenCalledTimes(2);
@@ -189,7 +211,10 @@ describe('SeedDemoAuthUsersUseCase', () => {
     credentialRepository.mockSuccessfulUpdate();
     passwordHasher.hash.mockResolvedValue('reset-hash');
 
-    const result = await useCase.execute({ readOnly: false });
+    const result = await useCase.execute({
+      readOnly: false,
+      accounts: DEFAULT_ACCOUNTS,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value).toEqual({
@@ -213,5 +238,47 @@ describe('SeedDemoAuthUsersUseCase', () => {
     expect(passwordHasher.hash).toHaveBeenCalledWith('SuperAdmin123!');
     expect(passwordHasher.hash).toHaveBeenCalledWith('Admin123!');
     expect(passwordHasher.hash).toHaveBeenCalledWith('Customer123!');
+  });
+
+  it('should seed credentials from the input accounts', async () => {
+    identityGateway.mockFindUserByEmail(null);
+    const viewerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 20,
+      email: 'ops-viewer@example.com',
+    });
+    const customerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
+      id: 21,
+      email: 'fixture@example.com',
+    });
+
+    identityGateway.createUser
+      .mockResolvedValueOnce(Result.success(viewerUser))
+      .mockResolvedValueOnce(Result.success(customerUser));
+    passwordHasher.hash.mockResolvedValue('hashed_password');
+    credentialRepository.save.mockImplementation((credential) =>
+      Promise.resolve(Result.success(credential)),
+    );
+    authorizationGateway.mockSuccessfulAssignRole();
+
+    const result = await useCase.execute({
+      readOnly: true,
+      accounts: {
+        ...DEFAULT_ACCOUNTS,
+        viewer: {
+          email: 'ops-viewer@example.com',
+          password: 'HostedViewer!',
+        },
+        customer: {
+          email: 'fixture@example.com',
+          password: 'FixtureCust!',
+        },
+      },
+    });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.viewer?.email).toBe('ops-viewer@example.com');
+    expect(result.value.customer.email).toBe('fixture@example.com');
+    expect(passwordHasher.hash).toHaveBeenCalledWith('HostedViewer!');
+    expect(passwordHasher.hash).toHaveBeenCalledWith('FixtureCust!');
   });
 });

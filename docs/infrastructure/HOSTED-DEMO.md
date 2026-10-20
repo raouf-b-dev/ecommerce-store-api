@@ -15,10 +15,12 @@ The API is the public origin. Admin and storefront are separate sites. They call
 
 For a **public** admin URL, set `DEMO_READ_ONLY=true` on the host (default is `false` for local Compose).
 
-- Seed creates `viewer@store.local` (`ADMIN_READONLY`) + `customer@store.local` only - never the writable local `superadmin@` / `admin@` accounts. See [SEEDING.md](../development/SEEDING.md).
-- Public visitors use the viewer account: `access_admin` + `view_all_*`, no `manage_*`. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
+- Seed creates the viewer (`ADMIN_READONLY`, from `DEMO_VIEWER_*`) plus a silent fixture customer (from `DEMO_CUSTOMER_*`, for demo orders/cart only). It does not create or update writable local operators. See [SEEDING.md](../development/SEEDING.md).
+- Public admin visitors use the viewer account: `access_admin` + `view_all_*`, no `manage_*`. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
+- Storefront visitors **register** with their own credentials. Do not publish the fixture customer as the shop login.
 - Private writable owner (optional): set `ADMIN_EMAIL` / `ADMIN_PASSWORD` once on the VM so boot creates a Super Admin, change the password on first login, then clear or rotate the env secret. See [ADMIN-BOOTSTRAP.md](../security/ADMIN-BOOTSTRAP.md). Do not publish that account in the README.
-- Pair with a scheduled demo reset below so shopper drift (orders, registrations) is healed.
+- If the database volume was previously seeded with local writable demo accounts, wipe it or use a fresh volume before enabling `DEMO_READ_ONLY`.
+- Pair with a scheduled demo reset below so catalog baselines heal; shopper-created accounts are not deleted.
 
 ## Demo reset
 
@@ -31,7 +33,7 @@ The cron sends header `X-Demo-Reset-Token`. There is no user JWT. Missing and wr
 
 On success the handler runs the same pipeline as `npm run db:seed`:
 
-- Demo accounts match the mode: with `DEMO_READ_ONLY=true`, `viewer@store.local` + `customer@store.local` (see [SEEDING.md](../development/SEEDING.md)); with the flag false, the local writable trio.
+- Demo accounts match the mode and env credentials: with `DEMO_READ_ONLY=true`, viewer + silent fixture customer (see [SEEDING.md](../development/SEEDING.md)); with the flag false, the local writable trio.
 - Categories and products are upserted.
 - Demo SKU stock is reset to catalog baselines, then the four fixture orders are applied again. Shopper checkouts do not keep reducing that baseline.
 - Shopper-created accounts and orders are not deleted. `npm run db:seed` stays non-destructive in that same way, and it still refuses `NODE_ENV=production`. The HTTP route is the opt-in for a hosted demo that runs with production mode.
