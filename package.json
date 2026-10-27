@@ -119,6 +119,7 @@
     "db:backup": "node scripts/db-backup.js",
     "db:restore": "node scripts/db-restore.js",
     "db:restore:drill": "node scripts/db-restore-drill.js --yes",
+    "queue:clean-legacy-repeatables": "node scripts/bullmq-clean-legacy-repeatables.js",
     "env:init": "node scripts/generate-envs.js",
     "env:init:force": "node scripts/generate-envs.js --overwrite",
     "env:init:merge": "node scripts/generate-envs.js --merge",
