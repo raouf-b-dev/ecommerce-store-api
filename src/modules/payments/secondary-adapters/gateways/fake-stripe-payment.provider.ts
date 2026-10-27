@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   PaymentProvider,
   InitiatePaymentParams,
@@ -87,7 +87,7 @@ export class FakeStripePaymentProvider extends PaymentProvider {
   }
 
   authorize(): Promise<Result<AuthorizeResult, InfrastructureError>> {
-    const providerReference = `pi_auth_${uuidv4().replace(/-/g, '')}`;
+    const providerReference = `pi_auth_${randomUUID().replace(/-/g, '')}`;
     return Promise.resolve(
       Result.success({
         outcome: 'authorized',

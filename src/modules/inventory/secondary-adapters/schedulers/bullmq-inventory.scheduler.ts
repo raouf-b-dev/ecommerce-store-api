@@ -42,13 +42,10 @@ export class BullMqInventoryScheduler
     const jobId = 'inventory-reconciliation-job';
 
     try {
-      await this.inventoryQueue.add(
-        jobName,
-        {},
-        {
-          repeat: { pattern: cron },
-          jobId,
-        },
+      await this.inventoryQueue.upsertJobScheduler(
+        jobId,
+        { pattern: cron },
+        { name: jobName, data: {} },
       );
       this.logger.log(
         'Inventory reconciliation audit job scheduled successfully (cron: 0 4 * * *)',
@@ -89,13 +86,10 @@ export class BullMqInventoryScheduler
     const jobId = 'sweep-expired-reservations-job';
 
     try {
-      await this.inventoryQueue.add(
-        jobName,
-        {},
-        {
-          repeat: { pattern: cron },
-          jobId,
-        },
+      await this.inventoryQueue.upsertJobScheduler(
+        jobId,
+        { pattern: cron },
+        { name: jobName, data: {} },
       );
       this.logger.log(
         'Expired reservations sweeper job scheduled successfully (cron: */5 * * * *)',

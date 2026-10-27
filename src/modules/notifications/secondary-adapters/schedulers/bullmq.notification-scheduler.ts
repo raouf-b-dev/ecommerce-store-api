@@ -48,13 +48,10 @@ export class BullMqNotificationScheduler
     const jobId = 'cleanup-expired-notifications-job';
 
     try {
-      await this.notificationQueue.add(
-        jobName,
-        {},
-        {
-          repeat: { pattern: cron },
-          jobId,
-        },
+      await this.notificationQueue.upsertJobScheduler(
+        jobId,
+        { pattern: cron },
+        { name: jobName, data: {} },
       );
       this.logger.log('Cleanup job scheduled successfully');
       return Result.success({ jobId });

@@ -6,6 +6,9 @@ export function createMockQueue(
   return {
     name,
     add: jest.fn().mockResolvedValue({ id: `${name}-job-id` }),
+    upsertJobScheduler: jest
+      .fn()
+      .mockResolvedValue({ id: `${name}-scheduler-job-id` }),
     getJob: jest.fn().mockResolvedValue(null),
     close: jest.fn().mockResolvedValue(undefined),
   } as unknown as jest.Mocked<Queue>;
