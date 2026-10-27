@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `npm run queue:clean-legacy-repeatables` (`scripts/bullmq-clean-legacy-repeatables.js`): one-time removal of legacy v5 repeatable entries. Dry run by default, `--yes` to remove. Run after deploying this release and before upgrading to bullmq 6 (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
+- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true`.
+- `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts).
 
 ## [0.12.0] - 2026-10-19
 
