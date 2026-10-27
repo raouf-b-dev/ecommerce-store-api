@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { Logger } from '@nestjs/common';
 import { BullMqOrderScheduler } from './bullmq-checkout.scheduler';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
@@ -59,6 +60,74 @@ describe('BullMqOrderScheduler', () => {
     }).compile();
 
     scheduler = module.get<BullMqOrderScheduler>(BullMqOrderScheduler);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('onModuleInit', () => {
+    it('should schedule pending orders expiration job on module init', async () => {
+      await scheduler.onModuleInit();
+
+      expect(mockQueue.upsertJobScheduler).toHaveBeenCalledWith(
+        'expire-pending-orders-job',
+        { pattern: '*/5 * * * *' },
+        { name: JobNames.EXPIRE_PENDING_ORDERS, data: {} },
+      );
+    });
+
+    it('should skip queue.upsertJobScheduler when shutting down', async () => {
+      mockLifecycle.isShuttingDown = true;
+
+      await scheduler.onModuleInit();
+
+      expect(mockQueue.upsertJobScheduler).not.toHaveBeenCalled();
+    });
+
+    it('should demote schedule failure to debug when shutting down mid-add', async () => {
+      const errorSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation();
+      const debugSpy = jest
+        .spyOn(Logger.prototype, 'debug')
+        .mockImplementation();
+
+      mockQueue.upsertJobScheduler.mockImplementation(() => {
+        mockLifecycle.isShuttingDown = true;
+        return Promise.reject(new Error('Connection is closed'));
+      });
+
+      await scheduler.onModuleInit();
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Failed to schedule pending orders expiration job (ignored during shutdown)',
+      );
+    });
+  });
+
+  describe('schedulePendingOrdersExpiration', () => {
+    it('should return the scheduler id on success', async () => {
+      const result = await scheduler.schedulePendingOrdersExpiration();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe('expire-pending-orders-job');
+    });
+
+    it('should return an InfrastructureError when upsertJobScheduler fails', async () => {
+      jest.spyOn(Logger.prototype, 'error').mockImplementation();
+      mockQueue.upsertJobScheduler.mockRejectedValueOnce(
+        new Error('Redis connection lost'),
+      );
+
+      const result = await scheduler.schedulePendingOrdersExpiration();
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule pending orders expiration job',
+      );
+    });
   });
 
   describe('scheduleRefundPayment', () => {

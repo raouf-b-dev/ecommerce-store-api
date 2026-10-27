@@ -40,30 +40,24 @@ describe('BullMqInventoryScheduler', () => {
     it('should schedule inventory reconciliation and sweeper jobs on module init', async () => {
       await scheduler.onModuleInit();
 
-      expect(mockQueue.add).toHaveBeenCalledWith(
-        JobNames.INVENTORY_RECONCILIATION,
-        {},
-        {
-          repeat: { pattern: '0 4 * * *' },
-          jobId: 'inventory-reconciliation-job',
-        },
+      expect(mockQueue.upsertJobScheduler).toHaveBeenCalledWith(
+        'inventory-reconciliation-job',
+        { pattern: '0 4 * * *' },
+        { name: JobNames.INVENTORY_RECONCILIATION, data: {} },
       );
-      expect(mockQueue.add).toHaveBeenCalledWith(
-        JobNames.SWEEP_EXPIRED_RESERVATIONS,
-        {},
-        {
-          repeat: { pattern: '*/5 * * * *' },
-          jobId: 'sweep-expired-reservations-job',
-        },
+      expect(mockQueue.upsertJobScheduler).toHaveBeenCalledWith(
+        'sweep-expired-reservations-job',
+        { pattern: '*/5 * * * *' },
+        { name: JobNames.SWEEP_EXPIRED_RESERVATIONS, data: {} },
       );
     });
 
-    it('should skip queue.add when shutting down', async () => {
+    it('should skip queue.upsertJobScheduler when shutting down', async () => {
       lifecycle.isShuttingDown = true;
 
       await scheduler.onModuleInit();
 
-      expect(mockQueue.add).not.toHaveBeenCalled();
+      expect(mockQueue.upsertJobScheduler).not.toHaveBeenCalled();
     });
   });
 
@@ -76,7 +70,9 @@ describe('BullMqInventoryScheduler', () => {
     });
 
     it('should return infrastructure error when queue fails', async () => {
-      mockQueue.add.mockRejectedValueOnce(new Error('Redis connection failed'));
+      mockQueue.upsertJobScheduler.mockRejectedValueOnce(
+        new Error('Redis connection failed'),
+      );
 
       const result = await scheduler.scheduleReconciliationJob();
 
@@ -98,7 +94,9 @@ describe('BullMqInventoryScheduler', () => {
     });
 
     it('should return infrastructure error when queue fails', async () => {
-      mockQueue.add.mockRejectedValueOnce(new Error('Redis connection failed'));
+      mockQueue.upsertJobScheduler.mockRejectedValueOnce(
+        new Error('Redis connection failed'),
+      );
 
       const result = await scheduler.scheduleSweeperJob();
 
@@ -117,7 +115,7 @@ describe('BullMqInventoryScheduler', () => {
         result,
         'Skipped expired reservations sweeper schedule during shutdown',
       );
-      expect(mockQueue.add).not.toHaveBeenCalled();
+      expect(mockQueue.upsertJobScheduler).not.toHaveBeenCalled();
     });
   });
 });

@@ -71,22 +71,19 @@ describe('BullMqNotificationScheduler', () => {
     it('should schedule cleanup job on module init', async () => {
       await scheduler.onModuleInit();
 
-      expect(mockQueue.add).toHaveBeenCalledWith(
-        JobNames.CLEANUP_NOTIFICATIONS,
-        {},
-        {
-          repeat: { pattern: '0 3 * * *' },
-          jobId: 'cleanup-expired-notifications-job',
-        },
+      expect(mockQueue.upsertJobScheduler).toHaveBeenCalledWith(
+        'cleanup-expired-notifications-job',
+        { pattern: '0 3 * * *' },
+        { name: JobNames.CLEANUP_NOTIFICATIONS, data: {} },
       );
     });
 
-    it('should skip queue.add when shutting down', async () => {
+    it('should skip queue.upsertJobScheduler when shutting down', async () => {
       lifecycle.isShuttingDown = true;
 
       await scheduler.onModuleInit();
 
-      expect(mockQueue.add).not.toHaveBeenCalled();
+      expect(mockQueue.upsertJobScheduler).not.toHaveBeenCalled();
     });
 
     it('should demote schedule failure to debug when shutting down mid-add', async () => {
@@ -97,7 +94,7 @@ describe('BullMqNotificationScheduler', () => {
         .spyOn(Logger.prototype, 'debug')
         .mockImplementation();
 
-      mockQueue.add.mockImplementation(() => {
+      mockQueue.upsertJobScheduler.mockImplementation(() => {
         lifecycle.isShuttingDown = true;
         return Promise.reject(new Error('Connection is closed'));
       });

@@ -262,13 +262,10 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     const jobId = 'expire-pending-orders-job';
 
     try {
-      await this.checkoutQueue.add(
-        jobName,
-        {},
-        {
-          repeat: { pattern: cron },
-          jobId,
-        },
+      await this.checkoutQueue.upsertJobScheduler(
+        jobId,
+        { pattern: cron },
+        { name: jobName, data: {} },
       );
       this.logger.log(
         'Pending orders expiration job scheduled successfully (cron: */5 * * * *)',
