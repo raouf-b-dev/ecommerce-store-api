@@ -75,7 +75,7 @@ export class PostgresOrderRepository implements OrderRepository {
     try {
       const orderEntity = await this.ormRepo.findOne({
         where: { id },
-        relations: ['items', 'shippingAddress'],
+        relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
         return ErrorFactory.RepositoryError('Order not found');
@@ -155,7 +155,7 @@ export class PostgresOrderRepository implements OrderRepository {
 
     const updated = await this.ormRepo.findOne({
       where: { id: order.id! },
-      relations: ['items', 'shippingAddress'],
+      relations: { items: true, shippingAddress: true },
     });
     if (!updated) {
       return ErrorFactory.RepositoryError('Order not found');
@@ -180,7 +180,7 @@ export class PostgresOrderRepository implements OrderRepository {
     try {
       const orderEntity = await this.ormRepo.findOne({
         where: { id },
-        relations: ['items', 'shippingAddress'],
+        relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
         return ErrorFactory.RepositoryError('Order not found');

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  FindOptionsRelations,
+  In,
+  Repository,
+} from 'typeorm';
 import { RoleRepository } from '../../../core/domain/repositories/role.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -11,10 +17,9 @@ import { PermissionEntity } from '../../orm/permission.schema';
 import { RolePermissionEntity } from '../../orm/role-permission.schema';
 import { RoleMapper } from '../../persistence/mappers/role.mapper';
 
-const ROLE_WITH_PERMISSIONS = [
-  'rolePermissions',
-  'rolePermissions.permission',
-] as const;
+const ROLE_WITH_PERMISSIONS: FindOptionsRelations<RoleEntity> = {
+  rolePermissions: { permission: true },
+};
 
 @Injectable()
 export class PostgresRoleRepository implements RoleRepository {
@@ -30,7 +35,7 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const entity = await this.roleRepo.findOne({
         where: { id },
-        relations: [...ROLE_WITH_PERMISSIONS],
+        relations: ROLE_WITH_PERMISSIONS,
       });
       if (!entity) {
         return ErrorFactory.RepositoryError(`Role with ID ${id} not found`);
@@ -47,7 +52,7 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const entity = await this.roleRepo.findOne({
         where: { code },
-        relations: [...ROLE_WITH_PERMISSIONS],
+        relations: ROLE_WITH_PERMISSIONS,
       });
       if (!entity) {
         return Result.success(null);
@@ -62,7 +67,7 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const entities = await this.roleRepo.find({
         order: { id: 'ASC' },
-        relations: [...ROLE_WITH_PERMISSIONS],
+        relations: ROLE_WITH_PERMISSIONS,
       });
       return Result.success(entities.map((e) => RoleMapper.toDomain(e)));
     } catch (error) {
@@ -151,14 +156,14 @@ export class PostgresRoleRepository implements RoleRepository {
     try {
       const role = await this.roleRepo.findOne({
         where: { code: roleCode },
-        select: ['id'],
+        select: { id: true },
       });
 
       if (!role) return Result.success(null);
 
       const entries = await this.rolePermissionRepo.find({
         where: { roleId: role.id },
-        relations: ['permission'],
+        relations: { permission: true },
       });
 
       return Result.success(entries.map((rp) => rp.permission.code));
