@@ -6,7 +6,7 @@
   "private": false,
   "license": "MIT",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.11.0"
   },
   "homepage": "https://github.com/raouf-b-dev/ecommerce-store-api#readme",
   "repository": {
@@ -175,7 +175,7 @@
     "sanitize-html": "^2.18.1",
     "socket.io": "4.8.4",
     "stripe": "^23.0.0",
-    "typeorm": "^0.3.25",
+    "typeorm": "^1.1.2",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
@@ -226,9 +226,6 @@
     "@nest-lab/throttler-storage-redis": {
       "@nestjs/common": "$@nestjs/common",
       "@nestjs/core": "$@nestjs/core"
-    },
-    "typeorm": {
-      "redis": "$redis"
     },
     "handlebars": "^4.7.10",
     "js-yaml": "^4.1.0"

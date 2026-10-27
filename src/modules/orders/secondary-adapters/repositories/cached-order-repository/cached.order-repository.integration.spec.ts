@@ -72,7 +72,7 @@ describe('CachedOrderRepository (Integration - Real DB delegate)', () => {
 
     return orderRepo.findOneOrFail({
       where: { id: order.id },
-      relations: ['items', 'shippingAddress'],
+      relations: { items: true, shippingAddress: true },
     });
   };
 

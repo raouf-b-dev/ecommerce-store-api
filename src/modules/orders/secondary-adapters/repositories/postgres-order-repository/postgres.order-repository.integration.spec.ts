@@ -69,7 +69,7 @@ describe('PostgresOrderRepository (Integration - Real DB)', () => {
 
     return orderRepo.findOneOrFail({
       where: { id: order.id },
-      relations: ['items', 'shippingAddress'],
+      relations: { items: true, shippingAddress: true },
     });
   };
 
