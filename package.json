@@ -227,9 +227,6 @@
       "@nestjs/common": "$@nestjs/common",
       "@nestjs/core": "$@nestjs/core"
     },
-    "typeorm": {
-      "redis": "$redis"
-    },
     "handlebars": "^4.7.10",
     "js-yaml": "^4.1.0"
   },

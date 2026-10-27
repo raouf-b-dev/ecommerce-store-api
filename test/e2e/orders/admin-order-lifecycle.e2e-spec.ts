@@ -192,7 +192,7 @@ describe('Admin order lifecycle (e2e)', () => {
       .getRepository(PaymentEntity)
       .findOne({
         where: { orderId },
-        relations: ['refunds'],
+        relations: { refunds: true },
       });
     assertDefined(paymentRecord);
     expect(paymentRecord.refunds).toHaveLength(1);

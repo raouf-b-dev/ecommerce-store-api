@@ -40,7 +40,7 @@ export class PostgresUserRepository implements UserRepository {
     try {
       const entity = await this.repository.findOne({
         where: { id },
-        relations: ['addresses'],
+        relations: { addresses: true },
       });
       if (!entity) return Result.success(null);
       return Result.success({
@@ -117,7 +117,7 @@ export class PostgresUserRepository implements UserRepository {
 
     const updated = await this.repository.findOne({
       where: { id: user.id! },
-      relations: ['addresses'],
+      relations: { addresses: true },
     });
     if (!updated) {
       return ErrorFactory.RepositoryError('User not found');
@@ -174,7 +174,7 @@ export class PostgresUserRepository implements UserRepository {
   ): Promise<Result<User[], RepositoryError>> {
     try {
       const entities = await this.repository.find({
-        relations: ['addresses'],
+        relations: { addresses: true },
         take: limit,
         skip: (page - 1) * limit,
       });
@@ -190,7 +190,7 @@ export class PostgresUserRepository implements UserRepository {
     try {
       const entity = await this.repository.findOne({
         where: { email },
-        relations: ['addresses'],
+        relations: { addresses: true },
       });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
@@ -206,7 +206,7 @@ export class PostgresUserRepository implements UserRepository {
     try {
       const entity = await this.repository.findOne({
         where: { id },
-        relations: ['addresses'],
+        relations: { addresses: true },
       });
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));

@@ -31,7 +31,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     try {
       const entity = await this.paymentRepo.findOne({
         where: { id },
-        relations: ['refunds'],
+        relations: { refunds: true },
       });
 
       if (!entity) {
@@ -50,7 +50,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     try {
       const entities = await this.paymentRepo.find({
         where: { orderId },
-        relations: ['refunds'],
+        relations: { refunds: true },
       });
 
       return Result.success(entities.map((e) => PaymentMapper.toDomain(e)));
@@ -68,7 +68,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     try {
       const entity = await this.paymentRepo.findOne({
         where: { transactionId },
-        relations: ['refunds'],
+        relations: { refunds: true },
       });
 
       if (!entity) {
@@ -90,7 +90,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     try {
       const entity = await this.paymentRepo.findOne({
         where: { gatewayPaymentIntentId: paymentIntentId },
-        relations: ['refunds'],
+        relations: { refunds: true },
       });
 
       if (!entity) {
@@ -119,7 +119,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
 
       const entities = await this.paymentRepo.find({
         where: { userId },
-        relations: ['refunds'],
+        relations: { refunds: true },
         skip,
         take,
         order: { createdAt: 'DESC' },
