@@ -1,6 +1,6 @@
 # ecommerce-store-api
 
-NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node 24+.
+NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node.js LTS, see `.nvmrc` (26).
 
 ## Checks
 

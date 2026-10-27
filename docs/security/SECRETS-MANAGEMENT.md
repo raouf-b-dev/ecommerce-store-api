@@ -472,7 +472,7 @@ flowchart LR
 
 ```dockerfile
 # ✅ Correct Dockerfile: no secrets
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -480,7 +480,7 @@ COPY . .
 RUN npm run build
 RUN npm prune --production
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules

@@ -1,5 +1,5 @@
 # ── Stage 1: deps ───────────────────────────────────────────────
-FROM node:24-alpine AS deps
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS deps
 WORKDIR /app
 
 # bcrypt requires native compilation on Alpine (musl libc)
@@ -27,7 +27,7 @@ CMD ["node_modules/.bin/ts-node", "-r", "tsconfig-paths/register", "scripts/seed
 # Clean install of production-only dependencies in an isolated stage.
 # Avoids deprecated `npm prune --production` and guarantees no dev
 # artefacts leak into the final image.
-FROM node:24-alpine AS prod-deps
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS prod-deps
 WORKDIR /app
 
 # bcrypt native addon needs build tools even for a prod-only install
@@ -38,7 +38,7 @@ RUN npm ci --omit=dev --ignore-scripts
 RUN npm rebuild bcrypt
 
 # ── Stage 4: production ────────────────────────────────────────
-FROM node:24-alpine AS production
+FROM node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS production
 WORKDIR /app
 
 # tini: proper PID 1 init - forwards SIGTERM to Node.js for graceful shutdown
