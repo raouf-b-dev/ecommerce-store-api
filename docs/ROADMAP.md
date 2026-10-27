@@ -152,7 +152,7 @@ Phases **15-17**, **16b**, **16d**, and **20** are done.
 
 **Scope**:
 
-- Add `"engines": { "node": ">=24.0.0" }` to `package.json` (README already claims Node 24).
+- Add `"engines": { "node": ">=24.11.0" }` to `package.json` (README already claims Node 24).
 - Fix `migration:create:prod` / `:staging` / `:test` forcing `NODE_ENV=development` (copy-paste).
 
 **Location**: `package.json`
