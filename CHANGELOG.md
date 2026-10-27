@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade.
+- Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it).
+
+### Added
+
+- `npm run queue:clean-legacy-repeatables` (`scripts/bullmq-clean-legacy-repeatables.js`): one-time removal of legacy v5 repeatable entries. Dry run by default, `--yes` to remove. Run after deploying this release and before upgrading to bullmq 6 (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
+
 ## [0.12.0] - 2026-10-19
 
 ### Added

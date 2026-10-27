@@ -83,8 +83,20 @@ npm run test:redis:chaos
 
 Requires Docker. Harness: `test/integration/redis/`. Spec kills Redis clients under `CachePort` traffic (`CLIENT KILL`) to force reconnect, asserts fail-open during the outage, then checks generation bump, list-flag clear, and stable idempotency keys.
 
+## BullMQ v6 migration
+
+Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) use Job Schedulers (`Queue.upsertJobScheduler`). BullMQ v5 `Queue.add(..., { repeat })` left legacy repeatable entries in Redis under hashed keys. BullMQ v6 does not support them and would keep them running next to the named schedulers (each cron would fire twice), so they must be removed while the app still runs bullmq 5 ([official guide](https://docs.bullmq.io/guide/migrations/migrate-from-v5-to-v6)).
+
+Order, per environment with persistent Redis:
+
+1. Deploy the release that uses `upsertJobScheduler` (bullmq 5). On boot it creates the named schedulers.
+2. Dry run: `npm run queue:clean-legacy-repeatables`. It lists, per queue (`inventory`, `notifications`, `checkout`), the legacy entries and the Job Schedulers it keeps.
+3. Remove: `node scripts/bullmq-clean-legacy-repeatables.js --yes`. Re-running is safe; a clean queue reports `legacy=0`.
+4. Only then deploy the bullmq 6 upgrade.
+
+The script reads `REDIS_*` and `REDIS_KEYPREFIX` from the same env files as the other scripts. A Job Scheduler is recognised by the iteration count that only `upsertJobScheduler` writes; everything else in the repeat set is legacy. Running it before step 1 is pointless: the old release re-adds the legacy entries on boot.
+
 ## Related docs
 
 - Phase 14 graceful degradation scope: [`docs/ROADMAP.md`](../ROADMAP.md)
 - Process lifecycle / shutdown: [`PROCESS-LIFECYCLE.md`](./PROCESS-LIFECYCLE.md)
-
