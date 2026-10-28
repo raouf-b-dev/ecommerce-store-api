@@ -37,8 +37,6 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       'view_all_products',
       'view_all_orders',
       'view_all_inventory',
-      'view_all_payments',
-      'view_all_users',
     ],
   },
   {
