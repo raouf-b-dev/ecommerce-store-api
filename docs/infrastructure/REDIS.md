@@ -92,11 +92,16 @@ The cleanup script only exists in the bullmq 5 release: bullmq 6 removed `Queue.
 Order, per environment with persistent Redis:
 
 1. Stop every running instance of the old release (API and workers). Pausing workers is not enough: the old release re-adds legacy repeatables on boot, and scheduler initialization can still enqueue jobs.
-2. From a checkout of the bullmq 5 release that uses `upsertJobScheduler` (develop at `22a31bf`, #373), dry run against the target environment: `NODE_ENV=<environment> npm run queue:clean-legacy-repeatables`. It lists, per queue (`inventory`, `notifications`, `checkout`), the legacy entries and the Job Schedulers it keeps.
+2. From a checkout of the bullmq 5 release that uses `upsertJobScheduler` (develop at `22a31bf`, #373), dry run against the target environment: `NODE_ENV=<environment> npm run queue:clean-legacy-repeatables`. For each queue (`inventory`, `notifications`, `checkout`) it prints one line with the counts (`legacy=`, `removed=`, `schedulers kept=`) followed by the key of every legacy entry; kept Job Schedulers appear only as a count.
 3. Remove, with the same environment: `NODE_ENV=<environment> node scripts/bullmq-clean-legacy-repeatables.js --yes`. Re-running is safe; a clean queue reports `legacy=0`.
 4. Start the new version (`22a31bf`, or 0.13.0 with bullmq 6 directly). On boot it creates the named Job Schedulers. Because no legacy entry is left, each cron fires once.
 
-Select the environment explicitly for both commands. The script calls `loadEnv()`, which uses `NODE_ENV` (default `development`) and loads only the first file that exists out of `.env.<NODE_ENV>`, `.env.production`, `.env`. Without `NODE_ENV`, a checkout that has `.env.development` cleans the development Redis instead of the target one. Alternatively export the target `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, `REDIS_PASSWORD`, `REDIS_TLS`, and `REDIS_KEYPREFIX` in the shell: variables already set are not overridden by the env file. A Job Scheduler is recognised by the iteration count that only `upsertJobScheduler` writes; everything else in the repeat set is legacy.
+Select the target explicitly for both commands, and confirm it before running them. The script calls `loadEnv()` (`scripts/lib/cli.js`), which uses `NODE_ENV` (default `development`) and loads only the first file that exists out of `.env.<NODE_ENV>`, `.env.production`, `.env`. A missing `.env.<NODE_ENV>` is not an error: `NODE_ENV=staging` without `.env.staging` silently loads `.env.production` and cleans the **production** Redis, and without `NODE_ENV` a checkout that has `.env.development` cleans the development Redis. The script does not print which file it loaded or which Redis host it connects to (only the key prefix), so use one of these:
+
+- `.env.<environment>` must exist in the checkout before you run with `NODE_ENV=<environment>`. Check it (`ls .env.<environment>`) and read its `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, and `REDIS_KEYPREFIX` first.
+- Or export the target `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, `REDIS_PASSWORD`, `REDIS_TLS`, and `REDIS_KEYPREFIX` in the shell: variables already set are not overridden by whichever env file loads.
+
+Then check the dry run's first line: it prints the key prefix (`prefix '...'`), which must be the target environment's `REDIS_KEYPREFIX`. A Job Scheduler is recognised by the iteration count that only `upsertJobScheduler` writes; everything else in the repeat set is legacy.
 
 ## Related docs
 

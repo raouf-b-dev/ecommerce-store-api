@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { WinstonLoggerService } from '../winston-logger.service';
+import { logSafePath } from '../log-safe-path';
 import { CorrelationService } from '../correlation/correlation.service';
 
 @Injectable()
@@ -11,7 +12,8 @@ export class HttpLoggingMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
-    const { method, originalUrl, ip } = req;
+    const { method, ip } = req;
+    const path = logSafePath(req.originalUrl);
     const userAgent = req.get('user-agent') || '-';
     const startTime = Date.now();
 
@@ -21,10 +23,10 @@ export class HttpLoggingMiddleware implements NestMiddleware {
       const duration = Date.now() - startTime;
       const correlationId = this.correlation.getId();
 
-      this.logger.http(`${method} ${originalUrl} ${statusCode} ${duration}ms`, {
+      this.logger.http(`${method} ${path} ${statusCode} ${duration}ms`, {
         context: 'HTTP',
         method,
-        url: originalUrl,
+        url: path,
         statusCode,
         contentLength: Number(contentLength),
         duration,

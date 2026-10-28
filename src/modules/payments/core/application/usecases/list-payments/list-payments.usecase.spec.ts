@@ -16,9 +16,18 @@ describe('ListPaymentsUseCase', () => {
   const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
-    permissions: new Set(['view_all_payments', 'view_all_orders']),
+    permissions: new Set([
+      'view_customer_pii',
+      'view_all_payments',
+      'view_all_orders',
+    ]),
   });
 
+  const viewerContext: CallerContext = createUserCallerContext({
+    userId: 900,
+    role: 'ADMIN_READONLY',
+    permissions: new Set(['access_admin', 'view_all_payments']),
+  });
   const customerContext: CallerContext = createUserCallerContext({
     userId: 123,
     role: 'CUSTOMER',
@@ -73,5 +82,48 @@ describe('ListPaymentsUseCase', () => {
       userId: 999,
       authorizedUserId: 123,
     });
+  });
+
+  it('masks customer contact data without view_customer_pii', async () => {
+    mockQueryService.mockSuccessfulList([sampleItem], 1);
+
+    const result = await useCase.execute({
+      query: { page: 1, limit: 10 },
+      callerContext: viewerContext,
+    });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.items[0]).toEqual({
+      ...sampleItem,
+      userName: `Customer #${sampleItem.userId}`,
+      userEmail: expect.stringMatching(/^.\*\*\*@\*\*\*/),
+    });
+    expect(result.value.items[0].userEmail).not.toBe(sampleItem.userEmail);
+  });
+
+  it('keeps customer contact data with view_customer_pii', async () => {
+    mockQueryService.mockSuccessfulList([sampleItem], 1);
+
+    const result = await useCase.execute({
+      query: { page: 1, limit: 10 },
+      callerContext: createUserCallerContext({
+        userId: 1,
+        role: 'ADMIN',
+        permissions: new Set(['view_all_payments', 'view_customer_pii']),
+      }),
+    });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value.items[0]).toEqual(sampleItem);
+  });
+
+  it('rejects contact filters without view_customer_pii', async () => {
+    const result = await useCase.execute({
+      query: { page: 1, limit: 10, userEmail: 'jane@example.com' },
+      callerContext: viewerContext,
+    });
+
+    ResultAssertionHelper.assertResultFailure(result);
+    expect(mockQueryService.list).not.toHaveBeenCalled();
   });
 });

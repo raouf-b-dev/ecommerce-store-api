@@ -127,7 +127,7 @@ export class CachedUserRepository implements UserRepository {
         if (user) return Result.success(user);
       }
     } catch (error) {
-      this.logger.warn(`Cache lookup failed for email: ${email}`, error);
+      this.logger.warn(`Cache lookup by email failed`, error);
     }
 
     try {

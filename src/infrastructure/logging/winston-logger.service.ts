@@ -191,10 +191,14 @@ export class WinstonLoggerService
 
 // --- Winston Formats & Helper Functions ---
 
-const SENSITIVE_KEYS_REGEX =
-  /^(password|token|secret|authorization|cookie|cardNumber|cvv|pan|ssn|creditCard)$/i;
+/**
+ * Keys whose values never reach a log sink: credentials, card data, and
+ * customer personal data (name, email, phone, address).
+ */
+export const SENSITIVE_KEYS_REGEX =
+  /^(password|token|secret|authorization|cookie|cardNumber|cvv|pan|ssn|creditCard|email|userEmail|phone|phoneNumber|firstName|lastName|fullName|userName|street|street2|postalCode|shippingAddress|billingAddress|deliveryInstructions)$/i;
 
-function redactInPlace(
+export function redactInPlace(
   target: unknown,
   visited = new WeakSet<object>(),
 ): unknown {

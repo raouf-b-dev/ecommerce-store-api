@@ -17,7 +17,13 @@ describe('GetOrderUseCase', () => {
   const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
-    permissions: new Set(['view_all_orders']),
+    permissions: new Set(['view_all_orders', 'view_customer_pii']),
+  });
+
+  const viewerContext = createUserCallerContext({
+    userId: 3,
+    role: 'ADMIN_READONLY',
+    permissions: new Set(['access_admin', 'view_all_orders']),
   });
 
   const customerContext: CallerContext = createUserCallerContext({
@@ -85,6 +91,35 @@ describe('GetOrderUseCase', () => {
         `Order with id ${orderId} not found`,
         UseCaseError,
       );
+    });
+
+    it('should mask customer contact data for a caller without view_customer_pii', async () => {
+      mockQueryService.mockSuccessfulGetById(sampleDetail);
+
+      const result = await useCase.execute({
+        orderId: 1,
+        callerContext: viewerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({
+        ...sampleDetail,
+        userName: 'Customer #2',
+        userEmail: expect.stringMatching(/^.\*\*\*@\*\*\*/),
+        shippingAddress: null,
+      });
+    });
+
+    it('should keep contact data for an admin with view_customer_pii', async () => {
+      mockQueryService.mockSuccessfulGetById(sampleDetail);
+
+      const result = await useCase.execute({
+        orderId: 1,
+        callerContext: adminContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual(sampleDetail);
     });
   });
 });

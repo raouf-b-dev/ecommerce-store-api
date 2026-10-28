@@ -26,6 +26,11 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   { code: 'view_all_payments', description: 'View all payments' },
   { code: 'manage_users', description: 'Create, update, and delete users' },
   { code: 'view_all_users', description: 'View all users' },
+  {
+    code: 'view_customer_pii',
+    description:
+      "View other customers' personal data (name, email, phone, addresses) on orders",
+  },
   { code: 'manage_roles', description: 'Manage custom roles' },
   { code: 'manage_carts', description: 'Manage customer carts' },
   { code: 'view_own_orders', description: 'View own orders' },

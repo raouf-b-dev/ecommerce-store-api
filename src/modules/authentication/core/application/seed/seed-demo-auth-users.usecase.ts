@@ -18,8 +18,9 @@ export interface DemoSeedAccountCreds {
 
 export interface SeedDemoAuthUsersInput {
   /**
-   * Hosted shared demo: seed viewer + fixture customer only; do not create or
-   * update writable local demo operators. Adapters read DEMO_READ_ONLY and
+   * Hosted shared demo: seed the read-only viewer only; do not create or
+   * update writable local demo operators or a demo customer (visitors
+   * register themselves). Adapters read DEMO_READ_ONLY and
    * pass credentials from env - application never loads env/config.
    */
   readOnly: boolean;
@@ -44,7 +45,8 @@ export interface SeedDemoAuthUsersResult {
   admin: SeededDemoAuthUser | null;
   /** Present only when readOnly is true. */
   viewer: SeededDemoAuthUser | null;
-  customer: SeededDemoAuthUser;
+  /** Present only when readOnly is false. */
+  customer: SeededDemoAuthUser | null;
 }
 
 @Injectable()
@@ -81,23 +83,11 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       });
       if (isFailure(viewer)) return viewer;
 
-      const customer = await this.seedUser({
-        email: accounts.customer.email,
-        password: accounts.customer.password,
-        roleCode: SystemRoleCode.CUSTOMER,
-        firstName: 'Jane',
-        lastName: 'Doe',
-        phone: '',
-        mustChangePassword: false,
-        verifyExistingRole: true,
-      });
-      if (isFailure(customer)) return customer;
-
       return Result.success({
         superAdmin: null,
         admin: null,
         viewer: viewer.value,
-        customer: customer.value,
+        customer: null,
       });
     }
 

@@ -15,6 +15,7 @@ import { AuthorizationGateway } from '../../ports/authorization.gateway';
 import { CredentialRepository } from '../../../domain/repositories/credential.repository';
 import { ChangePasswordCommand } from '../../commands/change-password.command';
 import { AuthTokensResult } from '../../commands/results/auth-tokens.result';
+import { ensureCredentialsChangeable } from '../../../domain/policies/credential-change.policy';
 import { RevokeAllForUserUsecase } from '../revoke-all-for-user/revoke-all-for-user.usecase';
 
 @Injectable()
@@ -45,6 +46,35 @@ export class ChangePasswordUseCase extends UseCase<
         'New password must differ from current password',
         null,
         HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const roleResult = await this.authorizationGateway.findRoleByUserId(
+      command.userId,
+    );
+    if (isFailure(roleResult)) {
+      return ErrorFactory.UseCaseError(
+        'Failed to resolve user role',
+        roleResult.error,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    if (!roleResult.value) {
+      return ErrorFactory.UseCaseError(
+        'User role not found',
+        null,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const role = roleResult.value;
+    const policyResult = ensureCredentialsChangeable(role.code);
+    if (isFailure(policyResult)) {
+      return ErrorFactory.UseCaseError(
+        policyResult.error.message,
+        policyResult.error,
+        HttpStatus.FORBIDDEN,
       );
     }
 
@@ -138,29 +168,10 @@ export class ChangePasswordUseCase extends UseCase<
       );
     }
 
-    const roleResult = await this.authorizationGateway.findRoleByUserId(
-      user.id,
-    );
-    if (isFailure(roleResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to resolve user role',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    if (!roleResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User role not found',
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
     const accessToken = await this.jwtSignerService.signAccessToken({
       sub: user.id.toString(),
       email: user.email,
-      role: roleResult.value.code,
+      role: role.code,
     });
 
     const {
@@ -193,7 +204,7 @@ export class ChangePasswordUseCase extends UseCase<
       accessToken,
       refreshToken,
       mustChangePassword: false,
-      permissions: roleResult.value.permissions,
+      permissions: role.permissions,
     });
   }
 }

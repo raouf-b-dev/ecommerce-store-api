@@ -25,4 +25,17 @@ describe('SYSTEM_ROLES', () => {
 
     expect(permissions.some((code) => code.startsWith('manage_'))).toBe(false);
   });
+
+  it('withholds customer personal data from the read-only viewer only', () => {
+    expect(permissionsOf(SystemRoleCode.ADMIN_READONLY)).not.toContain(
+      'view_customer_pii',
+    );
+    expect(permissionsOf(SystemRoleCode.CUSTOMER)).not.toContain(
+      'view_customer_pii',
+    );
+    expect(permissionsOf(SystemRoleCode.ADMIN)).toContain('view_customer_pii');
+    expect(permissionsOf(SystemRoleCode.SUPER_ADMIN)).toContain(
+      'view_customer_pii',
+    );
+  });
 });

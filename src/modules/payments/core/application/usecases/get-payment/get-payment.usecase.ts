@@ -1,3 +1,4 @@
+import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -56,6 +57,8 @@ export class GetPaymentUseCase extends UseCase<
       );
     }
 
-    return Result.success(result.value);
+    return Result.success(
+      result.value && CustomerPiiPolicy.present(result.value, callerContext),
+    );
   }
 }

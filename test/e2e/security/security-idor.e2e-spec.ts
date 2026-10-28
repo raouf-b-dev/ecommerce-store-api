@@ -18,6 +18,7 @@ import {
   E2eTestAppHelper,
 } from 'src/testing/helpers/e2e-test-app.helper';
 import { HttpErrorAssertionHelper } from 'src/testing/helpers/http-error-assertion.helper';
+import { SeedDemoAuthUsersUseCase } from 'src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase';
 
 const MISSING_ORDER_ID = 999999;
 
@@ -156,9 +157,36 @@ describe('Security IDOR (e2e)', () => {
 
   describe('orders and payments', () => {
     let customerBOrderId: number;
+    let admin: AuthSession;
+    let viewer: Pick<AuthSession, 'accessToken' | 'refreshToken'>;
+    const viewerPassword = AuthTestHelper.password;
 
     beforeAll(async () => {
-      const admin = await E2eCatalogHelper.seedAdminSession(moduleRef, http);
+      admin = await E2eCatalogHelper.seedAdminSession(moduleRef, http);
+      const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const unused = {
+        email: `e2e-unused-${stamp}@example.com`,
+        password: viewerPassword,
+      };
+      const viewerEmail = `e2e-viewer-${stamp}@example.com`;
+      const seeded = await moduleRef
+        .get(SeedDemoAuthUsersUseCase, { strict: false })
+        .execute({
+          readOnly: true,
+          accounts: {
+            superAdmin: unused,
+            admin: unused,
+            viewer: { email: viewerEmail, password: viewerPassword },
+            customer: unused,
+          },
+        });
+      if (seeded.isFailure) {
+        throw new Error(`Failed to seed E2E viewer: ${seeded.error.message}`);
+      }
+      viewer = await AuthTestHelper.login(http, {
+        email: viewerEmail,
+        password: viewerPassword,
+      });
       const product = await E2eCatalogHelper.createProductWithStock(
         moduleRef,
         http,
@@ -182,6 +210,59 @@ describe('Security IDOR (e2e)', () => {
 
       await E2eOrderHelper.waitForPaymentIntent(http, userB, customerBOrderId);
     }, 180_000);
+
+    it('masks customer personal data for a viewer without view_customer_pii', async () => {
+      const detail = await http
+        .get(`${E2E_API_PREFIX}/orders/${customerBOrderId}`)
+        .set(AuthTestHelper.bearer(viewer.accessToken));
+      expect(detail.status).toBe(HttpStatus.OK);
+      expect(Number(detail.body.id)).toBe(customerBOrderId);
+      expect(detail.body.orderNumber).toEqual(expect.any(String));
+      expect(detail.body.items.length).toBeGreaterThan(0);
+      expect(detail.body.totalAmount).toEqual(expect.anything());
+      expect(detail.body.status).toEqual(expect.any(String));
+      expect(detail.body.userName).toMatch(/^Customer #\d+$/);
+      expect(detail.body.userEmail).toMatch(/^.\*\*\*@\*\*\*/);
+      expect(detail.body.userEmail).not.toBe(userB.email);
+      expect(detail.body.shippingAddress).toBeNull();
+      expect(JSON.stringify(detail.body)).not.toContain(userB.email);
+
+      const list = await http
+        .get(`${E2E_API_PREFIX}/orders`)
+        .query({ limit: 100 })
+        .set(AuthTestHelper.bearer(viewer.accessToken));
+      expect(list.status).toBe(HttpStatus.OK);
+      for (const item of list.body.items) {
+        expect(item.userName).toMatch(/^Customer #\d+$/);
+        expect(item.userEmail ?? '').not.toContain(userB.email);
+      }
+
+      const search = await http
+        .get(`${E2E_API_PREFIX}/orders`)
+        .query({ userEmail: userB.email })
+        .set(AuthTestHelper.bearer(viewer.accessToken));
+      expect(search.status).toBe(HttpStatus.FORBIDDEN);
+    });
+
+    it('shows customer personal data to an admin with view_customer_pii', async () => {
+      const detail = await http
+        .get(`${E2E_API_PREFIX}/orders/${customerBOrderId}`)
+        .set(AuthTestHelper.bearer(admin.accessToken));
+      expect(detail.status).toBe(HttpStatus.OK);
+      expect(detail.body.userEmail).toBe(userB.email);
+      expect(detail.body.userName).not.toMatch(/^Customer #/);
+      expect(detail.body.shippingAddress).toEqual(expect.any(String));
+    });
+
+    it('refuses a password change for the read-only viewer', async () => {
+      await AuthTestHelper.changePassword(
+        http,
+        viewer.accessToken,
+        viewerPassword,
+        AuthTestHelper.rotatedPassword,
+        HttpStatus.FORBIDDEN,
+      );
+    });
 
     it('denies user reading a non-owned order id', async () => {
       const response = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);

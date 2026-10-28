@@ -54,11 +54,13 @@ async function bootstrap() {
         )}`,
       );
     }
-    console.log(
-      `Customer user ${statusLabel(report.customer.status)}: ${maskEmail(
-        report.customer.email,
-      )}`,
-    );
+    if (report.customer) {
+      console.log(
+        `Customer user ${statusLabel(report.customer.status)}: ${maskEmail(
+          report.customer.email,
+        )}`,
+      );
+    }
 
     if (authOnly) {
       console.log('\nAuth seed completed successfully.\n');

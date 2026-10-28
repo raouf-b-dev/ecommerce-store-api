@@ -136,4 +136,46 @@ describe('ChangePasswordUseCase', () => {
     const error = isFailure(result) ? result.error : undefined;
     expect(error?.statusCode).toBe(HttpStatus.BAD_REQUEST);
   });
+
+  it('returns forbidden and leaves the credential untouched for a read-only admin', async () => {
+    authorizationGateway.mockSuccessfulFindRoleByUserId({
+      id: 3,
+      code: 'ADMIN_READONLY',
+      permissions: ['access_admin', 'view_all_orders'],
+    });
+
+    const result = await useCase.execute({
+      userId,
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Read-only admin accounts cannot change their credentials',
+      UseCaseError,
+    );
+    const error = isFailure(result) ? result.error : undefined;
+    expect(error?.statusCode).toBe(HttpStatus.FORBIDDEN);
+    expect(credentialRepository.findByUserId).not.toHaveBeenCalled();
+    expect(credentialRepository.update).not.toHaveBeenCalled();
+    expect(revokeAllForUserUsecase.execute).not.toHaveBeenCalled();
+  });
+
+  it('fails when the role cannot be resolved before changing the password', async () => {
+    authorizationGateway.mockFailedFindRoleByUserId('role lookup failed');
+
+    const result = await useCase.execute({
+      userId,
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Failed to resolve user role',
+      UseCaseError,
+    );
+    expect(credentialRepository.update).not.toHaveBeenCalled();
+  });
 });

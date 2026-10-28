@@ -191,28 +191,6 @@ export function assertDemoResetToken(enabled: boolean, token: string): void {
   }
 }
 
-/** Published local-dev default for DEMO_CUSTOMER_PASSWORD (README, SEEDING.md). */
-export const DEMO_CUSTOMER_PUBLISHED_PASSWORD = 'Customer123!';
-
-/**
- * The hosted read-only demo seeds a fixture customer that owns the shared demo
- * cart and orders. Its documented local password is public, so a read-only
- * host must set its own DEMO_CUSTOMER_PASSWORD.
- */
-export function assertDemoCustomerPassword(
-  readOnly: boolean,
-  password: string,
-): void {
-  if (!readOnly) {
-    return;
-  }
-  if (password.trim() === '' || password === DEMO_CUSTOMER_PUBLISHED_PASSWORD) {
-    throw new EnvError(
-      'DEMO_CUSTOMER_PASSWORD must be set to a host-specific secret (not the published default) when DEMO_READ_ONLY=true',
-    );
-  }
-}
-
 export function assertVerifiedDbTlsInProduction(
   nodeEnv: string,
   ssl: boolean,
@@ -293,7 +271,7 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     // Hosted demo reset is off unless a deployment opts in with a long token.
     DEMO_RESET_ENABLED: bool({ default: false }),
     DEMO_RESET_TOKEN: str({ default: '' }),
-    // Shared hosted demo: seed viewer + fixture customer only. Mutations stay
+    // Shared hosted demo: seed the read-only viewer only. Mutations stay
     // on PermissionsGuard / RBAC (ADMIN_READONLY has products/orders/inventory views only). Leave false
     // for local Compose. Private writable owner: ADMIN_EMAIL / ADMIN_PASSWORD.
     DEMO_READ_ONLY: bool({ default: false }),
@@ -305,8 +283,8 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     DEMO_VIEWER_EMAIL: str({ default: 'viewer@store.local' }),
     DEMO_VIEWER_PASSWORD: str({ default: 'Viewer123!' }),
     DEMO_CUSTOMER_EMAIL: str({ default: 'customer@store.local' }),
-    // Must be overridden when DEMO_READ_ONLY=true (assertDemoCustomerPassword).
-    DEMO_CUSTOMER_PASSWORD: str({ default: DEMO_CUSTOMER_PUBLISHED_PASSWORD }),
+    // Local Compose only: DEMO_READ_ONLY=true seeds no demo customer.
+    DEMO_CUSTOMER_PASSWORD: str({ default: 'Customer123!' }),
 
     AUTH_COOKIE_SAMESITE: str({
       choices: ['strict', 'lax', 'none'],
@@ -340,10 +318,6 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
   assertDemoResetToken(
     validated.DEMO_RESET_ENABLED,
     validated.DEMO_RESET_TOKEN,
-  );
-  assertDemoCustomerPassword(
-    validated.DEMO_READ_ONLY,
-    validated.DEMO_CUSTOMER_PASSWORD,
   );
   return validated;
 }
