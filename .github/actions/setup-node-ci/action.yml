@@ -1,25 +1,42 @@
 name: Setup Node and npm, then install
 description: >
-  Setup Node from .nvmrc (npm cache), install the npm version pinned in
-  package.json devEngines.packageManager, and run npm ci.
+  Setup Node from .nvmrc, install the npm version pinned in package.json
+  devEngines.packageManager, enable the npm cache, and run npm ci.
   No Node release bundles npm 12 yet, so the pinned npm is installed explicitly.
   Callers must run actions/checkout first.
 
 runs:
   using: composite
   steps:
+    # No cache here: setup-node auto-enables npm caching when it sees
+    # devEngines.packageManager and runs `npm config get cache` in the repo,
+    # which devEngines (onFail: error) rejects while the bundled npm is active.
     - name: Setup Node
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version-file: .nvmrc
-        cache: npm
+        package-manager-cache: false
 
+    # Global installs are not checked against this repo's devEngines.
     - name: Install pinned npm (devEngines.packageManager)
       shell: bash
       run: |
         NPM_VERSION="$(node -p "require('./package.json').devEngines.packageManager.version")"
         npm install --global "npm@${NPM_VERSION}"
         echo "npm $(npm --version) on node $(node --version)"
+
+    # Same Node from the tool cache; the npm cache now runs under the pinned npm.
+    - name: Enable npm cache
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: Verify pinned npm
+      shell: bash
+      run: |
+        NPM_VERSION="$(node -p "require('./package.json').devEngines.packageManager.version")"
+        test "$(npm --version)" = "${NPM_VERSION}"
 
     - name: Install dependencies
       shell: bash
