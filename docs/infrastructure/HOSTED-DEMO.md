@@ -15,9 +15,12 @@ The API is the public origin. Admin and storefront are separate sites. They call
 
 For a **public** admin URL, set `DEMO_READ_ONLY=true` on the host (default is `false` for local Compose).
 
-- Seed creates the viewer (`ADMIN_READONLY`, from `DEMO_VIEWER_*`) plus a silent fixture customer (from `DEMO_CUSTOMER_*`, for demo orders/cart only). It does not create or update writable local operators. Set a host-specific `DEMO_CUSTOMER_PASSWORD`; boot fails in this mode when it is missing or still the published default. The seed also fails, without touching credentials, if an existing account at `DEMO_VIEWER_EMAIL` or `DEMO_CUSTOMER_EMAIL` has a different role than `ADMIN_READONLY` or `CUSTOMER`. See [SEEDING.md](../development/SEEDING.md).
+- The hosted demo has a single seeded account: the viewer (`ADMIN_READONLY`, from `DEMO_VIEWER_*`). The seed does not create or update writable local operators, and it creates no demo customer, cart, orders, or payments (`DEMO_CUSTOMER_*` is ignored). Catalog and inventory are still seeded. The seed fails, without touching credentials, if an existing account at `DEMO_VIEWER_EMAIL` does not have `ADMIN_READONLY`. See [SEEDING.md](../development/SEEDING.md).
+- The viewer cannot change its password or revoke all sessions: change-password and logout-all require the `change_own_credentials` permission, which `ADMIN_READONLY` lacks, so both return 403 and the published login keeps working for every visitor. Plain logout of the caller's own session still works.
 - Public admin visitors use the viewer account: `access_admin`, `view_all_products`, `view_all_orders`, `view_all_inventory`, no `manage_*`. It has no `view_all_users` or `view_all_payments`, so the users and payments pages (and the payments analytics chart) stay hidden from public visitors who may have registered their own accounts. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
-- Storefront visitors **register** with their own credentials. Do not publish the fixture customer as the shop login.
+- Storefront visitors **register** with their own credentials; there is no seeded shop login.
+- The viewer sees no customer personal data: order and payment responses mask it unless the caller owns the record or holds the `view_customer_pii` permission (`ADMIN` and `SUPER_ADMIN` have it, `ADMIN_READONLY` does not). The customer name shows as `Customer #<user id>`, the email as a placeholder such as `j***@***.com`, and the shipping address (with the recipient phone) as `null`. List filters on customer data return 403 without it. Order numbers, items, totals, statuses, payment status, and dates stay visible.
+- The hosted demo is a click-through test environment, not production. Tell visitors not to enter real data. For the full experience (writable admin, seeded customer, cart, and orders), run it locally with `DEMO_READ_ONLY=false`.
 - Private writable owner (optional): set `ADMIN_EMAIL` / `ADMIN_PASSWORD` once on the VM so boot creates a Super Admin, change the password on first login, then clear or rotate the env secret. See [ADMIN-BOOTSTRAP.md](../security/ADMIN-BOOTSTRAP.md). Do not publish that account in the README.
 - If the database volume was previously seeded with local writable demo accounts, wipe it or use a fresh volume before enabling `DEMO_READ_ONLY`.
 - Pair with a scheduled demo reset below so catalog baselines heal; shopper-created accounts are not deleted.
@@ -33,9 +36,9 @@ The cron sends header `X-Demo-Reset-Token`. There is no user JWT. Missing and wr
 
 On success the handler runs the same pipeline as `npm run db:seed`:
 
-- Demo accounts match the mode and env credentials: with `DEMO_READ_ONLY=true`, viewer + silent fixture customer (see [SEEDING.md](../development/SEEDING.md)); with the flag false, the local writable trio.
+- Demo accounts match the mode and env credentials: with `DEMO_READ_ONLY=true`, the viewer only (see [SEEDING.md](../development/SEEDING.md)); with the flag false, the local writable trio.
 - Categories and products are upserted.
-- Demo SKU stock is reset to catalog baselines, then the four fixture orders are applied again. Shopper checkouts do not keep reducing that baseline.
+- Demo SKU stock is reset to catalog baselines, then (with `DEMO_READ_ONLY=false` only) the four fixture orders are applied again. Shopper checkouts do not keep reducing that baseline.
 - Shopper-created accounts and orders are not deleted. `npm run db:seed` stays non-destructive in that same way, and it still refuses `NODE_ENV=production`. The HTTP route is the opt-in for a hosted demo that runs with production mode.
 
 The route is limited to 5 requests per minute and rejects a second in-process reset with 409 while one is running. The single-flight lock is per process (this demo is a single instance). Logs use the event names `demo_reset_succeeded`, `demo_reset_failed`, and `demo_reset_rejected` and do not include the token.

@@ -7,10 +7,11 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
+import { logSafePath } from '../infrastructure/logging/log-safe-path';
 
 interface ValidationErrorResponse {
   message: string | string[];
@@ -27,7 +28,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<Request>();
+    const logPath = logSafePath(request.url);
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'An unexpected server error occurred.';
@@ -52,7 +54,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : ErrorCode.VALIDATION_FAILED;
 
       this.logger.warn(
-        `Validation failed for ${request.method} ${request.url}: ${errors?.join(', ')}`,
+        `Validation failed for ${request.method} ${logPath}: ${errors?.join(', ')}`,
       );
     }
     // Branch 2: HttpException (including ResultInterceptor wrapped AppErrors)
@@ -73,7 +75,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
 
       this.logger.warn(
-        `[HTTP ${statusCode}] ${message} - Path: ${request.method} ${request.url}`,
+        `[HTTP ${statusCode}] ${message} - Path: ${request.method} ${logPath}`,
       );
     }
     // Branch 3: AppError (Direct escape without ResultInterceptor)
@@ -85,7 +87,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       errorDetail = exception.message;
 
       this.logger.warn(
-        `[AppError: ${code}] ${message} - Path: ${request.method} ${request.url}`,
+        `[AppError: ${code}] ${message} - Path: ${request.method} ${logPath}`,
       );
     }
     // Branch 4: Optimistic Lock Version Mismatch (TypeORM)
@@ -97,20 +99,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       errorDetail = exception.message;
 
       this.logger.warn(
-        `[OptimisticLockConflict] ${exception.message} - Path: ${request.method} ${request.url}`,
+        `[OptimisticLockConflict] ${exception.message} - Path: ${request.method} ${logPath}`,
       );
     }
     // Branch 4: Generic Error / Unknown
     else if (exception instanceof Error) {
       this.logger.error(
-        `[Unhandled Error] ${exception.message} - Path: ${request.method} ${request.url}`,
+        `[Unhandled Error] ${exception.message} - Path: ${request.method} ${logPath}`,
         exception.stack,
       );
       stack = exception.stack;
       errorDetail = exception.message;
     } else {
       this.logger.error(
-        `[Unknown Exception] - Path: ${request.method} ${request.url}`,
+        `[Unknown Exception] - Path: ${request.method} ${logPath}`,
         exception,
       );
       errorDetail = 'An unknown error type was caught.';

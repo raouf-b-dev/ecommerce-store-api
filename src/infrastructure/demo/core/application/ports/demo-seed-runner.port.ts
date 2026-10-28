@@ -15,7 +15,8 @@ export interface DemoSeedReport {
   admin: DemoSeedAuthUserReport | null;
   /** Null when DEMO_READ_ONLY is false (local Compose seeds writable admins). */
   viewer: DemoSeedAuthUserReport | null;
-  customer: DemoSeedAuthUserReport;
+  /** Null when DEMO_READ_ONLY is true (visitors register themselves). */
+  customer: DemoSeedAuthUserReport | null;
   categories: number;
   categoriesCreated: number;
   products: number;

@@ -131,6 +131,11 @@ export class OrdersController {
     type: PaginatedOrdersResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Filtering by userEmail, userName, firstName, or lastName requires view_customer_pii.',
+  })
   async findAll(
     @Query() query: ListOrdersQueryDto,
     @CallerCtx() callerContext: CallerContext,
@@ -159,11 +164,14 @@ export class OrdersController {
   }
 
   @Post(':id/payments')
-  @RequirePermissions('view_all_orders', 'view_own_orders')
+  // Seeing every order (view_all_orders) is not enough to charge one: staff
+  // need manage_payments, so the read-only demo admin cannot create payments.
+  @RequirePermissions('manage_payments', 'view_own_orders')
   @ApiOperation({
     summary: 'Create a payment for an order',
     description:
       'Charges the order total for an order the caller can see. ' +
+      'Requires manage_payments (staff) or view_own_orders (the order owner). ' +
       'The amount, currency, and owner come from the order. ' +
       'A caller who cannot see the order receives the same not-found result as a missing order.',
   })

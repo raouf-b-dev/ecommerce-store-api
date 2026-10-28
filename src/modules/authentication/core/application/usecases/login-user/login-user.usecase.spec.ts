@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   AuthenticationDtoFactory,
   AuthorizationGatewayMock,
@@ -98,6 +99,26 @@ describe('LoginUserUseCase', () => {
       'view_own_profile',
       'view_own_orders',
     ]);
+  });
+
+  it('logs the user id, never the email, on success', async () => {
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    sessionTokenRepository.mockSuccessfulSave(
+      AuthenticationDtoFactory.buildSessionToken({
+        userId: defaultUserRecord.id,
+        rawToken: 'dummy-refresh-token',
+        expiresAt: new Date('2025-01-01T12:00:00Z'),
+      }),
+    );
+
+    await usecase.execute({ email: 'test@example.com', password: 'password' });
+
+    const lines = logSpy.mock.calls.map((call) => String(call[0]));
+    expect(lines).toContain(
+      `User ${defaultUserRecord.id} logged in successfully`,
+    );
+    expect(lines.join('\n')).not.toContain('test@example.com');
+    logSpy.mockRestore();
   });
 
   it('should return failure if user is not found', async () => {

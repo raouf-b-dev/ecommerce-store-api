@@ -380,30 +380,9 @@ describe('validateEnv', () => {
     expect(validated.DEMO_CUSTOMER_PASSWORD).toBe('Customer123!');
   });
 
-  it('rejects DEMO_READ_ONLY=true without a host-set DEMO_CUSTOMER_PASSWORD', () => {
-    expect(() => validateEnv({ ...baseEnv, DEMO_READ_ONLY: 'true' })).toThrow(
-      EnvError,
-    );
-  });
-
-  it('rejects DEMO_READ_ONLY=true with the published demo customer password', () => {
-    expect(() =>
-      validateEnv({
-        ...baseEnv,
-        DEMO_READ_ONLY: 'true',
-        DEMO_CUSTOMER_PASSWORD: 'Customer123!',
-      }),
-    ).toThrow(EnvError);
-  });
-
-  it('accepts DEMO_READ_ONLY=true with a host-set DEMO_CUSTOMER_PASSWORD', () => {
-    const validated = validateEnv({
-      ...baseEnv,
-      DEMO_READ_ONLY: 'true',
-      DEMO_CUSTOMER_PASSWORD: 'host-fixture-secret',
-    });
+  it('accepts DEMO_READ_ONLY=true without a demo customer password', () => {
+    const validated = validateEnv({ ...baseEnv, DEMO_READ_ONLY: 'true' });
     expect(validated.DEMO_READ_ONLY).toBe(true);
-    expect(validated.DEMO_CUSTOMER_PASSWORD).toBe('host-fixture-secret');
   });
 
   it('rejects SameSite=None unless PUBLIC_BASE_URL is https', () => {

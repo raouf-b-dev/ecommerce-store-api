@@ -113,21 +113,17 @@ describe('SeedDemoAuthUsersUseCase', () => {
     );
   });
 
-  it('should seed viewer and customer only when readOnly is true', async () => {
+  it('should seed only the viewer when readOnly is true', async () => {
     identityGateway.mockFindUserByEmail(null);
 
     const viewerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
       id: 10,
       email: 'viewer@store.local',
     });
-    const customerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
-      id: 11,
-      email: 'customer@store.local',
-    });
 
-    identityGateway.createUser
-      .mockResolvedValueOnce(Result.success(viewerUser))
-      .mockResolvedValueOnce(Result.success(customerUser));
+    identityGateway.createUser.mockResolvedValueOnce(
+      Result.success(viewerUser),
+    );
 
     passwordHasher.hash.mockResolvedValue('hashed_password');
     credentialRepository.save.mockImplementation((credential) =>
@@ -149,11 +145,7 @@ describe('SeedDemoAuthUsersUseCase', () => {
         email: 'viewer@store.local',
         status: 'created',
       },
-      customer: {
-        userId: 11,
-        email: 'customer@store.local',
-        status: 'created',
-      },
+      customer: null,
     });
     expect(authorizationGateway.assignRole).toHaveBeenCalledWith(
       10,
@@ -165,7 +157,7 @@ describe('SeedDemoAuthUsersUseCase', () => {
     expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
       'viewer@store.local',
     );
-    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(
+    expect(identityGateway.findUserByEmail).not.toHaveBeenCalledWith(
       'customer@store.local',
     );
     expect(identityGateway.findUserByEmail).not.toHaveBeenCalledWith(
@@ -174,7 +166,11 @@ describe('SeedDemoAuthUsersUseCase', () => {
     expect(identityGateway.findUserByEmail).not.toHaveBeenCalledWith(
       'admin@store.local',
     );
-    expect(identityGateway.createUser).toHaveBeenCalledTimes(2);
+    expect(identityGateway.createUser).toHaveBeenCalledTimes(1);
+    expect(authorizationGateway.assignRole).not.toHaveBeenCalledWith(
+      expect.anything(),
+      SystemRoleCode.CUSTOMER,
+    );
   });
 
   it('should skip creation if users already exist', async () => {
@@ -246,14 +242,10 @@ describe('SeedDemoAuthUsersUseCase', () => {
       id: 20,
       email: 'ops-viewer@example.com',
     });
-    const customerUser = IdentityAccessGatewayDtoFactory.buildUserRecord({
-      id: 21,
-      email: 'fixture@example.com',
-    });
 
-    identityGateway.createUser
-      .mockResolvedValueOnce(Result.success(viewerUser))
-      .mockResolvedValueOnce(Result.success(customerUser));
+    identityGateway.createUser.mockResolvedValueOnce(
+      Result.success(viewerUser),
+    );
     passwordHasher.hash.mockResolvedValue('hashed_password');
     credentialRepository.save.mockImplementation((credential) =>
       Promise.resolve(Result.success(credential)),
@@ -268,28 +260,20 @@ describe('SeedDemoAuthUsersUseCase', () => {
           email: 'ops-viewer@example.com',
           password: 'HostedViewer!',
         },
-        customer: {
-          email: 'fixture@example.com',
-          password: 'FixtureCust!',
-        },
       },
     });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(result.value.viewer?.email).toBe('ops-viewer@example.com');
-    expect(result.value.customer.email).toBe('fixture@example.com');
+    expect(result.value.customer).toBeNull();
     expect(passwordHasher.hash).toHaveBeenCalledWith('HostedViewer!');
-    expect(passwordHasher.hash).toHaveBeenCalledWith('FixtureCust!');
+    expect(passwordHasher.hash).toHaveBeenCalledTimes(1);
   });
 
   describe('existing accounts in read-only mode', () => {
     const existingViewer = IdentityAccessGatewayDtoFactory.buildUserRecord({
       id: 30,
       email: 'viewer@store.local',
-    });
-    const existingCustomer = IdentityAccessGatewayDtoFactory.buildUserRecord({
-      id: 31,
-      email: 'customer@store.local',
     });
 
     const persistedCredential = (userId: number) =>
@@ -362,25 +346,15 @@ describe('SeedDemoAuthUsersUseCase', () => {
       expect(credentialRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should reseed existing viewer and customer accounts that hold the expected roles', async () => {
-      identityGateway.findUserByEmail
-        .mockResolvedValueOnce(Result.success(existingViewer))
-        .mockResolvedValueOnce(Result.success(existingCustomer));
-      authorizationGateway.findRoleByUserId
-        .mockResolvedValueOnce(
-          Result.success({
-            id: 3,
-            code: SystemRoleCode.ADMIN_READONLY,
-            permissions: [],
-          }),
-        )
-        .mockResolvedValueOnce(
-          Result.success({
-            id: 4,
-            code: SystemRoleCode.CUSTOMER,
-            permissions: [],
-          }),
-        );
+    it('should reseed an existing viewer account that holds the expected role', async () => {
+      identityGateway.findUserByEmail.mockResolvedValueOnce(
+        Result.success(existingViewer),
+      );
+      authorizationGateway.mockSuccessfulFindRoleByUserId({
+        id: 3,
+        code: SystemRoleCode.ADMIN_READONLY,
+        permissions: [],
+      });
       credentialRepository.findByUserId.mockImplementation((userId: number) =>
         Promise.resolve(Result.success(persistedCredential(userId))),
       );
@@ -397,15 +371,11 @@ describe('SeedDemoAuthUsersUseCase', () => {
         superAdmin: null,
         admin: null,
         viewer: { userId: 30, email: 'viewer@store.local', status: 'existing' },
-        customer: {
-          userId: 31,
-          email: 'customer@store.local',
-          status: 'existing',
-        },
+        customer: null,
       });
-      expect(credentialRepository.update).toHaveBeenCalledTimes(2);
+      expect(credentialRepository.update).toHaveBeenCalledTimes(1);
       expect(passwordHasher.hash).toHaveBeenCalledWith('Viewer123!');
-      expect(passwordHasher.hash).toHaveBeenCalledWith('Customer123!');
+      expect(identityGateway.findUserByEmail).toHaveBeenCalledTimes(1);
     });
   });
 

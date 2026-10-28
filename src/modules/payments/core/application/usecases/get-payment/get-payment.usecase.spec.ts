@@ -17,7 +17,7 @@ describe('GetPaymentUseCase', () => {
   const adminContext: CallerContext = createUserCallerContext({
     userId: 1,
     role: 'ADMIN',
-    permissions: new Set(['view_all_payments']),
+    permissions: new Set(['view_customer_pii', 'view_all_payments']),
   });
 
   const customerContext: CallerContext = createUserCallerContext({

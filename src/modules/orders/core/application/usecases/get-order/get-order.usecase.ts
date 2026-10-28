@@ -8,6 +8,7 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { OrderDetailDTO } from '../../queries/results/order-detail.result';
+import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
@@ -52,6 +53,8 @@ export class GetOrderUseCase extends UseCase<
       return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
     }
 
-    return Result.success(orderResult.value);
+    return Result.success(
+      CustomerPiiPolicy.present(orderResult.value, callerContext),
+    );
   }
 }

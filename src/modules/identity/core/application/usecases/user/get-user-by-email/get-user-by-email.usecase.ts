@@ -45,7 +45,7 @@ export class GetUserByEmailUseCase extends UseCase<
     const user = userResult.value;
     if (!user) {
       return ErrorFactory.UseCaseError(
-        `User with email ${email} not found`,
+        'User with the given email not found',
         null,
         HttpStatus.NOT_FOUND,
       );

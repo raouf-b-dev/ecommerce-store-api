@@ -130,7 +130,7 @@ describe('GetUserByEmailUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        `User with email ${validEmail} not found`,
+        'User with the given email not found',
         UseCaseError,
       );
       expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);

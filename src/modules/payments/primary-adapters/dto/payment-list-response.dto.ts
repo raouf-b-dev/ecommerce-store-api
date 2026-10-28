@@ -11,10 +11,20 @@ export class PaymentListItemResponseDto {
   @ApiProperty({ type: Number, example: 3 })
   userId!: number;
 
-  @ApiProperty({ type: String, example: 'Jane Doe' })
+  @ApiProperty({
+    type: String,
+    example: 'Jane Doe',
+    description:
+      "Customer display name. Without view_customer_pii (and not the payment owner) this is the placeholder 'Customer #<userId>'.",
+  })
   userName!: string;
 
-  @ApiProperty({ type: String, example: 'customer@store.local' })
+  @ApiProperty({
+    type: String,
+    example: 'customer@store.local',
+    description:
+      "Customer email. Without view_customer_pii (and not the owner) this is a masked placeholder such as 'j***@***.com'.",
+  })
   userEmail!: string;
 
   @ApiProperty({

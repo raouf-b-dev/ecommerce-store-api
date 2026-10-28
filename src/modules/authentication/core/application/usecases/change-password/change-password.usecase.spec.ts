@@ -65,7 +65,7 @@ describe('ChangePasswordUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 1,
       code: 'ADMIN',
-      permissions: ['access_admin', 'view_all_users'],
+      permissions: ['access_admin', 'view_all_users', 'change_own_credentials'],
     });
     passwordHasher.compare
       .mockResolvedValueOnce(true)
@@ -96,6 +96,7 @@ describe('ChangePasswordUseCase', () => {
     expect(result.value.permissions).toEqual([
       'access_admin',
       'view_all_users',
+      'change_own_credentials',
     ]);
     expect(revokeAllForUserUsecase.execute).toHaveBeenCalledWith(userId);
     expect(credentialRepository.update).toHaveBeenCalled();
@@ -135,5 +136,47 @@ describe('ChangePasswordUseCase', () => {
     );
     const error = isFailure(result) ? result.error : undefined;
     expect(error?.statusCode).toBe(HttpStatus.BAD_REQUEST);
+  });
+
+  it('returns forbidden and leaves the credential untouched for a role without change_own_credentials', async () => {
+    authorizationGateway.mockSuccessfulFindRoleByUserId({
+      id: 3,
+      code: 'ADMIN_READONLY',
+      permissions: ['access_admin', 'view_all_orders'],
+    });
+
+    const result = await useCase.execute({
+      userId,
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Changing credentials requires the change_own_credentials permission',
+      UseCaseError,
+    );
+    const error = isFailure(result) ? result.error : undefined;
+    expect(error?.statusCode).toBe(HttpStatus.FORBIDDEN);
+    expect(credentialRepository.findByUserId).not.toHaveBeenCalled();
+    expect(credentialRepository.update).not.toHaveBeenCalled();
+    expect(revokeAllForUserUsecase.execute).not.toHaveBeenCalled();
+  });
+
+  it('fails when the role cannot be resolved before changing the password', async () => {
+    authorizationGateway.mockFailedFindRoleByUserId('role lookup failed');
+
+    const result = await useCase.execute({
+      userId,
+      currentPassword: 'OldPass1!',
+      newPassword: 'NewPass2!',
+    });
+
+    ResultAssertionHelper.assertResultFailure(
+      result,
+      'Failed to resolve user role',
+      UseCaseError,
+    );
+    expect(credentialRepository.update).not.toHaveBeenCalled();
   });
 });

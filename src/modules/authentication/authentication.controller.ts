@@ -1,3 +1,5 @@
+import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { CHANGE_OWN_CREDENTIALS_PERMISSION } from './core/domain/policies/credential-change.policy';
 import {
   Controller,
   Post,
@@ -151,6 +153,7 @@ export class AuthenticationController {
   }
 
   @Post('logout-all')
+  @RequirePermissions(CHANGE_OWN_CREDENTIALS_PERMISSION)
   @SkipSanitization()
   @AllowDuringPasswordChange()
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -169,6 +172,11 @@ export class AuthenticationController {
     status: 204,
     description:
       'Successfully logged out all sessions (no response body). Clears the refresh cookie.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Caller lacks change_own_credentials (for example the shared read-only demo admin)',
   })
   async logoutAll(
     @RefreshToken() refreshToken: string,
