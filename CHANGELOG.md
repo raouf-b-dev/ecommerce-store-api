@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `ADMIN_READONLY` system role (`access_admin`, `view_all_products`, `view_all_orders`, `view_all_inventory`) and hosted viewer seed when `DEMO_READ_ONLY=true` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 - `DEMO_READ_ONLY` (default `false`): seeds the read-only viewer as the only account (no writable local operators and, since [#387](https://github.com/raouf-b-dev/ecommerce-store-api/pull/387), no demo customer) and skips forced password change on it. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
-- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts; `DEMO_CUSTOMER_*` is used by local seeding only) ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
+- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (only `DEMO_VIEWER_*` is the public hosted-demo login; `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, and `DEMO_CUSTOMER_*` are for local seeding only) ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 
 ### Changed
 

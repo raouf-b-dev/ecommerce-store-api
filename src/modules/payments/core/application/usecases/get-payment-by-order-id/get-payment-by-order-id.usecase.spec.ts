@@ -100,4 +100,36 @@ describe('GetPaymentByOrderIdUseCase', () => {
     );
     expect(mockQueryService.getByOrderId).not.toHaveBeenCalled();
   });
+
+  describe('customer contact data (CustomerPiiPolicy)', () => {
+    const viewerContext: CallerContext = createUserCallerContext({
+      userId: 9,
+      role: 'ADMIN_READONLY',
+      permissions: new Set(['view_all_payments']),
+    });
+
+    it('masks name and email for a caller without view_customer_pii', async () => {
+      mockQueryService.mockSuccessfulGetByOrderId({ ...sampleDetail });
+      const ctx = viewerContext;
+
+      const result = await useCase.execute({ orderId: 10, callerContext: ctx });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value!.userName).toBe('Customer #2');
+      expect(result.value!.userEmail).not.toBe('john@example.com');
+      expect(result.value!.userEmail).not.toContain('john');
+      expect(result.value!.userEmail).toContain('***');
+    });
+
+    it('returns real name and email for a caller with view_customer_pii', async () => {
+      mockQueryService.mockSuccessfulGetByOrderId({ ...sampleDetail });
+      const ctx = adminContext;
+
+      const result = await useCase.execute({ orderId: 10, callerContext: ctx });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value!.userName).toBe('John Doe');
+      expect(result.value!.userEmail).toBe('john@example.com');
+    });
+  });
 });

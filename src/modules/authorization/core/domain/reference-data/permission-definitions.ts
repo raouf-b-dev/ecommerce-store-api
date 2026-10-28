@@ -29,7 +29,7 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   {
     code: 'view_customer_pii',
     description:
-      "View other customers' personal data (name, email, phone, addresses) on orders",
+      "View other customers' personal data (name, email, phone, addresses) on orders and payments: unmasked order and payment results and the contact filters (userEmail, userName, firstName, lastName) on the order and payment lists",
   },
   {
     code: 'change_own_credentials',
