@@ -10,7 +10,7 @@
   <a href="https://bullmq.io/"><img src="https://img.shields.io/badge/BullMQ-FF4B4B?style=flat&logo=bull&logoColor=white" alt="BullMQ"></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-FCC72B?style=flat&logo=vitest&logoColor=black" alt="Vitest"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker"></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-24-green?style=flat&logo=node.js" alt="Node.js 24"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-26_LTS-green?style=flat&logo=node.js" alt="Node.js 26 LTS"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
 </p>
 
@@ -52,7 +52,7 @@ Architecture assets: [`docs/assets/ARCHITECTURE-OVERVIEW.md`](docs/assets/ARCHIT
 
 ## Quick start
 
-Needs Node.js 24, npm 11, and Docker Desktop **running** (tested with Desktop 28). After installing Docker, wait until it is idle, then open a new terminal.
+Needs Node.js LTS, see `.nvmrc` (26), npm 11, and Docker Desktop **running** (tested with Desktop 28). After installing Docker, wait until it is idle, then open a new terminal.
 
 ### Bootstrap
 

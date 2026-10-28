@@ -36,10 +36,14 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Prerequisites
 
-- **Node.js** ≥ 24
-- **npm** ≥ 11
+- **Node.js** LTS, see `.nvmrc` (26)
+- **npm** ≥ 11.6
 - **Docker Desktop** ≥ 28, with the engine running (open a new terminal after install)
 - **Git** ≥ 2.47
+
+### Node version policy
+
+`.nvmrc` is the single source of truth for the Node.js major (current LTS). CI reads it through `node-version-file`, the `Dockerfile` base image pins the matching patch by digest, and `package.json` `engines` follows the same major (`.npmrc` sets `engine-strict=true`, so `npm ci` fails on an older runtime). Dependabot bumps the Docker patch and digest but ignores Node majors. To move to a new LTS, edit `.nvmrc`, the `Dockerfile` pin, and `engines` in one PR.
 
 ### Installation
 

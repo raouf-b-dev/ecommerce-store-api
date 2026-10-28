@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade.
 - Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it).
+- Node.js 26 LTS (npm 11.20) is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0`, enforced by `.npmrc` `engine-strict=true`.
+- CI reads the Node version from `.nvmrc` (`node-version-file`). The `Dockerfile` base image is pinned to `node:26.12.1-alpine3.24` by digest.
+- Dependabot tracks the `Dockerfile` base image and ignores Node major updates. Node majors change only through `.nvmrc` (see CONTRIBUTING, "Node version policy").
 
 ## [0.12.0] - 2026-10-19
 
