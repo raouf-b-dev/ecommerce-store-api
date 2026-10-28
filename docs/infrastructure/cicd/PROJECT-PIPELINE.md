@@ -54,7 +54,7 @@ graph TD
 
 ## 2. Job breakdown
 
-All jobs run on `ubuntu-latest` with **Node.js 24**. Each job runs `npm ci` with `actions/setup-node` npm cache (no shared `node_modules` artifact).
+All jobs run on `ubuntu-latest` with Node.js from `.nvmrc` (26) and the npm pinned in `package.json` `devEngines.packageManager` (12.2.1). Each job uses the `.github/actions/setup-node-ci` composite action (`actions/setup-node` npm cache, pinned npm install, `npm ci`) (no shared `node_modules` artifact).
 
 | Job                     | Command / action                                                                     | Purpose                                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |

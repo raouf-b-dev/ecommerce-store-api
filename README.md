@@ -52,7 +52,7 @@ Architecture assets: [`docs/assets/ARCHITECTURE-OVERVIEW.md`](docs/assets/ARCHIT
 
 ## Quick start
 
-Needs Node.js LTS, see `.nvmrc` (26), npm 11, and Docker Desktop **running** (tested with Desktop 28). After installing Docker, wait until it is idle, then open a new terminal.
+Needs Node.js LTS, see `.nvmrc` (26), npm 12.2.1 (pinned in `package.json` `devEngines.packageManager`; install it with `npm install -g npm@12.2.1`), and Docker Desktop **running** (tested with Desktop 28). After installing Docker, wait until it is idle, then open a new terminal.
 
 ### Bootstrap
 

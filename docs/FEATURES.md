@@ -202,7 +202,7 @@ The access token carries a `mustChangePassword` claim, but only when the flag is
 
 ### Multi-Stage Docker Build
 
-Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on Node.js 24 Alpine. Uses `tini` as PID 1, runs as non-root `appuser`, and runs migrations via `docker-entrypoint.sh`.
+Four-stage Dockerfile (`deps` → `build` → `prod-deps` → `production`) on Node.js Alpine (`.nvmrc` (26), digest-pinned), with npm pinned by `devEngines.packageManager` (12.2.1). Uses `tini` as PID 1, runs as non-root `appuser`, and runs migrations via `docker-entrypoint.sh`.
 
 **Location**: `Dockerfile`, `docker-entrypoint.sh`, `docker-compose.prod.yml`
 
