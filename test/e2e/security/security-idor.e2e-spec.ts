@@ -232,6 +232,7 @@ describe('Security IDOR (e2e)', () => {
         .query({ limit: 100 })
         .set(AuthTestHelper.bearer(viewer.accessToken));
       expect(list.status).toBe(HttpStatus.OK);
+      expect(list.body.items.length).toBeGreaterThan(0);
       for (const item of list.body.items) {
         expect(item.userName).toMatch(/^Customer #\d+$/);
         expect(item.userEmail ?? '').not.toContain(userB.email);

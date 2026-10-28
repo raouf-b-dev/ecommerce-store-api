@@ -74,8 +74,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         code = exceptionResponse.code || exceptionResponse.error;
       }
 
+      // Nest builds the 404 message from the raw URL ("Cannot GET /x?userEmail=..."),
+      // so the query string is stripped from the logged message as well.
+      const rawUrl = request.originalUrl || request.url;
+      const logMessage = rawUrl ? message.split(rawUrl).join(logPath) : message;
       this.logger.warn(
-        `[HTTP ${statusCode}] ${message} - Path: ${request.method} ${logPath}`,
+        `[HTTP ${statusCode}] ${logMessage} - Path: ${request.method} ${logPath}`,
       );
     }
     // Branch 3: AppError (Direct escape without ResultInterceptor)
