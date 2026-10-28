@@ -131,6 +131,11 @@ export class OrdersController {
     type: PaginatedOrdersResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Filtering by userEmail, userName, firstName, or lastName requires view_customer_pii.',
+  })
   async findAll(
     @Query() query: ListOrdersQueryDto,
     @CallerCtx() callerContext: CallerContext,

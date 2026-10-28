@@ -38,4 +38,14 @@ describe('SYSTEM_ROLES', () => {
       'view_customer_pii',
     );
   });
+
+  it('grants change_own_credentials to every system role except ADMIN_READONLY', () => {
+    for (const role of SYSTEM_ROLES) {
+      const expected = role.code !== SystemRoleCode.ADMIN_READONLY;
+      expect([
+        role.code,
+        role.permissions.includes('change_own_credentials'),
+      ]).toEqual([role.code, expected]);
+    }
+  });
 });

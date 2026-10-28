@@ -31,6 +31,11 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
     description:
       "View other customers' personal data (name, email, phone, addresses) on orders",
   },
+  {
+    code: 'change_own_credentials',
+    description:
+      'Change own password and revoke all own sessions (logout everywhere)',
+  },
   { code: 'manage_roles', description: 'Manage custom roles' },
   { code: 'manage_carts', description: 'Manage customer carts' },
   { code: 'view_own_orders', description: 'View own orders' },

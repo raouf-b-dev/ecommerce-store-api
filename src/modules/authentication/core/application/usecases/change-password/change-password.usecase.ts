@@ -69,7 +69,7 @@ export class ChangePasswordUseCase extends UseCase<
     }
 
     const role = roleResult.value;
-    const policyResult = ensureCredentialsChangeable(role.code);
+    const policyResult = ensureCredentialsChangeable(role.permissions);
     if (isFailure(policyResult)) {
       return ErrorFactory.UseCaseError(
         policyResult.error.message,

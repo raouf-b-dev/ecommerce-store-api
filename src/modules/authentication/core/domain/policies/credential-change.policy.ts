@@ -2,19 +2,21 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
-import { SystemRoleCode } from '../../../../../shared-kernel/domain/value-objects/system-roles';
+
+/** Permission that lets a user change its own password and revoke all its sessions. */
+export const CHANGE_OWN_CREDENTIALS_PERMISSION = 'change_own_credentials';
 
 /**
- * The read-only admin role is the shared hosted demo login, so its password is
- * published. Letting it change its own credentials would let one visitor lock
- * every other visitor out of the demo.
+ * A role without change_own_credentials (for example the read-only admin used
+ * as the shared hosted demo login, whose password is published) cannot change
+ * its credentials; otherwise one visitor could lock every other visitor out.
  */
 export function ensureCredentialsChangeable(
-  roleCode: string,
+  permissions: Iterable<string>,
 ): Result<void, DomainError> {
-  if (roleCode === String(SystemRoleCode.ADMIN_READONLY)) {
+  if (!new Set(permissions).has(CHANGE_OWN_CREDENTIALS_PERMISSION)) {
     return ErrorFactory.DomainError(
-      'Read-only admin accounts cannot change their credentials',
+      'Changing credentials requires the change_own_credentials permission',
       null,
       StatusCode.FORBIDDEN,
     );

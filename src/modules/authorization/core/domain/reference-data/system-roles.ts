@@ -49,6 +49,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
       'manage_own_cart',
       'view_own_profile',
       'manage_own_addresses',
+      'change_own_credentials',
     ],
   },
 ];

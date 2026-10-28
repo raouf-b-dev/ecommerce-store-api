@@ -264,6 +264,24 @@ describe('Security IDOR (e2e)', () => {
       );
     });
 
+    it('refuses logout-all for the read-only viewer', async () => {
+      const response = await http
+        .post(`${E2E_API_PREFIX}/auth/logout-all`)
+        .set(AuthTestHelper.bearer(viewer.accessToken))
+        .send({});
+      expect(response.status).toBe(HttpStatus.FORBIDDEN);
+    });
+
+    it.each(['/users', '/payments'])(
+      'refuses %s to the read-only viewer',
+      async (path) => {
+        const response = await http
+          .get(`${E2E_API_PREFIX}${path}`)
+          .set(AuthTestHelper.bearer(viewer.accessToken));
+        expect(response.status).toBe(HttpStatus.FORBIDDEN);
+      },
+    );
+
     it('denies user reading a non-owned order id', async () => {
       const response = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);
 

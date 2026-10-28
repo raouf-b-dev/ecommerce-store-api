@@ -65,7 +65,7 @@ describe('ChangePasswordUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 1,
       code: 'ADMIN',
-      permissions: ['access_admin', 'view_all_users'],
+      permissions: ['access_admin', 'view_all_users', 'change_own_credentials'],
     });
     passwordHasher.compare
       .mockResolvedValueOnce(true)
@@ -96,6 +96,7 @@ describe('ChangePasswordUseCase', () => {
     expect(result.value.permissions).toEqual([
       'access_admin',
       'view_all_users',
+      'change_own_credentials',
     ]);
     expect(revokeAllForUserUsecase.execute).toHaveBeenCalledWith(userId);
     expect(credentialRepository.update).toHaveBeenCalled();
@@ -137,7 +138,7 @@ describe('ChangePasswordUseCase', () => {
     expect(error?.statusCode).toBe(HttpStatus.BAD_REQUEST);
   });
 
-  it('returns forbidden and leaves the credential untouched for a read-only admin', async () => {
+  it('returns forbidden and leaves the credential untouched for a role without change_own_credentials', async () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 3,
       code: 'ADMIN_READONLY',
@@ -152,7 +153,7 @@ describe('ChangePasswordUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'Read-only admin accounts cannot change their credentials',
+      'Changing credentials requires the change_own_credentials permission',
       UseCaseError,
     );
     const error = isFailure(result) ? result.error : undefined;

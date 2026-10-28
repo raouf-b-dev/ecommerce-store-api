@@ -64,7 +64,7 @@ export class OrderDetailResponseDto {
   @ApiProperty({
     example: 'Jane Doe',
     description:
-      'Customer display name. Null when user details are unavailable.',
+      'Customer display name. Null when user details are unavailable. Without view_customer_pii (and not the order owner) this is the placeholder "Customer #<userId>".',
     type: String,
     nullable: true,
   })
@@ -72,7 +72,8 @@ export class OrderDetailResponseDto {
 
   @ApiProperty({
     example: 'customer@store.local',
-    description: 'Customer email. Null when user details are unavailable.',
+    description:
+      'Customer email. Null when user details are unavailable. Without view_customer_pii (and not the owner) this is a masked placeholder such as "j***@***.com".',
     type: String,
     nullable: true,
   })
@@ -95,7 +96,7 @@ export class OrderDetailResponseDto {
   @ApiProperty({
     example: 'Jane Doe, 123 Tech Boulevard, San Francisco, CA 94105, US',
     description:
-      'Formatted shipping address. Null when the order has no shipping address.',
+      'Formatted shipping address (recipient name, street, phone). Null when the order has no shipping address, and always null without view_customer_pii unless the caller owns the order.',
     type: String,
     nullable: true,
   })
