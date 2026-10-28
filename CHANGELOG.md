@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Documentation
-
-- Replaced dead third-party reference links in `docs/` (Redis distributed locks, Adobe Commerce EAV, PostgreSQL B-Tree, CNCF supply chain paper, OpenGitOps principles) and removed two references with no live equivalent (Martin Fowler EAV bliki, Figma custom properties blog) ([#383](https://github.com/raouf-b-dev/ecommerce-store-api/pull/383)).
-
 ## [0.13.0] - 2026-10-28
 
 ### Added
@@ -32,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NestJS 12.3.2 and body-parser 2.4.0 (security audit) ([#370](https://github.com/raouf-b-dev/ecommerce-store-api/pull/370)); production-deps group: NestJS 12.2.0, `@opentelemetry/auto-instrumentations-node` 0.81.2, jose 6.2.13, sanitize-html 2.18.1 ([#361](https://github.com/raouf-b-dev/ecommerce-store-api/pull/361)).
 - Dev dependencies: undici 8.12.3 ([#368](https://github.com/raouf-b-dev/ecommerce-store-api/pull/368)), fast-uri 3.1.9 ([#366](https://github.com/raouf-b-dev/ecommerce-store-api/pull/366)), dotenv 18.0.9 ([#364](https://github.com/raouf-b-dev/ecommerce-store-api/pull/364)), and the dev-deps group refresh ([#376](https://github.com/raouf-b-dev/ecommerce-store-api/pull/376): `@nestjs/cli` 12.0.9, `@nestjs/schematics` 12.0.9, vitest 5.0.5, eslint 10.13.0, typescript-eslint 8.72.0 and others). chokidar was bumped to 6.0.0 ([#363](https://github.com/raouf-b-dev/ecommerce-store-api/pull/363)) and set back to `^5.0.0` in [#376](https://github.com/raouf-b-dev/ecommerce-store-api/pull/376) to match `@nestjs/cli` and its peers.
 - Migration `RenameProductsCategoryForeignKey1787400000011` renames the products -> categories foreign key from `FK_products_category` to the TypeORM generated name, so `migration:generate` no longer proposes dropping and re-adding it ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381)).
+- Replaced dead third-party reference links in `docs/` (Redis distributed locks, Adobe Commerce EAV, PostgreSQL B-Tree, CNCF supply chain paper, OpenGitOps principles) and removed two references with no live equivalent (Martin Fowler EAV bliki, Figma custom properties blog) ([#383](https://github.com/raouf-b-dev/ecommerce-store-api/pull/383)).
 
 ### Fixed
 
