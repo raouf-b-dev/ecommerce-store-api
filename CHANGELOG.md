@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Replaced dead third-party reference links in `docs/` (Redis distributed locks, Adobe Commerce EAV, PostgreSQL B-Tree, CNCF supply chain paper, OpenGitOps principles) and removed two references with no live equivalent (Martin Fowler EAV bliki, Figma custom properties blog) ([#383](https://github.com/raouf-b-dev/ecommerce-store-api/pull/383)).
+
 ## [0.13.0] - 2026-10-28
 
 ### Added

@@ -165,5 +165,4 @@ Scanners search files and git history for accidentally committed credentials (AP
 2. Humble, J. & Farley, D. (2010). _Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation_. Addison-Wesley. ISBN 978-0321601919.
 3. Weinberg, G. M. (1998). _The Psychology of Computer Programming_. Dorset House Publishing. ISBN 978-0932633422. (Conceptual foundation of context switching costs).
 4. OWASP Foundation. (2023). _OWASP Top 10 CI/CD Security Risks_. https://owasp.org/www-project-top-10-ci-cd-security-risks/
-5. CNCF (Cloud Native Computing Foundation). (2022). _Software Supply Chain Best Practices_. https://github.com/cncf/tag-security-software-supply-chain-best-practices
-
+5. CNCF (Cloud Native Computing Foundation). (2021). _Software Supply Chain Best Practices_. https://github.com/cncf/tag-security/blob/main/community/working-groups/supply-chain-security/supply-chain-security-paper/CNCF_SSCP_v1.pdf
