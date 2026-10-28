@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (`onFail: error`); CI (new `.github/actions/setup-node-ci` composite action replacing 16 setup-node copies) and the `Dockerfile` install it explicitly because no Node release bundles npm 12 yet.
+- npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (`onFail: error`); CI (new `.github/actions/setup-node-ci` composite action replacing 16 setup-node copies) and the `Dockerfile` install it explicitly because no Node release bundles npm 12 yet. `devEngines.runtime` (`node >=26.0.0`, `onFail: error`) keeps the Node guardrail, since npm 12 no longer enforces root `engines.node`.
 - Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade.
 - Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it).
 - Node.js 26 LTS (npm 11.20) is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0`, enforced by `.npmrc` `engine-strict=true`.

@@ -10,6 +10,11 @@
     "npm": ">=11.6.0"
   },
   "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=26.0.0",
+      "onFail": "error"
+    },
     "packageManager": {
       "name": "npm",
       "version": "12.2.1",
