@@ -510,20 +510,18 @@ For seeding or migration, use `saveMany()` to insert definitions and values in b
 
 ### Design Pattern Sources
 
-| Resource                                                                                         | Description                                                       |
-| :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
-| [Martin Fowler: EAV](https://martinfowler.com/bliki/EntityAttributeValue.html) | Canonical description of the pattern, trade-offs, and when to use |
-| [PostgreSQL JSONB Docs](https://www.postgresql.org/docs/current/datatype-json.html)              | JSONB operators for querying `options` column                     |
-| [Shopify Metafields API](https://shopify.dev/docs/api/admin-rest/2024-01/resources/metafield)    | How Shopify implements dynamic product fields                     |
-| [Magento EAV Model](https://developer.adobe.com/commerce/php/development/components/attributes/) | The most famous EAV implementation in e-commerce                  |
+| Resource                                                                                        | Description                                      |
+| :---------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| [PostgreSQL JSONB Docs](https://www.postgresql.org/docs/current/datatype-json.html)             | JSONB operators for querying `options` column    |
+| [Shopify Metafields API](https://shopify.dev/docs/api/admin-rest/2024-01/resources/metafield)   | How Shopify implements dynamic product fields    |
+| [Magento EAV Model](https://developer.adobe.com/commerce/php/development/components/attributes) | The most famous EAV implementation in e-commerce |
 
 ### Best Practice Articles
 
-| Resource                                                                                                | Description                                                                                |
-| :------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |
-| [EAV: Magento's Approach](https://developer.adobe.com/commerce/php/development/components/attributes/) | How one of the largest EAV implementations works in production |
-| [Custom Fields at Scale](https://www.figma.com/blog/how-figma-stores-custom-properties/)                | Figma's approach to flexible metadata storage                                              |
-| [WordPress Post Meta](https://developer.wordpress.org/reference/functions/get_post_meta/) | WordPress's `wp_postmeta`: one of the most deployed EAV systems on earth (42% of the web) |
+| Resource                                                                                              | Description                                                                               |
+| :---------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| [EAV: Magento's Approach](https://developer.adobe.com/commerce/php/development/components/attributes) | How one of the largest EAV implementations works in production                            |
+| [WordPress Post Meta](https://developer.wordpress.org/reference/functions/get_post_meta/)             | WordPress's `wp_postmeta`: one of the most deployed EAV systems on earth (42% of the web) |
 
 ### Decision Record
 
@@ -534,5 +532,4 @@ For seeding or migration, use `saveMany()` to insert definitions and values in b
 | `options` as JSONB                                 | Flexible enum-like constraints without a separate options table                                   |
 | Separate definitions table                         | Definitions are shared across all products; acts as a schema registry                             |
 | `category` column                                  | Groups attributes for UI rendering (tabs/sections) and API filtering                              |
-| Unique constraint on `(product_id, definition_id)` | One value per attribute per product: enforced at DB level |
-
+| Unique constraint on `(product_id, definition_id)` | One value per attribute per product: enforced at DB level                                         |

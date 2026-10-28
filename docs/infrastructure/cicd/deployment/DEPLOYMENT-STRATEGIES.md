@@ -179,5 +179,4 @@ Secrets (passwords, private keys) must never be injected as plain text variables
 2. Wiggins, A. (2017). _The Twelve-Factor App_. https://12factor.net/
 3. Richardson, C. (2018). _Microservices Patterns: With examples in Java_. Manning. ISBN 978-1617294549. (Expand/Contract database refactoring pattern).
 4. Morris, K. (2020). _Infrastructure as Code: Managing Servers in the Cloud_. O'Reilly. ISBN 978-1492080619.
-5. CNCF (Cloud Native Computing Foundation). (2023). _GitOps Principles_. https://github.com/open-gitops/project/blob/main/docs/principles.md
-
+5. OpenGitOps (CNCF). (2021). _GitOps Principles v1.0.0_. https://github.com/open-gitops/documents/blob/main/PRINCIPLES.md

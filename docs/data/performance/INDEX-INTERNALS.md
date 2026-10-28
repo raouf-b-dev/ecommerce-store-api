@@ -223,7 +223,7 @@ CREATE INDEX idx_audit_logs_created ON audit_logs USING brin (created_at);
 - Comer, D. (1979). "The Ubiquitous B-Tree." _ACM Computing Surveys_, 11(2), pp. 121-137. DOI: 10.1145/356770.356776
 - Graefe, G. (2011). "Modern B-Tree Techniques." _Foundations and Trends in Databases_, 3(4), pp. 203-402.
 - PostgreSQL Documentation. _Chapter 11: Indexes_. https://www.postgresql.org/docs/current/indexes.html
-- PostgreSQL Documentation. _§67.4: B-Tree Implementation_. https://www.postgresql.org/docs/current/btree-implementation.html
+- PostgreSQL Documentation. _B-Tree Indexes_. https://www.postgresql.org/docs/current/btree.html
 - PostgreSQL Documentation. _§70: GIN Indexes_. https://www.postgresql.org/docs/current/gin.html
 - PostgreSQL Documentation. _§71: GiST Indexes_. https://www.postgresql.org/docs/current/gist.html
 - PostgreSQL Documentation. _§72: BRIN Indexes_. https://www.postgresql.org/docs/current/brin.html
