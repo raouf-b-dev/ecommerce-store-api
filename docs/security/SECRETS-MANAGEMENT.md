@@ -475,6 +475,9 @@ flowchart LR
 FROM node:26-alpine AS build
 WORKDIR /app
 COPY package*.json ./
+# Node 26 images bundle npm 11; install the npm pinned in
+# package.json devEngines.packageManager (as the project Dockerfile does).
+RUN npm install -g "npm@$(node -p "require('./package.json').devEngines.packageManager.version")"
 RUN npm ci
 COPY . .
 RUN npm run build

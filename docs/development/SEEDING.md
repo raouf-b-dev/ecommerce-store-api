@@ -69,17 +69,18 @@ The auth seeder is idempotent by email. Re-running `npm run db:seed` resets demo
 
 When `DEMO_READ_ONLY=true` (hosted public instance), the seeder:
 
-- Seeds the **viewer** account (`ADMIN_READONLY`) from `DEMO_VIEWER_EMAIL` / `DEMO_VIEWER_PASSWORD` and a **silent fixture customer** from `DEMO_CUSTOMER_*` (needed for demo orders/cart the viewer can browse)
+- Seeds the **viewer** account (`ADMIN_READONLY`) from `DEMO_VIEWER_EMAIL` / `DEMO_VIEWER_PASSWORD` and a **silent fixture customer** from `DEMO_CUSTOMER_*` (needed for demo orders/cart the viewer can browse). `DEMO_CUSTOMER_PASSWORD` must be set on the host: env validation fails at boot when it is missing or still the published `Customer123!` default
+- Refuses (the seed fails, credentials untouched) when an existing account at `DEMO_VIEWER_EMAIL` does not have `ADMIN_READONLY`, or one at `DEMO_CUSTOMER_EMAIL` does not have `CUSTOMER`, so a demo email pointing at a privileged account never receives the published password
 - Does **not** create or update `superadmin@` / `admin@` (or whatever `DEMO_SUPERADMIN_*` / `DEMO_ADMIN_*` are set to). If a volume was previously seeded in local mode, wipe or use a fresh database before enabling hosted mode
 - Sets `mustChangePassword: false` on the hosted seed accounts (one-click viewer login)
-- Mutations stay on RBAC: `ADMIN_READONLY` has `access_admin` + `view_all_*` and no `manage_*`. A private writable owner is created with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (see [`ADMIN-BOOTSTRAP.md`](../security/ADMIN-BOOTSTRAP.md)), not from the public README
+- Mutations stay on RBAC: `ADMIN_READONLY` has `access_admin`, `view_all_products`, `view_all_orders`, and `view_all_inventory`, and no `manage_*`. It does not get `view_all_users` or `view_all_payments`, because visitors can self-register on the public demo and those views list every user's name, email, and phone. A private writable owner is created with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (see [`ADMIN-BOOTSTRAP.md`](../security/ADMIN-BOOTSTRAP.md)), not from the public README
 - Storefront visitors should **register** their own accounts. Do not publish the fixture customer as the hosted shop login
 
 **Public hosted sign-in (document this row only):**
 
-| Role                  | Email (default)      | Password (default) | Details                                           |
-| :-------------------- | :------------------- | :----------------- | :------------------------------------------------ |
-| **Admin (read-only)** | `viewer@store.local` | `Viewer123!`       | `access_admin` + all `view_all_*`. No `manage_*`. |
+| Role                  | Email (default)      | Password (default) | Details                                                                                |
+| :-------------------- | :------------------- | :----------------- | :------------------------------------------------------------------------------------- |
+| **Admin (read-only)** | `viewer@store.local` | `Viewer123!`       | `access_admin` + products, orders, inventory views. No users, payments, or `manage_*`. |
 
 ### 2. Seeded Shipping Address (for `customer@store.local`)
 
