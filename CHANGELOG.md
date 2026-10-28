@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The 404 log line no longer carries the request query string (customer contact filters such as `userEmail`); the `view_customer_pii` description now covers payments; payment detail specs cover masked and unmasked results; the IDOR e2e can no longer pass on an empty list ([#388](https://github.com/raouf-b-dev/ecommerce-store-api/pull/388)).
 - Demo seed refuses to reseed an existing viewer account whose role is not `ADMIN_READONLY` in read-only mode, fails on a missing or unreadable credential instead of skipping, and reports rollback failures ([#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386)).
 - Docs: BullMQ cleanup order and environment selection (`REDIS.md`), pinned npm install in the `SECRETS-MANAGEMENT.md` Dockerfile example ([#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386)).
 - `DEMO_READ_ONLY=true` no longer seeds a demo customer or the demo cart, orders, and payments owned by it; the viewer is the only seeded account, and visitors register on the storefront. The `DEMO_CUSTOMER_PASSWORD` boot check from [#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386) is removed with it ([#387](https://github.com/raouf-b-dev/ecommerce-store-api/pull/387)).
