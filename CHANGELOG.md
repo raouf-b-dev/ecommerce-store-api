@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Replaced dead third-party reference links in `docs/` (Redis distributed locks, Adobe Commerce EAV, PostgreSQL B-Tree, CNCF supply chain paper, OpenGitOps principles) and removed two references with no live equivalent (Martin Fowler EAV bliki, Figma custom properties blog) ([#383](https://github.com/raouf-b-dev/ecommerce-store-api/pull/383)).
+
 ## [0.13.0] - 2026-10-28
 
 ### Added
@@ -38,10 +42,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `npm run queue:clean-legacy-repeatables` and `scripts/bullmq-clean-legacy-repeatables.js` (with `scripts/lib/bullmq-legacy-repeatables.js`): they rely on `Queue.getRepeatableJobs` / `removeRepeatableByKey`, which bullmq 6 removed. Run them from the bullmq 5 release instead ([#380](https://github.com/raouf-b-dev/ecommerce-store-api/pull/380)).
 
 [Compare v0.12.0...v0.13.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.12.0...v0.13.0)
-
-### Documentation
-
-- Replaced dead third-party reference links in `docs/` (Redis distributed locks, Adobe Commerce EAV, PostgreSQL B-Tree, CNCF supply chain paper, OpenGitOps principles) and removed two references with no live equivalent (Martin Fowler EAV bliki, Figma custom properties blog).
 
 ## [0.12.0] - 2026-10-19
 
