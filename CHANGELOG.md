@@ -11,13 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
+- `ADMIN_READONLY` system role (`access_admin`, `view_all_products`, `view_all_orders`, `view_all_inventory`) and hosted viewer seed when `DEMO_READ_ONLY=true` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 - `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 - Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts) ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 
 ### Changed
 
-- bullmq 5.65.1 -> 6.3.14 ([#380](https://github.com/raouf-b-dev/ecommerce-store-api/pull/380)), then 6.5.0 ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381), includes the 6.4.1 msgpackr security bump; the app only uses `upsertJobScheduler`, so no API changes). The legacy-repeatables cleanup below only applies to an existing deployment whose persistent Redis still holds v5 repeatable entries; a fresh install has none and can skip it. On such an environment, before deploying, run the cleanup from the previous bullmq 5 release (develop at `22a31bf`, [#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)): `npm run queue:clean-legacy-repeatables` (dry run), then `node scripts/bullmq-clean-legacy-repeatables.js --yes` (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
+- bullmq 5.65.1 -> 6.3.14 ([#380](https://github.com/raouf-b-dev/ecommerce-store-api/pull/380)), then 6.5.0 ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381), includes the 6.4.1 msgpackr security bump; the app only uses `upsertJobScheduler`, so no API changes). The legacy-repeatables cleanup below only applies to an existing deployment whose persistent Redis still holds v5 repeatable entries; a fresh install has none and can skip it. On such an environment, stop every old instance, then run the cleanup from the bullmq 5 release (develop at `22a31bf`, [#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)) with the target environment selected: `NODE_ENV=<environment> npm run queue:clean-legacy-repeatables` (dry run), then `NODE_ENV=<environment> node scripts/bullmq-clean-legacy-repeatables.js --yes`, and only then start the new release (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
 - Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade ([#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)).
 - Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it) ([#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)).
 - Node.js 26 LTS is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0` (a lower bound; the npm pin is `devEngines.packageManager`), and `devEngines.runtime` enforces the Node range ([#378](https://github.com/raouf-b-dev/ecommerce-store-api/pull/378), [#379](https://github.com/raouf-b-dev/ecommerce-store-api/pull/379)).
@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Demo seed refuses to reseed an existing account whose role does not match the expected demo role in read-only mode, fails on a missing or unreadable credential instead of skipping, and reports rollback failures ([#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386)).
+- `DEMO_READ_ONLY=true` requires a host-set `DEMO_CUSTOMER_PASSWORD` other than the published default ([#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386)).
+- Docs: BullMQ cleanup order and environment selection (`REDIS.md`), pinned npm install in the `SECRETS-MANAGEMENT.md` Dockerfile example ([#386](https://github.com/raouf-b-dev/ecommerce-store-api/pull/386)).
 - `PostgresUserRepository.save` with an `expectedVersion` returns a `RepositoryError` for a user without an id instead of passing a null id into TypeORM `where` (which throws) ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381)).
 
 ### Removed
