@@ -6,6 +6,9 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
+# Install the npm pinned in package.json devEngines.packageManager (single source
+# of truth; no Node image bundles npm 12 yet). npm ci errors on a mismatch.
+RUN npm install -g "npm@$(node -p "require('./package.json').devEngines.packageManager.version")"
 RUN npm ci --ignore-scripts
 # Rebuild only native addons (bcrypt) - skips husky/prepare hooks
 RUN npm rebuild bcrypt
@@ -34,6 +37,9 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 COPY package*.json ./
+# Install the npm pinned in package.json devEngines.packageManager (single source
+# of truth; no Node image bundles npm 12 yet). npm ci errors on a mismatch.
+RUN npm install -g "npm@$(node -p "require('./package.json').devEngines.packageManager.version")"
 RUN npm ci --omit=dev --ignore-scripts
 RUN npm rebuild bcrypt
 

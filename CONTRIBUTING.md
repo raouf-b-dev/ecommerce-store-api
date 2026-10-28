@@ -37,13 +37,15 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 ### Prerequisites
 
 - **Node.js** LTS, see `.nvmrc` (26)
-- **npm** ≥ 11.6
+- **npm** 12.2.1, pinned in `package.json` `devEngines.packageManager` (`npm install -g npm@12.2.1`)
 - **Docker Desktop** ≥ 28, with the engine running (open a new terminal after install)
 - **Git** ≥ 2.47
 
 ### Node version policy
 
 `.nvmrc` is the single source of truth for the Node.js major (current LTS). CI reads it through `node-version-file`, the `Dockerfile` base image pins the matching patch by digest, and `package.json` `engines` follows the same major (`.npmrc` sets `engine-strict=true`, so `npm ci` fails on an older runtime). Dependabot bumps the Docker patch and digest but ignores Node majors. To move to a new LTS, edit `.nvmrc`, the `Dockerfile` pin, and `engines` in one PR.
+
+The npm version has one source: `devEngines.packageManager` in `package.json` (`onFail: "error"`), so `npm ci` and `npm install` fail with `EBADDEVENGINES` on any other npm. No Node.js release bundles npm 12 yet, so the pin is installed explicitly: CI through the `.github/actions/setup-node-ci` composite action and the `Dockerfile` through `npm install -g` in each stage that runs npm, both reading the version from `package.json`. `engines.npm` stays a lower bound and is not the pin. Revisit this when a Node.js LTS bundles npm 12 or later: the explicit install can then be dropped.
 
 ### Installation
 

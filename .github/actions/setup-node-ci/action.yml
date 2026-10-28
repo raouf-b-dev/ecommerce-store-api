@@ -1,0 +1,26 @@
+name: Setup Node and npm, then install
+description: >
+  Setup Node from .nvmrc (npm cache), install the npm version pinned in
+  package.json devEngines.packageManager, and run npm ci.
+  No Node release bundles npm 12 yet, so the pinned npm is installed explicitly.
+  Callers must run actions/checkout first.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: Install pinned npm (devEngines.packageManager)
+      shell: bash
+      run: |
+        NPM_VERSION="$(node -p "require('./package.json').devEngines.packageManager.version")"
+        npm install --global "npm@${NPM_VERSION}"
+        echo "npm $(npm --version) on node $(node --version)"
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci

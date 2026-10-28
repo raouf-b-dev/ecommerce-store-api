@@ -1,6 +1,6 @@
 # ecommerce-store-api
 
-NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node.js LTS, see `.nvmrc` (26).
+NestJS 12 modular monolith (DDD + Hexagonal), TypeScript, PostgreSQL (TypeORM), Redis Stack, BullMQ, Socket.io. Node.js LTS, see `.nvmrc` (26). npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (no Node release bundles npm 12 yet; `npm ci` errors on another npm); bump only that field, CI and the Dockerfile read it.
 
 ## Checks
 
