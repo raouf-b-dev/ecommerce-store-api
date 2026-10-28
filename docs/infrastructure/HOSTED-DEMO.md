@@ -15,8 +15,8 @@ The API is the public origin. Admin and storefront are separate sites. They call
 
 For a **public** admin URL, set `DEMO_READ_ONLY=true` on the host (default is `false` for local Compose).
 
-- Seed creates the viewer (`ADMIN_READONLY`, from `DEMO_VIEWER_*`) plus a silent fixture customer (from `DEMO_CUSTOMER_*`, for demo orders/cart only). It does not create or update writable local operators. See [SEEDING.md](../development/SEEDING.md).
-- Public admin visitors use the viewer account: `access_admin` + `view_all_*`, no `manage_*`. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
+- Seed creates the viewer (`ADMIN_READONLY`, from `DEMO_VIEWER_*`) plus a silent fixture customer (from `DEMO_CUSTOMER_*`, for demo orders/cart only). It does not create or update writable local operators. Set a host-specific `DEMO_CUSTOMER_PASSWORD`; boot fails in this mode when it is missing or still the published default. The seed also fails, without touching credentials, if an existing account at `DEMO_VIEWER_EMAIL` or `DEMO_CUSTOMER_EMAIL` has a different role than `ADMIN_READONLY` or `CUSTOMER`. See [SEEDING.md](../development/SEEDING.md).
+- Public admin visitors use the viewer account: `access_admin`, `view_all_products`, `view_all_orders`, `view_all_inventory`, no `manage_*`. It has no `view_all_users` or `view_all_payments`, so the users and payments pages (and the payments analytics chart) stay hidden from public visitors who may have registered their own accounts. The admin SPA and `PermissionsGuard` enforce that the same way as Admin vs `manage_roles`.
 - Storefront visitors **register** with their own credentials. Do not publish the fixture customer as the shop login.
 - Private writable owner (optional): set `ADMIN_EMAIL` / `ADMIN_PASSWORD` once on the VM so boot creates a Super Admin, change the password on first login, then clear or rotate the env secret. See [ADMIN-BOOTSTRAP.md](../security/ADMIN-BOOTSTRAP.md). Do not publish that account in the README.
 - If the database volume was previously seeded with local writable demo accounts, wipe it or use a fresh volume before enabling `DEMO_READ_ONLY`.
