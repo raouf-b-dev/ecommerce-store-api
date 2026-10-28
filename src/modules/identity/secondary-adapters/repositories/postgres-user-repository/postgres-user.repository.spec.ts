@@ -120,6 +120,22 @@ describe('PostgresUserRepository', () => {
       );
     });
 
+    it('should return failure without querying when OCC-updating a user that has no id', async () => {
+      const unsavedUser = User.fromProps(
+        UserTestFactory.createMockUser({ id: null }),
+      );
+
+      const result = await repository.save(unsavedUser, 1);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cannot update a user that has no id',
+        RepositoryError,
+      );
+      expect(mockQueryBuilder.execute).not.toHaveBeenCalled();
+      expect(typeOrmRepository.findOne).not.toHaveBeenCalled();
+    });
+
     it('should return failure if save fails', async () => {
       typeOrmRepository.save.mockRejectedValue(new Error('DB Error'));
 

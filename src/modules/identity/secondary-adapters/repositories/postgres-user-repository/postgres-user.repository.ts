@@ -86,6 +86,12 @@ export class PostgresUserRepository implements UserRepository {
     user: User,
     expectedVersion: number,
   ): Promise<Result<User, RepositoryError>> {
+    const id = user.id;
+    if (id === null) {
+      return ErrorFactory.RepositoryError(
+        'Cannot update a user that has no id',
+      );
+    }
     const mapped = UserMapper.toEntity(user);
     await this.dataSource.transaction(async (manager) => {
       const updateResult = await manager
@@ -97,7 +103,7 @@ export class PostgresUserRepository implements UserRepository {
           updatedAt: () => 'CURRENT_TIMESTAMP',
         })
         .where('id = :id AND version = :expectedVersion', {
-          id: user.id,
+          id,
           expectedVersion,
         })
         .execute();
@@ -107,16 +113,16 @@ export class PostgresUserRepository implements UserRepository {
           manager,
           UserEntity,
           'User',
-          user.id!,
+          id,
           expectedVersion,
         );
       }
 
-      await this.syncAddresses(manager, user.id!, mapped.addresses ?? []);
+      await this.syncAddresses(manager, id, mapped.addresses ?? []);
     });
 
     const updated = await this.repository.findOne({
-      where: { id: user.id! },
+      where: { id },
       relations: { addresses: true },
     });
     if (!updated) {
