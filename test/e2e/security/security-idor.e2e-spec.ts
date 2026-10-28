@@ -266,7 +266,7 @@ describe('Security IDOR (e2e)', () => {
 
     it('refuses logout-all for the read-only viewer', async () => {
       const response = await http
-        .post(`${E2E_API_PREFIX}/auth/logout-all`)
+        .post(`${E2E_API_PREFIX}/authentication/logout-all`)
         .set(AuthTestHelper.bearer(viewer.accessToken))
         .send({});
       expect(response.status).toBe(HttpStatus.FORBIDDEN);
