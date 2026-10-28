@@ -7,31 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-28
+
 ### Added
 
-- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true`.
-- `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
-- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts).
+- `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
+- `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD` ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
+- Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts) ([#360](https://github.com/raouf-b-dev/ecommerce-store-api/pull/360)).
 
 ### Changed
 
-- bullmq 5.65.1 -> 6.3.14. Before deploying it, remove legacy v5 repeatable entries on every environment with persistent Redis by running the cleanup from the previous bullmq 5 release (develop at `22a31bf`, #373): `npm run queue:clean-legacy-repeatables` (dry run), then `node scripts/bullmq-clean-legacy-repeatables.js --yes` (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
-- npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (`onFail: error`); CI (new `.github/actions/setup-node-ci` composite action replacing 16 setup-node copies) and the `Dockerfile` install it explicitly because no Node release bundles npm 12 yet. `devEngines.runtime` (`node >=26.0.0`, `onFail: error`) keeps the Node guardrail, since npm 12 no longer enforces root `engines.node`.
-- Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade.
-- Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it).
-- Node.js 26 LTS is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0` (a lower bound; the npm pin is `devEngines.packageManager`), and `devEngines.runtime` enforces the Node range.
-- CI reads the Node version from `.nvmrc` (`node-version-file`). The `Dockerfile` base image is pinned to `node:26.12.1-alpine3.24` by digest.
-- Dependabot tracks the `Dockerfile` base image and ignores Node major updates. Node majors change in `.nvmrc`, the `Dockerfile` pin, `engines.node`, and `devEngines.runtime` together (see CONTRIBUTING, "Node version policy").
-- bullmq 6.3.14 -> 6.5.0 (includes the 6.4.1 msgpackr security bump). The app only uses `upsertJobScheduler`, so no API changes.
-- Migration `RenameProductsCategoryForeignKey1787400000011` renames the products -> categories foreign key from `FK_products_category` to the TypeORM generated name, so `migration:generate` no longer proposes dropping and re-adding it.
+- bullmq 5.65.1 -> 6.3.14 ([#380](https://github.com/raouf-b-dev/ecommerce-store-api/pull/380)), then 6.5.0 ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381), includes the 6.4.1 msgpackr security bump; the app only uses `upsertJobScheduler`, so no API changes). The legacy-repeatables cleanup below only applies to an existing deployment whose persistent Redis still holds v5 repeatable entries; a fresh install has none and can skip it. On such an environment, before deploying, run the cleanup from the previous bullmq 5 release (develop at `22a31bf`, [#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)): `npm run queue:clean-legacy-repeatables` (dry run), then `node scripts/bullmq-clean-legacy-repeatables.js --yes` (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
+- Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade ([#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)).
+- Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it) ([#373](https://github.com/raouf-b-dev/ecommerce-store-api/pull/373)).
+- Node.js 26 LTS is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0` (a lower bound; the npm pin is `devEngines.packageManager`), and `devEngines.runtime` enforces the Node range ([#378](https://github.com/raouf-b-dev/ecommerce-store-api/pull/378), [#379](https://github.com/raouf-b-dev/ecommerce-store-api/pull/379)).
+- CI reads the Node version from `.nvmrc` (`node-version-file`). The `Dockerfile` base image is pinned to `node:26.12.1-alpine3.24` by digest ([#378](https://github.com/raouf-b-dev/ecommerce-store-api/pull/378)).
+- Dependabot tracks the `Dockerfile` base image and ignores Node major updates. Node majors change in `.nvmrc`, the `Dockerfile` pin, `engines.node`, and `devEngines.runtime` together (see CONTRIBUTING, "Node version policy") ([#378](https://github.com/raouf-b-dev/ecommerce-store-api/pull/378), [#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381)).
+- npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (`onFail: error`); CI (new `.github/actions/setup-node-ci` composite action replacing 16 setup-node copies) and the `Dockerfile` install it explicitly because no Node release bundles npm 12 yet. `devEngines.runtime` (`node >=26.0.0`, `onFail: error`) keeps the Node guardrail, since npm 12 no longer enforces root `engines.node` ([#379](https://github.com/raouf-b-dev/ecommerce-store-api/pull/379)).
+- typeorm 0.3.31 -> 1.1.2: repositories use the object syntax for `relations` / `select` (string arrays were removed in 1.0); the `overrides.typeorm.redis` block is dropped ([#371](https://github.com/raouf-b-dev/ecommerce-store-api/pull/371)).
+- NestJS 12.3.2 and body-parser 2.4.0 (security audit) ([#370](https://github.com/raouf-b-dev/ecommerce-store-api/pull/370)); production-deps group: NestJS 12.2.0, `@opentelemetry/auto-instrumentations-node` 0.81.2, jose 6.2.13, sanitize-html 2.18.1 ([#361](https://github.com/raouf-b-dev/ecommerce-store-api/pull/361)).
+- Dev dependencies: undici 8.12.3 ([#368](https://github.com/raouf-b-dev/ecommerce-store-api/pull/368)), fast-uri 3.1.9 ([#366](https://github.com/raouf-b-dev/ecommerce-store-api/pull/366)), dotenv 18.0.9 ([#364](https://github.com/raouf-b-dev/ecommerce-store-api/pull/364)), and the dev-deps group refresh ([#376](https://github.com/raouf-b-dev/ecommerce-store-api/pull/376): `@nestjs/cli` 12.0.9, `@nestjs/schematics` 12.0.9, vitest 5.0.5, eslint 10.13.0, typescript-eslint 8.72.0 and others). chokidar was bumped to 6.0.0 ([#363](https://github.com/raouf-b-dev/ecommerce-store-api/pull/363)) and set back to `^5.0.0` in [#376](https://github.com/raouf-b-dev/ecommerce-store-api/pull/376) to match `@nestjs/cli` and its peers.
+- Migration `RenameProductsCategoryForeignKey1787400000011` renames the products -> categories foreign key from `FK_products_category` to the TypeORM generated name, so `migration:generate` no longer proposes dropping and re-adding it ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381)).
 
 ### Fixed
 
-- `PostgresUserRepository.save` with an `expectedVersion` returns a `RepositoryError` for a user without an id instead of passing a null id into TypeORM `where` (which throws).
+- `PostgresUserRepository.save` with an `expectedVersion` returns a `RepositoryError` for a user without an id instead of passing a null id into TypeORM `where` (which throws) ([#381](https://github.com/raouf-b-dev/ecommerce-store-api/pull/381)).
 
 ### Removed
 
-- `npm run queue:clean-legacy-repeatables` and `scripts/bullmq-clean-legacy-repeatables.js` (with `scripts/lib/bullmq-legacy-repeatables.js`): they rely on `Queue.getRepeatableJobs` / `removeRepeatableByKey`, which bullmq 6 removed. Run them from the bullmq 5 release instead.
+- `npm run queue:clean-legacy-repeatables` and `scripts/bullmq-clean-legacy-repeatables.js` (with `scripts/lib/bullmq-legacy-repeatables.js`): they rely on `Queue.getRepeatableJobs` / `removeRepeatableByKey`, which bullmq 6 removed. Run them from the bullmq 5 release instead ([#380](https://github.com/raouf-b-dev/ecommerce-store-api/pull/380)).
+
+[Compare v0.12.0...v0.13.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.12.0...v0.13.0)
 
 ### Documentation
 
