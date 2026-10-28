@@ -12,16 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ADMIN_READONLY` system role (`access_admin` + `view_all_*`) and hosted viewer seed when `DEMO_READ_ONLY=true`.
 - `DEMO_READ_ONLY` (default `false`): seeds viewer + silent fixture customer only (does not create or update writable local operators) and skips forced password change on those accounts. Mutations stay on RBAC; private writable owner uses `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 - Demo seed emails/passwords via `DEMO_SUPERADMIN_*`, `DEMO_ADMIN_*`, `DEMO_VIEWER_*`, and `DEMO_CUSTOMER_*` (defaults match documented public demo accounts).
-- `npm run queue:clean-legacy-repeatables` (`scripts/bullmq-clean-legacy-repeatables.js`): one-time removal of legacy v5 repeatable entries. Dry run by default, `--yes` to remove. Run after deploying this release and before upgrading to bullmq 6 (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
 
 ### Changed
 
+- bullmq 5.65.1 → 6.3.14. Before deploying it, remove legacy v5 repeatable entries on every environment with persistent Redis by running the cleanup from the previous bullmq 5 release (develop at `22a31bf`, #373): `npm run queue:clean-legacy-repeatables` (dry run), then `node scripts/bullmq-clean-legacy-repeatables.js --yes` (`docs/infrastructure/REDIS.md`, "BullMQ v6 migration").
 - npm 12.2.1 is pinned through `package.json` `devEngines.packageManager` (`onFail: error`); CI (new `.github/actions/setup-node-ci` composite action replacing 16 setup-node copies) and the `Dockerfile` install it explicitly because no Node release bundles npm 12 yet. `devEngines.runtime` (`node >=26.0.0`, `onFail: error`) keeps the Node guardrail, since npm 12 no longer enforces root `engines.node`.
 - Cron jobs (inventory reconciliation, reservation sweeper, notifications cleanup, expire pending orders) are BullMQ Job Schedulers (`upsertJobScheduler`) instead of v5 repeatable jobs, to prepare the bullmq 6 upgrade.
 - Job ids and fake payment references use Node `crypto.randomUUID` instead of the undeclared transitive `uuid` package (bullmq 6 no longer ships it).
 - Node.js 26 LTS (npm 11.20) is the supported runtime: `engines` is `node >=26.0.0`, `npm >=11.6.0`, enforced by `.npmrc` `engine-strict=true`.
 - CI reads the Node version from `.nvmrc` (`node-version-file`). The `Dockerfile` base image is pinned to `node:26.12.1-alpine3.24` by digest.
 - Dependabot tracks the `Dockerfile` base image and ignores Node major updates. Node majors change only through `.nvmrc` (see CONTRIBUTING, "Node version policy").
+
+### Removed
+
+- `npm run queue:clean-legacy-repeatables` and `scripts/bullmq-clean-legacy-repeatables.js` (with `scripts/lib/bullmq-legacy-repeatables.js`): they rely on `Queue.getRepeatableJobs` / `removeRepeatableByKey`, which bullmq 6 removed. Run them from the bullmq 5 release instead.
 
 ## [0.12.0] - 2026-10-19
 
