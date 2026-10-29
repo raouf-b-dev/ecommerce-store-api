@@ -7,6 +7,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ListOrdersQuery } from '../../queries/list-orders.query';
 import { OrderListItemDTO } from '../../queries/results/order-list-item.result';
 import { PaginatedQueryResult } from '../../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
+import { HttpStatus } from '@nestjs/common';
+import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
@@ -47,6 +49,16 @@ export class ListOrdersUsecase implements UseCase<
       });
     }
 
+    if (
+      !CustomerPiiPolicy.canFilterByContact(callerContext, query, scope.userId)
+    ) {
+      return ErrorFactory.UseCaseError(
+        'Filtering orders by customer contact data requires view_customer_pii',
+        null,
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const filteredQuery: ListOrdersQuery = {
       ...query,
       authorizedUserId: scope.userId,
@@ -60,6 +72,11 @@ export class ListOrdersUsecase implements UseCase<
       );
     }
 
-    return Result.success(ordersResult.value);
+    return Result.success({
+      ...ordersResult.value,
+      items: ordersResult.value.items.map((item) =>
+        CustomerPiiPolicy.present(item, callerContext),
+      ),
+    });
   }
 }

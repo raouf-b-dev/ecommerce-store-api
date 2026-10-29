@@ -172,7 +172,7 @@ export class LoginUserUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Failed to create session');
     }
 
-    this.logger.log(`User ${command.email} logged in successfully`);
+    this.logger.log(`User ${user.id} logged in successfully`);
     this.domainEventPublisher.publish('auth.login.success', {
       userId: user.id,
     });

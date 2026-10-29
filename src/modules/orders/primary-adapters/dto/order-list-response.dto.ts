@@ -17,7 +17,8 @@ export class OrderListItemResponseDto {
 
   @ApiProperty({
     example: 'Jane Doe',
-    description: 'Customer display name. Null when the user join has no name.',
+    description:
+      'Customer display name. Null when the user join has no name. Without view_customer_pii (and not the order owner) this is the placeholder "Customer #<userId>".',
     type: String,
     nullable: true,
   })
@@ -25,7 +26,8 @@ export class OrderListItemResponseDto {
 
   @ApiProperty({
     example: 'customer@store.local',
-    description: 'Customer email. Null when the user join has no email.',
+    description:
+      'Customer email. Null when the user join has no email. Without view_customer_pii (and not the owner) this is a masked placeholder such as "j***@***.com".',
     type: String,
     nullable: true,
   })

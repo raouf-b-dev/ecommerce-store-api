@@ -31,6 +31,7 @@ import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.erro
 import { DECORATORS } from '@nestjs/swagger';
 import { isRecord } from '../../shared-kernel/infra/lang/is-record';
 import { ResultAssertionHelper } from '../../testing';
+import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 
 function findHeaderParam(target: object, paramName: string): unknown {
   const rawParams: unknown = Reflect.getMetadata(
@@ -203,6 +204,12 @@ describe('OrdersController', () => {
       expect(findHeaderParam(handler, 'Retry-After')).toBeUndefined();
     },
   );
+
+  it('requires manage_payments or view_own_orders (not view_all_orders) to create a payment', () => {
+    expect(
+      Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.createPayment),
+    ).toEqual(['manage_payments', 'view_own_orders']);
+  });
 
   it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {
     const rawProps: unknown = Reflect.getMetadata(

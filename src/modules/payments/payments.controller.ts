@@ -76,6 +76,11 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments with filtering' })
   @ApiOkResponse({ type: PaginatedPaymentListResponseDto })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Filtering by userEmail or userName requires view_customer_pii.',
+  })
   async listPayments(
     @Query() query: ListPaymentsQueryDto,
     @CallerCtx() callerContext: CallerContext,

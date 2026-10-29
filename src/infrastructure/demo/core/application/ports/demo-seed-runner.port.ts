@@ -9,9 +9,14 @@ export interface DemoSeedAuthUserReport {
 /** Counts from one idempotent demo seed run. Emails are the public demo accounts. */
 export interface DemoSeedReport {
   authOnly: boolean;
-  superAdmin: DemoSeedAuthUserReport;
-  admin: DemoSeedAuthUserReport;
-  customer: DemoSeedAuthUserReport;
+  /** Null when DEMO_READ_ONLY seeded the hosted viewer instead. */
+  superAdmin: DemoSeedAuthUserReport | null;
+  /** Null when DEMO_READ_ONLY seeded the hosted viewer instead. */
+  admin: DemoSeedAuthUserReport | null;
+  /** Null when DEMO_READ_ONLY is false (local Compose seeds writable admins). */
+  viewer: DemoSeedAuthUserReport | null;
+  /** Null when DEMO_READ_ONLY is true (visitors register themselves). */
+  customer: DemoSeedAuthUserReport | null;
   categories: number;
   categoriesCreated: number;
   products: number;

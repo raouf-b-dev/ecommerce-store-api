@@ -271,6 +271,20 @@ export function validateEnv(env: NodeJS.ProcessEnv) {
     // Hosted demo reset is off unless a deployment opts in with a long token.
     DEMO_RESET_ENABLED: bool({ default: false }),
     DEMO_RESET_TOKEN: str({ default: '' }),
+    // Shared hosted demo: seed the read-only viewer only. Mutations stay
+    // on PermissionsGuard / RBAC (ADMIN_READONLY has products/orders/inventory views only). Leave false
+    // for local Compose. Private writable owner: ADMIN_EMAIL / ADMIN_PASSWORD.
+    DEMO_READ_ONLY: bool({ default: false }),
+    // Demo seed account defaults (public labeled values; override on the host).
+    DEMO_SUPERADMIN_EMAIL: str({ default: 'superadmin@store.local' }),
+    DEMO_SUPERADMIN_PASSWORD: str({ default: 'SuperAdmin123!' }),
+    DEMO_ADMIN_EMAIL: str({ default: 'admin@store.local' }),
+    DEMO_ADMIN_PASSWORD: str({ default: 'Admin123!' }),
+    DEMO_VIEWER_EMAIL: str({ default: 'viewer@store.local' }),
+    DEMO_VIEWER_PASSWORD: str({ default: 'Viewer123!' }),
+    DEMO_CUSTOMER_EMAIL: str({ default: 'customer@store.local' }),
+    // Local Compose only: DEMO_READ_ONLY=true seeds no demo customer.
+    DEMO_CUSTOMER_PASSWORD: str({ default: 'Customer123!' }),
 
     AUTH_COOKIE_SAMESITE: str({
       choices: ['strict', 'lax', 'none'],

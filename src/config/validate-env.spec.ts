@@ -345,10 +345,14 @@ describe('validateEnv', () => {
     ).toThrow(EnvError);
   });
 
-  it('defaults demo reset off and refresh cookie SameSite strict', () => {
+  it('defaults demo reset off, read-only off, demo accounts, and refresh cookie SameSite strict', () => {
     const validated = validateEnv(baseEnv);
     expect(validated.DEMO_RESET_ENABLED).toBe(false);
     expect(validated.DEMO_RESET_TOKEN).toBe('');
+    expect(validated.DEMO_READ_ONLY).toBe(false);
+    expect(validated.DEMO_VIEWER_EMAIL).toBe('viewer@store.local');
+    expect(validated.DEMO_VIEWER_PASSWORD).toBe('Viewer123!');
+    expect(validated.DEMO_CUSTOMER_EMAIL).toBe('customer@store.local');
     expect(validated.AUTH_COOKIE_SAMESITE).toBe('strict');
   });
 
@@ -369,6 +373,16 @@ describe('validateEnv', () => {
       DEMO_RESET_TOKEN: 'x'.repeat(32),
     });
     expect(validated.DEMO_RESET_ENABLED).toBe(true);
+  });
+
+  it('keeps the published demo customer password when DEMO_READ_ONLY is false', () => {
+    const validated = validateEnv(baseEnv);
+    expect(validated.DEMO_CUSTOMER_PASSWORD).toBe('Customer123!');
+  });
+
+  it('accepts DEMO_READ_ONLY=true without a demo customer password', () => {
+    const validated = validateEnv({ ...baseEnv, DEMO_READ_ONLY: 'true' });
+    expect(validated.DEMO_READ_ONLY).toBe(true);
   });
 
   it('rejects SameSite=None unless PUBLIC_BASE_URL is https', () => {

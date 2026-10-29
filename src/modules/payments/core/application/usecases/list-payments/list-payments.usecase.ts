@@ -1,3 +1,6 @@
+import { HttpStatus } from '@nestjs/common';
+import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -47,6 +50,16 @@ export class ListPaymentsUseCase implements UseCase<
       });
     }
 
+    if (
+      !CustomerPiiPolicy.canFilterByContact(callerContext, query, scope.userId)
+    ) {
+      return ErrorFactory.UseCaseError(
+        'Filtering payments by customer contact data requires view_customer_pii',
+        null,
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const filteredQuery: ListPaymentsQuery = {
       ...query,
       authorizedUserId: scope.userId,
@@ -57,6 +70,11 @@ export class ListPaymentsUseCase implements UseCase<
       return result;
     }
 
-    return Result.success(result.value);
+    return Result.success({
+      ...result.value,
+      items: result.value.items.map((item) =>
+        CustomerPiiPolicy.present(item, callerContext),
+      ),
+    });
   }
 }

@@ -4,7 +4,10 @@ import { Result } from '../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SeedDemoAuthUsersUseCase } from '../../../../modules/authentication/core/application/seed/seed-demo-auth-users.usecase';
 import { SeedDemoCartUseCase } from '../../../../modules/carts/core/application/seed/seed-demo-cart.usecase';
-import { SeedDemoInventoryFromOrdersUseCase } from '../../../../modules/inventory/core/application/seed/seed-demo-inventory-from-orders.usecase';
+import {
+  SeedDemoInventoryEffectLine,
+  SeedDemoInventoryFromOrdersUseCase,
+} from '../../../../modules/inventory/core/application/seed/seed-demo-inventory-from-orders.usecase';
 import { SeedDemoInventoryUseCase } from '../../../../modules/inventory/core/application/seed/seed-demo-inventory.usecase';
 import { DEMO_SEED_ORDERS } from '../../../../modules/orders/core/application/seed/demo-orders';
 import { LinkDemoOrderPaymentsUseCase } from '../../../../modules/orders/core/application/seed/link-demo-order-payments.usecase';
@@ -14,13 +17,36 @@ import {
   utcDaysAgo,
 } from '../../../../modules/payments/core/application/seed/demo-payments';
 import { SeedDemoPaymentsUseCase } from '../../../../modules/payments/core/application/seed/seed-demo-payments.usecase';
-import { SeedDemoCatalogUseCase } from '../../../../modules/products/core/application/seed/seed-demo-catalog.usecase';
+import {
+  SeededDemoProduct,
+  SeedDemoCatalogUseCase,
+} from '../../../../modules/products/core/application/seed/seed-demo-catalog.usecase';
 import { SeedDemoCategoriesUseCase } from '../../../../modules/products/core/application/seed/seed-demo-categories.usecase';
 import {
   DemoSeedReport,
   DemoSeedRunner,
   DemoSeedRunOptions,
 } from '../../core/application/ports/demo-seed-runner.port';
+
+interface CustomerFixturesReport {
+  cartItems: number;
+  orders: number;
+  ordersCreated: number;
+  payments: number;
+  paymentsCreated: number;
+  links: number;
+  inventoryLines: SeedDemoInventoryEffectLine[];
+}
+
+const NO_CUSTOMER_FIXTURES: CustomerFixturesReport = {
+  cartItems: 0,
+  orders: 0,
+  ordersCreated: 0,
+  payments: 0,
+  paymentsCreated: 0,
+  links: 0,
+  inventoryLines: [],
+};
 
 function inventoryEffectForStatus(status: string): 'hold' | 'consume' | null {
   if (status === 'pending_payment') {
@@ -41,6 +67,9 @@ function inventoryEffectForStatus(status: string): 'hold' | 'consume' | null {
  * Same pipeline as `npm run db:seed`. Inventory is rebuilt from the fixture
  * order lines (not every order on the demo customer) so a public checkout
  * cannot permanently drain stock. Shopper-created accounts and orders stay.
+ * When the auth seed creates no demo customer (DEMO_READ_ONLY), the cart,
+ * order, and payment fixtures are skipped and stock resets to the catalog
+ * baseline.
  */
 @Injectable()
 export class DemoSeedRunnerAdapter extends DemoSeedRunner {
@@ -62,7 +91,10 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
   async run(
     options: DemoSeedRunOptions,
   ): Promise<Result<DemoSeedReport, UseCaseError>> {
-    const authUsersResult = await this.seedAuthUsersUseCase.execute();
+    const authUsersResult = await this.seedAuthUsersUseCase.execute({
+      readOnly: this.config.demo.readOnly,
+      accounts: this.config.demo.accounts,
+    });
     if (authUsersResult.isFailure) {
       return authUsersResult;
     }
@@ -72,6 +104,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       authOnly: options.authOnly,
       superAdmin: auth.superAdmin,
       admin: auth.admin,
+      viewer: auth.viewer,
       customer: auth.customer,
       categories: 0,
       categoriesCreated: 0,
@@ -117,9 +150,61 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       return inventoryResult;
     }
 
-    const customerUserId = auth.customer.userId;
+    const fixturesResult = auth.customer
+      ? await this.seedCustomerFixtures(auth.customer.userId, products)
+      : Result.success<CustomerFixturesReport>(NO_CUSTOMER_FIXTURES);
+    if (fixturesResult.isFailure) {
+      return fixturesResult;
+    }
+    const fixtures = fixturesResult.value;
+
+    const inventorySyncResult =
+      await this.seedInventoryFromOrdersUseCase.execute({
+        baselines: products.map((product) => ({
+          productId: product.id,
+          availableQuantity: product.initialStock,
+        })),
+        lines: fixtures.inventoryLines,
+      });
+    if (inventorySyncResult.isFailure) {
+      return inventorySyncResult;
+    }
+
+    return Result.success({
+      authOnly: false,
+      superAdmin: auth.superAdmin,
+      admin: auth.admin,
+      viewer: auth.viewer,
+      customer: auth.customer,
+      categories: categoriesResult.value.length,
+      categoriesCreated: categoriesResult.value.filter(
+        (category) => category.status === 'created',
+      ).length,
+      products: products.length,
+      productsCreated: products.filter(
+        (product) => product.status === 'created',
+      ).length,
+      inventory: inventoryResult.value.length,
+      inventoryCreated: inventoryResult.value.filter(
+        (item) => item.status === 'created',
+      ).length,
+      cartItems: fixtures.cartItems,
+      orders: fixtures.orders,
+      ordersCreated: fixtures.ordersCreated,
+      payments: fixtures.payments,
+      paymentsCreated: fixtures.paymentsCreated,
+      links: fixtures.links,
+      inventorySynced: inventorySyncResult.value.length,
+    });
+  }
+
+  /** Cart, orders, and payments owned by the seeded local demo customer. */
+  private async seedCustomerFixtures(
+    userId: number,
+    products: SeededDemoProduct[],
+  ): Promise<Result<CustomerFixturesReport, UseCaseError>> {
     const cartResult = await this.seedCartUseCase.execute({
-      userId: customerUserId,
+      userId: userId,
       products,
     });
     if (cartResult.isFailure) {
@@ -127,7 +212,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
     }
 
     const ordersResult = await this.seedOrdersUseCase.execute({
-      userId: customerUserId,
+      userId: userId,
       products,
     });
     if (ordersResult.isFailure) {
@@ -144,7 +229,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       return [
         {
           orderId: order.id,
-          userId: customerUserId,
+          userId: userId,
           amount: order.totalPrice,
           currency: order.currency,
           paymentMethod: order.paymentMethod,
@@ -218,35 +303,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
       });
     });
 
-    const inventorySyncResult =
-      await this.seedInventoryFromOrdersUseCase.execute({
-        baselines: products.map((product) => ({
-          productId: product.id,
-          availableQuantity: product.initialStock,
-        })),
-        lines: inventoryLines,
-      });
-    if (inventorySyncResult.isFailure) {
-      return inventorySyncResult;
-    }
-
     return Result.success({
-      authOnly: false,
-      superAdmin: auth.superAdmin,
-      admin: auth.admin,
-      customer: auth.customer,
-      categories: categoriesResult.value.length,
-      categoriesCreated: categoriesResult.value.filter(
-        (category) => category.status === 'created',
-      ).length,
-      products: products.length,
-      productsCreated: products.filter(
-        (product) => product.status === 'created',
-      ).length,
-      inventory: inventoryResult.value.length,
-      inventoryCreated: inventoryResult.value.filter(
-        (item) => item.status === 'created',
-      ).length,
       cartItems: cartResult.value.itemCount,
       orders: ordersResult.value.length,
       ordersCreated: ordersResult.value.filter(
@@ -257,7 +314,7 @@ export class DemoSeedRunnerAdapter extends DemoSeedRunner {
         (payment) => payment.seedStatus === 'created',
       ).length,
       links: linkResult.value.length,
-      inventorySynced: inventorySyncResult.value.length,
+      inventoryLines,
     });
   }
 }

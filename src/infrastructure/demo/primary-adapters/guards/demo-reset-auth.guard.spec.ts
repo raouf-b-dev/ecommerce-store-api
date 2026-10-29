@@ -29,7 +29,11 @@ describe('DemoResetAuthGuard', () => {
 
   it('returns 404 when reset is disabled, even with the token', () => {
     config.setMockConfig({
-      demo: { resetEnabled: false, resetToken: ENABLED_TOKEN },
+      demo: {
+        resetEnabled: false,
+        resetToken: ENABLED_TOKEN,
+        readOnly: false,
+      },
     });
     const context = createMockExecutionContext({
       headers: { [DEMO_RESET_TOKEN_HEADER]: ENABLED_TOKEN },
@@ -40,7 +44,11 @@ describe('DemoResetAuthGuard', () => {
 
   it('returns 401 when the token header is missing', () => {
     config.setMockConfig({
-      demo: { resetEnabled: true, resetToken: ENABLED_TOKEN },
+      demo: {
+        resetEnabled: true,
+        resetToken: ENABLED_TOKEN,
+        readOnly: false,
+      },
     });
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {
       return undefined;
@@ -61,7 +69,11 @@ describe('DemoResetAuthGuard', () => {
 
   it('returns 401 when the token does not match, without logging it', () => {
     config.setMockConfig({
-      demo: { resetEnabled: true, resetToken: ENABLED_TOKEN },
+      demo: {
+        resetEnabled: true,
+        resetToken: ENABLED_TOKEN,
+        readOnly: false,
+      },
     });
     const provided = 'y'.repeat(32);
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {
@@ -86,7 +98,11 @@ describe('DemoResetAuthGuard', () => {
 
   it('allows the request when the token matches', () => {
     config.setMockConfig({
-      demo: { resetEnabled: true, resetToken: ENABLED_TOKEN },
+      demo: {
+        resetEnabled: true,
+        resetToken: ENABLED_TOKEN,
+        readOnly: false,
+      },
     });
     const context = createMockExecutionContext({
       headers: { [DEMO_RESET_TOKEN_HEADER]: ENABLED_TOKEN },
@@ -97,7 +113,11 @@ describe('DemoResetAuthGuard', () => {
 
   it('rejects a token whose length differs from the expected secret', () => {
     config.setMockConfig({
-      demo: { resetEnabled: true, resetToken: ENABLED_TOKEN },
+      demo: {
+        resetEnabled: true,
+        resetToken: ENABLED_TOKEN,
+        readOnly: false,
+      },
     });
     const context = createMockExecutionContext({
       headers: { [DEMO_RESET_TOKEN_HEADER]: 'short' },

@@ -472,15 +472,18 @@ flowchart LR
 
 ```dockerfile
 # ✅ Correct Dockerfile: no secrets
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package*.json ./
+# Node 26 images bundle npm 11; install the npm pinned in
+# package.json devEngines.packageManager (as the project Dockerfile does).
+RUN npm install -g "npm@$(node -p "require('./package.json').devEngines.packageManager.version")"
 RUN npm ci
 COPY . .
 RUN npm run build
 RUN npm prune --production
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules

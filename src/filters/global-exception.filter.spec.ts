@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
@@ -158,6 +159,23 @@ describe('GlobalExceptionFilter', () => {
         code: 'CONFLICT_ERROR',
       }),
     );
+  });
+
+  it('does not log the query string of a 404 URL (no customer email)', () => {
+    const url = '/v1/orderz?userEmail=jane%40example.com';
+    mockRequest.url = url;
+    mockRequest.originalUrl = url;
+    const warn = jest.spyOn(Logger.prototype, 'warn');
+    const exception = new NotFoundException(`Cannot GET ${url}`);
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    const logged = warn.mock.calls.map((c) => String(c[0])).join('\n');
+    expect(logged).toContain('/v1/orderz');
+    expect(logged).not.toContain('@');
+    expect(logged).not.toContain('%40');
+    expect(logged).not.toContain('userEmail');
   });
 
   it('should handle direct AppError escapes', () => {

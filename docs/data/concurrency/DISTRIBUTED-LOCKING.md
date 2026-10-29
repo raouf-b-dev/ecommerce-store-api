@@ -23,7 +23,7 @@ The solution is a **distributed lock**: a coordination primitive backed by a sha
 
 ## 2. Redis-Based Distributed Locks
 
-> _Source: Salvatore Sanfilippo (antirez). "Distributed Locks with Redis." https://redis.io/docs/latest/develop/use-cases/distributed-lock/_
+> _Source: Salvatore Sanfilippo (antirez). "Distributed Locks with Redis." https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/_
 
 ### 2.1 The Basic Pattern: SETNX + TTL
 
@@ -84,7 +84,7 @@ This is acceptable for **efficiency locks** (preventing duplicate work where occ
 
 ## 3. The Redlock Algorithm
 
-> _Source: Sanfilippo, S. "Distributed Locks with Redis: The Redlock Algorithm." https://redis.io/docs/latest/develop/use-cases/distributed-lock/_
+> _Source: Sanfilippo, S. "Distributed Locks with Redis: The Redlock Algorithm." https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/_
 
 Redlock attempts to provide stronger safety guarantees by using **N independent Redis instances** (typically 5) and acquiring the lock on a majority of them.
 
@@ -289,7 +289,7 @@ try {
 
 ## 8. References
 
-- Sanfilippo, S. "Distributed Locks with Redis." https://redis.io/docs/latest/develop/use-cases/distributed-lock/
+- Sanfilippo, S. "Distributed Locks with Redis." https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/
 - Kleppmann, M. (2016). "How to do distributed locking." https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html
 - Kleppmann, M. (2017). _Designing Data-Intensive Applications_. O'Reilly. §8.4: "Fencing tokens."
 - Hunt, P., Konar, M., Junqueira, F.P., & Reed, B. (2010). "ZooKeeper: Wait-free Coordination for Internet-scale Systems." _Proceedings of USENIX ATC_.

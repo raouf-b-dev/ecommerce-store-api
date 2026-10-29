@@ -26,6 +26,16 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   { code: 'view_all_payments', description: 'View all payments' },
   { code: 'manage_users', description: 'Create, update, and delete users' },
   { code: 'view_all_users', description: 'View all users' },
+  {
+    code: 'view_customer_pii',
+    description:
+      "View other customers' personal data (name, email, phone, addresses) on orders and payments: unmasked order and payment results and the contact filters on the lists (orders: userEmail, userName, firstName, lastName; payments: userEmail, userName)",
+  },
+  {
+    code: 'change_own_credentials',
+    description:
+      'Change own password and revoke all own sessions (logout everywhere)',
+  },
   { code: 'manage_roles', description: 'Manage custom roles' },
   { code: 'manage_carts', description: 'Manage customer carts' },
   { code: 'view_own_orders', description: 'View own orders' },

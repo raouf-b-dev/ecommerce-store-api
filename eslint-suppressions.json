@@ -17,6 +17,16 @@
       "count": 4
     }
   },
+  "src/infrastructure/health/indicators/websocket.health-indicator.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/infrastructure/health/testing/mocks/health.mock.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 10
+    }
+  },
   "src/infrastructure/idempotency/idempotency.service.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -105,14 +115,6 @@
       "count": 1
     }
   },
-  "src/modules/authentication/core/application/seed/seed-demo-auth-users.usecase.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    }
-  },
   "src/modules/authentication/core/application/usecases/change-password/change-password.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -151,16 +153,6 @@
   "src/modules/carts/testing/factories/cart-entity.factory.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "src/infrastructure/health/indicators/websocket.health-indicator.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/infrastructure/health/testing/mocks/health.mock.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
     }
   },
   "src/modules/identity/primary-adapters/decorators/current-user.decorator.spec.ts": {

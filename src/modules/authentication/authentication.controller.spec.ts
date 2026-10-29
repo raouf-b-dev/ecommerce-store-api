@@ -1,3 +1,4 @@
+import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 // src/modules/authentication/authentication.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthenticationController } from './authentication.controller';
@@ -210,5 +211,20 @@ describe('AuthController', () => {
     const res = controller.getJwks();
     expect(jwksService.getJwks).toHaveBeenCalled();
     expect(res).toEqual({ keys: [] });
+  });
+
+  it('requires change_own_credentials for logout-all but nothing extra for logout', () => {
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        AuthenticationController.prototype.logoutAll,
+      ),
+    ).toEqual(['change_own_credentials']);
+    expect(
+      Reflect.getMetadata(
+        REQUIRED_PERMISSIONS_KEY,
+        AuthenticationController.prototype.logout,
+      ),
+    ).toBeUndefined();
   });
 });

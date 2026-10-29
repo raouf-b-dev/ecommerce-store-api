@@ -1,12 +1,25 @@
 {
   "name": "ecommerce-store-api",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "NestJS modular-monolith ecommerce API with compensating checkout, inventory locking, and RBAC.",
   "author": "Abderaouf Bouzerara <https://github.com/raouf-b-dev>",
   "private": false,
   "license": "MIT",
   "engines": {
-    "node": ">=24.11.0"
+    "node": ">=26.0.0",
+    "npm": ">=11.6.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=26.0.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "12.2.1",
+      "onFail": "error"
+    }
   },
   "homepage": "https://github.com/raouf-b-dev/ecommerce-store-api#readme",
   "repository": {
@@ -119,7 +132,6 @@
     "db:backup": "node scripts/db-backup.js",
     "db:restore": "node scripts/db-restore.js",
     "db:restore:drill": "node scripts/db-restore-drill.js --yes",
-    "queue:clean-legacy-repeatables": "node scripts/bullmq-clean-legacy-repeatables.js",
     "env:init": "node scripts/generate-envs.js",
     "env:init:force": "node scripts/generate-envs.js --overwrite",
     "env:init:merge": "node scripts/generate-envs.js --merge",
@@ -160,7 +172,7 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
-    "bullmq": "^5.65.1",
+    "bullmq": "^6.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
