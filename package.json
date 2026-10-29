@@ -176,7 +176,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
-    "envalid": "^8.2.0",
+    "envalid": "^9.0.0",
     "helmet": "^8.3.0",
     "ioredis": "^5.10.1",
     "jose": "^6.2.13",
