@@ -182,9 +182,9 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 ### Shopper Order Cancel
 
-`PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `view_own_orders`. Callers without `manage_orders` may cancel only their own order (same not-found IDOR response as `GET /v1/orders/:id`: HTTP 422 UseCaseError). Shoppers may cancel only `PENDING_PAYMENT`, `PAYMENT_FAILED`, or `CONFIRMED`; staff and system callers may also cancel `PROCESSING`. Later statuses still return 409 from `Order.isCancellable`. Jobs and compensation pass `SYSTEM_CALLER_CONTEXT`.
+`PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders`. Ownership and the rule that a caller without `manage_orders` cannot cancel once fulfilment has started (`PROCESSING` or later) live in `CancelOrderAccessPolicy` (application layer). The Order domain only knows actor-free status facts (`isCancellable`, `isFulfilmentStarted`) and returns 409 for a non-cancellable status. Missing and foreign orders both return HTTP 422 UseCaseError (same as `GET /v1/orders/:id`). Jobs and compensation pass `SYSTEM_CALLER_CONTEXT`. `view_own_orders` remains read-only.
 
-**Location**: `src/modules/orders/orders.controller.ts`, `src/modules/orders/core/application/usecases/cancel-order/`, `src/modules/orders/core/domain/entities/order.ts`
+**Location**: `src/modules/orders/orders.controller.ts`, `src/modules/orders/core/application/usecases/cancel-order/`, `src/modules/orders/core/application/services/cancel-order-access.policy.ts`, `src/modules/orders/core/domain/entities/order.ts`
 
 ### Forced Credential Rotation (mustChangePassword)
 

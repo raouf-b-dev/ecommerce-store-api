@@ -17,6 +17,7 @@ import {
   PaymentMethodType,
   isPaymentMethodType,
 } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { orderCannotBeCancelledError } from '../errors/order-cannot-be-cancelled.error';
 
 export interface OrderProps {
   id: number | null;
@@ -261,38 +262,32 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.DELIVERED);
   }
 
-  /**
-   * Shopper-cancellable statuses: before PROCESSING
-   * (PENDING_PAYMENT, PAYMENT_FAILED, CONFIRMED).
-   */
-  isShopperCancellable(): boolean {
+  /** True once fulfilment has begun (PROCESSING and later active states). */
+  isFulfilmentStarted(): boolean {
     return (
-      this._status.isPendingPayment() ||
-      this._status.isPaymentFailed() ||
-      this._status.isConfirmed()
+      this._status.isProcessing() ||
+      this._status.isShipped() ||
+      this._status.isDelivered() ||
+      this._status.isRefunded()
     );
   }
 
   /**
-   * Operator/system cancellable statuses: shopper set plus PROCESSING.
-   * Pass `shopper` to enforce the narrower shopper set.
+   * True when cancel is possible for the current status at all
+   * (PENDING_PAYMENT, PAYMENT_FAILED, CONFIRMED, PROCESSING).
    */
-  isCancellable(scope: 'operator' | 'shopper' = 'operator'): boolean {
-    if (scope === 'shopper') {
-      return this.isShopperCancellable();
-    }
-    return this.isShopperCancellable() || this._status.isProcessing();
+  isCancellable(): boolean {
+    return (
+      this._status.isPendingPayment() ||
+      this._status.isPaymentFailed() ||
+      this._status.isConfirmed() ||
+      this._status.isProcessing()
+    );
   }
 
-  cancel(
-    reason?: string,
-    scope: 'operator' | 'shopper' = 'operator',
-  ): Result<void, DomainError> {
-    if (!this.isCancellable(scope)) {
-      return ErrorFactory.DomainError(
-        'Order cannot be cancelled in current state',
-        { status: 409 },
-      );
+  cancel(reason?: string): Result<void, DomainError> {
+    if (!this.isCancellable()) {
+      return orderCannotBeCancelledError();
     }
 
     if (reason) {

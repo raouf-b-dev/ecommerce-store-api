@@ -10,12 +10,9 @@ import { Order } from '../../../domain/entities/order';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import {
-  ORDER_MUTATION_PERMISSIONS,
-  OwnedResourceAccessPolicy,
-} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { CancelOrderCommand } from '../../commands/cancel-order.command';
+import { CancelOrderAccessPolicy } from '../../services/cancel-order-access.policy';
+import { orderNotFoundError } from '../../services/order-not-found';
 
 function invalidRefundAmount(): Result<never, UseCaseError> {
   return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
@@ -43,22 +40,19 @@ export class CancelOrderUseCase implements UseCase<
       await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) {
       if (requestedOrder.error.statusCode === StatusCode.NOT_FOUND) {
-        return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
+        return orderNotFoundError(orderId);
       }
       return requestedOrder;
     }
 
     const { entity: order, expectedVersion } = requestedOrder.value;
 
-    if (
-      !OwnedResourceAccessPolicy.canMutateResource(
-        callerContext,
-        order.userId,
-        ORDER_MUTATION_PERMISSIONS,
-      )
-    ) {
-      return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
-    }
+    const accessResult = CancelOrderAccessPolicy.authorize(
+      callerContext,
+      order,
+      orderId,
+    );
+    if (accessResult.isFailure) return accessResult;
 
     const reason = isSagaCompensation
       ? 'Checkout compensation'
@@ -74,13 +68,7 @@ export class CancelOrderUseCase implements UseCase<
       return Result.success(order.toPrimitives());
     }
 
-    const cancelScope =
-      isSystemCaller(callerContext) ||
-      callerContext.permissions.has('manage_orders')
-        ? 'operator'
-        : 'shopper';
-
-    const cancelResult = order.cancel(undefined, cancelScope);
+    const cancelResult = order.cancel();
     if (cancelResult.isFailure) return cancelResult;
 
     if (order.paymentId !== null && order.totalPrice <= 0) {

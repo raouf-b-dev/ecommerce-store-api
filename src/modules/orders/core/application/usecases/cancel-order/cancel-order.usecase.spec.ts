@@ -215,10 +215,15 @@ describe('CancelOrderUseCase', () => {
     const ownerContext = createUserCallerContext({
       userId: 2,
       role: 'CUSTOMER',
-      permissions: new Set(['view_own_orders']),
+      permissions: new Set(['cancel_own_orders']),
     });
     const otherCustomerContext = createUserCallerContext({
       userId: 3,
+      role: 'CUSTOMER',
+      permissions: new Set(['cancel_own_orders']),
+    });
+    const viewOnlyOwnerContext = createUserCallerContext({
+      userId: 2,
       role: 'CUSTOMER',
       permissions: new Set(['view_own_orders']),
     });
@@ -295,6 +300,27 @@ describe('CancelOrderUseCase', () => {
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
     });
 
+    it('returns not found when the owner has only view_own_orders', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+        userId: 2,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: viewOnlyOwnerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
     it('returns 409 when the owner cancels a PROCESSING order', async () => {
       const orderId = 1;
       const order = OrderTestFactory.createDomainOrder({
@@ -310,6 +336,11 @@ describe('CancelOrderUseCase', () => {
         callerContext: ownerContext,
       });
 
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order cannot be cancelled in current state',
+        DomainError,
+      );
       expect(result).toMatchObject({
         isFailure: true,
         error: { statusCode: 409 },
@@ -351,6 +382,11 @@ describe('CancelOrderUseCase', () => {
         callerContext: ownerContext,
       });
 
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order cannot be cancelled in current state',
+        DomainError,
+      );
       expect(result).toMatchObject({
         isFailure: true,
         error: { statusCode: 409 },

@@ -168,21 +168,26 @@ describe('OwnedResourceAccessPolicy', () => {
       ).toBe(false);
     });
 
-    it('allows order owner with view_own_orders and admin with manage_orders', () => {
+    it('allows order owner with cancel_own_orders and admin with manage_orders', () => {
       const owner = createUserCallerContext({
         userId: 2,
         role: 'CUSTOMER',
-        permissions: new Set(['view_own_orders']),
+        permissions: new Set(['cancel_own_orders']),
       });
       const admin = createUserCallerContext({
         userId: 1,
         role: 'ADMIN',
         permissions: new Set(['manage_orders']),
       });
+      const viewOnlyOwner = createUserCallerContext({
+        userId: 2,
+        role: 'CUSTOMER',
+        permissions: new Set(['view_own_orders']),
+      });
       const other = createUserCallerContext({
         userId: 3,
         role: 'CUSTOMER',
-        permissions: new Set(['view_own_orders']),
+        permissions: new Set(['cancel_own_orders']),
       });
 
       expect(
@@ -199,6 +204,13 @@ describe('OwnedResourceAccessPolicy', () => {
           ORDER_MUTATION_PERMISSIONS,
         ),
       ).toBe(true);
+      expect(
+        OwnedResourceAccessPolicy.canMutateResource(
+          viewOnlyOwner,
+          2,
+          ORDER_MUTATION_PERMISSIONS,
+        ),
+      ).toBe(false);
       expect(
         OwnedResourceAccessPolicy.canMutateResource(
           other,

@@ -48,4 +48,17 @@ describe('SYSTEM_ROLES', () => {
       ]).toEqual([role.code, expected]);
     }
   });
+
+  it('grants cancel_own_orders to customer and operator roles, not ADMIN_READONLY', () => {
+    expect(permissionsOf(SystemRoleCode.CUSTOMER)).toContain(
+      'cancel_own_orders',
+    );
+    expect(permissionsOf(SystemRoleCode.ADMIN)).toContain('cancel_own_orders');
+    expect(permissionsOf(SystemRoleCode.SUPER_ADMIN)).toContain(
+      'cancel_own_orders',
+    );
+    expect(permissionsOf(SystemRoleCode.ADMIN_READONLY)).not.toContain(
+      'cancel_own_orders',
+    );
+  });
 });

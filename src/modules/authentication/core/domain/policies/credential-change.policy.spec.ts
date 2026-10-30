@@ -9,6 +9,7 @@ describe('ensureCredentialsChangeable', () => {
     ResultAssertionHelper.assertResultSuccess(
       ensureCredentialsChangeable([
         'view_own_orders',
+        'cancel_own_orders',
         CHANGE_OWN_CREDENTIALS_PERMISSION,
       ]),
     );

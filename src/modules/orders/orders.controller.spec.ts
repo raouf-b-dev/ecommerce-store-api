@@ -211,10 +211,10 @@ describe('OrdersController', () => {
     ).toEqual(['manage_payments', 'view_own_orders']);
   });
 
-  it('requires manage_orders or view_own_orders to cancel an order', () => {
+  it('requires manage_orders or cancel_own_orders to cancel an order', () => {
     expect(
       Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.cancelOrder),
-    ).toEqual(['manage_orders', 'view_own_orders']);
+    ).toEqual(['manage_orders', 'cancel_own_orders']);
   });
 
   it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {

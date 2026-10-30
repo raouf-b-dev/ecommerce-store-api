@@ -87,13 +87,73 @@ describe('Order', () => {
     });
   });
 
+  describe('isCancellable', () => {
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isCancellable()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isCancellable()).toBe(false);
+    });
+  });
+
+  describe('isFulfilmentStarted', () => {
+    it.each([
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(false);
+    });
+  });
+
   describe('cancel', () => {
     it.each([
       OrderStatus.PENDING_PAYMENT,
       OrderStatus.PAYMENT_FAILED,
       OrderStatus.CONFIRMED,
       OrderStatus.PROCESSING,
-    ])('allows operator cancellation when status is %s', (status) => {
+    ])('allows cancellation when status is %s', (status) => {
       const order = OrderTestFactory.createDomainOrder({
         status,
         paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
@@ -103,41 +163,6 @@ describe('Order', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(order.status).toBe(OrderStatus.CANCELLED);
-    });
-
-    it.each([
-      OrderStatus.PENDING_PAYMENT,
-      OrderStatus.PAYMENT_FAILED,
-      OrderStatus.CONFIRMED,
-    ])('allows shopper cancellation when status is %s', (status) => {
-      const order = OrderTestFactory.createDomainOrder({
-        status,
-        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
-      });
-
-      const result = order.cancel('Test reason', 'shopper');
-
-      ResultAssertionHelper.assertResultSuccess(result);
-      expect(order.status).toBe(OrderStatus.CANCELLED);
-    });
-
-    it('rejects shopper cancellation when status is PROCESSING', () => {
-      const order = OrderTestFactory.createDomainOrder({
-        status: OrderStatus.PROCESSING,
-        paymentId: 1,
-      });
-
-      const result = order.cancel(undefined, 'shopper');
-
-      ResultAssertionHelper.assertResultFailure(
-        result,
-        'Order cannot be cancelled in current state',
-        DomainError,
-      );
-      expect(result).toMatchObject({
-        isFailure: true,
-        error: { statusCode: 409 },
-      });
     });
 
     it.each([

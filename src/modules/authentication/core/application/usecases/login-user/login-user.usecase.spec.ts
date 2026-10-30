@@ -65,7 +65,7 @@ describe('LoginUserUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 2,
       code: 'CUSTOMER',
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
     });
     passwordHasher.compare.mockResolvedValue(true);
   });
@@ -98,6 +98,7 @@ describe('LoginUserUseCase', () => {
     expect(result.value.permissions).toEqual([
       'view_own_profile',
       'view_own_orders',
+      'cancel_own_orders',
     ]);
   });
 
