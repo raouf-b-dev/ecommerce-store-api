@@ -26,6 +26,12 @@ updates:
           - 'patch'
         exclude-patterns:
           - '@opentelemetry/*'
+    ignore:
+      # Held until @swc/cli (via @nestjs/cli) allows chokidar 6; it requires
+      # chokidar ^5 and a major bump breaks npm install with ERESOLVE.
+      - dependency-name: 'chokidar'
+        update-types:
+          - 'version-update:semver-major'
   - package-ecosystem: 'github-actions'
     directory: '/'
     target-branch: 'master'
