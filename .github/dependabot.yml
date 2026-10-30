@@ -9,7 +9,6 @@ updates:
     labels:
       - 'dependencies'
     groups:
-      # Keep OTel on one PR; split bumps break peer resolution (see #391/#393)
       opentelemetry:
         patterns:
           - '@opentelemetry/*'
