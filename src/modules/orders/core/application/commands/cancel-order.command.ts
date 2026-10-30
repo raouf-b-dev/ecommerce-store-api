@@ -4,5 +4,5 @@ export interface CancelOrderCommand {
   orderId: number;
   reason?: string;
   isSagaCompensation?: boolean;
-  callerContext?: CallerContext | null;
+  callerContext: CallerContext;
 }

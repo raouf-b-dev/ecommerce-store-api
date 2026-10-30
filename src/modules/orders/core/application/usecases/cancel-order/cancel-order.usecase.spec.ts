@@ -13,6 +13,11 @@ import {
   OrderTestFactory,
 } from 'src/modules/orders/testing';
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import {
+  SYSTEM_CALLER_CONTEXT,
+  createUserCallerContext,
+} from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
@@ -47,7 +52,10 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
     mockRepository.mockSuccessfulSave();
 
-    const result = await useCase.execute({ orderId });
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     expect(mockRepository.findByIdForUpdate).toHaveBeenCalledWith(orderId);
     expect(mockRepository.save).toHaveBeenCalled();
@@ -68,7 +76,11 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
     mockRepository.mockSuccessfulSave();
 
-    const result = await useCase.execute({ orderId, isSagaCompensation: true });
+    const result = await useCase.execute({
+      orderId,
+      isSagaCompensation: true,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     ResultAssertionHelper.assertResultSuccess(result);
     expect(domainEventPublisher.publish).toHaveBeenCalledWith(
@@ -85,7 +97,10 @@ describe('CancelOrderUseCase', () => {
     const orderId = 1;
     mockRepository.mockOrderNotFound(orderId);
 
-    const result = await useCase.execute({ orderId });
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -105,7 +120,10 @@ describe('CancelOrderUseCase', () => {
 
     mockRepository.mockSuccessfulFindByIdForUpdate(nonCancellableOrder);
 
-    const result = await useCase.execute({ orderId });
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -126,7 +144,10 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFindByIdForUpdate(cancellableOrder);
     mockRepository.mockSaveFailure('DB write failed');
 
-    const result = await useCase.execute({ orderId });
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -147,7 +168,10 @@ describe('CancelOrderUseCase', () => {
     mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
     mockRepository.mockSaveFailure('Version conflict');
 
-    const result = await useCase.execute({ orderId });
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
 
     ResultAssertionHelper.assertResultFailure(
       result,
@@ -156,6 +180,106 @@ describe('CancelOrderUseCase', () => {
     );
     expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
+  });
+
+  describe('authorization', () => {
+    const ownerContext = createUserCallerContext({
+      userId: 2,
+      role: 'CUSTOMER',
+      permissions: new Set(['view_own_orders']),
+    });
+    const otherCustomerContext = createUserCallerContext({
+      userId: 3,
+      role: 'CUSTOMER',
+      permissions: new Set(['view_own_orders']),
+    });
+    const adminContext = createUserCallerContext({
+      userId: 9,
+      role: 'ADMIN',
+      permissions: new Set(['manage_orders']),
+    });
+
+    it('cancels when the order belongs to the caller with view_own_orders', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+        userId: 2,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: ownerContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+      expect(mockRepository.save).toHaveBeenCalled();
+    });
+
+    it('returns not found when a different customer tries to cancel', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+        userId: 2,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: otherCustomerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('cancels any order when the caller has manage_orders', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createPendingPaymentOrder({
+        id: orderId,
+        userId: 2,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: adminContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+    });
+
+    it('returns 409 when the owner cancels a non-cancellable order', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        userId: 2,
+        status: OrderStatus.SHIPPED,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: ownerContext,
+      });
+
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 409 },
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('complex scenarios', () => {
@@ -169,7 +293,10 @@ describe('CancelOrderUseCase', () => {
       mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
       mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId: orderPrimitives.id! });
+      const result = await useCase.execute({
+        orderId: orderPrimitives.id!,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       // Test the outcome
       ResultAssertionHelper.assertResultSuccess(result);
@@ -184,7 +311,10 @@ describe('CancelOrderUseCase', () => {
 
       mockRepository.mockSuccessfulFindByIdForUpdate(order);
 
-      const result = await useCase.execute({ orderId: order.id! });
+      const result = await useCase.execute({
+        orderId: order.id!,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultFailure(result);
 
@@ -205,7 +335,10 @@ describe('CancelOrderUseCase', () => {
         Result.success('refund-job-id'),
       );
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
@@ -226,7 +359,10 @@ describe('CancelOrderUseCase', () => {
       mockRepository.mockSuccessfulFindByIdForUpdate(unpaidOrder);
       mockRepository.mockSuccessfulSave();
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
@@ -252,7 +388,10 @@ describe('CancelOrderUseCase', () => {
 
       mockRepository.mockSuccessfulFindByIdForUpdate(zeroPaidOrder);
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -275,7 +414,10 @@ describe('CancelOrderUseCase', () => {
         Result.success('refund-job-id'),
       );
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockRepository.save).not.toHaveBeenCalled();
@@ -304,7 +446,10 @@ describe('CancelOrderUseCase', () => {
         ErrorFactory.InfrastructureError('Queue connection refused'),
       );
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -331,7 +476,10 @@ describe('CancelOrderUseCase', () => {
 
       mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockRepository.save).not.toHaveBeenCalled();
@@ -352,7 +500,10 @@ describe('CancelOrderUseCase', () => {
 
       mockRepository.mockSuccessfulFindByIdForUpdate(shippedOrder);
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       expect(result).toMatchObject({
         isFailure: true,
@@ -376,7 +527,10 @@ describe('CancelOrderUseCase', () => {
         ErrorFactory.InfrastructureError('Queue down'),
       );
 
-      const result = await useCase.execute({ orderId });
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
 
       ResultAssertionHelper.assertResultFailure(
         result,
@@ -407,7 +561,10 @@ describe('CancelOrderUseCase', () => {
       });
 
       it('saves the cancelled order and returns a retryable failure when enqueue fails', async () => {
-        const result = await useCase.execute({ orderId });
+        const result = await useCase.execute({
+          orderId,
+          callerContext: SYSTEM_CALLER_CONTEXT,
+        });
 
         expect(result).toMatchObject({
           isFailure: true,
@@ -423,7 +580,10 @@ describe('CancelOrderUseCase', () => {
 
       it('creates exactly one refund job when the cancel is retried', async () => {
         // Run 1: enqueue fails after order is saved
-        await useCase.execute({ orderId });
+        await useCase.execute({
+          orderId,
+          callerContext: SYSTEM_CALLER_CONTEXT,
+        });
 
         // On retry, the order in DB is now CANCELLED with paymentId 42
         const cancelledOrder = OrderTestFactory.createDomainOrder({
@@ -433,8 +593,14 @@ describe('CancelOrderUseCase', () => {
         });
         mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
 
-        const retryResult = await useCase.execute({ orderId });
-        await useCase.execute({ orderId });
+        const retryResult = await useCase.execute({
+          orderId,
+          callerContext: SYSTEM_CALLER_CONTEXT,
+        });
+        await useCase.execute({
+          orderId,
+          callerContext: SYSTEM_CALLER_CONTEXT,
+        });
 
         ResultAssertionHelper.assertResultSuccess(retryResult);
         expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(

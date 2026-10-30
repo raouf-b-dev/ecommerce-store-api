@@ -180,6 +180,12 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 **Location**: `src/modules/products/core/domain/policies/catalog-visibility.policy.ts`, `src/modules/products/products.controller.ts`, `src/modules/products/categories.controller.ts`
 
+### Shopper Order Cancel
+
+`PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `view_own_orders`. Callers without `manage_orders` may cancel only their own order (same not-found IDOR response as `GET /v1/orders/:id`). Cancellable statuses stay on `Order.isCancellable` (409 when not cancellable). Jobs and compensation pass `SYSTEM_CALLER_CONTEXT`.
+
+**Location**: `src/modules/orders/orders.controller.ts`, `src/modules/orders/core/application/usecases/cancel-order/`
+
 ### Forced Credential Rotation (mustChangePassword)
 
 Seeded and bootstrap credentials set `mustChangePassword = true`. Login and refresh return the flag; `POST /v1/authentication/change-password` clears it, revokes other sessions, and reissues tokens. `MustChangePasswordGuard` returns HTTP 403 (`MUST_CHANGE_PASSWORD`) on other authenticated routes until rotation.

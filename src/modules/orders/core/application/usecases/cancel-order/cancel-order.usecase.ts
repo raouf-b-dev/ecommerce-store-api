@@ -9,10 +9,18 @@ import { Order } from '../../../domain/entities/order';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import {
+  ORDER_MUTATION_PERMISSIONS,
+  OwnedResourceAccessPolicy,
+} from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { CancelOrderCommand } from '../../commands/cancel-order.command';
 
 function invalidRefundAmount(): Result<never, UseCaseError> {
   return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
+}
+
+function orderNotFound(orderId: number): Result<never, UseCaseError> {
+  return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
 }
 
 @Injectable()
@@ -32,12 +40,22 @@ export class CancelOrderUseCase implements UseCase<
   async execute(
     dto: CancelOrderCommand,
   ): Promise<Result<IOrder, UseCaseError>> {
-    const { orderId, isSagaCompensation } = dto;
+    const { orderId, isSagaCompensation, callerContext } = dto;
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) return requestedOrder;
 
     const { entity: order, expectedVersion } = requestedOrder.value;
+
+    if (
+      !OwnedResourceAccessPolicy.canMutateResource(
+        callerContext,
+        order.userId,
+        ORDER_MUTATION_PERMISSIONS,
+      )
+    ) {
+      return orderNotFound(orderId);
+    }
 
     const reason = isSagaCompensation
       ? 'Checkout compensation'

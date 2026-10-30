@@ -4,6 +4,7 @@ import {
 } from '../interfaces/caller-context.interface';
 import {
   ORDER_ACCESS_PERMISSIONS,
+  ORDER_MUTATION_PERMISSIONS,
   USER_ACCESS_PERMISSIONS,
   USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
@@ -163,6 +164,46 @@ describe('OwnedResourceAccessPolicy', () => {
           customer,
           null,
           USER_MUTATION_PERMISSIONS,
+        ),
+      ).toBe(false);
+    });
+
+    it('allows order owner with view_own_orders and admin with manage_orders', () => {
+      const owner = createUserCallerContext({
+        userId: 2,
+        role: 'CUSTOMER',
+        permissions: new Set(['view_own_orders']),
+      });
+      const admin = createUserCallerContext({
+        userId: 1,
+        role: 'ADMIN',
+        permissions: new Set(['manage_orders']),
+      });
+      const other = createUserCallerContext({
+        userId: 3,
+        role: 'CUSTOMER',
+        permissions: new Set(['view_own_orders']),
+      });
+
+      expect(
+        OwnedResourceAccessPolicy.canMutateResource(
+          owner,
+          2,
+          ORDER_MUTATION_PERMISSIONS,
+        ),
+      ).toBe(true);
+      expect(
+        OwnedResourceAccessPolicy.canMutateResource(
+          admin,
+          2,
+          ORDER_MUTATION_PERMISSIONS,
+        ),
+      ).toBe(true);
+      expect(
+        OwnedResourceAccessPolicy.canMutateResource(
+          other,
+          2,
+          ORDER_MUTATION_PERMISSIONS,
         ),
       ).toBe(false);
     });

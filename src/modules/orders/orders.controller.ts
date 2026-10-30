@@ -290,22 +290,32 @@ export class OrdersController {
   }
 
   @Patch(':id/cancel')
-  @RequirePermissions('manage_orders')
+  @RequirePermissions('manage_orders', 'view_own_orders')
   @ApiOperation({
     summary: 'Cancel an order',
-    description: 'Cancels an order and triggers compensation logic if needed.',
+    description:
+      'Cancels an order and triggers compensation logic if needed. ' +
+      'Requires manage_orders (staff) or view_own_orders (the order owner). ' +
+      'A caller who cannot mutate the order receives the same not-found result as a missing order.',
   })
   @ApiResponse({
     status: 200,
     description: 'Order cancelled successfully.',
     type: OrderMutationResponseDto,
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({
     status: 409,
     description: 'Order cannot be cancelled in current state.',
   })
-  async cancelOrder(@Param('id', ParseIntPipe) id: number) {
-    return await this.cancelOrderUseCase.execute({ orderId: id });
+  async cancelOrder(
+    @Param('id', ParseIntPipe) id: number,
+    @CallerCtx() callerContext: CallerContext,
+  ) {
+    return await this.cancelOrderUseCase.execute({
+      orderId: id,
+      callerContext,
+    });
   }
 }
