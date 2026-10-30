@@ -296,6 +296,8 @@ export class OrdersController {
     description:
       'Cancels an order and triggers compensation logic if needed. ' +
       'Requires manage_orders (staff) or view_own_orders (the order owner). ' +
+      'Shoppers may cancel only PENDING_PAYMENT, PAYMENT_FAILED, or CONFIRMED orders; ' +
+      'staff and system callers may also cancel PROCESSING. ' +
       'A caller who cannot mutate the order receives the same not-found result as a missing order.',
   })
   @ApiResponse({
@@ -304,7 +306,16 @@ export class OrdersController {
     type: OrderMutationResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Authenticated caller lacks manage_orders and view_own_orders.',
+  })
+  @ApiResponse({
+    status: 422,
+    description:
+      'Order not found (missing id or inaccessible; same body as GET order).',
+  })
   @ApiResponse({
     status: 409,
     description: 'Order cannot be cancelled in current state.',

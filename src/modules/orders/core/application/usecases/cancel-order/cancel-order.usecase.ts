@@ -3,12 +3,14 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Result } from '../../../../../../shared-kernel/domain/result';
+import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { Order } from '../../../domain/entities/order';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
+import { isSystemCaller } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   ORDER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
@@ -17,10 +19,6 @@ import { CancelOrderCommand } from '../../commands/cancel-order.command';
 
 function invalidRefundAmount(): Result<never, UseCaseError> {
   return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
-}
-
-function orderNotFound(orderId: number): Result<never, UseCaseError> {
-  return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
 }
 
 @Injectable()
@@ -43,7 +41,12 @@ export class CancelOrderUseCase implements UseCase<
     const { orderId, isSagaCompensation, callerContext } = dto;
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
-    if (requestedOrder.isFailure) return requestedOrder;
+    if (requestedOrder.isFailure) {
+      if (requestedOrder.error.statusCode === StatusCode.NOT_FOUND) {
+        return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
+      }
+      return requestedOrder;
+    }
 
     const { entity: order, expectedVersion } = requestedOrder.value;
 
@@ -54,7 +57,7 @@ export class CancelOrderUseCase implements UseCase<
         ORDER_MUTATION_PERMISSIONS,
       )
     ) {
-      return orderNotFound(orderId);
+      return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
     }
 
     const reason = isSagaCompensation
@@ -71,7 +74,13 @@ export class CancelOrderUseCase implements UseCase<
       return Result.success(order.toPrimitives());
     }
 
-    const cancelResult = order.cancel();
+    const cancelScope =
+      isSystemCaller(callerContext) ||
+      callerContext.permissions.has('manage_orders')
+        ? 'operator'
+        : 'shopper';
+
+    const cancelResult = order.cancel(undefined, cancelScope);
     if (cancelResult.isFailure) return cancelResult;
 
     if (order.paymentId !== null && order.totalPrice <= 0) {

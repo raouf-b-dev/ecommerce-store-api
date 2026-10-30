@@ -68,6 +68,12 @@ describe('Security IDOR (e2e)', () => {
       .set(AuthTestHelper.bearer(user.accessToken));
   }
 
+  function patchAs(user: AuthSession, path: string) {
+    return http
+      .patch(`${E2E_API_PREFIX}${path}`)
+      .set(AuthTestHelper.bearer(user.accessToken));
+  }
+
   describe('users', () => {
     it('allows user to read own profile', async () => {
       const response = await http
@@ -312,6 +318,43 @@ describe('Security IDOR (e2e)', () => {
       expect(crossRead.body).not.toHaveProperty('items');
       expect(crossRead.body).not.toHaveProperty('userId');
       expect(crossRead.body).not.toHaveProperty('userEmail');
+    });
+
+    it('denies user cancelling a non-owned order id', async () => {
+      const response = await patchAs(
+        userA,
+        `/orders/${MISSING_ORDER_ID}/cancel`,
+      );
+
+      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: `Order with id ${MISSING_ORDER_ID} not found`,
+      });
+    });
+
+    it('returns the missing-id not-found when cancelling another customers real order', async () => {
+      const missing = await patchAs(
+        userA,
+        `/orders/${MISSING_ORDER_ID}/cancel`,
+      );
+      const crossCancel = await patchAs(
+        userA,
+        `/orders/${customerBOrderId}/cancel`,
+      );
+
+      expect(crossCancel.status).toBe(missing.status);
+      expect(crossCancel.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      HttpErrorAssertionHelper.assertErrorContract(crossCancel, {
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        messageContains: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(Object.keys(crossCancel.body).sort()).toEqual(
+        Object.keys(missing.body).sort(),
+      );
+      expect(crossCancel.body).not.toHaveProperty('items');
+      expect(crossCancel.body).not.toHaveProperty('userId');
+      expect(crossCancel.body).not.toHaveProperty('status');
     });
 
     it('returns null when no payment exists for the requested order', async () => {

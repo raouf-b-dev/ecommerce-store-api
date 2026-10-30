@@ -38,7 +38,11 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   },
   { code: 'manage_roles', description: 'Manage custom roles' },
   { code: 'manage_carts', description: 'Manage customer carts' },
-  { code: 'view_own_orders', description: 'View own orders' },
+  {
+    code: 'view_own_orders',
+    description:
+      'View own orders and cancel own orders in PENDING_PAYMENT, PAYMENT_FAILED, or CONFIRMED status',
+  },
   { code: 'view_own_payments', description: 'View own payment history' },
   { code: 'manage_own_cart', description: 'Read and modify own cart' },
 ];

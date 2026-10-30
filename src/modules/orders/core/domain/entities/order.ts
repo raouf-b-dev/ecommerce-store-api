@@ -261,17 +261,34 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.DELIVERED);
   }
 
-  isCancellable(): boolean {
+  /**
+   * Shopper-cancellable statuses: before PROCESSING
+   * (PENDING_PAYMENT, PAYMENT_FAILED, CONFIRMED).
+   */
+  isShopperCancellable(): boolean {
     return (
       this._status.isPendingPayment() ||
       this._status.isPaymentFailed() ||
-      this._status.isConfirmed() ||
-      this._status.isProcessing()
+      this._status.isConfirmed()
     );
   }
 
-  cancel(reason?: string): Result<void, DomainError> {
-    if (!this.isCancellable()) {
+  /**
+   * Operator/system cancellable statuses: shopper set plus PROCESSING.
+   * Pass `shopper` to enforce the narrower shopper set.
+   */
+  isCancellable(scope: 'operator' | 'shopper' = 'operator'): boolean {
+    if (scope === 'shopper') {
+      return this.isShopperCancellable();
+    }
+    return this.isShopperCancellable() || this._status.isProcessing();
+  }
+
+  cancel(
+    reason?: string,
+    scope: 'operator' | 'shopper' = 'operator',
+  ): Result<void, DomainError> {
+    if (!this.isCancellable(scope)) {
       return ErrorFactory.DomainError(
         'Order cannot be cancelled in current state',
         { status: 409 },

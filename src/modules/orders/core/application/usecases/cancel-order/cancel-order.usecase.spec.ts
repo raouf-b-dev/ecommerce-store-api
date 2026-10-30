@@ -93,7 +93,7 @@ describe('CancelOrderUseCase', () => {
     );
   });
 
-  it('should return a failure result if the order is not found', async () => {
+  it('maps repository not-found to the same UseCaseError as GET order', async () => {
     const orderId = 1;
     mockRepository.mockOrderNotFound(orderId);
 
@@ -105,11 +105,40 @@ describe('CancelOrderUseCase', () => {
     ResultAssertionHelper.assertResultFailure(
       result,
       'Order with id 1 not found',
-      RepositoryError,
+      UseCaseError,
     );
 
     expect(mockRepository.save).not.toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();
+  });
+
+  it('returns another RepositoryError unchanged with cause and retryable', async () => {
+    const orderId = 1;
+    const dbFailure = new RepositoryError(
+      'Failed to find the order for update',
+      {
+        cause: new Error('connection reset'),
+        retryable: true,
+      },
+    );
+    const failureResult = Result.failure(dbFailure);
+    mockRepository.findByIdForUpdate.mockResolvedValue(failureResult);
+
+    const result = await useCase.execute({
+      orderId,
+      callerContext: SYSTEM_CALLER_CONTEXT,
+    });
+
+    expect(result).toBe(failureResult);
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        message: 'Failed to find the order for update',
+        retryable: true,
+        cause: expect.any(Error),
+      },
+    });
+    expect(mockRepository.save).not.toHaveBeenCalled();
   });
 
   it('should return a failure result if the Order cannot be cancelled in current state', async () => {
@@ -199,11 +228,17 @@ describe('CancelOrderUseCase', () => {
       permissions: new Set(['manage_orders']),
     });
 
-    it('cancels when the order belongs to the caller with view_own_orders', async () => {
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+    ])('cancels when the owner cancels a %s order', async (status) => {
       const orderId = 1;
-      const order = OrderTestFactory.createPendingPaymentOrder({
+      const order = OrderTestFactory.createDomainOrder({
         id: orderId,
         userId: 2,
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
       });
       mockRepository.mockSuccessfulFindByIdForUpdate(order);
       mockRepository.mockSuccessfulSave();
@@ -260,7 +295,49 @@ describe('CancelOrderUseCase', () => {
       expect(result.value.status).toBe(OrderStatus.CANCELLED);
     });
 
-    it('returns 409 when the owner cancels a non-cancellable order', async () => {
+    it('returns 409 when the owner cancels a PROCESSING order', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        userId: 2,
+        status: OrderStatus.PROCESSING,
+        paymentId: 1,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: ownerContext,
+      });
+
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 409 },
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('cancels a PROCESSING order when the caller has manage_orders', async () => {
+      const orderId = 1;
+      const order = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        userId: 2,
+        status: OrderStatus.PROCESSING,
+        paymentId: 1,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(order);
+      mockRepository.mockSuccessfulSave();
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: adminContext,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.status).toBe(OrderStatus.CANCELLED);
+    });
+
+    it('returns 409 when the owner cancels a shipped order', async () => {
       const orderId = 1;
       const order = OrderTestFactory.createDomainOrder({
         id: orderId,
