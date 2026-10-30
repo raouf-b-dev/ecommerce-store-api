@@ -9,16 +9,24 @@ updates:
     labels:
       - 'dependencies'
     groups:
+      # Keep OTel on one PR; split bumps break peer resolution (see #391/#393)
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
       production-deps:
         dependency-type: 'production'
         update-types:
           - 'minor'
           - 'patch'
+        exclude-patterns:
+          - '@opentelemetry/*'
       dev-deps:
         dependency-type: 'development'
         update-types:
           - 'minor'
           - 'patch'
+        exclude-patterns:
+          - '@opentelemetry/*'
   - package-ecosystem: 'github-actions'
     directory: '/'
     target-branch: 'master'
