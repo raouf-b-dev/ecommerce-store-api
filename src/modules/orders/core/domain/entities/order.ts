@@ -205,6 +205,36 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.CONFIRMED);
   }
 
+  /**
+   * Records a payment that completed after the order was cancelled.
+   * Keeps status CANCELLED. Idempotent for the same paymentId so a
+   * retried payment-completed event can still schedule the refund.
+   */
+  recordPaymentAfterCancellation(paymentId: number): Result<void, DomainError> {
+    if (!this._status.isCancelled()) {
+      return ErrorFactory.DomainError(
+        'Payment after cancellation can only be recorded when the order is cancelled',
+      );
+    }
+
+    if (!paymentId) {
+      return ErrorFactory.DomainError('Payment ID is required');
+    }
+
+    if (this._paymentId !== null) {
+      if (this._paymentId !== paymentId) {
+        return ErrorFactory.DomainError(
+          'Order already has a different payment recorded',
+        );
+      }
+      return Result.success(undefined);
+    }
+
+    this._paymentId = paymentId;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
   markPaymentFailed(): Result<void, DomainError> {
     if (!this._status.isPendingPayment()) {
       return ErrorFactory.DomainError(

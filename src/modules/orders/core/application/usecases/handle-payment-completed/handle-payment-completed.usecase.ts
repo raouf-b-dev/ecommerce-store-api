@@ -9,6 +9,8 @@ import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
+import { ScheduleOrderRefundService } from '../../services/schedule-order-refund.service';
+import { Order } from '../../../domain/entities/order';
 
 export interface HandlePaymentCompletedCommand {
   orderId: number;
@@ -34,6 +36,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly orderScheduler: OrderScheduler,
+    private readonly scheduleOrderRefundService: ScheduleOrderRefundService,
   ) {
     super();
   }
@@ -44,7 +47,6 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     const { orderId, paymentId, reservationId, cartId } = dto;
     this.logger.log(`Handling payment completion for order ${orderId}`);
 
-    // 1. Find order
     const orderResult = await this.orderRepository.findByIdForUpdate(orderId);
     if (isFailure(orderResult)) {
       return ErrorFactory.UseCaseError(
@@ -55,7 +57,6 @@ export class HandlePaymentCompletedUseCase extends UseCase<
 
     const { entity: order, expectedVersion } = orderResult.value;
 
-    // 2. Idempotency check - skip if already confirmed
     if (order.status === OrderStatus.CONFIRMED) {
       this.logger.log(`Order ${orderId} already confirmed, skipping...`);
       return Result.success({
@@ -64,7 +65,15 @@ export class HandlePaymentCompletedUseCase extends UseCase<
       });
     }
 
-    // 3. Confirm payment (atomic operation for this job)
+    if (order.status === OrderStatus.CANCELLED) {
+      return this.handleCancelledOrder(
+        order,
+        orderId,
+        paymentId,
+        expectedVersion,
+      );
+    }
+
     const confirmResult = order.confirmPayment(paymentId);
     if (isFailure(confirmResult)) {
       return ErrorFactory.UseCaseError(
@@ -80,7 +89,6 @@ export class HandlePaymentCompletedUseCase extends UseCase<
 
     this.logger.log(`Order ${orderId} confirmed after payment`);
 
-    // 4. Schedule post-payment flow as a SEPARATE job (atomic, retriable independently)
     if (reservationId && cartId) {
       const scheduleResult = await this.orderScheduler.schedulePostPayment(
         orderId,
@@ -89,7 +97,6 @@ export class HandlePaymentCompletedUseCase extends UseCase<
       );
 
       if (isFailure(scheduleResult)) {
-        // Log but don't fail - order is confirmed, post-payment is a separate concern
         this.logger.error(
           `Failed to schedule post-payment flow for order ${orderId}. ` +
             `Manual intervention may be required.`,
@@ -104,6 +111,44 @@ export class HandlePaymentCompletedUseCase extends UseCase<
           `Post-payment flow not scheduled.`,
       );
     }
+
+    return Result.success({
+      orderId,
+      status: order.status,
+    });
+  }
+
+  private async handleCancelledOrder(
+    order: Order,
+    orderId: number,
+    paymentId: number,
+    expectedVersion: number,
+  ): Promise<Result<HandlePaymentCompletedResult, UseCaseError>> {
+    const recordResult = order.recordPaymentAfterCancellation(paymentId);
+    if (isFailure(recordResult)) {
+      return ErrorFactory.UseCaseError(
+        `Failed to record payment after cancellation for order ${orderId}`,
+        recordResult.error,
+      );
+    }
+
+    const saveResult = await this.orderRepository.save(order, expectedVersion);
+    if (isFailure(saveResult)) {
+      return saveResult;
+    }
+
+    const refundResult = await this.scheduleOrderRefundService.scheduleIfPaid(
+      order,
+      orderId,
+      'Payment completed after order cancellation',
+    );
+    if (isFailure(refundResult)) {
+      return refundResult;
+    }
+
+    this.logger.log(
+      `Refund scheduled for cancelled order ${orderId} after late payment`,
+    );
 
     return Result.success({
       orderId,

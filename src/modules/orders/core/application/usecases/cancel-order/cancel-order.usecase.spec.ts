@@ -18,6 +18,7 @@ import {
   createUserCallerContext,
 } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ScheduleOrderRefundService } from '../../services/schedule-order-refund.service';
 
 describe('CancelOrderUseCase', () => {
   let useCase: CancelOrderUseCase;
@@ -36,6 +37,7 @@ describe('CancelOrderUseCase', () => {
       mockRepository,
       mockOrderScheduler,
       domainEventPublisher,
+      new ScheduleOrderRefundService(mockOrderScheduler),
     );
   });
 
