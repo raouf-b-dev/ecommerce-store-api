@@ -9,16 +9,23 @@ updates:
     labels:
       - 'dependencies'
     groups:
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
       production-deps:
         dependency-type: 'production'
         update-types:
           - 'minor'
           - 'patch'
+        exclude-patterns:
+          - '@opentelemetry/*'
       dev-deps:
         dependency-type: 'development'
         update-types:
           - 'minor'
           - 'patch'
+        exclude-patterns:
+          - '@opentelemetry/*'
   - package-ecosystem: 'github-actions'
     directory: '/'
     target-branch: 'master'
