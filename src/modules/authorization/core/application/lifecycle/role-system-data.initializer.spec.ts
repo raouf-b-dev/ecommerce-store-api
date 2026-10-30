@@ -170,7 +170,8 @@ describe('RoleSystemDataInitializer', () => {
       await import('../../domain/reference-data/system-roles');
     const customerDef = SYSTEM_ROLES.find(
       (role) => role.code === SystemRoleCode.CUSTOMER,
-    )!;
+    );
+    if (!customerDef) throw new Error('CUSTOMER system role missing');
     const staleCustomerPermissions = customerDef.permissions.filter(
       (code) => code !== 'cancel_own_orders',
     );
@@ -209,7 +210,8 @@ describe('RoleSystemDataInitializer', () => {
     expect(mockRoleRepo.findByCode).not.toHaveBeenCalledWith(customRoleCode);
 
     mockRoleRepo.findByCode.mockImplementation((code: string) => {
-      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code))!;
+      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code));
+      if (!def) throw new Error(`System role missing: ${code}`);
       return Promise.resolve(
         Result.success(
           AuthorizationDtoFactory.buildEntity({

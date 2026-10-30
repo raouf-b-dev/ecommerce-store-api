@@ -263,6 +263,9 @@ describe('HandlePaymentCompletedUseCase', () => {
         reason: 'Payment completed after order cancellation',
       });
       expect(mockOrderScheduler.schedulePostPayment).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
     });
 
     it('saves before scheduling the refund', async () => {
@@ -284,6 +287,33 @@ describe('HandlePaymentCompletedUseCase', () => {
       expect(mockRepository.save.mock.invocationCallOrder[0]).toBeLessThan(
         mockOrderScheduler.scheduleRefundPayment.mock.invocationCallOrder[0],
       );
+    });
+
+    it('returns the save failure and schedules no refund when save fails', async () => {
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockRepository.mockSaveFailure('Database save failed');
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId,
+        reservationId,
+        cartId,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Database save failed',
+        RepositoryError,
+      );
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).not.toHaveBeenCalled();
     });
 
     it('returns a retryable failure after save when refund scheduling fails', async () => {

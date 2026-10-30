@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { CancelOrderUseCase } from './cancel-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -465,7 +466,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('does not trigger a refund for an unpaid order', async () => {
+    it('releases stock once and schedules no refund for an unpaid order', async () => {
       const orderId = 1;
       const unpaidOrder = OrderTestFactory.createPendingPaymentOrder({
         id: orderId,
@@ -480,6 +481,12 @@ describe('CancelOrderUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).toHaveBeenCalledTimes(1);
+      expect(mockOrderScheduler.scheduleOrderStockRelease).toHaveBeenCalledWith(
+        orderId,
+      );
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     });
 
@@ -536,9 +543,9 @@ describe('CancelOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultSuccess(result);
       expect(mockRepository.save).not.toHaveBeenCalled();
-      expect(
-        mockOrderScheduler.scheduleOrderStockRelease,
-      ).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleOrderStockRelease).toHaveBeenCalledWith(
+        orderId,
+      );
       expect(domainEventPublisher.publish).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
@@ -577,11 +584,11 @@ describe('CancelOrderUseCase', () => {
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(
         mockOrderScheduler.scheduleOrderStockRelease,
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalledTimes(1);
       expect(domainEventPublisher.publish).not.toHaveBeenCalled();
     });
 
-    it('does nothing when order is already CANCELLED without paymentId', async () => {
+    it('re-schedules stock release only when already CANCELLED without paymentId', async () => {
       const orderId = 1;
       const cancelledOrder = OrderTestFactory.createDomainOrder({
         id: orderId,
@@ -600,7 +607,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(
         mockOrderScheduler.scheduleOrderStockRelease,
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalledTimes(1);
       expect(domainEventPublisher.publish).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
     });
@@ -656,6 +663,165 @@ describe('CancelOrderUseCase', () => {
         error: { statusCode: 500 },
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('still schedules stock release once when refund fails with a retryable error', async () => {
+      const orderId = 1;
+      const paidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockRepository.mockSuccessfulSave();
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.failure(
+          new InfrastructureError('Queue down', { retryable: true }),
+        ),
+      );
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order cancelled but the refund could not be scheduled',
+        UseCaseError,
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { statusCode: 500, retryable: true },
+      });
+      expect(mockRepository.save).toHaveBeenCalledTimes(1);
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).toHaveBeenCalledTimes(1);
+      expect(mockOrderScheduler.scheduleOrderStockRelease).toHaveBeenCalledWith(
+        orderId,
+      );
+    });
+
+    it('schedules stock release before refund for an already CANCELLED paid order', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+
+      await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease.mock
+          .invocationCallOrder[0],
+      ).toBeLessThan(
+        mockOrderScheduler.scheduleRefundPayment.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('saves before stock release before refund on a normal paid cancel', async () => {
+      const orderId = 1;
+      const paidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockRepository.mockSuccessfulSave();
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+
+      await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      expect(mockRepository.save.mock.invocationCallOrder[0]).toBeLessThan(
+        mockOrderScheduler.scheduleOrderStockRelease.mock
+          .invocationCallOrder[0],
+      );
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease.mock
+          .invocationCallOrder[0],
+      ).toBeLessThan(
+        mockOrderScheduler.scheduleRefundPayment.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('logs and continues when stock release fails on a normal paid cancel', async () => {
+      const orderId = 1;
+      const paidOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(paidOrder);
+      mockRepository.mockSuccessfulSave();
+      mockOrderScheduler.scheduleOrderStockRelease.mockResolvedValue(
+        ErrorFactory.InfrastructureError('Queue unavailable'),
+      );
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+      jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `Failed to schedule stock release for order ${orderId}`,
+        ),
+      );
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
+    });
+
+    it('logs and continues when stock release fails on an already CANCELLED order', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockOrderScheduler.scheduleOrderStockRelease.mockResolvedValue(
+        ErrorFactory.InfrastructureError('Queue unavailable'),
+      );
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+      jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `Failed to schedule stock release for order ${orderId}`,
+        ),
+      );
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
     });
 
     describe('when the refund cannot be queued (failure injection)', () => {

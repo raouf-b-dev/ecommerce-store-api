@@ -56,6 +56,7 @@ export class CancelOrderUseCase implements UseCase<
       : 'Order cancelled';
 
     if (order.status === OrderStatus.CANCELLED) {
+      await this.scheduleStockRelease(orderId);
       const refundResult = await this.scheduleOrderRefundService.scheduleIfPaid(
         order,
         orderId,
@@ -80,21 +81,14 @@ export class CancelOrderUseCase implements UseCase<
     );
     if (updateResult.isFailure) return updateResult;
 
+    await this.scheduleStockRelease(orderId);
+
     const refundResult = await this.scheduleOrderRefundService.scheduleIfPaid(
       order,
       orderId,
       reason,
     );
     if (refundResult.isFailure) return refundResult;
-
-    const scheduleResult =
-      await this.orderScheduler.scheduleOrderStockRelease(orderId);
-
-    if (scheduleResult.isFailure) {
-      this.logger.error(
-        `Failed to schedule stock release for order ${orderId}: ${scheduleResult.error.message}`,
-      );
-    }
 
     if (isSagaCompensation) {
       this.domainEventPublisher.publish('checkout.saga.compensation', {
@@ -107,5 +101,16 @@ export class CancelOrderUseCase implements UseCase<
     }
 
     return Result.success(order.toPrimitives());
+  }
+
+  private async scheduleStockRelease(orderId: number): Promise<void> {
+    const scheduleResult =
+      await this.orderScheduler.scheduleOrderStockRelease(orderId);
+
+    if (scheduleResult.isFailure) {
+      this.logger.error(
+        `Failed to schedule stock release for order ${orderId}: ${scheduleResult.error.message}`,
+      );
+    }
   }
 }
