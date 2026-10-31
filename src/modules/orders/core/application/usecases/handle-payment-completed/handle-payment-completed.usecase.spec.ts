@@ -294,6 +294,56 @@ describe('HandlePaymentCompletedUseCase', () => {
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
+    it('schedules two refund jobs when two different surplus payments complete on the same order', async () => {
+      const firstSurplusPaymentId = 901;
+      const secondSurplusPaymentId = 902;
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+      const dedupeScheduler = new MockOrderScheduler();
+      mockOrderScheduler.scheduleRefundPayment.mockImplementation((props) =>
+        dedupeScheduler.scheduleRefundPayment(props),
+      );
+
+      const first = await useCase.execute({
+        orderId,
+        paymentId: firstSurplusPaymentId,
+      });
+      const second = await useCase.execute({
+        orderId,
+        paymentId: secondSurplusPaymentId,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(first);
+      ResultAssertionHelper.assertResultSuccess(second);
+      expect(first.value).toEqual({
+        orderId,
+        status: OrderStatus.CONFIRMED,
+      });
+      expect(second.value).toEqual({
+        orderId,
+        status: OrderStatus.CONFIRMED,
+      });
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(2);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId,
+        paymentId: firstSurplusPaymentId,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId,
+        paymentId: secondSurplusPaymentId,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+      expect(dedupeScheduler.jobs.size).toBe(2);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
     it('returns a retryable failure when surplus refund scheduling fails retryably', async () => {
       const orderPrimitives = OrderTestFactory.createMockOrder({
         id: orderId,
