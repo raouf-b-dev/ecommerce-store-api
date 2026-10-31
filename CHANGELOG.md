@@ -7,9 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shoppers can cancel their own orders with `PATCH /v1/orders/:id/cancel` through the new `cancel_own_orders` permission, which the boot-time role sync grants to the `CUSTOMER` system role. A shopper can cancel while the order is `PENDING_PAYMENT`, `PAYMENT_FAILED` or `CONFIRMED`; only `manage_orders` callers can also cancel a `PROCESSING` order. A payment that completes after an order was cancelled is recorded on it and refunded.
+
+### Changed
+
+- `PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders` (it required `manage_orders`). A missing order, or one the caller may not cancel, returns the same 422 body as `GET /v1/orders/:id`, and a caller with neither permission gets 403.
+- Production dependencies: OpenTelemetry API 1.9.1 -> 1.10.0, SDK and OTLP gRPC exporter 0.223.0 -> 0.300.0, resources 2.12.0 -> 3.0.0, auto-instrumentations 0.81.2 -> 0.82.0, envalid 8.2.0 -> 9.0.0, `@nestjs/swagger` 12.0.2 -> 12.0.5, stripe 23.0.0 -> 23.0.1.
+
 ### Fixed
 
 - A payment that is not the one an order accepted (a second payment on a settled order, a different payment on a cancelled order, or a late payment on a payment-failed order) is now refunded in full instead of being dropped, and refund jobs are keyed per payment.
+
+### Upgrade notes
+
+- **Custom roles:** no migration grants `cancel_own_orders`. Every custom shopper role, existing or new, must be granted `cancel_own_orders` to let its users cancel their own orders; the `CUSTOMER` system role gets it on boot.
 
 ## [0.13.0] - 2026-10-28
 
