@@ -56,24 +56,74 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     }
 
     const { entity: order, expectedVersion } = orderResult.value;
+    const classification = order.classifyIncomingPayment(paymentId);
 
-    if (order.status === OrderStatus.CONFIRMED) {
-      this.logger.log(`Order ${orderId} already confirmed, skipping...`);
-      return Result.success({
-        orderId,
-        status: order.status,
-      });
+    switch (classification.action) {
+      case 'confirm':
+        return this.confirmPayment(
+          order,
+          orderId,
+          paymentId,
+          expectedVersion,
+          reservationId,
+          cartId,
+        );
+      case 'record-late':
+        return this.recordLatePayment(
+          order,
+          orderId,
+          paymentId,
+          expectedVersion,
+        );
+      case 'already-applied':
+        this.logger.log(
+          `Payment ${paymentId} already applied on order ${orderId}, skipping`,
+        );
+        return Result.success({
+          orderId,
+          status: order.status,
+        });
+      case 'unknown':
+        this.logger.warn(
+          `Incoming payment ${paymentId} on order ${orderId} with null paymentId; not refunding`,
+        );
+        return Result.success({
+          orderId,
+          status: order.status,
+        });
+      case 'surplus': {
+        const refundResult =
+          await this.scheduleOrderRefundService.scheduleForPayment(
+            orderId,
+            paymentId,
+            'Surplus payment refund',
+          );
+        if (isFailure(refundResult)) {
+          return refundResult;
+        }
+        this.logger.log(
+          `Surplus refund scheduled for payment ${paymentId} on order ${orderId}`,
+        );
+        return Result.success({
+          orderId,
+          status: order.status,
+        });
+      }
+      default: {
+        const _exhaustive: never = classification;
+        return _exhaustive;
+      }
     }
+  }
 
-    if (order.status === OrderStatus.CANCELLED) {
-      return this.handleCancelledOrder(
-        order,
-        orderId,
-        paymentId,
-        expectedVersion,
-      );
-    }
-
+  private async confirmPayment(
+    order: Order,
+    orderId: number,
+    paymentId: number,
+    expectedVersion: number,
+    reservationId: number | undefined,
+    cartId: number | undefined,
+  ): Promise<Result<HandlePaymentCompletedResult, UseCaseError>> {
     const confirmResult = order.confirmPayment(paymentId);
     if (isFailure(confirmResult)) {
       return ErrorFactory.UseCaseError(
@@ -118,7 +168,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     });
   }
 
-  private async handleCancelledOrder(
+  private async recordLatePayment(
     order: Order,
     orderId: number,
     paymentId: number,

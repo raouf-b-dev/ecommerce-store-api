@@ -13,6 +13,12 @@ import {
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
+function isRemainingRefund(
+  input: ProcessRefundInput,
+): input is Extract<ProcessRefundInput, { mode: 'remaining' }> {
+  return 'mode' in input && input.mode === 'remaining';
+}
+
 @Injectable()
 export class RefundCheckoutPaymentUseCase implements UseCase<
   ProcessRefundInput,
@@ -27,7 +33,7 @@ export class RefundCheckoutPaymentUseCase implements UseCase<
   async execute(
     input: ProcessRefundInput,
   ): Promise<Result<void, UseCaseError>> {
-    if (input.amount <= 0) {
+    if (!isRemainingRefund(input) && input.amount <= 0) {
       return ErrorFactory.UseCaseError(
         'Refund amount must be greater than zero',
         {

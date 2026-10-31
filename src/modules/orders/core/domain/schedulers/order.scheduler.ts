@@ -17,12 +17,15 @@ export interface SchedulePostPaymentProps {
   cartId: number;
 }
 
-export interface ScheduleRefundPaymentProps {
+/**
+ * Schedule a refund for either an explicit major-unit amount (cancel
+ * path), or the payment's remaining balance (surplus path).
+ */
+export type ScheduleRefundPaymentProps = {
   orderId: number;
   paymentId: number;
-  amount: number;
   reason: string;
-}
+} & ({ amount: number } | { mode: 'remaining' });
 
 export abstract class OrderScheduler {
   abstract scheduleCheckout(

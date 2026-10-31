@@ -33,6 +33,17 @@ export interface OrderProps {
   updatedAt: Date | null;
 }
 
+/**
+ * How an incoming completed payment relates to this order's state.
+ * Used by the payment-completed handler; no actor or infrastructure.
+ */
+export type IncomingPaymentClassification =
+  | { action: 'confirm' }
+  | { action: 'record-late' }
+  | { action: 'surplus' }
+  | { action: 'already-applied' }
+  | { action: 'unknown' };
+
 export class Order implements IOrder {
   private _id: number | null;
   private readonly _userId: number;
@@ -206,9 +217,48 @@ export class Order implements IOrder {
   }
 
   /**
+   * Classifies an incoming completed paymentId against this order's
+   * own status and recorded paymentId. Pure query: no side effects.
+   */
+  classifyIncomingPayment(paymentId: number): IncomingPaymentClassification {
+    switch (this._status.value) {
+      case OrderStatus.PENDING_PAYMENT:
+        return { action: 'confirm' };
+
+      case OrderStatus.CANCELLED:
+        if (this._paymentId === null || this._paymentId === paymentId) {
+          return { action: 'record-late' };
+        }
+        return { action: 'surplus' };
+
+      case OrderStatus.PAYMENT_FAILED:
+        return { action: 'surplus' };
+
+      case OrderStatus.CONFIRMED:
+      case OrderStatus.PROCESSING:
+      case OrderStatus.SHIPPED:
+      case OrderStatus.DELIVERED:
+      case OrderStatus.REFUNDED:
+        if (this._paymentId === null) {
+          return { action: 'unknown' };
+        }
+        if (this._paymentId === paymentId) {
+          return { action: 'already-applied' };
+        }
+        return { action: 'surplus' };
+
+      default: {
+        const _exhaustive: never = this._status.value;
+        return _exhaustive;
+      }
+    }
+  }
+
+  /**
    * Records a payment that completed after the order was cancelled.
    * Keeps status CANCELLED. Idempotent for the same paymentId so a
    * retried payment-completed event can still schedule the refund.
+   * Only for the record-late case; surplus payments must not call this.
    */
   recordPaymentAfterCancellation(paymentId: number): Result<void, DomainError> {
     if (!this._status.isCancelled()) {

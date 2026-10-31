@@ -16,6 +16,12 @@ import { ProcessRefundCommand } from '../../commands/process-refund.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { providerMismatchError } from '../../errors/provider-mismatch.error';
 
+function isRemainingMode(
+  command: ProcessRefundCommand,
+): command is Extract<ProcessRefundCommand, { mode: 'remaining' }> {
+  return 'mode' in command && command.mode === 'remaining';
+}
+
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
   ProcessRefundCommand,
@@ -33,9 +39,9 @@ export class ProcessRefundUseCase extends UseCase<
   async execute(
     command: ProcessRefundCommand,
   ): Promise<Result<IPayment, AppError>> {
-    const { paymentId, amount, reason } = command;
+    const { paymentId, reason } = command;
 
-    if (amount <= 0) {
+    if (!isRemainingMode(command) && command.amount <= 0) {
       return ErrorFactory.UseCaseError(
         'Refund amount must be greater than zero',
       );
@@ -50,7 +56,22 @@ export class ProcessRefundUseCase extends UseCase<
       return Result.success(payment.toPrimitives());
     }
 
-    const moneyResult = Money.fromDecimal(amount, payment.currency);
+    let refundMajorUnits: number;
+    if (isRemainingMode(command)) {
+      if (payment.remainingAmount <= 0) {
+        return Result.success(payment.toPrimitives());
+      }
+      const remainingMoney = Money.create(
+        payment.remainingAmount,
+        payment.currency,
+      );
+      if (isFailure(remainingMoney)) return remainingMoney;
+      refundMajorUnits = remainingMoney.value.toMajorUnits();
+    } else {
+      refundMajorUnits = command.amount;
+    }
+
+    const moneyResult = Money.fromDecimal(refundMajorUnits, payment.currency);
     if (isFailure(moneyResult)) return moneyResult;
     const refundMinorUnits = moneyResult.value.amount;
 

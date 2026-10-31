@@ -5,14 +5,14 @@ import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/re
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { ProcessRefundInput } from '../../core/application/ports/payment.gateway';
 
-export interface RefundPaymentJobData {
+export type RefundPaymentJobData = {
   orderId: number;
   paymentId: number;
-  amount: number;
   reason: string;
   correlationId?: string;
-}
+} & ({ amount: number } | { mode: 'remaining' });
 
 @Injectable()
 export class RefundPaymentStep extends BaseJobHandler<
@@ -35,21 +35,41 @@ export class RefundPaymentStep extends BaseJobHandler<
   protected async onExecute(
     job: Job<RefundPaymentJobData>,
   ): Promise<Result<void, AppError>> {
-    const { paymentId, amount, reason } = job.data;
+    const input = toProcessRefundInput(job.data);
+    const amountLabel = refundAmountLabel(input);
+    this.logger.log(
+      `Refunding payment ${input.paymentId} for amount ${amountLabel}...`,
+    );
 
-    this.logger.log(`Refunding payment ${paymentId} for amount ${amount}...`);
-
-    const result = await this.refundPaymentUseCase.execute({
-      paymentId,
-      amount,
-      reason,
-    });
+    const result = await this.refundPaymentUseCase.execute(input);
 
     if (isFailure(result)) {
       return Result.failure(result.error);
     }
 
-    this.logger.log(`Payment ${paymentId} refunded.`);
+    this.logger.log(`Payment ${input.paymentId} refunded.`);
     return Result.success(undefined);
   }
+}
+
+function toProcessRefundInput(data: RefundPaymentJobData): ProcessRefundInput {
+  if ('mode' in data) {
+    return {
+      paymentId: data.paymentId,
+      reason: data.reason,
+      mode: 'remaining',
+    };
+  }
+  return {
+    paymentId: data.paymentId,
+    reason: data.reason,
+    amount: data.amount,
+  };
+}
+
+function refundAmountLabel(input: ProcessRefundInput): string {
+  if ('mode' in input) {
+    return 'remaining';
+  }
+  return String(input.amount);
 }

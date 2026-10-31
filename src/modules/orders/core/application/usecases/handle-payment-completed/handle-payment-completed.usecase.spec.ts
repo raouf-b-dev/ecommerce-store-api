@@ -105,7 +105,7 @@ describe('HandlePaymentCompletedUseCase', () => {
     expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
   });
 
-  it('skips save and scheduling when order is already confirmed', async () => {
+  it('skips save and scheduling when the same paymentId is already applied on a confirmed order', async () => {
     const orderPrimitives = OrderTestFactory.createMockOrder({
       id: orderId,
       status: OrderStatus.CONFIRMED,
@@ -150,7 +150,7 @@ describe('HandlePaymentCompletedUseCase', () => {
     expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
   });
 
-  it('returns failure when confirmPayment domain method fails for PAYMENT_FAILED', async () => {
+  it('schedules a surplus remaining refund and saves nothing when status is PAYMENT_FAILED', async () => {
     const orderPrimitives = OrderTestFactory.createMockOrder({
       id: orderId,
       status: OrderStatus.PAYMENT_FAILED,
@@ -164,14 +164,20 @@ describe('HandlePaymentCompletedUseCase', () => {
       cartId,
     });
 
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      `Failed to confirm payment for order ${orderId}`,
-      UseCaseError,
-    );
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(result.value).toEqual({
+      orderId,
+      status: OrderStatus.PAYMENT_FAILED,
+    });
     expect(mockRepository.save).not.toHaveBeenCalled();
     expect(mockOrderScheduler.schedulePostPayment).not.toHaveBeenCalled();
-    expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
+    expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+      orderId,
+      paymentId,
+      mode: 'remaining',
+      reason: 'Surplus payment refund',
+    });
   });
 
   it('confirms order without scheduling post-payment when reservationId or cartId are omitted', async () => {
@@ -224,6 +230,147 @@ describe('HandlePaymentCompletedUseCase', () => {
       reservationId,
       cartId,
     );
+  });
+
+  describe('surplus payment', () => {
+    const surplusPaymentId = 999;
+
+    it('schedules a remaining refund and saves nothing when a different payment completes on CONFIRMED', async () => {
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+        reservationId,
+        cartId,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({
+        orderId,
+        status: OrderStatus.CONFIRMED,
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.schedulePostPayment).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId,
+        paymentId: surplusPaymentId,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+    });
+
+    it('dedupes to one refund job when the same surplus event is replayed', async () => {
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+      const dedupeScheduler = new MockOrderScheduler();
+      mockOrderScheduler.scheduleRefundPayment.mockImplementation((props) =>
+        dedupeScheduler.scheduleRefundPayment(props),
+      );
+
+      const first = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+      });
+      const second = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(first);
+      ResultAssertionHelper.assertResultSuccess(second);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(2);
+      expect(dedupeScheduler.jobs.size).toBe(1);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('returns a retryable failure when surplus refund scheduling fails retryably', async () => {
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.failure(
+          new InfrastructureError('Queue connection refused', {
+            retryable: true,
+          }),
+        ),
+      );
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule surplus payment refund',
+        UseCaseError,
+      );
+      expect(result.error.retryable).toBe(true);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('returns a non-retryable failure when surplus refund scheduling fails non-retryably', async () => {
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.failure(
+          new InfrastructureError('Invalid payload', { retryable: false }),
+        ),
+      );
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule surplus payment refund',
+        UseCaseError,
+      );
+      expect(result.error.retryable).toBe(false);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('returns success without refund when settled order has null paymentId', async () => {
+      const orderPrimitives = OrderTestFactory.createMockOrder({
+        id: orderId,
+        status: OrderStatus.CONFIRMED,
+        paymentId: null,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(orderPrimitives);
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId: surplusPaymentId,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({
+        orderId,
+        status: OrderStatus.CONFIRMED,
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
   });
 
   describe('when the order is already CANCELLED', () => {
@@ -377,6 +524,33 @@ describe('HandlePaymentCompletedUseCase', () => {
         paymentId,
         amount: cancelledOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
         reason: 'Payment completed after order cancellation',
+      });
+    });
+
+    it('schedules a surplus remaining refund without saving when a different payment completes', async () => {
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId,
+      });
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+
+      const result = await useCase.execute({
+        orderId,
+        paymentId: 999,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toEqual({
+        orderId,
+        status: OrderStatus.CANCELLED,
+      });
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId,
+        paymentId: 999,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
       });
     });
   });

@@ -12,6 +12,7 @@ const successfulStatuses: PaymentStatusType[] = [
 const refundableStatuses: PaymentStatusType[] = [
   PaymentStatusType.CAPTURED,
   PaymentStatusType.COMPLETED,
+  PaymentStatusType.PARTIALLY_REFUNDED,
 ];
 
 const refundedStatuses: PaymentStatusType[] = [

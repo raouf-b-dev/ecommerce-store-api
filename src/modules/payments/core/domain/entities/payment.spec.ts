@@ -141,6 +141,26 @@ describe('Payment', () => {
       expect(payment.status).toBe(PaymentStatusType.REFUNDED);
     });
 
+    it('allows a further refund when status is PARTIALLY_REFUNDED', () => {
+      const payment = PaymentTestFactory.createDomainPayment({
+        id: 1,
+        status: PaymentStatusType.PARTIALLY_REFUNDED,
+        amount: 100,
+        refundedAmount: 40,
+        transactionId: 'tx_1',
+        completedAt: new Date(),
+      });
+      const refund = RefundTestFactory.createDomainRefund({
+        amount: 60,
+        paymentId: 1,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(payment.addRefund(refund));
+
+      expect(payment.refundedAmount).toBe(100);
+      expect(payment.status).toBe(PaymentStatusType.REFUNDED);
+    });
+
     it('rejects refund exceeding payment amount', () => {
       const payment = PaymentTestFactory.createDomainPayment({
         status: PaymentStatusType.COMPLETED,
