@@ -55,7 +55,7 @@ export class MockOrderScheduler implements OrderScheduler {
     }
     const jobId = this.jobConfig.getJobId(
       JobNames.REFUND_PAYMENT,
-      `order-${props.orderId}`,
+      `payment-${props.paymentId}`,
     );
     if (!this.jobs.has(jobId)) {
       this.jobs.set(jobId, props);

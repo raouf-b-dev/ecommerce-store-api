@@ -131,7 +131,7 @@ describe('BullMqOrderScheduler', () => {
   });
 
   describe('scheduleRefundPayment', () => {
-    it('schedules refund with stable jobId and correct payload', async () => {
+    it('schedules refund with stable payment-based jobId and correct payload', async () => {
       const props: ScheduleRefundPaymentProps = {
         orderId: 42,
         paymentId: 101,
@@ -144,7 +144,7 @@ describe('BullMqOrderScheduler', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       const expectedJobId = jobConfigService.getJobId(
         JobNames.REFUND_PAYMENT,
-        'order-42',
+        'payment-101',
       );
       expect(result.value).toBe(expectedJobId);
 
@@ -161,6 +161,39 @@ describe('BullMqOrderScheduler', () => {
         opts: expect.objectContaining({
           jobId: expectedJobId,
           attempts: 8,
+        }),
+      });
+    });
+
+    it('schedules a remaining-mode refund with the same payment-based jobId', async () => {
+      const props: ScheduleRefundPaymentProps = {
+        orderId: 42,
+        paymentId: 101,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      };
+
+      const result = await scheduler.scheduleRefundPayment(props);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      const expectedJobId = jobConfigService.getJobId(
+        JobNames.REFUND_PAYMENT,
+        'payment-101',
+      );
+      expect(result.value).toBe(expectedJobId);
+
+      expect(mockFlowProducer.add).toHaveBeenCalledWith({
+        name: JobNames.REFUND_PAYMENT,
+        queueName: 'checkout',
+        data: {
+          orderId: 42,
+          paymentId: 101,
+          mode: 'remaining',
+          reason: 'Surplus payment refund',
+          correlationId: 'test-correlation-id',
+        },
+        opts: expect.objectContaining({
+          jobId: expectedJobId,
         }),
       });
     });

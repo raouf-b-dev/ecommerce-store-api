@@ -64,9 +64,11 @@ export class PaymentStatus {
   }
 
   canBeRefunded(): boolean {
-    return [PaymentStatusType.CAPTURED, PaymentStatusType.COMPLETED].includes(
-      this._status,
-    );
+    return [
+      PaymentStatusType.CAPTURED,
+      PaymentStatusType.COMPLETED,
+      PaymentStatusType.PARTIALLY_REFUNDED,
+    ].includes(this._status);
   }
 
   equals(other: PaymentStatus): boolean {

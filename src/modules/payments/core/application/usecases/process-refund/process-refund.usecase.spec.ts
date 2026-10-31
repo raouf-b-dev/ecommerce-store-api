@@ -406,4 +406,89 @@ describe('ProcessRefundUseCase', () => {
     expect(result.error.statusCode).toBe(400);
     expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
+
+  describe('remaining mode', () => {
+    it('refunds only the remaining amount of a PARTIALLY_REFUNDED payment', async () => {
+      const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+        id: 123,
+        amount: 100,
+        refundedAmount: 40,
+        status: PaymentStatusType.PARTIALLY_REFUNDED,
+        transactionId: 'txn_123',
+      });
+      const payment = PaymentMapper.toDomain(paymentEntity);
+
+      paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+      paymentRepository.update.mockImplementation((p) =>
+        Promise.resolve(Result.success(p)),
+      );
+
+      const result = await useCase.execute({
+        paymentId: 123,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.refundedAmount).toBe(10000);
+      expect(result.value.status).toBe(PaymentStatusType.REFUNDED);
+      expect(defaultProvider.refund).toHaveBeenCalledWith({
+        providerReference: 'txn_123',
+        amount: expect.objectContaining({ amount: 6000, currency: 'USD' }),
+        idempotencyKey: 'refund-123-0',
+      });
+    });
+
+    it('refunds the full amount of a captured payment', async () => {
+      const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+        id: 123,
+        amount: 100,
+        refundedAmount: 0,
+        status: PaymentStatusType.CAPTURED,
+        transactionId: 'txn_123',
+      });
+      const payment = PaymentMapper.toDomain(paymentEntity);
+
+      paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+      paymentRepository.update.mockImplementation((p) =>
+        Promise.resolve(Result.success(p)),
+      );
+
+      const result = await useCase.execute({
+        paymentId: 123,
+        mode: 'remaining',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.refundedAmount).toBe(10000);
+      expect(result.value.status).toBe(PaymentStatusType.REFUNDED);
+      expect(defaultProvider.refund).toHaveBeenCalledWith({
+        providerReference: 'txn_123',
+        amount: expect.objectContaining({ amount: 10000, currency: 'USD' }),
+        idempotencyKey: 'refund-123-0',
+      });
+    });
+
+    it('is a no-op success on an already REFUNDED payment', async () => {
+      const paymentEntity = PaymentEntityTestFactory.createPaymentEntity({
+        id: 123,
+        amount: 100,
+        refundedAmount: 100,
+        status: PaymentStatusType.REFUNDED,
+        transactionId: 'txn_123',
+      });
+      const payment = PaymentMapper.toDomain(paymentEntity);
+
+      paymentRepository.mockSuccessfulFindById(payment.toPrimitives());
+
+      const result = await useCase.execute({
+        paymentId: 123,
+        mode: 'remaining',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(defaultProvider.refund).not.toHaveBeenCalled();
+      expect(paymentRepository.update).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -40,6 +40,26 @@ describe('RefundCheckoutPaymentUseCase', () => {
     );
   });
 
+  it('accepts remaining mode and forwards it to the gateway', async () => {
+    const input: ProcessRefundInput = {
+      paymentId: 10,
+      mode: 'remaining',
+      reason: 'Surplus payment refund',
+    };
+
+    const result = await useCase.execute(input);
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(paymentGateway.processRefund).toHaveBeenCalledWith(input);
+    expect(domainEventPublisher.publish).toHaveBeenCalledWith(
+      'checkout.saga.compensation',
+      {
+        step: 'refund-payment',
+        paymentId: 10,
+      },
+    );
+  });
+
   it('returns failure when amount is zero', async () => {
     const input: ProcessRefundInput = {
       paymentId: 10,

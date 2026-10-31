@@ -256,6 +256,108 @@ describe('Order', () => {
     });
   });
 
+  describe('classifyIncomingPayment', () => {
+    it('returns confirm when status is PENDING_PAYMENT', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PENDING_PAYMENT,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({ action: 'confirm' });
+    });
+
+    it('returns record-late when CANCELLED with no payment recorded', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'record-late',
+      });
+    });
+
+    it('returns record-late when CANCELLED with the same paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'record-late',
+      });
+    });
+
+    it('returns surplus when CANCELLED with a different paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(99)).toEqual({ action: 'surplus' });
+    });
+
+    it('returns surplus when status is PAYMENT_FAILED for any paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PAYMENT_FAILED,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({ action: 'surplus' });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns already-applied when %s and paymentId matches', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'already-applied',
+      });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns surplus when %s and paymentId differs', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(99)).toEqual({
+        action: 'surplus',
+      });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns unknown when %s and paymentId is null', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'unknown',
+      });
+    });
+  });
+
   describe('recordPaymentAfterCancellation', () => {
     it('sets paymentId and keeps CANCELLED when status is CANCELLED', () => {
       const order = OrderTestFactory.createDomainOrder({

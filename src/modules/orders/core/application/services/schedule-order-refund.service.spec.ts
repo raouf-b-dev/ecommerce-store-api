@@ -134,4 +134,51 @@ describe('ScheduleOrderRefundService', () => {
       },
     });
   });
+
+  describe('scheduleForPayment', () => {
+    it('schedules a remaining-mode refund for the given payment', async () => {
+      const result = await service.scheduleForPayment(
+        7,
+        42,
+        'Surplus payment refund',
+      );
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
+        orderId: 7,
+        paymentId: 42,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+    });
+
+    it('returns a retryable failure whose message does not mention cancellation', async () => {
+      const cause = new InfrastructureError('Queue down', { retryable: true });
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.failure(cause),
+      );
+
+      const result = await service.scheduleForPayment(
+        7,
+        42,
+        'Surplus payment refund',
+      );
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to schedule surplus payment refund',
+        UseCaseError,
+        cause,
+      );
+      expect(result.error.message).not.toMatch(/cancelled/i);
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          retryable: true,
+        },
+      });
+    });
+  });
 });

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A payment that is not the one an order accepted (a second payment on a settled order, a different payment on a cancelled order, or a late payment on a payment-failed order) is now refunded in full instead of being dropped, and refund jobs are keyed per payment.
+
 ## [0.13.0] - 2026-10-28
 
 ### Added

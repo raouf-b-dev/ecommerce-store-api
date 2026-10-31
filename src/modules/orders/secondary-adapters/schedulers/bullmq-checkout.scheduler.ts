@@ -216,7 +216,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     try {
       const jobId = this.jobConfig.getJobId(
         JobNames.REFUND_PAYMENT,
-        `order-${props.orderId}`,
+        `payment-${props.paymentId}`,
       );
       const correlationId = this.correlation.getId();
 
@@ -224,10 +224,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
         name: JobNames.REFUND_PAYMENT,
         queueName: 'checkout',
         data: {
-          orderId: props.orderId,
-          paymentId: props.paymentId,
-          amount: props.amount,
-          reason: props.reason,
+          ...toRefundJobPayload(props),
           ...(correlationId ? { correlationId } : {}),
         },
         opts: {
@@ -288,4 +285,25 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
       );
     }
   }
+}
+
+function toRefundJobPayload(props: ScheduleRefundPaymentProps): {
+  orderId: number;
+  paymentId: number;
+  reason: string;
+} & ({ amount: number } | { mode: 'remaining' }) {
+  if ('mode' in props) {
+    return {
+      orderId: props.orderId,
+      paymentId: props.paymentId,
+      reason: props.reason,
+      mode: 'remaining',
+    };
+  }
+  return {
+    orderId: props.orderId,
+    paymentId: props.paymentId,
+    reason: props.reason,
+    amount: props.amount,
+  };
 }

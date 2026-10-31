@@ -49,11 +49,22 @@ export interface PaymentIntentResult {
   clientSecret: string;
 }
 
-export interface ProcessRefundInput {
-  paymentId: number;
-  amount: number;
-  reason: string;
-}
+/**
+ * Refund either an explicit major-unit amount, or whatever remains on
+ * the payment (decided by payments at execution time). Discriminated so
+ * an omitted amount cannot silently mean remaining.
+ */
+export type ProcessRefundInput =
+  | {
+      paymentId: number;
+      reason: string;
+      amount: number;
+    }
+  | {
+      paymentId: number;
+      reason: string;
+      mode: 'remaining';
+    };
 
 export abstract class PaymentGateway {
   abstract createPayment(

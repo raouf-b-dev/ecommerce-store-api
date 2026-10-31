@@ -64,6 +64,24 @@ describe('RefundPaymentStep', () => {
     });
   });
 
+  it('forwards remaining mode without an amount', async () => {
+    const jobData: RefundPaymentJobData = {
+      orderId: 1,
+      paymentId: 10,
+      mode: 'remaining',
+      reason: 'Surplus payment refund',
+    };
+    const mockJob = createMockJob('refund-payment', jobData);
+
+    await jobHandler.handle(mockJob);
+
+    expect(execute).toHaveBeenCalledWith({
+      paymentId: 10,
+      mode: 'remaining',
+      reason: 'Surplus payment refund',
+    });
+  });
+
   it('does NOT throw UnrecoverableError when usecase returns retryable gateway failure', async () => {
     execute.mockResolvedValueOnce(
       ErrorFactory.UseCaseError('Failed to refund checkout payment', {
