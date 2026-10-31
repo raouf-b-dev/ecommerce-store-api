@@ -17,6 +17,7 @@ import {
   PaymentMethodType,
   isPaymentMethodType,
 } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { orderCannotBeCancelledError } from '../errors/order-cannot-be-cancelled.error';
 
 export interface OrderProps {
   id: number | null;
@@ -204,6 +205,36 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.CONFIRMED);
   }
 
+  /**
+   * Records a payment that completed after the order was cancelled.
+   * Keeps status CANCELLED. Idempotent for the same paymentId so a
+   * retried payment-completed event can still schedule the refund.
+   */
+  recordPaymentAfterCancellation(paymentId: number): Result<void, DomainError> {
+    if (!this._status.isCancelled()) {
+      return ErrorFactory.DomainError(
+        'Payment after cancellation can only be recorded when the order is cancelled',
+      );
+    }
+
+    if (!paymentId) {
+      return ErrorFactory.DomainError('Payment ID is required');
+    }
+
+    if (this._paymentId !== null) {
+      if (this._paymentId !== paymentId) {
+        return ErrorFactory.DomainError(
+          'Order already has a different payment recorded',
+        );
+      }
+      return Result.success(undefined);
+    }
+
+    this._paymentId = paymentId;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
+  }
+
   markPaymentFailed(): Result<void, DomainError> {
     if (!this._status.isPendingPayment()) {
       return ErrorFactory.DomainError(
@@ -261,6 +292,20 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.DELIVERED);
   }
 
+  /** True once fulfilment has begun (PROCESSING and later active states). */
+  isFulfilmentStarted(): boolean {
+    return (
+      this._status.isProcessing() ||
+      this._status.isShipped() ||
+      this._status.isDelivered() ||
+      this._status.isRefunded()
+    );
+  }
+
+  /**
+   * True when cancel is possible for the current status at all
+   * (PENDING_PAYMENT, PAYMENT_FAILED, CONFIRMED, PROCESSING).
+   */
   isCancellable(): boolean {
     return (
       this._status.isPendingPayment() ||
@@ -272,10 +317,7 @@ export class Order implements IOrder {
 
   cancel(reason?: string): Result<void, DomainError> {
     if (!this.isCancellable()) {
-      return ErrorFactory.DomainError(
-        'Order cannot be cancelled in current state',
-        { status: 409 },
-      );
+      return orderCannotBeCancelledError();
     }
 
     if (reason) {

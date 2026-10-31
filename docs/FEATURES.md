@@ -180,6 +180,12 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 
 **Location**: `src/modules/products/core/domain/policies/catalog-visibility.policy.ts`, `src/modules/products/products.controller.ts`, `src/modules/products/categories.controller.ts`
 
+### Shopper Order Cancel
+
+`PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders`. Ownership and the rule that a caller without `manage_orders` cannot cancel once fulfilment has started (`PROCESSING` or later) live in `CancelOrderAccessPolicy` (application layer). The Order domain only knows actor-free status facts (`isCancellable`, `isFulfilmentStarted`) and returns 409 for a non-cancellable status. Missing and foreign orders both return HTTP 422 UseCaseError (same as `GET /v1/orders/:id`). Jobs and compensation pass `SYSTEM_CALLER_CONTEXT`. `view_own_orders` remains read-only.
+
+**Location**: `src/modules/orders/orders.controller.ts`, `src/modules/orders/core/application/usecases/cancel-order/`, `src/modules/orders/core/application/services/cancel-order-access.policy.ts`, `src/modules/orders/core/domain/entities/order.ts`
+
 ### Forced Credential Rotation (mustChangePassword)
 
 Seeded and bootstrap credentials set `mustChangePassword = true`. Login and refresh return the flag; `POST /v1/authentication/change-password` clears it, revokes other sessions, and reissues tokens. `MustChangePasswordGuard` returns HTTP 403 (`MUST_CHANGE_PASSWORD`) on other authenticated routes until rotation.

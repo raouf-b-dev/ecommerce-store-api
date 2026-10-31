@@ -7,6 +7,7 @@ import { CancelOrderUseCase } from '../../core/application/usecases/cancel-order
 import { QueueEventsService } from '../../../../infrastructure/queue/queue-events.service';
 import { parseCheckoutCompensationJobData } from './checkout-compensation-job-data';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 @Injectable()
 export class CheckoutFailureListener implements OnModuleInit {
@@ -67,6 +68,7 @@ export class CheckoutFailureListener implements OnModuleInit {
             const cancelResult = await this.cancelOrderUseCase.execute({
               orderId,
               isSagaCompensation: true,
+              callerContext: SYSTEM_CALLER_CONTEXT,
             });
             if (cancelResult.isFailure) {
               this.logger.error(

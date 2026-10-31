@@ -87,6 +87,66 @@ describe('Order', () => {
     });
   });
 
+  describe('isCancellable', () => {
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isCancellable()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isCancellable()).toBe(false);
+    });
+  });
+
+  describe('isFulfilmentStarted', () => {
+    it.each([
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(false);
+    });
+  });
+
   describe('cancel', () => {
     it.each([
       OrderStatus.PENDING_PAYMENT,
@@ -193,6 +253,84 @@ describe('Order', () => {
         'Payment ID is required',
         DomainError,
       );
+    });
+  });
+
+  describe('recordPaymentAfterCancellation', () => {
+    it('sets paymentId and keeps CANCELLED when status is CANCELLED', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('is idempotent for the same paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('rejects a different paymentId when one is already recorded', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      const result = order.recordPaymentAfterCancellation(99);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order already has a different payment recorded',
+        DomainError,
+      );
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('rejects when status is not CANCELLED', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PENDING_PAYMENT,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Payment after cancellation can only be recorded when the order is cancelled',
+        DomainError,
+      );
+      expect(order.status).toBe(OrderStatus.PENDING_PAYMENT);
+      expect(order.paymentId).toBeNull();
+    });
+
+    it('rejects a missing payment id', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(0);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Payment ID is required',
+        DomainError,
+      );
+      expect(order.paymentId).toBeNull();
     });
   });
 

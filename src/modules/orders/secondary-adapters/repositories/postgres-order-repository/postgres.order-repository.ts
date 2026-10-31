@@ -78,7 +78,9 @@ export class PostgresOrderRepository implements OrderRepository {
         relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          status: HttpStatus.NOT_FOUND,
+        });
       }
       return Result.success({
         entity: OrderMapper.toDomain(orderEntity),

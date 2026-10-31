@@ -77,8 +77,14 @@ describe('ExpirePendingOrdersUseCase', () => {
     );
 
     expect(mockCancelOrderUseCase.execute).toHaveBeenCalledTimes(2);
-    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({ orderId: 1 });
-    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({ orderId: 2 });
+    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: 1,
+      callerContext: expect.objectContaining({ kind: 'system' }),
+    });
+    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: 2,
+      callerContext: expect.objectContaining({ kind: 'system' }),
+    });
   });
 
   it('should return failure if repository fails to find orders', async () => {

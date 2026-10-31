@@ -27,7 +27,7 @@ describe('FindRoleByUserIdUseCase', () => {
       code: 'CUSTOMER',
       name: 'Customer',
       isSystem: true,
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -57,7 +57,7 @@ describe('FindRoleByUserIdUseCase', () => {
     expect(result.value).toEqual({
       id: 456,
       code: 'CUSTOMER',
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
     });
   });
 

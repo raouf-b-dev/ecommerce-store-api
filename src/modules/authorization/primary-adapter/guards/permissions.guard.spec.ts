@@ -88,6 +88,54 @@ describe('PermissionsGuard', () => {
     ).toBe(true);
   });
 
+  it('allows cancel when the caller has manage_orders without cancel_own_orders', async () => {
+    mockReflector.getAllAndOverride.mockReturnValue([
+      'manage_orders',
+      'cancel_own_orders',
+    ]);
+    mockResolvePermissionsService.execute.mockResolvedValue(
+      Result.success(RolePermissionsVO.fromCodes(['manage_orders'])),
+    );
+
+    const context = createMockExecutionContext(
+      createMockRequestWithUser({ role: 'ADMIN' }),
+    );
+
+    expect(await guard.canActivate(context)).toBe(true);
+  });
+
+  it('allows cancel when the caller has cancel_own_orders without manage_orders', async () => {
+    mockReflector.getAllAndOverride.mockReturnValue([
+      'manage_orders',
+      'cancel_own_orders',
+    ]);
+    mockResolvePermissionsService.execute.mockResolvedValue(
+      Result.success(RolePermissionsVO.fromCodes(['cancel_own_orders'])),
+    );
+
+    const context = createMockExecutionContext(
+      createMockRequestWithUser({ role: 'CUSTOMER' }),
+    );
+
+    expect(await guard.canActivate(context)).toBe(true);
+  });
+
+  it('denies cancel when the caller has only view_own_orders', async () => {
+    mockReflector.getAllAndOverride.mockReturnValue([
+      'manage_orders',
+      'cancel_own_orders',
+    ]);
+    mockResolvePermissionsService.execute.mockResolvedValue(
+      Result.success(RolePermissionsVO.fromCodes(['view_own_orders'])),
+    );
+
+    const context = createMockExecutionContext(
+      createMockRequestWithUser({ role: 'CUSTOMER' }),
+    );
+
+    expect(await guard.canActivate(context)).toBe(false);
+  });
+
   it('should return false if resolving permissions fails', async () => {
     mockReflector.getAllAndOverride.mockReturnValue(['manage_roles']);
 
