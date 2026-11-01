@@ -74,6 +74,29 @@ describe('Security IDOR (e2e)', () => {
       .set(AuthTestHelper.bearer(user.accessToken));
   }
 
+  function postOrderPaymentAs(user: AuthSession, orderId: number) {
+    return http
+      .post(`${E2E_API_PREFIX}/orders/${orderId}/payments`)
+      .set(AuthTestHelper.bearer(user.accessToken))
+      .set(
+        'Idempotency-Key',
+        `idor-pay-${orderId}-${Date.now()}-${Math.random()}`,
+      )
+      .send({ paymentMethod: 'CARD' });
+  }
+
+  function notFoundIdentity(body: {
+    statusCode?: number;
+    code?: string;
+    message?: string;
+  }) {
+    return {
+      statusCode: body.statusCode,
+      code: body.code,
+      message: body.message,
+    };
+  }
+
   describe('users', () => {
     it('allows user to read own profile', async () => {
       const response = await http
@@ -92,6 +115,7 @@ describe('Security IDOR (e2e)', () => {
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(response, {
         statusCode: HttpStatus.NOT_FOUND,
+        code: 'USER_NOT_FOUND',
         messageContains: `User with id ${userB.userId} not found`,
       });
     });
@@ -111,6 +135,7 @@ describe('Security IDOR (e2e)', () => {
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(response, {
         statusCode: HttpStatus.NOT_FOUND,
+        code: 'USER_NOT_FOUND',
         messageContains: `User with id ${userB.userId} not found`,
       });
     });
@@ -137,6 +162,7 @@ describe('Security IDOR (e2e)', () => {
       expect(crossRead.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(crossRead, {
         statusCode: HttpStatus.NOT_FOUND,
+        code: 'CART_NOT_FOUND',
         messageContains: 'not found',
       });
     });
@@ -292,9 +318,10 @@ describe('Security IDOR (e2e)', () => {
     it('denies user reading a non-owned order id', async () => {
       const response = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);
 
-      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(response, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
         messageContains: `Order with id ${MISSING_ORDER_ID} not found`,
       });
     });
@@ -307,17 +334,33 @@ describe('Security IDOR (e2e)', () => {
       const missing = await getAs(userA, `/orders/${MISSING_ORDER_ID}`);
       const crossRead = await getAs(userA, `/orders/${customerBOrderId}`);
 
-      expect(crossRead.status).toBe(missing.status);
+      expect(crossRead.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(crossRead, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
         messageContains: `Order with id ${customerBOrderId} not found`,
       });
-      expect(Object.keys(crossRead.body).sort()).toEqual(
-        Object.keys(missing.body).sort(),
-      );
+      expect(notFoundIdentity(crossRead.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(notFoundIdentity(missing.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${MISSING_ORDER_ID} not found`,
+      });
       expect(crossRead.body).not.toHaveProperty('items');
       expect(crossRead.body).not.toHaveProperty('userId');
       expect(crossRead.body).not.toHaveProperty('userEmail');
+    });
+
+    it('returns 401 when cancelling without authentication', async () => {
+      const response = await http.patch(
+        `${E2E_API_PREFIX}/orders/${MISSING_ORDER_ID}/cancel`,
+      );
+
+      expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('denies user cancelling a non-owned order id', async () => {
@@ -326,9 +369,10 @@ describe('Security IDOR (e2e)', () => {
         `/orders/${MISSING_ORDER_ID}/cancel`,
       );
 
-      expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(response, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
         messageContains: `Order with id ${MISSING_ORDER_ID} not found`,
       });
     });
@@ -343,18 +387,58 @@ describe('Security IDOR (e2e)', () => {
         `/orders/${customerBOrderId}/cancel`,
       );
 
-      expect(crossCancel.status).toBe(missing.status);
-      expect(crossCancel.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(crossCancel.status).toBe(HttpStatus.NOT_FOUND);
       HttpErrorAssertionHelper.assertErrorContract(crossCancel, {
-        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
         messageContains: `Order with id ${customerBOrderId} not found`,
       });
-      expect(Object.keys(crossCancel.body).sort()).toEqual(
-        Object.keys(missing.body).sort(),
-      );
+      expect(notFoundIdentity(crossCancel.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(notFoundIdentity(missing.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${MISSING_ORDER_ID} not found`,
+      });
       expect(crossCancel.body).not.toHaveProperty('items');
       expect(crossCancel.body).not.toHaveProperty('userId');
       expect(crossCancel.body).not.toHaveProperty('status');
+    });
+
+    it('returns ORDER_NOT_FOUND for POST payment on a missing order', async () => {
+      const response = await postOrderPaymentAs(userA, MISSING_ORDER_ID);
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+      HttpErrorAssertionHelper.assertErrorContract(response, {
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        messageContains: `Order with id ${MISSING_ORDER_ID} not found`,
+      });
+    });
+
+    it('returns the same ORDER_NOT_FOUND body for POST payment on a foreign order', async () => {
+      const missing = await postOrderPaymentAs(userA, MISSING_ORDER_ID);
+      const crossPay = await postOrderPaymentAs(userA, customerBOrderId);
+
+      expect(crossPay.status).toBe(HttpStatus.NOT_FOUND);
+      HttpErrorAssertionHelper.assertErrorContract(crossPay, {
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        messageContains: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(notFoundIdentity(crossPay.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${customerBOrderId} not found`,
+      });
+      expect(notFoundIdentity(missing.body)).toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        code: 'ORDER_NOT_FOUND',
+        message: `Order with id ${MISSING_ORDER_ID} not found`,
+      });
     });
 
     it('returns null when no payment exists for the requested order', async () => {

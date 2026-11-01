@@ -26,7 +26,9 @@ export class PostgresProductRepository implements ProductRepository {
         where: { id },
       });
       if (!ormEntity) {
-        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
+        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`, {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success({
         entity: ProductMapper.toDomain(ormEntity),
@@ -104,7 +106,9 @@ export class PostgresProductRepository implements ProductRepository {
   ): Promise<Result<Product, RepositoryError>> {
     const existing = await this.ormRepo.findOne({ where: { id } });
     if (!existing) {
-      return ErrorFactory.RepositoryError(`${name} not found`);
+      return ErrorFactory.RepositoryError(`${name} not found`, {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return ErrorFactory.RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
@@ -117,7 +121,10 @@ export class PostgresProductRepository implements ProductRepository {
       const ormEntity = await this.ormRepo.findOne({
         where: { id },
       });
-      if (!ormEntity) return ErrorFactory.RepositoryError('Product not found');
+      if (!ormEntity)
+        return ErrorFactory.RepositoryError('Product not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
 
       return Result.success<Product>(ProductMapper.toDomain(ormEntity));
     } catch (error) {

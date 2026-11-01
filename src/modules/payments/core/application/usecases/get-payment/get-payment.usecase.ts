@@ -14,6 +14,7 @@ import {
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { PaymentQueryService } from '../../ports/payment-query.service';
 import { PaymentDetailDTO } from '../../queries/results/payment-detail.result';
+import { paymentNotFoundError } from '../../services/payment-not-found';
 
 export interface GetPaymentInput {
   paymentId: number;
@@ -41,9 +42,7 @@ export class GetPaymentUseCase extends UseCase<
     );
 
     if (!scope.allowed) {
-      return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
-      );
+      return paymentNotFoundError(paymentId);
     }
 
     const result = await this.paymentQueryService.getById(
@@ -51,14 +50,20 @@ export class GetPaymentUseCase extends UseCase<
       scope.authorizedUserId,
     );
 
-    if (isFailure(result) || !result.value) {
-      return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
-      );
+    if (isFailure(result)) {
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        kind: result.error.kind,
+        retryable: result.error.retryable,
+      });
+    }
+
+    if (!result.value) {
+      return paymentNotFoundError(paymentId);
     }
 
     return Result.success(
-      result.value && CustomerPiiPolicy.present(result.value, callerContext),
+      CustomerPiiPolicy.present(result.value, callerContext),
     );
   }
 }

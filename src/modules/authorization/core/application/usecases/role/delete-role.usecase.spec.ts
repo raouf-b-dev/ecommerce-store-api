@@ -8,6 +8,8 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('DeleteRoleUseCase', () => {
   let useCase: DeleteRoleUseCase;
@@ -64,7 +66,9 @@ describe('DeleteRoleUseCase', () => {
   it('should return failure if role not found', async () => {
     // Arrange
     mockRoleRepo.findById.mockResolvedValue(
-      ErrorFactory.RepositoryError('Role not found'),
+      ErrorFactory.RepositoryError('Role not found', {
+        kind: ErrorKind.NOT_FOUND,
+      }),
     );
 
     // Act
@@ -72,6 +76,8 @@ describe('DeleteRoleUseCase', () => {
 
     // Assert
     ResultAssertionHelper.assertResultFailure(result, 'Role not found');
+    expect(result.error.code).toBe(ErrorCode.ROLE_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(mockRoleRepo.delete).not.toHaveBeenCalled();
   });
 

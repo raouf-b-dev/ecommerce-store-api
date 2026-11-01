@@ -7,6 +7,8 @@ import { UpdateUserCommand } from '../../../commands/update-user.command';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('UpdateUserUseCase', () => {
   let useCase: UpdateUserUseCase;
@@ -56,9 +58,11 @@ describe('UpdateUserUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'User not found',
+        'User with id 999 not found',
         UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.USER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
       expect(mockUserRepository.findByIdForUpdate).toHaveBeenCalledWith(userId);
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });

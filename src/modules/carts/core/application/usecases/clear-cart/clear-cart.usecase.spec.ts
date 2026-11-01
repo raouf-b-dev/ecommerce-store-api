@@ -1,6 +1,8 @@
 import { ClearCartUseCase } from './clear-cart.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
 import { CartTestFactory, MockCartRepository } from 'src/modules/carts/testing';
@@ -59,8 +61,10 @@ describe('ClearCartUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         `Cart with id ${cartId} not found`,
-        RepositoryError,
+        UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
   });
 });

@@ -128,7 +128,9 @@ export class PostgresUserRepository implements UserRepository {
       relations: { addresses: true },
     });
     if (!updated) {
-      return ErrorFactory.RepositoryError('User not found');
+      return ErrorFactory.RepositoryError('User not found', {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return Result.success(UserMapper.toDomain(updated));
   }
@@ -168,7 +170,9 @@ export class PostgresUserRepository implements UserRepository {
   ): Promise<RepositoryError> {
     const existing = await manager.findOne(entity, { where: { id } });
     if (!existing) {
-      return new RepositoryError(`${name} not found`);
+      return new RepositoryError(`${name} not found`, {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return new RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,

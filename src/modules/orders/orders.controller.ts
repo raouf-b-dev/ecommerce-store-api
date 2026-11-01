@@ -15,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiHeader,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -151,7 +152,11 @@ export class OrdersController {
     description: 'Order found.',
     type: OrderDetailResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async findOne(
     @Param('id', ParseIntPipe) id: number,
@@ -199,6 +204,12 @@ export class OrdersController {
     status: 503,
     description: 'Service unavailable - idempotency store unavailable.',
   })
+  @ApiResponse({
+    status: 404,
+    description:
+      'Order not found (missing id or inaccessible; same body as GET order).',
+    type: ErrorResponseDto,
+  })
   @ApiHeader({
     name: 'Idempotency-Key',
     description: 'Client idempotency key. Required.',
@@ -232,7 +243,11 @@ export class OrdersController {
     description: 'Order confirmed successfully.',
     type: OrderMutationResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Order cannot be confirmed.' })
   async confirmOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.confirmOrderUseCase.execute(id);
@@ -249,7 +264,11 @@ export class OrdersController {
     description: 'Order processing started.',
     type: OrderMutationResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found.',
+    type: ErrorResponseDto,
+  })
   async processOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.processOrderUseCase.execute(id);
   }
@@ -262,7 +281,11 @@ export class OrdersController {
     description: 'Order marked as shipped.',
     type: OrderMutationResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found.',
+    type: ErrorResponseDto,
+  })
   async shipOrder(@Param('id', ParseIntPipe) id: number) {
     return await this.shipOrderUseCase.execute(id);
   }
@@ -278,7 +301,11 @@ export class OrdersController {
     description: 'Order marked as delivered.',
     type: OrderMutationResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Order not found.',
+    type: ErrorResponseDto,
+  })
   async deliverOrder(
     @Param('id', ParseIntPipe) id: number,
     @Body() deliverOrderDto?: DeliverOrderDto,
@@ -312,9 +339,10 @@ export class OrdersController {
       'Authenticated caller lacks manage_orders and cancel_own_orders.',
   })
   @ApiResponse({
-    status: 422,
+    status: 404,
     description:
       'Order not found (missing id or inaccessible; same body as GET order).',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
     status: 409,

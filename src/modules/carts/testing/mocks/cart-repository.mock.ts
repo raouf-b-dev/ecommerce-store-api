@@ -2,6 +2,7 @@
 import { CartRepository } from '../../core/domain/repositories/cart.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { Cart } from '../../core/domain/entities/cart';
 import { ICart } from '../../core/domain/interfaces/cart.interface';
 
@@ -32,7 +33,9 @@ export class MockCartRepository implements CartRepository {
   }
 
   mockCartNotFound(id: string): void {
-    const error = new RepositoryError(`Cart with id ${id} not found`);
+    const error = new RepositoryError(`Cart with id ${id} not found`, {
+      kind: ErrorKind.NOT_FOUND,
+    });
     this.findByuserId.mockResolvedValue(Result.failure(error));
     this.findById.mockResolvedValue(Result.failure(error));
     this.findByIdForUpdate.mockResolvedValue(Result.failure(error));

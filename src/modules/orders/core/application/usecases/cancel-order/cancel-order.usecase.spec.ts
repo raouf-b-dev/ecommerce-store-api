@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import { Logger } from '@nestjs/common';
 import { CancelOrderUseCase } from './cancel-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
@@ -111,6 +112,8 @@ describe('CancelOrderUseCase', () => {
       'Order with id 1 not found',
       UseCaseError,
     );
+    expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
 
     expect(mockRepository.save).not.toHaveBeenCalled();
     expect(mockOrderScheduler.scheduleOrderStockRelease).not.toHaveBeenCalled();

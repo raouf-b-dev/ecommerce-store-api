@@ -1,4 +1,3 @@
-import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -11,6 +10,7 @@ import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces
 import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
 import { ProductQueryService } from '../../ports/product-query.service';
 import { ProductDetailDTO } from '../../queries/results/product-detail.result';
+import { productNotFoundError } from '../../services/product-not-found';
 
 @Injectable()
 export class GetProductUseCase extends UseCase<
@@ -28,17 +28,20 @@ export class GetProductUseCase extends UseCase<
   ): Promise<Result<ProductDetailDTO, UseCaseError>> {
     const result = await this.productQueryService.getById(id);
 
-    if (isFailure(result) || !result.value) {
-      return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
-        cause: isFailure(result) ? result.error : null,
-        kind: ErrorKind.NOT_FOUND,
+    if (isFailure(result)) {
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        kind: result.error.kind,
+        retryable: result.error.retryable,
       });
     }
 
+    if (!result.value) {
+      return productNotFoundError(id);
+    }
+
     if (!CatalogVisibilityPolicy.isVisible(result.value.isActive, caller)) {
-      return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
-        kind: ErrorKind.NOT_FOUND,
-      });
+      return productNotFoundError(id);
     }
 
     return Result.success(result.value);

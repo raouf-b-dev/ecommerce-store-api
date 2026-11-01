@@ -7,6 +7,7 @@ import {
   ApiOkResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { GetUserNotificationsUseCase } from './core/application/usecases/get-user-notifications.usecase';
 import { MarkNotificationAsReadUseCase } from './core/application/usecases/mark-notification-as-read.usecase';
 import { GetUserNotificationsDto } from './primary-adapters/dto/get-user-notifications.dto';
@@ -41,6 +42,11 @@ export class NotificationsController {
   @ApiResponse({
     status: 200,
     description: 'Notification marked as read (empty body)',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Notification not found',
+    type: ErrorResponseDto,
   })
   async markAsRead(
     @CurrentUser('userId') userId: string,

@@ -1,6 +1,7 @@
 import { PaymentRepository } from '../../core/domain/repositories/payment.repository';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { Payment } from '../../core/domain/entities/payment';
 import { Refund } from '../../core/domain/entities/refund';
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
@@ -39,7 +40,11 @@ export class MockPaymentRepository implements PaymentRepository {
 
   mockPaymentNotFound(id: number): void {
     this.findById.mockResolvedValue(
-      Result.failure(new RepositoryError(`Payment with id ${id} not found`)),
+      Result.failure(
+        new RepositoryError(`Payment with id ${id} not found`, {
+          kind: ErrorKind.NOT_FOUND,
+        }),
+      ),
     );
   }
 

@@ -1,8 +1,8 @@
 import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { userNotFoundError } from '../../../services/user-not-found';
 import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
-import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from '../../../../domain/repositories/user.repository';
 import { DomainEventPublisher } from '../../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
@@ -20,10 +20,15 @@ export class DeactivateUserUseCase extends UseCase<number, void, UseCaseError> {
 
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
     const userResult = await this.userRepository.findByIdForUpdate(userId);
-    if (userResult.isFailure || !userResult.value) {
-      return ErrorFactory.UseCaseError('User not found', {
-        kind: ErrorKind.NOT_FOUND,
-      });
+    if (userResult.isFailure) {
+      if (userResult.error.kind === ErrorKind.NOT_FOUND) {
+        return userNotFoundError(userId);
+      }
+      return userResult;
+    }
+
+    if (!userResult.value) {
+      return userNotFoundError(userId);
     }
 
     const { entity: user, expectedVersion } = userResult.value;

@@ -4,6 +4,8 @@ import { PaymentRepository } from '../../../domain/repositories/payment.reposito
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMapper } from '../../../../secondary-adapters/persistence/mappers/payment.mapper';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { createUserCallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   MockPaymentRepository,
@@ -103,6 +105,8 @@ describe('VerifyPaymentUseCase', () => {
       'Payment with id 123 not found',
       UseCaseError,
     );
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 
   it('should fail if payment is not found', async () => {
@@ -117,6 +121,8 @@ describe('VerifyPaymentUseCase', () => {
       result,
       'Payment with id 123 not found',
     );
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(paymentRepository.findById).toHaveBeenCalledWith(123);
   });
 });

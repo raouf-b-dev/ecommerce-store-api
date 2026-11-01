@@ -5,6 +5,8 @@ import {
 import { GetPaymentByOrderIdUseCase } from './get-payment-by-order-id.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import {
   CallerContext,
   createUserCallerContext,
@@ -98,6 +100,8 @@ describe('GetPaymentByOrderIdUseCase', () => {
       'Payment for order ID 10 not found',
       UseCaseError,
     );
+    expect(result.error.code).toBe(ErrorCode.PAYMENT_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(mockQueryService.getByOrderId).not.toHaveBeenCalled();
   });
 

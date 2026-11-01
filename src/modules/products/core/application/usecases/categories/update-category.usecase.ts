@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { categoryNotFoundError } from '../../services/category-not-found';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -30,14 +31,17 @@ export class UpdateCategoryUseCase extends UseCase<
   ): Promise<Result<CategoryResult, AppError>> {
     const findResult = await this.categoryRepository.findById(command.id);
     if (isFailure(findResult)) {
-      return ErrorFactory.UseCaseError('Failed to find category', {
+      if (findResult.error.kind === ErrorKind.NOT_FOUND) {
+        return categoryNotFoundError(command.id);
+      }
+      return ErrorFactory.UseCaseError(findResult.error.message, {
         cause: findResult.error,
+        kind: findResult.error.kind,
+        retryable: findResult.error.retryable,
       });
     }
     if (!findResult.value) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${command.id} not found`,
-      );
+      return categoryNotFoundError(command.id);
     }
 
     const category = findResult.value;
@@ -98,9 +102,7 @@ export class UpdateCategoryUseCase extends UseCase<
       });
     }
     if (!readModel.value) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${command.id} not found`,
-      );
+      return categoryNotFoundError(command.id);
     }
 
     return Result.success(readModel.value);

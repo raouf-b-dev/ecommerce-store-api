@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
 import { GetUserByEmailUseCase } from './get-user-by-email.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../../testing';
@@ -134,6 +135,7 @@ describe('GetUserByEmailUseCase', () => {
         UseCaseError,
       );
       expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+      expect(result.error.code).toBe(ErrorCode.USER_NOT_FOUND);
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
 

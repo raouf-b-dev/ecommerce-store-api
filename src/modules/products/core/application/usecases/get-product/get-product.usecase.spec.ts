@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import {
   MockProductQueryService,
   ProductDtoTestFactory,
@@ -58,6 +59,7 @@ describe('GetProductUseCase', () => {
         UseCaseError,
       );
       expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+      expect(result.error.code).toBe(ErrorCode.PRODUCT_NOT_FOUND);
     });
 
     it('hides inactive products from shoppers as not found', async () => {
@@ -76,6 +78,7 @@ describe('GetProductUseCase', () => {
         UseCaseError,
       );
       expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+      expect(result.error.code).toBe(ErrorCode.PRODUCT_NOT_FOUND);
     });
 
     it('returns inactive products to operators with view_all_products', async () => {

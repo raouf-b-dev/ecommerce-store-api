@@ -7,6 +7,8 @@ import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { MockOrderRepository } from '../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('ProcessOrderUseCase', () => {
   let useCase: ProcessOrderUseCase;
@@ -47,6 +49,8 @@ describe('ProcessOrderUseCase', () => {
       result,
       `Order with id ${orderId} not found`,
     );
+    expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(mockOrderRepo.save).not.toHaveBeenCalled();
   });
 

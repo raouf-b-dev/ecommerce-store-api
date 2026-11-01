@@ -5,6 +5,9 @@ import {
   SYSTEM_CALLER_CONTEXT,
 } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { AuthPayloadFactory } from 'src/testing/factories/auth-payload.factory';
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ResultAssertionHelper } from '../../../../../testing';
 
 describe('CartOwnershipValidator', () => {
   let validator: CartOwnershipValidator;
@@ -47,7 +50,9 @@ describe('CartOwnershipValidator', () => {
       });
 
       const result = validator.validate(cart, callerContext);
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 
     it('should deny user with mismatched userId', () => {
@@ -59,13 +64,17 @@ describe('CartOwnershipValidator', () => {
       });
 
       const result = validator.validate(cart, callerContext);
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 
     it('should deny user cart access when caller context is null', () => {
       const cart = Cart.createUserCart(123);
       const result = validator.validate(cart, null);
-      expect(result.isFailure).toBe(true);
+      ResultAssertionHelper.assertResultFailure(result);
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
   });
 });
