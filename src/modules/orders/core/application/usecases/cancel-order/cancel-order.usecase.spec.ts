@@ -464,7 +464,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId: 42,
-        amount: paidOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
+        amount: paidOrder.getPricing().getTotalPriceMoney(),
         reason: 'Order cancelled',
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
@@ -522,9 +522,18 @@ describe('CancelOrderUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         'Refund amount must be greater than zero',
+        UseCaseError,
       );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: {
+          code: ErrorCode.USECASE_ERROR,
+          kind: ErrorKind.RULE_VIOLATION,
+        },
+      });
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+      expect(zeroPaidOrder.status).toBe(OrderStatus.CONFIRMED);
     });
 
     it('re-queues refund when cancelling an already CANCELLED order with paymentId', async () => {
@@ -554,7 +563,7 @@ describe('CancelOrderUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId: 42,
-        amount: cancelledOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
+        amount: cancelledOrder.getPricing().getTotalPriceMoney(),
         reason: 'Order cancelled',
       });
     });
@@ -896,10 +905,7 @@ describe('CancelOrderUseCase', () => {
           {
             orderId,
             paymentId: 42,
-            amount: cancelledOrder
-              .getPricing()
-              .getTotalPriceMoney()
-              .toMajorUnits(),
+            amount: cancelledOrder.getPricing().getTotalPriceMoney(),
             reason: 'Order cancelled',
           },
         ]);

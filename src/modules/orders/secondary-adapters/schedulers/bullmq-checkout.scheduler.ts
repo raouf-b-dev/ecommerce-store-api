@@ -15,6 +15,7 @@ import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
+import { toRefundPayloadAmount } from '../../core/application/messaging/refund-payment.payload';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
@@ -224,7 +225,10 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
         name: JobNames.REFUND_PAYMENT,
         queueName: 'checkout',
         data: {
-          ...toRefundJobPayload(props),
+          orderId: props.orderId,
+          paymentId: props.paymentId,
+          reason: props.reason,
+          ...toRefundPayloadAmount(props),
           ...(correlationId ? { correlationId } : {}),
         },
         opts: {
@@ -285,25 +289,4 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
       );
     }
   }
-}
-
-function toRefundJobPayload(props: ScheduleRefundPaymentProps): {
-  orderId: number;
-  paymentId: number;
-  reason: string;
-} & ({ amount: number } | { mode: 'remaining' }) {
-  if ('mode' in props) {
-    return {
-      orderId: props.orderId,
-      paymentId: props.paymentId,
-      reason: props.reason,
-      mode: 'remaining',
-    };
-  }
-  return {
-    orderId: props.orderId,
-    paymentId: props.paymentId,
-    reason: props.reason,
-    amount: props.amount,
-  };
 }

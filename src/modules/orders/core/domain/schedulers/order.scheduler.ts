@@ -1,5 +1,6 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { RefundAmount } from '../value-objects/refund-amount';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
@@ -17,15 +18,11 @@ export interface SchedulePostPaymentProps {
   cartId: number;
 }
 
-/**
- * Schedule a refund for either an explicit major-unit amount (cancel
- * path), or the payment's remaining balance (surplus path).
- */
 export type ScheduleRefundPaymentProps = {
   orderId: number;
   paymentId: number;
   reason: string;
-} & ({ amount: number } | { mode: 'remaining' });
+} & RefundAmount;
 
 export abstract class OrderScheduler {
   abstract scheduleCheckout(

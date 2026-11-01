@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../testing';
@@ -145,6 +146,47 @@ describe('Order', () => {
       });
 
       expect(order.isFulfilmentStarted()).toBe(false);
+    });
+  });
+
+  describe('refundableTotal', () => {
+    it('returns the total Money when the order total is positive', () => {
+      const order = OrderTestFactory.createDomainOrder();
+
+      const result = order.refundableTotal();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.equals(order.getPricing().getTotalPriceMoney())).toBe(
+        true,
+      );
+      expect(result.value.isPositive()).toBe(true);
+    });
+
+    it('rejects a zero total with REFUND_AMOUNT_INVALID', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        items: [
+          {
+            id: 1,
+            productId: 1,
+            productName: 'Free item',
+            quantity: 1,
+            unitPrice: 0,
+            currency: 'USD',
+          },
+        ],
+      });
+
+      const result = order.refundableTotal();
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Refund amount must be greater than zero',
+        DomainError,
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { code: ErrorCode.REFUND_AMOUNT_INVALID },
+      });
     });
   });
 

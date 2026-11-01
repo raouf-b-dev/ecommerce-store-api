@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
@@ -13,6 +12,7 @@ import { CancelOrderCommand } from '../../commands/cancel-order.command';
 import { CancelOrderAccessPolicy } from '../../services/cancel-order-access.policy';
 import { orderNotFoundError } from '../../services/order-not-found';
 import { ScheduleOrderRefundService } from '../../services/schedule-order-refund.service';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
 @Injectable()
 export class CancelOrderUseCase implements UseCase<
@@ -66,14 +66,16 @@ export class CancelOrderUseCase implements UseCase<
       return Result.success(order.toPrimitives());
     }
 
+    let refundAmount: Money | undefined;
+    if (order.paymentId !== null) {
+      const refundable =
+        this.scheduleOrderRefundService.ensureRefundable(order);
+      if (refundable.isFailure) return refundable;
+      refundAmount = refundable.value;
+    }
+
     const cancelResult = order.cancel();
     if (cancelResult.isFailure) return cancelResult;
-
-    if (order.paymentId !== null && order.totalPrice <= 0) {
-      return ErrorFactory.UseCaseError(
-        'Refund amount must be greater than zero',
-      );
-    }
 
     const updateResult = await this.orderRepository.save(
       order,
@@ -87,6 +89,7 @@ export class CancelOrderUseCase implements UseCase<
       order,
       orderId,
       reason,
+      refundAmount,
     );
     if (refundResult.isFailure) return refundResult;
 

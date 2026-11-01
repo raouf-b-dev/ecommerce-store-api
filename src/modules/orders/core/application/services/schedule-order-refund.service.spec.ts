@@ -78,7 +78,7 @@ describe('ScheduleOrderRefundService', () => {
     expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
       orderId,
       paymentId,
-      amount: order.getPricing().getTotalPriceMoney().toMajorUnits(),
+      amount: order.getPricing().getTotalPriceMoney(),
       reason,
     });
   });

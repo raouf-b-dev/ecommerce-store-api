@@ -119,6 +119,6 @@ function toProcessRefundCommand(input: ProcessRefundInput): {
   return {
     paymentId: input.paymentId,
     reason: input.reason,
-    amount: input.amount,
+    amount: input.amount.toMajorUnits(),
   };
 }
