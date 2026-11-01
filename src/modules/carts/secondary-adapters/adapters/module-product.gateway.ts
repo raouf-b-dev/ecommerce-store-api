@@ -18,10 +18,9 @@ export class ModuleProductGateway implements CartProductGateway {
     const result = await this.getProductUseCase.execute(productId);
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to find product',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to find product', {
+        cause: result.error,
+      });
     }
 
     const product = result.value;

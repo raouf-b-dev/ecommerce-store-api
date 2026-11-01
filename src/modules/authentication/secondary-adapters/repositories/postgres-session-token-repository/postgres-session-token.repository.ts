@@ -24,10 +24,9 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
       const savedEntity = await this.repository.save(entity);
       return Result.success(SessionTokenMapper.toDomain(savedEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to save session token',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to save session token', {
+        cause: error,
+      });
     }
   }
 
@@ -41,7 +40,7 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find session token by id',
-        error,
+        { cause: error },
       );
     }
   }
@@ -88,10 +87,9 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
 
       return Result.success(SessionTokenMapper.toDomain(updated));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to rotate session token',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to rotate session token', {
+        cause: error,
+      });
     }
   }
 
@@ -107,7 +105,7 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to revoke all sessions for user',
-        error,
+        { cause: error },
       );
     }
   }
@@ -119,10 +117,9 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
       });
       return Result.success(result.affected || 0);
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to delete expired sessions',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to delete expired sessions', {
+        cause: error,
+      });
     }
   }
 }

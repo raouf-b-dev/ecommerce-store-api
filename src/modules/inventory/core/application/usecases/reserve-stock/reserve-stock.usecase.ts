@@ -21,10 +21,9 @@ export class ReserveStockUseCase implements UseCase<
     const saveResult = await this.reservationRepository.save(command);
 
     if (saveResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        saveResult.error.message,
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError(saveResult.error.message, {
+        cause: saveResult.error,
+      });
     }
 
     return Result.success(saveResult.value);

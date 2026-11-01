@@ -32,11 +32,9 @@ export class ResetDemoUseCase extends UseCase<
 
   async execute(): Promise<Result<DemoResetResult, UseCaseError>> {
     if (this.running) {
-      return ErrorFactory.UseCaseError(
-        'Demo reset is already running',
-        undefined,
-        StatusCode.CONFLICT,
-      );
+      return ErrorFactory.UseCaseError('Demo reset is already running', {
+        status: StatusCode.CONFLICT,
+      });
     }
 
     this.running = true;

@@ -27,7 +27,7 @@ export class PostgresUserRepository implements UserRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to check if user exists by email',
-        error,
+        { cause: error },
       );
     }
   }
@@ -48,10 +48,9 @@ export class PostgresUserRepository implements UserRepository {
         expectedVersion: entity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find user for update',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find user for update', {
+        cause: error,
+      });
     }
   }
 
@@ -66,7 +65,9 @@ export class PostgresUserRepository implements UserRepository {
       return await this.saveNormally(user);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save user', error);
+      return ErrorFactory.RepositoryError('Failed to save user', {
+        cause: error,
+      });
     }
   }
 
@@ -186,7 +187,9 @@ export class PostgresUserRepository implements UserRepository {
       });
       return Result.success(entities.map(UserMapper.toDomain));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find all users', error);
+      return ErrorFactory.RepositoryError('Failed to find all users', {
+        cause: error,
+      });
     }
   }
 
@@ -201,10 +204,9 @@ export class PostgresUserRepository implements UserRepository {
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find user by email',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find user by email', {
+        cause: error,
+      });
     }
   }
 
@@ -217,7 +219,9 @@ export class PostgresUserRepository implements UserRepository {
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find user by id', error);
+      return ErrorFactory.RepositoryError('Failed to find user by id', {
+        cause: error,
+      });
     }
   }
 
@@ -226,7 +230,9 @@ export class PostgresUserRepository implements UserRepository {
       await this.repository.delete(id);
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete user', error);
+      return ErrorFactory.RepositoryError('Failed to delete user', {
+        cause: error,
+      });
     }
   }
 }

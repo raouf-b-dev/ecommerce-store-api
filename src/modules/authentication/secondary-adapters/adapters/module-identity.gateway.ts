@@ -115,10 +115,9 @@ export class ModuleIdentityGateway implements IdentityGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to create user',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to create user', {
+        cause: result.error,
+      });
     }
 
     const userRecord: UserRecord = {

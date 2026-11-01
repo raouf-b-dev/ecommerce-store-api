@@ -24,10 +24,9 @@ export class PostgresPermissionRepository implements PermissionRepository {
       if (!entity) return Result.success(null);
       return Result.success(PermissionMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find permission by code',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find permission by code', {
+        cause: error,
+      });
     }
   }
 
@@ -36,10 +35,9 @@ export class PostgresPermissionRepository implements PermissionRepository {
       const entities = await this.repository.find({ order: { code: 'ASC' } });
       return Result.success(PermissionMapper.toDomainArray(entities));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find all permissions',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find all permissions', {
+        cause: error,
+      });
     }
   }
 
@@ -51,7 +49,9 @@ export class PostgresPermissionRepository implements PermissionRepository {
       const saved = await this.repository.save(entities);
       return Result.success(PermissionMapper.toDomainArray(saved));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save permissions', error);
+      return ErrorFactory.RepositoryError('Failed to save permissions', {
+        cause: error,
+      });
     }
   }
 }

@@ -77,12 +77,11 @@ export class GetCartUseCase extends UseCase<
     }
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        result.error.message,
-        result.error,
-        result.error.statusCode,
-        result.error.retryable,
-      );
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        status: result.error.statusCode,
+        retryable: result.error.retryable,
+      });
     }
 
     if (!result.value) {

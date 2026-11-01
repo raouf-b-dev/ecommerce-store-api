@@ -41,21 +41,17 @@ export class GetUserUseCase extends UseCase<
         USER_ACCESS_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(
-        `User with id ${userId} not found`,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const result = await this.userQueryService.getById(userId);
 
     if (isFailure(result) || !result.value) {
-      return ErrorFactory.UseCaseError(
-        `User with id ${userId} not found`,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     return Result.success(result.value);

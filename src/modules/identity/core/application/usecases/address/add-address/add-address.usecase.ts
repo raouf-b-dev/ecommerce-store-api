@@ -48,22 +48,18 @@ export class AddAddressUseCase extends UseCase<
         USER_MUTATION_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(
-        `User with id ${userId} not found`,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (isFailure(userResult)) return userResult;
 
     if (!userResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const { entity: user, expectedVersion } = userResult.value;

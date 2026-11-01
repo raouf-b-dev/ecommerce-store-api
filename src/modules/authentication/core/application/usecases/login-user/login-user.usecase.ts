@@ -43,11 +43,10 @@ export class LoginUserUseCase extends UseCase<
     );
 
     if (userResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to retrieve user information',
-        userResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to retrieve user information', {
+        cause: userResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     const user = userResult.value;
@@ -56,11 +55,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_user',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     // 2. Check if user is active
@@ -68,11 +65,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'inactive_user',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     // 3. Find Credential by UserId & Verify Password
@@ -83,8 +78,10 @@ export class LoginUserUseCase extends UseCase<
     if (credentialResult.isFailure) {
       return ErrorFactory.UseCaseError(
         'Failed to retrieve credential information',
-        credentialResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: credentialResult.error,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
       );
     }
 
@@ -94,11 +91,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_credential',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const isMatch = await this.passwordHasher.compare(
@@ -109,11 +104,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_password',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     // 4. Resolve role code for JWT payload (PermissionsGuard requires the string code)
@@ -124,22 +117,19 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_resolution_failed',
       });
-      return ErrorFactory.UseCaseError(
-        'Failed to resolve user role',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to resolve user role', {
+        cause: roleResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     if (!roleResult.value) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_not_found',
       });
-      return ErrorFactory.UseCaseError(
-        'User role not found',
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('User role not found', {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     // 5. Generate Access Token

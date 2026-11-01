@@ -348,15 +348,12 @@ describe('RefreshTokenUseCase', () => {
 
   it('returns the repository failure when the session cannot be loaded', async () => {
     await build([presented]);
-    jest
-      .spyOn(repository, 'findById')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.SERVICE_UNAVAILABLE,
-        ),
-      );
+    jest.spyOn(repository, 'findById').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+      }),
+    );
 
     const result = await useCase.execute(RAW_TOKEN);
 
@@ -470,15 +467,12 @@ describe('RefreshTokenUseCase', () => {
 
   it('preserves retryable when rotation fails for a reason other than conflict', async () => {
     await build([presented]);
-    jest
-      .spyOn(repository, 'replaceTokenIfCurrent')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ),
-      );
+    jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      }),
+    );
 
     const result = await useCase.execute(RAW_TOKEN);
 
@@ -499,15 +493,12 @@ describe('RefreshTokenUseCase', () => {
     await build([presented]);
     const rotated = await useCase.execute(RAW_TOKEN);
     ResultAssertionHelper.assertResultSuccess(rotated);
-    jest
-      .spyOn(repository, 'revokeAllForUser')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ),
-      );
+    jest.spyOn(repository, 'revokeAllForUser').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      }),
+    );
 
     const replay = await useCase.execute(RAW_TOKEN);
 
@@ -565,11 +556,10 @@ describe('RefreshTokenUseCase', () => {
         );
       }
       return Promise.resolve(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.SERVICE_UNAVAILABLE,
-        ),
+        ErrorFactory.RepositoryError('db down', {
+          cause: new Error('db down'),
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+        }),
       );
     });
     jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(

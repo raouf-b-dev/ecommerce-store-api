@@ -45,7 +45,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
       if (check.isFailure && check.error.statusCode !== StatusCode.NOT_FOUND) {
         return ErrorFactory.UseCaseError(
           `Failed to check existing inventory for ${item.sku}`,
-          check.error,
+          { cause: check.error },
         );
       }
     }
@@ -72,7 +72,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
       if (saveResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to seed inventory for ${missingItems[i].sku}`,
-          saveResult.error,
+          { cause: saveResult.error },
         );
       }
     }

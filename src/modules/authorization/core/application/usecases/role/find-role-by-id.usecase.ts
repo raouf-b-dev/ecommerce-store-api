@@ -19,7 +19,9 @@ export class FindRoleByIdUseCase extends UseCase<number, IRole, UseCaseError> {
     const result = await this.roleRepository.findById(id);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError('Failed to find role', result.error);
+      return ErrorFactory.UseCaseError('Failed to find role', {
+        cause: result.error,
+      });
     }
 
     if (!result.value) {
