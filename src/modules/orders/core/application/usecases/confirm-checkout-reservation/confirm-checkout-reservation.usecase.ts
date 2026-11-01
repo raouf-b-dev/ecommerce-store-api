@@ -23,7 +23,7 @@ export class ConfirmCheckoutReservationUseCase implements UseCase<
     if (isFailure(result)) {
       return ErrorFactory.UseCaseError(
         'Failed to confirm checkout reservation',
-        result.error,
+        { cause: result.error },
       );
     }
 

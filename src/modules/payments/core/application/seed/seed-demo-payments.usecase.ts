@@ -52,7 +52,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
       if (existingResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to look up payments for order ${item.orderId}`,
-          existingResult.error,
+          { cause: existingResult.error },
         );
       }
 
@@ -112,7 +112,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
     if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError(
         `Failed to seed payment for order ${item.orderId}`,
-        saveResult.error,
+        { cause: saveResult.error },
       );
     }
 
@@ -184,7 +184,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
     if (updateResult.isFailure) {
       return ErrorFactory.UseCaseError(
         `Failed to refresh payment for order ${item.orderId}`,
-        updateResult.error,
+        { cause: updateResult.error },
       );
     }
 
@@ -211,7 +211,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
     if (addResult.isFailure) {
       return ErrorFactory.UseCaseError(
         `Failed to add seeded refund for payment ${payment.id}`,
-        addResult.error,
+        { cause: addResult.error },
       );
     }
 
@@ -232,7 +232,7 @@ export class SeedDemoPaymentsUseCase extends UseCase<
     if (updateResult.isFailure) {
       return ErrorFactory.UseCaseError(
         `Failed to persist seeded refund for payment ${payment.id}`,
-        updateResult.error,
+        { cause: updateResult.error },
       );
     }
 

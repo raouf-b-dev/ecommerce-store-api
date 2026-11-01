@@ -40,7 +40,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
 
       return Result.success(PaymentMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find payment', error);
+      return ErrorFactory.RepositoryError('Failed to find payment', {
+        cause: error,
+      });
     }
   }
 
@@ -57,7 +59,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by order ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -79,7 +81,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payment by transaction ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -103,7 +105,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payment by gateway intent ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -129,7 +131,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by user ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -172,7 +174,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
           },
         );
       }
-      return ErrorFactory.RepositoryError('Failed to save payment', error);
+      return ErrorFactory.RepositoryError('Failed to save payment', {
+        cause: error,
+      });
     }
   }
 
@@ -197,7 +201,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(PaymentMapper.toDomain(updatedPayment));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to update payment', error);
+      return ErrorFactory.RepositoryError('Failed to update payment', {
+        cause: error,
+      });
     }
   }
 
@@ -209,7 +215,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
       }
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete payment', error);
+      return ErrorFactory.RepositoryError('Failed to delete payment', {
+        cause: error,
+      });
     }
   }
 
@@ -227,7 +235,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
 
       return Result.success(RefundMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find refund', error);
+      return ErrorFactory.RepositoryError('Failed to find refund', {
+        cause: error,
+      });
     }
   }
 
@@ -253,7 +263,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(RefundMapper.toDomain(savedRefund));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save refund', error);
+      return ErrorFactory.RepositoryError('Failed to save refund', {
+        cause: error,
+      });
     }
   }
 }

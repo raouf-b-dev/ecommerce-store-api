@@ -84,7 +84,7 @@ export class PostgresNotificationQueryAdapter implements NotificationQueryServic
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch notification list: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -118,7 +118,7 @@ export class PostgresNotificationQueryAdapter implements NotificationQueryServic
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch notification for ID ${id}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }

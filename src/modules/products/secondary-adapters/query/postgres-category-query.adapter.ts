@@ -40,7 +40,7 @@ export class PostgresCategoryQueryAdapter implements CategoryQueryService {
       );
     } catch (error: unknown) {
       const message = toErrorMessage(error);
-      return ErrorFactory.QueryError(message, error);
+      return ErrorFactory.QueryError(message, { cause: error });
     }
   }
 
@@ -59,7 +59,7 @@ export class PostgresCategoryQueryAdapter implements CategoryQueryService {
       return Result.success(CategoryQueryMapper.toResult(row));
     } catch (error: unknown) {
       const message = toErrorMessage(error);
-      return ErrorFactory.QueryError(message, error);
+      return ErrorFactory.QueryError(message, { cause: error });
     }
   }
 

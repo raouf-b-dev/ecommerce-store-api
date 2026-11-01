@@ -19,10 +19,9 @@ export class ActivateCategoryUseCase extends UseCase<number, void, AppError> {
   async execute(id: number): Promise<Result<void, AppError>> {
     const findResult = await this.categoryRepository.findById(id);
     if (isFailure(findResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to find category',
-        findResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to find category', {
+        cause: findResult.error,
+      });
     }
     if (!findResult.value) {
       return ErrorFactory.QueryNotFoundError(
@@ -38,10 +37,9 @@ export class ActivateCategoryUseCase extends UseCase<number, void, AppError> {
 
     const saveResult = await this.categoryRepository.save(category);
     if (isFailure(saveResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to activate category',
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to activate category', {
+        cause: saveResult.error,
+      });
     }
 
     this.logger.log(`Category ${id} activated.`);

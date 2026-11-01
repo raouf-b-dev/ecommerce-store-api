@@ -32,7 +32,7 @@ export class ReleaseOrderStockUseCase implements UseCase<
     if (reservationsResult.isFailure) {
       return ErrorFactory.UseCaseError(
         `Failed to find reservations for order ${orderId}`,
-        reservationsResult.error,
+        { cause: reservationsResult.error },
       );
     }
 

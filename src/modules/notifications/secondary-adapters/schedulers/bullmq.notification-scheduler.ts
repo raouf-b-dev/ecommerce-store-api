@@ -65,7 +65,7 @@ export class BullMqNotificationScheduler
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule cleanup job',
-        error,
+        { cause: error },
       );
     }
   }
@@ -144,7 +144,7 @@ export class BullMqNotificationScheduler
       );
       return ErrorFactory.InfrastructureError(
         'Failed to schedule notification',
-        error,
+        { cause: error },
       );
     }
   }

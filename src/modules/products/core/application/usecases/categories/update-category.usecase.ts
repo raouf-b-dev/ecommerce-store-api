@@ -29,10 +29,9 @@ export class UpdateCategoryUseCase extends UseCase<
   ): Promise<Result<CategoryResult, AppError>> {
     const findResult = await this.categoryRepository.findById(command.id);
     if (isFailure(findResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to find category',
-        findResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to find category', {
+        cause: findResult.error,
+      });
     }
     if (!findResult.value) {
       return ErrorFactory.QueryNotFoundError(
@@ -57,7 +56,7 @@ export class UpdateCategoryUseCase extends UseCase<
     if (isFailure(nameExists)) {
       return ErrorFactory.UseCaseError(
         'Failed to validate category name uniqueness',
-        nameExists.error,
+        { cause: nameExists.error },
       );
     }
     if (nameExists.value) {
@@ -74,7 +73,7 @@ export class UpdateCategoryUseCase extends UseCase<
     if (isFailure(slugExists)) {
       return ErrorFactory.UseCaseError(
         'Failed to validate category slug uniqueness',
-        slugExists.error,
+        { cause: slugExists.error },
       );
     }
     if (slugExists.value) {
@@ -86,18 +85,16 @@ export class UpdateCategoryUseCase extends UseCase<
 
     const saveResult = await this.categoryRepository.save(category);
     if (isFailure(saveResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to update category',
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to update category', {
+        cause: saveResult.error,
+      });
     }
 
     const readModel = await this.categoryQueryService.getById(command.id);
     if (isFailure(readModel)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to load updated category',
-        readModel.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to load updated category', {
+        cause: readModel.error,
+      });
     }
     if (!readModel.value) {
       return ErrorFactory.QueryNotFoundError(

@@ -125,10 +125,9 @@ export class HandlePaymentWebhookService {
 
     const completeResult = payment.complete(dto.transactionId);
     if (isFailure(completeResult)) {
-      return ErrorFactory.ServiceError(
-        'Failed to complete payment',
-        completeResult.error,
-      );
+      return ErrorFactory.ServiceError('Failed to complete payment', {
+        cause: completeResult.error,
+      });
     }
 
     const savePaymentResult = await this.paymentRepository.update(payment);
@@ -172,10 +171,9 @@ export class HandlePaymentWebhookService {
 
     const failResult = payment.fail(dto.failureReason || 'Payment failed');
     if (isFailure(failResult)) {
-      return ErrorFactory.ServiceError(
-        'Failed to mark payment as failed',
-        failResult.error,
-      );
+      return ErrorFactory.ServiceError('Failed to mark payment as failed', {
+        cause: failResult.error,
+      });
     }
 
     const savePaymentResult = await this.paymentRepository.update(payment);

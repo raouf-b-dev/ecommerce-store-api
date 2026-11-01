@@ -55,8 +55,7 @@ export class ListPaymentsUseCase implements UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Filtering payments by customer contact data requires view_customer_pii',
-        null,
-        HttpStatus.FORBIDDEN,
+        { status: HttpStatus.FORBIDDEN },
       );
     }
 

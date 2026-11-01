@@ -37,7 +37,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
       const inventory = InventoryMapper.toDomain(entity);
       return Result.success<Inventory>(inventory);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find inventory', error);
+      return ErrorFactory.RepositoryError('Failed to find inventory', {
+        cause: error,
+      });
     }
   }
 
@@ -61,7 +63,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventory by product ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -84,7 +86,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventories by product IDs',
-        error,
+        { cause: error },
       );
     }
   }
@@ -111,7 +113,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
         InventoryMapper.toDomainArray(entities),
       );
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find inventories', error);
+      return ErrorFactory.RepositoryError('Failed to find inventories', {
+        cause: error,
+      });
     }
   }
 
@@ -134,10 +138,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
         InventoryMapper.toDomainArray(entities),
       );
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to batch find inventories',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to batch find inventories', {
+        cause: error,
+      });
     }
   }
 
@@ -163,7 +166,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find low stock inventories',
-        error,
+        { cause: error },
       );
     }
   }
@@ -187,7 +190,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventory for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -212,7 +215,7 @@ export class PostgresInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventory by product ID for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -228,7 +231,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
       return await this.saveNormally(inventory);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save inventory', error);
+      return ErrorFactory.RepositoryError('Failed to save inventory', {
+        cause: error,
+      });
     }
   }
 
@@ -287,7 +292,9 @@ export class PostgresInventoryRepository implements InventoryRepository {
 
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete inventory', error);
+      return ErrorFactory.RepositoryError('Failed to delete inventory', {
+        cause: error,
+      });
     }
   }
 }

@@ -58,10 +58,9 @@ export class ModuleCartGateway implements CartGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to clear cart',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to clear cart', {
+        cause: result.error,
+      });
     }
 
     return Result.success(undefined);
@@ -78,10 +77,9 @@ export class ModuleCartGateway implements CartGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        `Failed to ${operation} cart`,
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError(`Failed to ${operation} cart`, {
+        cause: result.error,
+      });
     }
 
     return this.toCheckoutCartInfo(result.value);
@@ -104,7 +102,7 @@ export class ModuleCartGateway implements CartGateway {
       if (isFailure(moneyResult)) {
         return ErrorFactory.InfrastructureError(
           `Invalid money for cart item "${item.productName}": ${moneyResult.error.message}`,
-          moneyResult.error,
+          { cause: moneyResult.error },
         );
       }
 

@@ -72,7 +72,7 @@ export class FakeStripePaymentProvider extends PaymentProvider {
         );
         return ErrorFactory.InfrastructureError(
           `Failed to schedule mock payment webhook: ${toErrorMessage(error)}`,
-          error,
+          { cause: error },
         );
       }
     }

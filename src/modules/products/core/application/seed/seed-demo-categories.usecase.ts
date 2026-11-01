@@ -32,7 +32,7 @@ export class SeedDemoCategoriesUseCase extends UseCase<
       if (isFailure(findResult)) {
         return ErrorFactory.UseCaseError(
           `Failed to lookup category ${fixture.slug}`,
-          findResult.error,
+          { cause: findResult.error },
         );
       }
 
@@ -48,7 +48,7 @@ export class SeedDemoCategoriesUseCase extends UseCase<
         if (isFailure(saveResult)) {
           return ErrorFactory.UseCaseError(
             `Failed to seed category ${fixture.slug}`,
-            saveResult.error,
+            { cause: saveResult.error },
           );
         }
         const id = saveResult.value.id;
@@ -71,14 +71,14 @@ export class SeedDemoCategoriesUseCase extends UseCase<
         if (isFailure(activateResult)) {
           return ErrorFactory.UseCaseError(
             `Failed to reactivate category ${fixture.slug}`,
-            activateResult.error,
+            { cause: activateResult.error },
           );
         }
         const saveResult = await this.categoryRepository.save(existing);
         if (isFailure(saveResult)) {
           return ErrorFactory.UseCaseError(
             `Failed to save reactivated category ${fixture.slug}`,
-            saveResult.error,
+            { cause: saveResult.error },
           );
         }
         const id = existing.id;

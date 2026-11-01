@@ -142,7 +142,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment list: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -187,7 +187,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment details for ID ${id}: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -232,7 +232,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment details for order ID ${orderId}: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }

@@ -24,10 +24,9 @@ export class ReleaseCheckoutStockUseCase implements UseCase<
     const result = await this.inventoryGateway.releaseStock(reservationId);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to release checkout stock',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to release checkout stock', {
+        cause: result.error,
+      });
     }
 
     this.domainEventPublisher.publish('checkout.saga.compensation', {

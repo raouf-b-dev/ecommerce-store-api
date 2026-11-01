@@ -29,7 +29,7 @@ export class ModuleInventoryReservationGateway implements InventoryReservationGa
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError(
         'Failed to get order reservations',
-        result.error,
+        { cause: result.error },
       );
     }
 
@@ -51,10 +51,9 @@ export class ModuleInventoryReservationGateway implements InventoryReservationGa
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to reserve stock',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to reserve stock', {
+        cause: result.error,
+      });
     }
 
     return Result.success({ id: result.value.id });
@@ -66,10 +65,9 @@ export class ModuleInventoryReservationGateway implements InventoryReservationGa
     const result = await this.releaseStockUseCase.execute(reservationId);
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to release stock',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to release stock', {
+        cause: result.error,
+      });
     }
 
     return Result.success(undefined);
@@ -81,10 +79,9 @@ export class ModuleInventoryReservationGateway implements InventoryReservationGa
     const result = await this.confirmReservationUseCase.execute(reservationId);
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to confirm reservation',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to confirm reservation', {
+        cause: result.error,
+      });
     }
 
     return Result.success(undefined);

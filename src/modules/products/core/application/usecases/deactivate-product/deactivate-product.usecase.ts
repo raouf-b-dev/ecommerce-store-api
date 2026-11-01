@@ -25,11 +25,9 @@ export class DeactivateProductUseCase extends UseCase<
       await this.productRepository.findByIdForUpdate(productId);
 
     if (isFailure(productResult)) {
-      return ErrorFactory.UseCaseError(
-        productResult.error.message,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(productResult.error.message, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const { entity: product, expectedVersion } = productResult.value;

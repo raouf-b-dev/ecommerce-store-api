@@ -27,10 +27,9 @@ export class PostgresNotificationRepository implements NotificationRepository {
       return Result.success(undefined);
     } catch (err) {
       const errorMsg = toErrorMessage(err);
-      return ErrorFactory.RepositoryError(
-        'Failed to save notification',
-        errorMsg,
-      );
+      return ErrorFactory.RepositoryError('Failed to save notification', {
+        cause: errorMsg,
+      });
     }
   }
 
@@ -44,10 +43,9 @@ export class PostgresNotificationRepository implements NotificationRepository {
       return Result.success(NotificationMapper.toDomain(entity));
     } catch (err) {
       const errorMsg = toErrorMessage(err);
-      return ErrorFactory.RepositoryError(
-        'Failed to fetch notification',
-        errorMsg,
-      );
+      return ErrorFactory.RepositoryError('Failed to fetch notification', {
+        cause: errorMsg,
+      });
     }
   }
 
@@ -90,7 +88,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
       const errorMsg = toErrorMessage(err);
       return ErrorFactory.RepositoryError(
         'Failed to fetch notifications by userId',
-        errorMsg,
+        { cause: errorMsg },
       );
     }
   }
@@ -109,7 +107,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
       const errorMsg = toErrorMessage(err);
       return ErrorFactory.RepositoryError(
         'Failed to mark notification as read',
-        errorMsg,
+        { cause: errorMsg },
       );
     }
   }
@@ -124,7 +122,7 @@ export class PostgresNotificationRepository implements NotificationRepository {
       const errorMsg = toErrorMessage(err);
       return ErrorFactory.RepositoryError(
         'Failed to delete expired notifications',
-        errorMsg,
+        { cause: errorMsg },
       );
     }
   }
