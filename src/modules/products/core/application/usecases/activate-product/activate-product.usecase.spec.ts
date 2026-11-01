@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import {
   MockProductRepository,
   ProductTestFactory,
@@ -45,7 +46,7 @@ describe('ActivateProductUseCase', () => {
       'Cannot activate a product without a category',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+    expect(result.error.kind).toBe(ErrorKind.INVALID);
     expect(productRepository.save).not.toHaveBeenCalled();
   });
 
@@ -76,6 +77,6 @@ describe('ActivateProductUseCase', () => {
       `Product with id 999 not found`,
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 });

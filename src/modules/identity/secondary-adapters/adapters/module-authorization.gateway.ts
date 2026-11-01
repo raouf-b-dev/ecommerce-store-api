@@ -19,7 +19,7 @@ export class ModuleAuthorizationGateway extends AuthorizationGateway {
       return Result.failure(
         new InfrastructureError(result.error.message, {
           cause: result.error.cause,
-          status: result.error.statusCode,
+          kind: result.error.kind,
         }),
       );
     }

@@ -14,7 +14,7 @@ import { InfrastructureError } from '../../../../../../shared-kernel/domain/exce
 import { PaymentProvider } from '../../ports/payment-provider';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 
 describe('ProcessRefundUseCase', () => {
@@ -250,7 +250,7 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Payment provider other-provider does not match active provider stripe',
     );
-    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(result.error.code).toBe(ErrorCode.PAYMENT_PROVIDER_MISMATCH);
     expect(defaultProvider.refund).not.toHaveBeenCalled();
     expect(paymentRepository.update).not.toHaveBeenCalled();
@@ -403,7 +403,7 @@ describe('ProcessRefundUseCase', () => {
       result,
       'Amount must be a non-negative decimal',
     );
-    expect(result.error.statusCode).toBe(400);
+    expect(result.error.kind).toBe(ErrorKind.INVALID);
     expect(defaultProvider.refund).not.toHaveBeenCalled();
   });
 

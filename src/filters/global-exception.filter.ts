@@ -12,6 +12,7 @@ import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
 import { logSafePath } from '../infrastructure/logging/log-safe-path';
+import { httpStatusFromErrorKind } from './http-error-mapping';
 
 interface ValidationErrorResponse {
   message: string | string[];
@@ -84,7 +85,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
     // Branch 3: AppError (Direct escape without ResultInterceptor)
     else if (exception instanceof AppError) {
-      statusCode = exception.statusCode;
+      statusCode = httpStatusFromErrorKind(exception.kind);
       message = exception.message;
       code = exception.code;
       stack = exception.stack;

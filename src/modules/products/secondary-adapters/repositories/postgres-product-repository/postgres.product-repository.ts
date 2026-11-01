@@ -1,5 +1,5 @@
-// src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { Repository, In } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -108,7 +108,7 @@ export class PostgresProductRepository implements ProductRepository {
     }
     return ErrorFactory.RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      { status: HttpStatus.CONFLICT },
+      { kind: ErrorKind.CONFLICT },
     );
   }
 

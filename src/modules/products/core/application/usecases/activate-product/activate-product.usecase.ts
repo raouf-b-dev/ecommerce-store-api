@@ -1,4 +1,5 @@
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -26,7 +27,7 @@ export class ActivateProductUseCase extends UseCase<
 
     if (isFailure(productResult)) {
       return ErrorFactory.UseCaseError(productResult.error.message, {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
@@ -35,7 +36,7 @@ export class ActivateProductUseCase extends UseCase<
     if (product.categoryId == null) {
       return ErrorFactory.UseCaseError(
         'Cannot activate a product without a category',
-        { status: HttpStatus.BAD_REQUEST },
+        { kind: ErrorKind.INVALID },
       );
     }
 

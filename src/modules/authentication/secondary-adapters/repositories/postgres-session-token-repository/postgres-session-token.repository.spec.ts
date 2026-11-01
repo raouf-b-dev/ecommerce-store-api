@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -116,7 +117,7 @@ describe('PostgresSessionTokenRepository', () => {
       'Refresh token was already rotated',
       RepositoryError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(result.error.retryable).toBe(false);
     expect(findOneBy).not.toHaveBeenCalled();
   });
@@ -136,7 +137,7 @@ describe('PostgresSessionTokenRepository', () => {
       'Session not found after rotation',
       RepositoryError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 
   it('returns failure when the update throws', async () => {

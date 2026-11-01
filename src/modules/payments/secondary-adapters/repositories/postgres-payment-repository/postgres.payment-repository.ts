@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
 import { PaymentRepository } from '../../../core/domain/repositories/payment.repository';
@@ -169,7 +169,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
           'Pending payment already exists for order',
           {
             cause: error,
-            status: StatusCode.CONFLICT,
+            kind: ErrorKind.CONFLICT,
             retryable: true,
           },
         );

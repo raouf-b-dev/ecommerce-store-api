@@ -1,8 +1,8 @@
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { SessionTokenRepository } from '../../../domain/repositories/session-token.repository';
 import { JwtSignerPort } from '../../ports/jwt-signer.port';
@@ -46,20 +46,20 @@ export class RefreshTokenUseCase extends UseCase<
       if (sessionResult.isFailure) {
         return ErrorFactory.UseCaseError('Failed to load session', {
           cause: sessionResult.error,
-          status: sessionResult.error.statusCode,
+          kind: sessionResult.error.kind,
           retryable: sessionResult.error.retryable,
         });
       }
       if (!sessionResult.value) {
         return ErrorFactory.UseCaseError('Session not found', {
-          status: HttpStatus.UNAUTHORIZED,
+          kind: ErrorKind.UNAUTHENTICATED,
         });
       }
       const session = sessionResult.value;
 
       if (!session.isValid) {
         return ErrorFactory.UseCaseError('Invalid or expired session', {
-          status: HttpStatus.UNAUTHORIZED,
+          kind: ErrorKind.UNAUTHENTICATED,
         });
       }
 
@@ -73,13 +73,13 @@ export class RefreshTokenUseCase extends UseCase<
       if (userResult.isFailure) {
         return ErrorFactory.UseCaseError('User not found', {
           cause: userResult.error,
-          status: userResult.error.statusCode,
+          kind: userResult.error.kind,
           retryable: userResult.error.retryable,
         });
       }
       if (!userResult.value) {
         return ErrorFactory.UseCaseError('User not found', {
-          status: HttpStatus.UNAUTHORIZED,
+          kind: ErrorKind.UNAUTHENTICATED,
         });
       }
       const user = userResult.value;
@@ -90,13 +90,13 @@ export class RefreshTokenUseCase extends UseCase<
       if (roleResult.isFailure) {
         return ErrorFactory.UseCaseError('Failed to resolve user role', {
           cause: roleResult.error,
-          status: roleResult.error.statusCode,
+          kind: roleResult.error.kind,
           retryable: roleResult.error.retryable,
         });
       }
       if (!roleResult.value) {
         return ErrorFactory.UseCaseError('Failed to resolve user role', {
-          status: HttpStatus.UNAUTHORIZED,
+          kind: ErrorKind.UNAUTHENTICATED,
         });
       }
 
@@ -108,7 +108,7 @@ export class RefreshTokenUseCase extends UseCase<
           'Failed to retrieve credential information',
           {
             cause: credentialResult.error,
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            kind: ErrorKind.INTERNAL,
             retryable: credentialResult.error.retryable,
           },
         );
@@ -137,7 +137,7 @@ export class RefreshTokenUseCase extends UseCase<
         expectedTokenHash,
       );
       if (replaced.isFailure) {
-        if (replaced.error.statusCode === StatusCode.CONFLICT) {
+        if (replaced.error.kind === ErrorKind.CONFLICT) {
           return this.rejectStaleRotation(
             sessionId,
             refreshToken,
@@ -147,7 +147,7 @@ export class RefreshTokenUseCase extends UseCase<
 
         return ErrorFactory.UseCaseError('Failed to rotate refresh token', {
           cause: replaced.error,
-          status: replaced.error.statusCode,
+          kind: replaced.error.kind,
           retryable: replaced.error.retryable,
         });
       }
@@ -160,7 +160,7 @@ export class RefreshTokenUseCase extends UseCase<
       });
     } catch {
       return ErrorFactory.UseCaseError('Invalid refresh token', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
   }
@@ -178,14 +178,14 @@ export class RefreshTokenUseCase extends UseCase<
         'Failed to revoke sessions after refresh token reuse',
         {
           cause: revokeResult.error,
-          status: revokeResult.error.statusCode,
+          kind: revokeResult.error.kind,
           retryable: revokeResult.error.retryable,
         },
       );
     }
 
     return ErrorFactory.UseCaseError(REUSE_MESSAGE, {
-      status: HttpStatus.UNAUTHORIZED,
+      kind: ErrorKind.UNAUTHENTICATED,
     });
   }
 
@@ -198,7 +198,7 @@ export class RefreshTokenUseCase extends UseCase<
     if (current.isFailure) {
       return ErrorFactory.UseCaseError('Failed to load session', {
         cause: current.error,
-        status: current.error.statusCode,
+        kind: current.error.kind,
         retryable: current.error.retryable,
       });
     }
@@ -212,7 +212,7 @@ export class RefreshTokenUseCase extends UseCase<
     }
 
     return ErrorFactory.UseCaseError('Invalid or expired session', {
-      status: HttpStatus.UNAUTHORIZED,
+      kind: ErrorKind.UNAUTHENTICATED,
     });
   }
 }

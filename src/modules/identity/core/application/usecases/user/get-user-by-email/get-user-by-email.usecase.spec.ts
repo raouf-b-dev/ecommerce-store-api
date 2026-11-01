@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { GetUserByEmailUseCase } from './get-user-by-email.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../../testing';
@@ -8,7 +9,6 @@ import {
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { MockUserRepository } from 'src/modules/identity/testing/mocks/user-repository.mock';
 import { UserTestFactory } from 'src/modules/identity/testing/factories/user.factory';
-import { HttpStatus } from '@nestjs/common';
 
 describe('GetUserByEmailUseCase', () => {
   let useCase: GetUserByEmailUseCase;
@@ -116,7 +116,7 @@ describe('GetUserByEmailUseCase', () => {
         'Access denied: You do not have permission to view this profile',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.FORBIDDEN);
+      expect(result.error.kind).toBe(ErrorKind.FORBIDDEN);
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
 
@@ -133,7 +133,7 @@ describe('GetUserByEmailUseCase', () => {
         'User with the given email not found',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
 

@@ -5,7 +5,7 @@ import { Failure, Result } from '../result';
 import { ServiceError } from './service-error';
 import { InfrastructureError } from './infrastructure-error';
 import { QueryError, QueryNotFoundError } from './query.error';
-import { ErrorOptions, isRetryableHttpStatus } from './error-options';
+import { ErrorOptions, isRetryableErrorKind } from './error-options';
 
 function domainError(
   message: string,
@@ -35,7 +35,7 @@ function repositoryError(
   return Result.failure(
     new RepositoryError(message, {
       ...options,
-      retryable: options.retryable ?? isRetryableHttpStatus(options.status),
+      retryable: options.retryable ?? isRetryableErrorKind(options.kind),
     }),
   );
 }
@@ -47,7 +47,7 @@ function infrastructureError(
   return Result.failure(
     new InfrastructureError(message, {
       ...options,
-      retryable: options.retryable ?? isRetryableHttpStatus(options.status),
+      retryable: options.retryable ?? isRetryableErrorKind(options.kind),
     }),
   );
 }
@@ -59,7 +59,7 @@ function queryError(
   return Result.failure(
     new QueryError(message, {
       ...options,
-      retryable: options.retryable ?? isRetryableHttpStatus(options.status),
+      retryable: options.retryable ?? isRetryableErrorKind(options.kind),
     }),
   );
 }

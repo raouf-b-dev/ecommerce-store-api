@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -82,7 +83,7 @@ export class ScheduleOrderRefundService {
       );
       return ErrorFactory.UseCaseError(failureMessage, {
         cause: refundResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: refundResult.error.retryable,
       });
     }

@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { ScheduleOrderRefundService } from './schedule-order-refund.service';
 import {
   MockOrderScheduler,
@@ -102,7 +103,7 @@ describe('ScheduleOrderRefundService', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, retryable: true },
+      error: { kind: ErrorKind.INTERNAL, retryable: true },
     });
   });
 
@@ -129,7 +130,7 @@ describe('ScheduleOrderRefundService', () => {
     expect(result).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: false,
       },
     });
@@ -175,7 +176,7 @@ describe('ScheduleOrderRefundService', () => {
       expect(result).toMatchObject({
         isFailure: true,
         error: {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          kind: ErrorKind.INTERNAL,
           retryable: true,
         },
       });

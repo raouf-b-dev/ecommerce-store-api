@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Logger } from '@nestjs/common';
 import { CancelOrderUseCase } from './cancel-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
@@ -346,7 +347,7 @@ describe('CancelOrderUseCase', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 409 },
+        error: { kind: ErrorKind.CONFLICT },
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
@@ -392,7 +393,7 @@ describe('CancelOrderUseCase', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 409 },
+        error: { kind: ErrorKind.CONFLICT },
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
@@ -579,7 +580,7 @@ describe('CancelOrderUseCase', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 500 },
+        error: { kind: ErrorKind.INTERNAL },
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(
@@ -629,7 +630,7 @@ describe('CancelOrderUseCase', () => {
 
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 409 },
+        error: { kind: ErrorKind.CONFLICT },
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
@@ -660,7 +661,7 @@ describe('CancelOrderUseCase', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 500 },
+        error: { kind: ErrorKind.INTERNAL },
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
     });
@@ -693,7 +694,7 @@ describe('CancelOrderUseCase', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 500, retryable: true },
+        error: { kind: ErrorKind.INTERNAL, retryable: true },
       });
       expect(mockRepository.save).toHaveBeenCalledTimes(1);
       expect(

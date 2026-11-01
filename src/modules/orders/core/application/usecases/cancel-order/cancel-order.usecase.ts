@@ -3,7 +3,7 @@ import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Result } from '../../../../../../shared-kernel/domain/result';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
@@ -36,7 +36,7 @@ export class CancelOrderUseCase implements UseCase<
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
     if (requestedOrder.isFailure) {
-      if (requestedOrder.error.statusCode === StatusCode.NOT_FOUND) {
+      if (requestedOrder.error.kind === ErrorKind.NOT_FOUND) {
         return orderNotFoundError(orderId);
       }
       return requestedOrder;

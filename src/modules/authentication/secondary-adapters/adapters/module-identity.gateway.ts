@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -43,7 +43,7 @@ export class ModuleIdentityGateway implements IdentityGateway {
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
     if (isFailure(result)) {
-      if (result.error.statusCode === StatusCode.NOT_FOUND) {
+      if (result.error.kind === ErrorKind.NOT_FOUND) {
         return Result.success(null);
       }
       return Result.failure(new InfrastructureError(result.error.message));
@@ -73,7 +73,7 @@ export class ModuleIdentityGateway implements IdentityGateway {
       callerContext: SYSTEM_CALLER_CONTEXT,
     });
     if (isFailure(result)) {
-      if (result.error.statusCode === StatusCode.NOT_FOUND) {
+      if (result.error.kind === ErrorKind.NOT_FOUND) {
         return Result.success(null);
       }
       return Result.failure(new InfrastructureError(result.error.message));

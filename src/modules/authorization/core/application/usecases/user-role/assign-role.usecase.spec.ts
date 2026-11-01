@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { AssignRoleUseCase } from './assign-role.usecase';
 import { Role } from '../../../domain/entities/role';
 import {
@@ -93,7 +94,7 @@ describe('AssignRoleUseCase', () => {
       'Role UNKNOWN not found',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(userRoleAssignmentRepository.save).not.toHaveBeenCalled();
   });
 });

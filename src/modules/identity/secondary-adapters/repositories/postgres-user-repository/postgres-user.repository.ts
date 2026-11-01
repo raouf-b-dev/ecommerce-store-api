@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -171,7 +172,7 @@ export class PostgresUserRepository implements UserRepository {
     }
     return new RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      { status: HttpStatus.CONFLICT },
+      { kind: ErrorKind.CONFLICT },
     );
   }
 

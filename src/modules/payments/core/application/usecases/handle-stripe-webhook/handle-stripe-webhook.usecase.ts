@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -39,14 +40,14 @@ export class HandleStripeWebhookUseCase extends UseCase<
     // 1. Validate signature presence
     if (!dto.signature?.trim()) {
       return ErrorFactory.UseCaseError('Missing stripe-signature header', {
-        status: HttpStatus.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
       });
     }
 
     // 2. Validate raw body presence
     if (!dto.rawBody || dto.rawBody.length === 0) {
       return ErrorFactory.UseCaseError('Missing raw request body', {
-        status: HttpStatus.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
       });
     }
 
@@ -57,7 +58,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
     );
     if (!payload) {
       return ErrorFactory.UseCaseError('Invalid Stripe webhook signature', {
-        status: HttpStatus.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
       });
     }
 
@@ -75,7 +76,7 @@ export class HandleStripeWebhookUseCase extends UseCase<
     if (!paymentIntent?.id) {
       return ErrorFactory.UseCaseError(
         'Invalid Stripe webhook payload: missing payment intent',
-        { status: HttpStatus.BAD_REQUEST },
+        { kind: ErrorKind.INVALID },
       );
     }
 

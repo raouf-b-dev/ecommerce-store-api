@@ -1,6 +1,7 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { HttpStatus } from '@nestjs/common';
+
 import { Repository, DataSource } from 'typeorm';
 import { OrderEntity } from '../../orm/order.schema';
 import { PostgresOrderRepository } from './postgres.order-repository';
@@ -83,7 +84,7 @@ describe('PostgresOrderRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+      expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     });
 
     it('should return error on DB failure', async () => {

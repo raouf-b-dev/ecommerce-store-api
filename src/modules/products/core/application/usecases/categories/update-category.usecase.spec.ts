@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import {
   CategoryResult,
   CategoryTestFactory,
@@ -86,7 +87,7 @@ describe('UpdateCategoryUseCase', () => {
       'Category with name Clothing already exists',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 

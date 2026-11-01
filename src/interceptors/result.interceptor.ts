@@ -11,7 +11,8 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Result, isFailure } from 'src/shared-kernel/domain/result';
 import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
-import { StatusCode } from 'src/shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from 'src/shared-kernel/domain/exceptions/error-kind';
+import { httpStatusFromErrorKind } from 'src/filters/http-error-mapping';
 
 @Injectable()
 export class ResultInterceptor implements NestInterceptor {
@@ -41,9 +42,9 @@ export class ResultInterceptor implements NestInterceptor {
   }
 
   private mapErrorToHttpException(error: AppError): HttpException {
-    const statusCode = error.statusCode || StatusCode.INTERNAL_SERVER_ERROR;
+    const statusCode = httpStatusFromErrorKind(error.kind);
 
-    if (statusCode === StatusCode.INTERNAL_SERVER_ERROR) {
+    if (error.kind === ErrorKind.INTERNAL) {
       this.logger.error('An unhandled internal error occurred:', error.stack);
     }
 

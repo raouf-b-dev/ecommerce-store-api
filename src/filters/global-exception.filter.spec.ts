@@ -1,3 +1,4 @@
+import { ErrorKind } from '../shared-kernel/domain/exceptions/error-kind';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GlobalExceptionFilter } from './global-exception.filter';
 import {
@@ -16,7 +17,7 @@ import { createMockArgumentsHost } from '../testing';
 class TestAppError extends AppError {
   constructor(message: string) {
     super(message, {
-      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      kind: ErrorKind.RULE_VIOLATION,
       code: ErrorCode.DOMAIN_ERROR,
       retryable: false,
     });

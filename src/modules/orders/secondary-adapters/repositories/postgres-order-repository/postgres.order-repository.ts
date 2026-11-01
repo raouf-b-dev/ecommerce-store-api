@@ -1,5 +1,6 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/order/infrastructure/postgres-order.repository.ts
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
@@ -81,7 +82,7 @@ export class PostgresOrderRepository implements OrderRepository {
       });
       if (!orderEntity) {
         return ErrorFactory.RepositoryError('Order not found', {
-          status: HttpStatus.NOT_FOUND,
+          kind: ErrorKind.NOT_FOUND,
         });
       }
       return Result.success({
@@ -152,7 +153,7 @@ export class PostgresOrderRepository implements OrderRepository {
         }
         throw new RepositoryError(
           `Optimistic lock failure for Order ${order.id}. Expected version ${expectedVersion}.`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 

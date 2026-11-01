@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -69,7 +69,7 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
       const locked =
         await this.inventoryRepository.findByProductIdForUpdate(productId);
       if (locked.isFailure) {
-        if (locked.error.statusCode === StatusCode.NOT_FOUND) {
+        if (locked.error.kind === ErrorKind.NOT_FOUND) {
           continue;
         }
         return ErrorFactory.UseCaseError(

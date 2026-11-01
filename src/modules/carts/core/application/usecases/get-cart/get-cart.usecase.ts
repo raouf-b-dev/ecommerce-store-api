@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -39,7 +40,7 @@ export class GetCartUseCase extends UseCase<
     if (!callerContext) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        { status: HttpStatus.NOT_FOUND },
+        { kind: ErrorKind.NOT_FOUND },
       );
     }
 
@@ -51,7 +52,7 @@ export class GetCartUseCase extends UseCase<
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        { status: HttpStatus.NOT_FOUND },
+        { kind: ErrorKind.NOT_FOUND },
       );
     }
 
@@ -79,7 +80,7 @@ export class GetCartUseCase extends UseCase<
     if (isFailure(result)) {
       return ErrorFactory.UseCaseError(result.error.message, {
         cause: result.error,
-        status: result.error.statusCode,
+        kind: result.error.kind,
         retryable: result.error.retryable,
       });
     }
@@ -87,7 +88,7 @@ export class GetCartUseCase extends UseCase<
     if (!result.value) {
       return ErrorFactory.UseCaseError(
         `Cart ${cartId || userId || ''} not found`,
-        { status: HttpStatus.NOT_FOUND },
+        { kind: ErrorKind.NOT_FOUND },
       );
     }
 

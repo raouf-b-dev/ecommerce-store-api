@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import {
@@ -69,7 +70,7 @@ describe('CancelOrderAccessPolicy', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: 409 },
+      error: { kind: ErrorKind.CONFLICT },
     });
   });
 

@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -37,12 +38,12 @@ export class RegisterUserUseCase extends UseCase<
     if (isFailure(existsResult)) {
       return ErrorFactory.UseCaseError('Failed to verify email availability', {
         cause: existsResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
     if (existsResult.value) {
       return ErrorFactory.UseCaseError('User with this email already exists', {
-        status: HttpStatus.CONFLICT,
+        kind: ErrorKind.CONFLICT,
       });
     }
 
@@ -71,7 +72,7 @@ export class RegisterUserUseCase extends UseCase<
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
       return ErrorFactory.UseCaseError('Failed to complete registration', {
         cause: credentialResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
@@ -84,7 +85,7 @@ export class RegisterUserUseCase extends UseCase<
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
       return ErrorFactory.UseCaseError('Failed to complete registration', {
         cause: roleResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 

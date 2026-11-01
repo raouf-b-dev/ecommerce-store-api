@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -6,6 +7,6 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 export function orderCannotBeCancelledError(): Result<never, DomainError> {
   return ErrorFactory.DomainError(
     'Order cannot be cancelled in current state',
-    { status: 409 },
+    { kind: ErrorKind.CONFLICT },
   );
 }
