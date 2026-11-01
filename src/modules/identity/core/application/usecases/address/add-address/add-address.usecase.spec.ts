@@ -10,6 +10,8 @@ import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import {
   createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
@@ -177,9 +179,13 @@ describe('AddAddressUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        `User not found`,
+        `User with id ${userId} not found`,
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
     });
 
     it('should return Failure(RepositoryError) if repository fails', async () => {
@@ -252,6 +258,10 @@ describe('AddAddressUseCase', () => {
         'User with id 123 not found',
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
       expect(mockUserRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 

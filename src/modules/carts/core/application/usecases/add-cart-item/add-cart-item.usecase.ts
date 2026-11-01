@@ -7,11 +7,13 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { CartInventoryGateway } from '../../ports/inventory.gateway';
 import { CartProductGateway } from '../../ports/product.gateway';
 import { INVENTORY_GATEWAY, PRODUCT_GATEWAY } from '../../../../carts.token';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+import { cartNotFoundError } from '../../services/cart-not-found';
 import { AddCartItemCommand } from '../../commands/add-cart-item.command';
 
 @Injectable()
@@ -42,11 +44,16 @@ export class AddCartItemUseCase extends UseCase<
 
     const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
-    if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) {
+      if (cartResult.error.kind === ErrorKind.NOT_FOUND) {
+        return cartNotFoundError(cartId);
+      }
+      return cartResult;
+    }
 
     const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
-      return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
+      return cartNotFoundError(cartId);
     }
 
     const ownershipResult = this.cartOwnershipValidator.validate(

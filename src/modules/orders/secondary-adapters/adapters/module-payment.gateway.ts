@@ -95,6 +95,8 @@ export class ModulePaymentGateway implements PaymentGateway {
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError('Failed to process refund', {
         cause: result.error,
+        kind: result.error.kind,
+        code: result.error.code,
         retryable: result.error.retryable,
       });
     }

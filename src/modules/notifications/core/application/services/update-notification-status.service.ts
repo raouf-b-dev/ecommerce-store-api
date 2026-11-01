@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Result } from 'src/shared-kernel/domain/result';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from 'src/shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from 'src/shared-kernel/domain/exceptions/error-kind';
 import { NotificationRepository } from '../../domain/repositories/notification.repository';
 import { NotificationStatus } from '../../domain/enums/notification-status.enum';
 
@@ -32,6 +34,10 @@ export class UpdateNotificationStatusService {
     if (!notification) {
       return ErrorFactory.UseCaseError(
         `Notification ${notificationId} not found`,
+        {
+          kind: ErrorKind.NOT_FOUND,
+          code: ErrorCode.NOTIFICATION_NOT_FOUND,
+        },
       );
     }
 

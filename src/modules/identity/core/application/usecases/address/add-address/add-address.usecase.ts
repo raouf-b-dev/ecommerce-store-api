@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { userNotFoundError } from '../../../services/user-not-found';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -6,7 +7,6 @@ import {
   Result,
 } from '../../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
 import {
   USER_MUTATION_PERMISSIONS,
@@ -49,18 +49,19 @@ export class AddAddressUseCase extends UseCase<
         USER_MUTATION_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
-        kind: ErrorKind.NOT_FOUND,
-      });
+      return userNotFoundError(userId);
     }
 
     const userResult = await this.userRepository.findByIdForUpdate(userId);
-    if (isFailure(userResult)) return userResult;
+    if (isFailure(userResult)) {
+      if (userResult.error.kind === ErrorKind.NOT_FOUND) {
+        return userNotFoundError(userId);
+      }
+      return userResult;
+    }
 
     if (!userResult.value) {
-      return ErrorFactory.UseCaseError('User not found', {
-        kind: ErrorKind.NOT_FOUND,
-      });
+      return userNotFoundError(userId);
     }
 
     const { entity: user, expectedVersion } = userResult.value;

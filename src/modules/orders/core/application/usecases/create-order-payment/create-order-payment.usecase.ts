@@ -5,12 +5,12 @@ import {
   isFailure,
 } from '../../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { GetOrderUseCase } from '../get-order/get-order.usecase';
 import { CreatedPayment, PaymentGateway } from '../../ports/payment.gateway';
+import { orderNotFoundError } from '../../services/order-not-found';
 
 export interface CreateOrderPaymentCommand {
   orderId: number;
@@ -41,9 +41,7 @@ export class CreateOrderPaymentUseCase extends UseCase<
     command: CreateOrderPaymentCommand,
   ): Promise<Result<CreatedPayment, AppError>> {
     if (!command.callerContext) {
-      return ErrorFactory.UseCaseError(
-        `Order with id ${command.orderId} not found`,
-      );
+      return orderNotFoundError(command.orderId);
     }
 
     const orderResult = await this.getOrderUseCase.execute({

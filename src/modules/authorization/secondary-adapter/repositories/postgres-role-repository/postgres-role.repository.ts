@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
@@ -38,7 +39,9 @@ export class PostgresRoleRepository implements RoleRepository {
         relations: ROLE_WITH_PERMISSIONS,
       });
       if (!entity) {
-        return ErrorFactory.RepositoryError(`Role with ID ${id} not found`);
+        return ErrorFactory.RepositoryError(`Role with ID ${id} not found`, {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(RoleMapper.toDomain(entity));
     } catch (error) {
@@ -132,7 +135,9 @@ export class PostgresRoleRepository implements RoleRepository {
         );
 
         if (!updateResult.affected) {
-          throw new RepositoryError('Role not found for update');
+          throw new RepositoryError('Role not found for update', {
+            kind: ErrorKind.NOT_FOUND,
+          });
         }
 
         await this.syncRolePermissions(

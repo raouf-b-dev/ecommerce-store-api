@@ -1,5 +1,5 @@
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
-
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import {
   MockCartQueryService,
   CartDtoTestFactory,
@@ -71,6 +71,7 @@ describe('GetCartUseCase', () => {
         'Cart 999 not found',
         UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
       expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 

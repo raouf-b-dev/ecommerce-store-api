@@ -1,4 +1,5 @@
 import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
 // src/modules/customers/application/usecases/get-customer/get-customer.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
@@ -46,6 +47,7 @@ export class GetUserByEmailUseCase extends UseCase<
     if (!user) {
       return ErrorFactory.UseCaseError('User with the given email not found', {
         kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
       });
     }
 

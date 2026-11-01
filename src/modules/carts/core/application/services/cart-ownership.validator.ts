@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Cart } from '../../domain/entities/cart';
 import {
   CallerContext,
   isSystemCaller,
 } from '../../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { cartNotFoundError } from './cart-not-found';
 
 @Injectable()
 export class CartOwnershipValidator {
@@ -28,7 +28,7 @@ export class CartOwnershipValidator {
       callerContext.userId === null ||
       Number(callerContext.userId) !== Number(cart.userId)
     ) {
-      return ErrorFactory.UseCaseError(`Cart with id ${cart.id} not found`);
+      return cartNotFoundError(cart.id);
     }
 
     return Result.success(undefined);

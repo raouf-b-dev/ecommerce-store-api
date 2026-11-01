@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerContext } from 'src/shared-kernel/domain/interfaces/caller-context.interface';
 import { AddAddressUseCase } from './core/application/usecases/address/add-address/add-address.usecase';
@@ -42,6 +43,11 @@ export class AddressesController {
   @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Add address to customer' })
   @ApiResponse({ status: 201, type: AddressResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorResponseDto,
+  })
   async addAddress(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddAddressDto,
@@ -58,6 +64,11 @@ export class AddressesController {
   @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Update customer address' })
   @ApiResponse({ status: 200, type: AddressResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'User or address not found',
+    type: ErrorResponseDto,
+  })
   async updateAddress(
     @Param('id', ParseIntPipe) id: number,
     @Param('addressId', ParseIntPipe) addressId: number,
@@ -77,6 +88,11 @@ export class AddressesController {
   @RequirePermissions('manage_users', 'manage_own_addresses')
   @ApiOperation({ summary: 'Delete customer address' })
   @ApiResponse({ status: 204, description: 'Address deleted' })
+  @ApiResponse({
+    status: 404,
+    description: 'User or address not found',
+    type: ErrorResponseDto,
+  })
   async deleteAddress(
     @Param('id', ParseIntPipe) id: number,
     @Param('addressId', ParseIntPipe) addressId: number,
@@ -95,6 +111,11 @@ export class AddressesController {
   @ApiResponse({
     status: 200,
     description: 'Default address updated (empty body)',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User or address not found',
+    type: ErrorResponseDto,
   })
   async setDefaultAddress(
     @Param('id', ParseIntPipe) id: number,

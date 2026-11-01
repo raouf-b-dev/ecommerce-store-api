@@ -5,7 +5,8 @@ import {
 import { DeleteCategoryUseCase } from './delete-category.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { QueryNotFoundError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
 
@@ -34,7 +35,7 @@ describe('DeleteCategoryUseCase', () => {
     expect(mockRepository.deleteById).toHaveBeenCalledWith(1);
   });
 
-  it('returns QueryNotFoundError when missing', async () => {
+  it('returns CATEGORY_NOT_FOUND when missing', async () => {
     mockRepository.mockMissingCategory();
 
     const result = await useCase.execute(99);
@@ -43,7 +44,10 @@ describe('DeleteCategoryUseCase', () => {
       result,
       'Category with id 99 not found',
     );
-    expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+    expect(result.error).toMatchObject({
+      kind: ErrorKind.NOT_FOUND,
+      code: ErrorCode.CATEGORY_NOT_FOUND,
+    });
     expect(mockRepository.deleteById).not.toHaveBeenCalled();
   });
 

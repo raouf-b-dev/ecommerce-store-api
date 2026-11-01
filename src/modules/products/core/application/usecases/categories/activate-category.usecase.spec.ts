@@ -5,7 +5,8 @@ import {
 import { ActivateCategoryUseCase } from './activate-category.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
-import { QueryNotFoundError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('ActivateCategoryUseCase', () => {
   let useCase: ActivateCategoryUseCase;
@@ -49,7 +50,7 @@ describe('ActivateCategoryUseCase', () => {
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 
-  it('returns QueryNotFoundError when missing', async () => {
+  it('returns CATEGORY_NOT_FOUND when missing', async () => {
     mockRepository.mockMissingCategory();
 
     const result = await useCase.execute(99);
@@ -58,6 +59,9 @@ describe('ActivateCategoryUseCase', () => {
       result,
       'Category with id 99 not found',
     );
-    expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+    expect(result.error).toMatchObject({
+      kind: ErrorKind.NOT_FOUND,
+      code: ErrorCode.CATEGORY_NOT_FOUND,
+    });
   });
 });

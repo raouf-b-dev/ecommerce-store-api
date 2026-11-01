@@ -1,4 +1,3 @@
-import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -14,6 +13,7 @@ import {
 } from '../../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
 import { UserQueryService } from '../../../ports/user-query.service';
 import { UserDetailDTO } from '../../../queries/results/user-detail.result';
+import { userNotFoundError } from '../../../services/user-not-found';
 
 export interface GetUserInput {
   userId: number;
@@ -42,17 +42,21 @@ export class GetUserUseCase extends UseCase<
         USER_ACCESS_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
-        kind: ErrorKind.NOT_FOUND,
-      });
+      return userNotFoundError(userId);
     }
 
     const result = await this.userQueryService.getById(userId);
 
-    if (isFailure(result) || !result.value) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
-        kind: ErrorKind.NOT_FOUND,
+    if (isFailure(result)) {
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        kind: result.error.kind,
+        retryable: result.error.retryable,
       });
+    }
+
+    if (!result.value) {
+      return userNotFoundError(userId);
     }
 
     return Result.success(result.value);

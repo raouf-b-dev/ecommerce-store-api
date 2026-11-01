@@ -4,6 +4,8 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { orderNotFoundError } from '../../services/order-not-found';
 
 @Injectable()
 export class ProcessOrderUseCase implements UseCase<
@@ -14,7 +16,12 @@ export class ProcessOrderUseCase implements UseCase<
   constructor(private orderRepository: OrderRepository) {}
   async execute(id: number): Promise<Result<IOrder, UseCaseError>> {
     const orderResult = await this.orderRepository.findByIdForUpdate(id);
-    if (orderResult.isFailure) return orderResult;
+    if (orderResult.isFailure) {
+      if (orderResult.error.kind === ErrorKind.NOT_FOUND) {
+        return orderNotFoundError(id);
+      }
+      return orderResult;
+    }
 
     const { entity: order, expectedVersion } = orderResult.value;
 

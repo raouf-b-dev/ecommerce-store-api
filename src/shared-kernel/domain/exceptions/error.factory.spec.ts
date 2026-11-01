@@ -115,6 +115,21 @@ describe('ErrorFactory', () => {
     });
   });
 
+  it('derives retryable true from kind INTERNAL in the factory', () => {
+    const result = ErrorFactory.RepositoryError('DB blip', {
+      kind: ErrorKind.INTERNAL,
+    });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        kind: ErrorKind.INTERNAL,
+        retryable: true,
+        code: ErrorCode.REPOSITORY_ERROR,
+      },
+    });
+  });
+
   it('factory kind CONFLICT yields retryable false; direct new yields true', () => {
     const viaFactory = ErrorFactory.RepositoryError('Conflict', {
       kind: ErrorKind.CONFLICT,

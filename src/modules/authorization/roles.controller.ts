@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { CreateRoleUseCase } from './core/application/usecases/role/create-role.usecase';
 import { UpdateRoleUseCase } from './core/application/usecases/role/update-role.usecase';
 import { DeleteRoleUseCase } from './core/application/usecases/role/delete-role.usecase';
@@ -50,6 +51,11 @@ export class RolesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get role by ID' })
   @ApiResponse({ status: 200, type: RoleResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found',
+    type: ErrorResponseDto,
+  })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.findRoleByIdUseCase.execute(id);
   }
@@ -64,6 +70,11 @@ export class RolesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a custom role' })
   @ApiResponse({ status: 200, type: RoleResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found',
+    type: ErrorResponseDto,
+  })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRoleDto,
@@ -75,6 +86,11 @@ export class RolesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a custom role' })
   @ApiResponse({ status: 204, description: 'Role deleted' })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found',
+    type: ErrorResponseDto,
+  })
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.deleteRoleUseCase.execute(id);
   }

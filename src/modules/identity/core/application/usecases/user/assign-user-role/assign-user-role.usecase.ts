@@ -1,4 +1,3 @@
-import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
@@ -9,6 +8,7 @@ import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptio
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from '../../../../domain/repositories/user.repository';
 import { AuthorizationGateway } from '../../../ports/authorization.gateway';
+import { userNotFoundError } from '../../../services/user-not-found';
 
 export interface AssignUserRoleCommand {
   userId: number;
@@ -38,9 +38,7 @@ export class AssignUserRoleUseCase extends UseCase<
     }
 
     if (!userResult.value) {
-      return ErrorFactory.UseCaseError('User not found', {
-        kind: ErrorKind.NOT_FOUND,
-      });
+      return userNotFoundError(command.userId);
     }
 
     const assignResult = await this.authorizationGateway.assignRole(

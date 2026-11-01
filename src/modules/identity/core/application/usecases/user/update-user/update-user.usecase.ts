@@ -6,7 +6,8 @@ import {
 } from '../../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
-import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
+import { userNotFoundError } from '../../../services/user-not-found';
+import { ErrorKind } from 'src/shared-kernel/domain/exceptions/error-kind';
 import { UpdateUserCommand } from '../../../commands/update-user.command';
 
 @Injectable()
@@ -25,9 +26,16 @@ export class UpdateUserUseCase extends UseCase<
     const { id, firstName, lastName, email, phone } = command;
 
     const userResult = await this.userRepository.findByIdForUpdate(id);
-    if (isFailure(userResult)) return userResult;
+    if (isFailure(userResult)) {
+      if (userResult.error.kind === ErrorKind.NOT_FOUND) {
+        return userNotFoundError(id);
+      }
+      return userResult;
+    }
 
-    if (!userResult.value) return ErrorFactory.UseCaseError('User not found');
+    if (!userResult.value) {
+      return userNotFoundError(id);
+    }
 
     const { entity: user, expectedVersion } = userResult.value;
 

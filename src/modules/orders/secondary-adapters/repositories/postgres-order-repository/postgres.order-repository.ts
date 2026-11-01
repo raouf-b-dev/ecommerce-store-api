@@ -149,7 +149,9 @@ export class PostgresOrderRepository implements OrderRepository {
           where: { id: order.id! },
         });
         if (!existing) {
-          throw new RepositoryError('Order not found');
+          throw new RepositoryError('Order not found', {
+            kind: ErrorKind.NOT_FOUND,
+          });
         }
         throw new RepositoryError(
           `Optimistic lock failure for Order ${order.id}. Expected version ${expectedVersion}.`,
@@ -165,7 +167,9 @@ export class PostgresOrderRepository implements OrderRepository {
       relations: { items: true, shippingAddress: true },
     });
     if (!updated) {
-      return ErrorFactory.RepositoryError('Order not found');
+      return ErrorFactory.RepositoryError('Order not found', {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return Result.success(OrderMapper.toDomain(updated));
   }
@@ -190,7 +194,9 @@ export class PostgresOrderRepository implements OrderRepository {
         relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       const order = OrderMapper.toDomain(orderEntity);
@@ -207,7 +213,9 @@ export class PostgresOrderRepository implements OrderRepository {
     try {
       const deleteResult = await this.ormRepo.delete(id);
       if (deleteResult.affected === 0) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success<void>(undefined);
     } catch (error) {

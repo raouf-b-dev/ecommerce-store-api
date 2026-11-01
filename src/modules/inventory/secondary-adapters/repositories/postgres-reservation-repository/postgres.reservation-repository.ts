@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -112,7 +113,9 @@ export class PostgresReservationRepository implements ReservationRepository {
         where: { id },
       });
       if (!entity) {
-        return ErrorFactory.RepositoryError('Reservation not found');
+        return ErrorFactory.RepositoryError('Reservation not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(ReservationMapper.toDomain(entity));
     } catch (error) {
@@ -128,7 +131,9 @@ export class PostgresReservationRepository implements ReservationRepository {
     try {
       const entity = await this.repository.findOne({ where: { orderId } });
       if (!entity) {
-        return ErrorFactory.RepositoryError('Reservation not found');
+        return ErrorFactory.RepositoryError('Reservation not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(ReservationMapper.toDomain(entity));
     } catch (error) {
@@ -210,7 +215,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (
@@ -286,7 +293,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (currentEntity.status === ReservationStatus.CONFIRMED) {
@@ -359,7 +368,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (currentEntity.status === ReservationStatus.EXPIRED) {

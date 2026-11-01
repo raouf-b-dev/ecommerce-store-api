@@ -6,7 +6,9 @@ import { ConfirmOrderUseCase } from './confirm-order.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing/helpers/result-assertion.helper';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
-import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('ConfirmOrderUseCase', () => {
   let useCase: ConfirmOrderUseCase;
@@ -43,9 +45,11 @@ describe('ConfirmOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'not found',
-        RepositoryError,
+        'Order with id 999 not found',
+        UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
 
       expect(mockOrderRepository.findByIdForUpdate).toHaveBeenCalledWith(
         orderId,

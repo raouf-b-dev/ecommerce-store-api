@@ -7,8 +7,11 @@ import {
   Result,
 } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { CartOwnershipValidator } from '../../services/cart-ownership.validator';
+import { cartNotFoundError } from '../../services/cart-not-found';
 
 export interface RemoveCartItemUseCaseInput {
   cartId: number;
@@ -35,11 +38,16 @@ export class RemoveCartItemUseCase extends UseCase<
     const { cartId, itemId, callerContext } = input;
     const cartResult = await this.cartRepository.findByIdForUpdate(cartId);
 
-    if (isFailure(cartResult)) return cartResult;
+    if (isFailure(cartResult)) {
+      if (cartResult.error.kind === ErrorKind.NOT_FOUND) {
+        return cartNotFoundError(cartId);
+      }
+      return cartResult;
+    }
 
     const { entity: cart, expectedVersion } = cartResult.value;
     if (!cart) {
-      return ErrorFactory.UseCaseError(`Cart with id ${cartId} not found`);
+      return cartNotFoundError(cartId);
     }
 
     const ownershipResult = this.cartOwnershipValidator.validate(
@@ -48,6 +56,16 @@ export class RemoveCartItemUseCase extends UseCase<
     );
 
     if (isFailure(ownershipResult)) return ownershipResult;
+
+    if (!cart.findItemById(itemId)) {
+      return ErrorFactory.UseCaseError(
+        `Item with id ${itemId} not found in cart`,
+        {
+          kind: ErrorKind.NOT_FOUND,
+          code: ErrorCode.CART_ITEM_NOT_FOUND,
+        },
+      );
+    }
 
     const removeResult = cart.removeItemById(itemId);
 
