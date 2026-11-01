@@ -1,5 +1,5 @@
 import { RefundCheckoutPaymentUseCase } from './refund-checkout-payment.usecase';
-import { ProcessRefundInput } from '../../ports/payment.gateway';
+import { RefundPaymentCommand } from '../../commands/refund-payment.command';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
@@ -24,7 +24,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
   it('refunds checkout payment and publishes event on success', async () => {
     const amountResult = Money.create(5000, 'USD');
     ResultAssertionHelper.assertResultSuccess(amountResult);
-    const input: ProcessRefundInput = {
+    const input: RefundPaymentCommand = {
       paymentId: 10,
       amount: amountResult.value,
       reason: 'Compensation',
@@ -44,7 +44,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('accepts remaining mode and forwards it to the gateway', async () => {
-    const input: ProcessRefundInput = {
+    const input: RefundPaymentCommand = {
       paymentId: 10,
       mode: 'remaining',
       reason: 'Surplus payment refund',
@@ -72,7 +72,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
 
     const amountResult = Money.create(5000, 'USD');
     ResultAssertionHelper.assertResultSuccess(amountResult);
-    const input: ProcessRefundInput = {
+    const input: RefundPaymentCommand = {
       paymentId: 10,
       amount: amountResult.value,
       reason: 'Compensation',
@@ -100,7 +100,7 @@ describe('RefundCheckoutPaymentUseCase', () => {
 
     const amountResult = Money.create(5000, 'USD');
     ResultAssertionHelper.assertResultSuccess(amountResult);
-    const input: ProcessRefundInput = {
+    const input: RefundPaymentCommand = {
       paymentId: 10,
       amount: amountResult.value,
       reason: 'Compensation',

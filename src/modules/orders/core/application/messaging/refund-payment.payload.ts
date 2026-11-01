@@ -2,25 +2,29 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
-import { RefundAmount } from '../../domain/schedulers/order.scheduler';
-import { ProcessRefundInput } from '../ports/payment.gateway';
+import { RefundAmount } from '../../domain/value-objects/refund-amount';
+import { RefundPaymentCommand } from '../commands/refund-payment.command';
 
-/** BullMQ JSON shape for a refund amount. Money cannot travel on the wire. */
-export type RefundPaymentJobAmount =
+/**
+ * Queue payload for a refund amount. Money cannot travel as JSON, so
+ * producer and consumer share this contract (same idea as query results:
+ * application-owned shape used by both adapter sides).
+ */
+export type RefundPaymentPayloadAmount =
   { amountMinor: number; currency: string } | { mode: 'remaining' };
 
-export type RefundPaymentJobData = {
+export type RefundPaymentPayload = {
   orderId: number;
   paymentId: number;
   reason: string;
   correlationId?: string;
-} & RefundPaymentJobAmount;
+} & RefundPaymentPayloadAmount;
 
 /**
- * Runtime job data may still be a pre-deploy payload with neither
+ * Runtime payload may still be a pre-deploy shape with neither
  * mode nor amountMinor; deserialize fails loudly for those.
  */
-export type RefundPaymentJobDataRuntime = {
+export type RefundPaymentPayloadRuntime = {
   orderId: number;
   paymentId: number;
   reason: string;
@@ -30,10 +34,10 @@ export type RefundPaymentJobDataRuntime = {
   currency?: string;
 };
 
-/** Serialize domain RefundAmount for the BullMQ payload. */
-export function toRefundJobAmount(
+/** Serialize domain RefundAmount for the queue payload. */
+export function toRefundPayloadAmount(
   refund: RefundAmount,
-): RefundPaymentJobAmount {
+): RefundPaymentPayloadAmount {
   if ('mode' in refund) {
     return { mode: 'remaining' };
   }
@@ -43,10 +47,10 @@ export function toRefundJobAmount(
   };
 }
 
-/** Rebuild ProcessRefundInput from job data. Legacy payloads fail loudly. */
-export function toProcessRefundInput(
-  data: RefundPaymentJobDataRuntime,
-): Result<ProcessRefundInput, UseCaseError> {
+/** Rebuild RefundPaymentCommand from queue payload. Legacy shapes fail loudly. */
+export function toRefundPaymentCommand(
+  data: RefundPaymentPayloadRuntime,
+): Result<RefundPaymentCommand, UseCaseError> {
   if (data.mode === 'remaining') {
     return Result.success({
       paymentId: data.paymentId,

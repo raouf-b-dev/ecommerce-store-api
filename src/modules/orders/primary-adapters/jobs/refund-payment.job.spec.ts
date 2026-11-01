@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { UnrecoverableError } from 'bullmq';
 import { RefundPaymentStep } from './refund-payment.job';
-import { RefundPaymentJobData } from '../../core/application/job-data/refund-payment.job-data';
+import { RefundPaymentPayload } from '../../core/application/messaging/refund-payment.payload';
 import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
@@ -37,7 +37,7 @@ describe('RefundPaymentStep', () => {
   it('refunds payment successfully when valid amount is provided', async () => {
     const moneyResult = Money.create(4999, 'USD');
     ResultAssertionHelper.assertResultSuccess(moneyResult);
-    const jobData: RefundPaymentJobData = {
+    const jobData: RefundPaymentPayload = {
       orderId: 1,
       paymentId: 10,
       amountMinor: 4999,
@@ -58,7 +58,7 @@ describe('RefundPaymentStep', () => {
   it('passes checkout compensation reason to use case', async () => {
     const moneyResult = Money.create(3550, 'USD');
     ResultAssertionHelper.assertResultSuccess(moneyResult);
-    const jobData: RefundPaymentJobData = {
+    const jobData: RefundPaymentPayload = {
       orderId: 1,
       paymentId: 10,
       amountMinor: 3550,
@@ -77,7 +77,7 @@ describe('RefundPaymentStep', () => {
   });
 
   it('forwards remaining mode without an amount', async () => {
-    const jobData: RefundPaymentJobData = {
+    const jobData: RefundPaymentPayload = {
       orderId: 1,
       paymentId: 10,
       mode: 'remaining',
@@ -132,7 +132,7 @@ describe('RefundPaymentStep', () => {
       }),
     );
 
-    const jobData: RefundPaymentJobData = {
+    const jobData: RefundPaymentPayload = {
       orderId: 1,
       paymentId: 10,
       amountMinor: 2500,
@@ -151,7 +151,7 @@ describe('RefundPaymentStep', () => {
       ErrorFactory.UseCaseError('Payment cannot be refunded in current status'),
     );
 
-    const jobData: RefundPaymentJobData = {
+    const jobData: RefundPaymentPayload = {
       orderId: 1,
       paymentId: 10,
       amountMinor: 2500,

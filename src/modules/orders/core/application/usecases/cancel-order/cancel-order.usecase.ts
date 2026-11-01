@@ -12,6 +12,7 @@ import { CancelOrderCommand } from '../../commands/cancel-order.command';
 import { CancelOrderAccessPolicy } from '../../services/cancel-order-access.policy';
 import { orderNotFoundError } from '../../services/order-not-found';
 import { ScheduleOrderRefundService } from '../../services/schedule-order-refund.service';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 
 @Injectable()
 export class CancelOrderUseCase implements UseCase<
@@ -65,10 +66,12 @@ export class CancelOrderUseCase implements UseCase<
       return Result.success(order.toPrimitives());
     }
 
+    let refundAmount: Money | undefined;
     if (order.paymentId !== null) {
       const refundable =
         this.scheduleOrderRefundService.ensureRefundable(order);
       if (refundable.isFailure) return refundable;
+      refundAmount = refundable.value;
     }
 
     const cancelResult = order.cancel();
@@ -86,6 +89,7 @@ export class CancelOrderUseCase implements UseCase<
       order,
       orderId,
       reason,
+      refundAmount,
     );
     if (refundResult.isFailure) return refundResult;
 

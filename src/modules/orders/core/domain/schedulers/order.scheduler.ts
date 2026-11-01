@@ -1,6 +1,6 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
+import { RefundAmount } from '../value-objects/refund-amount';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
@@ -17,13 +17,6 @@ export interface SchedulePostPaymentProps {
   reservationId: number;
   cartId: number;
 }
-
-/**
- * Refund either an explicit Money amount (cancel path), or the
- * payment's remaining balance (surplus path). Discriminated so an
- * omitted amount cannot silently mean remaining.
- */
-export type RefundAmount = { amount: Money } | { mode: 'remaining' };
 
 export type ScheduleRefundPaymentProps = {
   orderId: number;

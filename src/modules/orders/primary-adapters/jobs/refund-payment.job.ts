@@ -5,20 +5,15 @@ import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/re
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-import { ProcessRefundInput } from '../../core/application/ports/payment.gateway';
+import { RefundPaymentCommand } from '../../core/application/commands/refund-payment.command';
 import {
-  RefundPaymentJobData,
-  toProcessRefundInput,
-} from '../../core/application/job-data/refund-payment.job-data';
-
-export type {
-  RefundPaymentJobData,
-  RefundPaymentJobAmount,
-} from '../../core/application/job-data/refund-payment.job-data';
+  RefundPaymentPayload,
+  toRefundPaymentCommand,
+} from '../../core/application/messaging/refund-payment.payload';
 
 @Injectable()
 export class RefundPaymentStep extends BaseJobHandler<
-  RefundPaymentJobData,
+  RefundPaymentPayload,
   void
 > {
   protected readonly logger = new Logger(RefundPaymentStep.name);
@@ -35,32 +30,32 @@ export class RefundPaymentStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<RefundPaymentJobData>,
+    job: Job<RefundPaymentPayload>,
   ): Promise<Result<void, AppError>> {
-    const inputResult = toProcessRefundInput(job.data);
-    if (isFailure(inputResult)) {
-      return inputResult;
+    const commandResult = toRefundPaymentCommand(job.data);
+    if (isFailure(commandResult)) {
+      return commandResult;
     }
-    const input = inputResult.value;
-    const amountLabel = refundAmountLabel(input);
+    const command = commandResult.value;
+    const amountLabel = refundAmountLabel(command);
     this.logger.log(
-      `Refunding payment ${input.paymentId} for amount ${amountLabel}...`,
+      `Refunding payment ${command.paymentId} for amount ${amountLabel}...`,
     );
 
-    const result = await this.refundPaymentUseCase.execute(input);
+    const result = await this.refundPaymentUseCase.execute(command);
 
     if (isFailure(result)) {
       return Result.failure(result.error);
     }
 
-    this.logger.log(`Payment ${input.paymentId} refunded.`);
+    this.logger.log(`Payment ${command.paymentId} refunded.`);
     return Result.success(undefined);
   }
 }
 
-function refundAmountLabel(input: ProcessRefundInput): string {
-  if ('mode' in input) {
+function refundAmountLabel(command: RefundPaymentCommand): string {
+  if ('mode' in command) {
     return 'remaining';
   }
-  return input.amount.toDecimalString();
+  return command.amount.toDecimalString();
 }

@@ -38,17 +38,24 @@ export class ScheduleOrderRefundService {
   /**
    * Cancel path: refund the order's recorded payment for the order total
    * when a paymentId is present.
+   * Pass `amount` when the caller already ran ensureRefundable (first
+   * cancel) so the check is not repeated. Omit it on idempotent retries
+   * so this method still validates.
    */
   async scheduleIfPaid(
     order: Order,
     orderId: number,
     reason: string,
+    amount?: Money,
   ): Promise<Result<void, UseCaseError>> {
     if (order.paymentId === null) {
       return Result.success(undefined);
     }
 
-    const amountResult = this.ensureRefundable(order);
+    const amountResult =
+      amount !== undefined
+        ? Result.success(amount)
+        : this.ensureRefundable(order);
     if (amountResult.isFailure) {
       return amountResult;
     }
