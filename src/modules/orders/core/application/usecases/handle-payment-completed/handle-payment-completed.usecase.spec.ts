@@ -456,7 +456,7 @@ describe('HandlePaymentCompletedUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId,
-        amount: cancelledOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
+        amount: cancelledOrder.getPricing().getTotalPriceMoney(),
         reason: 'Payment completed after order cancellation',
       });
       expect(mockOrderScheduler.schedulePostPayment).not.toHaveBeenCalled();
@@ -572,7 +572,7 @@ describe('HandlePaymentCompletedUseCase', () => {
       expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledWith({
         orderId,
         paymentId,
-        amount: cancelledOrder.getPricing().getTotalPriceMoney().toMajorUnits(),
+        amount: cancelledOrder.getPricing().getTotalPriceMoney(),
         reason: 'Payment completed after order cancellation',
       });
     });

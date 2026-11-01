@@ -2,6 +2,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.error';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { RefundAmount } from '../../domain/schedulers/order.scheduler';
 
 export interface CreatePaymentInput {
   orderId: number;
@@ -49,22 +50,10 @@ export interface PaymentIntentResult {
   clientSecret: string;
 }
 
-/**
- * Refund either an explicit major-unit amount, or whatever remains on
- * the payment (decided by payments at execution time). Discriminated so
- * an omitted amount cannot silently mean remaining.
- */
-export type ProcessRefundInput =
-  | {
-      paymentId: number;
-      reason: string;
-      amount: number;
-    }
-  | {
-      paymentId: number;
-      reason: string;
-      mode: 'remaining';
-    };
+export type ProcessRefundInput = {
+  paymentId: number;
+  reason: string;
+} & RefundAmount;
 
 export abstract class PaymentGateway {
   abstract createPayment(

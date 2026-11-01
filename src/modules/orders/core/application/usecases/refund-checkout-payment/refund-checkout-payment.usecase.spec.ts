@@ -2,6 +2,7 @@ import { RefundCheckoutPaymentUseCase } from './refund-checkout-payment.usecase'
 import { ProcessRefundInput } from '../../ports/payment.gateway';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { MockOrdersPaymentGateway } from '../../../../testing';
 
@@ -21,9 +22,11 @@ describe('RefundCheckoutPaymentUseCase', () => {
   });
 
   it('refunds checkout payment and publishes event on success', async () => {
+    const amountResult = Money.create(5000, 'USD');
+    ResultAssertionHelper.assertResultSuccess(amountResult);
     const input: ProcessRefundInput = {
       paymentId: 10,
-      amount: 50,
+      amount: amountResult.value,
       reason: 'Compensation',
     };
 
@@ -60,39 +63,6 @@ describe('RefundCheckoutPaymentUseCase', () => {
     );
   });
 
-  it('returns failure when amount is zero', async () => {
-    const input: ProcessRefundInput = {
-      paymentId: 10,
-      amount: 0,
-      reason: 'Compensation',
-    };
-
-    const result = await useCase.execute(input);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Refund amount must be greater than zero',
-    );
-    expect(paymentGateway.processRefund).not.toHaveBeenCalled();
-    expect(domainEventPublisher.publish).not.toHaveBeenCalled();
-  });
-
-  it('returns failure when amount is negative', async () => {
-    const input: ProcessRefundInput = {
-      paymentId: 10,
-      amount: -5,
-      reason: 'Compensation',
-    };
-
-    const result = await useCase.execute(input);
-
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Refund amount must be greater than zero',
-    );
-    expect(paymentGateway.processRefund).not.toHaveBeenCalled();
-  });
-
   it('returns failure keeping retryable === true when gateway fails with retryable error', async () => {
     paymentGateway.processRefund.mockResolvedValueOnce(
       ErrorFactory.InfrastructureError('Payment provider timeout', {
@@ -100,9 +70,11 @@ describe('RefundCheckoutPaymentUseCase', () => {
       }),
     );
 
+    const amountResult = Money.create(5000, 'USD');
+    ResultAssertionHelper.assertResultSuccess(amountResult);
     const input: ProcessRefundInput = {
       paymentId: 10,
-      amount: 50,
+      amount: amountResult.value,
       reason: 'Compensation',
     };
 
@@ -126,9 +98,11 @@ describe('RefundCheckoutPaymentUseCase', () => {
       }),
     );
 
+    const amountResult = Money.create(5000, 'USD');
+    ResultAssertionHelper.assertResultSuccess(amountResult);
     const input: ProcessRefundInput = {
       paymentId: 10,
-      amount: 50,
+      amount: amountResult.value,
       reason: 'Compensation',
     };
 

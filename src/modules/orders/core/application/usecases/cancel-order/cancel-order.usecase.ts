@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
@@ -69,10 +68,10 @@ export class CancelOrderUseCase implements UseCase<
     const cancelResult = order.cancel();
     if (cancelResult.isFailure) return cancelResult;
 
-    if (order.paymentId !== null && order.totalPrice <= 0) {
-      return ErrorFactory.UseCaseError(
-        'Refund amount must be greater than zero',
-      );
+    if (order.paymentId !== null) {
+      const refundable =
+        this.scheduleOrderRefundService.ensureRefundable(order);
+      if (refundable.isFailure) return refundable;
     }
 
     const updateResult = await this.orderRepository.save(

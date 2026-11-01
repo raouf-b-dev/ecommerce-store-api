@@ -3,15 +3,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import { Order } from '../../domain/entities/order';
 import {
   OrderScheduler,
   ScheduleRefundPaymentProps,
 } from '../../domain/schedulers/order.scheduler';
-
-function invalidRefundAmount(): Result<never, UseCaseError> {
-  return ErrorFactory.UseCaseError('Refund amount must be greater than zero');
-}
 
 /**
  * Schedules payment refunds for cancel and surplus paths.
@@ -22,6 +19,21 @@ export class ScheduleOrderRefundService {
   private readonly logger = new Logger(ScheduleOrderRefundService.name);
 
   constructor(private readonly orderScheduler: OrderScheduler) {}
+
+  /**
+   * Domain refundable-total check, wrapped once as a UseCaseError so
+   * cancel keeps HTTP 422 with code USECASE_ERROR.
+   */
+  ensureRefundable(order: Order): Result<Money, UseCaseError> {
+    const result = order.refundableTotal();
+    if (result.isFailure) {
+      return ErrorFactory.UseCaseError(
+        'Refund amount must be greater than zero',
+        { cause: result.error },
+      );
+    }
+    return Result.success(result.value);
+  }
 
   /**
    * Cancel path: refund the order's recorded payment for the order total
@@ -36,15 +48,16 @@ export class ScheduleOrderRefundService {
       return Result.success(undefined);
     }
 
-    if (order.totalPrice <= 0) {
-      return invalidRefundAmount();
+    const amountResult = this.ensureRefundable(order);
+    if (amountResult.isFailure) {
+      return amountResult;
     }
 
     return this.scheduleRefund(
       {
         orderId,
         paymentId: order.paymentId,
-        amount: order.getPricing().getTotalPriceMoney().toMajorUnits(),
+        amount: amountResult.value,
         reason,
       },
       'Order cancelled but the refund could not be scheduled',

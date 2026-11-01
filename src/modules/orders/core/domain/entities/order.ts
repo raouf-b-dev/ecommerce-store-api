@@ -12,7 +12,9 @@ import { IShippingAddress } from '../interfaces/shipping-address.interface';
 import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import {
   PaymentMethodType,
   isPaymentMethodType,
@@ -170,6 +172,20 @@ export class Order implements IOrder {
 
   getPricing(): OrderPricing {
     return this._pricing;
+  }
+
+  /**
+   * Total that may be refunded for this order. Rejects a non-positive total.
+   */
+  refundableTotal(): Result<Money, DomainError> {
+    const total = this.getPricing().getTotalPriceMoney();
+    if (!total.isPositive()) {
+      return ErrorFactory.DomainError(
+        'Refund amount must be greater than zero',
+        { code: ErrorCode.REFUND_AMOUNT_INVALID },
+      );
+    }
+    return Result.success(total);
   }
 
   // ==================== PAYMENT ASSOCIATION ====================

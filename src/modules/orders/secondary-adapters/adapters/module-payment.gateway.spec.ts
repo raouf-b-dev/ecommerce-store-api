@@ -12,6 +12,7 @@ import { ResultAssertionHelper } from '../../../../testing';
 import { IPayment } from '../../../payments/core/domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../payments/core/domain/value-objects/payment-status';
 import { PaymentTestFactory } from '../../../payments/testing';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 describe('ModulePaymentGateway', () => {
   let gateway: ModulePaymentGateway;
@@ -171,12 +172,14 @@ describe('ModulePaymentGateway', () => {
   });
 
   describe('processRefund', () => {
-    it('forwards an explicit amount to ProcessRefundUseCase', async () => {
+    it('forwards an explicit amount to ProcessRefundUseCase as major units', async () => {
       processRefundExecute.mockResolvedValue(Result.success(payment));
+      const amountResult = Money.create(2550, 'EUR');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
 
       const result = await gateway.processRefund({
         paymentId: 5,
-        amount: 25.5,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       });
 
@@ -236,9 +239,12 @@ describe('ModulePaymentGateway', () => {
         ),
       );
 
+      const amountResult = Money.create(1000, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
+
       const result = await gateway.processRefund({
         paymentId: 5,
-        amount: 10,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       });
 

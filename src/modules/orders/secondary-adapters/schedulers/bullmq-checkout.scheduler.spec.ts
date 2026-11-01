@@ -16,6 +16,7 @@ import {
   ResultAssertionHelper,
 } from '../../../../testing';
 import { ScheduleRefundPaymentProps } from '../../core/domain/schedulers/order.scheduler';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 describe('BullMqOrderScheduler', () => {
   let scheduler: BullMqOrderScheduler;
@@ -132,10 +133,12 @@ describe('BullMqOrderScheduler', () => {
 
   describe('scheduleRefundPayment', () => {
     it('schedules refund with stable payment-based jobId and correct payload', async () => {
+      const amountResult = Money.create(8999, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
       const props: ScheduleRefundPaymentProps = {
         orderId: 42,
         paymentId: 101,
-        amount: 89.99,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       };
 
@@ -154,7 +157,8 @@ describe('BullMqOrderScheduler', () => {
         data: {
           orderId: 42,
           paymentId: 101,
-          amount: 89.99,
+          amountMinor: 8999,
+          currency: 'USD',
           reason: 'Order cancelled',
           correlationId: 'test-correlation-id',
         },
@@ -203,10 +207,12 @@ describe('BullMqOrderScheduler', () => {
         new Error('Redis connection lost'),
       );
 
+      const amountResult = Money.create(8999, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
       const props: ScheduleRefundPaymentProps = {
         orderId: 42,
         paymentId: 101,
-        amount: 89.99,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       };
 
