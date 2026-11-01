@@ -1,4 +1,6 @@
 import { ErrorCode } from './error-code';
+import { ErrorOptions } from './error-options';
+import { toOptionalError } from './to-optional-error';
 
 export abstract class AppError extends Error {
   public readonly timestamp: Date;
@@ -9,18 +11,16 @@ export abstract class AppError extends Error {
 
   protected constructor(
     message: string,
-    statusCode: number,
-    code: ErrorCode,
-    cause?: Error,
-    retryable: boolean = true,
+    defaults: { status: number; code: ErrorCode; retryable: boolean },
+    options: ErrorOptions = {},
   ) {
     super(message);
     this.name = new.target.name;
     this.timestamp = new Date();
-    this.statusCode = statusCode;
-    this.code = code;
-    this.cause = cause;
+    this.statusCode = options.status ?? defaults.status;
+    this.code = options.code ?? defaults.code;
+    this.cause = toOptionalError(options.cause);
+    this.retryable = options.retryable ?? defaults.retryable;
     Error.captureStackTrace(this, this.constructor);
-    this.retryable = retryable;
   }
 }

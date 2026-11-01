@@ -1,4 +1,4 @@
-import { toError, toErrorMessage, toOptionalError } from './error.utils';
+import { toError, toErrorMessage } from './error.utils';
 
 describe('error.utils', () => {
   describe('toErrorMessage', () => {
@@ -49,17 +49,6 @@ describe('error.utils', () => {
       const err = toError(undefined);
       expect(err.message).toBe('Unknown error');
       expect(err.cause).toBeUndefined();
-    });
-  });
-
-  describe('toOptionalError', () => {
-    it('returns undefined for falsy values', () => {
-      expect(toOptionalError(undefined)).toBeUndefined();
-      expect(toOptionalError(null)).toBeUndefined();
-    });
-
-    it('normalizes truthy values', () => {
-      expect(toOptionalError('x')?.message).toBe('x');
     });
   });
 });

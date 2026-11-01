@@ -4,6 +4,7 @@ import * as path from 'path';
 const SRC_ROOT = path.join(__dirname, '../../src');
 const EXCLUDED_FILES = new Set([
   'src/shared-kernel/helpers/lang/error.utils.ts',
+  'src/shared-kernel/domain/exceptions/to-optional-error.ts',
 ]);
 
 function isCommentLine(line: string): boolean {

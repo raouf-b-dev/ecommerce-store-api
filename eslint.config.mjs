@@ -152,7 +152,7 @@ export default tseslint.config(
           selector:
             'ConditionalExpression > BinaryExpression[operator="instanceof"][right.name="Error"]',
           message:
-            'Use toErrorMessage(), toError(), or toOptionalError() from src/shared-kernel/helpers/lang/error.utils instead of instanceof Error ternaries.',
+            'Use toErrorMessage()/toError() from src/shared-kernel/helpers/lang/error.utils, or toOptionalError() from src/shared-kernel/domain/exceptions/to-optional-error, instead of instanceof Error ternaries.',
         },
       ],
     },
