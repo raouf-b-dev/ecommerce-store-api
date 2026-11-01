@@ -59,7 +59,9 @@ export class CachedUserRepository implements UserRepository {
 
       return Result.success(savedUser);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save user', error);
+      return ErrorFactory.RepositoryError('Failed to save user', {
+        cause: error,
+      });
     }
   }
   async existsByEmail(
@@ -73,7 +75,7 @@ export class CachedUserRepository implements UserRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to check if user exists by email',
-        error,
+        { cause: error },
       );
     }
   }
@@ -110,7 +112,9 @@ export class CachedUserRepository implements UserRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find all users', error);
+      return ErrorFactory.RepositoryError('Failed to find all users', {
+        cause: error,
+      });
     }
   }
 
@@ -152,10 +156,9 @@ export class CachedUserRepository implements UserRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find user by email',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find user by email', {
+        cause: error,
+      });
     }
   }
 
@@ -192,7 +195,9 @@ export class CachedUserRepository implements UserRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find user by id', error);
+      return ErrorFactory.RepositoryError('Failed to find user by id', {
+        cause: error,
+      });
     }
   }
 
@@ -205,7 +210,9 @@ export class CachedUserRepository implements UserRepository {
       }
       return this.postgresRepo.delete(id);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete user', error);
+      return ErrorFactory.RepositoryError('Failed to delete user', {
+        cause: error,
+      });
     }
   }
 }

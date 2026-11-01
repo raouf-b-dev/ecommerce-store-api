@@ -18,11 +18,9 @@ export class ActivateUserUseCase extends UseCase<number, void, UseCaseError> {
     if (userResult.isFailure) return userResult;
 
     if (!userResult.value)
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
 
     const { entity: user, expectedVersion } = userResult.value;
 

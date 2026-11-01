@@ -80,12 +80,11 @@ export class ScheduleOrderRefundService {
       this.logger.error(
         `Failed to schedule refund for order ${props.orderId}: ${refundResult.error.message}`,
       );
-      return ErrorFactory.UseCaseError(
-        failureMessage,
-        refundResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        refundResult.error.retryable,
-      );
+      return ErrorFactory.UseCaseError(failureMessage, {
+        cause: refundResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        retryable: refundResult.error.retryable,
+      });
     }
 
     return Result.success(undefined);

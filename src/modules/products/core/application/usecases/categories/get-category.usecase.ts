@@ -28,7 +28,9 @@ export class GetCategoryUseCase extends UseCase<
     const result = await this.categoryQueryService.getById(id);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError('Failed to find category', result.error);
+      return ErrorFactory.UseCaseError('Failed to find category', {
+        cause: result.error,
+      });
     }
 
     if (!result.value) {

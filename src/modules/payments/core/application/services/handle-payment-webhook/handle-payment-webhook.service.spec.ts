@@ -151,7 +151,7 @@ describe('HandlePaymentWebhookService', () => {
       const cause = new Error('Database connection failed');
       const repositoryFailure = ErrorFactory.RepositoryError(
         'Failed to find payment by gateway intent ID',
-        cause,
+        { cause: cause },
       );
       paymentRepository.findByGatewayPaymentIntentId.mockResolvedValue(
         repositoryFailure,

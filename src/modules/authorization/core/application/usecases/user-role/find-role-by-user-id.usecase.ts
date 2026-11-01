@@ -30,11 +30,9 @@ export class FindRoleByUserIdUseCase implements UseCase<
 
     const userRoleAssignment = userRoleAssignmentResult.value;
     if (!userRoleAssignment) {
-      return ErrorFactory.UseCaseError(
-        'User role assignment not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User role assignment not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const roleResult = await this.roleRepository.findById(
@@ -44,11 +42,9 @@ export class FindRoleByUserIdUseCase implements UseCase<
 
     const role = roleResult.value;
     if (!role) {
-      return ErrorFactory.UseCaseError(
-        'Role not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('Role not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const roleRecord: RoleRecord = {

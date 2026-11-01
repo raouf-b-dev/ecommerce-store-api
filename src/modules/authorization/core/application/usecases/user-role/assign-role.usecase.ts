@@ -38,11 +38,9 @@ export class AssignRoleUseCase implements UseCase<
     const role = roleResult.value;
 
     if (!role) {
-      return ErrorFactory.UseCaseError(
-        `Role ${command.roleCode} not found`,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`Role ${command.roleCode} not found`, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     let userRole: UserRoleAssignment;

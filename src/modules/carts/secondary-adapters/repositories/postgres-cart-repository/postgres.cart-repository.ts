@@ -32,7 +32,9 @@ export class PostgresCartRepository implements CartRepository {
 
       return Result.success(CartMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find cart', error);
+      return ErrorFactory.RepositoryError('Failed to find cart', {
+        cause: error,
+      });
     }
   }
 
@@ -48,10 +50,9 @@ export class PostgresCartRepository implements CartRepository {
 
       return Result.success(CartMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by user ID',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find cart by user ID', {
+        cause: error,
+      });
     }
   }
 
@@ -68,10 +69,9 @@ export class PostgresCartRepository implements CartRepository {
         expectedVersion: entity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart for update',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find cart for update', {
+        cause: error,
+      });
     }
   }
 
@@ -90,7 +90,7 @@ export class PostgresCartRepository implements CartRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find cart by user ID for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -106,7 +106,9 @@ export class PostgresCartRepository implements CartRepository {
       return await this.saveNormally(cart);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', {
+        cause: error,
+      });
     }
   }
 
@@ -192,7 +194,9 @@ export class PostgresCartRepository implements CartRepository {
       }
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete cart', error);
+      return ErrorFactory.RepositoryError('Failed to delete cart', {
+        cause: error,
+      });
     }
   }
 }

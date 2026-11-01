@@ -49,10 +49,9 @@ export class HandlePaymentCompletedUseCase extends UseCase<
 
     const orderResult = await this.orderRepository.findByIdForUpdate(orderId);
     if (isFailure(orderResult)) {
-      return ErrorFactory.UseCaseError(
-        `Order not found: ${orderId}`,
-        orderResult.error,
-      );
+      return ErrorFactory.UseCaseError(`Order not found: ${orderId}`, {
+        cause: orderResult.error,
+      });
     }
 
     const { entity: order, expectedVersion } = orderResult.value;
@@ -128,7 +127,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     if (isFailure(confirmResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to confirm payment for order ${orderId}`,
-        confirmResult.error,
+        { cause: confirmResult.error },
       );
     }
 
@@ -178,7 +177,7 @@ export class HandlePaymentCompletedUseCase extends UseCase<
     if (isFailure(recordResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to record payment after cancellation for order ${orderId}`,
-        recordResult.error,
+        { cause: recordResult.error },
       );
     }
 

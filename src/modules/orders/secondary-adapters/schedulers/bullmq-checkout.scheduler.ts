@@ -90,7 +90,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule checkout flow',
-        error,
+        { cause: error },
       );
     }
   }
@@ -147,7 +147,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule post-payment flow',
-        error,
+        { cause: error },
       );
     }
   }
@@ -176,7 +176,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule stock release',
-        error,
+        { cause: error },
       );
     }
   }
@@ -205,7 +205,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule order stock release',
-        error,
+        { cause: error },
       );
     }
   }
@@ -237,7 +237,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule payment refund',
-        error,
+        { cause: error },
       );
     }
   }
@@ -281,7 +281,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule pending orders expiration job',
-        error,
+        { cause: error },
       );
     }
   }

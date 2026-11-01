@@ -40,7 +40,7 @@ export class CreateCategoryUseCase extends UseCase<
       if (isFailure(nameExists)) {
         return ErrorFactory.UseCaseError(
           'Failed to validate category name uniqueness',
-          nameExists.error,
+          { cause: nameExists.error },
         );
       }
       if (nameExists.value) {
@@ -56,7 +56,7 @@ export class CreateCategoryUseCase extends UseCase<
       if (isFailure(slugExists)) {
         return ErrorFactory.UseCaseError(
           'Failed to validate category slug uniqueness',
-          slugExists.error,
+          { cause: slugExists.error },
         );
       }
       if (slugExists.value) {
@@ -68,10 +68,9 @@ export class CreateCategoryUseCase extends UseCase<
 
       const saveResult = await this.categoryRepository.save(category);
       if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to create category',
-          saveResult.error,
-        );
+        return ErrorFactory.UseCaseError('Failed to create category', {
+          cause: saveResult.error,
+        });
       }
 
       return Result.success(toCategoryResult(saveResult.value));

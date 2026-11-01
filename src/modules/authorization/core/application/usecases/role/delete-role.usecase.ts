@@ -25,19 +25,17 @@ export class DeleteRoleUseCase extends UseCase<number, void, UseCaseError> {
 
     const validationResult = role.validateNotSystemForDeletion();
     if (isFailure(validationResult)) {
-      return ErrorFactory.UseCaseError(
-        'Cannot delete role',
-        validationResult.error,
-      );
+      return ErrorFactory.UseCaseError('Cannot delete role', {
+        cause: validationResult.error,
+      });
     }
 
     const deleteResult = await this.roleRepository.delete(id);
 
     if (isFailure(deleteResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to delete role',
-        deleteResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to delete role', {
+        cause: deleteResult.error,
+      });
     }
 
     return Result.success(undefined);

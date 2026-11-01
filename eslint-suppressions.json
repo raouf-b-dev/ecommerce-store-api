@@ -377,12 +377,12 @@
       "count": 2
     }
   },
-  "src/shared-kernel/infra/http/request.helpers.spec.ts": {
+  "src/shared-kernel/helpers/http/request.helpers.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
-  "src/shared-kernel/infra/lang/app-version.spec.ts": {
+  "src/shared-kernel/helpers/lang/app-version.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }

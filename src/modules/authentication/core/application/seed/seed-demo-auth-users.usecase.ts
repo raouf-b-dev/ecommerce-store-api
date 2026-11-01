@@ -155,7 +155,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(existingResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to check existing user ${input.email}`,
-        existingResult.error,
+        { cause: existingResult.error },
       );
     }
 
@@ -214,7 +214,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       if (isFailure(rollbackResult)) return rollbackResult;
       return ErrorFactory.UseCaseError(
         `Failed to seed credentials for ${input.email}`,
-        credentialResult.error,
+        { cause: credentialResult.error },
       );
     }
 
@@ -231,7 +231,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       if (isFailure(rollbackResult)) return rollbackResult;
       return ErrorFactory.UseCaseError(
         `Failed to assign role for ${input.email}`,
-        roleResult.error,
+        { cause: roleResult.error },
       );
     }
 
@@ -251,7 +251,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(roleResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to read role for existing user ${email}`,
-        roleResult.error,
+        { cause: roleResult.error },
       );
     }
 
@@ -261,10 +261,9 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       roleResult.value?.code ?? null,
     );
     if (isFailure(policyResult)) {
-      return ErrorFactory.UseCaseError(
-        policyResult.error.message,
-        policyResult.error,
-      );
+      return ErrorFactory.UseCaseError(policyResult.error.message, {
+        cause: policyResult.error,
+      });
     }
     return Result.success(undefined);
   }
@@ -285,17 +284,16 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
       if (isFailure(credentialDelete)) {
         return ErrorFactory.UseCaseError(
           `Failed to roll back credentials for ${email}`,
-          credentialDelete.error,
+          { cause: credentialDelete.error },
         );
       }
     }
 
     const userDelete = await this.identityGateway.deleteUser(userId);
     if (isFailure(userDelete)) {
-      return ErrorFactory.UseCaseError(
-        `Failed to roll back user ${email}`,
-        userDelete.error,
-      );
+      return ErrorFactory.UseCaseError(`Failed to roll back user ${email}`, {
+        cause: userDelete.error,
+      });
     }
     return Result.success(undefined);
   }
@@ -315,7 +313,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(credentialResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to read credentials for existing user ${email}`,
-        credentialResult.error,
+        { cause: credentialResult.error },
       );
     }
     if (!credentialResult.value) {
@@ -333,7 +331,7 @@ export class SeedDemoAuthUsersUseCase extends UseCase<
     if (isFailure(updateResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to reset credentials for ${email}`,
-        updateResult.error,
+        { cause: updateResult.error },
       );
     }
     return Result.success(undefined);

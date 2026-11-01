@@ -63,7 +63,9 @@ export class PostgresOrderRepository implements OrderRepository {
       const orders = OrderMapper.toDomainArray(orderEntities);
       return Result.success<Order[]>(orders);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to list orders', error);
+      return ErrorFactory.RepositoryError('Failed to list orders', {
+        cause: error,
+      });
     }
   }
 
@@ -89,7 +91,7 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find the order for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -105,7 +107,9 @@ export class PostgresOrderRepository implements OrderRepository {
       return await this.saveNormally(order);
     } catch (error: unknown) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save order', error);
+      return ErrorFactory.RepositoryError('Failed to save order', {
+        cause: error,
+      });
     }
   }
 
@@ -192,7 +196,9 @@ export class PostgresOrderRepository implements OrderRepository {
 
       return Result.success<Order>(order);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find the order', error);
+      return ErrorFactory.RepositoryError('Failed to find the order', {
+        cause: error,
+      });
     }
   }
 
@@ -204,7 +210,9 @@ export class PostgresOrderRepository implements OrderRepository {
       }
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete the order', error);
+      return ErrorFactory.RepositoryError('Failed to delete the order', {
+        cause: error,
+      });
     }
   }
 
@@ -226,7 +234,7 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find orders by status before date',
-        error,
+        { cause: error },
       );
     }
   }

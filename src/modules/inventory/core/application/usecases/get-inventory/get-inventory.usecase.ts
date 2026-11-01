@@ -24,10 +24,9 @@ export class GetInventoryUseCase implements UseCase<
     const queryResult =
       await this.inventoryQueryService.getByProductId(productId);
     if (queryResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        queryResult.error.message,
-        queryResult.error,
-      );
+      return ErrorFactory.UseCaseError(queryResult.error.message, {
+        cause: queryResult.error,
+      });
     }
 
     return Result.success(queryResult.value);

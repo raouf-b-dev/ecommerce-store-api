@@ -64,7 +64,7 @@ export class BullMqInventoryScheduler
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule inventory reconciliation audit job',
-        error,
+        { cause: error },
       );
     }
   }
@@ -108,7 +108,7 @@ export class BullMqInventoryScheduler
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule expired reservations sweeper job',
-        error,
+        { cause: error },
       );
     }
   }

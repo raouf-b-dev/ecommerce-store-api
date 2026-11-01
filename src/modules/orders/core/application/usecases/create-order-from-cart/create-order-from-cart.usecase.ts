@@ -43,10 +43,9 @@ export class CreateOrderFromCartUseCase extends UseCase<
     // 1. Get Cart
     const cartResult = await this.cartGateway.getCart(dto.cartId);
     if (isFailure(cartResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to fetch cart',
-        cartResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to fetch cart', {
+        cause: cartResult.error,
+      });
     }
     const cart = cartResult.value;
 
@@ -66,10 +65,9 @@ export class CreateOrderFromCartUseCase extends UseCase<
     // 3. Save Order
     const saveResult = await this.orderRepository.save(order);
     if (isFailure(saveResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to save order',
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to save order', {
+        cause: saveResult.error,
+      });
     }
 
     return Result.success(undefined);

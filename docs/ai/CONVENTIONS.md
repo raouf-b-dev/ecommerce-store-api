@@ -123,9 +123,8 @@ return ErrorFactory.UseCaseError('Cart is empty', {
 
 Unknown thrown values still go through the helpers below. Do not stringify them by hand.
 
-- `toErrorMessage(err)`: a log or response string.
-- `toError(err)`: an `Error` to log, rethrow, or pass on; keeps `cause`.
-- `toOptionalError(err)`: a cause that may be absent (`ErrorFactory` arguments).
+- `toErrorMessage(err)` / `toError(err)` from `shared-kernel/helpers/lang/error.utils`: log or rethrow; `toError` keeps `cause`.
+- `toOptionalError(err)` from `shared-kernel/domain/exceptions/to-optional-error`: a cause that may be absent (exception constructors / `ErrorFactory`).
 
 Redis logging: `logRedisError(logger, source, err)`. Banned (ESLint and `test/architecture/error-handling.spec.ts`): `err instanceof Error ? err.message : String(err)`, `new Error(String(err))`. Plain `if (err instanceof Error)` control flow is fine.
 

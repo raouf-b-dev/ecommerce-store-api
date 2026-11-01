@@ -28,7 +28,7 @@ export class PostgresUserRoleAssignmentRepository implements UserRoleAssignmentR
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to save user role assignment',
-        error,
+        { cause: error },
       );
     }
   }
@@ -46,7 +46,7 @@ export class PostgresUserRoleAssignmentRepository implements UserRoleAssignmentR
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find user role assignment',
-        error,
+        { cause: error },
       );
     }
   }
@@ -57,7 +57,7 @@ export class PostgresUserRoleAssignmentRepository implements UserRoleAssignmentR
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to delete user role assignment',
-        error,
+        { cause: error },
       );
     }
   }

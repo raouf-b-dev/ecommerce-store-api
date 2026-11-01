@@ -1,4 +1,4 @@
-import { IDEMPOTENCY_KEY_HEADER } from '../../shared-kernel/infra/http/request.helpers';
+import { IDEMPOTENCY_KEY_HEADER } from '../../shared-kernel/helpers/http/request.helpers';
 import { CurrentUserPayload } from '../../shared-kernel/domain/interfaces/current-user.interface';
 import { TEST_IDS } from '../helpers/test-data.helper';
 

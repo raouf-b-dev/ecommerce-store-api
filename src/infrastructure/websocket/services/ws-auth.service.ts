@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { JwtVerifierPort } from '../../../shared-kernel/domain/interfaces/jwt-verifier.port';
-import { toErrorMessage } from '../../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class WsAuthService {

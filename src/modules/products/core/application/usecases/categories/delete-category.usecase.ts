@@ -17,10 +17,9 @@ export class DeleteCategoryUseCase extends UseCase<number, void, AppError> {
   async execute(id: number): Promise<Result<void, AppError>> {
     const findResult = await this.categoryRepository.findById(id);
     if (isFailure(findResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to find category',
-        findResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to find category', {
+        cause: findResult.error,
+      });
     }
     if (!findResult.value) {
       return ErrorFactory.QueryNotFoundError(
@@ -30,10 +29,9 @@ export class DeleteCategoryUseCase extends UseCase<number, void, AppError> {
 
     const deleteResult = await this.categoryRepository.deleteById(id);
     if (isFailure(deleteResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to delete category',
-        deleteResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to delete category', {
+        cause: deleteResult.error,
+      });
     }
 
     return Result.success(undefined);

@@ -24,7 +24,9 @@ export class PostgresCategoryRepository implements CategoryRepository {
       }
       return Result.success(CategoryMapper.toDomain(ormEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find the category', error);
+      return ErrorFactory.RepositoryError('Failed to find the category', {
+        cause: error,
+      });
     }
   }
 
@@ -40,7 +42,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find the category by slug',
-        error,
+        { cause: error },
       );
     }
   }
@@ -57,7 +59,9 @@ export class PostgresCategoryRepository implements CategoryRepository {
       });
       return Result.success(CategoryMapper.toDomainArray(ormEntities));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find categories', error);
+      return ErrorFactory.RepositoryError('Failed to find categories', {
+        cause: error,
+      });
     }
   }
 
@@ -69,7 +73,9 @@ export class PostgresCategoryRepository implements CategoryRepository {
       }
       return Result.success(category);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save the category', error);
+      return ErrorFactory.RepositoryError('Failed to save the category', {
+        cause: error,
+      });
     }
   }
 
@@ -78,10 +84,9 @@ export class PostgresCategoryRepository implements CategoryRepository {
       await this.ormRepo.delete(id);
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to delete the category',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to delete the category', {
+        cause: error,
+      });
     }
   }
 
@@ -97,7 +102,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to check category name uniqueness',
-        error,
+        { cause: error },
       );
     }
   }
@@ -114,7 +119,7 @@ export class PostgresCategoryRepository implements CategoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to check category slug uniqueness',
-        error,
+        { cause: error },
       );
     }
   }

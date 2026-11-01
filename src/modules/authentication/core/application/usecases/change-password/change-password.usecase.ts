@@ -44,8 +44,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (command.newPassword === command.currentPassword) {
       return ErrorFactory.UseCaseError(
         'New password must differ from current password',
-        null,
-        HttpStatus.BAD_REQUEST,
+        { status: HttpStatus.BAD_REQUEST },
       );
     }
 
@@ -53,29 +52,25 @@ export class ChangePasswordUseCase extends UseCase<
       command.userId,
     );
     if (isFailure(roleResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to resolve user role',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to resolve user role', {
+        cause: roleResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     if (!roleResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User role not found',
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('User role not found', {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     const role = roleResult.value;
     const policyResult = ensureCredentialsChangeable(role.permissions);
     if (isFailure(policyResult)) {
-      return ErrorFactory.UseCaseError(
-        policyResult.error.message,
-        policyResult.error,
-        HttpStatus.FORBIDDEN,
-      );
+      return ErrorFactory.UseCaseError(policyResult.error.message, {
+        cause: policyResult.error,
+        status: HttpStatus.FORBIDDEN,
+      });
     }
 
     const credentialResult = await this.credentialRepository.findByUserId(
@@ -85,19 +80,19 @@ export class ChangePasswordUseCase extends UseCase<
     if (credentialResult.isFailure) {
       return ErrorFactory.UseCaseError(
         'Failed to retrieve credential information',
-        credentialResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: credentialResult.error,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
       );
     }
 
     const credential = credentialResult.value;
 
     if (!credential) {
-      return ErrorFactory.UseCaseError(
-        'Credential not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('Credential not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const currentMatches = await this.passwordHasher.compare(
@@ -106,11 +101,9 @@ export class ChangePasswordUseCase extends UseCase<
     );
 
     if (!currentMatches) {
-      return ErrorFactory.UseCaseError(
-        'Current password is incorrect',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Current password is incorrect', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const sameAsCurrent = await this.passwordHasher.compare(
@@ -121,8 +114,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (sameAsCurrent) {
       return ErrorFactory.UseCaseError(
         'New password must differ from current password',
-        null,
-        HttpStatus.BAD_REQUEST,
+        { status: HttpStatus.BAD_REQUEST },
       );
     }
 
@@ -131,41 +123,35 @@ export class ChangePasswordUseCase extends UseCase<
 
     const updateResult = await this.credentialRepository.update(credential);
     if (updateResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to update credential',
-        updateResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to update credential', {
+        cause: updateResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     const revokeResult = await this.revokeAllForUserUsecase.execute(
       command.userId,
     );
     if (revokeResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to revoke existing sessions',
-        revokeResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to revoke existing sessions', {
+        cause: revokeResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     const userResult = await this.identityGateway.findUserById(command.userId);
     if (userResult.isFailure || !userResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('User not found', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const user = userResult.value;
 
     if (!user.isActive) {
-      return ErrorFactory.UseCaseError(
-        'User account is inactive',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('User account is inactive', {
+        status: HttpStatus.UNAUTHORIZED,
+      });
     }
 
     const accessToken = await this.jwtSignerService.signAccessToken({
@@ -191,11 +177,10 @@ export class ChangePasswordUseCase extends UseCase<
 
     const saveResult = await this.sessionTokenRepository.save(session);
     if (saveResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to create session',
-        saveResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to create session', {
+        cause: saveResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     this.logger.log(`User ${user.id} changed password successfully`);

@@ -59,7 +59,7 @@ export class GetPaymentByOrderIdUseCase extends UseCase<
     if (isFailure(result)) {
       return ErrorFactory.UseCaseError(
         `Failed to load payment for order ID ${orderId}`,
-        result.error,
+        { cause: result.error },
       );
     }
 

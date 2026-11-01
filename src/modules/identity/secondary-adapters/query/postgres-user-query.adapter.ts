@@ -97,7 +97,7 @@ export class PostgresUserQueryAdapter implements UserQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch user list: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -149,7 +149,7 @@ export class PostgresUserQueryAdapter implements UserQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch user details for ID ${id}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }

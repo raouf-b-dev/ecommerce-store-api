@@ -44,11 +44,9 @@ export class GetUserByEmailUseCase extends UseCase<
 
     const user = userResult.value;
     if (!user) {
-      return ErrorFactory.UseCaseError(
-        'User with the given email not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User with the given email not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     if (
@@ -60,8 +58,7 @@ export class GetUserByEmailUseCase extends UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Access denied: You do not have permission to view this profile',
-        null,
-        HttpStatus.FORBIDDEN,
+        { status: HttpStatus.FORBIDDEN },
       );
     }
 

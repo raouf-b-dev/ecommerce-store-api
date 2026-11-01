@@ -35,18 +35,15 @@ export class RegisterUserUseCase extends UseCase<
       command.email,
     );
     if (isFailure(existsResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to verify email availability',
-        existsResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to verify email availability', {
+        cause: existsResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
     if (existsResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User with this email already exists',
-        null,
-        HttpStatus.CONFLICT,
-      );
+      return ErrorFactory.UseCaseError('User with this email already exists', {
+        status: HttpStatus.CONFLICT,
+      });
     }
 
     const passwordHash = await this.passwordHasher.hash(command.password);
@@ -72,11 +69,10 @@ export class RegisterUserUseCase extends UseCase<
     );
     if (isFailure(credentialResult)) {
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
-      return ErrorFactory.UseCaseError(
-        'Failed to complete registration',
-        credentialResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to complete registration', {
+        cause: credentialResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     // Step 3: Assign default role
@@ -86,11 +82,10 @@ export class RegisterUserUseCase extends UseCase<
     if (isFailure(roleResult)) {
       await this.credentialRepository.deleteByUserId(registeredUser.id); // compensate step 2
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
-      return ErrorFactory.UseCaseError(
-        'Failed to complete registration',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to complete registration', {
+        cause: roleResult.error,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
 
     return Result.success(registeredUser);

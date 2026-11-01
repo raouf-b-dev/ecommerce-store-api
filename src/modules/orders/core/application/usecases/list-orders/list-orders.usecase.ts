@@ -54,8 +54,7 @@ export class ListOrdersUsecase implements UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Filtering orders by customer contact data requires view_customer_pii',
-        null,
-        HttpStatus.FORBIDDEN,
+        { status: HttpStatus.FORBIDDEN },
       );
     }
 
@@ -66,10 +65,9 @@ export class ListOrdersUsecase implements UseCase<
 
     const ordersResult = await this.orderQueryService.list(filteredQuery);
     if (ordersResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        ordersResult.error.message,
-        ordersResult.error,
-      );
+      return ErrorFactory.UseCaseError(ordersResult.error.message, {
+        cause: ordersResult.error,
+      });
     }
 
     return Result.success({

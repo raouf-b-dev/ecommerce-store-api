@@ -42,7 +42,9 @@ export class CachedCartRepository implements CartRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find cart', error);
+      return ErrorFactory.RepositoryError('Failed to find cart', {
+        cause: error,
+      });
     }
   }
 
@@ -79,10 +81,9 @@ export class CachedCartRepository implements CartRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by user ID',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find cart by user ID', {
+        cause: error,
+      });
     }
   }
 
@@ -121,7 +122,9 @@ export class CachedCartRepository implements CartRepository {
 
       return Result.success(savedCart);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', {
+        cause: error,
+      });
     }
   }
 
@@ -134,7 +137,9 @@ export class CachedCartRepository implements CartRepository {
 
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete cart', error);
+      return ErrorFactory.RepositoryError('Failed to delete cart', {
+        cause: error,
+      });
     }
   }
 }

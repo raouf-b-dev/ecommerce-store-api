@@ -42,7 +42,7 @@ export class ReconcileInventoryUseCase {
         if (batchResult.isFailure) {
           return ErrorFactory.UseCaseError(
             'Failed to fetch inventory batch for reconciliation',
-            batchResult.error,
+            { cause: batchResult.error },
           );
         }
 
@@ -67,7 +67,7 @@ export class ReconcileInventoryUseCase {
         if (pendingSumResult.isFailure) {
           return ErrorFactory.UseCaseError(
             'Failed to fetch pending reservation totals',
-            pendingSumResult.error,
+            { cause: pendingSumResult.error },
           );
         }
 
@@ -109,10 +109,9 @@ export class ReconcileInventoryUseCase {
         'Unexpected error during inventory reconciliation',
         error,
       );
-      return ErrorFactory.UseCaseError(
-        'Inventory reconciliation failed',
-        error,
-      );
+      return ErrorFactory.UseCaseError('Inventory reconciliation failed', {
+        cause: error,
+      });
     }
   }
 }

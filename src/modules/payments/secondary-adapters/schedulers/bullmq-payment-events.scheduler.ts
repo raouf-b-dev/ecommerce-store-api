@@ -47,7 +47,7 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
       );
       return ErrorFactory.InfrastructureError(
         'Failed to emit payment completed event',
-        error,
+        { cause: error },
       );
     }
   }
@@ -76,7 +76,7 @@ export class BullMqPaymentEventsScheduler implements PaymentEventsScheduler {
       );
       return ErrorFactory.InfrastructureError(
         'Failed to emit payment failed event',
-        error,
+        { cause: error },
       );
     }
   }

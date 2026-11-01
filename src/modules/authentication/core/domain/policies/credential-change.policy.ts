@@ -17,8 +17,7 @@ export function ensureCredentialsChangeable(
   if (!new Set(permissions).has(CHANGE_OWN_CREDENTIALS_PERMISSION)) {
     return ErrorFactory.DomainError(
       'Changing credentials requires the change_own_credentials permission',
-      null,
-      StatusCode.FORBIDDEN,
+      { status: StatusCode.FORBIDDEN },
     );
   }
   return Result.success(undefined);

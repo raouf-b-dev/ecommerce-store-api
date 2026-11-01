@@ -11,7 +11,7 @@ import ms from 'ms';
 import { AuthCookieSameSite } from '../../../../config/validate-env';
 import { EnvConfigService } from '../../../../config/env-config.service';
 import { DEFAULT_API_PREFIX } from '../../../../infrastructure/http/api-version';
-import { getUnversionedRoutePath } from '../../../../shared-kernel/infra/http/request.helpers';
+import { getUnversionedRoutePath } from '../../../../shared-kernel/helpers/http/request.helpers';
 
 export const REFRESH_COOKIE_NAME = 'refresh_token';
 export const REFRESH_COOKIE_PATH = `${DEFAULT_API_PREFIX}/authentication`;

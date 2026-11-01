@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { JwksPort } from '../ports/jwks.port';
 import { EnvConfigService } from '../../../config/env-config.service';
-import { toError } from '../../../shared-kernel/infra/lang/error.utils';
+import { toError } from '../../../shared-kernel/helpers/lang/error.utils';
 import {
   importPKCS8,
   importJWK,

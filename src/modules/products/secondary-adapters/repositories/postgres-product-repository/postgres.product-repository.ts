@@ -33,10 +33,9 @@ export class PostgresProductRepository implements ProductRepository {
         expectedVersion: ormEntity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to find product for update`,
-        error,
-      );
+      return ErrorFactory.RepositoryError(`Failed to find product for update`, {
+        cause: error,
+      });
     }
   }
 
@@ -51,7 +50,9 @@ export class PostgresProductRepository implements ProductRepository {
       return await this.saveNormally(product);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError(`Failed to save the product`, error);
+      return ErrorFactory.RepositoryError(`Failed to save the product`, {
+        cause: error,
+      });
     }
   }
 
@@ -120,7 +121,9 @@ export class PostgresProductRepository implements ProductRepository {
 
       return Result.success<Product>(ProductMapper.toDomain(ormEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find the product`, error);
+      return ErrorFactory.RepositoryError(`Failed to find the product`, {
+        cause: error,
+      });
     }
   }
 
@@ -133,10 +136,9 @@ export class PostgresProductRepository implements ProductRepository {
       });
       return Result.success(ProductMapper.toDomainArray(ormEntities));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find products by IDs',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find products by IDs', {
+        cause: error,
+      });
     }
   }
 
@@ -147,7 +149,9 @@ export class PostgresProductRepository implements ProductRepository {
         ProductMapper.toDomainArray(ormEntities),
       );
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find products`, error);
+      return ErrorFactory.RepositoryError(`Failed to find products`, {
+        cause: error,
+      });
     }
   }
 
@@ -156,10 +160,9 @@ export class PostgresProductRepository implements ProductRepository {
       await this.ormRepo.delete(id);
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to delete the product`,
-        error,
-      );
+      return ErrorFactory.RepositoryError(`Failed to delete the product`, {
+        cause: error,
+      });
     }
   }
 }

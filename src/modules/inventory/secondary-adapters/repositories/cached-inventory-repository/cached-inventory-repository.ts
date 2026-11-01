@@ -62,7 +62,9 @@ export class CachedInventoryRepository implements InventoryRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find inventory', error);
+      return ErrorFactory.RepositoryError('Failed to find inventory', {
+        cause: error,
+      });
     }
   }
 
@@ -105,7 +107,7 @@ export class CachedInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventory by product ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -175,7 +177,7 @@ export class CachedInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find inventories by product IDs',
-        error,
+        { cause: error },
       );
     }
   }
@@ -216,7 +218,7 @@ export class CachedInventoryRepository implements InventoryRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find low stock inventories',
-        error,
+        { cause: error },
       );
     }
   }
@@ -279,7 +281,9 @@ export class CachedInventoryRepository implements InventoryRepository {
       await this.cacheService.delete(INVENTORY_REDIS.IS_CACHED_FLAG);
       return Result.success(savedInventory);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save inventory', error);
+      return ErrorFactory.RepositoryError('Failed to save inventory', {
+        cause: error,
+      });
     }
   }
 
@@ -304,7 +308,9 @@ export class CachedInventoryRepository implements InventoryRepository {
 
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete inventory', error);
+      return ErrorFactory.RepositoryError('Failed to delete inventory', {
+        cause: error,
+      });
     }
   }
 }

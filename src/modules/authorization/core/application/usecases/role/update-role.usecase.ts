@@ -35,10 +35,9 @@ export class UpdateRoleUseCase extends UseCase<
 
     const nameUpdateResult = role.updateName(dto.name);
     if (isFailure(nameUpdateResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to update name',
-        nameUpdateResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to update name', {
+        cause: nameUpdateResult.error,
+      });
     }
 
     role.updatePermissions(dto.permissions);
@@ -46,10 +45,9 @@ export class UpdateRoleUseCase extends UseCase<
     const updateResult = await this.roleRepository.update(role);
 
     if (isFailure(updateResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to update role',
-        updateResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to update role', {
+        cause: updateResult.error,
+      });
     }
 
     return Result.success(undefined);

@@ -31,7 +31,7 @@ export class CreateRoleUseCase extends UseCase<
     if (isFailure(existing)) {
       return ErrorFactory.UseCaseError(
         'Failed to validate role code uniqueness',
-        existing.error,
+        { cause: existing.error },
       );
     }
 
@@ -46,7 +46,9 @@ export class CreateRoleUseCase extends UseCase<
     const result = await this.roleRepository.save(role);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError('Failed to create role', result.error);
+      return ErrorFactory.UseCaseError('Failed to create role', {
+        cause: result.error,
+      });
     }
 
     return Result.success(result.value.toPrimitives());

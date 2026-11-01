@@ -20,11 +20,9 @@ export class DeactivateUserUseCase extends UseCase<number, void, UseCaseError> {
   async execute(userId: number): Promise<Result<void, UseCaseError>> {
     const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure || !userResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const { entity: user, expectedVersion } = userResult.value;

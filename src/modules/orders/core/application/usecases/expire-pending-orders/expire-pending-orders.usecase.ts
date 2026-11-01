@@ -46,10 +46,9 @@ export class ExpirePendingOrdersUseCase implements UseCase<
     );
 
     if (isFailure(pendingOrdersResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to fetch pending orders',
-        pendingOrdersResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to fetch pending orders', {
+        cause: pendingOrdersResult.error,
+      });
     }
 
     const pendingOrders = pendingOrdersResult.value;

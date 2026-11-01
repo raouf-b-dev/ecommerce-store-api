@@ -8,7 +8,7 @@ import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 import { CorrelationService } from './correlation/correlation.service';
 import { EnvConfigService } from '../../config/env-config.service';
-import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../shared-kernel/helpers/lang/is-record';
 import { trace, context } from '@opentelemetry/api';
 
 @Injectable()

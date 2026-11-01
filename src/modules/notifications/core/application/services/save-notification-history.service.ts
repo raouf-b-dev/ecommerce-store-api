@@ -26,10 +26,9 @@ export class SaveNotificationHistoryService {
 
     const saveResult = await this.notificationRepository.save(notification);
     if (saveResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to save notification history',
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to save notification history', {
+        cause: saveResult.error,
+      });
     }
 
     this.logger.log(

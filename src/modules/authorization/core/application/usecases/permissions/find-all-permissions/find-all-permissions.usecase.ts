@@ -19,10 +19,9 @@ export class FindAllPermissionsUseCase extends UseCase<
   async execute(): Promise<Result<IPermission[], UseCaseError>> {
     const result = await this.permissionRepo.findAll();
     if (result.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to load permissions',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to load permissions', {
+        cause: result.error,
+      });
     }
     return Result.success(result.value.map((p) => p.toPrimitives()));
   }

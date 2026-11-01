@@ -15,13 +15,11 @@ import { createMockArgumentsHost } from '../testing';
 
 class TestAppError extends AppError {
   constructor(message: string) {
-    super(
-      message,
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      ErrorCode.DOMAIN_ERROR,
-      undefined,
-      false,
-    );
+    super(message, {
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      code: ErrorCode.DOMAIN_ERROR,
+      retryable: false,
+    });
   }
 }
 

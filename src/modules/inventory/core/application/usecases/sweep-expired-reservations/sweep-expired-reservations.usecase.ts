@@ -59,7 +59,7 @@ export class SweepExpiredReservationsUseCase implements UseCase<
       if (expiredResult.isFailure) {
         return ErrorFactory.UseCaseError(
           'Failed to fetch expired reservations',
-          expiredResult.error,
+          { cause: expiredResult.error },
         );
       }
 

@@ -20,7 +20,7 @@ In your final message give: what changed, the `agent-check:` line, open risks or
 4. Reach into another module's repository or entity. Cross-module calls go through ACL gateway ports.
 5. Put logic in controllers or job handlers. They extract input, call one use case, return its result. Only use cases emit domain events.
 6. Throw from domain or application code. Return `Result<T, E>` built with `ErrorFactory`.
-7. Stringify unknown errors by hand. Use `toError`, `toErrorMessage`, `toOptionalError` from `src/shared-kernel/infra/lang/error.utils.ts`.
+7. Stringify unknown errors by hand. Use `toError` / `toErrorMessage` from `src/shared-kernel/helpers/lang/error.utils.ts`, and `toOptionalError` from `src/shared-kernel/domain/exceptions/to-optional-error.ts`.
 8. Put `version` on a domain entity or cache it, or update without the atomic `WHERE version = :expectedVersion` check. Rule: `docs/ai/ARCHITECTURE-INVARIANTS.md` invariant 10.
 9. Skip authorization on owned resources. Use cases take `CallerContext` and use `OwnedResourceAccessPolicy`; jobs and gateways pass `SYSTEM_CALLER_CONTEXT`.
 10. Ship a behavior change without co-located `*.spec.ts` covering success, failure, and authorization paths.

@@ -13,7 +13,7 @@ import { PaginatedQueryResult } from '../../../../shared-kernel/domain/interface
 import { Result } from '../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../shared-kernel/domain/exceptions/query.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class PostgresPaymentQueryAdapter implements PaymentQueryService {
@@ -142,7 +142,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment list: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -187,7 +187,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment details for ID ${id}: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -232,7 +232,7 @@ export class PostgresPaymentQueryAdapter implements PaymentQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch payment details for order ID ${orderId}: ${toErrorMessage(error)}`,
-        error,
+        { cause: error },
       );
     }
   }

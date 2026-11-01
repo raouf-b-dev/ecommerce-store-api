@@ -50,7 +50,7 @@ export class SeedSuperAdminUseCase extends UseCase<
     if (isFailure(existingResult)) {
       return ErrorFactory.UseCaseError(
         'Failed to check existing super admin user',
-        existingResult.error,
+        { cause: existingResult.error },
       );
     }
 
@@ -85,7 +85,7 @@ export class SeedSuperAdminUseCase extends UseCase<
       await this.identityGateway.deleteUser(user.id); // compensate step 1
       return ErrorFactory.UseCaseError(
         'Failed to seed super admin credentials',
-        credentialResult.error,
+        { cause: credentialResult.error },
       );
     }
 
@@ -97,10 +97,9 @@ export class SeedSuperAdminUseCase extends UseCase<
     if (isFailure(roleResult)) {
       await this.credentialRepository.deleteByUserId(user.id); // compensate step 2
       await this.identityGateway.deleteUser(user.id); // compensate step 1
-      return ErrorFactory.UseCaseError(
-        'Failed to assign super admin role',
-        roleResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to assign super admin role', {
+        cause: roleResult.error,
+      });
     }
 
     return Result.success({

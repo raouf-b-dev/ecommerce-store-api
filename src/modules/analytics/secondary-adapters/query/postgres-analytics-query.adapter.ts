@@ -69,10 +69,9 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
         );
       });
     } catch (error) {
-      return ErrorFactory.QueryError(
-        'Failed to load analytics overview',
-        error,
-      );
+      return ErrorFactory.QueryError('Failed to load analytics overview', {
+        cause: error,
+      });
     }
   }
 
@@ -122,10 +121,9 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
         );
       });
     } catch (error) {
-      return ErrorFactory.QueryError(
-        'Failed to load payments time series',
-        error,
-      );
+      return ErrorFactory.QueryError('Failed to load payments time series', {
+        cause: error,
+      });
     }
   }
 
@@ -173,7 +171,9 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
         );
       });
     } catch (error) {
-      return ErrorFactory.QueryError('Failed to load top products', error);
+      return ErrorFactory.QueryError('Failed to load top products', {
+        cause: error,
+      });
     }
   }
 
@@ -204,7 +204,9 @@ export class PostgresAnalyticsQueryAdapter implements AnalyticsQueryService {
         );
       });
     } catch (error) {
-      return ErrorFactory.QueryError('Failed to load inventory alerts', error);
+      return ErrorFactory.QueryError('Failed to load inventory alerts', {
+        cause: error,
+      });
     }
   }
 

@@ -1,6 +1,10 @@
+import { DomainError } from './domain.error';
 import { ErrorCode } from './error-code';
 import { ErrorFactory } from './error.factory';
+import { RepositoryError } from './repository.error';
+import { ServiceError } from './service-error';
 import { StatusCode } from './status-code';
+import { UseCaseError } from './usecase.error';
 
 describe('ErrorFactory', () => {
   it('sets the code from options and keeps the use case defaults', () => {
@@ -62,9 +66,9 @@ describe('ErrorFactory', () => {
     });
   });
 
-  it('keeps an Error cause when the second argument is an Error', () => {
+  it('keeps an Error cause when passed via options', () => {
     const cause = new Error('db down');
-    const result = ErrorFactory.RepositoryError('Failed to save', cause);
+    const result = ErrorFactory.RepositoryError('Failed to save', { cause });
 
     expect(result).toMatchObject({
       isFailure: true,
@@ -78,13 +82,12 @@ describe('ErrorFactory', () => {
     });
   });
 
-  it('keeps positional cause and status', () => {
+  it('keeps cause and status via options', () => {
     const cause = new Error('db down');
-    const result = ErrorFactory.RepositoryError(
-      'Failed to save',
+    const result = ErrorFactory.RepositoryError('Failed to save', {
       cause,
-      StatusCode.SERVICE_UNAVAILABLE,
-    );
+      status: StatusCode.SERVICE_UNAVAILABLE,
+    });
 
     expect(result).toMatchObject({
       isFailure: true,
@@ -97,12 +100,10 @@ describe('ErrorFactory', () => {
     });
   });
 
-  it('keeps a positional status when cause is omitted', () => {
-    const result = ErrorFactory.RepositoryError(
-      'Inventory not found',
-      undefined,
-      StatusCode.NOT_FOUND,
-    );
+  it('derives retryable false from a non-5xx status in the factory', () => {
+    const result = ErrorFactory.RepositoryError('Inventory not found', {
+      status: StatusCode.NOT_FOUND,
+    });
 
     expect(result).toMatchObject({
       isFailure: true,
@@ -112,5 +113,39 @@ describe('ErrorFactory', () => {
         code: ErrorCode.REPOSITORY_ERROR,
       },
     });
+  });
+
+  it('factory status 409 yields retryable false; direct new yields true', () => {
+    const viaFactory = ErrorFactory.RepositoryError('Conflict', {
+      status: 409,
+    });
+    const viaNew = new RepositoryError('Conflict', { status: 409 });
+
+    expect(viaFactory.error.retryable).toBe(false);
+    expect(viaNew.retryable).toBe(true);
+  });
+
+  it('DomainError ignores retryable: true', () => {
+    const error = new DomainError('bad', { retryable: true });
+    expect(error.retryable).toBe(false);
+  });
+
+  it('ServiceError ignores retryable: true', () => {
+    const error = new ServiceError('bad', { retryable: true });
+    expect(error.retryable).toBe(false);
+  });
+
+  it('UseCaseError honours retryable: true', () => {
+    const error = new UseCaseError('retry me', { retryable: true });
+    expect(error.retryable).toBe(true);
+  });
+
+  it('converts a non-Error cause via toOptionalError', () => {
+    const result = ErrorFactory.UseCaseError('wrapped', {
+      cause: 'plain string',
+    });
+
+    expect(result.error.cause).toBeInstanceOf(Error);
+    expect(result.error.cause?.message).toBe('plain string');
   });
 });

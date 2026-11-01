@@ -28,19 +28,16 @@ export class GetProductUseCase extends UseCase<
     const result = await this.productQueryService.getById(id);
 
     if (isFailure(result) || !result.value) {
-      return ErrorFactory.UseCaseError(
-        `Product with id ${id} not found`,
-        isFailure(result) ? result.error : null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
+        cause: isFailure(result) ? result.error : null,
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     if (!CatalogVisibilityPolicy.isVisible(result.value.isActive, caller)) {
-      return ErrorFactory.UseCaseError(
-        `Product with id ${id} not found`,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     return Result.success(result.value);

@@ -37,11 +37,9 @@ export class AssignUserRoleUseCase extends UseCase<
     }
 
     if (!userResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User not found', {
+        status: HttpStatus.NOT_FOUND,
+      });
     }
 
     const assignResult = await this.authorizationGateway.assignRole(
@@ -50,11 +48,10 @@ export class AssignUserRoleUseCase extends UseCase<
     );
 
     if (isFailure(assignResult)) {
-      return ErrorFactory.UseCaseError(
-        assignResult.error.message,
-        assignResult.error.cause,
-        assignResult.error.statusCode,
-      );
+      return ErrorFactory.UseCaseError(assignResult.error.message, {
+        cause: assignResult.error.cause,
+        status: assignResult.error.statusCode,
+      });
     }
 
     return Result.success(undefined);

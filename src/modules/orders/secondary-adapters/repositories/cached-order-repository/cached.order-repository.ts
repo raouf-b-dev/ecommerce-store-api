@@ -115,7 +115,9 @@ export class CachedOrderRepository implements OrderRepository {
       }
       return Result.success<Order[]>(orders);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to list orders', error);
+      return ErrorFactory.RepositoryError('Failed to list orders', {
+        cause: error,
+      });
     }
   }
 
@@ -147,7 +149,9 @@ export class CachedOrderRepository implements OrderRepository {
 
       return Result.success(saveResult.value);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to save order`, error);
+      return ErrorFactory.RepositoryError(`Failed to save order`, {
+        cause: error,
+      });
     }
   }
 
@@ -173,7 +177,9 @@ export class CachedOrderRepository implements OrderRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find order`, error);
+      return ErrorFactory.RepositoryError(`Failed to find order`, {
+        cause: error,
+      });
     }
   }
 
@@ -187,7 +193,9 @@ export class CachedOrderRepository implements OrderRepository {
 
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to delete order`, error);
+      return ErrorFactory.RepositoryError(`Failed to delete order`, {
+        cause: error,
+      });
     }
   }
 

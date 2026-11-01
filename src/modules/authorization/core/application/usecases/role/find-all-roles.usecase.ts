@@ -19,7 +19,9 @@ export class FindAllRolesUseCase extends UseCase<void, IRole[], UseCaseError> {
     const result = await this.roleRepository.findAll();
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError('Failed to load roles', result.error);
+      return ErrorFactory.UseCaseError('Failed to load roles', {
+        cause: result.error,
+      });
     }
 
     return Result.success(result.value.map((r) => r.toPrimitives()));

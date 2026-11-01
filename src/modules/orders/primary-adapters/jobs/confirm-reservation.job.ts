@@ -6,7 +6,7 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-import { isRecord } from '../../../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../../../shared-kernel/helpers/lang/is-record';
 import { PostPaymentJobData } from './post-payment-job.data';
 
 export interface ConfirmReservationResult {

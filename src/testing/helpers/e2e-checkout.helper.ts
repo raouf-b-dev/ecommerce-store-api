@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { HttpStatus } from '@nestjs/common';
-import { IDEMPOTENCY_KEY_HEADER } from 'src/shared-kernel/infra/http/request.helpers';
+import { IDEMPOTENCY_KEY_HEADER } from 'src/shared-kernel/helpers/http/request.helpers';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
 import {
   AuthSession,
