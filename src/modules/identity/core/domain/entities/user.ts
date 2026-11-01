@@ -4,6 +4,7 @@ import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/err
 import { IUser } from '../interfaces/user.interface';
 import { IAddress } from '../interfaces/address.interface';
 import { Address, AddressProps, UpdateAddressProps } from './address';
+import { normalizeEmail } from '../value-objects/email';
 
 export interface UserProps {
   id: number | null;
@@ -35,7 +36,7 @@ export class User implements IUser {
     this._id = props.id ?? null;
     this._firstName = props.firstName.trim();
     this._lastName = props.lastName.trim();
-    this._email = props.email.trim().toLowerCase();
+    this._email = normalizeEmail(props.email);
     this._phone = props.phone;
     this._isActive = props.isActive;
     this._addresses =
@@ -149,7 +150,7 @@ export class User implements IUser {
 
     this._firstName = firstName.trim();
     this._lastName = lastName.trim();
-    this._email = email.trim().toLowerCase();
+    this._email = normalizeEmail(email);
     this._phone = phone;
     this._updatedAt = new Date();
     return Result.success(undefined);

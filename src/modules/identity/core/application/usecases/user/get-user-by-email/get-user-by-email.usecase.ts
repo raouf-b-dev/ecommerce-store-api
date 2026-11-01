@@ -11,6 +11,7 @@ import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptio
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
 import { IUser } from 'src/modules/identity/core/domain/interfaces/user.interface';
+import { normalizeEmail } from 'src/modules/identity/core/domain/value-objects/email';
 
 import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
@@ -38,8 +39,9 @@ export class GetUserByEmailUseCase extends UseCase<
     input: GetUserByEmailInput,
   ): Promise<Result<IUser, UseCaseError>> {
     const { email, callerContext } = input;
+    const normalizedEmail = normalizeEmail(email);
 
-    const userResult = await this.userRepository.findByEmail(email);
+    const userResult = await this.userRepository.findByEmail(normalizedEmail);
 
     if (isFailure(userResult)) return userResult;
 
