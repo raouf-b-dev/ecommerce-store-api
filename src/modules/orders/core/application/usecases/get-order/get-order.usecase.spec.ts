@@ -6,7 +6,10 @@ import { GetOrderUseCase } from './get-order.usecase';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
-import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
+import {
+  QueryError,
+  QueryNotFoundError,
+} from '../../../../../../shared-kernel/domain/exceptions/query.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import {
@@ -84,6 +87,28 @@ describe('GetOrderUseCase', () => {
     it('should return Failure (404) when order belongs to a different customer or not found', async () => {
       const orderId = 1;
       mockQueryService.mockSuccessfulGetById(null);
+
+      const result = await useCase.execute({
+        orderId,
+        callerContext: customerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Order with id ${orderId} not found`,
+        UseCaseError,
+      );
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+      expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+    });
+
+    it('returns ORDER_NOT_FOUND when the query reports not found', async () => {
+      const orderId = 1;
+      mockQueryService.getById.mockResolvedValue(
+        Result.failure(
+          new QueryNotFoundError(`Order with id ${orderId} not found`),
+        ),
+      );
 
       const result = await useCase.execute({
         orderId,
