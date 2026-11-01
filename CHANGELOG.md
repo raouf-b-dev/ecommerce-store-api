@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- 401, 403 and 429 responses return the codes UNAUTHORIZED, FORBIDDEN and TOO_MANY_REQUESTS instead of Unauthorized, Forbidden and INTERNAL_ERROR.
 - A payment that is not the one an order accepted (a second payment on a settled order, a different payment on a cancelled order, or a late payment on a payment-failed order) is now refunded in full instead of being dropped, and refund jobs are keyed per payment.
 
 ### Upgrade notes
