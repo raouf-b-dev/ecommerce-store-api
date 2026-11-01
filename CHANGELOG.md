@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum.
 - Refund jobs carry the amount as Money (minor units and currency) instead of a major-unit number.
 - `PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders` (it required `manage_orders`). A missing order, or one the caller may not cancel, returns the same 404 body as `GET /v1/orders/:id`, and a caller with neither permission gets 403.
 - Missing resources now return 404 with ORDER_NOT_FOUND, PAYMENT_NOT_FOUND, ROLE_NOT_FOUND, USER_ROLE_ASSIGNMENT_NOT_FOUND, CART_NOT_FOUND, PRODUCT_NOT_FOUND, USER_NOT_FOUND, CATEGORY_NOT_FOUND, ADDRESS_NOT_FOUND, CART_ITEM_NOT_FOUND or NOTIFICATION_NOT_FOUND (many returned 422, admin order transitions returned REPOSITORY_ERROR). Query and repository failures keep their own kind instead of being collapsed into those codes; cart/product/payment/user/role/reservation missing-row repository errors use kind NOT_FOUND.
