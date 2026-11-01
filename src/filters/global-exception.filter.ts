@@ -71,8 +71,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             ? exceptionResponse.message[0]
             : exceptionResponse.message || exception.message;
 
-      if (typeof exceptionResponse === 'object') {
-        code = exceptionResponse.code || exceptionResponse.error;
+      const explicitCode =
+        typeof exceptionResponse === 'object' &&
+        typeof exceptionResponse.code === 'string' &&
+        exceptionResponse.code.length > 0
+          ? exceptionResponse.code
+          : undefined;
+
+      if (explicitCode !== undefined) {
+        code = explicitCode;
+      } else {
+        const statusName = HttpStatus[statusCode];
+        code = typeof statusName === 'string' ? statusName : undefined;
       }
 
       // Nest builds the 404 message from the raw URL ("Cannot GET /x?userEmail=..."),
