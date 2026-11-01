@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -49,7 +50,7 @@ export class AddAddressUseCase extends UseCase<
       )
     ) {
       return ErrorFactory.UseCaseError(`User with id ${userId} not found`, {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
@@ -58,7 +59,7 @@ export class AddAddressUseCase extends UseCase<
 
     if (!userResult.value) {
       return ErrorFactory.UseCaseError('User not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 

@@ -1,4 +1,4 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { AssignUserRoleUseCase } from './assign-user-role.usecase';
 import {
   AuthorizationGatewayMock,
@@ -56,7 +56,7 @@ describe('AssignUserRoleUseCase', () => {
       'User not found',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     authorizationGateway.verifyNoUnexpectedCalls();
   });
 
@@ -65,7 +65,7 @@ describe('AssignUserRoleUseCase', () => {
     userRepository.mockSuccessfulFindById(userId);
     authorizationGateway.mockFailedAssignRole(
       'Role INVALID not found',
-      HttpStatus.NOT_FOUND,
+      ErrorKind.NOT_FOUND,
     );
 
     const command = UserTestFactory.createAssignUserRoleCommand({
@@ -79,6 +79,6 @@ describe('AssignUserRoleUseCase', () => {
       'Role INVALID not found',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 });

@@ -1,14 +1,14 @@
 import { AppError } from './app.error';
 import { ErrorOptions } from './error-options';
 import { ErrorCode } from './error-code';
-import { StatusCode } from './status-code';
+import { ErrorKind } from './error-kind';
 
 export class DomainError extends AppError {
   constructor(message: string, options: ErrorOptions = {}) {
     super(
       message,
       {
-        status: StatusCode.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
         code: ErrorCode.DOMAIN_ERROR,
         retryable: false,
       },

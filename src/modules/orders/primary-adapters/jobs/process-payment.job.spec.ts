@@ -5,7 +5,7 @@ import { GetOrderUseCase } from '../../core/application/usecases/get-order/get-o
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { MockCorrelationService, createMockJob } from '../../../../testing';
 import { PaymentMethodType } from '../../../../shared-kernel/domain/value-objects/payment-method';
 import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
@@ -181,7 +181,7 @@ describe('ProcessPaymentStep', () => {
     });
     const retryableFailure = ErrorFactory.RepositoryError(
       'Pending payment already exists for order',
-      { status: StatusCode.CONFLICT, retryable: true },
+      { kind: ErrorKind.CONFLICT, retryable: true },
     );
     createPaymentExecute.mockResolvedValueOnce(retryableFailure);
 

@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import {
   MockCategoryRepository,
   MockProductRepository,
@@ -109,7 +110,7 @@ describe('UpdateProductUseCase', () => {
         'categoryId cannot be null',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
@@ -127,7 +128,7 @@ describe('UpdateProductUseCase', () => {
         'Category with id 99 not found',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 
@@ -153,7 +154,7 @@ describe('UpdateProductUseCase', () => {
         'Currency "EUR" is not supported by this store',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
@@ -252,7 +253,7 @@ describe('UpdateProductUseCase', () => {
         'Amount must be a non-negative decimal',
         DomainError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 

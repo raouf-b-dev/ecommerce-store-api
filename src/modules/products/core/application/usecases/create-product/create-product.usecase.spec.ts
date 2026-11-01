@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import {
   CreateProductInputFactory,
   MockCategoryRepository,
@@ -61,7 +62,7 @@ describe('CreateProductUseCase', () => {
         'categoryId is required',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockCategoryRepository.findById).not.toHaveBeenCalled();
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
@@ -105,7 +106,7 @@ describe('CreateProductUseCase', () => {
         'Category with id 99 not found',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
@@ -121,7 +122,7 @@ describe('CreateProductUseCase', () => {
         'Currency "EUR" is not supported by this store',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 
@@ -161,7 +162,7 @@ describe('CreateProductUseCase', () => {
         'Currency must be a 3-letter code (ISO 4217)',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+      expect(result.error.kind).toBe(ErrorKind.INVALID);
       expect(mockRepository.save).not.toHaveBeenCalled();
     });
 

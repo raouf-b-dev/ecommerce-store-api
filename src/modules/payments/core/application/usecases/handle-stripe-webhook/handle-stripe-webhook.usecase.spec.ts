@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { HandleStripeWebhookUseCase } from './handle-stripe-webhook.usecase';
 import {
   MockStripeSignatureVerifier,
@@ -72,7 +73,7 @@ describe('HandleStripeWebhookUseCase', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.BAD_REQUEST },
+      error: { kind: ErrorKind.INVALID },
     });
   });
 
@@ -89,7 +90,7 @@ describe('HandleStripeWebhookUseCase', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.BAD_REQUEST },
+      error: { kind: ErrorKind.INVALID },
     });
   });
 
@@ -106,7 +107,7 @@ describe('HandleStripeWebhookUseCase', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.BAD_REQUEST },
+      error: { kind: ErrorKind.INVALID },
     });
   });
 
@@ -125,7 +126,7 @@ describe('HandleStripeWebhookUseCase', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.BAD_REQUEST },
+      error: { kind: ErrorKind.INVALID },
     });
   });
 
@@ -345,7 +346,7 @@ describe('HandleStripeWebhookUseCase', () => {
     );
     expect(result).toMatchObject({
       isFailure: true,
-      error: { statusCode: HttpStatus.BAD_REQUEST },
+      error: { kind: ErrorKind.INVALID },
     });
   });
 

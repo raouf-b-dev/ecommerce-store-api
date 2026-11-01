@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { ProductRepository } from '../../../domain/repositories/product-repository';
 import { CategoryRepository } from '../../../domain/repositories/category-repository';
 import { SupportedCurrenciesPort } from '../../ports/supported-currencies.port';
@@ -42,7 +43,7 @@ export class CreateProductUseCase extends UseCase<
       const normalizedCurrency = currencyResult.value.code;
       if (command.categoryId == null) {
         return ErrorFactory.UseCaseError('categoryId is required', {
-          status: HttpStatus.BAD_REQUEST,
+          kind: ErrorKind.INVALID,
         });
       }
 
@@ -55,7 +56,7 @@ export class CreateProductUseCase extends UseCase<
       if (!categoryResult.value || !categoryResult.value.isActive) {
         return ErrorFactory.UseCaseError(
           `Category with id ${command.categoryId} not found`,
-          { status: HttpStatus.BAD_REQUEST },
+          { kind: ErrorKind.INVALID },
         );
       }
 

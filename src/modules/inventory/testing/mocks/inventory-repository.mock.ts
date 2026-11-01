@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/inventory/testing/mocks/inventory-repository.mock.ts
 import {
   InventoryRepository,
@@ -7,7 +8,6 @@ import { Result } from '../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../shared-kernel/domain/exceptions/repository.error';
 import { Inventory } from '../../core/domain/entities/inventory';
 import { IInventory } from '../../core/domain/interfaces/inventory.interface';
-import { HttpStatus } from '@nestjs/common';
 
 export class MockInventoryRepository implements InventoryRepository {
   findByIdForUpdate = jest.fn<
@@ -89,7 +89,7 @@ export class MockInventoryRepository implements InventoryRepository {
   mockInventoryNotFoundForProduct(productId: number): void {
     const err = Result.failure<RepositoryError>(
       new RepositoryError(`Inventory not found for product ${productId}`, {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       }),
     );
     this.findByProductId.mockResolvedValue(err);

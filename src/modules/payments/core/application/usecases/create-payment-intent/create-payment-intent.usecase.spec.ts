@@ -16,7 +16,7 @@ import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptio
 import { InfrastructureError } from '../../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { Result } from '../../../../../../shared-kernel/domain/result';
@@ -195,7 +195,7 @@ describe('CreatePaymentIntentUseCase', () => {
       `Payment provider other-provider does not match active provider ${paymentProvider.id.value}`,
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(result.error.code).toBe(ErrorCode.PAYMENT_PROVIDER_MISMATCH);
     expect(paymentRepository.save).not.toHaveBeenCalled();
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();
@@ -228,7 +228,7 @@ describe('CreatePaymentIntentUseCase', () => {
       `Payment amount or currency does not match pending payment for order ${command.orderId}`,
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(result.error.code).toBe(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
     expect(paymentRepository.save).not.toHaveBeenCalled();
     expect(paymentProvider.initiatePayment).not.toHaveBeenCalled();

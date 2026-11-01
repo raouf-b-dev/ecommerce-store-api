@@ -1,9 +1,9 @@
 import { DomainError } from './domain.error';
 import { ErrorCode } from './error-code';
 import { ErrorFactory } from './error.factory';
+import { ErrorKind } from './error-kind';
 import { RepositoryError } from './repository.error';
 import { ServiceError } from './service-error';
-import { StatusCode } from './status-code';
 import { UseCaseError } from './usecase.error';
 
 describe('ErrorFactory', () => {
@@ -17,7 +17,7 @@ describe('ErrorFactory', () => {
       error: {
         message: 'Cart is empty',
         code: ErrorCode.CART_EMPTY,
-        statusCode: StatusCode.UNPROCESSABLE_ENTITY,
+        kind: ErrorKind.RULE_VIOLATION,
         retryable: false,
         cause: undefined,
       },
@@ -34,15 +34,15 @@ describe('ErrorFactory', () => {
       error: {
         message: 'Amount is invalid',
         code: ErrorCode.AMOUNT_INVALID,
-        statusCode: StatusCode.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
         retryable: false,
       },
     });
   });
 
-  it('sets status and retryable from options', () => {
+  it('sets kind and retryable from options', () => {
     const missing = ErrorFactory.RepositoryError('Inventory not found', {
-      status: StatusCode.NOT_FOUND,
+      kind: ErrorKind.NOT_FOUND,
     });
     const rejected = ErrorFactory.InfrastructureError('Provider rejected', {
       retryable: false,
@@ -51,7 +51,7 @@ describe('ErrorFactory', () => {
     expect(missing).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
         retryable: false,
         code: ErrorCode.REPOSITORY_ERROR,
       },
@@ -59,7 +59,7 @@ describe('ErrorFactory', () => {
     expect(rejected).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: false,
         code: ErrorCode.INFRASTRUCTURE_ERROR,
       },
@@ -76,50 +76,52 @@ describe('ErrorFactory', () => {
         message: 'Failed to save',
         code: ErrorCode.REPOSITORY_ERROR,
         cause,
-        statusCode: StatusCode.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: true,
       },
     });
   });
 
-  it('keeps cause and status via options', () => {
+  it('keeps cause and kind via options', () => {
     const cause = new Error('db down');
     const result = ErrorFactory.RepositoryError('Failed to save', {
       cause,
-      status: StatusCode.SERVICE_UNAVAILABLE,
+      kind: ErrorKind.UNAVAILABLE,
     });
 
     expect(result).toMatchObject({
       isFailure: true,
       error: {
         cause,
-        statusCode: StatusCode.SERVICE_UNAVAILABLE,
+        kind: ErrorKind.UNAVAILABLE,
         retryable: true,
         code: ErrorCode.REPOSITORY_ERROR,
       },
     });
   });
 
-  it('derives retryable false from a non-5xx status in the factory', () => {
+  it('derives retryable false from a non-retryable kind in the factory', () => {
     const result = ErrorFactory.RepositoryError('Inventory not found', {
-      status: StatusCode.NOT_FOUND,
+      kind: ErrorKind.NOT_FOUND,
     });
 
     expect(result).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
         retryable: false,
         code: ErrorCode.REPOSITORY_ERROR,
       },
     });
   });
 
-  it('factory status 409 yields retryable false; direct new yields true', () => {
+  it('factory kind CONFLICT yields retryable false; direct new yields true', () => {
     const viaFactory = ErrorFactory.RepositoryError('Conflict', {
-      status: 409,
+      kind: ErrorKind.CONFLICT,
     });
-    const viaNew = new RepositoryError('Conflict', { status: 409 });
+    const viaNew = new RepositoryError('Conflict', {
+      kind: ErrorKind.CONFLICT,
+    });
 
     expect(viaFactory.error.retryable).toBe(false);
     expect(viaNew.retryable).toBe(true);

@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import {
   MockProductRepository,
   ProductTestFactory,
@@ -52,6 +53,6 @@ describe('DeactivateProductUseCase', () => {
       `Product with id 999 not found`,
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 });

@@ -7,7 +7,7 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../testing';
 import { IPayment } from '../../../payments/core/domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../payments/core/domain/value-objects/payment-status';
@@ -131,7 +131,7 @@ describe('ModulePaymentGateway', () => {
     it('returns the payment intent failure unchanged', async () => {
       const failure = ErrorFactory.RepositoryError(
         'Pending payment already exists for order',
-        { status: StatusCode.CONFLICT, retryable: true },
+        { kind: ErrorKind.CONFLICT, retryable: true },
       );
       createPaymentIntentExecute.mockResolvedValue(failure);
 

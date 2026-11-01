@@ -1,14 +1,16 @@
 import { ErrorCode } from './error-code';
+import { ErrorKind } from './error-kind';
 
 /** Fields a caller sets by name. Omit a field to keep that error class's default. */
 export type ErrorOptions = {
   cause?: unknown;
-  status?: number;
+  kind?: ErrorKind;
   retryable?: boolean;
   code?: ErrorCode;
 };
 
-export function isRetryableHttpStatus(status?: number): boolean {
-  if (!status) return true;
-  return status >= 500;
+/** Factory default for Repository/Infrastructure/Query: INTERNAL/UNAVAILABLE/absent -> true. */
+export function isRetryableErrorKind(kind?: ErrorKind): boolean {
+  if (!kind) return true;
+  return kind === ErrorKind.INTERNAL || kind === ErrorKind.UNAVAILABLE;
 }

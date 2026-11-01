@@ -1,4 +1,5 @@
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -21,7 +22,7 @@ export class DeactivateUserUseCase extends UseCase<number, void, UseCaseError> {
     const userResult = await this.userRepository.findByIdForUpdate(userId);
     if (userResult.isFailure || !userResult.value) {
       return ErrorFactory.UseCaseError('User not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 

@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -45,7 +46,7 @@ export class LoginUserUseCase extends UseCase<
     if (userResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to retrieve user information', {
         cause: userResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
@@ -56,7 +57,7 @@ export class LoginUserUseCase extends UseCase<
         reason: 'invalid_user',
       });
       return ErrorFactory.UseCaseError('Invalid credentials', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -66,7 +67,7 @@ export class LoginUserUseCase extends UseCase<
         reason: 'inactive_user',
       });
       return ErrorFactory.UseCaseError('Invalid credentials', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -80,7 +81,7 @@ export class LoginUserUseCase extends UseCase<
         'Failed to retrieve credential information',
         {
           cause: credentialResult.error,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          kind: ErrorKind.INTERNAL,
         },
       );
     }
@@ -92,7 +93,7 @@ export class LoginUserUseCase extends UseCase<
         reason: 'invalid_credential',
       });
       return ErrorFactory.UseCaseError('Invalid credentials', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -105,7 +106,7 @@ export class LoginUserUseCase extends UseCase<
         reason: 'invalid_password',
       });
       return ErrorFactory.UseCaseError('Invalid credentials', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -119,7 +120,7 @@ export class LoginUserUseCase extends UseCase<
       });
       return ErrorFactory.UseCaseError('Failed to resolve user role', {
         cause: roleResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
@@ -128,7 +129,7 @@ export class LoginUserUseCase extends UseCase<
         reason: 'role_not_found',
       });
       return ErrorFactory.UseCaseError('User role not found', {
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 

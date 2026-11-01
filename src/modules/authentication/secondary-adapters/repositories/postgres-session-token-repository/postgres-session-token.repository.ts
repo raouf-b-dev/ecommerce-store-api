@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -71,7 +72,7 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
       if ((result.affected ?? 0) === 0) {
         return ErrorFactory.RepositoryError(
           'Refresh token was already rotated',
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
@@ -80,7 +81,7 @@ export class PostgresSessionTokenRepository implements SessionTokenRepository {
         return ErrorFactory.RepositoryError(
           'Session not found after rotation',
           {
-            status: HttpStatus.NOT_FOUND,
+            kind: ErrorKind.NOT_FOUND,
           },
         );
       }

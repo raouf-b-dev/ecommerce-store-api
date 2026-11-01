@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -12,7 +13,7 @@ export function validateProductCurrency(
   const currencyResult = Currency.create(currency);
   if (currencyResult.isFailure) {
     return ErrorFactory.UseCaseError(currencyResult.error.message, {
-      status: HttpStatus.BAD_REQUEST,
+      kind: ErrorKind.INVALID,
     });
   }
 
@@ -20,7 +21,7 @@ export function validateProductCurrency(
   if (!supportedCurrencies.includes(currencyResult.value.code)) {
     return ErrorFactory.UseCaseError(
       `Currency "${currency}" is not supported by this store`,
-      { status: HttpStatus.BAD_REQUEST },
+      { kind: ErrorKind.INVALID },
     );
   }
 

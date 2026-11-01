@@ -1,5 +1,5 @@
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Failure } from '../../../../../shared-kernel/domain/result';
@@ -11,7 +11,7 @@ export function providerMismatchError(
   return ErrorFactory.UseCaseError(
     `Payment provider ${actualProvider} does not match active provider ${expectedProvider}`,
     {
-      status: StatusCode.CONFLICT,
+      kind: ErrorKind.CONFLICT,
       code: ErrorCode.PAYMENT_PROVIDER_MISMATCH,
     },
   );

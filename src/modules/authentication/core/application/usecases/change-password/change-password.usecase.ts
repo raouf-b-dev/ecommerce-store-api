@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -44,7 +45,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (command.newPassword === command.currentPassword) {
       return ErrorFactory.UseCaseError(
         'New password must differ from current password',
-        { status: HttpStatus.BAD_REQUEST },
+        { kind: ErrorKind.INVALID },
       );
     }
 
@@ -54,13 +55,13 @@ export class ChangePasswordUseCase extends UseCase<
     if (isFailure(roleResult)) {
       return ErrorFactory.UseCaseError('Failed to resolve user role', {
         cause: roleResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
     if (!roleResult.value) {
       return ErrorFactory.UseCaseError('User role not found', {
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
@@ -69,7 +70,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (isFailure(policyResult)) {
       return ErrorFactory.UseCaseError(policyResult.error.message, {
         cause: policyResult.error,
-        status: HttpStatus.FORBIDDEN,
+        kind: ErrorKind.FORBIDDEN,
       });
     }
 
@@ -82,7 +83,7 @@ export class ChangePasswordUseCase extends UseCase<
         'Failed to retrieve credential information',
         {
           cause: credentialResult.error,
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          kind: ErrorKind.INTERNAL,
         },
       );
     }
@@ -91,7 +92,7 @@ export class ChangePasswordUseCase extends UseCase<
 
     if (!credential) {
       return ErrorFactory.UseCaseError('Credential not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
@@ -102,7 +103,7 @@ export class ChangePasswordUseCase extends UseCase<
 
     if (!currentMatches) {
       return ErrorFactory.UseCaseError('Current password is incorrect', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -114,7 +115,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (sameAsCurrent) {
       return ErrorFactory.UseCaseError(
         'New password must differ from current password',
-        { status: HttpStatus.BAD_REQUEST },
+        { kind: ErrorKind.INVALID },
       );
     }
 
@@ -125,7 +126,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (updateResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to update credential', {
         cause: updateResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
@@ -135,14 +136,14 @@ export class ChangePasswordUseCase extends UseCase<
     if (revokeResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to revoke existing sessions', {
         cause: revokeResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 
     const userResult = await this.identityGateway.findUserById(command.userId);
     if (userResult.isFailure || !userResult.value) {
       return ErrorFactory.UseCaseError('User not found', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -150,7 +151,7 @@ export class ChangePasswordUseCase extends UseCase<
 
     if (!user.isActive) {
       return ErrorFactory.UseCaseError('User account is inactive', {
-        status: HttpStatus.UNAUTHORIZED,
+        kind: ErrorKind.UNAUTHENTICATED,
       });
     }
 
@@ -179,7 +180,7 @@ export class ChangePasswordUseCase extends UseCase<
     if (saveResult.isFailure) {
       return ErrorFactory.UseCaseError('Failed to create session', {
         cause: saveResult.error,
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
       });
     }
 

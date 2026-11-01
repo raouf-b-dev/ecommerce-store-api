@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { Result } from 'src/shared-kernel/domain/result';
 import { UserRoleAssignmentRepository } from '../../../domain/repositories/user-role-assignment.repository';
@@ -31,7 +32,7 @@ export class FindRoleByUserIdUseCase implements UseCase<
     const userRoleAssignment = userRoleAssignmentResult.value;
     if (!userRoleAssignment) {
       return ErrorFactory.UseCaseError('User role assignment not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
@@ -43,7 +44,7 @@ export class FindRoleByUserIdUseCase implements UseCase<
     const role = roleResult.value;
     if (!role) {
       return ErrorFactory.UseCaseError('Role not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 

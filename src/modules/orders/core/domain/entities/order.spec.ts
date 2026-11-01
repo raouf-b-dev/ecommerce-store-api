@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../testing';
@@ -185,7 +186,7 @@ describe('Order', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 409 },
+        error: { kind: ErrorKind.CONFLICT },
       });
     });
   });

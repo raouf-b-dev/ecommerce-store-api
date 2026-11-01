@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -30,13 +31,13 @@ export class GetProductUseCase extends UseCase<
     if (isFailure(result) || !result.value) {
       return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
         cause: isFailure(result) ? result.error : null,
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
     if (!CatalogVisibilityPolicy.isVisible(result.value.isActive, caller)) {
       return ErrorFactory.UseCaseError(`Product with id ${id} not found`, {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 

@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/customers/application/usecases/get-customer/get-customer.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
@@ -11,7 +12,6 @@ import { UserRepository } from 'src/modules/identity/core/domain/repositories/us
 import { IUser } from 'src/modules/identity/core/domain/interfaces/user.interface';
 
 import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { HttpStatus } from '@nestjs/common';
 
 import {
   USER_ACCESS_PERMISSIONS,
@@ -45,7 +45,7 @@ export class GetUserByEmailUseCase extends UseCase<
     const user = userResult.value;
     if (!user) {
       return ErrorFactory.UseCaseError('User with the given email not found', {
-        status: HttpStatus.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
       });
     }
 
@@ -58,7 +58,7 @@ export class GetUserByEmailUseCase extends UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Access denied: You do not have permission to view this profile',
-        { status: HttpStatus.FORBIDDEN },
+        { kind: ErrorKind.FORBIDDEN },
       );
     }
 

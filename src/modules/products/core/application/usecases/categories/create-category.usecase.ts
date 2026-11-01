@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -46,7 +47,7 @@ export class CreateCategoryUseCase extends UseCase<
       if (nameExists.value) {
         return ErrorFactory.UseCaseError(
           `Category with name ${category.name} already exists`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
@@ -62,7 +63,7 @@ export class CreateCategoryUseCase extends UseCase<
       if (slugExists.value) {
         return ErrorFactory.UseCaseError(
           `Category with slug ${category.slug} already exists`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 

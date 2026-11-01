@@ -18,7 +18,7 @@ import {
 } from '../../../../../testing/mocks/typeorm.mocks';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { PaymentMapper } from '../../persistence/mappers/payment.mapper';
 import { RefundMapper } from '../../persistence/mappers/refund.mapper';
 
@@ -150,7 +150,7 @@ describe('PostgresPaymentRepository', () => {
         'Pending payment already exists for order',
         RepositoryError,
       );
-      expect(result.error.statusCode).toBe(StatusCode.CONFLICT);
+      expect(result.error.kind).toBe(ErrorKind.CONFLICT);
       expect(result.error.retryable).toBe(true);
     });
 
@@ -174,7 +174,7 @@ describe('PostgresPaymentRepository', () => {
         'Failed to save payment',
         RepositoryError,
       );
-      expect(result.error.statusCode).toBe(StatusCode.INTERNAL_SERVER_ERROR);
+      expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     });
   });
 

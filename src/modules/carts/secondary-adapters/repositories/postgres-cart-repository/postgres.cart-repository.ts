@@ -1,5 +1,6 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/carts/infrastructure/repositories/postgres-cart-repository/postgres.cart-repository.ts
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -151,7 +152,7 @@ export class PostgresCartRepository implements CartRepository {
         }
         throw new RepositoryError(
           `Optimistic lock failure for Cart ${cart.id}. Expected version ${expectedVersion}.`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
