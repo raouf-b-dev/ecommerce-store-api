@@ -1,6 +1,6 @@
 import { EnvError, makeValidator } from 'envalid';
 import { type StringValue } from 'ms';
-import { parseDuration } from '../../shared-kernel/infra/lang/duration';
+import { parseDuration } from '../../shared-kernel/helpers/lang/duration';
 
 /** Envalid wrapper around {@link parseDuration}. */
 export function parseEnvDuration(value: string): StringValue {

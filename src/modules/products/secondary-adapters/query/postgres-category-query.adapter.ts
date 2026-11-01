@@ -11,7 +11,7 @@ import { CategoryQueryMapper } from '../mappers/query/category-query.mapper';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../shared-kernel/domain/exceptions/query.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class PostgresCategoryQueryAdapter implements CategoryQueryService {

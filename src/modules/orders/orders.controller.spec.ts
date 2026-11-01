@@ -29,7 +29,7 @@ import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/paym
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
 import { DECORATORS } from '@nestjs/swagger';
-import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../shared-kernel/helpers/lang/is-record';
 import { ResultAssertionHelper } from '../../testing';
 import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 

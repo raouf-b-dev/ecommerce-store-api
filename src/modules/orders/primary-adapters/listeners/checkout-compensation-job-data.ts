@@ -1,4 +1,4 @@
-import { isRecord } from '../../../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../../../shared-kernel/helpers/lang/is-record';
 
 export interface CheckoutCompensationJobData {
   reservationId?: number;

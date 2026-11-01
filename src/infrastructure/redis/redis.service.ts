@@ -11,7 +11,7 @@ import {
   type RedisJSON,
 } from 'redis';
 import { EnvConfigService } from '../../config/env-config.service';
-import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../shared-kernel/helpers/lang/error.utils';
 import {
   buildFullKey,
   buildStableFullKey,

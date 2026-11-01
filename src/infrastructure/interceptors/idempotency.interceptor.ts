@@ -14,7 +14,7 @@ import { IdempotencyStore } from '../../shared-kernel/domain/stores/idempotency.
 import {
   buildScopedIdempotencyKey,
   extractIdempotencyKey,
-} from '../../shared-kernel/infra/http/request.helpers';
+} from '../../shared-kernel/helpers/http/request.helpers';
 import { IDEMPOTENCY_REDIS } from '../redis/constants/redis.constants';
 import { ErrorCode } from '../../shared-kernel/domain/exceptions/error-code';
 

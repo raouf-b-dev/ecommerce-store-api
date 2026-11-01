@@ -14,7 +14,7 @@ import { PaymentProviderId } from '../../core/domain/value-objects/payment-provi
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { InfrastructureError } from '../../../../shared-kernel/domain/exceptions/infrastructure-error';
-import { toErrorMessage } from '../../../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../../../shared-kernel/helpers/lang/error.utils';
 import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { JobConfigService } from '../../../../infrastructure/jobs/job-config.service';
 import { EnvConfigService } from '../../../../config/env-config.service';

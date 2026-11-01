@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 import { RedisService } from '../../redis/redis.service';
-import { toErrorMessage } from '../../../shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from '../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class RedisHealthIndicator {

@@ -4,7 +4,7 @@ import { Result } from 'src/shared-kernel/domain/result';
 import { AppError } from 'src/shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from 'src/infrastructure/logging/correlation/correlation.service';
 import { readJobCorrelationId } from './job-correlation';
-import { toError } from 'src/shared-kernel/infra/lang/error.utils';
+import { toError } from 'src/shared-kernel/helpers/lang/error.utils';
 
 export abstract class BaseJobHandler<TData, TResult> {
   protected abstract readonly logger: Logger;

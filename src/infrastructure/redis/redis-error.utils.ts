@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import {
   toError,
   toErrorMessage,
-} from '../../shared-kernel/infra/lang/error.utils';
+} from '../../shared-kernel/helpers/lang/error.utils';
 
 const KNOWN_CONNECTION_ERRORS = [
   'ECONNABORTED',

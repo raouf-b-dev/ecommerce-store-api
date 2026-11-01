@@ -2,7 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const SRC_ROOT = path.join(__dirname, '../../src');
-const EXCLUDED_FILES = new Set(['src/shared-kernel/infra/lang/error.utils.ts']);
+const EXCLUDED_FILES = new Set([
+  'src/shared-kernel/helpers/lang/error.utils.ts',
+]);
 
 function isCommentLine(line: string): boolean {
   const trimmed = line.trim();

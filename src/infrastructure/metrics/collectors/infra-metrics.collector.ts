@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { MetricsService } from '../metrics.service';
 import { RedisService } from '../../redis/redis.service';
-import { toError } from '../../../shared-kernel/infra/lang/error.utils';
+import { toError } from '../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class InfraMetricsCollector {
