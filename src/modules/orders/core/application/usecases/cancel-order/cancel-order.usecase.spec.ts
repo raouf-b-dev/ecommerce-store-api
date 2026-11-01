@@ -533,6 +533,7 @@ describe('CancelOrderUseCase', () => {
       });
       expect(mockRepository.save).not.toHaveBeenCalled();
       expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+      expect(zeroPaidOrder.status).toBe(OrderStatus.CONFIRMED);
     });
 
     it('re-queues refund when cancelling an already CANCELLED order with paymentId', async () => {

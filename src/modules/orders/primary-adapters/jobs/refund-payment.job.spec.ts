@@ -1,16 +1,11 @@
 import { Test } from '@nestjs/testing';
 import { UnrecoverableError } from 'bullmq';
-import {
-  RefundPaymentStep,
-  RefundPaymentJobData,
-  toRefundJobAmount,
-  toProcessRefundInput,
-} from './refund-payment.job';
+import { RefundPaymentStep } from './refund-payment.job';
+import { RefundPaymentJobData } from '../../core/application/job-data/refund-payment.job-data';
 import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/refund-checkout-payment/refund-checkout-payment.usecase';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { UseCaseError } from '../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 import {
   MockCorrelationService,
@@ -113,6 +108,22 @@ describe('RefundPaymentStep', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it('throws UnrecoverableError when amountMinor is not a valid Money', async () => {
+    const jobData = {
+      orderId: 1,
+      paymentId: 10,
+      amountMinor: -1,
+      currency: 'USD',
+      reason: 'Order cancelled',
+    };
+    const mockJob = createMockJob('refund-payment', jobData);
+
+    await expect(jobHandler.handle(mockJob)).rejects.toThrow(
+      UnrecoverableError,
+    );
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it('does NOT throw UnrecoverableError when usecase returns retryable gateway failure', async () => {
     execute.mockResolvedValueOnce(
       ErrorFactory.UseCaseError('Failed to refund checkout payment', {
@@ -152,63 +163,5 @@ describe('RefundPaymentStep', () => {
     await expect(jobHandler.handle(mockJob)).rejects.toThrow(
       UnrecoverableError,
     );
-  });
-});
-
-describe('refund job amount serialization', () => {
-  it('round-trips an explicit Money amount to ProcessRefundInput', () => {
-    const moneyResult = Money.create(4999, 'USD');
-    ResultAssertionHelper.assertResultSuccess(moneyResult);
-    const serialized = toRefundJobAmount({ amount: moneyResult.value });
-    const inputResult = toProcessRefundInput({
-      orderId: 1,
-      paymentId: 10,
-      reason: 'Order cancelled',
-      ...serialized,
-    });
-
-    ResultAssertionHelper.assertResultSuccess(inputResult);
-    expect(inputResult.value).toEqual({
-      paymentId: 10,
-      reason: 'Order cancelled',
-      amount: moneyResult.value,
-    });
-  });
-
-  it('round-trips remaining mode to ProcessRefundInput', () => {
-    const serialized = toRefundJobAmount({ mode: 'remaining' });
-    const inputResult = toProcessRefundInput({
-      orderId: 1,
-      paymentId: 10,
-      reason: 'Surplus payment refund',
-      ...serialized,
-    });
-
-    ResultAssertionHelper.assertResultSuccess(inputResult);
-    expect(inputResult.value).toEqual({
-      paymentId: 10,
-      reason: 'Surplus payment refund',
-      mode: 'remaining',
-    });
-  });
-
-  it('returns a non-retryable failure for a legacy major-unit payload', () => {
-    const legacyData = {
-      orderId: 1,
-      paymentId: 10,
-      reason: 'Order cancelled',
-      amount: 49.99,
-    };
-    const inputResult = toProcessRefundInput(legacyData);
-
-    ResultAssertionHelper.assertResultFailure(
-      inputResult,
-      'legacy refund job payload: let the refund-payment queue finish before deploying',
-      UseCaseError,
-    );
-    expect(inputResult).toMatchObject({
-      isFailure: true,
-      error: { retryable: false },
-    });
   });
 });

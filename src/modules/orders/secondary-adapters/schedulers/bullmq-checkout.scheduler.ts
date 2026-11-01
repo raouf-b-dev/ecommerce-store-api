@@ -15,7 +15,7 @@ import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
-import { toRefundJobAmount } from '../../primary-adapters/jobs/refund-payment.job';
+import { toRefundJobAmount } from '../../core/application/job-data/refund-payment.job-data';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {

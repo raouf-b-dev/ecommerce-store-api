@@ -65,14 +65,14 @@ export class CancelOrderUseCase implements UseCase<
       return Result.success(order.toPrimitives());
     }
 
-    const cancelResult = order.cancel();
-    if (cancelResult.isFailure) return cancelResult;
-
     if (order.paymentId !== null) {
       const refundable =
         this.scheduleOrderRefundService.ensureRefundable(order);
       if (refundable.isFailure) return refundable;
     }
+
+    const cancelResult = order.cancel();
+    if (cancelResult.isFailure) return cancelResult;
 
     const updateResult = await this.orderRepository.save(
       order,
