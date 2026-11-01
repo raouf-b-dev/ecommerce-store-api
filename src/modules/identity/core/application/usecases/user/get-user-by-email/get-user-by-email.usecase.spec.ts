@@ -154,5 +154,25 @@ describe('GetUserByEmailUseCase', () => {
       );
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(validEmail);
     });
+
+    it('returns Success with the stored user when input email is mixed-case', async () => {
+      const storedEmail = 'mixcase-9@test.local';
+      const typedEmail = 'MixCase-9@Test.local';
+      const mockUserData = UserTestFactory.createMockUser({
+        id: 123,
+        email: storedEmail,
+      });
+
+      mockUserRepository.mockSuccessfulFindByEmail(mockUserData);
+
+      const result = await useCase.execute({
+        email: typedEmail,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.email).toBe(storedEmail);
+      expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(storedEmail);
+    });
   });
 });

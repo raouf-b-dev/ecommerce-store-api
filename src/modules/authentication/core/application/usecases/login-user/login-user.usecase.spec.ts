@@ -102,6 +102,30 @@ describe('LoginUserUseCase', () => {
     ]);
   });
 
+  it('returns Success when the typed email is mixed-case and identity finds the user', async () => {
+    const typedEmail = 'MixCase-9@Test.local';
+    identityGateway.mockFindUserByEmail({
+      ...defaultUserRecord,
+      email: 'mixcase-9@test.local',
+    });
+    sessionTokenRepository.mockSuccessfulSave(
+      AuthenticationDtoFactory.buildSessionToken({
+        userId: defaultUserRecord.id,
+        rawToken: 'dummy-refresh-token',
+        expiresAt: new Date('2025-01-01T12:00:00Z'),
+      }),
+    );
+
+    const result = await usecase.execute({
+      email: typedEmail,
+      password: 'password',
+    });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(typedEmail);
+    expect(result.value.accessToken).toBeTruthy();
+  });
+
   it('logs the user id, never the email, on success', async () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
     sessionTokenRepository.mockSuccessfulSave(

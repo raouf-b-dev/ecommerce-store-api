@@ -6,6 +6,7 @@ import {
 } from '../../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
+import { normalizeEmail } from 'src/modules/identity/core/domain/value-objects/email';
 
 @Injectable()
 export class CheckEmailExistsUseCase extends UseCase<
@@ -18,7 +19,9 @@ export class CheckEmailExistsUseCase extends UseCase<
   }
 
   async execute(email: string): Promise<Result<boolean, UseCaseError>> {
-    const userResult = await this.userRepository.existsByEmail(email);
+    const userResult = await this.userRepository.existsByEmail(
+      normalizeEmail(email),
+    );
     if (isFailure(userResult)) return userResult;
 
     return Result.success(userResult.value);
