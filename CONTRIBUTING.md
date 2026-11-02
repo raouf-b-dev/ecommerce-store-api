@@ -175,6 +175,8 @@ npm run audit:openapi
    - A description of what changed and why
    - Reference any related issues (e.g., "Fixes #123")
 
+   When the API contract changes (routes, DTOs, status codes, permissions, or OpenAPI), run `npm run audit:openapi`. When HTTP behavior, checkout, or auth changes, run `npm run test:e2e`.
+
 4. **Wait for review** - maintainers will review your PR and may request changes
 
 ### PR Checklist
