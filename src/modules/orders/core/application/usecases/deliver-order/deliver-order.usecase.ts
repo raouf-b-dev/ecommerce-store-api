@@ -3,10 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { orderNotFoundError } from '../../services/order-not-found';
+import { OrderMutationMapper } from '../../mappers/order-mutation.mapper';
+import { OrderMutationResult } from '../../queries/results/order-mutation.result';
 
 export interface DeliverOrderCommand {
   notes?: string;
@@ -15,7 +16,7 @@ export interface DeliverOrderCommand {
 @Injectable()
 export class DeliverOrderUseCase implements UseCase<
   { id: number; command?: DeliverOrderCommand },
-  IOrder,
+  OrderMutationResult,
   UseCaseError
 > {
   constructor(private readonly orderRepository: OrderRepository) {}
@@ -23,7 +24,7 @@ export class DeliverOrderUseCase implements UseCase<
   async execute(input: {
     id: number;
     command?: DeliverOrderCommand;
-  }): Promise<Result<IOrder, UseCaseError>> {
+  }): Promise<Result<OrderMutationResult, UseCaseError>> {
     const requestedOrder = await this.orderRepository.findByIdForUpdate(
       input.id,
     );
@@ -47,6 +48,6 @@ export class DeliverOrderUseCase implements UseCase<
       return updateResult;
     }
 
-    return Result.success(order.toPrimitives());
+    return Result.success(OrderMutationMapper.fromDomain(order));
   }
 }

@@ -79,7 +79,7 @@ export class ProcessPaymentStep extends BaseJobHandler<
     }
     const order = orderResult.value;
     const orderCurrency = order.currency;
-    const moneyResult = Money.fromMajorUnits(order.totalPrice, orderCurrency);
+    const moneyResult = Money.fromMajorUnits(order.totalAmount, orderCurrency);
     if (isFailure(moneyResult)) {
       return ErrorFactory.ServiceError(
         `Failed to compute payment amount for order ${orderId}: ${moneyResult.error.message}`,

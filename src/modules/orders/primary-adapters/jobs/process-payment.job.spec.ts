@@ -33,7 +33,6 @@ describe('ProcessPaymentStep', () => {
     subtotal: 25.5,
     shippingCost: 0,
     totalAmount: 25.5,
-    totalPrice: 25.5,
     currency: 'USD',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -165,7 +164,7 @@ describe('ProcessPaymentStep', () => {
     getOrderExecute.mockResolvedValueOnce(
       Result.success({
         ...validOrder,
-        totalPrice: -10,
+        totalAmount: -10,
       }),
     );
 

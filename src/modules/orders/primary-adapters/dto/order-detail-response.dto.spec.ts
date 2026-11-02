@@ -7,37 +7,26 @@ import { OrderListItemResponseDto } from './order-list-response.dto';
 import { OrderResponseDto } from './order-response.dto';
 
 describe('order total response DTOs', () => {
-  it('documents totalAmount as canonical on detail and marks totalPrice deprecated', () => {
+  it('documents only totalAmount on detail responses', () => {
     const totalAmountMeta: unknown = Reflect.getMetadata(
       DECORATORS.API_MODEL_PROPERTIES,
       OrderDetailResponseDto.prototype,
       'totalAmount',
     );
-    const totalPriceMeta: unknown = Reflect.getMetadata(
-      DECORATORS.API_MODEL_PROPERTIES,
+    const props: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
       OrderDetailResponseDto.prototype,
-      'totalPrice',
     );
 
     expect(totalAmountMeta).toEqual(expect.objectContaining({ type: Number }));
     expect(totalAmountMeta).not.toEqual(
       expect.objectContaining({ deprecated: true }),
     );
-    expect(totalPriceMeta).toEqual(
-      expect.objectContaining({ type: Number, deprecated: true }),
-    );
-
-    const description =
-      totalPriceMeta !== null &&
-      typeof totalPriceMeta === 'object' &&
-      'description' in totalPriceMeta &&
-      typeof totalPriceMeta.description === 'string'
-        ? totalPriceMeta.description
-        : '';
-    expect(description).toContain('totalAmount');
+    expect(props).toEqual(expect.arrayContaining([':totalAmount']));
+    expect(props).not.toEqual(expect.arrayContaining([':totalPrice']));
   });
 
-  it('documents totalAmount as the list total field', () => {
+  it('documents only totalAmount on list responses', () => {
     const totalAmountMeta: unknown = Reflect.getMetadata(
       DECORATORS.API_MODEL_PROPERTIES,
       OrderListItemResponseDto.prototype,
@@ -53,43 +42,30 @@ describe('order total response DTOs', () => {
     expect(props).not.toEqual(expect.arrayContaining([':totalPrice']));
   });
 
-  it('documents totalAmount as canonical on OrderResponseDto and marks totalPrice deprecated', () => {
+  it('documents only totalAmount on OrderResponseDto', () => {
     const totalAmountMeta: unknown = Reflect.getMetadata(
       DECORATORS.API_MODEL_PROPERTIES,
       OrderResponseDto.prototype,
       'totalAmount',
     );
-    const totalPriceMeta: unknown = Reflect.getMetadata(
-      DECORATORS.API_MODEL_PROPERTIES,
+    const props: unknown = Reflect.getMetadata(
+      DECORATORS.API_MODEL_PROPERTIES_ARRAY,
       OrderResponseDto.prototype,
-      'totalPrice',
     );
 
     expect(totalAmountMeta).toEqual(expect.objectContaining({}));
-    expect(totalAmountMeta).not.toEqual(
-      expect.objectContaining({ deprecated: true }),
-    );
-    expect(totalPriceMeta).toEqual(
-      expect.objectContaining({ deprecated: true }),
-    );
-
-    const description =
-      totalPriceMeta !== null &&
-      typeof totalPriceMeta === 'object' &&
-      'description' in totalPriceMeta &&
-      typeof totalPriceMeta.description === 'string'
-        ? totalPriceMeta.description
-        : '';
-    expect(description).toContain('totalAmount');
+    expect(props).toEqual(expect.arrayContaining([':totalAmount']));
+    expect(props).not.toEqual(expect.arrayContaining([':totalPrice']));
   });
 
-  it('keeps totalPrice on mutation responses without adding paymentId', () => {
+  it('documents only totalAmount on mutation responses without paymentId', () => {
     const props: unknown = Reflect.getMetadata(
       DECORATORS.API_MODEL_PROPERTIES_ARRAY,
       OrderMutationResponseDto.prototype,
     );
 
-    expect(props).toEqual(expect.arrayContaining([':totalPrice']));
+    expect(props).toEqual(expect.arrayContaining([':totalAmount']));
+    expect(props).not.toEqual(expect.arrayContaining([':totalPrice']));
     expect(props).not.toEqual(expect.arrayContaining([':paymentId']));
   });
 });

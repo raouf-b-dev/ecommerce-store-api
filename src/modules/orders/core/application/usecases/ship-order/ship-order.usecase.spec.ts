@@ -206,8 +206,11 @@ describe('ShipOrderUseCase', () => {
       const result = await useCase.execute(processingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(5);
+      expect(result.value.id).toBe(processingMultiItem.id);
+      expect(result.value.totalAmount).toEqual(expect.any(Number));
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
+      expect(result.value).not.toHaveProperty('items');
+      expect(result.value).not.toHaveProperty('paymentId');
     });
 
     it('should return ORDER_NOT_FOUND when findByIdForUpdate is not found', async () => {

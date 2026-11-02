@@ -96,11 +96,6 @@ export class OrderQueryMapper {
       ? optionalTrimmedString(`${user.firstName} ${user.lastName}`)
       : null;
     const userEmail = user ? optionalTrimmedString(user.email) : null;
-    const totalAmount = requireFiniteNumber(
-      orderEntity.totalPrice,
-      'totalPrice',
-    );
-
     return {
       id: orderEntity.id,
       orderNumber: `ORD-${orderEntity.id}`,
@@ -116,8 +111,7 @@ export class OrderQueryMapper {
         orderEntity.shippingCost,
         'shippingCost',
       ),
-      totalAmount,
-      totalPrice: totalAmount,
+      totalAmount: requireFiniteNumber(orderEntity.totalPrice, 'totalPrice'),
       currency: orderEntity.currency,
       createdAt: orderEntity.createdAt,
       updatedAt: orderEntity.updatedAt,

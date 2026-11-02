@@ -73,7 +73,7 @@ When evaluating how to model currency in the Cart module, two core architectural
 
 ### Decision 8: Explicit MVP Shipping Cost (Phase 17)
 
-- **Decision**: Cart and order read models expose `subtotal`, `shippingCost`, and `totalAmount`/`totalPrice`. MVP shipping policy is `$0` returned explicitly by the API, not invented in storefront UI copy.
+- **Decision**: Cart and order HTTP read models expose `subtotal`, `shippingCost`, and `totalAmount`. Domain and persistence may still name the order total `totalPrice`. MVP shipping policy is `$0` returned explicitly by the API, not invented in storefront UI copy.
 - **Rationale**: `OrderPricing.calculate()` already persisted zero shipping in the domain; Phase 17 makes that fact visible on HTTP so checkout UIs cannot claim "Free" without API authority.
 
 ---

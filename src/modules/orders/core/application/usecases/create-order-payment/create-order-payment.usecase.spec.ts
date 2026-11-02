@@ -57,7 +57,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 25.5,
+          totalAmount: 25.5,
           currency: 'EUR',
         }),
       ),
@@ -91,7 +91,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 10,
+          totalAmount: 10,
           currency: 'USD',
         }),
       ),
@@ -119,7 +119,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 0,
+          totalAmount: 0,
           currency: 'USD',
         }),
       ),
@@ -157,7 +157,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 10,
+          totalAmount: 10,
           currency: 'US',
         }),
       ),

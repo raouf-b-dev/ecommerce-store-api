@@ -252,8 +252,11 @@ describe('DeliverOrderUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(5);
+      expect(result.value.id).toBe(shippedMultiItem.id);
+      expect(result.value.totalAmount).toEqual(expect.any(Number));
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
+      expect(result.value).not.toHaveProperty('items');
+      expect(result.value).not.toHaveProperty('paymentId');
     });
   });
 });

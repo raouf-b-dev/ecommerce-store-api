@@ -16,6 +16,8 @@ import { AddressType } from 'src/shared-kernel/domain/value-objects/address-type
 import { OrderListItemDTO } from '../../core/application/queries/results/order-list-item.result';
 import { OrderDetailDTO } from '../../core/application/queries/results/order-detail.result';
 import { OrderItemDetailDTO } from '../../core/application/queries/results/order-item-detail.result';
+import { OrderMutationResult } from '../../core/application/queries/results/order-mutation.result';
+import { OrderStatus } from '../../core/domain/value-objects/order-status';
 import { RawOrderListQueryRow } from '../../secondary-adapters/dto/raw-order-list-query-row.interface';
 import { CheckoutDto } from '../../primary-adapters/dto/checkout.dto';
 import { CreatedPayment } from '../../core/application/ports/payment.gateway';
@@ -215,7 +217,6 @@ export class OrderDtoTestFactory {
       subtotal: 100,
       shippingCost: 0,
       totalAmount: 100,
-      totalPrice: 100,
       currency: 'USD',
       createdAt: new Date('2026-08-09T20:00:00.000Z'),
       updatedAt: new Date('2026-08-09T20:00:00.000Z'),
@@ -291,5 +292,18 @@ export class OrderDtoTestFactory {
       createdAt: new Date('2026-08-09T20:00:00.000Z'),
     };
     return { ...baseItem, ...overrides };
+  }
+
+  static createOrderMutationResult(
+    overrides?: Partial<OrderMutationResult>,
+  ): OrderMutationResult {
+    const base: OrderMutationResult = {
+      id: 1,
+      status: OrderStatus.CANCELLED,
+      totalAmount: 100,
+      currency: 'USD',
+      updatedAt: new Date('2026-08-09T20:00:00.000Z').toISOString(),
+    };
+    return { ...base, ...overrides };
   }
 }

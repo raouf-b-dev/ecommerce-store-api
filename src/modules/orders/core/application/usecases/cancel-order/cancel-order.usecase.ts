@@ -5,7 +5,6 @@ import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { OrderRepository } from '../../../domain/repositories/order-repository';
-import { IOrder } from '../../../domain/interfaces/order.interface';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { OrderScheduler } from '../../../domain/schedulers/order.scheduler';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
@@ -14,11 +13,13 @@ import { CancelOrderAccessPolicy } from '../../services/cancel-order-access.poli
 import { orderNotFoundError } from '../../services/order-not-found';
 import { ScheduleOrderRefundService } from '../../services/schedule-order-refund.service';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
+import { OrderMutationMapper } from '../../mappers/order-mutation.mapper';
+import { OrderMutationResult } from '../../queries/results/order-mutation.result';
 
 @Injectable()
 export class CancelOrderUseCase implements UseCase<
   CancelOrderCommand,
-  IOrder,
+  OrderMutationResult,
   UseCaseError | DomainError
 > {
   private readonly logger = new Logger(CancelOrderUseCase.name);
@@ -32,7 +33,7 @@ export class CancelOrderUseCase implements UseCase<
 
   async execute(
     dto: CancelOrderCommand,
-  ): Promise<Result<IOrder, UseCaseError | DomainError>> {
+  ): Promise<Result<OrderMutationResult, UseCaseError | DomainError>> {
     const { orderId, isSagaCompensation, callerContext } = dto;
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
@@ -64,7 +65,7 @@ export class CancelOrderUseCase implements UseCase<
         reason,
       );
       if (refundResult.isFailure) return refundResult;
-      return Result.success(order.toPrimitives());
+      return Result.success(OrderMutationMapper.fromDomain(order));
     }
 
     let refundAmount: Money | undefined;
@@ -103,7 +104,7 @@ export class CancelOrderUseCase implements UseCase<
       });
     }
 
-    return Result.success(order.toPrimitives());
+    return Result.success(OrderMutationMapper.fromDomain(order));
   }
 
   private async scheduleStockRelease(orderId: number): Promise<void> {
