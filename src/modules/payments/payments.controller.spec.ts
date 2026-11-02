@@ -144,7 +144,7 @@ describe('PaymentsController', () => {
 
     expect(processRefundUseCase.execute).toHaveBeenCalledWith({
       paymentId: 7,
-      amount: dto.amount,
+      majorUnits: dto.amount,
       reason: dto.reason,
     });
   });

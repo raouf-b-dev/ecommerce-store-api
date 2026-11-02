@@ -1,7 +1,7 @@
 import { IPayment } from '../../core/domain/interfaces/payment.interface';
 import { PaymentResponseDto } from '../dto/payment-response.dto';
 import { ProcessRefundDto } from '../dto/process-refund.dto';
-import { ProcessRefundCommand } from '../../core/application/commands/process-refund.command';
+import { ProcessRefundHttpCommand } from '../../core/application/commands/process-refund.command';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
@@ -32,10 +32,14 @@ export class PaymentDtoMapper {
     };
   }
 
+  /**
+   * Maps the HTTP refund body to an HTTP-edge command. Keeps major units:
+   * currency comes from the payment aggregate after load (Fowler Money).
+   */
   static toRefundCommand(
     paymentId: number,
     dto: ProcessRefundDto,
-  ): Result<ProcessRefundCommand, UseCaseError> {
+  ): Result<ProcessRefundHttpCommand, UseCaseError> {
     if (
       typeof dto.amount !== 'number' ||
       !Number.isFinite(dto.amount) ||
@@ -49,7 +53,7 @@ export class PaymentDtoMapper {
 
     return Result.success({
       paymentId,
-      amount: dto.amount,
+      majorUnits: dto.amount,
       reason: dto.reason,
     });
   }
