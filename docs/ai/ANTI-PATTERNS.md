@@ -45,7 +45,7 @@ async findById(id: number): Promise<Result<Inventory, RepositoryError>> {
   const entity = await this.ormRepo.findOne({ where: { id } });
   if (!entity) {
     return ErrorFactory.RepositoryError('Inventory not found', {
-      status: HttpStatus.NOT_FOUND,
+      kind: ErrorKind.NOT_FOUND,
     });
   }
   return Result.success(InventoryMapper.toDomain(entity));
