@@ -568,6 +568,82 @@ describe('CancelOrderUseCase', () => {
       });
     });
 
+    it('on repeat cancel of a paid cancelled order, returns success and reschedules stock release and refund', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+      mockOrderScheduler.scheduleRefundPayment.mockResolvedValue(
+        Result.success('refund-job-id'),
+      );
+
+      const first = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+      ResultAssertionHelper.assertResultSuccess(first);
+      expect(first.value.status).toBe(OrderStatus.CANCELLED);
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).toHaveBeenCalledTimes(1);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(1);
+
+      const second = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+      ResultAssertionHelper.assertResultSuccess(second);
+      expect(second.value.status).toBe(OrderStatus.CANCELLED);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).toHaveBeenCalledTimes(2);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenCalledTimes(2);
+      expect(mockOrderScheduler.scheduleRefundPayment).toHaveBeenNthCalledWith(
+        2,
+        {
+          orderId,
+          paymentId: 42,
+          amount: cancelledOrder.getPricing().getTotalPriceMoney(),
+          reason: 'Order cancelled',
+        },
+      );
+    });
+
+    it('on repeat cancel of an unpaid cancelled order, reschedules stock release only', async () => {
+      const orderId = 1;
+      const cancelledOrder = OrderTestFactory.createDomainOrder({
+        id: orderId,
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      mockRepository.mockSuccessfulFindByIdForUpdate(cancelledOrder);
+
+      const first = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+      ResultAssertionHelper.assertResultSuccess(first);
+      expect(first.value.status).toBe(OrderStatus.CANCELLED);
+
+      const second = await useCase.execute({
+        orderId,
+        callerContext: SYSTEM_CALLER_CONTEXT,
+      });
+      ResultAssertionHelper.assertResultSuccess(second);
+      expect(second.value.status).toBe(OrderStatus.CANCELLED);
+      expect(mockRepository.save).not.toHaveBeenCalled();
+      expect(
+        mockOrderScheduler.scheduleOrderStockRelease,
+      ).toHaveBeenCalledTimes(2);
+      expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
+    });
+
     it('returns 500 when re-queuing refund fails on already CANCELLED order with paymentId', async () => {
       const orderId = 1;
       const cancelledOrder = OrderTestFactory.createDomainOrder({
