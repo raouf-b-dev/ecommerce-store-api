@@ -93,6 +93,7 @@ describe('CheckoutFailureListener', () => {
     expect(cancelExecute).toHaveBeenCalledWith({
       orderId: 10,
       isSagaCompensation: true,
+      callerContext: expect.objectContaining({ kind: 'system' }),
     });
     expect(releaseExecute).toHaveBeenCalledWith(20);
   });
@@ -120,6 +121,7 @@ describe('CheckoutFailureListener', () => {
     expect(cancelExecute).toHaveBeenCalledWith({
       orderId: 15,
       isSagaCompensation: true,
+      callerContext: expect.objectContaining({ kind: 'system' }),
     });
     expect(releaseExecute).toHaveBeenCalledWith(99);
   });

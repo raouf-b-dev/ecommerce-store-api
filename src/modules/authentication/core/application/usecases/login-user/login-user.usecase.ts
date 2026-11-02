@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -43,11 +44,10 @@ export class LoginUserUseCase extends UseCase<
     );
 
     if (userResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to retrieve user information',
-        userResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to retrieve user information', {
+        cause: userResult.error,
+        kind: ErrorKind.INTERNAL,
+      });
     }
 
     const user = userResult.value;
@@ -56,11 +56,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_user',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        kind: ErrorKind.UNAUTHENTICATED,
+      });
     }
 
     // 2. Check if user is active
@@ -68,11 +66,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'inactive_user',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        kind: ErrorKind.UNAUTHENTICATED,
+      });
     }
 
     // 3. Find Credential by UserId & Verify Password
@@ -83,8 +79,10 @@ export class LoginUserUseCase extends UseCase<
     if (credentialResult.isFailure) {
       return ErrorFactory.UseCaseError(
         'Failed to retrieve credential information',
-        credentialResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        {
+          cause: credentialResult.error,
+          kind: ErrorKind.INTERNAL,
+        },
       );
     }
 
@@ -94,11 +92,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_credential',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        kind: ErrorKind.UNAUTHENTICATED,
+      });
     }
 
     const isMatch = await this.passwordHasher.compare(
@@ -109,11 +105,9 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'invalid_password',
       });
-      return ErrorFactory.UseCaseError(
-        'Invalid credentials',
-        null,
-        HttpStatus.UNAUTHORIZED,
-      );
+      return ErrorFactory.UseCaseError('Invalid credentials', {
+        kind: ErrorKind.UNAUTHENTICATED,
+      });
     }
 
     // 4. Resolve role code for JWT payload (PermissionsGuard requires the string code)
@@ -124,22 +118,19 @@ export class LoginUserUseCase extends UseCase<
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_resolution_failed',
       });
-      return ErrorFactory.UseCaseError(
-        'Failed to resolve user role',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to resolve user role', {
+        cause: roleResult.error,
+        kind: ErrorKind.INTERNAL,
+      });
     }
 
     if (!roleResult.value) {
       this.domainEventPublisher.publish('auth.login.failure', {
         reason: 'role_not_found',
       });
-      return ErrorFactory.UseCaseError(
-        'User role not found',
-        null,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('User role not found', {
+        kind: ErrorKind.INTERNAL,
+      });
     }
 
     // 5. Generate Access Token

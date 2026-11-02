@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -69,12 +69,12 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
       const locked =
         await this.inventoryRepository.findByProductIdForUpdate(productId);
       if (locked.isFailure) {
-        if (locked.error.statusCode === StatusCode.NOT_FOUND) {
+        if (locked.error.kind === ErrorKind.NOT_FOUND) {
           continue;
         }
         return ErrorFactory.UseCaseError(
           `Failed to load inventory for product ${productId}`,
-          locked.error,
+          { cause: locked.error },
         );
       }
 
@@ -92,7 +92,7 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
         if (applyResult.isFailure) {
           return ErrorFactory.UseCaseError(
             `Failed to apply seed inventory effect for product ${productId}`,
-            applyResult.error,
+            { cause: applyResult.error },
           );
         }
         inventory = applyResult.value;
@@ -105,7 +105,7 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
       if (saveResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to save seeded inventory for product ${productId}`,
-          saveResult.error,
+          { cause: saveResult.error },
         );
       }
 
@@ -142,27 +142,24 @@ export class SeedDemoInventoryFromOrdersUseCase extends UseCase<
     if (effect.hold > 0) {
       const holdResult = inventory.reserveStock(effect.hold);
       if (holdResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          holdResult.error.message,
-          holdResult.error,
-        );
+        return ErrorFactory.UseCaseError(holdResult.error.message, {
+          cause: holdResult.error,
+        });
       }
     }
 
     if (effect.consume > 0) {
       const reserveResult = inventory.reserveStock(effect.consume);
       if (reserveResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          reserveResult.error.message,
-          reserveResult.error,
-        );
+        return ErrorFactory.UseCaseError(reserveResult.error.message, {
+          cause: reserveResult.error,
+        });
       }
       const confirmResult = inventory.confirmReservation(effect.consume);
       if (confirmResult.isFailure) {
-        return ErrorFactory.UseCaseError(
-          confirmResult.error.message,
-          confirmResult.error,
-        );
+        return ErrorFactory.UseCaseError(confirmResult.error.message, {
+          cause: confirmResult.error,
+        });
       }
     }
 

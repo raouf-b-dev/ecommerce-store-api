@@ -1,5 +1,6 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
+import { RefundAmount } from '../value-objects/refund-amount';
 import { ShippingAddressProps } from '../value-objects/shipping-address';
 
 export interface ScheduleCheckoutProps {
@@ -17,12 +18,11 @@ export interface SchedulePostPaymentProps {
   cartId: number;
 }
 
-export interface ScheduleRefundPaymentProps {
+export type ScheduleRefundPaymentProps = {
   orderId: number;
   paymentId: number;
-  amount: number;
   reason: string;
-}
+} & RefundAmount;
 
 export abstract class OrderScheduler {
   abstract scheduleCheckout(

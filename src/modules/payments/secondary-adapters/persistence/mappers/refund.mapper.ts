@@ -1,6 +1,5 @@
 import { CreateFromEntity } from '../../../../../infrastructure/mappers/utils/create-from-entity.type';
 import { Refund, RefundProps } from '../../../core/domain/entities/refund';
-import { RefundStatusType } from '../../../core/domain/value-objects/refund-status';
 import { RefundEntity } from '../../orm/refund.schema';
 import {
   requireMajorUnitsFromMinor,
@@ -17,7 +16,7 @@ export class RefundMapper {
       amount: requireMinorUnits(entity.amount, entity.currency),
       currency: entity.currency,
       reason: entity.reason,
-      status: entity.status as RefundStatusType,
+      status: entity.status,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

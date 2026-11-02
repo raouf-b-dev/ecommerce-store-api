@@ -8,6 +8,8 @@ import { RoleRepository } from '../../../domain/repositories/role.repository';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('FindRoleByIdUseCase', () => {
   let useCase: FindRoleByIdUseCase;
@@ -43,16 +45,27 @@ describe('FindRoleByIdUseCase', () => {
     expect(result.value).toEqual(role.toPrimitives());
   });
 
-  it('should return failure if role is not found', async () => {
-    // Arrange
+  it('should return ROLE_NOT_FOUND when repository reports not found', async () => {
     mockRoleRepo.findById.mockResolvedValue(
-      ErrorFactory.RepositoryError('Role not found'),
+      ErrorFactory.RepositoryError('Role not found', {
+        kind: ErrorKind.NOT_FOUND,
+      }),
     );
 
-    // Act
     const result = await useCase.execute(1);
 
-    // Assert
-    ResultAssertionHelper.assertResultFailure(result);
+    ResultAssertionHelper.assertResultFailure(result, 'Role not found');
+    expect(result.error.code).toBe(ErrorCode.ROLE_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+  });
+
+  it('should return failure if repository find fails', async () => {
+    mockRoleRepo.findById.mockResolvedValue(
+      ErrorFactory.RepositoryError('DB Error'),
+    );
+
+    const result = await useCase.execute(1);
+
+    ResultAssertionHelper.assertResultFailure(result, 'Failed to find role');
   });
 });

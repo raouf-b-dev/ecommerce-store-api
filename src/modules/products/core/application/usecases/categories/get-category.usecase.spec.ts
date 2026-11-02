@@ -4,7 +4,8 @@ import {
 } from 'src/modules/products/testing';
 import { GetCategoryUseCase } from './get-category.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
-import { QueryNotFoundError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { QueryError } from '../../../../../../shared-kernel/domain/exceptions/query.error';
@@ -41,7 +42,7 @@ describe('GetCategoryUseCase', () => {
     expect(result.value).toEqual(category);
   });
 
-  it('returns QueryNotFoundError when missing', async () => {
+  it('returns CATEGORY_NOT_FOUND when missing', async () => {
     mockQueryService.mockSuccessfulGetById(null);
 
     const result = await useCase.execute(99);
@@ -50,7 +51,10 @@ describe('GetCategoryUseCase', () => {
       result,
       'Category with id 99 not found',
     );
-    expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+    expect(result.error).toMatchObject({
+      kind: ErrorKind.NOT_FOUND,
+      code: ErrorCode.CATEGORY_NOT_FOUND,
+    });
   });
 
   it('hides inactive categories from shoppers as not found', async () => {
@@ -76,7 +80,10 @@ describe('GetCategoryUseCase', () => {
       result,
       'Category with id 8 not found',
     );
-    expect(result.isFailure && result.error).toBeInstanceOf(QueryNotFoundError);
+    expect(result.error).toMatchObject({
+      kind: ErrorKind.NOT_FOUND,
+      code: ErrorCode.CATEGORY_NOT_FOUND,
+    });
   });
 
   it('returns inactive categories to operators with view_all_products', async () => {
@@ -110,10 +117,6 @@ describe('GetCategoryUseCase', () => {
 
     const result = await useCase.execute(1);
 
-    ResultAssertionHelper.assertResultFailure(
-      result,
-      'Failed to find category',
-      UseCaseError,
-    );
+    ResultAssertionHelper.assertResultFailure(result, 'DB Error', UseCaseError);
   });
 });

@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
 import { CallerContext } from '../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -64,6 +65,7 @@ export class CartsController {
     status: 404,
     description:
       'No cart yet for this user. Clients should treat as empty (null), not an error banner.',
+    type: ErrorResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCurrentCart(@CallerCtx() callerContext: CallerContext | null) {
@@ -75,6 +77,11 @@ export class CartsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get cart by ID' })
   @ApiResponse({ status: 200, type: CartResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart not found',
+    type: ErrorResponseDto,
+  })
   async getCart(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext | null,
@@ -89,6 +96,11 @@ export class CartsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Add item to cart' })
   @ApiResponse({ status: 204, description: 'Item added to cart successfully.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart not found',
+    type: ErrorResponseDto,
+  })
   async addItem(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCartItemDto,
@@ -108,6 +120,11 @@ export class CartsController {
   @ApiResponse({
     status: 204,
     description: 'Cart item quantity updated successfully.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart or cart item not found',
+    type: ErrorResponseDto,
   })
   async updateItem(
     @Param('id', ParseIntPipe) id: number,
@@ -130,6 +147,11 @@ export class CartsController {
     status: 204,
     description: 'Item removed from cart successfully.',
   })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart or cart item not found',
+    type: ErrorResponseDto,
+  })
   async removeItem(
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
@@ -146,6 +168,11 @@ export class CartsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Clear cart (remove all items)' })
   @ApiResponse({ status: 204, description: 'Cart cleared successfully.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Cart not found',
+    type: ErrorResponseDto,
+  })
   async clearCart(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext | null,

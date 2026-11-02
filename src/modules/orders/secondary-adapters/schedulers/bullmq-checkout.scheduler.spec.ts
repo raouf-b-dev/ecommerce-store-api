@@ -16,6 +16,7 @@ import {
   ResultAssertionHelper,
 } from '../../../../testing';
 import { ScheduleRefundPaymentProps } from '../../core/domain/schedulers/order.scheduler';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 describe('BullMqOrderScheduler', () => {
   let scheduler: BullMqOrderScheduler;
@@ -131,11 +132,13 @@ describe('BullMqOrderScheduler', () => {
   });
 
   describe('scheduleRefundPayment', () => {
-    it('schedules refund with stable jobId and correct payload', async () => {
+    it('schedules refund with stable payment-based jobId and correct payload', async () => {
+      const amountResult = Money.create(8999, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
       const props: ScheduleRefundPaymentProps = {
         orderId: 42,
         paymentId: 101,
-        amount: 89.99,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       };
 
@@ -144,7 +147,7 @@ describe('BullMqOrderScheduler', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       const expectedJobId = jobConfigService.getJobId(
         JobNames.REFUND_PAYMENT,
-        'order-42',
+        'payment-101',
       );
       expect(result.value).toBe(expectedJobId);
 
@@ -154,7 +157,8 @@ describe('BullMqOrderScheduler', () => {
         data: {
           orderId: 42,
           paymentId: 101,
-          amount: 89.99,
+          amountMinor: 8999,
+          currency: 'USD',
           reason: 'Order cancelled',
           correlationId: 'test-correlation-id',
         },
@@ -165,15 +169,50 @@ describe('BullMqOrderScheduler', () => {
       });
     });
 
+    it('schedules a remaining-mode refund with the same payment-based jobId', async () => {
+      const props: ScheduleRefundPaymentProps = {
+        orderId: 42,
+        paymentId: 101,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      };
+
+      const result = await scheduler.scheduleRefundPayment(props);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      const expectedJobId = jobConfigService.getJobId(
+        JobNames.REFUND_PAYMENT,
+        'payment-101',
+      );
+      expect(result.value).toBe(expectedJobId);
+
+      expect(mockFlowProducer.add).toHaveBeenCalledWith({
+        name: JobNames.REFUND_PAYMENT,
+        queueName: 'checkout',
+        data: {
+          orderId: 42,
+          paymentId: 101,
+          mode: 'remaining',
+          reason: 'Surplus payment refund',
+          correlationId: 'test-correlation-id',
+        },
+        opts: expect.objectContaining({
+          jobId: expectedJobId,
+        }),
+      });
+    });
+
     it('returns an InfrastructureError when flowProducer.add throws', async () => {
       mockFlowProducer.add.mockRejectedValueOnce(
         new Error('Redis connection lost'),
       );
 
+      const amountResult = Money.create(8999, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
       const props: ScheduleRefundPaymentProps = {
         orderId: 42,
         paymentId: 101,
-        amount: 89.99,
+        amount: amountResult.value,
         reason: 'Order cancelled',
       };
 

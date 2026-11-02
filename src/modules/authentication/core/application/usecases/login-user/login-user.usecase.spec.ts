@@ -65,7 +65,7 @@ describe('LoginUserUseCase', () => {
     authorizationGateway.mockSuccessfulFindRoleByUserId({
       id: 2,
       code: 'CUSTOMER',
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
     });
     passwordHasher.compare.mockResolvedValue(true);
   });
@@ -98,7 +98,32 @@ describe('LoginUserUseCase', () => {
     expect(result.value.permissions).toEqual([
       'view_own_profile',
       'view_own_orders',
+      'cancel_own_orders',
     ]);
+  });
+
+  it('returns Success when the typed email is mixed-case and identity finds the user', async () => {
+    const typedEmail = 'MixCase-9@Test.local';
+    identityGateway.mockFindUserByEmail({
+      ...defaultUserRecord,
+      email: 'mixcase-9@test.local',
+    });
+    sessionTokenRepository.mockSuccessfulSave(
+      AuthenticationDtoFactory.buildSessionToken({
+        userId: defaultUserRecord.id,
+        rawToken: 'dummy-refresh-token',
+        expiresAt: new Date('2025-01-01T12:00:00Z'),
+      }),
+    );
+
+    const result = await usecase.execute({
+      email: typedEmail,
+      password: 'password',
+    });
+
+    ResultAssertionHelper.assertResultSuccess(result);
+    expect(identityGateway.findUserByEmail).toHaveBeenCalledWith(typedEmail);
+    expect(result.value.accessToken).toBeTruthy();
   });
 
   it('logs the user id, never the email, on success', async () => {

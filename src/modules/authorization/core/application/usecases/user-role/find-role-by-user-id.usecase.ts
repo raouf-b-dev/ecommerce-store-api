@@ -1,10 +1,14 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UseCaseError } from 'src/shared-kernel/domain/exceptions/usecase.error';
 import { Result } from 'src/shared-kernel/domain/result';
 import { UserRoleAssignmentRepository } from '../../../domain/repositories/user-role-assignment.repository';
 import { UseCase } from 'src/shared-kernel/domain/interfaces/base.usecase';
 import { RoleRepository } from '../../../domain/repositories/role.repository';
-import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
+import { ErrorKind } from 'src/shared-kernel/domain/exceptions/error-kind';
+import {
+  roleNotFoundError,
+  userRoleAssignmentNotFoundError,
+} from '../../services/role-not-found';
 
 export interface RoleRecord {
   id: number;
@@ -30,25 +34,22 @@ export class FindRoleByUserIdUseCase implements UseCase<
 
     const userRoleAssignment = userRoleAssignmentResult.value;
     if (!userRoleAssignment) {
-      return ErrorFactory.UseCaseError(
-        'User role assignment not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return userRoleAssignmentNotFoundError();
     }
 
     const roleResult = await this.roleRepository.findById(
       userRoleAssignment.roleId,
     );
-    if (roleResult.isFailure) return roleResult;
+    if (roleResult.isFailure) {
+      if (roleResult.error.kind === ErrorKind.NOT_FOUND) {
+        return roleNotFoundError();
+      }
+      return roleResult;
+    }
 
     const role = roleResult.value;
     if (!role) {
-      return ErrorFactory.UseCaseError(
-        'Role not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return roleNotFoundError();
     }
 
     const roleRecord: RoleRecord = {

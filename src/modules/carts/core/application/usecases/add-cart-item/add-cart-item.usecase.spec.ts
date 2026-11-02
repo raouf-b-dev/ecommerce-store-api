@@ -148,7 +148,11 @@ describe('AddCartItemUseCase', () => {
 
       const result = await usecase.execute(command);
 
-      ResultAssertionHelper.assertResultFailure(result);
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Cart with id 999 not found',
+      );
+      expect(result.error.code).toBe('CART_NOT_FOUND');
     });
 
     it('should return failure when stock is insufficient', async () => {

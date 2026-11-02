@@ -233,10 +233,9 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
         totalPages,
       });
     } catch (error) {
-      return ErrorFactory.QueryError(
-        'Failed to execute order list query',
-        error,
-      );
+      return ErrorFactory.QueryError('Failed to execute order list query', {
+        cause: error,
+      });
     }
   }
 
@@ -275,7 +274,7 @@ export class PostgresOrderQueryAdapter implements OrderQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to retrieve order detail for ID ${id}`,
-        error,
+        { cause: error },
       );
     }
   }

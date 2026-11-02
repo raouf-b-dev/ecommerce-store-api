@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { Injectable } from '@nestjs/common';
@@ -55,8 +56,7 @@ export class ListPaymentsUseCase implements UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Filtering payments by customer contact data requires view_customer_pii',
-        null,
-        HttpStatus.FORBIDDEN,
+        { kind: ErrorKind.FORBIDDEN },
       );
     }
 

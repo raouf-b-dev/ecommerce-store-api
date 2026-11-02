@@ -4,7 +4,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { EnvConfigService } from 'src/config/env-config.service';
-import { toErrorMessage } from 'src/shared-kernel/infra/lang/error.utils';
+import { toErrorMessage } from 'src/shared-kernel/helpers/lang/error.utils';
 import { buildNodeRedisClientOptions } from '../../redis/redis-connection.options';
 
 export class RedisIoAdapter extends IoAdapter {

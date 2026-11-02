@@ -11,7 +11,7 @@ import { Notification } from '../../core/domain/entities/notification';
 import { NotificationScheduler } from '../../core/domain/schedulers/notification.scheduler';
 import { NotificationStatus } from '../../core/domain/enums/notification-status.enum';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-import { toError } from '../../../../shared-kernel/infra/lang/error.utils';
+import { toError } from '../../../../shared-kernel/helpers/lang/error.utils';
 import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
 
 @Injectable()
@@ -65,7 +65,7 @@ export class BullMqNotificationScheduler
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule cleanup job',
-        error,
+        { cause: error },
       );
     }
   }
@@ -144,7 +144,7 @@ export class BullMqNotificationScheduler
       );
       return ErrorFactory.InfrastructureError(
         'Failed to schedule notification',
-        error,
+        { cause: error },
       );
     }
   }

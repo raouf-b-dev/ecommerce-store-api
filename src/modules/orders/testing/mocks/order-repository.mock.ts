@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/orders/testing/mocks/order-repository.mock.ts
 import {
   ListOrdersQuery,
@@ -44,12 +45,11 @@ export class MockOrderRepository implements OrderRepository {
   }
 
   mockOrderNotFound(orderId: number): void {
-    this.findById.mockResolvedValue(
-      Result.failure(new RepositoryError(`Order with id ${orderId} not found`)),
-    );
-    this.findByIdForUpdate.mockResolvedValue(
-      Result.failure(new RepositoryError(`Order with id ${orderId} not found`)),
-    );
+    const notFound = new RepositoryError(`Order with id ${orderId} not found`, {
+      kind: ErrorKind.NOT_FOUND,
+    });
+    this.findById.mockResolvedValue(Result.failure(notFound));
+    this.findByIdForUpdate.mockResolvedValue(Result.failure(notFound));
   }
 
   mockSuccessfulSave(idToAssign = 1001): void {

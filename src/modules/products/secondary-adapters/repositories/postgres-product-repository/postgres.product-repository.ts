@@ -1,5 +1,5 @@
-// src\modules\products\infrastructure\repositories\PostgresProductRepository\postgres.product-repository.ts
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { Repository, In } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
@@ -26,17 +26,18 @@ export class PostgresProductRepository implements ProductRepository {
         where: { id },
       });
       if (!ormEntity) {
-        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`);
+        return ErrorFactory.RepositoryError(`Product with ID ${id} not found`, {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success({
         entity: ProductMapper.toDomain(ormEntity),
         expectedVersion: ormEntity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to find product for update`,
-        error,
-      );
+      return ErrorFactory.RepositoryError(`Failed to find product for update`, {
+        cause: error,
+      });
     }
   }
 
@@ -51,7 +52,9 @@ export class PostgresProductRepository implements ProductRepository {
       return await this.saveNormally(product);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError(`Failed to save the product`, error);
+      return ErrorFactory.RepositoryError(`Failed to save the product`, {
+        cause: error,
+      });
     }
   }
 
@@ -103,11 +106,13 @@ export class PostgresProductRepository implements ProductRepository {
   ): Promise<Result<Product, RepositoryError>> {
     const existing = await this.ormRepo.findOne({ where: { id } });
     if (!existing) {
-      return ErrorFactory.RepositoryError(`${name} not found`);
+      return ErrorFactory.RepositoryError(`${name} not found`, {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return ErrorFactory.RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      { status: HttpStatus.CONFLICT },
+      { kind: ErrorKind.CONFLICT },
     );
   }
 
@@ -116,11 +121,16 @@ export class PostgresProductRepository implements ProductRepository {
       const ormEntity = await this.ormRepo.findOne({
         where: { id },
       });
-      if (!ormEntity) return ErrorFactory.RepositoryError('Product not found');
+      if (!ormEntity)
+        return ErrorFactory.RepositoryError('Product not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
 
       return Result.success<Product>(ProductMapper.toDomain(ormEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find the product`, error);
+      return ErrorFactory.RepositoryError(`Failed to find the product`, {
+        cause: error,
+      });
     }
   }
 
@@ -133,10 +143,9 @@ export class PostgresProductRepository implements ProductRepository {
       });
       return Result.success(ProductMapper.toDomainArray(ormEntities));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find products by IDs',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find products by IDs', {
+        cause: error,
+      });
     }
   }
 
@@ -147,7 +156,9 @@ export class PostgresProductRepository implements ProductRepository {
         ProductMapper.toDomainArray(ormEntities),
       );
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find products`, error);
+      return ErrorFactory.RepositoryError(`Failed to find products`, {
+        cause: error,
+      });
     }
   }
 
@@ -156,10 +167,9 @@ export class PostgresProductRepository implements ProductRepository {
       await this.ormRepo.delete(id);
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        `Failed to delete the product`,
-        error,
-      );
+      return ErrorFactory.RepositoryError(`Failed to delete the product`, {
+        cause: error,
+      });
     }
   }
 }

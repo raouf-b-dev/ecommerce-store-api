@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ListOrdersUsecase } from './list-orders.usecase';
 import {
   isFailure,
@@ -136,7 +137,7 @@ describe('ListOrdersUsecase', () => {
       });
 
       ResultAssertionHelper.assertResultFailure(result);
-      expect(result.error.statusCode).toBe(403);
+      expect(result.error.kind).toBe(ErrorKind.FORBIDDEN);
       expect(mockQueryService.list).not.toHaveBeenCalled();
     },
   );

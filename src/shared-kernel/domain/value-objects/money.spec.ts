@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../exceptions/error-kind';
+
 import { ErrorCode } from '../exceptions/error-code';
 import { DomainError } from '../exceptions/domain.error';
 import { ResultAssertionHelper } from '../../../testing';
@@ -31,7 +32,7 @@ describe('Money', () => {
       DomainError,
     );
     expect(result.error.code).toBe(ErrorCode.AMOUNT_INVALID);
-    expect(result.error.statusCode).toBe(HttpStatus.BAD_REQUEST);
+    expect(result.error.kind).toBe(ErrorKind.INVALID);
   });
 
   it('returns CURRENCY_INVALID when the currency is not an ISO 4217 code', () => {

@@ -45,6 +45,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
     isSystem: true,
     permissions: [
       'view_own_orders',
+      'cancel_own_orders',
       'view_own_payments',
       'manage_own_cart',
       'view_own_profile',

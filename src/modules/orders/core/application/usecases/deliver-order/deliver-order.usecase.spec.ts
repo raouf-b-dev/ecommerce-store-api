@@ -9,6 +9,9 @@ import {
 } from './deliver-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
@@ -60,9 +63,11 @@ describe('DeliverOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'not found',
-        RepositoryError,
+        'Order with id 999 not found',
+        UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
 
       expect(mockOrderRepository.findByIdForUpdate).toHaveBeenCalledWith(
         orderId,
@@ -247,8 +252,11 @@ describe('DeliverOrderUseCase', () => {
       });
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(5);
+      expect(result.value.id).toBe(shippedMultiItem.id);
+      expect(result.value.totalAmount).toEqual(expect.any(Number));
       expect(result.value.status).toBe(OrderStatus.DELIVERED);
+      expect(result.value).not.toHaveProperty('items');
+      expect(result.value).not.toHaveProperty('paymentId');
     });
   });
 });

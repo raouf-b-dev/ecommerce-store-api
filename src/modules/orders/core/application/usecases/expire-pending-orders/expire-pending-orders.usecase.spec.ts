@@ -1,5 +1,6 @@
 import {
   MockOrderRepository,
+  OrderDtoTestFactory,
   OrderTestFactory,
 } from 'src/modules/orders/testing';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -62,7 +63,12 @@ describe('ExpirePendingOrdersUseCase', () => {
     );
 
     mockCancelOrderUseCase.execute.mockResolvedValue(
-      Result.success(OrderTestFactory.createCancelledOrder({ id: 1 })),
+      Result.success(
+        OrderDtoTestFactory.createOrderMutationResult({
+          id: 1,
+          status: OrderStatus.CANCELLED,
+        }),
+      ),
     );
 
     const result = await useCase.execute({ expirationMinutes: 30 });
@@ -77,8 +83,14 @@ describe('ExpirePendingOrdersUseCase', () => {
     );
 
     expect(mockCancelOrderUseCase.execute).toHaveBeenCalledTimes(2);
-    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({ orderId: 1 });
-    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({ orderId: 2 });
+    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: 1,
+      callerContext: expect.objectContaining({ kind: 'system' }),
+    });
+    expect(mockCancelOrderUseCase.execute).toHaveBeenCalledWith({
+      orderId: 2,
+      callerContext: expect.objectContaining({ kind: 'system' }),
+    });
   });
 
   it('should return failure if repository fails to find orders', async () => {
@@ -112,7 +124,12 @@ describe('ExpirePendingOrdersUseCase', () => {
     mockCancelOrderUseCase.execute
       .mockResolvedValueOnce(Result.failure(new UseCaseError('Cancel failed')))
       .mockResolvedValueOnce(
-        Result.success(OrderTestFactory.createCancelledOrder({ id: 2 })),
+        Result.success(
+          OrderDtoTestFactory.createOrderMutationResult({
+            id: 2,
+            status: OrderStatus.CANCELLED,
+          }),
+        ),
       );
 
     const result = await useCase.execute({ expirationMinutes: 30 });

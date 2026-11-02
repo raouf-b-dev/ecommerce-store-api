@@ -48,7 +48,9 @@ export class CachedProductRepository implements ProductRepository {
 
       return Result.success(savedProduct);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to save product`, error);
+      return ErrorFactory.RepositoryError(`Failed to save product`, {
+        cause: error,
+      });
     }
   }
 
@@ -73,7 +75,9 @@ export class CachedProductRepository implements ProductRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find product`, error);
+      return ErrorFactory.RepositoryError(`Failed to find product`, {
+        cause: error,
+      });
     }
   }
 
@@ -122,10 +126,9 @@ export class CachedProductRepository implements ProductRepository {
 
       return Result.success(foundProducts);
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find products by IDs',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find products by IDs', {
+        cause: error,
+      });
     }
   }
 
@@ -180,7 +183,9 @@ export class CachedProductRepository implements ProductRepository {
 
       return Result.success(products);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to find all products`, error);
+      return ErrorFactory.RepositoryError(`Failed to find all products`, {
+        cause: error,
+      });
     }
   }
 
@@ -194,7 +199,9 @@ export class CachedProductRepository implements ProductRepository {
 
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError(`Failed to delete product`, error);
+      return ErrorFactory.RepositoryError(`Failed to delete product`, {
+        cause: error,
+      });
     }
   }
 }

@@ -5,18 +5,15 @@ import { RefundCheckoutPaymentUseCase } from '../../core/application/usecases/re
 import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
-
-export interface RefundPaymentJobData {
-  orderId: number;
-  paymentId: number;
-  amount: number;
-  reason: string;
-  correlationId?: string;
-}
+import { RefundPaymentCommand } from '../../core/application/commands/refund-payment.command';
+import {
+  RefundPaymentPayload,
+  toRefundPaymentCommand,
+} from '../../core/application/messaging/refund-payment.payload';
 
 @Injectable()
 export class RefundPaymentStep extends BaseJobHandler<
-  RefundPaymentJobData,
+  RefundPaymentPayload,
   void
 > {
   protected readonly logger = new Logger(RefundPaymentStep.name);
@@ -33,23 +30,32 @@ export class RefundPaymentStep extends BaseJobHandler<
   }
 
   protected async onExecute(
-    job: Job<RefundPaymentJobData>,
+    job: Job<RefundPaymentPayload>,
   ): Promise<Result<void, AppError>> {
-    const { paymentId, amount, reason } = job.data;
+    const commandResult = toRefundPaymentCommand(job.data);
+    if (isFailure(commandResult)) {
+      return commandResult;
+    }
+    const command = commandResult.value;
+    const amountLabel = refundAmountLabel(command);
+    this.logger.log(
+      `Refunding payment ${command.paymentId} for amount ${amountLabel}...`,
+    );
 
-    this.logger.log(`Refunding payment ${paymentId} for amount ${amount}...`);
-
-    const result = await this.refundPaymentUseCase.execute({
-      paymentId,
-      amount,
-      reason,
-    });
+    const result = await this.refundPaymentUseCase.execute(command);
 
     if (isFailure(result)) {
       return Result.failure(result.error);
     }
 
-    this.logger.log(`Payment ${paymentId} refunded.`);
+    this.logger.log(`Payment ${command.paymentId} refunded.`);
     return Result.success(undefined);
   }
+}
+
+function refundAmountLabel(command: RefundPaymentCommand): string {
+  if ('mode' in command) {
+    return 'remaining';
+  }
+  return command.amount.toDecimalString();
 }

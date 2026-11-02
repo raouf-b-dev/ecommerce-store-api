@@ -15,6 +15,7 @@ import { JobNames } from '../../../../infrastructure/jobs/job-names';
 import { FlowProducerService } from '../../../../infrastructure/queue/flow-producer.service';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { ApplicationLifecyclePort } from '../../../../shared-kernel/domain/interfaces/application-lifecycle.port';
+import { toRefundPayloadAmount } from '../../core/application/messaging/refund-payment.payload';
 
 @Injectable()
 export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
@@ -90,7 +91,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule checkout flow',
-        error,
+        { cause: error },
       );
     }
   }
@@ -147,7 +148,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule post-payment flow',
-        error,
+        { cause: error },
       );
     }
   }
@@ -176,7 +177,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule stock release',
-        error,
+        { cause: error },
       );
     }
   }
@@ -205,7 +206,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule order stock release',
-        error,
+        { cause: error },
       );
     }
   }
@@ -216,7 +217,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     try {
       const jobId = this.jobConfig.getJobId(
         JobNames.REFUND_PAYMENT,
-        `order-${props.orderId}`,
+        `payment-${props.paymentId}`,
       );
       const correlationId = this.correlation.getId();
 
@@ -226,8 +227,8 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
         data: {
           orderId: props.orderId,
           paymentId: props.paymentId,
-          amount: props.amount,
           reason: props.reason,
+          ...toRefundPayloadAmount(props),
           ...(correlationId ? { correlationId } : {}),
         },
         opts: {
@@ -240,7 +241,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
     } catch (error) {
       return ErrorFactory.InfrastructureError(
         'Failed to schedule payment refund',
-        error,
+        { cause: error },
       );
     }
   }
@@ -284,7 +285,7 @@ export class BullMqOrderScheduler implements OrderScheduler, OnModuleInit {
       }
       return ErrorFactory.InfrastructureError(
         'Failed to schedule pending orders expiration job',
-        error,
+        { cause: error },
       );
     }
   }

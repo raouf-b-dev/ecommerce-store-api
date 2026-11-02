@@ -6,6 +6,9 @@ import { Role } from '../../../domain/entities/role';
 import { MockUserRoleAssignmentRepository } from 'src/modules/authorization/testing/mocks/user-role-assignment.repository.mock';
 import { MockRoleRepository } from 'src/modules/authorization/testing/mocks/role-repository.mock';
 import { AuthorizationDtoFactory } from 'src/modules/authorization/testing/factories/authorization.dto.factory';
+import { ErrorCode } from 'src/shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from 'src/shared-kernel/domain/exceptions/error-kind';
+import { ErrorFactory } from 'src/shared-kernel/domain/exceptions/error.factory';
 
 describe('FindRoleByUserIdUseCase', () => {
   let usecase: FindRoleByUserIdUseCase;
@@ -27,7 +30,7 @@ describe('FindRoleByUserIdUseCase', () => {
       code: 'CUSTOMER',
       name: 'Customer',
       isSystem: true,
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -57,7 +60,7 @@ describe('FindRoleByUserIdUseCase', () => {
     expect(result.value).toEqual({
       id: 456,
       code: 'CUSTOMER',
-      permissions: ['view_own_profile', 'view_own_orders'],
+      permissions: ['view_own_profile', 'view_own_orders', 'cancel_own_orders'],
     });
   });
 
@@ -72,5 +75,24 @@ describe('FindRoleByUserIdUseCase', () => {
       result,
       'User role assignment not found',
     );
+    expect(result.error.code).toBe(ErrorCode.USER_ROLE_ASSIGNMENT_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
+  });
+
+  it('should return failure if role is not found', async () => {
+    userRoleAssignmentRepository.findByUserId.mockResolvedValue(
+      Result.success(assignment),
+    );
+    roleRepository.findById.mockResolvedValue(
+      ErrorFactory.RepositoryError('Role not found', {
+        kind: ErrorKind.NOT_FOUND,
+      }),
+    );
+
+    const result = await usecase.execute(123);
+
+    ResultAssertionHelper.assertResultFailure(result, 'Role not found');
+    expect(result.error.code).toBe(ErrorCode.ROLE_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 });

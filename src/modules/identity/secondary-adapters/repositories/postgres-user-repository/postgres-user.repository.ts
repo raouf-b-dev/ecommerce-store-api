@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -27,7 +28,7 @@ export class PostgresUserRepository implements UserRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to check if user exists by email',
-        error,
+        { cause: error },
       );
     }
   }
@@ -48,10 +49,9 @@ export class PostgresUserRepository implements UserRepository {
         expectedVersion: entity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find user for update',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find user for update', {
+        cause: error,
+      });
     }
   }
 
@@ -66,7 +66,9 @@ export class PostgresUserRepository implements UserRepository {
       return await this.saveNormally(user);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save user', error);
+      return ErrorFactory.RepositoryError('Failed to save user', {
+        cause: error,
+      });
     }
   }
 
@@ -126,7 +128,9 @@ export class PostgresUserRepository implements UserRepository {
       relations: { addresses: true },
     });
     if (!updated) {
-      return ErrorFactory.RepositoryError('User not found');
+      return ErrorFactory.RepositoryError('User not found', {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return Result.success(UserMapper.toDomain(updated));
   }
@@ -166,11 +170,13 @@ export class PostgresUserRepository implements UserRepository {
   ): Promise<RepositoryError> {
     const existing = await manager.findOne(entity, { where: { id } });
     if (!existing) {
-      return new RepositoryError(`${name} not found`);
+      return new RepositoryError(`${name} not found`, {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return new RepositoryError(
       `Optimistic lock failure for ${name} ${id}. Expected version ${expectedVersion}.`,
-      { status: HttpStatus.CONFLICT },
+      { kind: ErrorKind.CONFLICT },
     );
   }
 
@@ -186,7 +192,9 @@ export class PostgresUserRepository implements UserRepository {
       });
       return Result.success(entities.map(UserMapper.toDomain));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find all users', error);
+      return ErrorFactory.RepositoryError('Failed to find all users', {
+        cause: error,
+      });
     }
   }
 
@@ -201,10 +209,9 @@ export class PostgresUserRepository implements UserRepository {
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find user by email',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find user by email', {
+        cause: error,
+      });
     }
   }
 
@@ -217,7 +224,9 @@ export class PostgresUserRepository implements UserRepository {
       if (!entity) return Result.success(null);
       return Result.success(UserMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find user by id', error);
+      return ErrorFactory.RepositoryError('Failed to find user by id', {
+        cause: error,
+      });
     }
   }
 
@@ -226,7 +235,9 @@ export class PostgresUserRepository implements UserRepository {
       await this.repository.delete(id);
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete user', error);
+      return ErrorFactory.RepositoryError('Failed to delete user', {
+        cause: error,
+      });
     }
   }
 }

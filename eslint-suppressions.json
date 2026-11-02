@@ -120,11 +120,6 @@
       "count": 1
     }
   },
-  "src/modules/authorization/core/application/lifecycle/permission-system-data.initializer.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/modules/authorization/core/application/lifecycle/role-system-data.initializer.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -246,114 +241,6 @@
       "count": 1
     }
   },
-  "src/modules/orders/core/application/usecases/checkout/checkout.usecase.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/core/domain/entities/order-items.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
-  "src/modules/orders/core/domain/policies/order-workflow.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/core/domain/value-objects/order-status.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "src/modules/orders/primary-adapters/jobs/create-order.job.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/primary-adapters/jobs/reserve-stock-job/reserve-stock.job.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "src/modules/orders/primary-adapters/jobs/reserve-stock-job/reserve-stock.job.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/secondary-adapters/repositories/postgres-order-repository/postgres.order-repository.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/orders/testing/factories/order-entity.factory.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "src/modules/payments/core/application/queries/results/payment-detail.result.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/application/services/handle-payment-webhook/handle-payment-webhook.service.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/application/usecases/capture-payment/capture-payment.usecase.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/application/usecases/verify-payment/verify-payment.usecase.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/domain/value-objects/payment-status.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "src/modules/payments/core/domain/value-objects/payment-status.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/core/domain/value-objects/refund-status.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/primary-adapters/processors/payments.processor.spec.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/secondary-adapters/persistence/mappers/refund.mapper.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/secondary-adapters/repositories/postgres-payment-repository/postgres.payment-repository.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/modules/payments/testing/factories/refund-entity.test.factory.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "src/modules/products/core/application/seed/seed-demo-catalog.usecase.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -377,12 +264,12 @@
       "count": 2
     }
   },
-  "src/shared-kernel/infra/http/request.helpers.spec.ts": {
+  "src/shared-kernel/helpers/http/request.helpers.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
-  "src/shared-kernel/infra/lang/app-version.spec.ts": {
+  "src/shared-kernel/helpers/lang/app-version.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }

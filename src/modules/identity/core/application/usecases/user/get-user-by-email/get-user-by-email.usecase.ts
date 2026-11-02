@@ -1,3 +1,5 @@
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
 // src/modules/customers/application/usecases/get-customer/get-customer.usecase.ts
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
@@ -9,9 +11,9 @@ import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptio
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { UserRepository } from 'src/modules/identity/core/domain/repositories/user.repository';
 import { IUser } from 'src/modules/identity/core/domain/interfaces/user.interface';
+import { normalizeEmail } from 'src/modules/identity/core/domain/value-objects/email';
 
 import { CallerContext } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
-import { HttpStatus } from '@nestjs/common';
 
 import {
   USER_ACCESS_PERMISSIONS,
@@ -37,18 +39,18 @@ export class GetUserByEmailUseCase extends UseCase<
     input: GetUserByEmailInput,
   ): Promise<Result<IUser, UseCaseError>> {
     const { email, callerContext } = input;
+    const normalizedEmail = normalizeEmail(email);
 
-    const userResult = await this.userRepository.findByEmail(email);
+    const userResult = await this.userRepository.findByEmail(normalizedEmail);
 
     if (isFailure(userResult)) return userResult;
 
     const user = userResult.value;
     if (!user) {
-      return ErrorFactory.UseCaseError(
-        'User with the given email not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError('User with the given email not found', {
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
     }
 
     if (
@@ -60,8 +62,7 @@ export class GetUserByEmailUseCase extends UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Access denied: You do not have permission to view this profile',
-        null,
-        HttpStatus.FORBIDDEN,
+        { kind: ErrorKind.FORBIDDEN },
       );
     }
 

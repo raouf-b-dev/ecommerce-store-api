@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DomainEventPublisher } from '../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { toError } from '../../shared-kernel/infra/lang/error.utils';
+import { toError } from '../../shared-kernel/helpers/lang/error.utils';
 
 /**
  * Infrastructure adapter - wraps @nestjs/event-emitter for

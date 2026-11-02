@@ -1,6 +1,7 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { MockInventoryRepository } from 'src/modules/inventory/testing';
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus } from '@nestjs/common';
+
 import { SeedDemoInventoryUseCase } from './seed-demo-inventory.usecase';
 import { InventoryRepository } from '../../domain/repositories/inventory.repository';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -37,7 +38,7 @@ describe('SeedDemoInventoryUseCase', () => {
     inventoryRepository.findByProductId.mockResolvedValue(
       Result.failure(
         new RepositoryError('Inventory not found', {
-          status: HttpStatus.NOT_FOUND,
+          kind: ErrorKind.NOT_FOUND,
         }),
       ),
     );
@@ -89,7 +90,7 @@ describe('SeedDemoInventoryUseCase', () => {
     inventoryRepository.findByProductId.mockResolvedValue(
       Result.failure(
         new RepositoryError('Inventory not found', {
-          status: HttpStatus.NOT_FOUND,
+          kind: ErrorKind.NOT_FOUND,
         }),
       ),
     );

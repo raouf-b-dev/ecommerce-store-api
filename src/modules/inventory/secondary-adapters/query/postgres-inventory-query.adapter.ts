@@ -133,7 +133,7 @@ export class PostgresInventoryQueryAdapter implements InventoryQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch inventory list: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -166,7 +166,7 @@ export class PostgresInventoryQueryAdapter implements InventoryQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch inventory for product ID ${productId}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }

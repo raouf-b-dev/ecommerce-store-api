@@ -18,6 +18,12 @@ export const ORDER_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
   viewOwn: 'view_own_orders',
 };
 
+/** Cancel (and similar mutations): manage_orders for staff, cancel_own_orders for the owner. */
+export const ORDER_MUTATION_PERMISSIONS: OwnedResourceMutationPermissions = {
+  manageAll: 'manage_orders',
+  manageOwn: 'cancel_own_orders',
+};
+
 export const PAYMENT_ACCESS_PERMISSIONS: OwnedResourcePermissions = {
   viewAll: 'view_all_payments',
   viewOwn: 'view_own_payments',

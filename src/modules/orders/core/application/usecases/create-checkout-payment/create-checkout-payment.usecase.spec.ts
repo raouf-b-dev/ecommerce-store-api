@@ -4,7 +4,7 @@ import { PaymentGateway } from '../../ports/payment.gateway';
 import { PaymentMethodType } from '../../../../../../shared-kernel/domain/value-objects/payment-method';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../../../testing';
 
 describe('CreateCheckoutPaymentUseCase', () => {
@@ -56,7 +56,7 @@ describe('CreateCheckoutPaymentUseCase', () => {
   it('returns failure from PaymentGateway unchanged', async () => {
     const failure = ErrorFactory.RepositoryError(
       'Pending payment already exists for order',
-      { status: StatusCode.CONFLICT, retryable: true },
+      { kind: ErrorKind.CONFLICT, retryable: true },
     );
     createPaymentIntent.mockResolvedValue(failure);
 

@@ -6,6 +6,7 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 @Injectable()
 export class CancelOrderStep extends BaseJobHandler<
@@ -40,6 +41,7 @@ export class CancelOrderStep extends BaseJobHandler<
     const result = await this.cancelOrderUseCase.execute({
       orderId,
       isSagaCompensation: true,
+      callerContext: SYSTEM_CALLER_CONTEXT,
     });
 
     if (isFailure(result)) {

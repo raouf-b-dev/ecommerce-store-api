@@ -46,10 +46,9 @@ export class HandlePaymentFailedUseCase extends UseCase<
     // 1. Find order
     const orderResult = await this.orderRepository.findByIdForUpdate(orderId);
     if (isFailure(orderResult)) {
-      return ErrorFactory.UseCaseError(
-        `Order not found: ${orderId}`,
-        orderResult.error,
-      );
+      return ErrorFactory.UseCaseError(`Order not found: ${orderId}`, {
+        cause: orderResult.error,
+      });
     }
 
     const { entity: order, expectedVersion } = orderResult.value;
@@ -68,7 +67,7 @@ export class HandlePaymentFailedUseCase extends UseCase<
     if (isFailure(failResult)) {
       return ErrorFactory.UseCaseError(
         `Failed to mark payment failed for order ${orderId}`,
-        failResult.error,
+        { cause: failResult.error },
       );
     }
 

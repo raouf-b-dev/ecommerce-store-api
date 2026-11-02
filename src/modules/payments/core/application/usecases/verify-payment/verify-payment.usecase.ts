@@ -7,12 +7,13 @@ import {
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
-import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   PAYMENT_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+import { paymentNotFoundError } from '../../services/payment-not-found';
 
 export interface VerifyPaymentInput {
   paymentId: number;
@@ -35,13 +36,16 @@ export class VerifyPaymentUseCase extends UseCase<
     const { paymentId, callerContext } = input;
     const result = await this.paymentRepository.findById(paymentId);
 
-    if (isFailure(result)) return result;
+    if (isFailure(result)) {
+      if (result.error.kind === ErrorKind.NOT_FOUND) {
+        return paymentNotFoundError(paymentId);
+      }
+      return result;
+    }
 
     const payment = result.value;
     if (!payment) {
-      return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
-      );
+      return paymentNotFoundError(paymentId);
     }
 
     if (
@@ -51,9 +55,7 @@ export class VerifyPaymentUseCase extends UseCase<
         PAYMENT_ACCESS_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(
-        `Payment with id ${paymentId} not found`,
-      );
+      return paymentNotFoundError(paymentId);
     }
 
     return Result.success(payment.toPrimitives());

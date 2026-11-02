@@ -1,6 +1,7 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { HttpStatus } from '@nestjs/common';
+
 import { Repository, DataSource } from 'typeorm';
 import { OrderEntity } from '../../orm/order.schema';
 import { PostgresOrderRepository } from './postgres.order-repository';
@@ -28,6 +29,7 @@ describe('PostgresOrderRepository', () => {
   beforeEach(async () => {
     mockOrmRepo = createMockRepository<OrderEntity>();
     mockQueryBuilder = createMockQueryBuilder<OrderEntity>();
+    mockOrmRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
     mockTransactionManager = createMockTransactionManager({
       mockQueryBuilder,
     });
@@ -83,7 +85,7 @@ describe('PostgresOrderRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+      expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     });
 
     it('should return error on DB failure', async () => {
@@ -110,9 +112,7 @@ describe('PostgresOrderRepository', () => {
 
   describe('listOrders', () => {
     it('should list orders successfully', async () => {
-      (mockOrmRepo.createQueryBuilder().getMany as jest.Mock).mockResolvedValue(
-        [testData.orderEntity],
-      );
+      mockQueryBuilder.getMany.mockResolvedValue([testData.orderEntity]);
 
       const result = await repository.listOrders({});
 

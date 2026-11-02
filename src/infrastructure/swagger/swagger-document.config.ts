@@ -1,5 +1,5 @@
 import { DocumentBuilder } from '@nestjs/swagger';
-import { getAppVersion } from '../../shared-kernel/infra/lang/app-version';
+import { getAppVersion } from '../../shared-kernel/helpers/lang/app-version';
 
 export function buildSwaggerDocumentConfig(): ReturnType<
   DocumentBuilder['build']

@@ -1,4 +1,5 @@
-import { Injectable, HttpStatus, Logger } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -25,11 +26,9 @@ export class DeactivateProductUseCase extends UseCase<
       await this.productRepository.findByIdForUpdate(productId);
 
     if (isFailure(productResult)) {
-      return ErrorFactory.UseCaseError(
-        productResult.error.message,
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return ErrorFactory.UseCaseError(productResult.error.message, {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
 
     const { entity: product, expectedVersion } = productResult.value;

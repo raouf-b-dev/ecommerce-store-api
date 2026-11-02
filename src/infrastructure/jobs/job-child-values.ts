@@ -1,4 +1,4 @@
-import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../shared-kernel/helpers/lang/is-record';
 
 export function firstChildValue(
   childrenValues: Record<string, unknown>,

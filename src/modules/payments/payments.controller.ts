@@ -21,6 +21,7 @@ import {
   ApiOkResponse,
   ApiExtraModels,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { nullableResponseSchema } from '../../infrastructure/swagger/nullable-response.schema';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
@@ -120,6 +121,11 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   @ApiOkResponse({ type: PaymentDetailResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Payment not found',
+    type: ErrorResponseDto,
+  })
   async getPayment(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,
@@ -163,6 +169,11 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify payment status with payment gateway' })
   @ApiResponse({ status: 200, type: PaymentResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Payment not found',
+    type: ErrorResponseDto,
+  })
   async verifyPayment(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,

@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
@@ -104,7 +104,7 @@ describe('ResetDemoUseCase', () => {
 
     expect(second).toMatchObject({
       isFailure: true,
-      error: { statusCode: StatusCode.CONFLICT },
+      error: { kind: ErrorKind.CONFLICT },
     });
     expect(runner.run).toHaveBeenCalledTimes(1);
 

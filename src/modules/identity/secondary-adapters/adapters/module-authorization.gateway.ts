@@ -17,11 +17,10 @@ export class ModuleAuthorizationGateway extends AuthorizationGateway {
     const result = await this.assignRoleUseCase.execute({ userId, roleCode });
     if (isFailure(result)) {
       return Result.failure(
-        new InfrastructureError(
-          result.error.message,
-          result.error.cause,
-          result.error.statusCode,
-        ),
+        new InfrastructureError(result.error.message, {
+          cause: result.error.cause,
+          kind: result.error.kind,
+        }),
       );
     }
     return Result.success(undefined);

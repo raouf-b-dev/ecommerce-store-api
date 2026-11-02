@@ -13,7 +13,10 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
     description: 'Create, update, and delete products',
   },
   { code: 'view_all_products', description: 'View all products' },
-  { code: 'manage_orders', description: 'Create, update, and delete orders' },
+  {
+    code: 'manage_orders',
+    description: 'Manage all orders: status transitions and cancel',
+  },
   { code: 'view_all_orders', description: 'View all orders' },
   { code: 'view_own_profile', description: 'View own customer profile' },
   {
@@ -39,6 +42,7 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
   { code: 'manage_roles', description: 'Manage custom roles' },
   { code: 'manage_carts', description: 'Manage customer carts' },
   { code: 'view_own_orders', description: 'View own orders' },
+  { code: 'cancel_own_orders', description: 'Cancel own orders' },
   { code: 'view_own_payments', description: 'View own payment history' },
   { code: 'manage_own_cart', description: 'Read and modify own cart' },
 ];

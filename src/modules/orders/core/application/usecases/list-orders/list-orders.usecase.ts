@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { OrderQueryService } from '../../ports/order-query.service';
@@ -7,7 +8,7 @@ import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ListOrdersQuery } from '../../queries/list-orders.query';
 import { OrderListItemDTO } from '../../queries/results/order-list-item.result';
 import { PaginatedQueryResult } from '../../../../../../shared-kernel/domain/interfaces/paginated-query-result.interface';
-import { HttpStatus } from '@nestjs/common';
+
 import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
@@ -54,8 +55,7 @@ export class ListOrdersUsecase implements UseCase<
     ) {
       return ErrorFactory.UseCaseError(
         'Filtering orders by customer contact data requires view_customer_pii',
-        null,
-        HttpStatus.FORBIDDEN,
+        { kind: ErrorKind.FORBIDDEN },
       );
     }
 
@@ -66,10 +66,9 @@ export class ListOrdersUsecase implements UseCase<
 
     const ordersResult = await this.orderQueryService.list(filteredQuery);
     if (ordersResult.isFailure) {
-      return ErrorFactory.UseCaseError(
-        ordersResult.error.message,
-        ordersResult.error,
-      );
+      return ErrorFactory.UseCaseError(ordersResult.error.message, {
+        cause: ordersResult.error,
+      });
     }
 
     return Result.success({

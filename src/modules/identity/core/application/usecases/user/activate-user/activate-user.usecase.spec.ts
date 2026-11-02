@@ -6,6 +6,8 @@ import { ActivateUserUseCase } from './activate-user.usecase';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { DomainError } from '../../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('ActivateUserUseCase', () => {
   let usecase: ActivateUserUseCase;
@@ -48,8 +50,10 @@ describe('ActivateUserUseCase', () => {
 
     ResultAssertionHelper.assertResultFailure(
       result,
-      'User not found',
+      'User with id 999 not found',
       UseCaseError,
     );
+    expect(result.error.code).toBe(ErrorCode.USER_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
   });
 });

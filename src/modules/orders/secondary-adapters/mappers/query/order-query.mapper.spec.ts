@@ -78,6 +78,8 @@ describe('OrderQueryMapper', () => {
         subtotal: 120,
         imageUrl: 'https://cdn.example.com/keyboard.webp',
       });
+      expect(result.totalAmount).toBe(120);
+      expect(result).not.toHaveProperty('totalPrice');
     });
 
     it('returns null user and shipping fields when details are missing', () => {

@@ -6,19 +6,60 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import { PaymentRepository } from '../../../domain/repositories/payment.repository';
+import { Payment } from '../../../domain/entities/payment';
 import { Refund } from '../../../domain/entities/refund';
 import { PaymentProvider } from '../../ports/payment-provider';
 import { IPayment } from '../../../domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { DomainEventPublisher } from '../../../../../../shared-kernel/domain/interfaces/domain-event-publisher';
-import { ProcessRefundCommand } from '../../commands/process-refund.command';
+import {
+  isProcessRefundHttpCommand,
+  isRemainingRefund,
+  ProcessRefundUseCaseInput,
+} from '../../commands/process-refund.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
 import { providerMismatchError } from '../../errors/provider-mismatch.error';
 
+function isPositiveAmountMissing(input: ProcessRefundUseCaseInput): boolean {
+  if (isProcessRefundHttpCommand(input)) {
+    return input.majorUnits <= 0;
+  }
+  if (isRemainingRefund(input)) {
+    return false;
+  }
+  return input.amount.amount <= 0;
+}
+
+/**
+ * Resolve the refund Money from the use-case input and the loaded payment.
+ * HTTP major units convert once here with payment.currency (Fowler Money).
+ */
+function resolveRefundMoney(
+  input: ProcessRefundUseCaseInput,
+  payment: Payment,
+): Result<Money, AppError> {
+  if (isProcessRefundHttpCommand(input)) {
+    return Money.fromMajorUnits(input.majorUnits, payment.currency);
+  }
+
+  if (isRemainingRefund(input)) {
+    return Money.create(payment.remainingAmount, payment.currency);
+  }
+
+  if (input.amount.currency !== payment.currency) {
+    return ErrorFactory.UseCaseError(
+      `Refund currency mismatch: expected ${payment.currency}, received ${input.amount.currency}`,
+      { code: ErrorCode.CURRENCY_MISMATCH },
+    );
+  }
+  return Result.success(input.amount);
+}
+
 @Injectable()
 export class ProcessRefundUseCase extends UseCase<
-  ProcessRefundCommand,
+  ProcessRefundUseCaseInput,
   IPayment,
   AppError
 > {
@@ -31,11 +72,11 @@ export class ProcessRefundUseCase extends UseCase<
   }
 
   async execute(
-    command: ProcessRefundCommand,
+    input: ProcessRefundUseCaseInput,
   ): Promise<Result<IPayment, AppError>> {
-    const { paymentId, amount, reason } = command;
+    const { paymentId, reason } = input;
 
-    if (amount <= 0) {
+    if (isPositiveAmountMissing(input)) {
       return ErrorFactory.UseCaseError(
         'Refund amount must be greater than zero',
       );
@@ -50,9 +91,18 @@ export class ProcessRefundUseCase extends UseCase<
       return Result.success(payment.toPrimitives());
     }
 
-    const moneyResult = Money.fromDecimal(amount, payment.currency);
+    if (
+      !isProcessRefundHttpCommand(input) &&
+      isRemainingRefund(input) &&
+      payment.remainingAmount <= 0
+    ) {
+      return Result.success(payment.toPrimitives());
+    }
+
+    const moneyResult = resolveRefundMoney(input, payment);
     if (isFailure(moneyResult)) return moneyResult;
-    const refundMinorUnits = moneyResult.value.amount;
+    const refundMoney = moneyResult.value;
+    const refundMinorUnits = refundMoney.amount;
 
     if (!payment.providerId.equals(this.paymentProvider.id)) {
       return providerMismatchError(
@@ -77,7 +127,6 @@ export class ProcessRefundUseCase extends UseCase<
       return ErrorFactory.UseCaseError('Payment has no ID');
     }
 
-    // 1. Validate transaction ID for provider refund
     if (!payment.transactionId) {
       return ErrorFactory.UseCaseError(
         'Cannot refund payment without transaction ID',
@@ -88,7 +137,7 @@ export class ProcessRefundUseCase extends UseCase<
 
     const providerResult = await this.paymentProvider.refund({
       providerReference: payment.transactionId,
-      amount: moneyResult.value,
+      amount: refundMoney,
       idempotencyKey,
     });
     if (isFailure(providerResult)) return providerResult;

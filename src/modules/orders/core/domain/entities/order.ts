@@ -12,11 +12,15 @@ import { IShippingAddress } from '../interfaces/shipping-address.interface';
 import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Result } from '../../../../../shared-kernel/domain/result';
+import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import {
   PaymentMethodType,
   isPaymentMethodType,
 } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { orderCannotBeCancelledError } from '../errors/order-cannot-be-cancelled.error';
 
 export interface OrderProps {
   id: number | null;
@@ -31,6 +35,17 @@ export interface OrderProps {
   createdAt: Date | null;
   updatedAt: Date | null;
 }
+
+/**
+ * How an incoming completed payment relates to this order's state.
+ * Used by the payment-completed handler; no actor or infrastructure.
+ */
+export type IncomingPaymentClassification =
+  | { action: 'confirm' }
+  | { action: 'record-late' }
+  | { action: 'surplus' }
+  | { action: 'already-applied' }
+  | { action: 'unknown' };
 
 export class Order implements IOrder {
   private _id: number | null;
@@ -160,6 +175,23 @@ export class Order implements IOrder {
     return this._pricing;
   }
 
+  /**
+   * Total that may be refunded for this order. Rejects a non-positive total.
+   */
+  refundableTotal(): Result<Money, DomainError> {
+    const total = this.getPricing().getTotalPriceMoney();
+    if (!total.isPositive()) {
+      return ErrorFactory.DomainError(
+        'Refund amount must be greater than zero',
+        {
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
+          kind: ErrorKind.RULE_VIOLATION,
+        },
+      );
+    }
+    return Result.success(total);
+  }
+
   // ==================== PAYMENT ASSOCIATION ====================
 
   /**
@@ -202,6 +234,75 @@ export class Order implements IOrder {
 
     this._paymentId = paymentId;
     return this.changeStatus(OrderStatus.CONFIRMED);
+  }
+
+  /**
+   * Classifies an incoming completed paymentId against this order's
+   * own status and recorded paymentId. Pure query: no side effects.
+   */
+  classifyIncomingPayment(paymentId: number): IncomingPaymentClassification {
+    switch (this._status.value) {
+      case OrderStatus.PENDING_PAYMENT:
+        return { action: 'confirm' };
+
+      case OrderStatus.CANCELLED:
+        if (this._paymentId === null || this._paymentId === paymentId) {
+          return { action: 'record-late' };
+        }
+        return { action: 'surplus' };
+
+      case OrderStatus.PAYMENT_FAILED:
+        return { action: 'surplus' };
+
+      case OrderStatus.CONFIRMED:
+      case OrderStatus.PROCESSING:
+      case OrderStatus.SHIPPED:
+      case OrderStatus.DELIVERED:
+      case OrderStatus.REFUNDED:
+        if (this._paymentId === null) {
+          return { action: 'unknown' };
+        }
+        if (this._paymentId === paymentId) {
+          return { action: 'already-applied' };
+        }
+        return { action: 'surplus' };
+
+      default: {
+        const _exhaustive: never = this._status.value;
+        return _exhaustive;
+      }
+    }
+  }
+
+  /**
+   * Records a payment that completed after the order was cancelled.
+   * Keeps status CANCELLED. Idempotent for the same paymentId so a
+   * retried payment-completed event can still schedule the refund.
+   * Only for the record-late case; surplus payments must not call this.
+   */
+  recordPaymentAfterCancellation(paymentId: number): Result<void, DomainError> {
+    if (!this._status.isCancelled()) {
+      return ErrorFactory.DomainError(
+        'Payment after cancellation can only be recorded when the order is cancelled',
+      );
+    }
+
+    if (!paymentId) {
+      return ErrorFactory.DomainError('Payment ID is required');
+    }
+
+    if (this._paymentId !== null) {
+      if (this._paymentId !== paymentId) {
+        return ErrorFactory.DomainError(
+          'Order already has a different payment recorded',
+        );
+      }
+      return Result.success(undefined);
+    }
+
+    this._paymentId = paymentId;
+    this._updatedAt = new Date();
+    return Result.success(undefined);
   }
 
   markPaymentFailed(): Result<void, DomainError> {
@@ -261,6 +362,20 @@ export class Order implements IOrder {
     return this.changeStatus(OrderStatus.DELIVERED);
   }
 
+  /** True once fulfilment has begun (PROCESSING and later active states). */
+  isFulfilmentStarted(): boolean {
+    return (
+      this._status.isProcessing() ||
+      this._status.isShipped() ||
+      this._status.isDelivered() ||
+      this._status.isRefunded()
+    );
+  }
+
+  /**
+   * True when cancel is possible for the current status at all
+   * (PENDING_PAYMENT, PAYMENT_FAILED, CONFIRMED, PROCESSING).
+   */
   isCancellable(): boolean {
     return (
       this._status.isPendingPayment() ||
@@ -272,10 +387,7 @@ export class Order implements IOrder {
 
   cancel(reason?: string): Result<void, DomainError> {
     if (!this.isCancellable()) {
-      return ErrorFactory.DomainError(
-        'Order cannot be cancelled in current state',
-        { status: 409 },
-      );
+      return orderCannotBeCancelledError();
     }
 
     if (reason) {

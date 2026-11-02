@@ -165,6 +165,73 @@ describe('RoleSystemDataInitializer', () => {
     expect(matching.code).toBe(SYSTEM_ROLES[0].code);
   });
 
+  it('links cancel_own_orders onto an existing customer role without touching custom roles', async () => {
+    const { SYSTEM_ROLES, SystemRoleCode } =
+      await import('../../domain/reference-data/system-roles');
+    const customerDef = SYSTEM_ROLES.find(
+      (role) => role.code === SystemRoleCode.CUSTOMER,
+    );
+    if (!customerDef) throw new Error('CUSTOMER system role missing');
+    const staleCustomerPermissions = customerDef.permissions.filter(
+      (code) => code !== 'cancel_own_orders',
+    );
+    const customRoleCode = 'STORE_MANAGER';
+
+    mockRoleRepo.findByCode.mockImplementation((code: string) => {
+      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code));
+      if (!def) {
+        return Promise.resolve(Result.success(null));
+      }
+      const permissions =
+        def.code === SystemRoleCode.CUSTOMER
+          ? [...staleCustomerPermissions]
+          : [...def.permissions];
+      return Promise.resolve(
+        Result.success(
+          AuthorizationDtoFactory.buildEntity({
+            id: 1,
+            code: def.code,
+            name: def.name,
+            isSystem: true,
+            permissions,
+          }),
+        ),
+      );
+    });
+    mockRoleRepo.update.mockResolvedValue(Result.success<void>(undefined));
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockRoleRepo.update).toHaveBeenCalledTimes(1);
+    const updatedCustomer = mockRoleRepo.update.mock.calls[0][0];
+    expect(updatedCustomer.code).toBe(SystemRoleCode.CUSTOMER);
+    expect(updatedCustomer.permissions.has('cancel_own_orders')).toBe(true);
+    expect(updatedCustomer.permissions.has('view_own_orders')).toBe(true);
+    expect(mockRoleRepo.findByCode).not.toHaveBeenCalledWith(customRoleCode);
+
+    mockRoleRepo.findByCode.mockImplementation((code: string) => {
+      const def = SYSTEM_ROLES.find((r) => String(r.code) === String(code));
+      if (!def) throw new Error(`System role missing: ${code}`);
+      return Promise.resolve(
+        Result.success(
+          AuthorizationDtoFactory.buildEntity({
+            id: 1,
+            code: def.code,
+            name: def.name,
+            isSystem: true,
+            permissions: [...def.permissions],
+          }),
+        ),
+      );
+    });
+    mockRoleRepo.update.mockClear();
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockRoleRepo.update).not.toHaveBeenCalled();
+    expect(mockRoleRepo.findByCode).not.toHaveBeenCalledWith(customRoleCode);
+  });
+
   it('should skip role and continue if findByCode fails', async () => {
     const { SYSTEM_ROLES } =
       await import('../../domain/reference-data/system-roles');

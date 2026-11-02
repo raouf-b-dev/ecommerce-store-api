@@ -9,6 +9,7 @@ import { OrderRepository } from '../../../domain/repositories/order-repository';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
 import { CancelOrderUseCase } from '../cancel-order/cancel-order.usecase';
+import { SYSTEM_CALLER_CONTEXT } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
 export interface ExpirePendingOrdersCommand {
   expirationMinutes: number;
@@ -45,10 +46,9 @@ export class ExpirePendingOrdersUseCase implements UseCase<
     );
 
     if (isFailure(pendingOrdersResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to fetch pending orders',
-        pendingOrdersResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to fetch pending orders', {
+        cause: pendingOrdersResult.error,
+      });
     }
 
     const pendingOrders = pendingOrdersResult.value;
@@ -64,6 +64,7 @@ export class ExpirePendingOrdersUseCase implements UseCase<
 
       const cancelResult = await this.cancelOrderUseCase.execute({
         orderId: order.id,
+        callerContext: SYSTEM_CALLER_CONTEXT,
       });
 
       if (isFailure(cancelResult)) {

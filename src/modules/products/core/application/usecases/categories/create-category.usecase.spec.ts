@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { MockCategoryRepository } from 'src/modules/products/testing';
 import { CreateCategoryUseCase } from './create-category.usecase';
 import { ResultAssertionHelper } from '../../../../../../testing';
@@ -50,7 +51,7 @@ describe('CreateCategoryUseCase', () => {
       'Category with name Electronics already exists',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 
@@ -67,7 +68,7 @@ describe('CreateCategoryUseCase', () => {
       'Category with slug electronics already exists',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     expect(mockRepository.save).not.toHaveBeenCalled();
   });
 

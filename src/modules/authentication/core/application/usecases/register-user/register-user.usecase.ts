@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -35,18 +36,15 @@ export class RegisterUserUseCase extends UseCase<
       command.email,
     );
     if (isFailure(existsResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to verify email availability',
-        existsResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to verify email availability', {
+        cause: existsResult.error,
+        kind: ErrorKind.INTERNAL,
+      });
     }
     if (existsResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User with this email already exists',
-        null,
-        HttpStatus.CONFLICT,
-      );
+      return ErrorFactory.UseCaseError('User with this email already exists', {
+        kind: ErrorKind.CONFLICT,
+      });
     }
 
     const passwordHash = await this.passwordHasher.hash(command.password);
@@ -72,11 +70,10 @@ export class RegisterUserUseCase extends UseCase<
     );
     if (isFailure(credentialResult)) {
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
-      return ErrorFactory.UseCaseError(
-        'Failed to complete registration',
-        credentialResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to complete registration', {
+        cause: credentialResult.error,
+        kind: ErrorKind.INTERNAL,
+      });
     }
 
     // Step 3: Assign default role
@@ -86,11 +83,10 @@ export class RegisterUserUseCase extends UseCase<
     if (isFailure(roleResult)) {
       await this.credentialRepository.deleteByUserId(registeredUser.id); // compensate step 2
       await this.identityGateway.deleteUser(registeredUser.id); // compensate step 1
-      return ErrorFactory.UseCaseError(
-        'Failed to complete registration',
-        roleResult.error,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return ErrorFactory.UseCaseError('Failed to complete registration', {
+        cause: roleResult.error,
+        kind: ErrorKind.INTERNAL,
+      });
     }
 
     return Result.success(registeredUser);

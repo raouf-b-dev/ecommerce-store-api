@@ -52,31 +52,54 @@ export class PermissionSystemDataInitializer implements OnApplicationBootstrap {
       return;
     }
 
-    const existingCodes = existingResult.value.map((p) => p.code);
-    const toCreate = SYSTEM_PERMISSIONS.filter(
-      (sp) => !existingCodes.includes(sp.code),
+    const existingByCode = new Map(
+      existingResult.value.map((permission) => [permission.code, permission]),
     );
 
-    if (toCreate.length > 0) {
-      const permissions = toCreate.map((sp) => {
-        return new Permission({
-          id: 0,
-          code: sp.code,
-          description: sp.description,
-        });
-      });
+    const toSave: Permission[] = [];
+    let createdCount = 0;
+    let updatedCount = 0;
 
-      const saveResult = await this.permissionRepo.saveMany(permissions);
-      if (saveResult.isSuccess) {
-        this.logger.log(`Created ${toCreate.length} system permissions.`);
-      } else {
-        this.logInitFailure(
-          'Failed to save system permissions.',
-          saveResult.error.message,
+    for (const definition of SYSTEM_PERMISSIONS) {
+      const existing = existingByCode.get(definition.code);
+      if (!existing) {
+        toSave.push(
+          new Permission({
+            id: 0,
+            code: definition.code,
+            description: definition.description,
+          }),
         );
+        createdCount += 1;
+        continue;
       }
-    } else {
+
+      if (existing.applyCatalogDescription(definition.description)) {
+        toSave.push(existing);
+        updatedCount += 1;
+      }
+    }
+
+    if (toSave.length === 0) {
       this.logger.log('All system permissions are already up to date.');
+      return;
+    }
+
+    if (this.lifecycle.isShuttingDown) {
+      this.logger.debug('Aborting system permission init during shutdown');
+      return;
+    }
+
+    const saveResult = await this.permissionRepo.saveMany(toSave);
+    if (saveResult.isSuccess) {
+      this.logger.log(
+        `Synced system permissions (created ${createdCount}, updated ${updatedCount}).`,
+      );
+    } else {
+      this.logInitFailure(
+        'Failed to save system permissions.',
+        saveResult.error.message,
+      );
     }
   }
 

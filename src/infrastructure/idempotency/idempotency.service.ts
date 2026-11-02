@@ -5,7 +5,7 @@ import {
   IdempotencyResult,
 } from '../../shared-kernel/domain/stores/idempotency.store';
 import { CachePort } from '../../shared-kernel/domain/interfaces/cache.port';
-import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../shared-kernel/helpers/lang/is-record';
 
 type IdempotencyStatus = typeof IDEMPOTENCY_REDIS.STATUS.IN_PROGRESS;
 

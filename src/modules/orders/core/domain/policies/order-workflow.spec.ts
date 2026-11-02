@@ -30,7 +30,7 @@ const forbiddenOrderWorkflowTransitions: [OrderStatus, OrderStatus][] =
   allStatuses.flatMap((from) =>
     allStatuses
       .filter((to) => from !== to && !allowedSet.has(`${from}->${to}`))
-      .map((to) => [from, to] as [OrderStatus, OrderStatus]),
+      .map((to): [OrderStatus, OrderStatus] => [from, to]),
   );
 
 const terminalOrderStatuses: OrderStatus[] = [

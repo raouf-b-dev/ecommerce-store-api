@@ -56,5 +56,17 @@ describe('CheckEmailExistsUseCase', () => {
       );
       expect(mockUserRepository.existsByEmail).toHaveBeenCalledWith(email);
     });
+
+    it('looks up the normalized email when input is mixed-case', async () => {
+      mockUserRepository.existsByEmail.mockResolvedValue(Result.success(true));
+
+      const result = await useCase.execute('MixCase-9@Test.local');
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value).toBe(true);
+      expect(mockUserRepository.existsByEmail).toHaveBeenCalledWith(
+        'mixcase-9@test.local',
+      );
+    });
   });
 });

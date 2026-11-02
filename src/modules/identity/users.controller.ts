@@ -18,6 +18,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { ActivateUserUseCase } from './core/application/usecases/user/activate-user/activate-user.usecase';
 import { DeactivateUserUseCase } from './core/application/usecases/user/deactivate-user/deactivate-user.usecase';
 import { AssignUserRoleUseCase } from './core/application/usecases/user/assign-user-role/assign-user-role.usecase';
@@ -84,6 +85,11 @@ export class UsersController {
   @RequirePermissions('view_all_users', 'view_own_profile')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, type: UserDetailResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorResponseDto,
+  })
   async getUser(
     @Param('id', ParseIntPipe) id: number,
     @CallerCtx() callerContext: CallerContext,
@@ -99,6 +105,11 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update user information' })
   @ApiResponse({ status: 204, description: 'User updated' })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorResponseDto,
+  })
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
@@ -127,7 +138,11 @@ export class UsersController {
     status: 403,
     description: 'Forbidden - Requires manage_users permission',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorResponseDto,
+  })
   async activate(@Param('id', ParseIntPipe) id: number) {
     return this.activateUserUseCase.execute(id);
   }
@@ -143,7 +158,11 @@ export class UsersController {
     status: 403,
     description: 'Forbidden - Requires manage_users permission',
   })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: ErrorResponseDto,
+  })
   async deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.deactivateUserUseCase.execute(id);
   }
@@ -158,7 +177,11 @@ export class UsersController {
     status: 403,
     description: 'Forbidden - Requires manage_roles permission',
   })
-  @ApiResponse({ status: 404, description: 'User or role not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'User or role not found',
+    type: ErrorResponseDto,
+  })
   async assignRole(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AssignRoleDto,

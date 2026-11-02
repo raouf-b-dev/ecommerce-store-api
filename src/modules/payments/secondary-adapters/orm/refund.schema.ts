@@ -10,6 +10,7 @@ import {
   Relation,
 } from 'typeorm';
 import { PaymentEntity } from './payment.schema';
+import { RefundStatusType } from '../../core/domain/value-objects/refund-status';
 
 @Entity({ name: 'refunds' })
 @Index('idx_refunds_payment_id', ['paymentId'])
@@ -30,7 +31,7 @@ export class RefundEntity {
   reason!: string;
 
   @Column({ type: 'varchar' })
-  status!: string;
+  status!: RefundStatusType;
 
   @ManyToOne(() => PaymentEntity, (payment) => payment.refunds)
   @JoinColumn({ name: 'payment_id' })

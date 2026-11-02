@@ -41,7 +41,7 @@ export class LinkDemoOrderPaymentsUseCase extends UseCase<
       if (findResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to load order ${item.orderId} for payment link`,
-          findResult.error,
+          { cause: findResult.error },
         );
       }
 
@@ -55,7 +55,7 @@ export class LinkDemoOrderPaymentsUseCase extends UseCase<
         if (associateResult.isFailure) {
           return ErrorFactory.UseCaseError(
             `Failed to associate payment ${item.paymentId} with order ${item.orderId}`,
-            associateResult.error,
+            { cause: associateResult.error },
           );
         }
       }
@@ -71,7 +71,7 @@ export class LinkDemoOrderPaymentsUseCase extends UseCase<
       if (saveResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to save linked order ${item.orderId}`,
-          saveResult.error,
+          { cause: saveResult.error },
         );
       }
 

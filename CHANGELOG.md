@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-03
+
+### Added
+
+- Shoppers can cancel their own orders with `PATCH /v1/orders/:id/cancel` through the new `cancel_own_orders` permission, which the boot-time role sync grants to the `CUSTOMER` system role. A shopper can cancel while the order is `PENDING_PAYMENT`, `PAYMENT_FAILED` or `CONFIRMED`. Only `manage_orders` callers can also cancel a `PROCESSING` order. A payment that completes after an order was cancelled is recorded on it and refunded ([#408](https://github.com/raouf-b-dev/ecommerce-store-api/pull/408)).
+
+### Changed
+
+- Order responses expose only `totalAmount` for the order total. `totalPrice` is removed from those HTTP bodies ([#422](https://github.com/raouf-b-dev/ecommerce-store-api/pull/422)).
+- Boot now refreshes system permission descriptions from the catalog, and `manage_orders` describes status transitions and cancel rather than create/update/delete ([#421](https://github.com/raouf-b-dev/ecommerce-store-api/pull/421)).
+- Cancelling a paid order with a zero total now returns code `REFUND_AMOUNT_INVALID` (still HTTP 422) instead of `USECASE_ERROR` ([#420](https://github.com/raouf-b-dev/ecommerce-store-api/pull/420)).
+- OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum ([#417](https://github.com/raouf-b-dev/ecommerce-store-api/pull/417)).
+- Refund jobs carry the amount as Money (minor units and currency) instead of a major-unit number ([#415](https://github.com/raouf-b-dev/ecommerce-store-api/pull/415), [#423](https://github.com/raouf-b-dev/ecommerce-store-api/pull/423)).
+- `PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders` (it required `manage_orders`). A missing order, or one the caller may not cancel, returns the same 404 body as `GET /v1/orders/:id`, and a caller with neither permission gets 403 ([#408](https://github.com/raouf-b-dev/ecommerce-store-api/pull/408), [#414](https://github.com/raouf-b-dev/ecommerce-store-api/pull/414)).
+- Missing resources now return 404 with ORDER_NOT_FOUND, PAYMENT_NOT_FOUND, ROLE_NOT_FOUND, USER_ROLE_ASSIGNMENT_NOT_FOUND, CART_NOT_FOUND, PRODUCT_NOT_FOUND, USER_NOT_FOUND, CATEGORY_NOT_FOUND, ADDRESS_NOT_FOUND, CART_ITEM_NOT_FOUND or NOTIFICATION_NOT_FOUND (many returned 422, admin order transitions returned REPOSITORY_ERROR) ([#414](https://github.com/raouf-b-dev/ecommerce-store-api/pull/414)).
+- Production dependencies: OpenTelemetry API 1.9.1 -> 1.10.0, SDK and OTLP gRPC exporter 0.223.0 -> 0.300.0, resources 2.12.0 -> 3.0.0, auto-instrumentations 0.81.2 -> 0.82.0, envalid 8.2.0 -> 9.0.0, `@nestjs/swagger` 12.0.2 -> 12.0.5, stripe 23.0.0 -> 23.0.1 ([#394](https://github.com/raouf-b-dev/ecommerce-store-api/pull/394), [#401](https://github.com/raouf-b-dev/ecommerce-store-api/pull/401), [#402](https://github.com/raouf-b-dev/ecommerce-store-api/pull/402), [#406](https://github.com/raouf-b-dev/ecommerce-store-api/pull/406)).
+
+### Fixed
+
+- Login matches the email case-insensitively, so users registered with uppercase letters can sign in ([#416](https://github.com/raouf-b-dev/ecommerce-store-api/pull/416)).
+- 401, 403 and 429 responses return the codes UNAUTHORIZED, FORBIDDEN and TOO_MANY_REQUESTS instead of Unauthorized, Forbidden and INTERNAL_ERROR ([#413](https://github.com/raouf-b-dev/ecommerce-store-api/pull/413)).
+- A payment that is not the one an order accepted (a second payment on a settled order, a different payment on a cancelled order, or a late payment on a payment-failed order) is now refunded in full instead of being dropped, and refund jobs are keyed per payment ([#409](https://github.com/raouf-b-dev/ecommerce-store-api/pull/409)).
+
+### Upgrade notes
+
+- **Breaking:** API clients must read order totals from `totalAmount`. The `totalPrice` property is no longer present on order responses ([#422](https://github.com/raouf-b-dev/ecommerce-store-api/pull/422)).
+- Before deploying, let the refund-payment queue finish (no waiting, active or delayed refund jobs), because queued refund jobs use the old payload and old order-<id> job ids. Do not delete queued jobs ([#415](https://github.com/raouf-b-dev/ecommerce-store-api/pull/415), [#423](https://github.com/raouf-b-dev/ecommerce-store-api/pull/423)).
+- API clients that handle cancelling a paid order with a zero total must check for code `REFUND_AMOUNT_INVALID` instead of `USECASE_ERROR` (HTTP 422 remains unchanged) ([#420](https://github.com/raouf-b-dev/ecommerce-store-api/pull/420)).
+- API clients must branch on HTTP 404 and the new `*_NOT_FOUND` codes for missing path-addressed resources instead of 422, `USECASE_ERROR` or `QUERY_ERROR` ([#414](https://github.com/raouf-b-dev/ecommerce-store-api/pull/414)).
+- Clients that compare `code` to `Unauthorized` or `Forbidden`, or treat 429 as `INTERNAL_ERROR`, must use `UNAUTHORIZED`, `FORBIDDEN` and `TOO_MANY_REQUESTS`. Other framework statuses without an explicit code now use their HTTP status names (for example `METHOD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`) ([#412](https://github.com/raouf-b-dev/ecommerce-store-api/pull/412), [#413](https://github.com/raouf-b-dev/ecommerce-store-api/pull/413)).
+- **Custom roles:** no migration grants `cancel_own_orders`. Every custom shopper role, existing or new, must be granted `cancel_own_orders` to let its users cancel their own orders. The `CUSTOMER` system role gets it on boot ([#408](https://github.com/raouf-b-dev/ecommerce-store-api/pull/408)).
+
+[Compare v0.13.0...v0.14.0](https://github.com/raouf-b-dev/ecommerce-store-api/compare/v0.13.0...v0.14.0)
+
 ## [0.13.0] - 2026-10-28
 
 ### Added

@@ -17,10 +17,9 @@ export class GetOrderReservationsUseCase implements UseCase<
   async execute(orderId: number): Promise<Result<Reservation[], UseCaseError>> {
     const result = await this.reservationRepository.findAllByOrderId(orderId);
     if (result.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Failed to fetch reservations',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to fetch reservations', {
+        cause: result.error,
+      });
     }
     return Result.success(result.value);
   }

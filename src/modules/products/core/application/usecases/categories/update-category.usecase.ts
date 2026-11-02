@@ -1,4 +1,6 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { categoryNotFoundError } from '../../services/category-not-found';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -29,15 +31,17 @@ export class UpdateCategoryUseCase extends UseCase<
   ): Promise<Result<CategoryResult, AppError>> {
     const findResult = await this.categoryRepository.findById(command.id);
     if (isFailure(findResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to find category',
-        findResult.error,
-      );
+      if (findResult.error.kind === ErrorKind.NOT_FOUND) {
+        return categoryNotFoundError(command.id);
+      }
+      return ErrorFactory.UseCaseError(findResult.error.message, {
+        cause: findResult.error,
+        kind: findResult.error.kind,
+        retryable: findResult.error.retryable,
+      });
     }
     if (!findResult.value) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${command.id} not found`,
-      );
+      return categoryNotFoundError(command.id);
     }
 
     const category = findResult.value;
@@ -57,13 +61,13 @@ export class UpdateCategoryUseCase extends UseCase<
     if (isFailure(nameExists)) {
       return ErrorFactory.UseCaseError(
         'Failed to validate category name uniqueness',
-        nameExists.error,
+        { cause: nameExists.error },
       );
     }
     if (nameExists.value) {
       return ErrorFactory.UseCaseError(
         `Category with name ${category.name} already exists`,
-        { status: HttpStatus.CONFLICT },
+        { kind: ErrorKind.CONFLICT },
       );
     }
 
@@ -74,35 +78,31 @@ export class UpdateCategoryUseCase extends UseCase<
     if (isFailure(slugExists)) {
       return ErrorFactory.UseCaseError(
         'Failed to validate category slug uniqueness',
-        slugExists.error,
+        { cause: slugExists.error },
       );
     }
     if (slugExists.value) {
       return ErrorFactory.UseCaseError(
         `Category with slug ${category.slug} already exists`,
-        { status: HttpStatus.CONFLICT },
+        { kind: ErrorKind.CONFLICT },
       );
     }
 
     const saveResult = await this.categoryRepository.save(category);
     if (isFailure(saveResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to update category',
-        saveResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to update category', {
+        cause: saveResult.error,
+      });
     }
 
     const readModel = await this.categoryQueryService.getById(command.id);
     if (isFailure(readModel)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to load updated category',
-        readModel.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to load updated category', {
+        cause: readModel.error,
+      });
     }
     if (!readModel.value) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${command.id} not found`,
-      );
+      return categoryNotFoundError(command.id);
     }
 
     return Result.success(readModel.value);

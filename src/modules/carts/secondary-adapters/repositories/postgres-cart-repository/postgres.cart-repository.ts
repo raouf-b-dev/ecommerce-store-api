@@ -1,5 +1,6 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/carts/infrastructure/repositories/postgres-cart-repository/postgres.cart-repository.ts
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
@@ -27,12 +28,16 @@ export class PostgresCartRepository implements CartRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Cart not found');
+        return ErrorFactory.RepositoryError('Cart not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       return Result.success(CartMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find cart', error);
+      return ErrorFactory.RepositoryError('Failed to find cart', {
+        cause: error,
+      });
     }
   }
 
@@ -43,15 +48,16 @@ export class PostgresCartRepository implements CartRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Cart not found');
+        return ErrorFactory.RepositoryError('Cart not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       return Result.success(CartMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart by user ID',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find cart by user ID', {
+        cause: error,
+      });
     }
   }
 
@@ -62,16 +68,18 @@ export class PostgresCartRepository implements CartRepository {
   > {
     try {
       const entity = await this.repository.findOne({ where: { id } });
-      if (!entity) return ErrorFactory.RepositoryError('Cart not found');
+      if (!entity)
+        return ErrorFactory.RepositoryError('Cart not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       return Result.success({
         entity: CartMapper.toDomain(entity),
         expectedVersion: entity.version,
       });
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to find cart for update',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to find cart for update', {
+        cause: error,
+      });
     }
   }
 
@@ -82,7 +90,10 @@ export class PostgresCartRepository implements CartRepository {
   > {
     try {
       const entity = await this.repository.findOne({ where: { userId } });
-      if (!entity) return ErrorFactory.RepositoryError('Cart not found');
+      if (!entity)
+        return ErrorFactory.RepositoryError('Cart not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       return Result.success({
         entity: CartMapper.toDomain(entity),
         expectedVersion: entity.version,
@@ -90,7 +101,7 @@ export class PostgresCartRepository implements CartRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find cart by user ID for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -106,7 +117,9 @@ export class PostgresCartRepository implements CartRepository {
       return await this.saveNormally(cart);
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save cart', error);
+      return ErrorFactory.RepositoryError('Failed to save cart', {
+        cause: error,
+      });
     }
   }
 
@@ -145,11 +158,13 @@ export class PostgresCartRepository implements CartRepository {
           where: { id: cart.id! },
         });
         if (!existing) {
-          throw new RepositoryError('Cart not found');
+          throw new RepositoryError('Cart not found', {
+            kind: ErrorKind.NOT_FOUND,
+          });
         }
         throw new RepositoryError(
           `Optimistic lock failure for Cart ${cart.id}. Expected version ${expectedVersion}.`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
@@ -158,7 +173,9 @@ export class PostgresCartRepository implements CartRepository {
 
     const updated = await this.repository.findOne({ where: { id: cart.id! } });
     if (!updated) {
-      return ErrorFactory.RepositoryError('Cart not found');
+      return ErrorFactory.RepositoryError('Cart not found', {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return Result.success(CartMapper.toDomain(updated));
   }
@@ -188,11 +205,15 @@ export class PostgresCartRepository implements CartRepository {
     try {
       const result = await this.repository.delete(id);
       if (result.affected === 0) {
-        return ErrorFactory.RepositoryError('Cart not found');
+        return ErrorFactory.RepositoryError('Cart not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete cart', error);
+      return ErrorFactory.RepositoryError('Failed to delete cart', {
+        cause: error,
+      });
     }
   }
 }

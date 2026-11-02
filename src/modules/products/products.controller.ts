@@ -17,6 +17,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
@@ -110,7 +111,11 @@ export class ProductsController {
     description: 'Product found.',
     type: ProductDetailResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({
     status: 401,
     description: 'Invalid or expired authentication token.',
@@ -134,7 +139,11 @@ export class ProductsController {
     description: 'Product updated successfully.',
     type: ProductResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
     status: 403,
@@ -165,7 +174,11 @@ export class ProductsController {
       'Deletes a product from the catalog. Requires admin privileges.',
   })
   @ApiResponse({ status: 204, description: 'Product deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
     status: 403,
@@ -187,7 +200,11 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({
     status: 409,
     description:
@@ -212,7 +229,11 @@ export class ProductsController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({
     status: 409,
     description:

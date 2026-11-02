@@ -1,3 +1,5 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
 import { Order } from './order';
 import { OrderStatus } from '../value-objects/order-status';
 import { ResultAssertionHelper } from '../../../../../testing';
@@ -87,6 +89,110 @@ describe('Order', () => {
     });
   });
 
+  describe('isCancellable', () => {
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isCancellable()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isCancellable()).toBe(false);
+    });
+  });
+
+  describe('isFulfilmentStarted', () => {
+    it.each([
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('is true when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(true);
+    });
+
+    it.each([
+      OrderStatus.PENDING_PAYMENT,
+      OrderStatus.PAYMENT_FAILED,
+      OrderStatus.CONFIRMED,
+      OrderStatus.CANCELLED,
+    ])('is false when status is %s', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: status === OrderStatus.PENDING_PAYMENT ? null : 1,
+      });
+
+      expect(order.isFulfilmentStarted()).toBe(false);
+    });
+  });
+
+  describe('refundableTotal', () => {
+    it('returns the total Money when the order total is positive', () => {
+      const order = OrderTestFactory.createDomainOrder();
+
+      const result = order.refundableTotal();
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(result.value.equals(order.getPricing().getTotalPriceMoney())).toBe(
+        true,
+      );
+      expect(result.value.isPositive()).toBe(true);
+    });
+
+    it('rejects a zero total with REFUND_AMOUNT_INVALID', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        items: [
+          {
+            id: 1,
+            productId: 1,
+            productName: 'Free item',
+            quantity: 1,
+            unitPrice: 0,
+            currency: 'USD',
+          },
+        ],
+      });
+
+      const result = order.refundableTotal();
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Refund amount must be greater than zero',
+        DomainError,
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: {
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
+          kind: ErrorKind.RULE_VIOLATION,
+        },
+      });
+    });
+  });
+
   describe('cancel', () => {
     it.each([
       OrderStatus.PENDING_PAYMENT,
@@ -125,7 +231,7 @@ describe('Order', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { statusCode: 409 },
+        error: { kind: ErrorKind.CONFLICT },
       });
     });
   });
@@ -193,6 +299,186 @@ describe('Order', () => {
         'Payment ID is required',
         DomainError,
       );
+    });
+  });
+
+  describe('classifyIncomingPayment', () => {
+    it('returns confirm when status is PENDING_PAYMENT', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PENDING_PAYMENT,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({ action: 'confirm' });
+    });
+
+    it('returns record-late when CANCELLED with no payment recorded', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'record-late',
+      });
+    });
+
+    it('returns record-late when CANCELLED with the same paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'record-late',
+      });
+    });
+
+    it('returns surplus when CANCELLED with a different paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(99)).toEqual({ action: 'surplus' });
+    });
+
+    it('returns surplus when status is PAYMENT_FAILED for any paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PAYMENT_FAILED,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({ action: 'surplus' });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns already-applied when %s and paymentId matches', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'already-applied',
+      });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns surplus when %s and paymentId differs', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: 42,
+      });
+
+      expect(order.classifyIncomingPayment(99)).toEqual({
+        action: 'surplus',
+      });
+    });
+
+    it.each([
+      OrderStatus.CONFIRMED,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+      OrderStatus.REFUNDED,
+    ])('returns unknown when %s and paymentId is null', (status) => {
+      const order = OrderTestFactory.createDomainOrder({
+        status,
+        paymentId: null,
+      });
+
+      expect(order.classifyIncomingPayment(42)).toEqual({
+        action: 'unknown',
+      });
+    });
+  });
+
+  describe('recordPaymentAfterCancellation', () => {
+    it('sets paymentId and keeps CANCELLED when status is CANCELLED', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('is idempotent for the same paymentId', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('rejects a different paymentId when one is already recorded', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: 42,
+      });
+
+      const result = order.recordPaymentAfterCancellation(99);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Order already has a different payment recorded',
+        DomainError,
+      );
+      expect(order.status).toBe(OrderStatus.CANCELLED);
+      expect(order.paymentId).toBe(42);
+    });
+
+    it('rejects when status is not CANCELLED', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.PENDING_PAYMENT,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(42);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Payment after cancellation can only be recorded when the order is cancelled',
+        DomainError,
+      );
+      expect(order.status).toBe(OrderStatus.PENDING_PAYMENT);
+      expect(order.paymentId).toBeNull();
+    });
+
+    it('rejects a missing payment id', () => {
+      const order = OrderTestFactory.createDomainOrder({
+        status: OrderStatus.CANCELLED,
+        paymentId: null,
+      });
+
+      const result = order.recordPaymentAfterCancellation(0);
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Payment ID is required',
+        DomainError,
+      );
+      expect(order.paymentId).toBeNull();
     });
   });
 

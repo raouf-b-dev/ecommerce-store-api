@@ -28,7 +28,9 @@ export class PostgresCredentialRepository implements CredentialRepository {
       );
       return Result.success(Credential.fromPersistence(saved));
     } catch (err) {
-      return ErrorFactory.RepositoryError('Failed to save credential', err);
+      return ErrorFactory.RepositoryError('Failed to save credential', {
+        cause: err,
+      });
     }
   }
 
@@ -39,7 +41,9 @@ export class PostgresCredentialRepository implements CredentialRepository {
       const row = await this.repo.findOne({ where: { userId } });
       return Result.success(row ? Credential.fromPersistence(row) : null);
     } catch (err) {
-      return ErrorFactory.RepositoryError('Failed to find credential', err);
+      return ErrorFactory.RepositoryError('Failed to find credential', {
+        cause: err,
+      });
     }
   }
 
@@ -54,7 +58,9 @@ export class PostgresCredentialRepository implements CredentialRepository {
       );
       return Result.success(undefined);
     } catch (err) {
-      return ErrorFactory.RepositoryError('Failed to update credential', err);
+      return ErrorFactory.RepositoryError('Failed to update credential', {
+        cause: err,
+      });
     }
   }
 
@@ -63,7 +69,9 @@ export class PostgresCredentialRepository implements CredentialRepository {
       await this.repo.delete({ userId });
       return Result.success(undefined);
     } catch (err) {
-      return ErrorFactory.RepositoryError('Failed to delete credential', err);
+      return ErrorFactory.RepositoryError('Failed to delete credential', {
+        cause: err,
+      });
     }
   }
 }

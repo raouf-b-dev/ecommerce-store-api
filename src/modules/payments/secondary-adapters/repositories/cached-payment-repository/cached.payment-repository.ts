@@ -43,7 +43,9 @@ export class CachedPaymentRepository implements PaymentRepository {
 
       return dbResult;
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find payment', error);
+      return ErrorFactory.RepositoryError('Failed to find payment', {
+        cause: error,
+      });
     }
   }
 
@@ -68,7 +70,7 @@ export class CachedPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by order ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -101,7 +103,7 @@ export class CachedPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payment by transaction ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -134,7 +136,9 @@ export class CachedPaymentRepository implements PaymentRepository {
 
       return Result.success(savedPayment);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save payment', error);
+      return ErrorFactory.RepositoryError('Failed to save payment', {
+        cause: error,
+      });
     }
   }
 
@@ -152,7 +156,9 @@ export class CachedPaymentRepository implements PaymentRepository {
 
       return Result.success(updatedPayment);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to update payment', error);
+      return ErrorFactory.RepositoryError('Failed to update payment', {
+        cause: error,
+      });
     }
   }
 
@@ -165,7 +171,9 @@ export class CachedPaymentRepository implements PaymentRepository {
 
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete payment', error);
+      return ErrorFactory.RepositoryError('Failed to delete payment', {
+        cause: error,
+      });
     }
   }
 
@@ -186,7 +194,9 @@ export class CachedPaymentRepository implements PaymentRepository {
 
       return Result.success(saveResult.value);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save refund', error);
+      return ErrorFactory.RepositoryError('Failed to save refund', {
+        cause: error,
+      });
     }
   }
 }

@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { SessionToken } from '../../../core/domain/entities/session-token';
 import { PostgresSessionTokenRepository } from './postgres-session-token.repository';
 import { SessionTokenEntity } from '../../orm/session-token.schema';
@@ -114,7 +115,7 @@ describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
       'Refresh token was already rotated',
       RepositoryError,
     );
-    expect(conflict.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(conflict.error.kind).toBe(ErrorKind.CONFLICT);
     expect(conflict.error.retryable).toBe(false);
 
     const loaded = await repository.findById(original.id);
@@ -148,7 +149,7 @@ describe('PostgresSessionTokenRepository (Integration - Real DB)', () => {
       'Refresh token was already rotated',
       RepositoryError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+    expect(result.error.kind).toBe(ErrorKind.CONFLICT);
 
     const loaded = await repository.findById(expired.id);
     ResultAssertionHelper.assertResultSuccess(loaded);

@@ -1,7 +1,6 @@
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
 
 /** Permission that lets a user change its own password and revoke all its sessions. */
 export const CHANGE_OWN_CREDENTIALS_PERMISSION = 'change_own_credentials';
@@ -17,8 +16,6 @@ export function ensureCredentialsChangeable(
   if (!new Set(permissions).has(CHANGE_OWN_CREDENTIALS_PERMISSION)) {
     return ErrorFactory.DomainError(
       'Changing credentials requires the change_own_credentials permission',
-      null,
-      StatusCode.FORBIDDEN,
     );
   }
   return Result.success(undefined);

@@ -29,9 +29,10 @@ import { PaymentMethodType } from '../../shared-kernel/domain/value-objects/paym
 import { ErrorFactory } from '../../shared-kernel/domain/exceptions/error.factory';
 import { UseCaseError } from '../../shared-kernel/domain/exceptions/usecase.error';
 import { DECORATORS } from '@nestjs/swagger';
-import { isRecord } from '../../shared-kernel/infra/lang/is-record';
+import { isRecord } from '../../shared-kernel/helpers/lang/is-record';
 import { ResultAssertionHelper } from '../../testing';
 import { REQUIRED_PERMISSIONS_KEY } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
+import { OrderMutationMapper } from './core/application/mappers/order-mutation.mapper';
 
 function findHeaderParam(target: object, paramName: string): unknown {
   const rawParams: unknown = Reflect.getMetadata(
@@ -115,7 +116,9 @@ describe('OrdersController', () => {
           useValue: {
             execute: jest
               .fn()
-              .mockResolvedValue(Result.success(cancelledOrder)),
+              .mockResolvedValue(
+                Result.success(OrderMutationMapper.fromDomain(cancelledOrder)),
+              ),
           },
         },
         {
@@ -123,7 +126,9 @@ describe('OrdersController', () => {
           useValue: {
             execute: jest
               .fn()
-              .mockResolvedValue(Result.success(confirmedOrder)),
+              .mockResolvedValue(
+                Result.success(OrderMutationMapper.fromDomain(confirmedOrder)),
+              ),
           },
         },
         {
@@ -131,7 +136,9 @@ describe('OrdersController', () => {
           useValue: {
             execute: jest
               .fn()
-              .mockResolvedValue(Result.success(processingOrder)),
+              .mockResolvedValue(
+                Result.success(OrderMutationMapper.fromDomain(processingOrder)),
+              ),
           },
         },
         {
@@ -139,13 +146,19 @@ describe('OrdersController', () => {
           useValue: {
             execute: jest
               .fn()
-              .mockResolvedValue(Result.success(deliveredOrder)),
+              .mockResolvedValue(
+                Result.success(OrderMutationMapper.fromDomain(deliveredOrder)),
+              ),
           },
         },
         {
           provide: ShipOrderUseCase,
           useValue: {
-            execute: jest.fn().mockResolvedValue(Result.success(undefined)),
+            execute: jest
+              .fn()
+              .mockResolvedValue(
+                Result.success(OrderMutationMapper.fromDomain(processingOrder)),
+              ),
           },
         },
         {
@@ -211,6 +224,12 @@ describe('OrdersController', () => {
     ).toEqual(['manage_payments', 'view_own_orders']);
   });
 
+  it('requires manage_orders or cancel_own_orders to cancel an order', () => {
+    expect(
+      Reflect.getMetadata(REQUIRED_PERMISSIONS_KEY, controller.cancelOrder),
+    ).toEqual(['manage_orders', 'cancel_own_orders']);
+  });
+
   it('does not expose idempotencyKey in CheckoutDto Swagger properties', () => {
     const rawProps: unknown = Reflect.getMetadata(
       DECORATORS.API_MODEL_PROPERTIES_ARRAY,
@@ -249,11 +268,14 @@ describe('OrdersController', () => {
   });
 
   it('should call CancelOrderUseCase.execute when cancelOrder is called and return its result', async () => {
-    const res = await controller.cancelOrder(cancelledOrder.id!);
+    const res = await controller.cancelOrder(cancelledOrder.id!, callerContext);
     expect(cancelOrderUseCase.execute).toHaveBeenCalledWith({
       orderId: cancelledOrder.id!,
+      callerContext,
     });
-    expect(res).toEqual(Result.success(cancelledOrder));
+    expect(res).toEqual(
+      Result.success(OrderMutationMapper.fromDomain(cancelledOrder)),
+    );
   });
 
   it('should call ConfirmOrderUseCase.execute when confirmOrder is called and return its result', async () => {
@@ -261,7 +283,9 @@ describe('OrdersController', () => {
     expect(confirmOrderUseCase.execute).toHaveBeenCalledWith(
       confirmedOrder.id!,
     );
-    expect(res).toEqual(Result.success(confirmedOrder));
+    expect(res).toEqual(
+      Result.success(OrderMutationMapper.fromDomain(confirmedOrder)),
+    );
   });
 
   it('should call ProcessOrderUseCase.execute when processOrder is called and return its result', async () => {
@@ -269,7 +293,9 @@ describe('OrdersController', () => {
     expect(processOrderUseCase.execute).toHaveBeenCalledWith(
       processingOrder.id!,
     );
-    expect(res).toEqual(Result.success(processingOrder));
+    expect(res).toEqual(
+      Result.success(OrderMutationMapper.fromDomain(processingOrder)),
+    );
   });
 
   it('should call DeliverOrderUseCase.execute when deliverOrder is called and return its result', async () => {
@@ -281,12 +307,17 @@ describe('OrdersController', () => {
       id: deliveredOrder.id!,
       command: createDeliveredOrderDto,
     });
-    expect(res).toEqual(Result.success(deliveredOrder));
+    expect(res).toEqual(
+      Result.success(OrderMutationMapper.fromDomain(deliveredOrder)),
+    );
   });
 
   it('should call ShipOrderUseCase.execute when shipOrder is called', async () => {
-    await controller.shipOrder(processingOrder.id!);
+    const res = await controller.shipOrder(processingOrder.id!);
     expect(shipOrderUseCase.execute).toHaveBeenCalledWith(processingOrder.id!);
+    expect(res).toEqual(
+      Result.success(OrderMutationMapper.fromDomain(processingOrder)),
+    );
   });
 
   it('should call CreateOrderPaymentUseCase.execute when createPayment is called', async () => {

@@ -10,11 +10,19 @@ export enum RefundStatusType {
   REJECTED = 'REJECTED',
 }
 
+const VALID_REFUND_STATUS_TYPES = new Set<unknown>(
+  Object.values(RefundStatusType),
+);
+
+export function isRefundStatusType(value: unknown): value is RefundStatusType {
+  return VALID_REFUND_STATUS_TYPES.has(value);
+}
+
 export class RefundStatus {
   private readonly _status: RefundStatusType;
 
-  constructor(status: RefundStatusType) {
-    if (!Object.values(RefundStatusType).includes(status)) {
+  constructor(status: string) {
+    if (!isRefundStatusType(status)) {
       throw new DomainError(`Invalid refund status: ${status}`);
     }
     this._status = status;
@@ -57,7 +65,7 @@ export class RefundStatus {
   }
 
   static from(value: string): RefundStatus {
-    return new RefundStatus(value as RefundStatusType);
+    return new RefundStatus(value);
   }
 
   static pending(): RefundStatus {

@@ -7,6 +7,7 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { OrderDetailDTO } from '../../queries/results/order-detail.result';
 import { CustomerPiiPolicy } from '../../../../../../shared-kernel/domain/policies/customer-pii.policy';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
@@ -14,6 +15,7 @@ import {
   ORDER_ACCESS_PERMISSIONS,
   OwnedResourceAccessPolicy,
 } from '../../../../../../shared-kernel/domain/policies/owned-resource-access.policy';
+import { orderNotFoundError } from '../../services/order-not-found';
 
 export interface GetOrderInput {
   orderId: number;
@@ -41,7 +43,7 @@ export class GetOrderUseCase extends UseCase<
     );
 
     if (!scope.allowed) {
-      return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
+      return orderNotFoundError(orderId);
     }
 
     const orderResult = await this.orderQueryService.getById(
@@ -49,8 +51,19 @@ export class GetOrderUseCase extends UseCase<
       scope.authorizedUserId,
     );
 
-    if (isFailure(orderResult) || !orderResult.value) {
-      return ErrorFactory.UseCaseError(`Order with id ${orderId} not found`);
+    if (isFailure(orderResult)) {
+      if (orderResult.error.kind === ErrorKind.NOT_FOUND) {
+        return orderNotFoundError(orderId);
+      }
+      return ErrorFactory.UseCaseError(orderResult.error.message, {
+        cause: orderResult.error,
+        kind: orderResult.error.kind,
+        retryable: orderResult.error.retryable,
+      });
+    }
+
+    if (!orderResult.value) {
+      return orderNotFoundError(orderId);
     }
 
     return Result.success(

@@ -7,6 +7,8 @@ import {
 } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import {
   PAYMENT_ACCESS_PERMISSIONS,
@@ -48,6 +50,10 @@ export class GetPaymentByOrderIdUseCase extends UseCase<
     if (!scope.allowed) {
       return ErrorFactory.UseCaseError(
         `Payment for order ID ${orderId} not found`,
+        {
+          kind: ErrorKind.NOT_FOUND,
+          code: ErrorCode.PAYMENT_NOT_FOUND,
+        },
       );
     }
 
@@ -57,10 +63,11 @@ export class GetPaymentByOrderIdUseCase extends UseCase<
     );
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        `Failed to load payment for order ID ${orderId}`,
-        result.error,
-      );
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        kind: result.error.kind,
+        retryable: result.error.retryable,
+      });
     }
 
     return Result.success(

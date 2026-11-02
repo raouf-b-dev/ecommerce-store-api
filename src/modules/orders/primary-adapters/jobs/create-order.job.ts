@@ -6,7 +6,10 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
-import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
+import {
+  isReserveStockResult,
+  ReserveStockResult,
+} from './reserve-stock-job/reserve-stock.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 
@@ -41,9 +44,9 @@ export class CreateOrderStep extends BaseJobHandler<
 
     // Get data from child job (ReserveStockStep)
     const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(childrenValues)[0] as ReserveStockResult;
+    const childData = Object.values(childrenValues)[0];
 
-    if (!childData || !childData.reservationId) {
+    if (!isReserveStockResult(childData)) {
       return ErrorFactory.ServiceError(
         'Missing reservation data from ReserveStockStep',
       );
@@ -75,7 +78,7 @@ export class CreateOrderStep extends BaseJobHandler<
     return Result.success({
       ...childData,
       orderId: order.id,
-      orderTotal: order.totalPrice,
+      orderTotal: order.totalAmount,
       orderCurrency: order.currency,
     });
   }

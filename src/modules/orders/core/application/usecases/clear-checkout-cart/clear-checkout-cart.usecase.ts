@@ -20,10 +20,9 @@ export class ClearCheckoutCartUseCase implements UseCase<
     const result = await this.cartGateway.clearCart(cartId);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to clear checkout cart',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to clear checkout cart', {
+        cause: result.error,
+      });
     }
 
     return Result.success(undefined);

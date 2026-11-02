@@ -14,6 +14,8 @@ import {
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { ErrorFactory } from '../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 describe('CreateOrderPaymentUseCase', () => {
   let useCase: CreateOrderPaymentUseCase;
@@ -55,7 +57,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 25.5,
+          totalAmount: 25.5,
           currency: 'EUR',
         }),
       ),
@@ -89,7 +91,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 10,
+          totalAmount: 10,
           currency: 'USD',
         }),
       ),
@@ -117,7 +119,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 0,
+          totalAmount: 0,
           currency: 'USD',
         }),
       ),
@@ -155,7 +157,7 @@ describe('CreateOrderPaymentUseCase', () => {
         OrderDtoTestFactory.createOrderDetailDTO({
           id: 123,
           userId: 2,
-          totalPrice: 10,
+          totalAmount: 10,
           currency: 'US',
         }),
       ),
@@ -185,6 +187,8 @@ describe('CreateOrderPaymentUseCase', () => {
       result,
       'Order with id 123 not found',
     );
+    expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+    expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     expect(getOrderExecute).not.toHaveBeenCalled();
     expect(paymentGateway.createPayment).not.toHaveBeenCalled();
   });

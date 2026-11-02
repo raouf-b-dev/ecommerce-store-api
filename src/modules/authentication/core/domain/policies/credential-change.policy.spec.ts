@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../../testing/helpers/result-assertion.helper';
 import {
   CHANGE_OWN_CREDENTIALS_PERMISSION,
@@ -9,6 +10,7 @@ describe('ensureCredentialsChangeable', () => {
     ResultAssertionHelper.assertResultSuccess(
       ensureCredentialsChangeable([
         'view_own_orders',
+        'cancel_own_orders',
         CHANGE_OWN_CREDENTIALS_PERMISSION,
       ]),
     );
@@ -24,6 +26,6 @@ describe('ensureCredentialsChangeable', () => {
       result,
       'Changing credentials requires the change_own_credentials permission',
     );
-    expect(result.error.statusCode).toBe(403);
+    expect(result.error.kind).toBe(ErrorKind.INVALID);
   });
 });

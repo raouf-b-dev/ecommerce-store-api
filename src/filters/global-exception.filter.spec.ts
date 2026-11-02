@@ -1,12 +1,17 @@
+import { ErrorKind } from '../shared-kernel/domain/exceptions/error-kind';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GlobalExceptionFilter } from './global-exception.filter';
 import {
   ArgumentsHost,
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Logger,
+  MethodNotAllowedException,
   NotFoundException,
+  PayloadTooLargeException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AppError } from '../shared-kernel/domain/exceptions/app.error';
 import { ErrorCode } from '../shared-kernel/domain/exceptions/error-code';
@@ -15,13 +20,11 @@ import { createMockArgumentsHost } from '../testing';
 
 class TestAppError extends AppError {
   constructor(message: string) {
-    super(
-      message,
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      ErrorCode.DOMAIN_ERROR,
-      undefined,
-      false,
-    );
+    super(message, {
+      kind: ErrorKind.RULE_VIOLATION,
+      code: ErrorCode.DOMAIN_ERROR,
+      retryable: false,
+    });
   }
 }
 
@@ -95,7 +98,8 @@ describe('GlobalExceptionFilter', () => {
       {
         statusCode: 403,
         message: 'Password change required before accessing this resource',
-        error: 'MUST_CHANGE_PASSWORD',
+        code: 'MUST_CHANGE_PASSWORD',
+        error: 'Forbidden',
       },
       403,
     );
@@ -117,7 +121,7 @@ describe('GlobalExceptionFilter', () => {
     expect(jsonResponse).not.toHaveProperty('error');
   });
 
-  it('should prefer explicit code over Nest error field for MUST_CHANGE_PASSWORD', () => {
+  it('prefers explicit MUST_CHANGE_PASSWORD over HttpStatus name and Nest error', () => {
     process.env.NODE_ENV = 'production';
     const exception = new HttpException(
       {
@@ -143,6 +147,7 @@ describe('GlobalExceptionFilter', () => {
       {
         statusCode: 409,
         message: 'Record already exists',
+        code: 'CONFLICT_ERROR',
         error: 'CONFLICT_ERROR',
       },
       409,
@@ -161,6 +166,103 @@ describe('GlobalExceptionFilter', () => {
     );
   });
 
+  it('returns UNAUTHORIZED for a 401 guard UnauthorizedException', () => {
+    const exception = new UnauthorizedException('Missing authentication token');
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(401);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 401,
+        message: 'Missing authentication token',
+        code: ErrorCode.UNAUTHORIZED,
+      }),
+    );
+  });
+
+  it('returns FORBIDDEN for a 403 guard ForbiddenException', () => {
+    const exception = new ForbiddenException('Forbidden resource');
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(403);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 403,
+        message: 'Forbidden resource',
+        code: ErrorCode.FORBIDDEN,
+      }),
+    );
+  });
+
+  it('returns TOO_MANY_REQUESTS for a string-body 429 HttpException', () => {
+    const exception = new HttpException(
+      'ThrottlerException: Too Many Requests',
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(429);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 429,
+        message: 'ThrottlerException: Too Many Requests',
+        code: ErrorCode.TOO_MANY_REQUESTS,
+      }),
+    );
+  });
+
+  it('returns PAYLOAD_TOO_LARGE for a 413 HttpException', () => {
+    const exception = new PayloadTooLargeException();
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(413);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 413,
+        code: 'PAYLOAD_TOO_LARGE',
+      }),
+    );
+  });
+
+  it('returns METHOD_NOT_ALLOWED for a 405 HttpException', () => {
+    const exception = new MethodNotAllowedException();
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(405);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 405,
+        code: 'METHOD_NOT_ALLOWED',
+      }),
+    );
+  });
+
+  it('returns NOT_FOUND for an unknown-route NotFoundException', () => {
+    const exception = new NotFoundException('Cannot GET /v1/missing');
+
+    filter.catch(exception, mockArgumentsHost);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        statusCode: 404,
+        message: 'Cannot GET /v1/missing',
+        code: ErrorCode.NOT_FOUND,
+      }),
+    );
+  });
+
   it('does not log the query string of a 404 URL (no customer email)', () => {
     const url = '/v1/orderz?userEmail=jane%40example.com';
     mockRequest.url = url;
@@ -171,6 +273,11 @@ describe('GlobalExceptionFilter', () => {
     filter.catch(exception, mockArgumentsHost);
 
     expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: ErrorCode.NOT_FOUND,
+      }),
+    );
     const logged = warn.mock.calls.map((c) => String(c[0])).join('\n');
     expect(logged).toContain('/v1/orderz');
     expect(logged).not.toContain('@');

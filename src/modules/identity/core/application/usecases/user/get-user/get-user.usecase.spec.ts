@@ -4,6 +4,8 @@ import {
 } from 'src/modules/identity/testing';
 import { GetUserUseCase } from './get-user.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import {
   createUserCallerContext,
@@ -70,6 +72,8 @@ describe('GetUserUseCase', () => {
         'User with id 2 not found',
         UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.USER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 
     it('should deny access if customer attempts to view another user profile', async () => {
@@ -83,6 +87,8 @@ describe('GetUserUseCase', () => {
         'User with id 2 not found',
         UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.USER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 
     it('should allow admin to view any user profile', async () => {

@@ -1,4 +1,4 @@
-import { Injectable, HttpStatus } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   Result,
@@ -8,6 +8,7 @@ import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptio
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { UserRepository } from '../../../../domain/repositories/user.repository';
 import { AuthorizationGateway } from '../../../ports/authorization.gateway';
+import { userNotFoundError } from '../../../services/user-not-found';
 
 export interface AssignUserRoleCommand {
   userId: number;
@@ -37,11 +38,7 @@ export class AssignUserRoleUseCase extends UseCase<
     }
 
     if (!userResult.value) {
-      return ErrorFactory.UseCaseError(
-        'User not found',
-        null,
-        HttpStatus.NOT_FOUND,
-      );
+      return userNotFoundError(command.userId);
     }
 
     const assignResult = await this.authorizationGateway.assignRole(
@@ -50,11 +47,10 @@ export class AssignUserRoleUseCase extends UseCase<
     );
 
     if (isFailure(assignResult)) {
-      return ErrorFactory.UseCaseError(
-        assignResult.error.message,
-        assignResult.error.cause,
-        assignResult.error.statusCode,
-      );
+      return ErrorFactory.UseCaseError(assignResult.error.message, {
+        cause: assignResult.error.cause,
+        kind: assignResult.error.kind,
+      });
     }
 
     return Result.success(undefined);

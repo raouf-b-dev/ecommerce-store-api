@@ -17,6 +17,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ErrorResponseDto } from '../../filters/dto/error-response.dto';
 import { RequirePermissions } from '../authorization/primary-adapter/decorators/require-permissions.decorator';
 import { OptionalAuth } from '../../guards/decorators/optional-auth.decorator';
 import { CallerCtx } from '../identity/primary-adapters/decorators/caller-context.decorator';
@@ -110,7 +111,11 @@ export class CategoriesController {
     description: 'Category found.',
     type: CategoryResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({
     status: 401,
     description: 'Invalid or expired authentication token.',
@@ -134,7 +139,11 @@ export class CategoriesController {
     description: 'Category updated successfully.',
     type: CategoryResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
     status: 403,
@@ -164,7 +173,11 @@ export class CategoriesController {
       'Deletes a category. Products that referenced it keep a null category. Requires admin privileges.',
   })
   @ApiResponse({ status: 204, description: 'Category deleted successfully.' })
-  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found.',
+    type: ErrorResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({
     status: 403,
@@ -186,7 +199,11 @@ export class CategoriesController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found.',
+    type: ErrorResponseDto,
+  })
   async activate(@Param('id', ParseIntPipe) id: number) {
     return this.activateCategoryUseCase.execute(id);
   }
@@ -206,7 +223,11 @@ export class CategoriesController {
     status: 403,
     description: 'Forbidden - Admin access required.',
   })
-  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Category not found.',
+    type: ErrorResponseDto,
+  })
   async deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.deactivateCategoryUseCase.execute(id);
   }

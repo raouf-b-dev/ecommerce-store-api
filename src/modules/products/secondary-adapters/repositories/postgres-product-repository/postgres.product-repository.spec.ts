@@ -1,8 +1,9 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/modules/products/infrastructure/repositories/PostgresProductRepository/postgres.product-repository.spec.ts
 import { ProductTestFactory } from 'src/modules/products/testing';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { HttpStatus } from '@nestjs/common';
+
 import { Repository } from 'typeorm';
 import { PostgresProductRepository } from './postgres.product-repository';
 import { ProductEntity } from '../../orm/product.schema';
@@ -137,7 +138,7 @@ describe('PostgresProductRepository', () => {
         'Optimistic lock failure',
         RepositoryError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.CONFLICT);
+      expect(result.error.kind).toBe(ErrorKind.CONFLICT);
     });
 
     it('should return not-found when OCC update affects 0 rows and the product is missing', async () => {

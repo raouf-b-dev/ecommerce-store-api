@@ -57,7 +57,7 @@ All ten domain modules (Analytics, Authentication, Authorization, Carts, Identit
 
 ### CQRS Read Path
 
-List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition).
+List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition). Order list, detail and status-mutation responses expose order totals as `totalAmount` (major units) only. Status mutation use cases return a slim `OrderMutationResult` rather than full order primitives. Domain and persistence still use `totalPrice`. The `sortBy=totalPrice` list query param is unchanged.
 
 **Location**: `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/` · **Deep-dive**: [CQRS.md](architecture/CQRS.md)
 
@@ -179,6 +179,12 @@ Normalized Role-Based Access Control with `@RequirePermissions()` and `Permissio
 `GET /v1/products`, `GET /v1/products/:id`, and the matching category reads are `@OptionalAuth()`. Anonymous and `CUSTOMER` callers only see active items (`CatalogVisibilityPolicy`). `isActive=false` is ignored for shoppers; inactive detail is HTTP 404. Operators with `view_all_products` keep the full catalog. Product and category mutations stay `manage_products`.
 
 **Location**: `src/modules/products/core/domain/policies/catalog-visibility.policy.ts`, `src/modules/products/products.controller.ts`, `src/modules/products/categories.controller.ts`
+
+### Shopper Order Cancel
+
+`PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders`. Ownership and the rule that a caller without `manage_orders` cannot cancel once fulfilment has started (`PROCESSING` or later) live in `CancelOrderAccessPolicy` (application layer). The Order domain only knows actor-free status facts (`isCancellable`, `isFulfilmentStarted`) and returns 409 for a non-cancellable status. Missing and foreign orders both return HTTP 404 ORDER_NOT_FOUND (same as `GET /v1/orders/:id`). Jobs and compensation pass `SYSTEM_CALLER_CONTEXT`. `view_own_orders` remains read-only. A payment that completes late on a `CANCELLED` or `PAYMENT_FAILED` order is refunded. A second, different payment that completes on a settled order (`CONFIRMED` and later, or `CANCELLED` with another payment already recorded) is refunded in full; the confirming payment is never refunded by that path. Refund jobs are keyed per payment so each distinct payment gets one refund job.
+
+**Location**: `src/modules/orders/orders.controller.ts`, `src/modules/orders/core/application/usecases/cancel-order/`, `src/modules/orders/core/application/services/cancel-order-access.policy.ts`, `src/modules/orders/core/domain/entities/order.ts`
 
 ### Forced Credential Rotation (mustChangePassword)
 
@@ -314,9 +320,9 @@ Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING
 
 ### Full-Stack Local Run
 
-Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use `.github/pull_request_template.md`.
+Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use the account default template; API-specific OpenAPI and e2e checks live in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-**Location**: `docs/development/FULL-STACK.md`, `.github/pull_request_template.md`
+**Location**: `docs/development/FULL-STACK.md`, `CONTRIBUTING.md`
 
 ---
 

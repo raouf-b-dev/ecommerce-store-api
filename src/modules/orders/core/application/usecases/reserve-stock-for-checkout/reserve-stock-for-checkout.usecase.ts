@@ -34,10 +34,9 @@ export class ReserveStockForCheckoutUseCase implements UseCase<
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to reserve stock for checkout',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to reserve stock for checkout', {
+        cause: result.error,
+      });
     }
 
     return Result.success(result.value);

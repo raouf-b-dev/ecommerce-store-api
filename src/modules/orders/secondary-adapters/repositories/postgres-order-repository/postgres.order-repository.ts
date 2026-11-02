@@ -1,5 +1,6 @@
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 // src/order/infrastructure/postgres-order.repository.ts
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { OrderRepository } from '../../../core/domain/repositories/order-repository';
@@ -50,10 +51,8 @@ export class PostgresOrderRepository implements OrderRepository {
       }
 
       const sortColumn = `order.${sortBy}`;
-      queryBuilder.orderBy(
-        sortColumn,
-        sortOrder.toUpperCase() as 'ASC' | 'DESC',
-      );
+      const direction = sortOrder === 'asc' ? 'ASC' : 'DESC';
+      queryBuilder.orderBy(sortColumn, direction);
 
       const skip = (page - 1) * limit;
       queryBuilder.skip(skip).take(limit);
@@ -63,7 +62,9 @@ export class PostgresOrderRepository implements OrderRepository {
       const orders = OrderMapper.toDomainArray(orderEntities);
       return Result.success<Order[]>(orders);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to list orders', error);
+      return ErrorFactory.RepositoryError('Failed to list orders', {
+        cause: error,
+      });
     }
   }
 
@@ -78,7 +79,9 @@ export class PostgresOrderRepository implements OrderRepository {
         relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success({
         entity: OrderMapper.toDomain(orderEntity),
@@ -87,7 +90,7 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find the order for update',
-        error,
+        { cause: error },
       );
     }
   }
@@ -103,7 +106,9 @@ export class PostgresOrderRepository implements OrderRepository {
       return await this.saveNormally(order);
     } catch (error: unknown) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save order', error);
+      return ErrorFactory.RepositoryError('Failed to save order', {
+        cause: error,
+      });
     }
   }
 
@@ -142,11 +147,13 @@ export class PostgresOrderRepository implements OrderRepository {
           where: { id: order.id! },
         });
         if (!existing) {
-          throw new RepositoryError('Order not found');
+          throw new RepositoryError('Order not found', {
+            kind: ErrorKind.NOT_FOUND,
+          });
         }
         throw new RepositoryError(
           `Optimistic lock failure for Order ${order.id}. Expected version ${expectedVersion}.`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
@@ -158,7 +165,9 @@ export class PostgresOrderRepository implements OrderRepository {
       relations: { items: true, shippingAddress: true },
     });
     if (!updated) {
-      return ErrorFactory.RepositoryError('Order not found');
+      return ErrorFactory.RepositoryError('Order not found', {
+        kind: ErrorKind.NOT_FOUND,
+      });
     }
     return Result.success(OrderMapper.toDomain(updated));
   }
@@ -183,14 +192,18 @@ export class PostgresOrderRepository implements OrderRepository {
         relations: { items: true, shippingAddress: true },
       });
       if (!orderEntity) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       const order = OrderMapper.toDomain(orderEntity);
 
       return Result.success<Order>(order);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find the order', error);
+      return ErrorFactory.RepositoryError('Failed to find the order', {
+        cause: error,
+      });
     }
   }
 
@@ -198,11 +211,15 @@ export class PostgresOrderRepository implements OrderRepository {
     try {
       const deleteResult = await this.ormRepo.delete(id);
       if (deleteResult.affected === 0) {
-        return ErrorFactory.RepositoryError('Order not found');
+        return ErrorFactory.RepositoryError('Order not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success<void>(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete the order', error);
+      return ErrorFactory.RepositoryError('Failed to delete the order', {
+        cause: error,
+      });
     }
   }
 
@@ -224,7 +241,7 @@ export class PostgresOrderRepository implements OrderRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find orders by status before date',
-        error,
+        { cause: error },
       );
     }
   }

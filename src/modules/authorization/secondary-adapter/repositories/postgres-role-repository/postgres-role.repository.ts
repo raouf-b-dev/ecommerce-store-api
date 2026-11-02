@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
@@ -38,11 +39,15 @@ export class PostgresRoleRepository implements RoleRepository {
         relations: ROLE_WITH_PERMISSIONS,
       });
       if (!entity) {
-        return ErrorFactory.RepositoryError(`Role with ID ${id} not found`);
+        return ErrorFactory.RepositoryError(`Role with ID ${id} not found`, {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(RoleMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find role by ID', error);
+      return ErrorFactory.RepositoryError('Failed to find role by ID', {
+        cause: error,
+      });
     }
   }
 
@@ -59,7 +64,9 @@ export class PostgresRoleRepository implements RoleRepository {
       }
       return Result.success(RoleMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find role by code', error);
+      return ErrorFactory.RepositoryError('Failed to find role by code', {
+        cause: error,
+      });
     }
   }
 
@@ -71,7 +78,9 @@ export class PostgresRoleRepository implements RoleRepository {
       });
       return Result.success(entities.map((e) => RoleMapper.toDomain(e)));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find all roles', error);
+      return ErrorFactory.RepositoryError('Failed to find all roles', {
+        cause: error,
+      });
     }
   }
 
@@ -94,7 +103,9 @@ export class PostgresRoleRepository implements RoleRepository {
 
       return await this.findById(savedId);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save role', error);
+      return ErrorFactory.RepositoryError('Failed to save role', {
+        cause: error,
+      });
     }
   }
 
@@ -108,7 +119,9 @@ export class PostgresRoleRepository implements RoleRepository {
       }
       return Result.success(results);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to save roles', error);
+      return ErrorFactory.RepositoryError('Failed to save roles', {
+        cause: error,
+      });
     }
   }
 
@@ -122,7 +135,9 @@ export class PostgresRoleRepository implements RoleRepository {
         );
 
         if (!updateResult.affected) {
-          throw new RepositoryError('Role not found for update');
+          throw new RepositoryError('Role not found for update', {
+            kind: ErrorKind.NOT_FOUND,
+          });
         }
 
         await this.syncRolePermissions(
@@ -137,7 +152,9 @@ export class PostgresRoleRepository implements RoleRepository {
       if (error instanceof RepositoryError) {
         return Result.failure(error);
       }
-      return ErrorFactory.RepositoryError('Failed to update role', error);
+      return ErrorFactory.RepositoryError('Failed to update role', {
+        cause: error,
+      });
     }
   }
 
@@ -146,7 +163,9 @@ export class PostgresRoleRepository implements RoleRepository {
       await this.roleRepo.delete(id);
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete role', error);
+      return ErrorFactory.RepositoryError('Failed to delete role', {
+        cause: error,
+      });
     }
   }
 
@@ -170,7 +189,7 @@ export class PostgresRoleRepository implements RoleRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to fetch permission codes by role code',
-        error,
+        { cause: error },
       );
     }
   }

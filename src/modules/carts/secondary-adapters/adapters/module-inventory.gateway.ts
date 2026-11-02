@@ -22,10 +22,9 @@ export class ModuleInventoryGateway implements CartInventoryGateway {
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.InfrastructureError(
-        'Failed to check stock',
-        result.error,
-      );
+      return ErrorFactory.InfrastructureError('Failed to check stock', {
+        cause: result.error,
+      });
     }
 
     return Result.success({

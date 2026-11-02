@@ -2,7 +2,8 @@ import { SetDefaultAddressUseCase } from './set-default-address.usecase';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ResultAssertionHelper } from '../../../../../../../testing';
 import { RepositoryError } from '../../../../../../../shared-kernel/domain/exceptions/repository.error';
-import { DomainError } from '../../../../../../../shared-kernel/domain/exceptions/domain.error';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import {
   createUserCallerContext,
   SYSTEM_CALLER_CONTEXT,
@@ -80,9 +81,13 @@ describe('SetDefaultAddressUseCase', () => {
         `User with id ${userId} not found`,
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
     });
 
-    it('should return Failure(DomainError) if address not found', async () => {
+    it('should return Failure(UseCaseError) if address not found', async () => {
       const userId = 123;
       const addressId = 0;
 
@@ -99,8 +104,12 @@ describe('SetDefaultAddressUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         `Address with ID ${addressId} not found`,
-        DomainError,
+        UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.ADDRESS_NOT_FOUND,
+      });
     });
 
     it('should return Failure(RepositoryError) if save fails', async () => {
@@ -159,6 +168,10 @@ describe('SetDefaultAddressUseCase', () => {
         'User with id 123 not found',
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
       expect(mockUserRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 

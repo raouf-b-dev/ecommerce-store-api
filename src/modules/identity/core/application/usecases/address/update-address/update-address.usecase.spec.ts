@@ -13,6 +13,8 @@ import {
 } from '../../../../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Result } from '../../../../../../../shared-kernel/domain/result';
 import { AddressType } from '../../../../../../../shared-kernel/domain/value-objects/address-type';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 
 const adminCallerContext = createUserCallerContext({
   userId: 1,
@@ -118,8 +120,41 @@ describe('UpdateAddressUseCase', () => {
         `User with id ${userId} not found`,
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
 
       expect(mockUserRepository.findByIdForUpdate).toHaveBeenCalledWith(userId);
+      expect(mockUserRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should return Failure(UseCaseError) if address not found', async () => {
+      const userId = 123;
+      const addressId = 0;
+      const updateDto = AddressTestFactory.createUpdateAddressCommand({
+        userId,
+        addressId,
+      });
+
+      mockUserRepository.mockSuccessfulFindByIdForUpdate(
+        UserTestFactory.createMockUser({ id: userId }),
+      );
+
+      const result = await useCase.execute({
+        ...updateDto,
+        callerContext: adminCallerContext,
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        `Address with id ${addressId} not found`,
+        UseCaseError,
+      );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.ADDRESS_NOT_FOUND,
+      });
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
 
@@ -219,6 +254,10 @@ describe('UpdateAddressUseCase', () => {
         'User with id 123 not found',
         UseCaseError,
       );
+      expect(result.error).toMatchObject({
+        kind: ErrorKind.NOT_FOUND,
+        code: ErrorCode.USER_NOT_FOUND,
+      });
       expect(mockUserRepository.findByIdForUpdate).not.toHaveBeenCalled();
     });
 

@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+
 import { Test } from '@nestjs/testing';
 import {
   AuthenticationDtoFactory,
@@ -75,7 +76,7 @@ class RecordingSessionTokenRepository implements SessionTokenRepository {
     if (!stored || stored.isRevoked || stored.tokenHash !== expectedTokenHash) {
       return Promise.resolve(
         ErrorFactory.RepositoryError('Refresh token was already rotated', {
-          status: HttpStatus.CONFLICT,
+          kind: ErrorKind.CONFLICT,
         }),
       );
     }
@@ -237,7 +238,7 @@ describe('RefreshTokenUseCase', () => {
       REUSE_MESSAGE,
       UseCaseError,
     );
-    expect(replay.error.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+    expect(replay.error.kind).toBe(ErrorKind.UNAUTHENTICATED);
     expect(revokeAllForUser).toHaveBeenCalledTimes(1);
     expect(revokeAllForUser).toHaveBeenCalledWith(1);
 
@@ -348,15 +349,12 @@ describe('RefreshTokenUseCase', () => {
 
   it('returns the repository failure when the session cannot be loaded', async () => {
     await build([presented]);
-    jest
-      .spyOn(repository, 'findById')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.SERVICE_UNAVAILABLE,
-        ),
-      );
+    jest.spyOn(repository, 'findById').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        kind: ErrorKind.UNAVAILABLE,
+      }),
+    );
 
     const result = await useCase.execute(RAW_TOKEN);
 
@@ -365,7 +363,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to load session',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+    expect(result.error.kind).toBe(ErrorKind.UNAVAILABLE);
     expect(result.error.retryable).toBe(true);
   });
 
@@ -413,7 +411,7 @@ describe('RefreshTokenUseCase', () => {
       'User not found',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     expect(result.error.retryable).toBe(true);
   });
 
@@ -445,7 +443,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to resolve user role',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     expect(result.error.retryable).toBe(true);
   });
 
@@ -460,7 +458,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to retrieve credential information',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     expect(result.error.retryable).toBe(true);
     const stored = await repository.findById(SESSION_ID);
     ResultAssertionHelper.assertResultSuccess(stored);
@@ -470,15 +468,12 @@ describe('RefreshTokenUseCase', () => {
 
   it('preserves retryable when rotation fails for a reason other than conflict', async () => {
     await build([presented]);
-    jest
-      .spyOn(repository, 'replaceTokenIfCurrent')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ),
-      );
+    jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        kind: ErrorKind.INTERNAL,
+      }),
+    );
 
     const result = await useCase.execute(RAW_TOKEN);
 
@@ -487,7 +482,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to rotate refresh token',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     expect(result.error.retryable).toBe(true);
     const stored = await repository.findById(SESSION_ID);
     ResultAssertionHelper.assertResultSuccess(stored);
@@ -499,15 +494,12 @@ describe('RefreshTokenUseCase', () => {
     await build([presented]);
     const rotated = await useCase.execute(RAW_TOKEN);
     ResultAssertionHelper.assertResultSuccess(rotated);
-    jest
-      .spyOn(repository, 'revokeAllForUser')
-      .mockResolvedValue(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        ),
-      );
+    jest.spyOn(repository, 'revokeAllForUser').mockResolvedValue(
+      ErrorFactory.RepositoryError('db down', {
+        cause: new Error('db down'),
+        kind: ErrorKind.INTERNAL,
+      }),
+    );
 
     const replay = await useCase.execute(RAW_TOKEN);
 
@@ -516,7 +508,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to revoke sessions after refresh token reuse',
       UseCaseError,
     );
-    expect(replay.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(replay.error.kind).toBe(ErrorKind.INTERNAL);
     expect(replay.error.retryable).toBe(true);
   });
 
@@ -539,7 +531,7 @@ describe('RefreshTokenUseCase', () => {
     });
     jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
       ErrorFactory.RepositoryError('Refresh token was already rotated', {
-        status: HttpStatus.CONFLICT,
+        kind: ErrorKind.CONFLICT,
       }),
     );
     const revokeAllForUser = jest.spyOn(repository, 'revokeAllForUser');
@@ -565,16 +557,15 @@ describe('RefreshTokenUseCase', () => {
         );
       }
       return Promise.resolve(
-        ErrorFactory.RepositoryError(
-          'db down',
-          new Error('db down'),
-          HttpStatus.SERVICE_UNAVAILABLE,
-        ),
+        ErrorFactory.RepositoryError('db down', {
+          cause: new Error('db down'),
+          kind: ErrorKind.UNAVAILABLE,
+        }),
       );
     });
     jest.spyOn(repository, 'replaceTokenIfCurrent').mockResolvedValue(
       ErrorFactory.RepositoryError('Refresh token was already rotated', {
-        status: HttpStatus.CONFLICT,
+        kind: ErrorKind.CONFLICT,
       }),
     );
 
@@ -585,7 +576,7 @@ describe('RefreshTokenUseCase', () => {
       'Failed to load session',
       UseCaseError,
     );
-    expect(result.error.statusCode).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+    expect(result.error.kind).toBe(ErrorKind.UNAVAILABLE);
     expect(result.error.retryable).toBe(true);
   });
 });

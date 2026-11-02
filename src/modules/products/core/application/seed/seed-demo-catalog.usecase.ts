@@ -50,7 +50,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
     if (isFailure(categoriesResult)) {
       return ErrorFactory.UseCaseError(
         'Failed to load categories for catalog seed',
-        categoriesResult.error,
+        { cause: categoriesResult.error },
       );
     }
 
@@ -72,10 +72,9 @@ export class SeedDemoCatalogUseCase extends UseCase<
 
     const existingProductsResult = await this.productRepository.findAll();
     if (isFailure(existingProductsResult)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to load existing products',
-        existingProductsResult.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to load existing products', {
+        cause: existingProductsResult.error,
+      });
     }
 
     const existingBySku = new Map<
@@ -127,7 +126,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
       if (result.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to seed product ${missingProducts[i].sku}`,
-          result.error,
+          { cause: result.error },
         );
       }
     }
@@ -160,7 +159,7 @@ export class SeedDemoCatalogUseCase extends UseCase<
       if (result.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to refresh demo product ${updates[i].sku}`,
-          result.error,
+          { cause: result.error },
         );
       }
     }

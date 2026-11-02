@@ -35,10 +35,9 @@ export class ListCategoriesUseCase extends UseCase<
     });
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to load categories',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to load categories', {
+        cause: result.error,
+      });
     }
 
     return Result.success(result.value);

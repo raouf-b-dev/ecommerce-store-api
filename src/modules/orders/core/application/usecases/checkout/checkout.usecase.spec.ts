@@ -43,17 +43,15 @@ describe('CheckoutUseCase', () => {
   beforeEach(async () => {
     orderScheduler = new MockOrderScheduler();
     const orderRepository = new MockOrderRepository();
-    orderRepository.save.mockImplementation((order: { id?: number | null }) => {
-      order.id = 1001;
-      return Promise.resolve(Result.success(order as never));
+    orderRepository.save.mockImplementation((order) => {
+      order.setId(1001);
+      return Promise.resolve(Result.success(order));
     });
 
     const mockOrderFactory = {
-      createFromCart: jest.fn().mockReturnValue({
-        id: null,
-        totalPrice: 100,
-        items: [],
-      }),
+      createFromCart: jest
+        .fn()
+        .mockReturnValue(OrderTestFactory.createDomainOrder({ id: null })),
     };
 
     const mockValidateCheckoutUseCase = {

@@ -2,6 +2,7 @@ import { Result } from '../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.error';
 import { InfrastructureError } from '../../../../../shared-kernel/domain/exceptions/infrastructure-error';
 import { PaymentMethodType } from '../../../../../shared-kernel/domain/value-objects/payment-method';
+import { RefundPaymentCommand } from '../commands/refund-payment.command';
 
 export interface CreatePaymentInput {
   orderId: number;
@@ -49,11 +50,8 @@ export interface PaymentIntentResult {
   clientSecret: string;
 }
 
-export interface ProcessRefundInput {
-  paymentId: number;
-  amount: number;
-  reason: string;
-}
+/** ACL input; same shape as RefundPaymentCommand. */
+export type ProcessRefundInput = RefundPaymentCommand;
 
 export abstract class PaymentGateway {
   abstract createPayment(

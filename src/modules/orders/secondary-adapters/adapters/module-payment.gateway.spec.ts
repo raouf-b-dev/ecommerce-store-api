@@ -7,11 +7,12 @@ import { PaymentMethodType } from '../../../../shared-kernel/domain/value-object
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Result } from '../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
-import { StatusCode } from '../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../testing';
 import { IPayment } from '../../../payments/core/domain/interfaces/payment.interface';
 import { PaymentStatusType } from '../../../payments/core/domain/value-objects/payment-status';
 import { PaymentTestFactory } from '../../../payments/testing';
+import { Money } from '../../../../shared-kernel/domain/value-objects/money';
 
 describe('ModulePaymentGateway', () => {
   let gateway: ModulePaymentGateway;
@@ -20,6 +21,9 @@ describe('ModulePaymentGateway', () => {
   >;
   let createPaymentIntentExecute: jest.MockedFunction<
     CreatePaymentIntentUseCase['execute']
+  >;
+  let processRefundExecute: jest.MockedFunction<
+    ProcessRefundUseCase['execute']
   >;
 
   const input = {
@@ -48,6 +52,7 @@ describe('ModulePaymentGateway', () => {
   beforeEach(async () => {
     createPaymentExecute = jest.fn();
     createPaymentIntentExecute = jest.fn();
+    processRefundExecute = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,7 +65,10 @@ describe('ModulePaymentGateway', () => {
           provide: CreatePaymentIntentUseCase,
           useValue: { execute: createPaymentIntentExecute },
         },
-        { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
+        {
+          provide: ProcessRefundUseCase,
+          useValue: { execute: processRefundExecute },
+        },
       ],
     }).compile();
 
@@ -124,7 +132,7 @@ describe('ModulePaymentGateway', () => {
     it('returns the payment intent failure unchanged', async () => {
       const failure = ErrorFactory.RepositoryError(
         'Pending payment already exists for order',
-        { status: StatusCode.CONFLICT, retryable: true },
+        { kind: ErrorKind.CONFLICT, retryable: true },
       );
       createPaymentIntentExecute.mockResolvedValue(failure);
 
@@ -159,6 +167,97 @@ describe('ModulePaymentGateway', () => {
       expect(result.value).toEqual({
         paymentId: 42,
         clientSecret: 'secret_123',
+      });
+    });
+  });
+
+  describe('processRefund', () => {
+    it('forwards an explicit Money amount to ProcessRefundUseCase unchanged', async () => {
+      processRefundExecute.mockResolvedValue(Result.success(payment));
+      const amountResult = Money.create(2550, 'EUR');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
+
+      const result = await gateway.processRefund({
+        paymentId: 5,
+        amount: amountResult.value,
+        reason: 'Order cancelled',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(processRefundExecute).toHaveBeenCalledWith({
+        paymentId: 5,
+        amount: amountResult.value,
+        reason: 'Order cancelled',
+      });
+      expect(processRefundExecute.mock.calls[0][0]).toMatchObject({
+        amount: expect.objectContaining({ amount: 2550, currency: 'EUR' }),
+      });
+    });
+
+    it('forwards remaining mode to ProcessRefundUseCase', async () => {
+      processRefundExecute.mockResolvedValue(Result.success(payment));
+
+      const result = await gateway.processRefund({
+        paymentId: 5,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+
+      ResultAssertionHelper.assertResultSuccess(result);
+      expect(processRefundExecute).toHaveBeenCalledWith({
+        paymentId: 5,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+    });
+
+    it('preserves retryable true when ProcessRefundUseCase fails retryably', async () => {
+      processRefundExecute.mockResolvedValue(
+        ErrorFactory.UseCaseError('Provider timeout', { retryable: true }),
+      );
+
+      const result = await gateway.processRefund({
+        paymentId: 5,
+        mode: 'remaining',
+        reason: 'Surplus payment refund',
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to process refund',
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { retryable: true },
+      });
+    });
+
+    it('preserves retryable false when ProcessRefundUseCase fails non-retryably', async () => {
+      processRefundExecute.mockResolvedValue(
+        ErrorFactory.UseCaseError(
+          'Payment cannot be refunded in current status',
+          {
+            retryable: false,
+          },
+        ),
+      );
+
+      const amountResult = Money.create(1000, 'USD');
+      ResultAssertionHelper.assertResultSuccess(amountResult);
+
+      const result = await gateway.processRefund({
+        paymentId: 5,
+        amount: amountResult.value,
+        reason: 'Order cancelled',
+      });
+
+      ResultAssertionHelper.assertResultFailure(
+        result,
+        'Failed to process refund',
+      );
+      expect(result).toMatchObject({
+        isFailure: true,
+        error: { retryable: false },
       });
     });
   });

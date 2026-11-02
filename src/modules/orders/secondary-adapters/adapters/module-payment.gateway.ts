@@ -89,15 +89,13 @@ export class ModulePaymentGateway implements PaymentGateway {
   async processRefund(
     input: ProcessRefundInput,
   ): Promise<Result<void, InfrastructureError>> {
-    const result = await this.processRefundUseCase.execute({
-      paymentId: input.paymentId,
-      amount: input.amount,
-      reason: input.reason,
-    });
+    const result = await this.processRefundUseCase.execute(input);
 
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError('Failed to process refund', {
         cause: result.error,
+        kind: result.error.kind,
+        code: result.error.code,
         retryable: result.error.retryable,
       });
     }

@@ -16,7 +16,7 @@ import {
   PAYMENT_REDIS,
   USER_REDIS,
 } from '../constants/redis.constants';
-import { toError } from '../../../shared-kernel/infra/lang/error.utils';
+import { toError } from '../../../shared-kernel/helpers/lang/error.utils';
 
 @Injectable()
 export class RedisIndexInitializerService implements OnModuleInit {

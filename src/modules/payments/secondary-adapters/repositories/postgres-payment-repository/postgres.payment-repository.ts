@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { RepositoryError } from '../../../../../shared-kernel/domain/exceptions/repository.error';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Payment } from '../../../core/domain/entities/payment';
 import { Refund } from '../../../core/domain/entities/refund';
 import { PaymentRepository } from '../../../core/domain/repositories/payment.repository';
@@ -35,12 +35,16 @@ export class PostgresPaymentRepository implements PaymentRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Payment not found');
+        return ErrorFactory.RepositoryError('Payment not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       return Result.success(PaymentMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find payment', error);
+      return ErrorFactory.RepositoryError('Failed to find payment', {
+        cause: error,
+      });
     }
   }
 
@@ -57,7 +61,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by order ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -72,14 +76,16 @@ export class PostgresPaymentRepository implements PaymentRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Payment not found');
+        return ErrorFactory.RepositoryError('Payment not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       return Result.success(PaymentMapper.toDomain(entity));
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payment by transaction ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -103,7 +109,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payment by gateway intent ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -129,7 +135,7 @@ export class PostgresPaymentRepository implements PaymentRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find payments by user ID',
-        error,
+        { cause: error },
       );
     }
   }
@@ -167,12 +173,14 @@ export class PostgresPaymentRepository implements PaymentRepository {
           'Pending payment already exists for order',
           {
             cause: error,
-            status: StatusCode.CONFLICT,
+            kind: ErrorKind.CONFLICT,
             retryable: true,
           },
         );
       }
-      return ErrorFactory.RepositoryError('Failed to save payment', error);
+      return ErrorFactory.RepositoryError('Failed to save payment', {
+        cause: error,
+      });
     }
   }
 
@@ -186,7 +194,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
           });
 
           if (!existing) {
-            throw new RepositoryError('Payment not found for update');
+            throw new RepositoryError('Payment not found for update', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           const saved = await manager.save(PaymentEntity, entity);
@@ -197,7 +207,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(PaymentMapper.toDomain(updatedPayment));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to update payment', error);
+      return ErrorFactory.RepositoryError('Failed to update payment', {
+        cause: error,
+      });
     }
   }
 
@@ -205,11 +217,15 @@ export class PostgresPaymentRepository implements PaymentRepository {
     try {
       const result = await this.paymentRepo.delete(id);
       if (result.affected === 0) {
-        return ErrorFactory.RepositoryError('Payment not found for deletion');
+        return ErrorFactory.RepositoryError('Payment not found for deletion', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(undefined);
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to delete payment', error);
+      return ErrorFactory.RepositoryError('Failed to delete payment', {
+        cause: error,
+      });
     }
   }
 
@@ -222,12 +238,16 @@ export class PostgresPaymentRepository implements PaymentRepository {
       });
 
       if (!entity) {
-        return ErrorFactory.RepositoryError('Refund not found');
+        return ErrorFactory.RepositoryError('Refund not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
 
       return Result.success(RefundMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find refund', error);
+      return ErrorFactory.RepositoryError('Failed to find refund', {
+        cause: error,
+      });
     }
   }
 
@@ -253,7 +273,9 @@ export class PostgresPaymentRepository implements PaymentRepository {
       return Result.success(RefundMapper.toDomain(savedRefund));
     } catch (error) {
       if (error instanceof RepositoryError) return Result.failure(error);
-      return ErrorFactory.RepositoryError('Failed to save refund', error);
+      return ErrorFactory.RepositoryError('Failed to save refund', {
+        cause: error,
+      });
     }
   }
 }

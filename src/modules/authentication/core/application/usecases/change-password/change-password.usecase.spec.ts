@@ -1,3 +1,4 @@
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import {
   AuthenticationDtoFactory,
   AuthorizationGatewayMock,
@@ -13,7 +14,6 @@ import { ChangePasswordUseCase } from './change-password.usecase';
 import { Credential } from '../../../domain/entities/credential';
 import { isFailure } from '../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
-import { HttpStatus } from '@nestjs/common';
 
 describe('ChangePasswordUseCase', () => {
   let useCase: ChangePasswordUseCase;
@@ -119,7 +119,7 @@ describe('ChangePasswordUseCase', () => {
       UseCaseError,
     );
     const error = isFailure(result) ? result.error : undefined;
-    expect(error?.statusCode).toBe(HttpStatus.UNAUTHORIZED);
+    expect(error?.kind).toBe(ErrorKind.UNAUTHENTICATED);
   });
 
   it('returns bad request when new password equals current password string', async () => {
@@ -135,7 +135,7 @@ describe('ChangePasswordUseCase', () => {
       UseCaseError,
     );
     const error = isFailure(result) ? result.error : undefined;
-    expect(error?.statusCode).toBe(HttpStatus.BAD_REQUEST);
+    expect(error?.kind).toBe(ErrorKind.INVALID);
   });
 
   it('returns forbidden and leaves the credential untouched for a role without change_own_credentials', async () => {
@@ -157,7 +157,7 @@ describe('ChangePasswordUseCase', () => {
       UseCaseError,
     );
     const error = isFailure(result) ? result.error : undefined;
-    expect(error?.statusCode).toBe(HttpStatus.FORBIDDEN);
+    expect(error?.kind).toBe(ErrorKind.FORBIDDEN);
     expect(credentialRepository.findByUserId).not.toHaveBeenCalled();
     expect(credentialRepository.update).not.toHaveBeenCalled();
     expect(revokeAllForUserUsecase.execute).not.toHaveBeenCalled();

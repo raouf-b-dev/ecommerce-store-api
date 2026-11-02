@@ -16,10 +16,9 @@ export class ResolveRolePermissionsService {
       await this.roleRepository.findPermissionCodesByRoleCode(roleCode);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError(
-        'Failed to resolve role permissions',
-        result.error,
-      );
+      return ErrorFactory.UseCaseError('Failed to resolve role permissions', {
+        cause: result.error,
+      });
     }
 
     const codes = result.value || [];

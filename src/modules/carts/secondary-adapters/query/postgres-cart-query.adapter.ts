@@ -53,7 +53,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch cart for ID ${cartId}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -94,7 +94,7 @@ export class PostgresCartQueryAdapter implements CartQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch cart for user ID ${userId}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }

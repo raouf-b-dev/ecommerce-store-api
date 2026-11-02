@@ -59,6 +59,7 @@ import { ExpirePendingOrdersJob } from './primary-adapters/jobs/expire-pending-o
 import { ReleaseOrderStockJob } from './primary-adapters/jobs/release-order-stock.job';
 import { ReleaseOrderStockUseCase } from './core/application/usecases/release-order-stock/release-order-stock.usecase';
 import { ShippingAddressResolver } from './core/application/services/shipping-address-resolver';
+import { ScheduleOrderRefundService } from './core/application/services/schedule-order-refund.service';
 import { ValidateCheckoutUseCase } from './core/application/usecases/validate-checkout/validate-checkout.usecase';
 import { ValidateCartStep } from './primary-adapters/jobs/validate-cart.job';
 import { ReserveStockStep } from './primary-adapters/jobs/reserve-stock-job/reserve-stock.job';
@@ -173,6 +174,9 @@ import { LinkDemoOrderPaymentsUseCase } from './core/application/seed/link-demo-
     // Domain
     OrderFactory,
     ShippingAddressResolver,
+
+    // Application services
+    ScheduleOrderRefundService,
 
     // Use cases
     GetOrderUseCase,

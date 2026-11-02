@@ -1,4 +1,5 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { Injectable } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
 import {
   isFailure,
@@ -40,13 +41,13 @@ export class CreateCategoryUseCase extends UseCase<
       if (isFailure(nameExists)) {
         return ErrorFactory.UseCaseError(
           'Failed to validate category name uniqueness',
-          nameExists.error,
+          { cause: nameExists.error },
         );
       }
       if (nameExists.value) {
         return ErrorFactory.UseCaseError(
           `Category with name ${category.name} already exists`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
@@ -56,22 +57,21 @@ export class CreateCategoryUseCase extends UseCase<
       if (isFailure(slugExists)) {
         return ErrorFactory.UseCaseError(
           'Failed to validate category slug uniqueness',
-          slugExists.error,
+          { cause: slugExists.error },
         );
       }
       if (slugExists.value) {
         return ErrorFactory.UseCaseError(
           `Category with slug ${category.slug} already exists`,
-          { status: HttpStatus.CONFLICT },
+          { kind: ErrorKind.CONFLICT },
         );
       }
 
       const saveResult = await this.categoryRepository.save(category);
       if (isFailure(saveResult)) {
-        return ErrorFactory.UseCaseError(
-          'Failed to create category',
-          saveResult.error,
-        );
+        return ErrorFactory.UseCaseError('Failed to create category', {
+          cause: saveResult.error,
+        });
       }
 
       return Result.success(toCategoryResult(saveResult.value));

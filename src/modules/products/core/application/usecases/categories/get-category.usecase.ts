@@ -10,6 +10,7 @@ import { CallerContext } from '../../../../../../shared-kernel/domain/interfaces
 import { CatalogVisibilityPolicy } from '../../../domain/policies/catalog-visibility.policy';
 import { CategoryQueryService } from '../../ports/category-query.service';
 import { CategoryResult } from '../../queries/results/category.result';
+import { categoryNotFoundError } from '../../services/category-not-found';
 
 @Injectable()
 export class GetCategoryUseCase extends UseCase<
@@ -28,22 +29,21 @@ export class GetCategoryUseCase extends UseCase<
     const result = await this.categoryQueryService.getById(id);
 
     if (isFailure(result)) {
-      return ErrorFactory.UseCaseError('Failed to find category', result.error);
+      return ErrorFactory.UseCaseError(result.error.message, {
+        cause: result.error,
+        kind: result.error.kind,
+        retryable: result.error.retryable,
+      });
     }
 
     if (!result.value) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${id} not found`,
-      );
+      return categoryNotFoundError(id);
     }
 
-    const category = result.value;
-    if (!CatalogVisibilityPolicy.isVisible(category.isActive, caller)) {
-      return ErrorFactory.QueryNotFoundError(
-        `Category with id ${id} not found`,
-      );
+    if (!CatalogVisibilityPolicy.isVisible(result.value.isActive, caller)) {
+      return categoryNotFoundError(id);
     }
 
-    return Result.success(category);
+    return Result.success(result.value);
   }
 }

@@ -6,6 +6,9 @@ import {
 import { ShipOrderUseCase } from './ship-order.usecase';
 import { OrderStatus } from '../../../domain/value-objects/order-status';
 import { RepositoryError } from '../../../../../../shared-kernel/domain/exceptions/repository.error';
+import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ResultAssertionHelper } from '../../../../../../testing';
 import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { PaymentMethodType } from 'src/shared-kernel/domain/value-objects/payment-method';
@@ -50,9 +53,11 @@ describe('ShipOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        'not found',
-        RepositoryError,
+        'Order with id 999 not found',
+        UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
       expect(mockOrderRepository.findByIdForUpdate).toHaveBeenCalledWith(
         orderId,
       );
@@ -201,11 +206,14 @@ describe('ShipOrderUseCase', () => {
       const result = await useCase.execute(processingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(5);
+      expect(result.value.id).toBe(processingMultiItem.id);
+      expect(result.value.totalAmount).toEqual(expect.any(Number));
       expect(result.value.status).toBe(OrderStatus.SHIPPED);
+      expect(result.value).not.toHaveProperty('items');
+      expect(result.value).not.toHaveProperty('paymentId');
     });
 
-    it('should return RepositoryError when findByIdForUpdate fails', async () => {
+    it('should return ORDER_NOT_FOUND when findByIdForUpdate is not found', async () => {
       const orderId = 1;
       mockOrderRepository.mockOrderNotFound(orderId);
 
@@ -213,9 +221,10 @@ describe('ShipOrderUseCase', () => {
 
       ResultAssertionHelper.assertResultFailure(
         result,
-        undefined,
-        RepositoryError,
+        'Order with id 1 not found',
+        UseCaseError,
       );
+      expect(result.error.code).toBe(ErrorCode.ORDER_NOT_FOUND);
     });
 
     it('should return RepositoryError when save fails', async () => {

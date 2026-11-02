@@ -135,7 +135,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch product list: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -177,7 +177,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch product details for ID ${id}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }
@@ -219,7 +219,7 @@ export class PostgresProductQueryAdapter implements ProductQueryService {
     } catch (error) {
       return ErrorFactory.QueryError(
         `Failed to fetch product details for slug ${slug}: ${(error as Error).message}`,
-        error,
+        { cause: error },
       );
     }
   }

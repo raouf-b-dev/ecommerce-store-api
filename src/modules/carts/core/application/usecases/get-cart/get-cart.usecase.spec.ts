@@ -1,4 +1,5 @@
-import { HttpStatus } from '@nestjs/common';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
+import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import {
   MockCartQueryService,
   CartDtoTestFactory,
@@ -70,7 +71,8 @@ describe('GetCartUseCase', () => {
         'Cart 999 not found',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.NOT_FOUND);
+      expect(result.error.code).toBe(ErrorCode.CART_NOT_FOUND);
+      expect(result.error.kind).toBe(ErrorKind.NOT_FOUND);
     });
 
     it('should return failure with 500 when query service fails', async () => {
@@ -88,7 +90,7 @@ describe('GetCartUseCase', () => {
         'Database connection error',
         UseCaseError,
       );
-      expect(result.error.statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(result.error.kind).toBe(ErrorKind.INTERNAL);
     });
 
     it('should allow admin to access cart by cartId without user constraint', async () => {

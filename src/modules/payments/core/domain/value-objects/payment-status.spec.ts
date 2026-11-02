@@ -12,6 +12,7 @@ const successfulStatuses: PaymentStatusType[] = [
 const refundableStatuses: PaymentStatusType[] = [
   PaymentStatusType.CAPTURED,
   PaymentStatusType.COMPLETED,
+  PaymentStatusType.PARTIALLY_REFUNDED,
 ];
 
 const refundedStatuses: PaymentStatusType[] = [
@@ -32,10 +33,8 @@ describe('PaymentStatus', () => {
 
     describe('when status is unknown', () => {
       it('throws DomainError', () => {
-        expect(() => new PaymentStatus('UNKNOWN' as PaymentStatusType)).toThrow(
-          DomainError,
-        );
-        expect(() => new PaymentStatus('UNKNOWN' as PaymentStatusType)).toThrow(
+        expect(() => new PaymentStatus('UNKNOWN')).toThrow(DomainError);
+        expect(() => new PaymentStatus('UNKNOWN')).toThrow(
           'Invalid payment status: UNKNOWN',
         );
       });

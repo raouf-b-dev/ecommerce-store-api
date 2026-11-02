@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { StatusCode } from '../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { UseCase } from '../../../../../shared-kernel/domain/interfaces/base.usecase';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
@@ -42,10 +42,10 @@ export class SeedDemoInventoryUseCase extends UseCase<
     for (let i = 0; i < existenceChecks.length; i++) {
       const check = existenceChecks[i];
       const item = items[i];
-      if (check.isFailure && check.error.statusCode !== StatusCode.NOT_FOUND) {
+      if (check.isFailure && check.error.kind !== ErrorKind.NOT_FOUND) {
         return ErrorFactory.UseCaseError(
           `Failed to check existing inventory for ${item.sku}`,
-          check.error,
+          { cause: check.error },
         );
       }
     }
@@ -53,7 +53,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
     const missingItems = items.filter(
       (_, i) =>
         existenceChecks[i].isFailure &&
-        existenceChecks[i].error.statusCode === StatusCode.NOT_FOUND,
+        existenceChecks[i].error.kind === ErrorKind.NOT_FOUND,
     );
 
     const saveResults = await Promise.all(
@@ -72,7 +72,7 @@ export class SeedDemoInventoryUseCase extends UseCase<
       if (saveResult.isFailure) {
         return ErrorFactory.UseCaseError(
           `Failed to seed inventory for ${missingItems[i].sku}`,
-          saveResult.error,
+          { cause: saveResult.error },
         );
       }
     }

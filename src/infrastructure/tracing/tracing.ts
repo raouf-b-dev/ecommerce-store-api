@@ -7,8 +7,8 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
-import { toErrorMessage } from '../../shared-kernel/infra/lang/error.utils';
-import { getAppVersion } from '../../shared-kernel/infra/lang/app-version';
+import { toErrorMessage } from '../../shared-kernel/helpers/lang/error.utils';
+import { getAppVersion } from '../../shared-kernel/helpers/lang/app-version';
 
 const isTracingEnabled = process.env.OTEL_TRACING_ENABLED !== 'false';
 

@@ -5,7 +5,7 @@ import { RedisIndexInitializerService } from './search/redis-index-initializer.s
 import {
   toError,
   toErrorMessage,
-} from '../../shared-kernel/infra/lang/error.utils';
+} from '../../shared-kernel/helpers/lang/error.utils';
 import { MetricsService } from '../metrics/metrics.service';
 
 /**

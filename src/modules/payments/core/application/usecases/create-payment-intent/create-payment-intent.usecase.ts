@@ -12,7 +12,7 @@ import { PaymentProvider } from '../../ports/payment-provider';
 import { PaymentStatusType } from '../../../domain/value-objects/payment-status';
 import { CreatePaymentIntentCommand } from '../../commands/create-payment-intent.command';
 import { Money } from '../../../../../../shared-kernel/domain/value-objects/money';
-import { StatusCode } from '../../../../../../shared-kernel/domain/exceptions/status-code';
+import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
 import { ErrorCode } from '../../../../../../shared-kernel/domain/exceptions/error-code';
 import { providerMismatchError } from '../../errors/provider-mismatch.error';
 
@@ -65,7 +65,7 @@ export class CreatePaymentIntentUseCase extends UseCase<
         return ErrorFactory.UseCaseError(
           `Payment amount or currency does not match pending payment for order ${dto.orderId}`,
           {
-            status: StatusCode.CONFLICT,
+            kind: ErrorKind.CONFLICT,
             code: ErrorCode.PAYMENT_AMOUNT_MISMATCH,
           },
         );

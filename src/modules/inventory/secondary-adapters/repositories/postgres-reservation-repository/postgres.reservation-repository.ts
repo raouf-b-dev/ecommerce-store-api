@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -44,7 +45,7 @@ export class PostgresReservationRepository implements ReservationRepository {
       if (reservationResult.isFailure) {
         return ErrorFactory.RepositoryError(
           'Failed to create reservation entity',
-          reservationResult.error,
+          { cause: reservationResult.error },
         );
       }
 
@@ -100,7 +101,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       if (error instanceof RepositoryError) {
         return Result.failure(error);
       }
-      return ErrorFactory.RepositoryError('Failed to save reservation', error);
+      return ErrorFactory.RepositoryError('Failed to save reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -110,11 +113,15 @@ export class PostgresReservationRepository implements ReservationRepository {
         where: { id },
       });
       if (!entity) {
-        return ErrorFactory.RepositoryError('Reservation not found');
+        return ErrorFactory.RepositoryError('Reservation not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(ReservationMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find reservation', error);
+      return ErrorFactory.RepositoryError('Failed to find reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -124,11 +131,15 @@ export class PostgresReservationRepository implements ReservationRepository {
     try {
       const entity = await this.repository.findOne({ where: { orderId } });
       if (!entity) {
-        return ErrorFactory.RepositoryError('Reservation not found');
+        return ErrorFactory.RepositoryError('Reservation not found', {
+          kind: ErrorKind.NOT_FOUND,
+        });
       }
       return Result.success(ReservationMapper.toDomain(entity));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find reservation', error);
+      return ErrorFactory.RepositoryError('Failed to find reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -139,7 +150,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       const entities = await this.repository.find({ where: { orderId } });
       return Result.success(entities.map(ReservationMapper.toDomain));
     } catch (error) {
-      return ErrorFactory.RepositoryError('Failed to find reservations', error);
+      return ErrorFactory.RepositoryError('Failed to find reservations', {
+        cause: error,
+      });
     }
   }
 
@@ -151,10 +164,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       const savedEntity = await this.repository.save(entity);
       return Result.success(ReservationMapper.toDomain(savedEntity));
     } catch (error) {
-      return ErrorFactory.RepositoryError(
-        'Failed to update reservation',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to update reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -180,7 +192,7 @@ export class PostgresReservationRepository implements ReservationRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to find expired reservations',
-        error,
+        { cause: error },
       );
     }
   }
@@ -203,7 +215,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (
@@ -256,10 +270,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       if (error instanceof RepositoryError) {
         return Result.failure(error);
       }
-      return ErrorFactory.RepositoryError(
-        'Failed to release reservation',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to release reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -280,7 +293,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (currentEntity.status === ReservationStatus.CONFIRMED) {
@@ -330,10 +345,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       if (error instanceof RepositoryError) {
         return Result.failure(error);
       }
-      return ErrorFactory.RepositoryError(
-        'Failed to confirm reservation',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to confirm reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -354,7 +368,9 @@ export class PostgresReservationRepository implements ReservationRepository {
           });
 
           if (!currentEntity) {
-            throw new RepositoryError('Reservation not found');
+            throw new RepositoryError('Reservation not found', {
+              kind: ErrorKind.NOT_FOUND,
+            });
           }
 
           if (currentEntity.status === ReservationStatus.EXPIRED) {
@@ -401,10 +417,9 @@ export class PostgresReservationRepository implements ReservationRepository {
       if (error instanceof RepositoryError) {
         return Result.failure(error);
       }
-      return ErrorFactory.RepositoryError(
-        'Failed to expire reservation',
-        error,
-      );
+      return ErrorFactory.RepositoryError('Failed to expire reservation', {
+        cause: error,
+      });
     }
   }
 
@@ -439,7 +454,7 @@ export class PostgresReservationRepository implements ReservationRepository {
     } catch (error) {
       return ErrorFactory.RepositoryError(
         'Failed to aggregate pending reservation quantities',
-        error,
+        { cause: error },
       );
     }
   }

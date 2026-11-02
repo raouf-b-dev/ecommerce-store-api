@@ -1,37 +1,28 @@
 import { AppError } from './app.error';
-import { ErrorOptions, resolveErrorArgs } from './error-options';
+import { ErrorOptions } from './error-options';
 import { ErrorCode } from './error-code';
-import { StatusCode } from './status-code';
+import { ErrorKind } from './error-kind';
 
 export class QueryError extends AppError {
-  constructor(message: string, options: ErrorOptions);
-  constructor(
-    message: string,
-    cause?: unknown,
-    status?: number,
-    retryable?: boolean,
-    code?: ErrorCode,
-  );
-  constructor(
-    message: string,
-    causeOrOptions?: unknown,
-    status?: number,
-    retryable: boolean = true,
-    code?: ErrorCode,
-  ) {
-    const resolved = resolveErrorArgs(causeOrOptions, status, retryable, code);
+  constructor(message: string, options: ErrorOptions = {}) {
     super(
       message,
-      resolved.status ?? StatusCode.INTERNAL_SERVER_ERROR,
-      resolved.code ?? ErrorCode.QUERY_ERROR,
-      resolved.cause,
-      resolved.retryable ?? retryable,
+      {
+        kind: ErrorKind.INTERNAL,
+        code: ErrorCode.QUERY_ERROR,
+        retryable: true,
+      },
+      options,
     );
   }
 }
 
 export class QueryNotFoundError extends QueryError {
-  constructor(message: string, cause?: Error) {
-    super(message, cause, StatusCode.NOT_FOUND, false);
+  constructor(message: string, options: ErrorOptions = {}) {
+    super(message, {
+      ...options,
+      kind: ErrorKind.NOT_FOUND,
+      retryable: false,
+    });
   }
 }

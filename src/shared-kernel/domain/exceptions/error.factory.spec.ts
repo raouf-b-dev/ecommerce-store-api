@@ -1,6 +1,11 @@
+import { DomainError } from './domain.error';
 import { ErrorCode } from './error-code';
 import { ErrorFactory } from './error.factory';
-import { StatusCode } from './status-code';
+import { ErrorKind } from './error-kind';
+import { QueryError, QueryNotFoundError } from './query.error';
+import { RepositoryError } from './repository.error';
+import { ServiceError } from './service-error';
+import { UseCaseError } from './usecase.error';
 
 describe('ErrorFactory', () => {
   it('sets the code from options and keeps the use case defaults', () => {
@@ -13,7 +18,7 @@ describe('ErrorFactory', () => {
       error: {
         message: 'Cart is empty',
         code: ErrorCode.CART_EMPTY,
-        statusCode: StatusCode.UNPROCESSABLE_ENTITY,
+        kind: ErrorKind.RULE_VIOLATION,
         retryable: false,
         cause: undefined,
       },
@@ -30,15 +35,15 @@ describe('ErrorFactory', () => {
       error: {
         message: 'Amount is invalid',
         code: ErrorCode.AMOUNT_INVALID,
-        statusCode: StatusCode.BAD_REQUEST,
+        kind: ErrorKind.INVALID,
         retryable: false,
       },
     });
   });
 
-  it('sets status and retryable from options', () => {
+  it('sets kind and retryable from options', () => {
     const missing = ErrorFactory.RepositoryError('Inventory not found', {
-      status: StatusCode.NOT_FOUND,
+      kind: ErrorKind.NOT_FOUND,
     });
     const rejected = ErrorFactory.InfrastructureError('Provider rejected', {
       retryable: false,
@@ -47,7 +52,7 @@ describe('ErrorFactory', () => {
     expect(missing).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
         retryable: false,
         code: ErrorCode.REPOSITORY_ERROR,
       },
@@ -55,16 +60,16 @@ describe('ErrorFactory', () => {
     expect(rejected).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: false,
         code: ErrorCode.INFRASTRUCTURE_ERROR,
       },
     });
   });
 
-  it('keeps an Error cause when the second argument is an Error', () => {
+  it('keeps an Error cause when passed via options', () => {
     const cause = new Error('db down');
-    const result = ErrorFactory.RepositoryError('Failed to save', cause);
+    const result = ErrorFactory.RepositoryError('Failed to save', { cause });
 
     expect(result).toMatchObject({
       isFailure: true,
@@ -72,45 +77,160 @@ describe('ErrorFactory', () => {
         message: 'Failed to save',
         code: ErrorCode.REPOSITORY_ERROR,
         cause,
-        statusCode: StatusCode.INTERNAL_SERVER_ERROR,
+        kind: ErrorKind.INTERNAL,
         retryable: true,
       },
     });
   });
 
-  it('keeps positional cause and status', () => {
+  it('keeps cause and kind via options', () => {
     const cause = new Error('db down');
-    const result = ErrorFactory.RepositoryError(
-      'Failed to save',
+    const result = ErrorFactory.RepositoryError('Failed to save', {
       cause,
-      StatusCode.SERVICE_UNAVAILABLE,
-    );
+      kind: ErrorKind.UNAVAILABLE,
+    });
 
     expect(result).toMatchObject({
       isFailure: true,
       error: {
         cause,
-        statusCode: StatusCode.SERVICE_UNAVAILABLE,
+        kind: ErrorKind.UNAVAILABLE,
         retryable: true,
         code: ErrorCode.REPOSITORY_ERROR,
       },
     });
   });
 
-  it('keeps a positional status when cause is omitted', () => {
-    const result = ErrorFactory.RepositoryError(
-      'Inventory not found',
-      undefined,
-      StatusCode.NOT_FOUND,
-    );
+  it('derives retryable false from a non-retryable kind in the factory', () => {
+    const result = ErrorFactory.RepositoryError('Inventory not found', {
+      kind: ErrorKind.NOT_FOUND,
+    });
 
     expect(result).toMatchObject({
       isFailure: true,
       error: {
-        statusCode: StatusCode.NOT_FOUND,
+        kind: ErrorKind.NOT_FOUND,
         retryable: false,
         code: ErrorCode.REPOSITORY_ERROR,
       },
+    });
+  });
+
+  it('derives retryable true from kind INTERNAL in the factory', () => {
+    const result = ErrorFactory.RepositoryError('DB blip', {
+      kind: ErrorKind.INTERNAL,
+    });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        kind: ErrorKind.INTERNAL,
+        retryable: true,
+        code: ErrorCode.REPOSITORY_ERROR,
+      },
+    });
+  });
+
+  it('factory kind CONFLICT yields retryable false; direct new yields true', () => {
+    const viaFactory = ErrorFactory.RepositoryError('Conflict', {
+      kind: ErrorKind.CONFLICT,
+    });
+    const viaNew = new RepositoryError('Conflict', {
+      kind: ErrorKind.CONFLICT,
+    });
+
+    expect(viaFactory.error.retryable).toBe(false);
+    expect(viaNew.retryable).toBe(true);
+  });
+
+  it('DomainError ignores retryable: true', () => {
+    const error = new DomainError('bad', { retryable: true });
+    expect(error.retryable).toBe(false);
+  });
+
+  it('ServiceError ignores retryable: true', () => {
+    const error = new ServiceError('bad', { retryable: true });
+    expect(error.retryable).toBe(false);
+  });
+
+  it('UseCaseError honours retryable: true', () => {
+    const error = new UseCaseError('retry me', { retryable: true });
+    expect(error.retryable).toBe(true);
+  });
+
+  it('converts a non-Error cause via toOptionalError', () => {
+    const result = ErrorFactory.UseCaseError('wrapped', {
+      cause: 'plain string',
+    });
+
+    expect(result.error.cause).toBeInstanceOf(Error);
+    expect(result.error.cause?.message).toBe('plain string');
+  });
+
+  it('QueryError defaults to INTERNAL and retryable true', () => {
+    const error = new QueryError('query failed');
+
+    expect(error).toMatchObject({
+      message: 'query failed',
+      kind: ErrorKind.INTERNAL,
+      code: ErrorCode.QUERY_ERROR,
+      retryable: true,
+    });
+  });
+
+  it('derives QueryError retryable true from kind INTERNAL in the factory', () => {
+    const result = ErrorFactory.QueryError('query blip', {
+      kind: ErrorKind.INTERNAL,
+    });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        kind: ErrorKind.INTERNAL,
+        retryable: true,
+        code: ErrorCode.QUERY_ERROR,
+      },
+    });
+  });
+
+  it('derives QueryError retryable true from kind UNAVAILABLE in the factory', () => {
+    const result = ErrorFactory.QueryError('store unavailable', {
+      kind: ErrorKind.UNAVAILABLE,
+    });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        kind: ErrorKind.UNAVAILABLE,
+        retryable: true,
+        code: ErrorCode.QUERY_ERROR,
+      },
+    });
+  });
+
+  it('derives QueryError retryable false from a non-retryable kind in the factory', () => {
+    const result = ErrorFactory.QueryError('row missing', {
+      kind: ErrorKind.NOT_FOUND,
+    });
+
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        kind: ErrorKind.NOT_FOUND,
+        retryable: false,
+        code: ErrorCode.QUERY_ERROR,
+      },
+    });
+  });
+
+  it('QueryNotFoundError defaults to NOT_FOUND, QUERY_ERROR, and retryable false', () => {
+    const error = new QueryNotFoundError('row missing');
+
+    expect(error).toMatchObject({
+      message: 'row missing',
+      kind: ErrorKind.NOT_FOUND,
+      code: ErrorCode.QUERY_ERROR,
+      retryable: false,
     });
   });
 });

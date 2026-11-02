@@ -14,7 +14,6 @@ export interface OrderDetailDTO {
   subtotal: number;
   shippingCost: number;
   totalAmount: number;
-  totalPrice: number;
   currency: string;
   createdAt: Date;
   updatedAt: Date;

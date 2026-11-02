@@ -6,6 +6,9 @@ import {
 } from '../../../../../../../shared-kernel/domain/result';
 import { UseCaseError } from '../../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { ErrorFactory } from '../../../../../../../shared-kernel/domain/exceptions/error.factory';
+import { ErrorCode } from '../../../../../../../shared-kernel/domain/exceptions/error-code';
+import { userNotFoundError } from '../../../services/user-not-found';
+import { ErrorKind } from '../../../../../../../shared-kernel/domain/exceptions/error-kind';
 import {
   USER_MUTATION_PERMISSIONS,
   OwnedResourceAccessPolicy,
@@ -47,16 +50,32 @@ export class UpdateAddressUseCase extends UseCase<
         USER_MUTATION_PERMISSIONS,
       )
     ) {
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+      return userNotFoundError(userId);
     }
 
     const userResult = await this.userRepository.findByIdForUpdate(userId);
-    if (isFailure(userResult)) return userResult;
+    if (isFailure(userResult)) {
+      if (userResult.error.kind === ErrorKind.NOT_FOUND) {
+        return userNotFoundError(userId);
+      }
+      return userResult;
+    }
 
-    if (!userResult.value)
-      return ErrorFactory.UseCaseError(`User with id ${userId} not found`);
+    if (!userResult.value) {
+      return userNotFoundError(userId);
+    }
 
     const { entity: user, expectedVersion } = userResult.value;
+
+    if (!user.addresses.some((address) => address.id === addressId)) {
+      return ErrorFactory.UseCaseError(
+        `Address with id ${addressId} not found`,
+        {
+          kind: ErrorKind.NOT_FOUND,
+          code: ErrorCode.ADDRESS_NOT_FOUND,
+        },
+      );
+    }
 
     const updateResult = user.updateAddress(addressId, {
       street: street ?? null,

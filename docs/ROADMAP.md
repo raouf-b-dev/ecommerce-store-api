@@ -51,7 +51,7 @@ Phases **15-17**, **16b**, **16d**, and **20** are done.
 | **3**   | Decorator-based Caching                     | Done   | `CachedRepository` decorator pattern wrapping Postgres repositories with Redis cache-aside                                                                                                                                                                                                                                                                                                            | `src/modules/*/secondary-adapters/repositories/cached-*/`                                                                  |
 | **4**   | Test Suite Foundation                       | Done   | Use case unit tests (all modules) · mock-based repository specs · controller/guard tests · architecture boundary tests (`test:arch`) · shared test helpers · Docker Compose for local dev (PostgreSQL + Redis Stack)                                                                                                                                                                                  | `src/modules/*/`, `src/testing/`, `test/architecture/`                                                                     |
 | **5**   | Code Quality (v0.2.0)                       | Done   | Removed redundant try/catch from use case/service files · Trimmed orders table indexes · Migration CLI scripts configured (`data-source.ts`, `scripts/docker-migrate.js`)                                                                                                                                                                                                                             | `data-source.ts`, `package.json`                                                                                           |
-| **6**   | Deployment Blockers                         | Done   | Multi-stage `Dockerfile` (Node.js LTS Alpine, see `.nvmrc`, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                                                 | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                        |
+| **6**   | Deployment Blockers                         | Done   | Multi-stage `Dockerfile` (Node.js LTS Alpine, see `.nvmrc`, tini, non-root) · `GlobalExceptionFilter` · graceful shutdown (`SIGTERM` drain) · `docker-entrypoint.sh` migration runner · `docker-compose.prod.yml` hardening (healthchecks, log rotation, memory limits, network isolation) · `scripts/generate-envs.js`                                                                               | `Dockerfile`, `docker-compose.prod.yml`, `scripts/`                                                                        |
 | **7**   | Security & Authentication                   | Done   | Helmet · CORS whitelist · XSS sanitization · `ValidationPipe` hardening (`forbidNonWhitelisted`) · pagination `@Max(100)` · RSA RS256 JWT · refresh token rotation + reuse detection · session tracking · full RBAC (roles/permissions/guards) · logout/logout-all · authentication endpoint `@Throttle`                                                                                              | `src/main.ts`, `src/modules/authentication/`, `src/infrastructure/jwt/`                                                    |
 | **8**   | Observability & SaaS                        | Done   | Winston structured logging · `/health` · correlation ID middleware (`X-Request-Id`) · BullMQ job correlation propagation · API versioning (`/v1`) · Redis-backed rate limiting · Prometheus (`/metrics`) · Grafana/Loki/Tempo stack · OpenTelemetry tracing · hexagonal boundary audit · agent docs (`AGENTS.md`, `.agents/`, `docs/ai/`)                                                             | `src/infrastructure/logging/`, `src/infrastructure/metrics/`, `docker/monitoring/`, `AGENTS.md`                            |
 | **9**   | Local DB Seeding                            | Done   | `npm run db:seed` · module-owned seed use cases · admin & customer accounts · 15-product catalog · inventory levels · documented credentials                                                                                                                                                                                                                                                          | `scripts/`, `src/modules/*/core/application/seed/`, `docs/development/`                                                    |
@@ -322,9 +322,9 @@ Moved to Phase **16c**.
 
 ### [x] Pull Request Template
 
-**What**: Add `.github/pull_request_template.md` (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates.
+**What**: Ship a repo-local PR checklist (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates. Later removed so the account default template applies; API-specific OpenAPI and e2e checks moved to `CONTRIBUTING.md`.
 
-**Location**: `.github/`
+**Location**: `CONTRIBUTING.md`
 
 ---
 
@@ -332,20 +332,24 @@ Moved to Phase **16c**.
 
 > **Goal**: Every error body has one documented shape, and `code` is always a stable machine-readable value that clients can branch on.
 
-### [ ] One Documented Error Envelope
+### [/] One Documented Error Envelope
 
-**What**: Today `GlobalExceptionFilter` copies Nest's `error` field into `code` for framework `HttpException`s (`code = exceptionResponse.code || exceptionResponse.error`), so `code` can be human text such as `Bad Request` or `Unauthorized`. Validation failures and unhandled errors return no `code`, and outside production the body also carries an `error` field with debug detail.
+**What**: `GlobalExceptionFilter` already emits one envelope (`success`, `statusCode`, `message`, `code`, optional `errors[]`, `timestamp`; non-production may also include `error` and `stack`). For framework `HttpException`s, an explicit response `code` wins; otherwise `code` is the Nest `HttpStatus` enum name for that status (`UNAUTHORIZED`, `FORBIDDEN`, `TOO_MANY_REQUESTS`, `METHOD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`, and similar). Validation failures use `VALIDATION_FAILED`. Domain `AppError` codes pass through. A missing `code` falls back to `INTERNAL_ERROR`. OpenAPI documents the wire shape in `ErrorResponseDto` with `code` as a non-exhaustive string. The Unreleased upgrade note covers clients that still compare against Nest's human-text codes (`Unauthorized`, `Forbidden`) or treated 429 as `INTERNAL_ERROR`.
 
-**Scope**:
+**Done**:
 
-- Map framework exceptions to stable codes (for example `VALIDATION_FAILED`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `RATE_LIMITED`, `INTERNAL_ERROR`); domain `AppError` codes stay as they are. `code` is always present.
-- One error schema (`success`, `statusCode`, `code`, `message`, optional `errors[]`, `timestamp`) published in OpenAPI and referenced by every documented error response. Non-production debug fields are renamed so they cannot be confused with `code`, and documented as development-only.
-- ADR recording the envelope and the code naming rule.
-- Release note: clients that branch on the old human-text `code` values must switch to the stable codes.
+- Framework statuses map to stable SCREAMING_CASE codes via `HttpStatus` names (including `TOO_MANY_REQUESTS` for 429, not `RATE_LIMITED`); domain codes unchanged; `code` always present.
+- Shared OpenAPI error body (`ErrorResponseDto`) with `code` as a non-exhaustive string.
+- Upgrade note for the 401/403/429 code change.
+
+**Scope** (remaining):
+
+- Keep the shared error schema covered by `audit:openapi`, and reference it from every documented error response that still lacks it.
+- e2e specs that assert the envelope shape and `code` for 400/401/403/404/409/429.
 
 **Done when**: `audit:openapi` covers the error schema and e2e specs assert the shape and code for 400/401/403/404/409/429.
 
-**Location**: `src/filters/global-exception.filter.ts`, `src/infrastructure/swagger/`, `docs/architecture/adr/`, `test/e2e/`
+**Location**: `src/filters/global-exception.filter.ts`, `src/filters/dto/error-response.dto.ts`, `src/infrastructure/swagger/`, `test/e2e/`
 
 ### [x] Cross-user order and payment reads
 
