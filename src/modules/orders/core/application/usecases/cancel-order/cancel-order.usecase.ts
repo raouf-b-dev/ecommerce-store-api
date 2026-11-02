@@ -57,6 +57,11 @@ export class CancelOrderUseCase implements UseCase<
       ? 'Checkout compensation'
       : 'Order cancelled';
 
+    // Already cancelled: re-schedule stock release and refund. There is no
+    // outbox yet, so a repeated cancel is the client's only recovery when the
+    // first scheduling failed after the order was saved. Downstream steps are
+    // idempotent (reservation state, refund job id payment-<id>, REFUNDED
+    // short-circuit).
     if (order.status === OrderStatus.CANCELLED) {
       await this.scheduleStockRelease(orderId);
       const refundResult = await this.scheduleOrderRefundService.scheduleIfPaid(
