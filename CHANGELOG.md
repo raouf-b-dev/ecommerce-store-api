@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Cancelling a paid order with a zero total now returns code `REFUND_AMOUNT_INVALID` (still HTTP 422) instead of `USECASE_ERROR`.
+- Order list, detail, and mutation responses use `totalAmount` as the canonical total; `totalPrice` is a deprecated alias with the same value and will be removed in a later release.
 - OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum.
 - Refund jobs carry the amount as Money (minor units and currency) instead of a major-unit number.
 - `PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders` (it required `manage_orders`). A missing order, or one the caller may not cancel, returns the same 404 body as `GET /v1/orders/:id`, and a caller with neither permission gets 403.
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade notes
 
+- API clients should read order totals from `totalAmount`; `totalPrice` on order responses is deprecated and will be removed in a later release (the `sortBy=totalPrice` query parameter is unchanged).
 - Before deploying, let the refund-payment queue finish (no waiting, active or delayed refund jobs), because queued refund jobs use the old payload and old order-<id> job ids. Do not delete queued jobs.
 - API clients must branch on HTTP 404 and the new `*_NOT_FOUND` codes for missing path-addressed resources instead of 422, `USECASE_ERROR` or `QUERY_ERROR`.
 - **Custom roles:** no migration grants `cancel_own_orders`. Every custom shopper role, existing or new, must be granted `cancel_own_orders` to let its users cancel their own orders; the `CUSTOMER` system role gets it on boot.
