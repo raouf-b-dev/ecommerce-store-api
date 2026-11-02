@@ -15,8 +15,11 @@ export class OrderResponseDto {
   @ApiProperty({ enum: OrderStatus })
   status!: OrderStatus;
 
-  @ApiProperty({ example: 2400 })
-  totalPrice!: number;
+  @ApiProperty({
+    example: 2400,
+    description: 'Order total (major units).',
+  })
+  totalAmount!: number;
 
   @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })
   createdAt!: Date;

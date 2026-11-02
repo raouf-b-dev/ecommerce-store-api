@@ -153,8 +153,11 @@ describe('ConfirmOrderUseCase', () => {
       const result = await useCase.execute(pendingMultiItem.id!);
 
       ResultAssertionHelper.assertResultSuccess(result);
-      expect(result.value.items).toHaveLength(5);
+      expect(result.value.id).toBe(pendingMultiItem.id);
+      expect(result.value.totalAmount).toEqual(expect.any(Number));
       expect(result.value.status).toBe(OrderStatus.CONFIRMED);
+      expect(result.value).not.toHaveProperty('items');
+      expect(result.value).not.toHaveProperty('paymentId');
     });
   });
 });

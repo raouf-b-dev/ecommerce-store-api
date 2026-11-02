@@ -121,17 +121,10 @@ export class OrderDetailResponseDto {
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total amount',
+    description: 'Order total (major units).',
     type: Number,
   })
   totalAmount!: number;
-
-  @ApiProperty({
-    example: 224.94,
-    description: 'Order total price',
-    type: Number,
-  })
-  totalPrice!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })
   currency!: string;
@@ -166,10 +159,10 @@ export class OrderMutationResponseDto {
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total price',
+    description: 'Order total (major units).',
     type: Number,
   })
-  totalPrice!: number;
+  totalAmount!: number;
 
   @ApiProperty({ example: 'USD', description: 'Currency code' })
   currency!: string;

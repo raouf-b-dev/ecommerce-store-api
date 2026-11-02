@@ -51,7 +51,7 @@ export class CreateOrderPaymentUseCase extends UseCase<
     if (isFailure(orderResult)) return orderResult;
 
     const order = orderResult.value;
-    const moneyResult = Money.fromMajorUnits(order.totalPrice, order.currency);
+    const moneyResult = Money.fromMajorUnits(order.totalAmount, order.currency);
     if (isFailure(moneyResult)) return moneyResult;
 
     return this.paymentGateway.createPayment({
