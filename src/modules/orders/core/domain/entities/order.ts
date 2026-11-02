@@ -13,6 +13,7 @@ import { OrderPricing } from '../value-objects/order-pricing';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
+import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
 import {
@@ -182,7 +183,10 @@ export class Order implements IOrder {
     if (!total.isPositive()) {
       return ErrorFactory.DomainError(
         'Refund amount must be greater than zero',
-        { code: ErrorCode.REFUND_AMOUNT_INVALID },
+        {
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
+          kind: ErrorKind.RULE_VIOLATION,
+        },
       );
     }
     return Result.success(total);

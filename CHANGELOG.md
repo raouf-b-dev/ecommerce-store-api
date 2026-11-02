@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Cancelling a paid order with a zero total now returns code `REFUND_AMOUNT_INVALID` (still HTTP 422) instead of `USECASE_ERROR`.
 - OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum.
 - Refund jobs carry the amount as Money (minor units and currency) instead of a major-unit number.
 - `PATCH /v1/orders/:id/cancel` accepts `manage_orders` or `cancel_own_orders` (it required `manage_orders`). A missing order, or one the caller may not cancel, returns the same 404 body as `GET /v1/orders/:id`, and a caller with neither permission gets 403.

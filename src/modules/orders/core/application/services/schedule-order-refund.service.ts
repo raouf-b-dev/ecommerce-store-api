@@ -1,6 +1,7 @@
 import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
 import { Injectable, Logger } from '@nestjs/common';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { UseCaseError } from '../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../shared-kernel/domain/result';
 import { Money } from '../../../../../shared-kernel/domain/value-objects/money';
@@ -21,24 +22,9 @@ export class ScheduleOrderRefundService {
   constructor(private readonly orderScheduler: OrderScheduler) {}
 
   /**
-   * Domain refundable-total check, wrapped once as a UseCaseError so
-   * cancel keeps HTTP 422 with code USECASE_ERROR.
-   */
-  ensureRefundable(order: Order): Result<Money, UseCaseError> {
-    const result = order.refundableTotal();
-    if (result.isFailure) {
-      return ErrorFactory.UseCaseError(
-        'Refund amount must be greater than zero',
-        { cause: result.error },
-      );
-    }
-    return Result.success(result.value);
-  }
-
-  /**
    * Cancel path: refund the order's recorded payment for the order total
    * when a paymentId is present.
-   * Pass `amount` when the caller already ran ensureRefundable (first
+   * Pass `amount` when the caller already ran Order.refundableTotal (first
    * cancel) so the check is not repeated. Omit it on idempotent retries
    * so this method still validates.
    */
@@ -47,15 +33,13 @@ export class ScheduleOrderRefundService {
     orderId: number,
     reason: string,
     amount?: Money,
-  ): Promise<Result<void, UseCaseError>> {
+  ): Promise<Result<void, UseCaseError | DomainError>> {
     if (order.paymentId === null) {
       return Result.success(undefined);
     }
 
     const amountResult =
-      amount !== undefined
-        ? Result.success(amount)
-        : this.ensureRefundable(order);
+      amount !== undefined ? Result.success(amount) : order.refundableTotal();
     if (amountResult.isFailure) {
       return amountResult;
     }

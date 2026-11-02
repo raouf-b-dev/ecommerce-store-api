@@ -522,12 +522,12 @@ describe('CancelOrderUseCase', () => {
       ResultAssertionHelper.assertResultFailure(
         result,
         'Refund amount must be greater than zero',
-        UseCaseError,
+        DomainError,
       );
       expect(result).toMatchObject({
         isFailure: true,
         error: {
-          code: ErrorCode.USECASE_ERROR,
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
           kind: ErrorKind.RULE_VIOLATION,
         },
       });
