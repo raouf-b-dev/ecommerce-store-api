@@ -320,9 +320,9 @@ Seed accounts, passwords, and catalog fixtures: [SEEDING.md](development/SEEDING
 
 ### Full-Stack Local Run
 
-Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use `.github/pull_request_template.md`.
+Clone order, env, CORS, and one port table for running this API with the admin dashboard and storefront: [FULL-STACK.md](development/FULL-STACK.md). Pull requests use the account default template; API-specific OpenAPI and e2e checks live in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-**Location**: `docs/development/FULL-STACK.md`, `.github/pull_request_template.md`
+**Location**: `docs/development/FULL-STACK.md`, `CONTRIBUTING.md`
 
 ---
 

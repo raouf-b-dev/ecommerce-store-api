@@ -322,9 +322,9 @@ Moved to Phase **16c**.
 
 ### [x] Pull Request Template
 
-**What**: Add `.github/pull_request_template.md` (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates.
+**What**: Ship a repo-local PR checklist (summary, linked issue, tests run, OpenAPI regenerated, docs touched) next to the existing issue templates. Later removed so the account default template applies; API-specific OpenAPI and e2e checks moved to `CONTRIBUTING.md`.
 
-**Location**: `.github/`
+**Location**: `CONTRIBUTING.md`
 
 ---
 
