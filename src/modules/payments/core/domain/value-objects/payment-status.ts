@@ -12,11 +12,21 @@ export enum PaymentStatusType {
   CANCELLED = 'CANCELLED',
 }
 
+const VALID_PAYMENT_STATUS_TYPES = new Set<unknown>(
+  Object.values(PaymentStatusType),
+);
+
+export function isPaymentStatusType(
+  value: unknown,
+): value is PaymentStatusType {
+  return VALID_PAYMENT_STATUS_TYPES.has(value);
+}
+
 export class PaymentStatus {
   private readonly _status: PaymentStatusType;
 
-  constructor(status: PaymentStatusType) {
-    if (!Object.values(PaymentStatusType).includes(status)) {
+  constructor(status: string) {
+    if (!isPaymentStatusType(status)) {
       throw new DomainError(`Invalid payment status: ${status}`);
     }
     this._status = status;
@@ -80,7 +90,7 @@ export class PaymentStatus {
   }
 
   static from(value: string): PaymentStatus {
-    return new PaymentStatus(value as PaymentStatusType);
+    return new PaymentStatus(value);
   }
 
   static pending(): PaymentStatus {

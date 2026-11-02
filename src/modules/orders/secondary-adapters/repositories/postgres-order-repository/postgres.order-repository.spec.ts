@@ -29,6 +29,7 @@ describe('PostgresOrderRepository', () => {
   beforeEach(async () => {
     mockOrmRepo = createMockRepository<OrderEntity>();
     mockQueryBuilder = createMockQueryBuilder<OrderEntity>();
+    mockOrmRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder);
     mockTransactionManager = createMockTransactionManager({
       mockQueryBuilder,
     });
@@ -111,9 +112,7 @@ describe('PostgresOrderRepository', () => {
 
   describe('listOrders', () => {
     it('should list orders successfully', async () => {
-      (mockOrmRepo.createQueryBuilder().getMany as jest.Mock).mockResolvedValue(
-        [testData.orderEntity],
-      );
+      mockQueryBuilder.getMany.mockResolvedValue([testData.orderEntity]);
 
       const result = await repository.listOrders({});
 

@@ -33,10 +33,8 @@ describe('CapturePaymentUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<CapturePaymentUseCase>(CapturePaymentUseCase);
-    paymentRepository = module.get<PaymentRepository>(
-      PaymentRepository,
-    ) as MockPaymentRepository;
+    useCase = module.get(CapturePaymentUseCase);
+    paymentRepository = module.get<MockPaymentRepository>(PaymentRepository);
     domainEventPublisher = module.get(DomainEventPublisher);
   });
 

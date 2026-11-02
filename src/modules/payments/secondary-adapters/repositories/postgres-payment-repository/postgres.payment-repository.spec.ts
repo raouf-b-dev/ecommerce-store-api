@@ -26,7 +26,7 @@ describe('PostgresPaymentRepository', () => {
   let repository: PostgresPaymentRepository;
   let mockOrmRepo: jest.Mocked<Repository<PaymentEntity>>;
   let mockDataSource: jest.Mocked<DataSource>;
-  let mockTransactionManager: any;
+  let mockTransactionManager: ReturnType<typeof createMockTransactionManager>;
   let mockQueryBuilder: jest.Mocked<SelectQueryBuilder<PaymentEntity>>;
 
   beforeEach(async () => {

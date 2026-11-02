@@ -3,14 +3,20 @@ import { OrderStatus } from './order-status.enum';
 
 export { OrderStatus } from './order-status.enum';
 
+const VALID_ORDER_STATUSES = new Set<unknown>(Object.values(OrderStatus));
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return VALID_ORDER_STATUSES.has(value);
+}
+
 export class OrderStatusVO {
   private readonly _status: OrderStatus;
 
   constructor(status: string | OrderStatus) {
-    if (!Object.values(OrderStatus).includes(status as OrderStatus)) {
+    if (!isOrderStatus(status)) {
       throw new Error(`Invalid order status: ${status}`);
     }
-    this._status = status as OrderStatus;
+    this._status = status;
   }
 
   get value(): OrderStatus {

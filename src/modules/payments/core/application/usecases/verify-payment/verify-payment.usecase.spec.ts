@@ -39,10 +39,8 @@ describe('VerifyPaymentUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<VerifyPaymentUseCase>(VerifyPaymentUseCase);
-    paymentRepository = module.get<PaymentRepository>(
-      PaymentRepository,
-    ) as MockPaymentRepository;
+    useCase = module.get(VerifyPaymentUseCase);
+    paymentRepository = module.get<MockPaymentRepository>(PaymentRepository);
   });
 
   afterEach(() => {

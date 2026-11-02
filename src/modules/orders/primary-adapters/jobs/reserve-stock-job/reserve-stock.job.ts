@@ -6,11 +6,21 @@ import { Result, isFailure } from '../../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../../core/domain/schedulers/order.scheduler';
-import { ValidateCartResult } from '../validate-cart.job';
+import { isValidateCartResult, ValidateCartResult } from '../validate-cart.job';
 import { CorrelationService } from '../../../../../infrastructure/logging/correlation/correlation.service';
 
 export interface ReserveStockResult extends ValidateCartResult {
   reservationId: number;
+}
+
+export function isReserveStockResult(
+  value: unknown,
+): value is ReserveStockResult {
+  return (
+    isValidateCartResult(value) &&
+    'reservationId' in value &&
+    typeof value.reservationId === 'number'
+  );
 }
 
 @Injectable()
@@ -37,9 +47,9 @@ export class ReserveStockStep extends BaseJobHandler<
     const { cartId } = job.data;
 
     const childrenValues = await job.getChildrenValues();
-    const childData = Object.values(childrenValues)[0] as ValidateCartResult;
+    const childData = Object.values(childrenValues)[0];
 
-    if (!childData || !childData.cartItems) {
+    if (!isValidateCartResult(childData)) {
       return ErrorFactory.ServiceError(
         'Missing cart data from ValidateCartStep',
       );
