@@ -287,8 +287,14 @@ erDiagram
 // 1. Definition must exist and be active
 const defResult = await this.definitionRepo.findById(input.definitionId);
 if (defResult.isFailure) return defResult;
-if (defResult.value === null) return ErrorFactory.UseCaseError(..., HttpStatus.NOT_FOUND);
-if (!defResult.value.isActive) return ErrorFactory.UseCaseError('Attribute is deactivated', ...);
+if (defResult.value === null) {
+  return ErrorFactory.UseCaseError('Attribute definition not found', {
+    kind: ErrorKind.NOT_FOUND,
+  });
+}
+if (!defResult.value.isActive) {
+  return ErrorFactory.UseCaseError('Attribute is deactivated');
+}
 
 // 2. Validate value against data type (domain rule on the definition entity)
 const validation = defResult.value.validateValue(input.value);
@@ -298,7 +304,6 @@ if (validation.isFailure) return validation;
 if (defResult.value.options && !defResult.value.options.includes(input.value)) {
   return ErrorFactory.UseCaseError(
     `Value '${input.value}' not in allowed options: ${defResult.value.options.join(', ')}`,
-    ...
   );
 }
 ```
