@@ -57,7 +57,7 @@ All ten domain modules (Analytics, Authentication, Authorization, Carts, Identit
 
 ### CQRS Read Path
 
-List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition).
+List and detail reads use query ports and flat read DTOs. TypeORM adapters under `secondary-adapters/query/` resolve related fields (for example customer names and SKUs) in a single SQL query instead of N+1 round trips. Coverage spans Orders, Inventory, Payments, Products, Carts, Identity, Notifications, and Analytics (query-only composition). Order list and detail expose canonical `totalAmount` (major units); detail still also returns deprecated `totalPrice` as the same value until a later breaking release removes it. The `sortBy=totalPrice` list query param is unchanged.
 
 **Location**: `src/modules/*/core/application/queries/`, `src/modules/*/secondary-adapters/query/` · **Deep-dive**: [CQRS.md](architecture/CQRS.md)
 

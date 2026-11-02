@@ -121,15 +121,18 @@ export class OrderDetailResponseDto {
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total amount',
+    description:
+      'Canonical order total (major units). Prefer this field over totalPrice.',
     type: Number,
   })
   totalAmount!: number;
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total price',
+    description:
+      'Deprecated alias of totalAmount. Use totalAmount. Removed in a later release.',
     type: Number,
+    deprecated: true,
   })
   totalPrice!: number;
 
@@ -166,7 +169,8 @@ export class OrderMutationResponseDto {
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total price',
+    description:
+      'Order total (major units). Same value as totalAmount on list and detail read models.',
     type: Number,
   })
   totalPrice!: number;

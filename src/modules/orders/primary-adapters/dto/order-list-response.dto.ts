@@ -45,7 +45,8 @@ export class OrderListItemResponseDto {
 
   @ApiProperty({
     example: 224.94,
-    description: 'Order total amount',
+    description:
+      'Canonical order total (major units). Same field name as order detail totalAmount.',
     type: Number,
   })
   totalAmount!: number;

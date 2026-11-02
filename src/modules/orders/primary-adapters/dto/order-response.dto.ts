@@ -15,7 +15,19 @@ export class OrderResponseDto {
   @ApiProperty({ enum: OrderStatus })
   status!: OrderStatus;
 
-  @ApiProperty({ example: 2400 })
+  @ApiProperty({
+    example: 2400,
+    description:
+      'Canonical order total (major units). Prefer this field over totalPrice.',
+  })
+  totalAmount!: number;
+
+  @ApiProperty({
+    example: 2400,
+    description:
+      'Deprecated alias of totalAmount. Use totalAmount. Removed in a later release.',
+    deprecated: true,
+  })
   totalPrice!: number;
 
   @ApiProperty({ example: '2025-08-25T12:34:56.000Z' })

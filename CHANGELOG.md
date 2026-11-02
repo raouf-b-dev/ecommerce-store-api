@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Order list and detail responses treat `totalAmount` as the canonical order total; detail still returns deprecated `totalPrice` as the same value until a later release removes it.
 - Boot now refreshes system permission descriptions from the catalog, and `manage_orders` describes status transitions and cancel rather than create/update/delete.
 - Cancelling a paid order with a zero total now returns code `REFUND_AMOUNT_INVALID` (still HTTP 422) instead of `USECASE_ERROR`.
 - OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum.
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Upgrade notes
 
+- API clients should read order totals from `totalAmount` on list and detail responses; `totalPrice` on detail remains as a deprecated alias and will be removed in a later release.
 - Before deploying, let the refund-payment queue finish (no waiting, active or delayed refund jobs), because queued refund jobs use the old payload and old order-<id> job ids. Do not delete queued jobs.
 - API clients must branch on HTTP 404 and the new `*_NOT_FOUND` codes for missing path-addressed resources instead of 422, `USECASE_ERROR` or `QUERY_ERROR`.
 - Clients that compare `code` to `Unauthorized` or `Forbidden`, or treat 429 as `INTERNAL_ERROR`, must use `UNAUTHORIZED`, `FORBIDDEN` and `TOO_MANY_REQUESTS`; other framework statuses without an explicit code now use their HTTP status names (for example `METHOD_NOT_ALLOWED`, `PAYLOAD_TOO_LARGE`).
