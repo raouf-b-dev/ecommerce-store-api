@@ -172,7 +172,7 @@ describe('ModulePaymentGateway', () => {
   });
 
   describe('processRefund', () => {
-    it('forwards an explicit amount to ProcessRefundUseCase as major units', async () => {
+    it('forwards an explicit Money amount to ProcessRefundUseCase unchanged', async () => {
       processRefundExecute.mockResolvedValue(Result.success(payment));
       const amountResult = Money.create(2550, 'EUR');
       ResultAssertionHelper.assertResultSuccess(amountResult);
@@ -186,8 +186,11 @@ describe('ModulePaymentGateway', () => {
       ResultAssertionHelper.assertResultSuccess(result);
       expect(processRefundExecute).toHaveBeenCalledWith({
         paymentId: 5,
-        amount: 25.5,
+        amount: amountResult.value,
         reason: 'Order cancelled',
+      });
+      expect(processRefundExecute.mock.calls[0][0]).toMatchObject({
+        amount: expect.objectContaining({ amount: 2550, currency: 'EUR' }),
       });
     });
 

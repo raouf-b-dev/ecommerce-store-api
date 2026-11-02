@@ -34,16 +34,16 @@ describe('PaymentDtoMapper', () => {
     expect(kwdDto.refundedAmount).toBe(0.5);
   });
 
-  it('converts a refund request from major units to refund command', () => {
+  it('maps a refund request to majorUnits without inventing a currency', () => {
     const command = PaymentDtoMapper.toRefundCommand(7, {
-      amount: 19.99,
+      amount: 199.99,
       reason: 'damaged',
     });
 
     ResultAssertionHelper.assertResultSuccess(command);
     expect(command.value).toEqual({
       paymentId: 7,
-      amount: 19.99,
+      majorUnits: 199.99,
       reason: 'damaged',
     });
   });

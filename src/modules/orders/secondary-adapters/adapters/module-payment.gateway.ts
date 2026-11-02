@@ -89,8 +89,7 @@ export class ModulePaymentGateway implements PaymentGateway {
   async processRefund(
     input: ProcessRefundInput,
   ): Promise<Result<void, InfrastructureError>> {
-    const command = toProcessRefundCommand(input);
-    const result = await this.processRefundUseCase.execute(command);
+    const result = await this.processRefundUseCase.execute(input);
 
     if (isFailure(result)) {
       return ErrorFactory.InfrastructureError('Failed to process refund', {
@@ -103,22 +102,4 @@ export class ModulePaymentGateway implements PaymentGateway {
 
     return Result.success(undefined);
   }
-}
-
-function toProcessRefundCommand(input: ProcessRefundInput): {
-  paymentId: number;
-  reason: string;
-} & ({ amount: number } | { mode: 'remaining' }) {
-  if ('mode' in input) {
-    return {
-      paymentId: input.paymentId,
-      reason: input.reason,
-      mode: 'remaining',
-    };
-  }
-  return {
-    paymentId: input.paymentId,
-    reason: input.reason,
-    amount: input.amount.toMajorUnits(),
-  };
 }
