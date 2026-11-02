@@ -1,5 +1,6 @@
 import { ErrorKind } from '../../../../../shared-kernel/domain/exceptions/error-kind';
-
+import { ErrorCode } from '../../../../../shared-kernel/domain/exceptions/error-code';
+import { DomainError } from '../../../../../shared-kernel/domain/exceptions/domain.error';
 import { ScheduleOrderRefundService } from './schedule-order-refund.service';
 import {
   MockOrderScheduler,
@@ -56,8 +57,15 @@ describe('ScheduleOrderRefundService', () => {
     ResultAssertionHelper.assertResultFailure(
       result,
       'Refund amount must be greater than zero',
-      UseCaseError,
+      DomainError,
     );
+    expect(result).toMatchObject({
+      isFailure: true,
+      error: {
+        code: ErrorCode.REFUND_AMOUNT_INVALID,
+        kind: ErrorKind.RULE_VIOLATION,
+      },
+    });
     expect(mockOrderScheduler.scheduleRefundPayment).not.toHaveBeenCalled();
   });
 

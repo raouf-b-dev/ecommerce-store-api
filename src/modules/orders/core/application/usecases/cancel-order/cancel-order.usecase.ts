@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UseCase } from '../../../../../../shared-kernel/domain/interfaces/base.usecase';
+import { DomainError } from '../../../../../../shared-kernel/domain/exceptions/domain.error';
 import { UseCaseError } from '../../../../../../shared-kernel/domain/exceptions/usecase.error';
 import { Result } from '../../../../../../shared-kernel/domain/result';
 import { ErrorKind } from '../../../../../../shared-kernel/domain/exceptions/error-kind';
@@ -18,7 +19,7 @@ import { Money } from '../../../../../../shared-kernel/domain/value-objects/mone
 export class CancelOrderUseCase implements UseCase<
   CancelOrderCommand,
   IOrder,
-  UseCaseError
+  UseCaseError | DomainError
 > {
   private readonly logger = new Logger(CancelOrderUseCase.name);
 
@@ -31,7 +32,7 @@ export class CancelOrderUseCase implements UseCase<
 
   async execute(
     dto: CancelOrderCommand,
-  ): Promise<Result<IOrder, UseCaseError>> {
+  ): Promise<Result<IOrder, UseCaseError | DomainError>> {
     const { orderId, isSagaCompensation, callerContext } = dto;
     const requestedOrder =
       await this.orderRepository.findByIdForUpdate(orderId);
@@ -68,8 +69,7 @@ export class CancelOrderUseCase implements UseCase<
 
     let refundAmount: Money | undefined;
     if (order.paymentId !== null) {
-      const refundable =
-        this.scheduleOrderRefundService.ensureRefundable(order);
+      const refundable = order.refundableTotal();
       if (refundable.isFailure) return refundable;
       refundAmount = refundable.value;
     }

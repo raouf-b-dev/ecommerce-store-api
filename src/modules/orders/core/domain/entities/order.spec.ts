@@ -185,7 +185,10 @@ describe('Order', () => {
       );
       expect(result).toMatchObject({
         isFailure: true,
-        error: { code: ErrorCode.REFUND_AMOUNT_INVALID },
+        error: {
+          code: ErrorCode.REFUND_AMOUNT_INVALID,
+          kind: ErrorKind.RULE_VIOLATION,
+        },
       });
     });
   });
