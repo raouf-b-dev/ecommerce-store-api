@@ -33,6 +33,18 @@ export class Permission {
     return this._description;
   }
 
+  /**
+   * Aligns the stored description with the catalog definition.
+   * Returns true when the description changed and the caller must persist.
+   */
+  applyCatalogDescription(description: string): boolean {
+    if (this._description === description) {
+      return false;
+    }
+    this._description = description;
+    return true;
+  }
+
   toPrimitives(): IPermission {
     return {
       id: this._id,

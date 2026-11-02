@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Boot now refreshes system permission descriptions from the catalog, and `manage_orders` describes status transitions and cancel rather than create/update/delete.
 - Cancelling a paid order with a zero total now returns code `REFUND_AMOUNT_INVALID` (still HTTP 422) instead of `USECASE_ERROR`.
 - OpenAPI shared error body documents common `code` values (including `"ORDER_NOT_FOUND"`, `"PAYMENT_NOT_FOUND"`, `"UNAUTHORIZED"`, `"FORBIDDEN"`) as a non-exhaustive string, not a closed enum.
 - Refund jobs carry the amount as Money (minor units and currency) instead of a major-unit number.

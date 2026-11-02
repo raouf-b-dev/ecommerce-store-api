@@ -120,11 +120,6 @@
       "count": 1
     }
   },
-  "src/modules/authorization/core/application/lifecycle/permission-system-data.initializer.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/modules/authorization/core/application/lifecycle/role-system-data.initializer.spec.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

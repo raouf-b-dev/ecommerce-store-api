@@ -39,16 +39,14 @@ describe('PermissionSystemDataInitializer', () => {
       ],
     }).compile();
 
-    initializer = module.get<PermissionSystemDataInitializer>(
-      PermissionSystemDataInitializer,
-    );
+    initializer = module.get(PermissionSystemDataInitializer);
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('should initialize permissions if none exist', async () => {
+  it('inserts missing permission codes when none exist', async () => {
     mockPermissionRepo.findAll.mockResolvedValue(Result.success([]));
     mockPermissionRepo.saveMany.mockResolvedValue(Result.success([]));
 
@@ -57,14 +55,18 @@ describe('PermissionSystemDataInitializer', () => {
     expect(mockPermissionRepo.findAll).toHaveBeenCalled();
     expect(mockPermissionRepo.saveMany).toHaveBeenCalled();
     const saveArgs = mockPermissionRepo.saveMany.mock.calls[0][0];
-    expect(saveArgs.length).toBeGreaterThan(0);
+    expect(saveArgs.length).toBe(SYSTEM_PERMISSIONS.length);
     expect(saveArgs[0]).toBeInstanceOf(Permission);
   });
 
-  it('should not initialize permissions if all exist', async () => {
+  it('does not write when every existing description already matches the catalog', async () => {
     const existing = SYSTEM_PERMISSIONS.map(
-      (sp: any) =>
-        new Permission({ id: 0, code: sp.code, description: sp.description }),
+      (sp, index) =>
+        new Permission({
+          id: index + 1,
+          code: sp.code,
+          description: sp.description,
+        }),
     );
     mockPermissionRepo.findAll.mockResolvedValue(Result.success(existing));
 
@@ -72,6 +74,54 @@ describe('PermissionSystemDataInitializer', () => {
 
     expect(mockPermissionRepo.findAll).toHaveBeenCalled();
     expect(mockPermissionRepo.saveMany).not.toHaveBeenCalled();
+  });
+
+  it('updates an existing permission when its description differs from the catalog', async () => {
+    const existing = SYSTEM_PERMISSIONS.map(
+      (sp, index) =>
+        new Permission({
+          id: index + 1,
+          code: sp.code,
+          description:
+            sp.code === 'manage_orders'
+              ? 'Create, update, and delete orders'
+              : sp.description,
+        }),
+    );
+    mockPermissionRepo.findAll.mockResolvedValue(Result.success(existing));
+    mockPermissionRepo.saveMany.mockResolvedValue(Result.success([]));
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockPermissionRepo.saveMany).toHaveBeenCalledTimes(1);
+    const saveArgs = mockPermissionRepo.saveMany.mock.calls[0][0];
+    expect(saveArgs).toHaveLength(1);
+    expect(saveArgs[0].code).toBe('manage_orders');
+    expect(saveArgs[0].id).toBe(
+      existing.find((permission) => permission.code === 'manage_orders')?.id,
+    );
+    expect(saveArgs[0].description).toBe(
+      SYSTEM_PERMISSIONS.find((sp) => sp.code === 'manage_orders')?.description,
+    );
+  });
+
+  it('still inserts a missing code when other permissions already exist', async () => {
+    const existing = [
+      new Permission({
+        id: 1,
+        code: SYSTEM_PERMISSIONS[0].code,
+        description: SYSTEM_PERMISSIONS[0].description,
+      }),
+    ];
+    mockPermissionRepo.findAll.mockResolvedValue(Result.success(existing));
+    mockPermissionRepo.saveMany.mockResolvedValue(Result.success([]));
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockPermissionRepo.findAll).toHaveBeenCalled();
+    expect(mockPermissionRepo.saveMany).toHaveBeenCalled();
+    const saveArgs = mockPermissionRepo.saveMany.mock.calls[0][0];
+    expect(saveArgs.length).toBe(SYSTEM_PERMISSIONS.length - 1);
   });
 
   it('should not initialize permissions and log error if findAll fails', async () => {
@@ -85,32 +135,33 @@ describe('PermissionSystemDataInitializer', () => {
     expect(mockPermissionRepo.saveMany).not.toHaveBeenCalled();
   });
 
-  it('should only initialize missing permissions (partial seed)', async () => {
-    // Existing only contains the first one
-    const existing = [
-      new Permission({
-        id: 0,
-        code: SYSTEM_PERMISSIONS[0].code,
-        description: SYSTEM_PERMISSIONS[0].description,
-      }),
-    ];
-    mockPermissionRepo.findAll.mockResolvedValue(Result.success(existing));
-    mockPermissionRepo.saveMany.mockResolvedValue(Result.success([]));
-
-    await initializer.onApplicationBootstrap();
-
-    expect(mockPermissionRepo.findAll).toHaveBeenCalled();
-    expect(mockPermissionRepo.saveMany).toHaveBeenCalled();
-    const saveArgs = mockPermissionRepo.saveMany.mock.calls[0][0];
-    expect(saveArgs.length).toBe(SYSTEM_PERMISSIONS.length - 1); // Should save all except the first one
-  });
-
   it('should skip init when already shutting down', async () => {
     lifecycle.isShuttingDown = true;
 
     await initializer.onApplicationBootstrap();
 
     expect(mockPermissionRepo.findAll).not.toHaveBeenCalled();
+  });
+
+  it('aborts without writing when shutdown starts after findAll', async () => {
+    const existing = SYSTEM_PERMISSIONS.map(
+      (sp, index) =>
+        new Permission({
+          id: index + 1,
+          code: sp.code,
+          description:
+            sp.code === 'manage_orders' ? 'stale description' : sp.description,
+        }),
+    );
+    mockPermissionRepo.findAll.mockImplementation(() => {
+      lifecycle.isShuttingDown = true;
+      return Promise.resolve(Result.success(existing));
+    });
+
+    await initializer.onApplicationBootstrap();
+
+    expect(mockPermissionRepo.findAll).toHaveBeenCalled();
+    expect(mockPermissionRepo.saveMany).not.toHaveBeenCalled();
   });
 
   it('should demote findAll failure to debug when shutting down mid-init', async () => {
