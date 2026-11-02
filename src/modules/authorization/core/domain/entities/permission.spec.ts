@@ -45,4 +45,38 @@ describe('Permission Entity', () => {
     expect(permission.code).toBe('view_reports');
     expect(permission.description).toBeNull();
   });
+
+  it('returns false from applyCatalogDescription when the description already matches', () => {
+    const permission = new Permission({
+      id: 4,
+      code: 'manage_orders',
+      description: 'Manage all orders: status transitions and cancel',
+    });
+
+    const changed = permission.applyCatalogDescription(
+      'Manage all orders: status transitions and cancel',
+    );
+
+    expect(changed).toBe(false);
+    expect(permission.description).toBe(
+      'Manage all orders: status transitions and cancel',
+    );
+  });
+
+  it('updates the description from applyCatalogDescription when it differs', () => {
+    const permission = new Permission({
+      id: 5,
+      code: 'manage_orders',
+      description: 'Create, update, and delete orders',
+    });
+
+    const changed = permission.applyCatalogDescription(
+      'Manage all orders: status transitions and cancel',
+    );
+
+    expect(changed).toBe(true);
+    expect(permission.description).toBe(
+      'Manage all orders: status transitions and cancel',
+    );
+  });
 });

@@ -13,7 +13,10 @@ export const SYSTEM_PERMISSIONS: PermissionDefinition[] = [
     description: 'Create, update, and delete products',
   },
   { code: 'view_all_products', description: 'View all products' },
-  { code: 'manage_orders', description: 'Create, update, and delete orders' },
+  {
+    code: 'manage_orders',
+    description: 'Manage all orders: status transitions and cancel',
+  },
   { code: 'view_all_orders', description: 'View all orders' },
   { code: 'view_own_profile', description: 'View own customer profile' },
   {
