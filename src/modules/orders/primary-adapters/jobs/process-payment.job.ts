@@ -7,7 +7,10 @@ import { Result, isFailure } from '../../../../shared-kernel/domain/result';
 import { AppError } from '../../../../shared-kernel/domain/exceptions/app.error';
 import { ErrorFactory } from '../../../../shared-kernel/domain/exceptions/error.factory';
 import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.scheduler';
-import { ReserveStockResult } from './reserve-stock-job/reserve-stock.job';
+import {
+  isReserveStockResult,
+  ReserveStockResult,
+} from './reserve-stock-job/reserve-stock.job';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
 import { Money } from '../../../../shared-kernel/domain/value-objects/money';
@@ -18,19 +21,6 @@ export interface ProcessPaymentResult extends ReserveStockResult {
   orderId: number;
   orderTotal: number;
   orderCurrency: string;
-}
-
-function isReserveStockResult(value: unknown): value is ReserveStockResult {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'reservationId' in value &&
-    typeof value.reservationId === 'number' &&
-    'cartId' in value &&
-    typeof value.cartId === 'number' &&
-    'cartItems' in value &&
-    Array.isArray(value.cartItems)
-  );
 }
 
 @Injectable()

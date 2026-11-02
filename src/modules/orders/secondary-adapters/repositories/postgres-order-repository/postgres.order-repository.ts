@@ -51,10 +51,8 @@ export class PostgresOrderRepository implements OrderRepository {
       }
 
       const sortColumn = `order.${sortBy}`;
-      queryBuilder.orderBy(
-        sortColumn,
-        sortOrder.toUpperCase() as 'ASC' | 'DESC',
-      );
+      const direction = sortOrder === 'asc' ? 'ASC' : 'DESC';
+      queryBuilder.orderBy(sortColumn, direction);
 
       const skip = (page - 1) * limit;
       queryBuilder.skip(skip).take(limit);

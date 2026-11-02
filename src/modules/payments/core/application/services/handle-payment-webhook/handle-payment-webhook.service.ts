@@ -70,7 +70,7 @@ export class HandlePaymentWebhookService {
       default: {
         const _exhaustiveCheck: never = dto.eventType;
         return ErrorFactory.ServiceError(
-          `Unhandled event type: ${_exhaustiveCheck as string}`,
+          `Unhandled event type: ${String(_exhaustiveCheck)}`,
         );
       }
     }

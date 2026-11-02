@@ -8,10 +8,33 @@ import { ScheduleCheckoutProps } from '../../core/domain/schedulers/order.schedu
 import { ShippingAddressDto } from '../dto/shipping-address.dto';
 import { CorrelationService } from '../../../../infrastructure/logging/correlation/correlation.service';
 import { SYSTEM_CALLER_CONTEXT } from '../../../../shared-kernel/domain/interfaces/caller-context.interface';
+import { isRecord } from '../../../../shared-kernel/helpers/lang/is-record';
 
 export interface ValidateCartResult {
   cartId: number;
   cartItems: Array<{ productId: number; quantity: number; price: number }>;
+}
+
+function isCartItem(
+  value: unknown,
+): value is { productId: number; quantity: number; price: number } {
+  return (
+    isRecord(value) &&
+    typeof value.productId === 'number' &&
+    typeof value.quantity === 'number' &&
+    typeof value.price === 'number'
+  );
+}
+
+export function isValidateCartResult(
+  value: unknown,
+): value is ValidateCartResult {
+  return (
+    isRecord(value) &&
+    typeof value.cartId === 'number' &&
+    Array.isArray(value.cartItems) &&
+    value.cartItems.every(isCartItem)
+  );
 }
 
 @Injectable()

@@ -50,32 +50,68 @@ describe('OrderItem', () => {
     });
 
     describe('when productId is missing', () => {
-      it.each([0, null as unknown as number, undefined as unknown as number])(
-        'throws when productId is %s',
-        (productId) => {
-          expect(
-            () =>
-              new OrderItem({
-                ...validProps,
-                productId,
-              }),
-          ).toThrow('Product ID is required');
-        },
-      );
+      it('throws when productId is 0', () => {
+        expect(
+          () =>
+            new OrderItem({
+              ...validProps,
+              productId: 0,
+            }),
+        ).toThrow('Product ID is required');
+      });
+
+      it('throws when productId is null', () => {
+        expect(
+          () =>
+            new OrderItem({
+              ...validProps,
+              // @ts-expect-error intentional invalid productId
+              productId: null,
+            }),
+        ).toThrow('Product ID is required');
+      });
+
+      it('throws when productId is undefined', () => {
+        expect(
+          () =>
+            new OrderItem({
+              ...validProps,
+              // @ts-expect-error intentional invalid productId
+              productId: undefined,
+            }),
+        ).toThrow('Product ID is required');
+      });
     });
 
     describe('when productName is blank', () => {
-      it.each([
-        '',
-        '   ',
-        null as unknown as string,
-        undefined as unknown as string,
-      ])('throws when productName is %s', (productName) => {
+      it.each(['', '   '])('throws when productName is %s', (productName) => {
         expect(
           () =>
             new OrderItem({
               ...validProps,
               productName,
+            }),
+        ).toThrow('Product name is required');
+      });
+
+      it('throws when productName is null', () => {
+        expect(
+          () =>
+            new OrderItem({
+              ...validProps,
+              // @ts-expect-error intentional invalid productName
+              productName: null,
+            }),
+        ).toThrow('Product name is required');
+      });
+
+      it('throws when productName is undefined', () => {
+        expect(
+          () =>
+            new OrderItem({
+              ...validProps,
+              // @ts-expect-error intentional invalid productName
+              productName: undefined,
             }),
         ).toThrow('Product name is required');
       });

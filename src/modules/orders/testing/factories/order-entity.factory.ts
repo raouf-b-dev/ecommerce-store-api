@@ -90,7 +90,7 @@ export class OrderEntityTestFactory {
   static createOrderItemEntity(
     overrides?: Partial<OrderItemEntity>,
   ): OrderItemEntity {
-    const defaultEntity: OrderItemEntity = {
+    return Object.assign(new OrderItemEntity(), {
       id: 1,
       productId: 3,
       productName: 'Test Product',
@@ -100,16 +100,14 @@ export class OrderEntityTestFactory {
       quantity: 1,
       lineTotal: 100,
       currency: 'USD',
-      order: null as unknown as OrderEntity,
-    };
-
-    return { ...defaultEntity, ...overrides };
+      ...overrides,
+    });
   }
 
   static createUnsavedOrderItemEntity(
     overrides?: Partial<Omit<OrderItemEntity, 'id'>>,
   ): DeepPartial<OrderItemEntity> {
-    const defaultEntity: Omit<OrderItemEntity, 'id'> = {
+    const defaultEntity: Omit<OrderItemEntity, 'id' | 'order'> = {
       productId: 3,
       productName: 'Test Product',
       sku: 'SKU-001',
@@ -118,7 +116,6 @@ export class OrderEntityTestFactory {
       quantity: 1,
       lineTotal: 100,
       currency: 'USD',
-      order: null as unknown as OrderEntity,
     };
 
     return { ...defaultEntity, ...overrides };
