@@ -22,12 +22,12 @@ Eleven modules under `src/modules/` talk through ACL gateways and domain events,
 
 **Current limits**
 
-| Topic    | Status                                                                                 |
-| :------- | :------------------------------------------------------------------------------------- |
-| Payments | Fake Stripe provider behind a swappable port. No live payment provider wired yet.      |
-| Deploy   | Single-instance ops (migrations, health probes, backup/smoke). Not multi-instance yet. |
-| Scope    | Reference backend, not a hosted storefront.                                            |
-| Demo     | No public staging. Run locally with Docker.                                            |
+| Topic    | Status                                                                                                                             |
+| :------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| Payments | Fake Stripe provider behind a swappable port. No live payment provider wired yet.                                                  |
+| Deploy   | Single-instance ops (migrations, health probes, backup/smoke). Not multi-instance yet.                                             |
+| Scope    | Reference backend, not a hosted storefront.                                                                                        |
+| Demo     | Run locally with Docker / [ecommerce-platform](https://github.com/raouf-b-dev/ecommerce-platform). Hosted public demo in progress. |
 
 Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
